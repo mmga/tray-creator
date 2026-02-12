@@ -1,5 +1,4 @@
 "use client";
-
 import type { TrayParams } from "@/types/tray";
 import { BASE_PRESETS, PARAM_LIMITS, DEFAULT_PRESET_INDEX } from "@/lib/config";
 import { calculateTrayDimensions } from "@/lib/tray-model";
@@ -58,7 +57,7 @@ function ParamSlider({
                 onChange(v);
               }
             }}
-            className="w-20 h-7 text-right text-sm bg-zinc-800 border-zinc-700 text-zinc-200"
+            className="w-20 h-7 text-right text-sm bg-zinc-800 border-zinc-700 text-zinc-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
           <span className="text-xs text-zinc-500 w-6">{unit}</span>
         </div>
@@ -84,6 +83,7 @@ export default function ParameterPanel({
   isGenerating,
 }: ParameterPanelProps) {
   const dimensions = calculateTrayDimensions(params);
+  const isOversized = dimensions.width > 260 || dimensions.depth > 260;
 
   const handlePresetChange = (value: string) => {
     const index = parseInt(value);
@@ -99,37 +99,7 @@ export default function ParameterPanel({
 
   return (
     <div className="flex flex-col gap-4 h-full overflow-y-auto p-1 custom-scrollbar">
-      {/* 预设选择 */}
-      <Card className="bg-zinc-900/80 border-zinc-800 backdrop-blur-sm">
-        <CardHeader className="pb-3 pt-4 px-4">
-          <CardTitle className="text-sm font-semibold text-zinc-200 tracking-wide uppercase">
-            底座预设
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-4 pb-4">
-          <Select
-            defaultValue={String(DEFAULT_PRESET_INDEX)}
-            onValueChange={handlePresetChange}
-          >
-            <SelectTrigger className="bg-zinc-800 border-zinc-700 text-zinc-200">
-              <SelectValue placeholder="选择底座尺寸" />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-800 border-zinc-700">
-              {BASE_PRESETS.map((preset, i) => (
-                <SelectItem
-                  key={i}
-                  value={String(i)}
-                  className="text-zinc-200 focus:bg-zinc-700 focus:text-zinc-100"
-                >
-                  {preset.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </CardContent>
-      </Card>
-
-      {/* 布局参数 */}
+      {/* 布局参数（含底座预设） */}
       <Card className="bg-zinc-900/80 border-zinc-800 backdrop-blur-sm">
         <CardHeader className="pb-3 pt-4 px-4">
           <CardTitle className="text-sm font-semibold text-zinc-200 tracking-wide uppercase">
@@ -137,6 +107,30 @@ export default function ParameterPanel({
           </CardTitle>
         </CardHeader>
         <CardContent className="px-4 pb-4 space-y-4">
+          {/* 底座预设 */}
+          <div className="space-y-1">
+            <Label className="text-sm text-zinc-300">底座尺寸</Label>
+            <Select
+              defaultValue={String(DEFAULT_PRESET_INDEX)}
+              onValueChange={handlePresetChange}
+            >
+              <SelectTrigger className="bg-zinc-800 border-zinc-700 text-zinc-200">
+                <SelectValue placeholder="选择底座尺寸" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-800 border-zinc-700">
+                {BASE_PRESETS.map((preset, i) => (
+                  <SelectItem
+                    key={i}
+                    value={String(i)}
+                    className="text-zinc-200 focus:bg-zinc-700 focus:text-zinc-100"
+                  >
+                    {preset.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <ParamSlider
             label="列数"
             value={params.columns}
@@ -151,16 +145,6 @@ export default function ParameterPanel({
             onChange={(v) => updateParam("rows", v)}
             unit="个"
           />
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm text-zinc-300">底座直径</Label>
-              <div className="flex items-center gap-1">
-                <span className="text-sm font-mono text-zinc-200">{params.holeDiameter}</span>
-                <span className="text-xs text-zinc-500 w-6">mm</span>
-              </div>
-            </div>
-            <p className="text-xs text-zinc-600">通过上方预设选择</p>
-          </div>
           <ParamSlider
             label="间距"
             value={params.spacing}
@@ -200,24 +184,24 @@ export default function ParameterPanel({
       </Card>
 
       {/* 尺寸信息 */}
-      <Card className="bg-zinc-900/80 border-zinc-800 backdrop-blur-sm">
+      <Card className={`bg-zinc-900/80 border-zinc-800 backdrop-blur-sm ${isOversized ? 'border-red-600/60' : ''}`}>
         <CardHeader className="pb-3 pt-4 px-4">
           <CardTitle className="text-sm font-semibold text-zinc-200 tracking-wide uppercase">
             模型尺寸
           </CardTitle>
         </CardHeader>
-        <CardContent className="px-4 pb-4">
+        <CardContent className="px-4 pb-4 space-y-3">
           <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="bg-zinc-800/60 rounded-lg p-2">
+            <div className={`rounded-lg p-2 ${dimensions.width > 260 ? 'bg-red-900/40' : 'bg-zinc-800/60'}`}>
               <p className="text-xs text-zinc-500">宽度</p>
-              <p className="text-sm font-mono text-zinc-200">
+              <p className={`text-sm font-mono ${dimensions.width > 260 ? 'text-red-400' : 'text-zinc-200'}`}>
                 {dimensions.width.toFixed(1)}
               </p>
               <p className="text-xs text-zinc-600">mm</p>
             </div>
-            <div className="bg-zinc-800/60 rounded-lg p-2">
+            <div className={`rounded-lg p-2 ${dimensions.depth > 260 ? 'bg-red-900/40' : 'bg-zinc-800/60'}`}>
               <p className="text-xs text-zinc-500">深度</p>
-              <p className="text-sm font-mono text-zinc-200">
+              <p className={`text-sm font-mono ${dimensions.depth > 260 ? 'text-red-400' : 'text-zinc-200'}`}>
                 {dimensions.depth.toFixed(1)}
               </p>
               <p className="text-xs text-zinc-600">mm</p>
@@ -230,6 +214,11 @@ export default function ParameterPanel({
               <p className="text-xs text-zinc-600">mm</p>
             </div>
           </div>
+          {isOversized && (
+            <p className="text-xs text-red-400 text-center">
+              ⚠ 模型尺寸超过打印范围 (260×260mm)
+            </p>
+          )}
         </CardContent>
       </Card>
 
