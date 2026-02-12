@@ -22,7 +22,13 @@ function TrayMesh({ geometry }: { geometry: THREE.BufferGeometry }) {
   }, [geometry]);
 
   return (
-    <mesh ref={meshRef} geometry={geometry} castShadow receiveShadow>
+    <mesh
+      ref={meshRef}
+      geometry={geometry}
+      rotation={[-Math.PI / 2, 0, 0]}
+      castShadow
+      receiveShadow
+    >
       <meshStandardMaterial
         color={RENDER_CONFIG.modelColor}
         metalness={RENDER_CONFIG.modelMetalness}
@@ -66,7 +72,7 @@ function ContextLostHandler() {
 
 export default function TrayViewer({ geometry }: TrayViewerProps) {
   return (
-    <div className="w-full h-full min-h-[400px] bg-zinc-950 rounded-xl overflow-hidden border border-zinc-800">
+    <div className="w-full h-full min-h-[400px] rounded-xl overflow-hidden border border-zinc-800" style={{ backgroundColor: '#1a1b2e' }}>
       <Canvas
         camera={{ position: [60, 60, 60], fov: 45, near: 0.1, far: 2000 }}
         gl={{
@@ -76,7 +82,7 @@ export default function TrayViewer({ geometry }: TrayViewerProps) {
           failIfMajorPerformanceCaveat: false,
         }}
         onCreated={({ gl }) => {
-          gl.setClearColor(new THREE.Color("#0a0a0a"));
+          gl.setClearColor(new THREE.Color("#1a1b2e"));
           gl.toneMapping = THREE.ACESFilmicToneMapping;
           gl.toneMappingExposure = 1.0;
         }}
