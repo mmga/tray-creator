@@ -89,7 +89,7 @@ export default function ParameterPanel({
     const index = parseInt(value);
     const preset = BASE_PRESETS[index];
     if (preset) {
-      updateParam("holeDiameter", preset.diameter + preset.tolerance);
+      updateParam("holeDiameter", preset.diameter);
     }
   };
 
@@ -151,14 +151,18 @@ export default function ParameterPanel({
             onChange={(v) => updateParam("rows", v)}
             unit="个"
           />
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm text-zinc-300">底座直径</Label>
+              <div className="flex items-center gap-1">
+                <span className="text-sm font-mono text-zinc-200">{params.holeDiameter}</span>
+                <span className="text-xs text-zinc-500 w-6">mm</span>
+              </div>
+            </div>
+            <p className="text-xs text-zinc-600">通过上方预设选择</p>
+          </div>
           <ParamSlider
-            label="凹槽直径"
-            value={params.holeDiameter}
-            config={PARAM_LIMITS.holeDiameter}
-            onChange={(v) => updateParam("holeDiameter", v)}
-          />
-          <ParamSlider
-            label="边缘间距"
+            label="间距"
             value={params.spacing}
             config={PARAM_LIMITS.spacing}
             onChange={(v) => updateParam("spacing", v)}
@@ -166,26 +170,14 @@ export default function ParameterPanel({
         </CardContent>
       </Card>
 
-      {/* 边框参数 */}
+      {/* 结构参数 */}
       <Card className="bg-zinc-900/80 border-zinc-800 backdrop-blur-sm">
         <CardHeader className="pb-3 pt-4 px-4">
           <CardTitle className="text-sm font-semibold text-zinc-200 tracking-wide uppercase">
-            边框
+            结构
           </CardTitle>
         </CardHeader>
         <CardContent className="px-4 pb-4 space-y-4">
-          <ParamSlider
-            label="边框宽度"
-            value={params.wallWidth}
-            config={PARAM_LIMITS.wallWidth}
-            onChange={(v) => updateParam("wallWidth", v)}
-          />
-          <ParamSlider
-            label="边框高度"
-            value={params.wallHeight}
-            config={PARAM_LIMITS.wallHeight}
-            onChange={(v) => updateParam("wallHeight", v)}
-          />
           <ParamSlider
             label="底板厚度"
             value={params.baseThickness}
