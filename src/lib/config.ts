@@ -25,31 +25,31 @@ export const DEFAULT_PRESET_INDEX = 2;
 
 // ---- 默认托盘参数 ----
 export const DEFAULT_TRAY_PARAMS: TrayParams = {
-  rows: 1,
-  columns: 1,
+  rows: 5,
+  columns: 2,
   holeDiameter: BASE_PRESETS[DEFAULT_PRESET_INDEX].diameter,
-  spacing: 3,
-  baseThickness: 2,
-  holeDepth: 5,
-  cornerRadius: 2,
+  spacing: 2,
+  baseThickness: 3,
+  holeDepth: 2,
+  cornerRadius: 6,
 };
 
 // ---- 参数范围限制 ----
 export const PARAM_LIMITS = {
   rows: { min: 1, max: 6, step: 1 },
   columns: { min: 1, max: 6, step: 1 },
-  spacing: { min: 1, max: 10, step: 1 },
-  baseThickness: { min: 1, max: 4, step: 1 },
-  holeDepth: { min: 1, max: 4, step: 0.2 },
+  spacing: { min: 2, max: 10, step: 1 },
+  baseThickness: { min: 2, max: 4, step: 1 },
+  holeDepth: { min: 2, max: 4, step: 0.2 },
   cornerRadius: { min: 0, max: 10, step: 1 },
 } as const;
 
 // ---- 3D 渲染配置 ----
 export const RENDER_CONFIG = {
   /** 圆柱体细分段数 */
-  cylinderSegments: 32,
+  cylinderSegments: 64,
   /** 圆角细分段数 */
-  cornerSegments: 16,
+  cornerSegments: 32,
   /** 参数变化防抖延迟 (ms) */
   debounceMs: 300,
   /** 模型颜色（黑灰色，接近实物 3D 打印色） */
@@ -58,4 +58,11 @@ export const RENDER_CONFIG = {
   modelMetalness: 0.3,
   /** 模型粗糙度 */
   modelRoughness: 0.5,
+  /** 边缘线阈值角度 */
+  edgeThreshold: 15,
+  /** 摄像机初始配置 */
+  camera: {
+    position: [120, 120, 120],
+    fov: 45,
+  },
 } as const;

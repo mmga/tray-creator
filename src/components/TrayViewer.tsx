@@ -15,7 +15,7 @@ function TrayMesh({ geometry }: { geometry: THREE.BufferGeometry }) {
 
   // 从几何体提取硬边缘线
   const edgesGeometry = useMemo(() => {
-    return new THREE.EdgesGeometry(geometry, 15);
+    return new THREE.EdgesGeometry(geometry, RENDER_CONFIG.edgeThreshold);
   }, [geometry]);
 
   useEffect(() => {
@@ -104,7 +104,12 @@ export default function TrayViewer({ geometry }: TrayViewerProps) {
       </div>
 
       <Canvas
-        camera={{ position: [60, 60, 60], fov: 45, near: 0.1, far: 2000 }}
+        camera={{
+          position: RENDER_CONFIG.camera.position as [number, number, number],
+          fov: RENDER_CONFIG.camera.fov,
+          near: 0.1,
+          far: 2000
+        }}
         gl={{
           antialias: true,
           alpha: false,
@@ -127,21 +132,6 @@ export default function TrayViewer({ geometry }: TrayViewerProps) {
         <directionalLight position={[-30, 40, -20]} intensity={0.35} color="#ffe8cc" />
         {/* 侧底光：从下方打亮凹槽内壁 */}
         <directionalLight position={[0, -30, 40]} intensity={0.25} color="#ffeedd" />
-
-        {/* 参考网格 — dark iron */}
-        <Grid
-          args={[200, 200]}
-          position={[0, -0.5, 0]}
-          cellSize={5}
-          cellThickness={0.5}
-          cellColor="#3d3832"
-          sectionSize={25}
-          sectionThickness={1.2}
-          sectionColor="#5a5248"
-          fadeDistance={300}
-          fadeStrength={0.6}
-          infiniteGrid
-        />
 
         {/* 托盘模型 */}
         {geometry && <TrayMesh geometry={geometry} />}
