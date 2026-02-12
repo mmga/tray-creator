@@ -50,8 +50,6 @@ export const RENDER_CONFIG = {
   cylinderSegments: 64,
   /** 圆角细分段数 */
   cornerSegments: 32,
-  /** 参数变化防抖延迟 (ms) */
-  debounceMs: 300,
   /** 模型颜色（黑灰色，接近实物 3D 打印色） */
   modelColor: "#2a2a2e",
   /** 模型金属度（较高以在深色表面产生高光） */

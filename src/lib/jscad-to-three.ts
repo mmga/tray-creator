@@ -1,7 +1,7 @@
 import { geom3 } from "@jscad/modeling/src/geometries";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import * as THREE from "three";
-import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
+
 
 /**
  * 将 JSCAD geom3 几何体转换为 Three.js BufferGeometry
@@ -9,9 +9,8 @@ import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUti
  * 流程：
  * 1. 从 geom3 提取多边形面 (polygons)
  * 2. 对每个多边形进行三角化 (fan triangulation)
- * 3. 构建顶点位置 Array
- * 4. 使用 BufferGeometryUtils.mergeVertices 合并顶点
- * 5. computeVertexNormals 计算平滑顶点法线
+ * 3. 计算面法线 (flat shading) 以最大化结构清晰度
+ * 4. 返回 Three.js BufferGeometry
  */
 export function jscadToThreeGeometry(jscadGeom: Geom3): THREE.BufferGeometry {
   const polygons = geom3.toPolygons(jscadGeom as any);
