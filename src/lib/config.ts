@@ -52,10 +52,10 @@ export const RENDER_CONFIG = {
   cornerSegments: 16,
   /** 参数变化防抖延迟 (ms) */
   debounceMs: 300,
-  /** 模型颜色 */
-  modelColor: "#b0b0b0",
-  /** 模型金属度 */
-  modelMetalness: 0.1,
+  /** 模型颜色（黑灰色，接近实物 3D 打印色） */
+  modelColor: "#2a2a2e",
+  /** 模型金属度（较高以在深色表面产生高光） */
+  modelMetalness: 0.3,
   /** 模型粗糙度 */
-  modelRoughness: 0.6,
+  modelRoughness: 0.5,
 } as const;

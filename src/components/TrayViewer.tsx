@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useMemo } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, Grid } from "@react-three/drei";
 import * as THREE from "three";
@@ -13,6 +13,11 @@ interface TrayViewerProps {
 function TrayMesh({ geometry }: { geometry: THREE.BufferGeometry }) {
   const meshRef = useRef<THREE.Mesh>(null);
 
+  // 从几何体提取硬边缘线
+  const edgesGeometry = useMemo(() => {
+    return new THREE.EdgesGeometry(geometry, 15);
+  }, [geometry]);
+
   useEffect(() => {
     if (meshRef.current && geometry) {
       meshRef.current.geometry = geometry;
@@ -22,20 +27,30 @@ function TrayMesh({ geometry }: { geometry: THREE.BufferGeometry }) {
   }, [geometry]);
 
   return (
-    <mesh
-      ref={meshRef}
-      geometry={geometry}
-      rotation={[-Math.PI / 2, 0, 0]}
-      castShadow
-      receiveShadow
-    >
-      <meshStandardMaterial
-        color={RENDER_CONFIG.modelColor}
-        metalness={RENDER_CONFIG.modelMetalness}
-        roughness={RENDER_CONFIG.modelRoughness}
-        side={THREE.DoubleSide}
-      />
-    </mesh>
+    <group rotation={[-Math.PI / 2, 0, 0]}>
+      {/* 实体模型 */}
+      <mesh
+        ref={meshRef}
+        geometry={geometry}
+        castShadow
+        receiveShadow
+      >
+        <meshStandardMaterial
+          color={RENDER_CONFIG.modelColor}
+          metalness={RENDER_CONFIG.modelMetalness}
+          roughness={RENDER_CONFIG.modelRoughness}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+      {/* 边缘线叠加 — 极低 GPU 开销 */}
+      <lineSegments geometry={edgesGeometry}>
+        <lineBasicMaterial
+          color="#58524a"
+          transparent
+          opacity={0.6}
+        />
+      </lineSegments>
+    </group>
   );
 }
 
@@ -72,7 +87,7 @@ function ContextLostHandler() {
 
 export default function TrayViewer({ geometry }: TrayViewerProps) {
   return (
-    <div className="relative w-full h-full min-h-[400px] overflow-hidden forged-viewport" style={{ backgroundColor: '#0a0908' }}>
+    <div className="relative w-full h-full min-h-[400px] overflow-hidden forged-viewport" style={{ backgroundColor: '#1a1917' }}>
       {/* Corner rivets */}
       <div className="absolute top-3 left-3 rivet z-10" />
       <div className="absolute top-3 right-3 rivet z-10" />
@@ -97,30 +112,34 @@ export default function TrayViewer({ geometry }: TrayViewerProps) {
           failIfMajorPerformanceCaveat: false,
         }}
         onCreated={({ gl }) => {
-          gl.setClearColor(new THREE.Color("#0a0908"));
+          gl.setClearColor(new THREE.Color("#1a1917"));
           gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = 1.0;
+          gl.toneMappingExposure = 1.2;
         }}
       >
         <ContextLostHandler />
 
-        {/* 灯光 — warm forge lighting */}
-        <ambientLight intensity={0.5} color="#ffeedd" />
-        <directionalLight position={[50, 80, 50]} intensity={1.0} color="#fff5e6" />
-        <directionalLight position={[-30, 40, -20]} intensity={0.3} color="#ffe8cc" />
+        {/* 灯光 — warm forge lighting (3-point) */}
+        <ambientLight intensity={0.4} color="#ffeedd" />
+        {/* 主光：右上前方 */}
+        <directionalLight position={[50, 80, 50]} intensity={1.2} color="#fff5e6" />
+        {/* 补光：左后方，柔和 */}
+        <directionalLight position={[-30, 40, -20]} intensity={0.35} color="#ffe8cc" />
+        {/* 侧底光：从下方打亮凹槽内壁 */}
+        <directionalLight position={[0, -30, 40]} intensity={0.25} color="#ffeedd" />
 
         {/* 参考网格 — dark iron */}
         <Grid
           args={[200, 200]}
-          position={[0, -0.01, 0]}
+          position={[0, -0.5, 0]}
           cellSize={5}
           cellThickness={0.5}
-          cellColor="#1c1a16"
+          cellColor="#3d3832"
           sectionSize={25}
-          sectionThickness={1}
-          sectionColor="#2e2a24"
-          fadeDistance={150}
-          fadeStrength={1}
+          sectionThickness={1.2}
+          sectionColor="#5a5248"
+          fadeDistance={300}
+          fadeStrength={0.6}
           infiniteGrid
         />
 
