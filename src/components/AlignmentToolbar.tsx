@@ -63,35 +63,38 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, ca
 
     const updates: { id: string, x: number, y: number }[] = [];
 
+    // Helper for 0.2mm step
+    const roundToStep = (val: number) => Math.round(val / 0.2) * 0.2;
+
     if (type === 'left') {
       selected.forEach(s => {
         const halfW = (s.width + HOLE_TOLERANCE) / 2;
-        updates.push({ id: s.id, x: minX + halfW, y: s.y });
+        updates.push({ id: s.id, x: roundToStep(minX + halfW), y: s.y });
       });
     } else if (type === 'center-x') {
       selected.forEach(s => {
-        updates.push({ id: s.id, x: centerX, y: s.y });
+        updates.push({ id: s.id, x: roundToStep(centerX), y: s.y });
       });
     } else if (type === 'right') {
       selected.forEach(s => {
         const halfW = (s.width + HOLE_TOLERANCE) / 2;
-        updates.push({ id: s.id, x: maxX - halfW, y: s.y });
+        updates.push({ id: s.id, x: roundToStep(maxX - halfW), y: s.y });
       });
     } else if (type === 'top') {
       // Align Top: Max Y
       selected.forEach(s => {
         const halfH = (s.height + HOLE_TOLERANCE) / 2;
-        updates.push({ id: s.id, x: s.x, y: maxY - halfH });
+        updates.push({ id: s.id, x: s.x, y: roundToStep(maxY - halfH) });
       });
     } else if (type === 'center-y') {
       selected.forEach(s => {
-        updates.push({ id: s.id, x: s.x, y: centerY });
+        updates.push({ id: s.id, x: s.x, y: roundToStep(centerY) });
       });
     } else if (type === 'bottom') {
       // Align Bottom: Min Y
       selected.forEach(s => {
         const halfH = (s.height + HOLE_TOLERANCE) / 2;
-        updates.push({ id: s.id, x: s.x, y: minY + halfH });
+        updates.push({ id: s.id, x: s.x, y: roundToStep(minY + halfH) });
       });
     } else if (type === 'distribute-h') {
        const n = selected.length;
@@ -105,12 +108,12 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, ca
             const w = s.width + HOLE_TOLERANCE;
             const halfW = w / 2;
             if (i === 0) {
-               updates.push({ id: s.id, x: minX + halfW, y: s.y });
+               updates.push({ id: s.id, x: roundToStep(minX + halfW), y: s.y });
                currentEdge += w + gap;
             } else if (i === n - 1) {
-               updates.push({ id: s.id, x: maxX - halfW, y: s.y });
+               updates.push({ id: s.id, x: roundToStep(maxX - halfW), y: s.y });
             } else {
-               updates.push({ id: s.id, x: currentEdge + halfW, y: s.y });
+               updates.push({ id: s.id, x: roundToStep(currentEdge + halfW), y: s.y });
                currentEdge += w + gap;
             }
          });
@@ -127,12 +130,12 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, ca
             const h = s.height + HOLE_TOLERANCE;
             const halfH = h / 2;
             if (i === 0) {
-               updates.push({ id: s.id, x: minY + halfH, y: s.y });
+               updates.push({ id: s.id, x: s.x, y: roundToStep(minY + halfH) });
                currentEdge += h + gap;
             } else if (i === n - 1) {
-               updates.push({ id: s.id, x: maxY - halfH, y: s.y });
+               updates.push({ id: s.id, x: s.x, y: roundToStep(maxY - halfH) });
             } else {
-               updates.push({ id: s.id, x: currentEdge + halfH, y: s.y });
+               updates.push({ id: s.id, x: s.x, y: roundToStep(currentEdge + halfH) });
                currentEdge += h + gap;
             }
          });
@@ -146,6 +149,17 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, ca
     const bounds = getSelectionBounds();
     if (!bounds) return;
 
+    // Helper for 0.2mm step
+    const roundToStep = (val: number) => Math.round(val / 0.2) * 0.2;
+
+    let targetX = 0; // Relative move logic is tricky with snapping.
+    // Better to calculate TARGET position for group, then diff.
+    // But group moves together.
+    // If I snap the DELTA, the result might not be snapped if original wasn't.
+    // If I snap the RESULT, relative positions might shift unless I snap the Reference Point.
+    
+    // Strategy: Calculate new Group Reference Point (e.g. MinX), Snap IT, then move others relative to it.
+    
     let dx = 0;
     let dy = 0;
     
@@ -153,34 +167,52 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, ca
     
     // Horizontal with Spacing
     if (position === 'left') {
-      // Move minX to spacing
-      dx = spacing - minX; 
+      // Target MinX = spacing (Snapped?) Spacing is usually integer.
+      // But let's snap the target position just in case.
+      const targetMinX = roundToStep(spacing);
+      dx = targetMinX - minX;
     } else if (position === 'right') {
-      // Move maxX to canvasWidth - spacing
-      dx = (canvasWidth - spacing) - maxX;
+      // Target MaxX = canvasWidth - spacing
+      const targetMaxX = roundToStep(canvasWidth - spacing);
+      dx = targetMaxX - maxX;
     } else if (position === 'center-x') {
        const canvasCx = canvasWidth / 2;
        const groupCx = (minX + maxX) / 2;
-       dx = canvasCx - groupCx;
+       // Target GroupCx = canvasCx
+       // dx = canvasCx - groupCx
+       // But we want the RESULTing positions to be roughly snapped?
+       // If we center, we center. 
+       // Let's snap the dx?
+       dx = roundToStep(canvasCx - groupCx);
     }
 
     // Vertical with Spacing
     if (position === 'bottom') {
-      // Move minY to spacing
-      dy = spacing - minY;
+      const targetMinY = roundToStep(spacing);
+      dy = targetMinY - minY;
     } else if (position === 'top') {
-      // Move maxY to canvasHeight - spacing
-      dy = (canvasHeight - spacing) - maxY;
+      const targetMaxY = roundToStep(canvasHeight - spacing);
+      dy = targetMaxY - maxY;
     } else if (position === 'center-y') {
       const canvasCy = canvasHeight / 2;
       const groupCy = (minY + maxY) / 2;
-      dy = canvasCy - groupCy;
+      dy = roundToStep(canvasCy - groupCy);
     }
 
     const updates: { id: string, x: number, y: number }[] = [];
     selectedIds.forEach(id => {
       const s = slots.find(slot => slot.id === id);
       if (s) {
+        // We apply dx, dy.
+        // Should we snap the final result?
+        // If we snap dx/dy, and s.x was snapped, result is snapped.
+        // If s.x was NOT snapped, result is NOT snapped.
+        // User wants "Automatic Snap".
+        // It implies the result should be on grid.
+        // If I have a group, I can't snap ALL of them unless their relative distance is multiple of 0.2.
+        // Standard CAD: Snap the Reference Point (e.g. Edge) to Grid.
+        // The others follow.
+        // So `dx = target - current` is correct.
         updates.push({ id: s.id, x: s.x + dx, y: s.y + dy });
       }
     });

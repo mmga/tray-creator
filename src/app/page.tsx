@@ -119,7 +119,7 @@ export default function Home() {
             <Tabs 
               value={rightView} 
               onValueChange={(v) => setRightView(v as "2d" | "3d")} 
-              className="flex-1 flex flex-col"
+              className="flex-1 flex flex-col relative"
             >
               <div className="absolute top-3 right-5 z-20">
                  <TabsList className="bg-[#1c1a16] border border-[#2e2a24]">
@@ -128,8 +128,8 @@ export default function Home() {
                  </TabsList>
               </div>
 
-              <TabsContent value="2d" className="flex-1 m-0 h-full p-8 data-[state=inactive]:hidden">
-                <div className="w-full h-full border border-[#2e2a24] rounded-sm shadow-2xl shadow-[#000]">
+              <TabsContent value="2d" className="absolute inset-0 m-0 p-0 data-[state=inactive]:hidden">
+                <div className="w-full h-full border-t border-[#2e2a24]">
                   <LayoutCanvas
                     params={customModel.params}
                     onUpdateSlot={customModel.updateSlotPosition}
@@ -139,7 +139,7 @@ export default function Home() {
                 </div>
               </TabsContent>
 
-              <TabsContent value="3d" className="flex-1 m-0 h-full data-[state=inactive]:hidden">
+              <TabsContent value="3d" className="absolute inset-0 m-0 data-[state=inactive]:hidden">
                 <TrayViewer geometry={customModel.threeGeometry} />
               </TabsContent>
             </Tabs>

@@ -356,8 +356,11 @@ export default function LayoutCanvas({
       const totalPhysDy = -(svgP.y - dragStartRef.current.mouseStart.y);
 
       // Proposed Primary Phys Position
-      let proposedX = dragSlotOrigin.x + totalPhysDx;
-      let proposedY = dragSlotOrigin.y + totalPhysDy;
+      // Apply 0.2mm step snapping to the raw proposed position first
+      const roundToStep = (val: number) => Math.round(val / 0.2) * 0.2;
+      
+      let proposedX = roundToStep(dragSlotOrigin.x + totalPhysDx);
+      let proposedY = roundToStep(dragSlotOrigin.y + totalPhysDy);
 
       // Apply Snapping to Proposed Position
       const dragSlot = slots.find(s => s.id === draggingId);
@@ -619,6 +622,14 @@ export default function LayoutCanvas({
       className={`w-full h-full bg-[#1c1a16] rounded-sm overflow-hidden relative select-none flex items-center justify-center ${isSpacePressed ? 'cursor-grab' : ''} ${isPanning ? 'cursor-grabbing' : ''}`}
       onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); }} 
     >
+      {/* Debug Info Overlay (Bottom Right) inside the canvas container or separate? 
+          User said "Bottom Bar, after Zoom".
+          Zoom controls are below? 
+          Wait, I don't see Zoom controls in the JSX I read earlier?
+          Let me check where Zoom controls are.
+          Ah, I might have missed them in the truncated view.
+          Let me read the bottom of LayoutCanvas.tsx first.
+      */}
       <AlignmentToolbar 
         selectedIds={selectedIds} 
         slots={slots} 
@@ -869,9 +880,28 @@ export default function LayoutCanvas({
         </div>
       )}
       
-      {/* 底部提示 */}
-      <div className="absolute bottom-2 left-2 text-[10px] text-muted-foreground/60 font-mono pointer-events-none">
-        CANVAS: {trayWidth}mm × {trayDepth}mm | ZOOM: {Math.round(zoom * 100)}%
+      {/* 底部提示 & Debug Info */}
+      <div className="absolute bottom-2 left-2 right-12 flex items-end justify-between pointer-events-none px-2 pb-1">
+        <div className="text-[10px] text-muted-foreground/60 font-mono flex gap-4">
+             <span>CANVAS: {trayWidth}mm × {trayDepth}mm</span>
+             <span>ZOOM: {Math.round(zoom * 100)}%</span>
+             
+             {selectedIds.size === 1 && (() => {
+                const s = slots.find(slot => slot.id === Array.from(selectedIds)[0]);
+                if (!s) return null;
+                return (
+                  <span className="text-orange-400">
+                    ID:{s.id.slice(0,4)} | X:{s.x.toFixed(1)} Y:{s.y.toFixed(1)} | W:{s.width} H:{s.height} | R:{Math.round(s.rotation)}°
+                  </span>
+                );
+             })()}
+             
+             {selectedIds.size > 1 && (
+               <span className="text-orange-400">
+                 {selectedIds.size} ITEMS SELECTED
+               </span>
+             )}
+        </div>
       </div>
     </div>
   );
