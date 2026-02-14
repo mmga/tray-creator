@@ -3,6 +3,7 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 import type { FreeSlot, CustomLayoutParams } from "@/types/custom-tray";
 import { HOLE_TOLERANCE } from "@/lib/config";
+import { getEllipsePolygon, polygonsIntersect } from "@/lib/collision";
 
 interface LayoutCanvasProps {
   params: CustomLayoutParams;
@@ -64,7 +65,24 @@ export default function LayoutCanvas({
         if (e.code === 'ArrowRight') dx = step;
         if (e.code === 'ArrowUp')    dy = step;  // physical Y up
         if (e.code === 'ArrowDown')  dy = -step;
+        if (e.code === 'ArrowDown')  dy = -step;
         onUpdateSlotRef.current(selectedIdRef.current, slot.x + dx, slot.y + dy);
+      }
+
+      // Delete: Remove selected slot
+      if (selectedIdRef.current && (e.code === 'Delete' || e.code === 'Backspace')) {
+        e.preventDefault();
+        onRemoveSlot(selectedIdRef.current);
+        setSelectedId(null);
+        setContextMenu(null);
+      }
+
+      // Escape: Deselect / Close Menu
+      if (e.code === 'Escape') {
+        e.preventDefault();
+        setSelectedId(null);
+        setContextMenu(null);
+        setIsRotating(false);
       }
     };
     const handleKeyUp = (e: KeyboardEvent) => {
@@ -148,13 +166,31 @@ export default function LayoutCanvas({
      );
   };
 
-  const checkSlotCollision = (id: string, x: number, y: number, r: number) => {
+  const checkSlotCollision = (id: string, x: number, y: number, currentW: number, currentH: number, currentRot: number) => {
+    // Optimization: First do a broad phase check using bounding circles
+    // (We keep the old logic as a fast cull, but with margin)
+    // Actually, let's just use SAT for accuracy as requested by user.
+    
+    // We need to check if (Slot A + Spacing/2) intersects (Slot B + Spacing/2).
+    // Or simpler: (Slot A) intersects (Slot B expanded by Spacing).
+    // Let's go with: Check if slot `id` (at x,y,w,h,rot) intersects any `other` (at other.x...) 
+    // AND the distance is < spacing.
+    
+    // The requirement is "maintain spacing". 
+    // So distinct shapes A and B must be > spacing apart.
+    // Equivalent to: Shape A expanded by spacing/2 intersects Shape B expanded by spacing/2.
+    
+    // Let's generate polygon for NEW position of current slot (expanded by spacing/2)
+    const margin = spacing / 2 + HOLE_TOLERANCE / 2;
+    const poly1 = getEllipsePolygon(x, y, currentW, currentH, currentRot, margin, 12); // 12 steps is good balance
+
     for (const other of slots) {
       if (other.id === id) continue;
-      const otherR = getCollisionRadius(other);
-      const minDist = r + otherR + spacing;
-      const dist = Math.hypot(x - other.x, y - other.y);
-      if (dist < minDist - 0.01) {
+      
+      // Expand other slot by spacing/2
+      const poly2 = getEllipsePolygon(other.x, other.y, other.width, other.height, other.rotation, margin, 12);
+      
+      if (polygonsIntersect(poly1, poly2)) {
         return true;
       }
     }
@@ -481,13 +517,14 @@ export default function LayoutCanvas({
           
           // Collision Check
           const isBoundary = checkBoundaryCollision(slot.x, slot.y, slot.width, slot.height, slot.rotation);
-          const isOverlap = checkSlotCollision(slot.id, slot.x, slot.y, collisionR);
+          // Collision now uses SAT
+          const isOverlap = checkSlotCollision(slot.id, slot.x, slot.y, slot.width, slot.height, slot.rotation);
           const isColliding = isBoundary || isOverlap;
           
-          const color = "#eab308"; // Unified color (Yellow-500 from 32mm)
           const isHovered = hoveredId === slot.id;
           const isDragging = draggingId === slot.id;
           const isSelected = selectedId === slot.id;
+          const color = isSelected ? "#f97316" : "#eab308"; // Orange if selected, else Yellow
 
           return (
             <g
@@ -517,13 +554,13 @@ export default function LayoutCanvas({
                 pointerEvents="none"
               />
 
-              {/* Highlight Halo - Inside - Show if Selected/Hovered/Dragging/Colliding */}
-              {(isColliding || isHovered || isDragging || isSelected) && (
+              {/* Highlight Halo - Inside - Show if Hovered/Dragging/Colliding (Selection uses fill color) */}
+              {(isColliding || isHovered || isDragging) && (
                 <ellipse
                   rx={Math.max(0, w / 2 - 0.5 / zoom)}
                   ry={Math.max(0, h / 2 - 0.5 / zoom)}
                   fill="none"
-                  stroke={isColliding ? "#ef4444" : "#fbbf24"}
+                  stroke={isColliding ? "#ef4444" : "#fbbf24"} 
                   strokeWidth={0.8 / zoom}
                   strokeOpacity={0.8}
                   pointerEvents="none"
