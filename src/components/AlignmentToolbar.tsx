@@ -1,8 +1,8 @@
-import { 
-  AlignLeft, AlignCenterHorizontal, AlignRight, 
+import {
+  AlignLeft, AlignCenterHorizontal, AlignRight,
   AlignStartVertical, AlignCenterVertical, AlignEndVertical,
   AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter,
-  ArrowUp, ArrowDown, ArrowLeft, ArrowRight
+  ArrowUpToLine, ArrowDownToLine, ArrowLeftToLine, ArrowRightToLine
 } from "lucide-react";
 import { FreeSlot } from "@/types/custom-tray";
 import { HOLE_TOLERANCE } from "@/lib/config";
@@ -19,23 +19,38 @@ interface AlignmentToolbarProps {
 export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, canvasWidth, canvasHeight, spacing }: AlignmentToolbarProps) {
   if (selectedIds.size === 0) return null;
 
+  // Helper to get bounding box of rotated ellipse
+  const getEllipseRotatedBounds = (slot: FreeSlot) => {
+    const w = slot.width;
+    const h = slot.height;
+    const rotation = slot.rotation || 0;
+
+    const rad = (rotation * Math.PI) / 180;
+    const a = (w + HOLE_TOLERANCE) / 2;
+    const b = (h + HOLE_TOLERANCE) / 2;
+
+    const halfW = Math.sqrt(Math.pow(a * Math.cos(rad), 2) + Math.pow(b * Math.sin(rad), 2));
+    const halfH = Math.sqrt(Math.pow(a * Math.sin(rad), 2) + Math.pow(b * Math.cos(rad), 2));
+
+    return { halfW, halfH };
+  };
+
   const getSelectionBounds = () => {
     const selected = slots.filter(s => selectedIds.has(s.id));
     if (selected.length === 0) return null;
 
     let minX = Infinity, maxX = -Infinity;
     let minY = Infinity, maxY = -Infinity;
-    
+
     // Bounds are based on Visual Edge (including tolerance)
     selected.forEach(s => {
-      const halfW = (s.width + HOLE_TOLERANCE) / 2;
-      const halfH = (s.height + HOLE_TOLERANCE) / 2;
+      const { halfW, halfH } = getEllipseRotatedBounds(s);
       minX = Math.min(minX, s.x - halfW);
       maxX = Math.max(maxX, s.x + halfW);
       minY = Math.min(minY, s.y - halfH);
       maxY = Math.max(maxY, s.y + halfH);
     });
-    
+
     return { minX, maxX, minY, maxY, width: maxX - minX, height: maxY - minY };
   };
 
@@ -50,8 +65,7 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, ca
     const ySorted = [...selected].sort((a, b) => a.y - b.y);
 
     selected.forEach(s => {
-      const halfW = (s.width + HOLE_TOLERANCE) / 2;
-      const halfH = (s.height + HOLE_TOLERANCE) / 2;
+      const { halfW, halfH } = getEllipseRotatedBounds(s);
       minX = Math.min(minX, s.x - halfW);
       maxX = Math.max(maxX, s.x + halfW);
       minY = Math.min(minY, s.y - halfH);
@@ -68,7 +82,7 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, ca
 
     if (type === 'left') {
       selected.forEach(s => {
-        const halfW = (s.width + HOLE_TOLERANCE) / 2;
+        const { halfW } = getEllipseRotatedBounds(s);
         updates.push({ id: s.id, x: roundToStep(minX + halfW), y: s.y });
       });
     } else if (type === 'center-x') {
@@ -77,13 +91,13 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, ca
       });
     } else if (type === 'right') {
       selected.forEach(s => {
-        const halfW = (s.width + HOLE_TOLERANCE) / 2;
+        const { halfW } = getEllipseRotatedBounds(s);
         updates.push({ id: s.id, x: roundToStep(maxX - halfW), y: s.y });
       });
     } else if (type === 'top') {
       // Align Top: Max Y
       selected.forEach(s => {
-        const halfH = (s.height + HOLE_TOLERANCE) / 2;
+        const { halfH } = getEllipseRotatedBounds(s);
         updates.push({ id: s.id, x: s.x, y: roundToStep(maxY - halfH) });
       });
     } else if (type === 'center-y') {
@@ -93,55 +107,61 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, ca
     } else if (type === 'bottom') {
       // Align Bottom: Min Y
       selected.forEach(s => {
-        const halfH = (s.height + HOLE_TOLERANCE) / 2;
+        const { halfH } = getEllipseRotatedBounds(s);
         updates.push({ id: s.id, x: s.x, y: roundToStep(minY + halfH) });
       });
     } else if (type === 'distribute-h') {
-       const n = selected.length;
-       if (n > 2) {
-         const totalSpace = (maxX - minX);
-         const totalItemWidth = xSorted.reduce((sum, s) => sum + (s.width + HOLE_TOLERANCE), 0);
-         const freeSpace = totalSpace - totalItemWidth;
-         const gap = freeSpace / (n - 1);
-         let currentEdge = minX;
-         xSorted.forEach((s, i) => {
-            const w = s.width + HOLE_TOLERANCE;
-            const halfW = w / 2;
-            if (i === 0) {
-               updates.push({ id: s.id, x: roundToStep(minX + halfW), y: s.y });
-               currentEdge += w + gap;
-            } else if (i === n - 1) {
-               updates.push({ id: s.id, x: roundToStep(maxX - halfW), y: s.y });
-            } else {
-               updates.push({ id: s.id, x: roundToStep(currentEdge + halfW), y: s.y });
-               currentEdge += w + gap;
-            }
-         });
-       }
+      const n = selected.length;
+      if (n > 2) {
+        const totalSpace = (maxX - minX);
+        const totalItemWidth = xSorted.reduce((sum, s) => {
+          const { halfW } = getEllipseRotatedBounds(s);
+          return sum + halfW * 2;
+        }, 0);
+        const freeSpace = totalSpace - totalItemWidth;
+        const gap = freeSpace / (n - 1);
+        let currentEdge = minX;
+        xSorted.forEach((s, i) => {
+          const { halfW } = getEllipseRotatedBounds(s);
+          const w = halfW * 2;
+          if (i === 0) {
+            updates.push({ id: s.id, x: roundToStep(minX + halfW), y: s.y });
+            currentEdge += w + gap;
+          } else if (i === n - 1) {
+            updates.push({ id: s.id, x: roundToStep(maxX - halfW), y: s.y });
+          } else {
+            updates.push({ id: s.id, x: roundToStep(currentEdge + halfW), y: s.y });
+            currentEdge += w + gap;
+          }
+        });
+      }
     } else if (type === 'distribute-v') {
-       const n = selected.length;
-       if (n > 2) {
-         const totalSpace = (maxY - minY);
-         const totalItemHeight = ySorted.reduce((sum, s) => sum + (s.height + HOLE_TOLERANCE), 0);
-         const freeSpace = totalSpace - totalItemHeight;
-         const gap = freeSpace / (n - 1);
-         let currentEdge = minY;
-         ySorted.forEach((s, i) => {
-            const h = s.height + HOLE_TOLERANCE;
-            const halfH = h / 2;
-            if (i === 0) {
-               updates.push({ id: s.id, x: s.x, y: roundToStep(minY + halfH) });
-               currentEdge += h + gap;
-            } else if (i === n - 1) {
-               updates.push({ id: s.id, x: s.x, y: roundToStep(maxY - halfH) });
-            } else {
-               updates.push({ id: s.id, x: s.x, y: roundToStep(currentEdge + halfH) });
-               currentEdge += h + gap;
-            }
-         });
-       }
+      const n = selected.length;
+      if (n > 2) {
+        const totalSpace = (maxY - minY);
+        const totalItemHeight = ySorted.reduce((sum, s) => {
+          const { halfH } = getEllipseRotatedBounds(s);
+          return sum + halfH * 2;
+        }, 0);
+        const freeSpace = totalSpace - totalItemHeight;
+        const gap = freeSpace / (n - 1);
+        let currentEdge = minY;
+        ySorted.forEach((s, i) => {
+          const { halfH } = getEllipseRotatedBounds(s);
+          const h = halfH * 2;
+          if (i === 0) {
+            updates.push({ id: s.id, x: s.x, y: roundToStep(minY + halfH) });
+            currentEdge += h + gap;
+          } else if (i === n - 1) {
+            updates.push({ id: s.id, x: s.x, y: roundToStep(maxY - halfH) });
+          } else {
+            updates.push({ id: s.id, x: s.x, y: roundToStep(currentEdge + halfH) });
+            currentEdge += h + gap;
+          }
+        });
+      }
     }
-    
+
     if (updates.length > 0) onUpdateSlots(updates);
   };
 
@@ -152,38 +172,22 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, ca
     // Helper for 0.2mm step
     const roundToStep = (val: number) => Math.round(val / 0.2) * 0.2;
 
-    let targetX = 0; // Relative move logic is tricky with snapping.
-    // Better to calculate TARGET position for group, then diff.
-    // But group moves together.
-    // If I snap the DELTA, the result might not be snapped if original wasn't.
-    // If I snap the RESULT, relative positions might shift unless I snap the Reference Point.
-    
-    // Strategy: Calculate new Group Reference Point (e.g. MinX), Snap IT, then move others relative to it.
-    
     let dx = 0;
     let dy = 0;
-    
+
     const { minX, maxX, minY, maxY } = bounds;
-    
+
     // Horizontal with Spacing
     if (position === 'left') {
-      // Target MinX = spacing (Snapped?) Spacing is usually integer.
-      // But let's snap the target position just in case.
       const targetMinX = roundToStep(spacing);
       dx = targetMinX - minX;
     } else if (position === 'right') {
-      // Target MaxX = canvasWidth - spacing
       const targetMaxX = roundToStep(canvasWidth - spacing);
       dx = targetMaxX - maxX;
     } else if (position === 'center-x') {
-       const canvasCx = canvasWidth / 2;
-       const groupCx = (minX + maxX) / 2;
-       // Target GroupCx = canvasCx
-       // dx = canvasCx - groupCx
-       // But we want the RESULTing positions to be roughly snapped?
-       // If we center, we center. 
-       // Let's snap the dx?
-       dx = roundToStep(canvasCx - groupCx);
+      const canvasCx = canvasWidth / 2;
+      const groupCx = (minX + maxX) / 2;
+      dx = roundToStep(canvasCx - groupCx);
     }
 
     // Vertical with Spacing
@@ -203,70 +207,61 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, ca
     selectedIds.forEach(id => {
       const s = slots.find(slot => slot.id === id);
       if (s) {
-        // We apply dx, dy.
-        // Should we snap the final result?
-        // If we snap dx/dy, and s.x was snapped, result is snapped.
-        // If s.x was NOT snapped, result is NOT snapped.
-        // User wants "Automatic Snap".
-        // It implies the result should be on grid.
-        // If I have a group, I can't snap ALL of them unless their relative distance is multiple of 0.2.
-        // Standard CAD: Snap the Reference Point (e.g. Edge) to Grid.
-        // The others follow.
-        // So `dx = target - current` is correct.
         updates.push({ id: s.id, x: s.x + dx, y: s.y + dy });
       }
     });
-    
+
     if (updates.length > 0) onUpdateSlots(updates);
   };
 
   const btnClass = "p-1.5 hover:bg-neutral-700/50 rounded text-neutral-300 hover:text-white transition-colors cursor-pointer group relative disabled:opacity-30 disabled:cursor-not-allowed";
-  const tooltipClass = "absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-black text-xs text-white rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity z-50";
+  // Tooltip: Move to top-full (below the button) to avoid clipping by overflow-hidden parent of the Canvas
+  const tooltipClass = "absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-black text-xs text-white rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity z-50";
 
   const showGroupAlign = selectedIds.size > 1;
 
   // Canvas Align Icons
-  const CanvasIconLeft = ArrowLeft;
-  const CanvasIconRight = ArrowRight;
-  const CanvasIconTop = ArrowUp;
-  const CanvasIconBottom = ArrowDown;
-  const CanvasIconCenterX = AlignCenterHorizontal; 
+  const CanvasIconLeft = ArrowLeftToLine;
+  const CanvasIconRight = ArrowRightToLine;
+  const CanvasIconTop = ArrowUpToLine;
+  const CanvasIconBottom = ArrowDownToLine;
+  const CanvasIconCenterX = AlignCenterHorizontal;
   const CanvasIconCenterY = AlignCenterVertical;
 
   return (
     <div className="absolute top-4 left-1/2 transform -translate-x-1/2 flex items-center gap-1 bg-neutral-800/90 backdrop-blur-sm border border-neutral-700 rounded-lg shadow-xl px-2 py-1.5 z-50">
-      
+
       {/* Canvas Alignment (Linear Row) */}
       <div className="flex items-center gap-0.5 mr-2 pr-2 border-r border-neutral-700">
-         {/* Horizontal */}
-         <button className={btnClass} onClick={() => handleCanvasAlign('left')}>
-            <CanvasIconLeft size={16} strokeWidth={2.5} />
-            <span className={tooltipClass}>To Canvas Left</span>
-         </button>
-         <button className={btnClass} onClick={() => handleCanvasAlign('center-x')}>
-            <CanvasIconCenterX size={16} />
-            <span className={tooltipClass}>To Canvas Center X</span>
-         </button>
-         <button className={btnClass} onClick={() => handleCanvasAlign('right')}>
-            <CanvasIconRight size={16} strokeWidth={2.5} />
-            <span className={tooltipClass}>To Canvas Right</span>
-         </button>
-         
-         <div className="w-px h-4 bg-neutral-700 mx-1" />
+        {/* Horizontal */}
+        <button className={btnClass} onClick={() => handleCanvasAlign('left')}>
+          <CanvasIconLeft size={16} strokeWidth={2.5} />
+          <span className={tooltipClass}>To Canvas Left</span>
+        </button>
+        <button className={btnClass} onClick={() => handleCanvasAlign('center-x')}>
+          <CanvasIconCenterX size={16} />
+          <span className={tooltipClass}>To Canvas Center X</span>
+        </button>
+        <button className={btnClass} onClick={() => handleCanvasAlign('right')}>
+          <CanvasIconRight size={16} strokeWidth={2.5} />
+          <span className={tooltipClass}>To Canvas Right</span>
+        </button>
 
-         {/* Vertical */}
-         <button className={btnClass} onClick={() => handleCanvasAlign('top')}>
-            <CanvasIconTop size={16} strokeWidth={2.5} />
-            <span className={tooltipClass}>To Canvas Top</span>
-         </button>
-         <button className={btnClass} onClick={() => handleCanvasAlign('center-y')}>
-            <CanvasIconCenterY size={16} />
-            <span className={tooltipClass}>To Canvas Center Y</span>
-         </button>
-         <button className={btnClass} onClick={() => handleCanvasAlign('bottom')}>
-            <CanvasIconBottom size={16} strokeWidth={2.5} />
-            <span className={tooltipClass}>To Canvas Bottom</span>
-         </button>
+        <div className="w-px h-4 bg-neutral-700 mx-1" />
+
+        {/* Vertical */}
+        <button className={btnClass} onClick={() => handleCanvasAlign('top')}>
+          <CanvasIconTop size={16} strokeWidth={2.5} />
+          <span className={tooltipClass}>To Canvas Top</span>
+        </button>
+        <button className={btnClass} onClick={() => handleCanvasAlign('center-y')}>
+          <CanvasIconCenterY size={16} />
+          <span className={tooltipClass}>To Canvas Center Y</span>
+        </button>
+        <button className={btnClass} onClick={() => handleCanvasAlign('bottom')}>
+          <CanvasIconBottom size={16} strokeWidth={2.5} />
+          <span className={tooltipClass}>To Canvas Bottom</span>
+        </button>
       </div>
 
       {/* Relative Alignment (Only if Multiple Selected) */}
