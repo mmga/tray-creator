@@ -318,38 +318,40 @@ export default function LayoutCanvas({
       const SNAP_THRESHOLD = 1.5; // mm
       const guides: GuideLine[] = [];
       const dragSlot = slots.find(s => s.id === draggingId);
-      const dragRx = dragSlot ? (dragSlot.width + HOLE_TOLERANCE) / 2 : 0;
-      const dragRy = dragSlot ? (dragSlot.height + HOLE_TOLERANCE) / 2 : 0;
+      const dragBB = dragSlot ? getEllipseBoundingBox(dragSlot.width, dragSlot.height, dragSlot.rotation) : { halfW: 0, halfH: 0 };
+      const dragRx = dragBB.halfW;
+      const dragRy = dragBB.halfH;
 
       for (const other of slots) {
         if (other.id === draggingId) continue;
-        const otherRx = (other.width + HOLE_TOLERANCE) / 2;
-        const otherRy = (other.height + HOLE_TOLERANCE) / 2;
+        const otherBB = getEllipseBoundingBox(other.width, other.height, other.rotation);
+        const otherRx = otherBB.halfW;
+        const otherRy = otherBB.halfH;
 
         // --- X axis snaps (center + left/right edges) ---
         const xSnaps = [
-          { target: other.x, label: 'center' },                         // center-center
-          { target: other.x - otherRx + dragRx, label: 'left-edge' },   // left edge align
-          { target: other.x + otherRx - dragRx, label: 'right-edge' },  // right edge align
+          { target: other.x, guide: other.x },                         // center-center
+          { target: other.x - otherRx + dragRx, guide: other.x - otherRx },   // left edge align
+          { target: other.x + otherRx - dragRx, guide: other.x + otherRx },  // right edge align
         ];
         for (const snap of xSnaps) {
           if (Math.abs(finalX - snap.target) < SNAP_THRESHOLD) {
             finalX = snap.target;
-            guides.push({ axis: 'x', value: snap.target });
+            guides.push({ axis: 'x', value: snap.guide });
             break; // only snap to one X target per other slot
           }
         }
 
         // --- Y axis snaps (center + top/bottom edges) ---
         const ySnaps = [
-          { target: other.y, label: 'center' },                         // center-center
-          { target: other.y - otherRy + dragRy, label: 'bottom-edge' }, // bottom edge
-          { target: other.y + otherRy - dragRy, label: 'top-edge' },    // top edge
+          { target: other.y, guide: other.y },                         // center-center
+          { target: other.y - otherRy + dragRy, guide: other.y - otherRy }, // bottom edge
+          { target: other.y + otherRy - dragRy, guide: other.y + otherRy },    // top edge
         ];
         for (const snap of ySnaps) {
           if (Math.abs(finalPhysY - snap.target) < SNAP_THRESHOLD) {
             finalPhysY = snap.target;
-            guides.push({ axis: 'y', value: trayDepth - snap.target });
+            guides.push({ axis: 'y', value: trayDepth - snap.guide });
             break;
           }
         }
