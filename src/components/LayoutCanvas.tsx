@@ -619,7 +619,14 @@ export default function LayoutCanvas({
       className={`w-full h-full bg-[#1c1a16] rounded-sm overflow-hidden relative select-none flex items-center justify-center ${isSpacePressed ? 'cursor-grab' : ''} ${isPanning ? 'cursor-grabbing' : ''}`}
       onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); }} 
     >
-      <AlignmentToolbar selectedIds={selectedIds} slots={slots} onUpdateSlots={handleUpdateSlots} />
+      <AlignmentToolbar 
+        selectedIds={selectedIds} 
+        slots={slots} 
+        onUpdateSlots={handleUpdateSlots} 
+        canvasWidth={trayWidth}
+        canvasHeight={trayDepth}
+        spacing={spacing}
+      />
       {/* ... (Background Grid and SVG setup unchanged) ... */}
       
       <div 
