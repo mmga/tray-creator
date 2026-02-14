@@ -10,6 +10,18 @@ import type { TrayParams, BasePreset } from "@/types/tray";
 // ---- 公差 (mm)，静默追加到凹槽直径，不在 UI 中显示 ----
 export const HOLE_TOLERANCE = 0.4;
 
+// ---- 磁吸孔固定参数 (不可调) ----
+export const BASE_HOLE_CONFIG = {
+  /** 磁吸孔直径 (mm) */
+  diameter: 20,
+  /** 磁吸孔深度 (mm) */
+  depth: 1.2,
+  /** 距凹槽底部固定壁厚 (mm) */
+  topWall: 0.6,
+  /** 底部最小壁厚 (mm) */
+  minBottomWall: 0.6,
+} as const;
+
 // ---- 底座预设 ----
 export const BASE_PRESETS: BasePreset[] = [
   { name: "小型步兵 (25mm)", diameter: 25 },
@@ -32,6 +44,7 @@ export const DEFAULT_TRAY_PARAMS: TrayParams = {
   baseThickness: 3,
   holeDepth: 2,
   cornerRadius: 6,
+  enableBaseHole: false,
 };
 
 // ---- 参数范围限制 ----

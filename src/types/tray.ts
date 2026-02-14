@@ -16,6 +16,8 @@ export interface TrayParams {
   holeDepth: number;
   /** 圆角半径 (mm)，仅影响底板四角竖直方向的边 */
   cornerRadius: number;
+  /** 是否启用底板磁吸孔 */
+  enableBaseHole: boolean;
 }
 
 /**

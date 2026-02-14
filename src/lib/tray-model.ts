@@ -1,7 +1,7 @@
 import { booleans, primitives, transforms, extrusions } from "@jscad/modeling";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { TrayParams } from "@/types/tray";
-import { RENDER_CONFIG, HOLE_TOLERANCE } from "@/lib/config";
+import { RENDER_CONFIG, HOLE_TOLERANCE, BASE_HOLE_CONFIG } from "@/lib/config";
 
 const { subtract } = booleans;
 const { roundedRectangle } = primitives;
@@ -90,7 +90,48 @@ export function createTrayModel(params: TrayParams): Geom3 {
   }
 
   // 4. 布尔减法：实体 - 凹槽
-  const tray = subtract(body, ...holes);
+  let tray = subtract(body, ...holes);
+
+  // 5. 底板磁吸孔 — 固定尺寸盲孔，不穿透
+  if (params.enableBaseHole) {
+    const { diameter, depth, topWall, minBottomWall } = BASE_HOLE_CONFIG;
+    const bottomWall = baseThickness - topWall - depth;
+
+    if (bottomWall >= minBottomWall) {
+      const bhRadius = diameter / 2;
+      // 孔中心 Z = 底板底面 + 底壁 + 孔深/2 = bottomWall + depth/2
+      const holeCenterZ = bottomWall + depth / 2;
+      const baseHoles: Geom3[] = [];
+
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < columns; col++) {
+          const cx =
+            -totalWidth / 2 +
+            spacing +
+            holeRadius +
+            col * (actualHoleDiameter + spacing);
+          const cy =
+            -totalDepth / 2 +
+            spacing +
+            holeRadius +
+            row * (actualHoleDiameter + spacing);
+
+          baseHoles.push(
+            translate(
+              [cx, cy, holeCenterZ],
+              cylinder({
+                radius: bhRadius,
+                height: depth + 0.02,
+                segments: RENDER_CONFIG.cylinderSegments,
+              })
+            )
+          );
+        }
+      }
+
+      tray = subtract(tray, ...baseHoles);
+    }
+  }
 
   return tray;
 }

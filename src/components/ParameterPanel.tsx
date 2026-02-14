@@ -1,6 +1,6 @@
 "use client";
 import type { TrayParams } from "@/types/tray";
-import { BASE_PRESETS, PARAM_LIMITS, DEFAULT_PRESET_INDEX } from "@/lib/config";
+import { BASE_PRESETS, PARAM_LIMITS, DEFAULT_PRESET_INDEX, BASE_HOLE_CONFIG } from "@/lib/config";
 import { calculateTrayDimensions } from "@/lib/tray-model";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, RotateCcw, Play, Loader2, type LucideIcon } from "lucide-react";
+import { Download, RotateCcw, Play, Loader2, Circle, type LucideIcon } from "lucide-react";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/config";
 
 interface ParameterPanelProps {
@@ -179,7 +179,9 @@ export default function ParameterPanel({
         <ParamSlider
           label="底板厚度"
           value={params.baseThickness}
-          config={PARAM_LIMITS.baseThickness}
+          config={params.enableBaseHole
+            ? { ...PARAM_LIMITS.baseThickness, min: 3 }
+            : PARAM_LIMITS.baseThickness}
           onChange={(v) => updateParam("baseThickness", v)}
         />
         <ParamSlider
@@ -196,6 +198,59 @@ export default function ParameterPanel({
         />
       </div>
 
+      {/* 底板孔位 */}
+      <div className="iron-panel rounded-sm p-4 space-y-4">
+        <SectionHeader icon={Circle} title="底板孔位" />
+
+        {/* 切换按钮组 */}
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => updateParam("enableBaseHole", false)}
+            className={`px-3 py-2 text-xs font-bold tracking-wider uppercase border transition-all duration-200 cursor-pointer ${!params.enableBaseHole
+              ? 'bg-primary/15 text-primary border-primary/50 shadow-inner'
+              : 'bg-[#1c1a16] text-muted-foreground border-[#2e2a24] hover:border-[#3d372e]'
+              }`}
+          >
+            普通托盘
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              updateParam("enableBaseHole", true);
+              // 磁吸孔模式下底板厚度最小 3mm
+              if (params.baseThickness < 3) {
+                updateParam("baseThickness", 3);
+              }
+            }}
+            className={`px-3 py-2 text-xs font-bold tracking-wider uppercase border transition-all duration-200 cursor-pointer ${params.enableBaseHole
+              ? 'bg-primary/15 text-primary border-primary/50 shadow-inner'
+              : 'bg-[#1c1a16] text-muted-foreground border-[#2e2a24] hover:border-[#3d372e]'
+              }`}
+          >
+            磁吸孔
+          </button>
+        </div>
+
+        {/* 磁吸孔信息 */}
+        {params.enableBaseHole && (
+          <div className="space-y-1.5 text-[11px] font-mono text-muted-foreground/70 bg-[#1c1a16] border border-[#2e2a24] p-2.5">
+            <div className="flex justify-between">
+              <span>磁铁孔</span>
+              <span className="text-foreground/80">⌀{BASE_HOLE_CONFIG.diameter}mm × {BASE_HOLE_CONFIG.depth}mm</span>
+            </div>
+            <div className="flex justify-between">
+              <span>顶壁</span>
+              <span className="text-foreground/80">{BASE_HOLE_CONFIG.topWall}mm</span>
+            </div>
+            <div className="flex justify-between">
+              <span>底壁</span>
+              <span className="text-foreground/80">{(params.baseThickness - BASE_HOLE_CONFIG.topWall - BASE_HOLE_CONFIG.depth).toFixed(1)}mm</span>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* 模型尺寸 */}
       <div className={`iron-panel rounded-sm p-4 space-y-3 transition-all duration-300 ${isOversized ? 'border-[#8b1a1a] animate-forge-pulse' : ''}`}>
         <SectionHeader icon={RulerIcon} title="模型尺寸" />
@@ -209,8 +264,8 @@ export default function ParameterPanel({
             <div
               key={label}
               className={`relative text-center p-2.5 transition-colors duration-200 ${warn
-                  ? 'bg-[#8b1a1a15] border border-[#8b1a1a50]'
-                  : 'bg-[#1c1a16] border border-[#2e2a24]'
+                ? 'bg-[#8b1a1a15] border border-[#8b1a1a50]'
+                : 'bg-[#1c1a16] border border-[#2e2a24]'
                 }`}
             >
               <p className="text-[11px] text-muted-foreground/60 mb-0.5">{label}</p>
