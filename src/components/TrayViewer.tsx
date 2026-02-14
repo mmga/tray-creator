@@ -87,7 +87,7 @@ function ContextLostHandler() {
 
 export default function TrayViewer({ geometry }: TrayViewerProps) {
   return (
-    <div className="relative w-full h-full min-h-[400px] overflow-hidden forged-viewport" style={{ backgroundColor: '#1a1917' }}>
+    <div className="relative w-full h-full min-h-[400px] overflow-hidden forged-viewport" style={{ backgroundColor: '#3d3b38' }}>
       {/* Corner rivets */}
       <div className="absolute top-3 left-3 rivet z-10" />
       <div className="absolute top-3 right-3 rivet z-10" />
@@ -117,7 +117,7 @@ export default function TrayViewer({ geometry }: TrayViewerProps) {
           failIfMajorPerformanceCaveat: false,
         }}
         onCreated={({ gl }) => {
-          gl.setClearColor(new THREE.Color("#1a1917"));
+          gl.setClearColor(new THREE.Color("#3d3b38"));
           gl.toneMapping = THREE.ACESFilmicToneMapping;
           gl.toneMappingExposure = 1.2;
         }}

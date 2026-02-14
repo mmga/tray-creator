@@ -64,3 +64,37 @@ export const RENDER_CONFIG = {
     fov: 45,
   },
 } as const;
+
+// ---- 自定义布局配置 ----
+import type { CustomLayoutParams } from "@/types/custom-tray";
+
+export const CUSTOM_LAYOUT_DEFAULTS: CustomLayoutParams = {
+  trayWidth: 150,
+  trayDepth: 100,
+  slots: [],
+  spacing: 5,
+  baseThickness: 3,
+  holeDepth: 2,
+  cornerRadius: 6,
+};
+
+
+export const CUSTOM_LIMITS = {
+  trayWidth: { min: 50, max: 260, step: 1 },
+  trayDepth: { min: 50, max: 260, step: 1 },
+  spacing: { min: 2, max: 20, step: 1 },
+  // 复用 PARAM_LIMITS 的其他限制
+  baseThickness: PARAM_LIMITS.baseThickness,
+  holeDepth: PARAM_LIMITS.holeDepth,
+  cornerRadius: PARAM_LIMITS.cornerRadius,
+} as const;
+
+// ---- 凹槽颜色映射 (用于 2D 编辑器) ----
+export const SLOT_COLORS: Record<number, string> = {
+  25: "#ef4444", // red-500
+  28.5: "#f97316", // orange-500
+  32: "#eab308", // yellow-500
+  40: "#84cc16", // lime-500
+  50: "#06b6d4", // cyan-500
+  60: "#8b5cf6", // violet-500
+};
