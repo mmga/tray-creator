@@ -14,9 +14,11 @@ interface UseCustomLayoutReturn {
   setParams: React.Dispatch<React.SetStateAction<CustomLayoutParams>>;
   updateParam: <K extends keyof CustomLayoutParams>(key: K, value: CustomLayoutParams[K]) => void;
   // 凹槽操作
-  addSlot: (diameter: number) => void;
+  // 凹槽操作
+  addSlot: (width: number, height?: number) => void;
   removeSlot: (id: string) => void;
   updateSlotPosition: (id: string, x: number, y: number) => void;
+  updateSlotRotation: (id: string, rotation: number) => void;
   // 3D 相关
   threeGeometry: THREE.BufferGeometry | null;
   isGenerating: boolean;
@@ -40,13 +42,18 @@ export function useCustomLayout(): UseCustomLayoutReturn {
   /**
    * 添加凹槽 -> 默认放置在画布中心
    */
-  const addSlot = useCallback((diameter: number) => {
+  const addSlot = useCallback((width: number, height?: number) => {
     setParams((prev) => {
+      const isCircle = !height || width === height;
       const newSlot: FreeSlot = {
         id: crypto.randomUUID(),
         x: prev.trayWidth / 2,
         y: prev.trayDepth / 2,
-        diameter,
+        shape: isCircle ? 'circle' : 'ellipse',
+        width,
+        height: height || width,
+        rotation: 0,
+        diameter: width, // 兼容旧代码，虽然后续会移除
       };
       return { ...prev, slots: [...prev.slots, newSlot] };
     });
@@ -63,12 +70,19 @@ export function useCustomLayout(): UseCustomLayoutReturn {
   }, []);
 
   /**
-   * 更新凹槽位置 (无碰撞校验，校验在 UI 层做或此处做均可，这里暂不做强校验以允许拖拽过程中的重叠)
+   * 更新凹槽位置
    */
   const updateSlotPosition = useCallback((id: string, x: number, y: number) => {
     setParams((prev) => ({
       ...prev,
       slots: prev.slots.map((s) => (s.id === id ? { ...s, x, y } : s)),
+    }));
+  }, []);
+
+  const updateSlotRotation = useCallback((id: string, rotation: number) => {
+    setParams((prev) => ({
+      ...prev,
+      slots: prev.slots.map((s) => (s.id === id ? { ...s, rotation } : s)),
     }));
   }, []);
 
@@ -110,6 +124,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     addSlot,
     removeSlot,
     updateSlotPosition,
+    updateSlotRotation,
     threeGeometry,
     isGenerating,
     handleGenerate,

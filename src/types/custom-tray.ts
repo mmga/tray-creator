@@ -5,7 +5,12 @@ export interface FreeSlot {
   id: string; // 唯一标识（UUID）
   x: number; // 中心 X 坐标 (mm)，相对于托盘左下角
   y: number; // 中心 Y 坐标 (mm)，相对于托盘左下角
-  diameter: number; // 凹槽直径 (mm)
+  shape: 'circle' | 'ellipse'; 
+  width: number;  // 圆形时为直径，椭圆时长轴
+  height: number; // 圆形时为直径，椭圆时短轴
+  rotation: number; // 旋转角度 (度)
+  /** 兼容旧数据 (可选) */
+  diameter?: number; 
 }
 
 /** 自定义布局参数（完全独立） */

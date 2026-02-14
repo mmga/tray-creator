@@ -50,28 +50,52 @@ export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
 
   // 3. 生成凹槽
   const holes: Geom3[] = [];
+  const { ellipse } = primitives;
+  const { rotateZ } = transforms;
+  const degToRad = (d: number) => d * (Math.PI / 180);
 
   for (const slot of slots) {
     // 转换坐标到 JSCAD 中心坐标系
     const cx = slot.x - trayWidth / 2;
     const cy = slot.y - trayDepth / 2;
     
-    // Z: 从 baseThickness 处开始向上
-    const cz = baseThickness + holeDepth / 2;
+    // Z: 这种拉伸是从底部 (0) 开始还是中心? 
+    // extrudeLinear default is from 0 to height in Z. 
+    // We need the bottom of the hole to be at `baseThickness`.
+    // So translate Z to `baseThickness`.
+    const holeZ = baseThickness; 
+
+    const width = slot.width || slot.diameter || 0;
+    const height = slot.height || slot.diameter || 0;
+    const rotation = slot.rotation || 0;
     
-    // 计算并生成圆柱体
-    const actualDiameter = slot.diameter + HOLE_TOLERANCE;
-    
-    const hole = translate(
-      [cx, cy, cz],
-      cylinder({
-        radius: actualDiameter / 2,
-        height: holeDepth + 0.02,
-        segments: RENDER_CONFIG.cylinderSegments,
-      })
+    const actualW = width + HOLE_TOLERANCE;
+    const actualH = height + HOLE_TOLERANCE;
+
+    // Create base shape
+    // Note: We use ellipse for both circle and ellipse to simplify logic, 
+    // or use cylinder for circles if faster (but ellipse extruded is fine).
+    // segments calculation: for ellipse, maybe use higher.
+    const holeShape2D = ellipse({
+      radius: [actualW / 2, actualH / 2],
+      segments: RENDER_CONFIG.cylinderSegments,
+    });
+
+    // Extrude
+    const hole3D = extrudeLinear({ height: holeDepth + 0.02 }, holeShape2D);
+
+    // Rotate (around Z axis, at origin 0,0,0 of the shape which is its center)
+    const rotatedHole = rotateZ(degToRad(rotation), hole3D);
+
+    // Translate to position
+    // Note: extrudeLinear creates shape from Z=0 to Z=height.
+    // We want it to start at baseThickness.
+    const placedHole = translate(
+      [cx, cy, holeZ],
+      rotatedHole
     );
     
-    holes.push(hole);
+    holes.push(placedHole);
   }
 
   // 4. 布尔运算

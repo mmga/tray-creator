@@ -20,6 +20,16 @@ export const BASE_PRESETS: BasePreset[] = [
   { name: "巨型 (60mm)", diameter: 60 },
 ];
 
+export const ELLIPSE_PRESETS = [
+  { name: "60x35.5mm", width: 60, height: 35.5 },
+  { name: "75x42mm", width: 75, height: 42 },
+  { name: "90x52mm", width: 90, height: 52 },
+  { name: "105x70mm", width: 105, height: 70 },
+  { name: "120x92mm", width: 120, height: 92 },
+  { name: "150x95mm", width: 150, height: 95 },
+  { name: "170x105mm", width: 170, height: 105 },
+];
+
 // ---- 默认预设索引（标准步兵 32mm） ----
 export const DEFAULT_PRESET_INDEX = 2;
 
@@ -90,6 +100,8 @@ export const CUSTOM_LIMITS = {
 } as const;
 
 // ---- 凹槽颜色映射 (用于 2D 编辑器) ----
+// ---- 凹槽颜色映射 (用于 2D 编辑器) ----
+// 使用直径或长轴作为 Key
 export const SLOT_COLORS: Record<number, string> = {
   25: "#ef4444", // red-500
   28.5: "#f97316", // orange-500
@@ -97,4 +109,11 @@ export const SLOT_COLORS: Record<number, string> = {
   40: "#84cc16", // lime-500
   50: "#06b6d4", // cyan-500
   60: "#8b5cf6", // violet-500
+  // Elliptical widths
+  75: "#ec4899", // pink-500
+  90: "#d946ef", // fuchsia-500
+  105: "#a855f7", // purple-500
+  120: "#6366f1", // indigo-500
+  150: "#3b82f6", // blue-500
+  170: "#0ea5e9", // sky-500
 };

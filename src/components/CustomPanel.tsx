@@ -1,7 +1,7 @@
 "use client";
 
 import type { CustomLayoutParams } from "@/types/custom-tray";
-import { BASE_PRESETS, CUSTOM_LIMITS } from "@/lib/config";
+import { BASE_PRESETS, ELLIPSE_PRESETS, CUSTOM_LIMITS } from "@/lib/config";
 import { calculateCustomTrayDimensions } from "@/lib/custom-tray-model";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,7 @@ interface CustomPanelProps {
   params: CustomLayoutParams;
   updateParam: <K extends keyof CustomLayoutParams>(key: K, value: CustomLayoutParams[K]) => void;
   setParams: React.Dispatch<React.SetStateAction<CustomLayoutParams>>;
-  onAddSlot: (diameter: number) => void;
+  onAddSlot: (width: number, height?: number) => void;
   onGenerate: () => void;
   onExportSTL: () => void;
   isGenerating: boolean;
@@ -143,7 +143,7 @@ export default function CustomPanel({
 
       {/* 添加凹槽 */}
       <div className="iron-panel rounded-sm p-4 space-y-3">
-        <SectionHeader icon={BoxSelectIcon} title="添加凹槽" />
+        <SectionHeader icon={BoxSelectIcon} title="添加圆形凹槽" />
         <div className="grid grid-cols-3 gap-2">
           {BASE_PRESETS.map((preset, i) => (
             <Button
@@ -158,6 +158,23 @@ export default function CustomPanel({
             </Button>
           ))}
         </div>
+
+        <SectionHeader icon={BoxSelectIcon} title="添加椭圆凹槽" />
+        <div className="grid grid-cols-2 gap-2">
+          {ELLIPSE_PRESETS.map((preset, i) => (
+            <Button
+              key={i}
+              variant="outline"
+              size="sm"
+              onClick={() => onAddSlot(preset.width, preset.height)}
+              className="h-8 text-[11px] border-[#2e2a24] bg-[#1c1a16] hover:bg-[#2e2a24] hover:text-primary transition-all"
+            >
+              <Plus className="w-3 h-3 mr-1" />
+              {preset.name.replace('mm', '')}
+            </Button>
+          ))}
+        </div>
+        
         <p className="text-[10px] text-muted-foreground/50 text-center pt-1">
           点击上方按钮添加，在右侧画布拖拽与删除
         </p>

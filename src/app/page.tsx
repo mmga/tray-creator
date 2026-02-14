@@ -134,6 +134,7 @@ export default function Home() {
                     params={customModel.params}
                     onUpdateSlot={customModel.updateSlotPosition}
                     onRemoveSlot={customModel.removeSlot}
+                    onUpdateSlotRotation={customModel.updateSlotRotation}
                   />
                 </div>
               </TabsContent>
