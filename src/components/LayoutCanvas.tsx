@@ -2,7 +2,7 @@
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import type { FreeSlot, CustomLayoutParams } from "@/types/custom-tray";
-import { SLOT_COLORS, HOLE_TOLERANCE } from "@/lib/config";
+import { HOLE_TOLERANCE } from "@/lib/config";
 
 interface LayoutCanvasProps {
   params: CustomLayoutParams;
@@ -29,6 +29,21 @@ export default function LayoutCanvas({
   const [isPanning, setIsPanning] = useState(false);
   const panStartRef = useRef({ x: 0, y: 0 });
 
+  // Smart Guides
+  interface GuideLine {
+    axis: 'x' | 'y';
+    value: number; // SVG coordinate
+  }
+  const [guideLines, setGuideLines] = useState<GuideLine[]>([]);
+
+  // Refs for nudge (to avoid stale closures in useEffect)
+  const selectedIdRef = useRef<string | null>(null);
+  const slotsRef = useRef(params.slots);
+  const onUpdateSlotRef = useRef(onUpdateSlot);
+  selectedIdRef.current = selectedId;
+  slotsRef.current = params.slots;
+  onUpdateSlotRef.current = onUpdateSlot;
+
   const { trayWidth, trayDepth, slots, spacing } = params;
 
   // Global key listener for Space
@@ -36,6 +51,20 @@ export default function LayoutCanvas({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === "Space" && !e.repeat) {
         setIsSpacePressed(true);
+      }
+      // Nudge: Arrow keys move selected slot by 1mm
+      const arrowCodes = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+      if (selectedIdRef.current && arrowCodes.includes(e.code)) {
+        e.preventDefault();
+        const step = 1; // mm
+        const slot = slotsRef.current.find(s => s.id === selectedIdRef.current);
+        if (!slot) return;
+        let dx = 0, dy = 0;
+        if (e.code === 'ArrowLeft')  dx = -step;
+        if (e.code === 'ArrowRight') dx = step;
+        if (e.code === 'ArrowUp')    dy = step;  // physical Y up
+        if (e.code === 'ArrowDown')  dy = -step;
+        onUpdateSlotRef.current(selectedIdRef.current, slot.x + dx, slot.y + dy);
       }
     };
     const handleKeyUp = (e: KeyboardEvent) => {
@@ -245,11 +274,53 @@ export default function LayoutCanvas({
       pt.y = e.clientY;
       const svgP = pt.matrixTransform(svgRef.current.getScreenCTM()?.inverse());
 
-      const newSvgX = svgP.x - dragOffset.x;
-      const newSvgY = svgP.y - dragOffset.y;
-      const newPhysicalY = trayDepth - newSvgY;
+      let finalX = svgP.x - dragOffset.x;
+      const rawSvgY = svgP.y - dragOffset.y;
+      let finalPhysY = trayDepth - rawSvgY;
 
-      onUpdateSlot(draggingId, newSvgX, newPhysicalY);
+      // Smart Guides: snap to center and edges of other slots
+      const SNAP_THRESHOLD = 1.5; // mm
+      const guides: GuideLine[] = [];
+      const dragSlot = slots.find(s => s.id === draggingId);
+      const dragRx = dragSlot ? (dragSlot.width + HOLE_TOLERANCE) / 2 : 0;
+      const dragRy = dragSlot ? (dragSlot.height + HOLE_TOLERANCE) / 2 : 0;
+
+      for (const other of slots) {
+        if (other.id === draggingId) continue;
+        const otherRx = (other.width + HOLE_TOLERANCE) / 2;
+        const otherRy = (other.height + HOLE_TOLERANCE) / 2;
+
+        // --- X axis snaps (center + left/right edges) ---
+        const xSnaps = [
+          { target: other.x, label: 'center' },                         // center-center
+          { target: other.x - otherRx + dragRx, label: 'left-edge' },   // left edge align
+          { target: other.x + otherRx - dragRx, label: 'right-edge' },  // right edge align
+        ];
+        for (const snap of xSnaps) {
+          if (Math.abs(finalX - snap.target) < SNAP_THRESHOLD) {
+            finalX = snap.target;
+            guides.push({ axis: 'x', value: snap.target });
+            break; // only snap to one X target per other slot
+          }
+        }
+
+        // --- Y axis snaps (center + top/bottom edges) ---
+        const ySnaps = [
+          { target: other.y, label: 'center' },                         // center-center
+          { target: other.y - otherRy + dragRy, label: 'bottom-edge' }, // bottom edge
+          { target: other.y + otherRy - dragRy, label: 'top-edge' },    // top edge
+        ];
+        for (const snap of ySnaps) {
+          if (Math.abs(finalPhysY - snap.target) < SNAP_THRESHOLD) {
+            finalPhysY = snap.target;
+            guides.push({ axis: 'y', value: trayDepth - snap.target });
+            break;
+          }
+        }
+      }
+
+      setGuideLines(guides);
+      onUpdateSlot(draggingId, finalX, finalPhysY);
     }
   }, [draggingId, dragOffset, isPanning, isRotating, onUpdateSlot, onUpdateSlotRotation, trayDepth, slots]);
 
@@ -304,6 +375,7 @@ export default function LayoutCanvas({
     setIsPanning(false);
     setIsRotating(false);
     rotateStartRef.current = null;
+    setGuideLines([]);
   }, []);
 
   // Icons
@@ -520,6 +592,15 @@ export default function LayoutCanvas({
             </g>
           );
         })}
+
+        {/* Smart Guide Lines */}
+        {guideLines.map((g, i) => (
+          g.axis === 'x'
+            ? <line key={`guide-${i}`} x1={g.value} y1={minY} x2={g.value} y2={minY + viewH}
+                    stroke="#38bdf8" strokeWidth={0.3/zoom} strokeDasharray="2 2" pointerEvents="none" opacity={0.8} />
+            : <line key={`guide-${i}`} x1={minX} y1={g.value} x2={minX + viewW} y2={g.value}
+                    stroke="#38bdf8" strokeWidth={0.3/zoom} strokeDasharray="2 2" pointerEvents="none" opacity={0.8} />
+        ))}
       </svg>
       
       {/* Zoom Controls */}
