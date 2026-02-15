@@ -94,11 +94,13 @@ export function createTrayModel(params: TrayParams): Geom3 {
 
   // 5. 底板磁吸孔 — 固定尺寸盲孔，不穿透
   if (params.enableBaseHole) {
-    const { diameter, depth, topWall, minBottomWall } = BASE_HOLE_CONFIG;
+    const { presets, tolerance, topWall, minBottomWall } = BASE_HOLE_CONFIG;
+    const { diameter, depth } = presets[params.baseHoleSize];
     const bottomWall = baseThickness - topWall - depth;
 
     if (bottomWall >= minBottomWall) {
-      const bhRadius = diameter / 2;
+      // 建模直径 = 基准直径 + 公差
+      const bhRadius = (diameter + tolerance) / 2;
       // 孔中心 Z = 底板底面 + 底壁 + 孔深/2 = bottomWall + depth/2
       const holeCenterZ = bottomWall + depth / 2;
       const baseHoles: Geom3[] = [];

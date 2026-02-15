@@ -12,10 +12,13 @@ export const HOLE_TOLERANCE = 0.4;
 
 // ---- 磁吸孔固定参数 (不可调) ----
 export const BASE_HOLE_CONFIG = {
-  /** 磁吸孔直径 (mm) */
-  diameter: 20,
-  /** 磁吸孔深度 (mm) */
-  depth: 1.2,
+  /** 规格预设 */
+  presets: {
+    "19.5": { diameter: 19.5, depth: 0.8 },
+    "25": { diameter: 25, depth: 1.2 },
+  },
+  /** 建模公差 (mm)，仅用于建模，不显示在 UI */
+  tolerance: 0.2,
   /** 距凹槽底部固定壁厚 (mm) */
   topWall: 0.6,
   /** 底部最小壁厚 (mm) */
@@ -55,6 +58,7 @@ export const DEFAULT_TRAY_PARAMS: TrayParams = {
   holeDepth: 2,
   cornerRadius: 6,
   enableBaseHole: false,
+  baseHoleSize: "19.5",
 };
 
 // ---- 参数范围限制 ----
