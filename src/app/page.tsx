@@ -135,6 +135,8 @@ export default function Home() {
                     onUpdateSlot={customModel.updateSlotPosition}
                     onRemoveSlot={customModel.removeSlot}
                     onUpdateSlotRotation={customModel.updateSlotRotation}
+                    onUndo={customModel.undo}
+                    onSaveSnapshot={customModel.saveSnapshot}
                   />
                 </div>
               </TabsContent>
