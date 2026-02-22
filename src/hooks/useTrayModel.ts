@@ -45,8 +45,8 @@ export function useTrayModel(): UseTrayModelReturn {
           prev?.dispose();
           return threeGeom;
         });
-      } catch (e) {
-        console.error("Failed to generate model:", e);
+      } catch {
+        // 参数组合可能产生无效几何体，静默忽略
       } finally {
         setIsGenerating(false);
       }

@@ -79,7 +79,6 @@ export function useCustomLayout(): UseCustomLayoutReturn {
         width,
         height: height || width,
         rotation: 0,
-        diameter: width, // 兼容旧代码
       };
       return { ...prev, slots: [...prev.slots, newSlot] };
     });
@@ -188,8 +187,8 @@ export function useCustomLayout(): UseCustomLayoutReturn {
           prev?.dispose();
           return threeGeom;
         });
-      } catch (e) {
-        console.error("Failed to generate custom model:", e);
+      } catch {
+        // 参数组合可能产生无效几何体，静默忽略
       } finally {
         setIsGenerating(false);
       }
@@ -205,7 +204,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
       params.slots.length
     );
     exportToSTL(jscadGeomRef.current, filename);
-  }, [params]);
+  }, [params.trayWidth, params.trayDepth, params.slots.length]);
 
   return {
     params,

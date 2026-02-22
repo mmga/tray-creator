@@ -1,5 +1,6 @@
 import type { TrayParams } from "@/types/tray";
 import type { CustomLayoutParams, AppMode } from "@/types/custom-tray";
+import { PARAM_CONFIG, CUSTOM_LIMITS } from "@/lib/config";
 
 // ═══════════════════════════════════════════
 // 参数导入导出工具
@@ -60,7 +61,7 @@ export function importParams(
                     );
                 }
 
-                // 校验参数结构
+                // 校验并钳位参数
                 if (expectedMode === "grid") {
                     validateGridParams(data.params as TrayParams);
                 } else {
@@ -77,12 +78,22 @@ export function importParams(
     });
 }
 
-// ── 校验 ──────────────────────────────────
+// ── 校验 & 钳位 ──────────────────────────────
 
 function requireNumber(obj: Record<string, unknown>, key: string) {
     if (typeof obj[key] !== "number") {
         throw new Error(`缺少或无效的字段: ${key}`);
     }
+}
+
+/** 将值钳位到 [min, max] 范围 */
+function clampField(
+    obj: Record<string, unknown>,
+    key: string,
+    config: { min: number; max: number },
+) {
+    const v = obj[key] as number;
+    obj[key] = Math.max(config.min, Math.min(config.max, v));
 }
 
 function validateGridParams(p: TrayParams) {
@@ -92,6 +103,14 @@ function validateGridParams(p: TrayParams) {
         "baseThickness", "holeDepth", "cornerRadius",
     ];
     for (const f of numFields) requireNumber(obj, f);
+
+    // 钳位到允许范围
+    clampField(obj, "columns", PARAM_CONFIG.columns);
+    clampField(obj, "rows", PARAM_CONFIG.rows);
+    clampField(obj, "spacing", PARAM_CONFIG.spacing);
+    clampField(obj, "baseThickness", PARAM_CONFIG.baseThickness);
+    clampField(obj, "holeDepth", PARAM_CONFIG.holeDepth);
+    clampField(obj, "cornerRadius", PARAM_CONFIG.cornerRadius);
 }
 
 function validateCustomParams(p: CustomLayoutParams) {
@@ -104,4 +123,12 @@ function validateCustomParams(p: CustomLayoutParams) {
     if (!Array.isArray(obj.slots)) {
         throw new Error("缺少或无效的字段: slots");
     }
+
+    // 钳位到允许范围
+    clampField(obj, "trayWidth", CUSTOM_LIMITS.trayWidth);
+    clampField(obj, "trayDepth", CUSTOM_LIMITS.trayDepth);
+    clampField(obj, "spacing", CUSTOM_LIMITS.spacing);
+    clampField(obj, "baseThickness", CUSTOM_LIMITS.baseThickness);
+    clampField(obj, "holeDepth", CUSTOM_LIMITS.holeDepth);
+    clampField(obj, "cornerRadius", CUSTOM_LIMITS.cornerRadius);
 }

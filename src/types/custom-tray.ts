@@ -9,8 +9,6 @@ export interface FreeSlot {
   width: number;  // 圆形时为直径，椭圆时长轴
   height: number; // 圆形时为直径，椭圆时短轴
   rotation: number; // 旋转角度 (度)
-  /** 兼容旧数据 (可选) */
-  diameter?: number;
 }
 
 /** 自定义布局参数（完全独立） */

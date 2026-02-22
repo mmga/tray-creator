@@ -55,6 +55,42 @@ function TrayMesh({ geometry }: { geometry: THREE.BufferGeometry }) {
 }
 
 /**
+ * 几何体变化时自动调整摄像机距离，保证模型完整可见
+ */
+function CameraAutoFit({ geometry }: { geometry: THREE.BufferGeometry }) {
+  const { camera, controls } = useThree();
+
+  useEffect(() => {
+    if (!geometry.boundingSphere) geometry.computeBoundingSphere();
+    const sphere = geometry.boundingSphere;
+    if (!sphere) return;
+
+    const fov = (camera as THREE.PerspectiveCamera).fov;
+    const fovRad = (fov * Math.PI) / 180;
+    // 模型绕 X 旋转了 -90°，考虑边界球在旋转后的中心
+    const center = sphere.center.clone().applyAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
+    const distance = (sphere.radius / Math.sin(fovRad / 2)) * 0.8;
+
+    // 从 45° 仰角观察
+    const angle = Math.PI / 4;
+    camera.position.set(
+      center.x + distance * Math.cos(angle),
+      center.y + distance * Math.sin(angle),
+      center.z + distance * Math.cos(angle),
+    );
+
+    if (controls) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (controls as any).target.copy(center);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (controls as any).update();
+    }
+  }, [geometry, camera, controls]);
+
+  return null;
+}
+
+/**
  * 监听 WebGL context lost / restored 事件，自动恢复
  */
 function ContextLostHandler() {
@@ -63,13 +99,12 @@ function ContextLostHandler() {
   const handleContextLost = useCallback(
     (event: Event) => {
       event.preventDefault();
-      console.warn("WebGL context lost, attempting recovery...");
     },
     []
   );
 
   const handleContextRestored = useCallback(() => {
-    console.log("WebGL context restored.");
+    // 恢复后无需额外操作，R3F 会自动重建渲染管线
   }, []);
 
   useEffect(() => {
@@ -134,7 +169,12 @@ export default function TrayViewer({ geometry }: TrayViewerProps) {
         <directionalLight position={[0, -30, 40]} intensity={0.25} color="#ffeedd" />
 
         {/* 托盘模型 */}
-        {geometry && <TrayMesh geometry={geometry} />}
+        {geometry && (
+          <>
+            <TrayMesh geometry={geometry} />
+            <CameraAutoFit geometry={geometry} />
+          </>
+        )}
 
         {/* 交互控制 */}
         <OrbitControls
