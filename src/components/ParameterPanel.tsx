@@ -16,6 +16,7 @@ import {
 import { Download, RotateCcw, Play, Loader2, type LucideIcon } from "lucide-react";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/config";
 import { BaseHoleConfig } from "@/components/BaseHoleConfig";
+import { ParamIOButtons } from "@/components/ParamIOButtons";
 
 interface ParameterPanelProps {
   params: TrayParams;
@@ -278,6 +279,11 @@ export default function ParameterPanel({
           <RotateCcw className="w-3.5 h-3.5 mr-2" />
           <span className="text-sm tracking-wider">重置参数</span>
         </Button>
+        <ParamIOButtons
+          mode="grid"
+          params={params as unknown as Record<string, unknown>}
+          onImport={(p) => setParams(p as TrayParams)}
+        />
       </div>
     </div>
   );

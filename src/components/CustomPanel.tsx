@@ -17,6 +17,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { BaseHoleConfig } from "@/components/BaseHoleConfig";
+import { ParamIOButtons } from "@/components/ParamIOButtons";
 
 interface CustomPanelProps {
   params: CustomLayoutParams;
@@ -298,6 +299,11 @@ export default function CustomPanel({
           <RotateCcw className="w-3.5 h-3.5 mr-2" />
           <span className="text-sm tracking-wider">重置参数</span>
         </Button>
+        <ParamIOButtons
+          mode="custom"
+          params={params as unknown as Record<string, unknown>}
+          onImport={(p) => setParams(p as CustomLayoutParams)}
+        />
       </div>
     </div>
   );
