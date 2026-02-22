@@ -3,9 +3,6 @@
 import type { CustomLayoutParams } from "@/types/custom-tray";
 import { BASE_PRESETS, ELLIPSE_PRESETS, CUSTOM_LIMITS, PARAM_CONFIG, MAX_BUILD_SIZE } from "@/lib/config";
 import { calculateCustomTrayDimensions } from "@/lib/custom-tray-model";
-import { Slider } from "@/components/ui/slider";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
   Download,
@@ -15,10 +12,15 @@ import {
   Plus,
   Trash2,
   Minimize,
-  type LucideIcon,
+  Layout,
+  Wrench,
+  Ruler,
+  BoxSelect,
 } from "lucide-react";
 import { BaseHoleConfig } from "@/components/BaseHoleConfig";
 import { ParamIOButtons } from "@/components/ParamIOButtons";
+import { SectionHeader } from "@/components/ui/SectionHeader";
+import { ParamSlider } from "@/components/ui/ParamSlider";
 import { isAdmin } from "@/lib/permissions";
 
 interface CustomPanelProps {
@@ -30,72 +32,6 @@ interface CustomPanelProps {
   onGenerate: () => void;
   onExportSTL: () => void;
   isGenerating: boolean;
-}
-
-/** Imperial section header with gold trim */
-function SectionHeader({ icon: Icon, title }: { icon: LucideIcon; title: string }) {
-  return (
-    <div className="relative pb-3 mb-1">
-      <div className="flex items-center gap-2.5">
-        <div className="flex items-center justify-center w-6 h-6 border border-primary/40 bg-[#1c1a16]">
-          <Icon className="w-3.5 h-3.5 text-primary" />
-        </div>
-        <h3 className="text-xs font-bold text-primary/90 tracking-[0.2em] uppercase parchment-glow">
-          {title}
-        </h3>
-      </div>
-      <div className="absolute bottom-0 left-0 right-0 h-px gold-trim opacity-40" />
-    </div>
-  );
-}
-
-function ParamSlider({
-  label,
-  value,
-  config,
-  onChange,
-  unit = "mm",
-}: {
-  label: string;
-  value: number;
-  config: { min: number; max: number; step: number };
-  onChange: (v: number) => void;
-  unit?: string;
-}) {
-  return (
-    <div className="space-y-2 group">
-      <div className="flex items-center justify-between">
-        <Label className="text-sm text-muted-foreground group-hover:text-foreground/80 transition-colors duration-200">
-          {label}
-        </Label>
-        <div className="flex items-center gap-1.5">
-          <Input
-            type="number"
-            value={value}
-            min={config.min}
-            max={config.max}
-            step={config.step}
-            onChange={(e) => {
-              const v = parseFloat(e.target.value);
-              if (!isNaN(v) && v >= config.min && v <= config.max) {
-                onChange(v);
-              }
-            }}
-            className="w-18 h-7 text-right text-sm font-mono bg-[#1c1a16] border-[#2e2a24] text-foreground focus:border-primary/50 focus:ring-primary/20 transition-colors duration-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-          />
-          <span className="text-[11px] text-muted-foreground/60 w-6 font-mono">{unit}</span>
-        </div>
-      </div>
-      <Slider
-        value={[value]}
-        min={config.min}
-        max={config.max}
-        step={config.step}
-        onValueChange={([v]) => onChange(v)}
-        className="py-1"
-      />
-    </div>
-  );
 }
 
 export default function CustomPanel({
@@ -110,12 +46,6 @@ export default function CustomPanel({
 }: CustomPanelProps) {
   const dimensions = calculateCustomTrayDimensions(params);
   const isOversized = dimensions.width > MAX_BUILD_SIZE || dimensions.depth > MAX_BUILD_SIZE;
-
-  // Icons
-  const LayoutIcon = require("lucide-react").Layout as LucideIcon;
-  const WrenchIcon = require("lucide-react").Wrench as LucideIcon;
-  const RulerIcon = require("lucide-react").Ruler as LucideIcon;
-  const BoxSelectIcon = require("lucide-react").BoxSelect as LucideIcon;
 
   const handleReset = () => {
     // Reset to defaults but keep current logic if needed
@@ -132,7 +62,7 @@ export default function CustomPanel({
     <div className="flex flex-col gap-4 animate-fade-in">
       {/* 托盘尺寸 */}
       <div className="iron-panel rounded-sm p-4 space-y-4">
-        <SectionHeader icon={LayoutIcon} title="托盘尺寸" />
+        <SectionHeader icon={Layout} title="托盘尺寸" />
         <ParamSlider
           label={CUSTOM_LIMITS.trayWidth.label}
           value={params.trayWidth}
@@ -160,7 +90,7 @@ export default function CustomPanel({
 
       {/* 添加凹槽 */}
       <div className="iron-panel rounded-sm p-4 space-y-3">
-        <SectionHeader icon={BoxSelectIcon} title="添加圆形凹槽" />
+        <SectionHeader icon={BoxSelect} title="添加圆形凹槽" />
         <div className="grid grid-cols-3 gap-2">
           {BASE_PRESETS.map((preset, i) => (
             <Button
@@ -176,7 +106,7 @@ export default function CustomPanel({
           ))}
         </div>
 
-        <SectionHeader icon={BoxSelectIcon} title="添加椭圆凹槽" />
+        <SectionHeader icon={BoxSelect} title="添加椭圆凹槽" />
         <div className="grid grid-cols-2 gap-2">
           {ELLIPSE_PRESETS.map((preset, i) => (
             <Button
@@ -199,7 +129,7 @@ export default function CustomPanel({
 
       {/* 结构参数 (独立) */}
       <div className="iron-panel rounded-sm p-4 space-y-4">
-        <SectionHeader icon={WrenchIcon} title="结构参数" />
+        <SectionHeader icon={Wrench} title="结构参数" />
 
         <ParamSlider
           label={CUSTOM_LIMITS.spacing.label}
@@ -241,7 +171,7 @@ export default function CustomPanel({
 
       {/* 模型尺寸 */}
       <div className={`iron-panel rounded-sm p-4 space-y-3 transition-all duration-300 ${isOversized ? 'border-[#8b1a1a] animate-forge-pulse' : ''}`}>
-        <SectionHeader icon={RulerIcon} title="统计信息" />
+        <SectionHeader icon={Ruler} title="统计信息" />
         <div className="grid grid-cols-2 gap-2 mb-2">
           <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
             <span className="text-[10px] text-muted-foreground block">凹槽数量</span>

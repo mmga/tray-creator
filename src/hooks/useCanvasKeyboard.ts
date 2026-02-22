@@ -1,0 +1,133 @@
+"use client";
+
+import { useEffect, useRef, useCallback } from "react";
+import type { FreeSlot } from "@/types/custom-tray";
+
+interface UseCanvasKeyboardOptions {
+    selectedIdsRef: React.RefObject<Set<string>>;
+    slotsRef: React.RefObject<FreeSlot[]>;
+    onUpdateSlot: (id: string, x: number, y: number) => void;
+    onRemoveSlot: (id: string) => void;
+    onUndo?: () => void;
+    setSelectedIds: React.Dispatch<React.SetStateAction<Set<string>>>;
+    setContextMenu: React.Dispatch<React.SetStateAction<unknown>>;
+    setIsRotating: React.Dispatch<React.SetStateAction<boolean>>;
+    setIsSpacePressed: React.Dispatch<React.SetStateAction<boolean>>;
+    setIsPanning: React.Dispatch<React.SetStateAction<boolean>>;
+    setShowHints: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+/**
+ * 画布键盘事件 hook
+ *
+ * 处理：Delete/Backspace 删除、Ctrl+Z 撤销、方向键微调、
+ * Space 平移、Esc 取消、? 快捷键提示
+ */
+export function useCanvasKeyboard({
+    selectedIdsRef,
+    slotsRef,
+    onUpdateSlot,
+    onRemoveSlot,
+    onUndo,
+    setSelectedIds,
+    setContextMenu,
+    setIsRotating,
+    setIsSpacePressed,
+    setIsPanning,
+    setShowHints,
+}: UseCanvasKeyboardOptions) {
+    // 使用 ref 保持回调引用稳定
+    const onUpdateSlotRef = useRef(onUpdateSlot);
+    onUpdateSlotRef.current = onUpdateSlot;
+    const onUndoRef = useRef(onUndo);
+    onUndoRef.current = onUndo;
+
+    const handleKeyDown = useCallback(
+        (e: KeyboardEvent) => {
+            // Space: 平移模式
+            if (e.code === "Space" && !e.repeat) {
+                setIsSpacePressed(true);
+            }
+
+            // 方向键: 微调选中凹槽
+            const arrowCodes = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
+            if (selectedIdsRef.current.size > 0 && arrowCodes.includes(e.code)) {
+                e.preventDefault();
+                let dx = 0,
+                    dy = 0;
+                if (e.code === "ArrowLeft") dx = -1;
+                if (e.code === "ArrowRight") dx = 1;
+                if (e.code === "ArrowUp") dy = 1;
+                if (e.code === "ArrowDown") dy = -1;
+
+                selectedIdsRef.current.forEach((id) => {
+                    const slot = slotsRef.current.find((s) => s.id === id);
+                    if (slot) {
+                        onUpdateSlotRef.current(id, slot.x + dx, slot.y + dy);
+                    }
+                });
+            }
+
+            // Ctrl+Z: 撤销
+            if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
+                e.preventDefault();
+                onUndoRef.current?.();
+                return;
+            }
+
+            // Delete/Backspace: 删除选中
+            if (
+                selectedIdsRef.current.size > 0 &&
+                (e.code === "Delete" || e.code === "Backspace")
+            ) {
+                e.preventDefault();
+                selectedIdsRef.current.forEach((id) => onRemoveSlot(id));
+                setSelectedIds(new Set());
+                setContextMenu(null);
+            }
+
+            // Escape: 取消选择
+            if (e.code === "Escape") {
+                e.preventDefault();
+                setSelectedIds(new Set());
+                setContextMenu(null);
+                setIsRotating(false);
+            }
+
+            // ?: 快捷键提示
+            if (e.key === "?" || (e.key === "/" && e.shiftKey)) {
+                e.preventDefault();
+                setShowHints((prev) => !prev);
+            }
+        },
+        [
+            selectedIdsRef,
+            slotsRef,
+            onRemoveSlot,
+            setSelectedIds,
+            setContextMenu,
+            setIsRotating,
+            setIsSpacePressed,
+            setShowHints,
+        ],
+    );
+
+    const handleKeyUp = useCallback(
+        (e: KeyboardEvent) => {
+            if (e.code === "Space") {
+                setIsSpacePressed(false);
+                setIsPanning(false);
+            }
+        },
+        [setIsSpacePressed, setIsPanning],
+    );
+
+    useEffect(() => {
+        window.addEventListener("keydown", handleKeyDown);
+        window.addEventListener("keyup", handleKeyUp);
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+            window.removeEventListener("keyup", handleKeyUp);
+        };
+    }, [handleKeyDown, handleKeyUp]);
+}
