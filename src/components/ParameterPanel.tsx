@@ -254,7 +254,7 @@ export default function ParameterPanel({
       <div className="flex flex-col gap-2.5 pb-4">
         <Button
           onClick={onGenerate}
-          disabled={isGenerating}
+          disabled={isGenerating || isOversized}
           className="w-full h-11 blood-red text-[#f0d8b8] font-bold tracking-wider cursor-pointer transition-all duration-200 border border-[#a02020] shadow-lg shadow-[#8b1a1a30] hover:shadow-xl hover:shadow-[#8b1a1a50] hover:brightness-125 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isGenerating ? (
@@ -262,7 +262,7 @@ export default function ParameterPanel({
           ) : (
             <Play className="w-4 h-4 mr-2" />
           )}
-          {isGenerating ? "锻造中..." : "开始锻造"}
+          {isGenerating ? "锻造中..." : isOversized ? "尺寸超限" : "开始锻造"}
         </Button>
         <Button
           onClick={onExportSTL}
