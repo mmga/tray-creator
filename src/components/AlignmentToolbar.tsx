@@ -17,7 +17,8 @@ interface AlignmentToolbarProps {
 }
 
 export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, canvasWidth, canvasHeight, spacing }: AlignmentToolbarProps) {
-  if (selectedIds.size === 0) return null;
+  const hasSelection = selectedIds.size > 0;
+  const hasMultiple = selectedIds.size > 1;
 
   // Helper to get bounding box of rotated ellipse
   const getEllipseRotatedBounds = (slot: FreeSlot) => {
@@ -214,11 +215,8 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, ca
     if (updates.length > 0) onUpdateSlots(updates);
   };
 
-  const btnClass = "p-1.5 hover:bg-neutral-700/50 rounded text-neutral-300 hover:text-white transition-colors cursor-pointer group relative disabled:opacity-30 disabled:cursor-not-allowed";
-  // Tooltip: Move to top-full (below the button) to avoid clipping by overflow-hidden parent of the Canvas
+  const btnClass = "p-1.5 hover:bg-neutral-700/50 rounded text-neutral-300 hover:text-white transition-colors cursor-pointer group relative disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-neutral-300";
   const tooltipClass = "absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-black text-xs text-white rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity z-50";
-
-  const showGroupAlign = selectedIds.size > 1;
 
   // Canvas Align Icons
   const CanvasIconLeft = ArrowLeftToLine;
@@ -231,88 +229,82 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, ca
   return (
     <div className="absolute top-4 left-1/2 transform -translate-x-1/2 flex items-center gap-1 bg-neutral-800/90 backdrop-blur-sm border border-neutral-700 rounded-lg shadow-xl px-2 py-1.5 z-50">
 
-      {/* Canvas Alignment (Linear Row) */}
+      {/* 画布对齐 */}
       <div className="flex items-center gap-0.5 mr-2 pr-2 border-r border-neutral-700">
-        {/* Horizontal */}
-        <button className={btnClass} onClick={() => handleCanvasAlign('left')}>
+        {/* 水平 */}
+        <button className={btnClass} disabled={!hasSelection} onClick={() => handleCanvasAlign('left')}>
           <CanvasIconLeft size={16} strokeWidth={2.5} />
-          <span className={tooltipClass}>To Canvas Left</span>
+          <span className={tooltipClass}>靠左对齐画布</span>
         </button>
-        <button className={btnClass} onClick={() => handleCanvasAlign('center-x')}>
+        <button className={btnClass} disabled={!hasSelection} onClick={() => handleCanvasAlign('center-x')}>
           <CanvasIconCenterX size={16} />
-          <span className={tooltipClass}>To Canvas Center X</span>
+          <span className={tooltipClass}>水平居中画布</span>
         </button>
-        <button className={btnClass} onClick={() => handleCanvasAlign('right')}>
+        <button className={btnClass} disabled={!hasSelection} onClick={() => handleCanvasAlign('right')}>
           <CanvasIconRight size={16} strokeWidth={2.5} />
-          <span className={tooltipClass}>To Canvas Right</span>
+          <span className={tooltipClass}>靠右对齐画布</span>
         </button>
 
         <div className="w-px h-4 bg-neutral-700 mx-1" />
 
-        {/* Vertical */}
-        <button className={btnClass} onClick={() => handleCanvasAlign('top')}>
+        {/* 垂直 */}
+        <button className={btnClass} disabled={!hasSelection} onClick={() => handleCanvasAlign('top')}>
           <CanvasIconTop size={16} strokeWidth={2.5} />
-          <span className={tooltipClass}>To Canvas Top</span>
+          <span className={tooltipClass}>靠上对齐画布</span>
         </button>
-        <button className={btnClass} onClick={() => handleCanvasAlign('center-y')}>
+        <button className={btnClass} disabled={!hasSelection} onClick={() => handleCanvasAlign('center-y')}>
           <CanvasIconCenterY size={16} />
-          <span className={tooltipClass}>To Canvas Center Y</span>
+          <span className={tooltipClass}>垂直居中画布</span>
         </button>
-        <button className={btnClass} onClick={() => handleCanvasAlign('bottom')}>
+        <button className={btnClass} disabled={!hasSelection} onClick={() => handleCanvasAlign('bottom')}>
           <CanvasIconBottom size={16} strokeWidth={2.5} />
-          <span className={tooltipClass}>To Canvas Bottom</span>
+          <span className={tooltipClass}>靠下对齐画布</span>
         </button>
       </div>
 
-      {/* Relative Alignment (Only if Multiple Selected) */}
-      {showGroupAlign && (
-        <>
-          {/* Horizontal Alignment */}
-          <button className={btnClass} onClick={() => handleAlign('left')}>
-            <AlignLeft size={18} />
-            <span className={tooltipClass}>Align Selection Left</span>
-          </button>
-          <button className={btnClass} onClick={() => handleAlign('center-x')}>
-            <AlignCenterHorizontal size={18} />
-            <span className={tooltipClass}>Align Selection Center X</span>
-          </button>
-          <button className={btnClass} onClick={() => handleAlign('right')}>
-            <AlignRight size={18} />
-            <span className={tooltipClass}>Align Selection Right</span>
-          </button>
+      {/* 多选对齐 */}
+      <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('left')}>
+        <AlignLeft size={18} />
+        <span className={tooltipClass}>左对齐选中项</span>
+      </button>
+      <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('center-x')}>
+        <AlignCenterHorizontal size={18} />
+        <span className={tooltipClass}>水平居中选中项</span>
+      </button>
+      <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('right')}>
+        <AlignRight size={18} />
+        <span className={tooltipClass}>右对齐选中项</span>
+      </button>
 
-          <div className="w-px h-6 bg-neutral-700 mx-1" />
+      <div className="w-px h-6 bg-neutral-700 mx-1" />
 
-          {/* Vertical Alignment */}
-          <button className={btnClass} onClick={() => handleAlign('top')}>
-            <AlignStartVertical size={18} />
-            <span className={tooltipClass}>Align Selection Top</span>
-          </button>
-          <button className={btnClass} onClick={() => handleAlign('center-y')}>
-            <AlignCenterVertical size={18} />
-            <span className={tooltipClass}>Align Selection Center Y</span>
-          </button>
-          <button className={btnClass} onClick={() => handleAlign('bottom')}>
-            <AlignEndVertical size={18} />
-            <span className={tooltipClass}>Align Selection Bottom</span>
-          </button>
+      <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('top')}>
+        <AlignStartVertical size={18} />
+        <span className={tooltipClass}>顶部对齐选中项</span>
+      </button>
+      <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('center-y')}>
+        <AlignCenterVertical size={18} />
+        <span className={tooltipClass}>垂直居中选中项</span>
+      </button>
+      <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('bottom')}>
+        <AlignEndVertical size={18} />
+        <span className={tooltipClass}>底部对齐选中项</span>
+      </button>
 
-          <div className="w-px h-6 bg-neutral-700 mx-1" />
+      <div className="w-px h-6 bg-neutral-700 mx-1" />
 
-          {/* Distribution */}
-          <button className={btnClass} onClick={() => handleAlign('distribute-h')}>
-            <AlignHorizontalDistributeCenter size={18} />
-            <span className={tooltipClass}>Distribute Horizontal Spacing</span>
-          </button>
-          <button className={btnClass} onClick={() => handleAlign('distribute-v')}>
-            <AlignVerticalDistributeCenter size={18} />
-            <span className={tooltipClass}>Distribute Vertical Spacing</span>
-          </button>
-        </>
-      )}
+      {/* 分布 */}
+      <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('distribute-h')}>
+        <AlignHorizontalDistributeCenter size={18} />
+        <span className={tooltipClass}>水平等距分布</span>
+      </button>
+      <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('distribute-v')}>
+        <AlignVerticalDistributeCenter size={18} />
+        <span className={tooltipClass}>垂直等距分布</span>
+      </button>
 
       <div className="ml-2 text-xs text-neutral-500 font-mono">
-        {selectedIds.size} Selected
+        {selectedIds.size > 0 ? `${selectedIds.size} 已选择` : '未选择'}
       </div>
     </div>
   );
