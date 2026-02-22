@@ -147,6 +147,15 @@ export default function CustomPanel({
           onChange={(v) => updateParam("trayDepth", v)}
           unit={CUSTOM_LIMITS.trayDepth.unit}
         />
+        <Button
+          variant="outline"
+          onClick={onTrimBaseplate}
+          disabled={params.slots.length === 0}
+          className="w-full h-9 border-[#2e2a24] text-[#8cb880] cursor-pointer hover:bg-[#2a3528]/30 hover:border-[#4a6741] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Minimize className="w-3.5 h-3.5 mr-2" />
+          <span className="text-sm tracking-wider">裁剪底板</span>
+        </Button>
       </div>
 
       {/* 添加凹槽 */}
@@ -304,15 +313,6 @@ export default function CustomPanel({
         >
           <RotateCcw className="w-3.5 h-3.5 mr-2" />
           <span className="text-sm tracking-wider">重置参数</span>
-        </Button>
-        <Button
-          variant="outline"
-          onClick={onTrimBaseplate}
-          disabled={params.slots.length === 0}
-          className="w-full h-9 border-[#2e2a24] text-[#8cb880] cursor-pointer hover:bg-[#2a3528]/30 hover:border-[#4a6741] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Minimize className="w-3.5 h-3.5 mr-2" />
-          <span className="text-sm tracking-wider">裁剪底板</span>
         </Button>
         <ParamIOButtons
           mode="custom"
