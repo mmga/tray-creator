@@ -22,7 +22,13 @@ export function exportParams(
     params: TrayParams | CustomLayoutParams
 ) {
     const data: ParamFile = { version: CURRENT_VERSION, mode, params };
-    const json = JSON.stringify(data, null, 2);
+    // 使用 replacer 函数将导出的数字截断至最多 3 位小数，避免浮点数精度溢出（如 27.400000000000006 => 27.4）
+    const json = JSON.stringify(data, (key, value) => {
+        if (typeof value === 'number') {
+            return Math.round(value * 1000) / 1000;
+        }
+        return value;
+    }, 2);
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
 

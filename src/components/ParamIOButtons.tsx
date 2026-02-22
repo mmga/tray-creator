@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, Share2 } from "lucide-react";
 import { exportParams, importParams } from "@/lib/param-io";
 import type { AppMode } from "@/types/custom-tray";
+import { isAdmin } from "@/lib/permissions";
 
 interface ParamIOButtonsProps {
     mode: AppMode;
@@ -38,6 +39,10 @@ export function ParamIOButtons({ mode, params, onImport }: ParamIOButtonsProps) 
         e.target.value = "";
     };
 
+    const exportBtnClasses = !isAdmin
+        ? "flex-1 h-8 text-xs bg-[#2a3528] hover:bg-[#354530] text-[#8cb880] font-semibold tracking-wider cursor-pointer border border-[#4a6741] shadow-sm shadow-[#2a352830] transition-colors"
+        : "flex-1 h-8 text-xs border border-[#2e2a24] text-muted-foreground cursor-pointer hover:bg-[#1c1a16] hover:text-foreground/80 hover:border-[#3d372e] transition-all duration-200";
+
     return (
         <>
             <input
@@ -51,7 +56,7 @@ export function ParamIOButtons({ mode, params, onImport }: ParamIOButtonsProps) 
                 <Button
                     variant="outline"
                     onClick={handleExport}
-                    className="flex-1 h-8 text-xs border-[#2e2a24] text-muted-foreground cursor-pointer hover:bg-[#1c1a16] hover:text-foreground/80 hover:border-[#3d372e] transition-all duration-200"
+                    className={exportBtnClasses}
                 >
                     <Share2 className="w-3.5 h-3.5 mr-1.5" />
                     导出参数

@@ -268,7 +268,8 @@ export default function LayoutCanvas({
       if (e.shiftKey) {
         newRotation = Math.round(newRotation / 15) * 15;
       }
-      newRotation = (newRotation % 360 + 360) % 360;
+      // 限定为 1 度为步长，不使用小数
+      newRotation = Math.round((newRotation % 360 + 360) % 360);
 
       if (onUpdateSlotRotation) {
         onUpdateSlotRotation(draggingId, newRotation);
@@ -550,7 +551,8 @@ export default function LayoutCanvas({
     }
     const val = parseFloat(valStr);
     if (!isNaN(val) && onUpdateSlotRotation) {
-      onUpdateSlotRotation(id, val);
+      // 限定为 1 度为步长，不使用小数
+      onUpdateSlotRotation(id, Math.round(val));
     }
   };
 
