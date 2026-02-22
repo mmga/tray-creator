@@ -6,6 +6,13 @@ import { HOLE_TOLERANCE } from "@/lib/config";
 import { getEllipsePolygon, polygonsIntersect } from "@/lib/collision";
 import AlignmentToolbar from "./AlignmentToolbar";
 
+import { useCanvasZoom } from "../hooks/useCanvasZoom";
+import { useCanvasKeyboard } from "../hooks/useCanvasKeyboard";
+import { CanvasStatusBar } from "./canvas/CanvasStatusBar";
+import { CanvasZoomControls } from "./canvas/CanvasZoomControls";
+import { KeyboardHintsOverlay } from "./canvas/KeyboardHintsOverlay";
+import { CanvasContextMenu } from "./canvas/CanvasContextMenu";
+
 interface LayoutCanvasProps {
   params: CustomLayoutParams;
   onUpdateSlot: (id: string, x: number, y: number) => void;
@@ -23,11 +30,20 @@ export default function LayoutCanvas({
   onUndo,
   onSaveSnapshot,
 }: LayoutCanvasProps) {
-  const svgRef = useRef<SVGSVGElement>(null);
+  // Core State
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  // Hoisted state (must be before hooks to avoid reference errors)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; slotId: string } | null>(null);
+  const [isRotating, setIsRotating] = useState(false);
+  const [showHints, setShowHints] = useState(false);
+
+  // Refs for DOM and logic
+  const svgRef = useRef<SVGSVGElement>(null);
   const parentRef = useRef<HTMLDivElement>(null); // To get client rect for marquee
+  const rotateStartRef = useRef<{ angle: number; startRotation: number } | null>(null);
 
   // Multi-drag State
   const dragStartRef = useRef<{
@@ -38,18 +54,6 @@ export default function LayoutCanvas({
   // Marquee Selection State (Client Coords)
   const [selectionBox, setSelectionBox] = useState<{ start: { x: number, y: number }, current: { x: number, y: number } } | null>(null);
 
-  // Helper to handle multiple updates
-  const handleUpdateSlots = useCallback((updates: { id: string, x: number, y: number }[]) => {
-    updates.forEach(u => onUpdateSlot(u.id, u.x, u.y));
-  }, [onUpdateSlot]);
-
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [isSpacePressed, setIsSpacePressed] = useState(false);
-  const [isPanning, setIsPanning] = useState(false);
-  const [showHints, setShowHints] = useState(false);
-  const panStartRef = useRef({ x: 0, y: 0 });
-
   // Smart Guides
   interface GuideLine {
     axis: 'x' | 'y';
@@ -57,7 +61,21 @@ export default function LayoutCanvas({
   }
   const [guideLines, setGuideLines] = useState<GuideLine[]>([]);
 
-  // Refs for logic (to avoid stale closures in useEffect)
+  // Extracted canvas zoom/pan hook
+  const {
+    zoom, pan, setPan, viewBox, viewW, viewH, minX, minY,
+    isSpacePressed, setIsSpacePressed,
+    isPanning, setIsPanning,
+    panStartRef, handleWheel,
+    adjustZoom, resetZoom,
+  } = useCanvasZoom({
+    baseW: params.trayWidth + 40, // trayWidth + (PADDING_MM * 2)
+    baseH: params.trayDepth + 40,
+    trayWidth: params.trayWidth,
+    trayDepth: params.trayDepth,
+  });
+
+  const { trayWidth, trayDepth, slots, spacing } = params;
   const selectedIdsRef = useRef(selectedIds);
   const slotsRef = useRef(params.slots);
   const onUpdateSlotRef = useRef(onUpdateSlot);
@@ -69,119 +87,25 @@ export default function LayoutCanvas({
   onUndoRef.current = onUndo;
   onSaveSnapshotRef.current = onSaveSnapshot;
 
-  const { trayWidth, trayDepth, slots, spacing } = params;
+  // Helper to handle multiple updates
+  const handleUpdateSlots = useCallback((updates: { id: string, x: number, y: number }[]) => {
+    updates.forEach(u => onUpdateSlot(u.id, u.x, u.y));
+  }, [onUpdateSlot]);
 
-  // Global key listener for Space & Tools
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === "Space" && !e.repeat) {
-        setIsSpacePressed(true);
-      }
-      // Nudge: Arrow keys move selected slots by 1mm
-      const arrowCodes = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
-      if (selectedIdsRef.current.size > 0 && arrowCodes.includes(e.code)) {
-        e.preventDefault();
-        const step = e.shiftKey ? 10 : 1; // Shift+Arrow = 10mm (1cm), Arrow = 1mm? Code says 1mm.
-        // Wait, Code said: "step = 1; // mm".
-        // Let's stick to 1mm default.
-        // And Shift? User said "Shift+Arrow moves 1mm or 10px?". 
-        // Current code: "step = 1".
-        // I will keep 1mm default.
-
-        let dx = 0, dy = 0;
-        if (e.code === 'ArrowLeft') dx = -1;
-        if (e.code === 'ArrowRight') dx = 1;
-        if (e.code === 'ArrowUp') dy = 1;  // physical Y up
-        if (e.code === 'ArrowDown') dy = -1;
-
-        selectedIdsRef.current.forEach(id => {
-          const slot = slotsRef.current.find(s => s.id === id);
-          if (slot) {
-            onUpdateSlotRef.current(id, slot.x + dx, slot.y + dy);
-          }
-        });
-      }
-
-      // Ctrl+Z / Cmd+Z: Undo
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-        e.preventDefault();
-        onUndoRef.current?.();
-        return;
-      }
-
-      // Delete: Remove selected slots
-      if (selectedIdsRef.current.size > 0 && (e.code === 'Delete' || e.code === 'Backspace')) {
-        e.preventDefault();
-        selectedIdsRef.current.forEach(id => onRemoveSlot(id));
-        setSelectedIds(new Set()); // Clear selection
-        setContextMenu(null);
-      }
-
-      // Escape: Deselect / Close Menu
-      if (e.code === 'Escape') {
-        e.preventDefault();
-        setSelectedIds(new Set());
-        setContextMenu(null);
-        setIsRotating(false);
-      }
-      // ? key: Toggle keyboard hints
-      if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
-        e.preventDefault();
-        setShowHints(prev => !prev);
-      }
-    };
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.code === "Space") {
-        setIsSpacePressed(false);
-        setIsPanning(false);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-    };
-  }, []);
-
-  const handleWheel = useCallback((e: React.WheelEvent) => {
-    // Prevent default browser zooming
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
-    }
-
-    // Simple zoom logic
-    const delta = -e.deltaY;
-    const factor = 0.1;
-    setZoom((z) => {
-      const newZoom = z + (delta > 0 ? factor : -factor);
-      return Math.min(Math.max(0.5, newZoom), 5); // Limit 0.5x to 5x
-    });
-  }, []);
-
-  const adjustZoom = (amount: number) => {
-    setZoom((z) => Math.min(Math.max(0.5, z + amount), 5));
-  };
-
-  const resetZoom = () => {
-    setZoom(1);
-    setPan({ x: 0, y: 0 });
-  };
-
-  // ViewBox calculation with Pan support
-  const PADDING_MM = 20;
-  const baseW = trayWidth + PADDING_MM * 2;
-  const baseH = trayDepth + PADDING_MM * 2;
-
-  const viewW = baseW / zoom;
-  const viewH = baseH / zoom;
-  // Center of Tray is (trayWidth/2, trayDepth/2).
-  // Pan is in screen pixels (from mouse movement) converted to SVG units? 
-  // Actually, easier to treat `pan` as "Viewer Offset in MM".
-  const minX = (trayWidth / 2) - (viewW / 2) - pan.x;
-  const minY = (trayDepth / 2) - (viewH / 2) - pan.y;
-
-  const viewBox = `${minX} ${minY} ${viewW} ${viewH}`;
+  // Extracted canvas keyboard event hook
+  useCanvasKeyboard({
+    selectedIdsRef,
+    slotsRef,
+    onUpdateSlot,
+    onRemoveSlot,
+    onUndo,
+    setSelectedIds,
+    setContextMenu,
+    setIsRotating,
+    setIsSpacePressed,
+    setIsPanning,
+    setShowHints,
+  });
 
   /**
    * 碰撞检测 (Approximation for Ellipses)
@@ -255,9 +179,6 @@ export default function LayoutCanvas({
       draggingSlotResult.rotation
     )
     : false;
-
-  const [isRotating, setIsRotating] = useState(false);
-  const rotateStartRef = useRef<{ angle: number; startRotation: number } | null>(null);
 
   // ... (keep existing helpers)
 
@@ -603,13 +524,7 @@ export default function LayoutCanvas({
     setGuideLines([]);
   }, [selectionBox, selectedIds, slots, trayDepth]);
 
-  // Icons
-  const ZoomIn = require("lucide-react").ZoomIn;
-  const ZoomOut = require("lucide-react").ZoomOut;
-  const Maximize = require("lucide-react").Maximize;
-
-  // Context Menu
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; slotId: string } | null>(null);
+  // Context Menu Helpers
 
   // ... (useEffect click listener is fine)
 
@@ -863,104 +778,32 @@ export default function LayoutCanvas({
         />
       )}
 
-      {/* Zoom Controls */}
-      <div className="absolute bottom-4 right-4 flex flex-col gap-1.5 bg-[#1c1a16] border border-[#2e2a24] p-1.5 rounded shadow-lg">
-        <button
-          className="p-1.5 hover:bg-[#2e2a24] text-muted-foreground hover:text-primary rounded transition-colors"
-          onClick={resetZoom}
-          title="Reset View"
-        >
-          <Maximize className="w-4 h-4" />
-        </button>
-      </div>
+      {/* Extracted UI Overlays */}
+      <CanvasZoomControls
+        onResetZoom={resetZoom}
+        onShowHints={() => setShowHints(true)}
+      />
 
-      {/* Context Menu (Enhanced) */}
-      {contextMenu && (
-        <div
-          className="fixed bg-[#2a2a2e] border border-[#444] rounded shadow-xl z-50 overflow-hidden min-w-[140px] flex flex-col"
-          style={{ left: contextMenu.x, top: contextMenu.y }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="px-3 py-2 border-b border-[#444] bg-[#222]">
-            <label className="text-[10px] text-muted-foreground block mb-1">Rotation (°)</label>
-            <div className="flex items-center gap-1">
-              <input
-                type="number"
-                className="w-full h-6 bg-[#111] border border-[#555] rounded px-1 text-xs text-secondary-foreground"
-                value={Math.round(slots.find(s => s.id === contextMenu.slotId)?.rotation || 0)}
-                onChange={(e) => handleRotationInput(e, contextMenu.slotId)}
-                onClick={(e) => e.stopPropagation()}
-              />
-            </div>
-          </div>
+      <CanvasContextMenu
+        contextMenu={contextMenu}
+        slots={slots}
+        onRotationChange={handleRotationInput}
+        onDelete={handleDeleteFromMenu}
+        onClose={() => setContextMenu(null)}
+      />
 
-          <button
-            className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-[#3e3e42] hover:text-red-300 transition-colors"
-            onClick={handleDeleteFromMenu}
-          >
-            Delete
-          </button>
-        </div>
-      )}
+      <CanvasStatusBar
+        trayWidth={trayWidth}
+        trayDepth={trayDepth}
+        zoom={zoom}
+        selectedIds={selectedIds}
+        slots={slots}
+      />
 
-      {/* 底部提示 & Debug Info */}
-      <div className="absolute bottom-2 left-2 right-12 flex items-end justify-between pointer-events-none px-2 pb-1">
-        <div className="text-[10px] text-muted-foreground/60 font-mono flex gap-4">
-          <span>CANVAS: {trayWidth}mm × {trayDepth}mm</span>
-          <span>ZOOM: {Math.round(zoom * 100)}%</span>
-
-          {selectedIds.size === 1 && (() => {
-            const s = slots.find(slot => slot.id === Array.from(selectedIds)[0]);
-            if (!s) return null;
-            return (
-              <span className="text-orange-400">
-                ID:{s.id.slice(0, 4)} | X:{s.x.toFixed(1)} Y:{s.y.toFixed(1)} | W:{s.width} H:{s.height} | R:{Math.round(s.rotation)}°
-              </span>
-            );
-          })()}
-
-          {selectedIds.size > 1 && (
-            <span className="text-orange-400">
-              {selectedIds.size} ITEMS SELECTED
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* 快捷键提示面板 */}
-      {showHints && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm pointer-events-auto" onClick={() => setShowHints(false)}>
-          <div className="bg-[#12110e] border border-[#2e2a24] rounded-sm p-6 max-w-sm shadow-xl" onClick={e => e.stopPropagation()}>
-            <h3 className="text-sm font-bold text-primary tracking-[0.15em] mb-4 text-center">快捷键</h3>
-            <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-[11px]">
-              <kbd className="px-1.5 py-0.5 bg-[#1c1a16] border border-[#2e2a24] rounded text-center font-mono text-primary/80">Delete</kbd>
-              <span className="text-muted-foreground">删除选中凹槽</span>
-              <kbd className="px-1.5 py-0.5 bg-[#1c1a16] border border-[#2e2a24] rounded text-center font-mono text-primary/80">Ctrl+Z</kbd>
-              <span className="text-muted-foreground">撤销</span>
-              <kbd className="px-1.5 py-0.5 bg-[#1c1a16] border border-[#2e2a24] rounded text-center font-mono text-primary/80">↑ ↓ ← →</kbd>
-              <span className="text-muted-foreground">微调位置（1mm）</span>
-              <kbd className="px-1.5 py-0.5 bg-[#1c1a16] border border-[#2e2a24] rounded text-center font-mono text-primary/80">Space + 拖</kbd>
-              <span className="text-muted-foreground">平移画布</span>
-              <kbd className="px-1.5 py-0.5 bg-[#1c1a16] border border-[#2e2a24] rounded text-center font-mono text-primary/80">滚轮</kbd>
-              <span className="text-muted-foreground">缩放画布</span>
-              <kbd className="px-1.5 py-0.5 bg-[#1c1a16] border border-[#2e2a24] rounded text-center font-mono text-primary/80">Esc</kbd>
-              <span className="text-muted-foreground">取消选择</span>
-              <kbd className="px-1.5 py-0.5 bg-[#1c1a16] border border-[#2e2a24] rounded text-center font-mono text-primary/80">框选</kbd>
-              <span className="text-muted-foreground">空白处拖拽选择多个</span>
-            </div>
-            <p className="text-[10px] text-muted-foreground/50 text-center mt-4">按 ? 或点击外部关闭</p>
-          </div>
-        </div>
-      )}
-
-      {/* 快捷键提示按钮 */}
-      <button
-        onClick={() => setShowHints(true)}
-        className="absolute bottom-2 right-2 w-6 h-6 flex items-center justify-center rounded-sm bg-[#1c1a16] border border-[#2e2a24] text-muted-foreground/50 hover:text-primary/80 hover:border-primary/40 transition-colors text-[11px] font-mono z-10 cursor-pointer"
-        title="快捷键帮助"
-      >
-        ?
-      </button>
+      <KeyboardHintsOverlay
+        showHints={showHints}
+        onClose={() => setShowHints(false)}
+      />
     </div>
   );
 }

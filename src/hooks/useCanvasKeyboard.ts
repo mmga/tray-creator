@@ -10,7 +10,7 @@ interface UseCanvasKeyboardOptions {
     onRemoveSlot: (id: string) => void;
     onUndo?: () => void;
     setSelectedIds: React.Dispatch<React.SetStateAction<Set<string>>>;
-    setContextMenu: React.Dispatch<React.SetStateAction<unknown>>;
+    setContextMenu: React.Dispatch<React.SetStateAction<{ x: number; y: number; slotId: string; } | null>>;
     setIsRotating: React.Dispatch<React.SetStateAction<boolean>>;
     setIsSpacePressed: React.Dispatch<React.SetStateAction<boolean>>;
     setIsPanning: React.Dispatch<React.SetStateAction<boolean>>;
@@ -97,7 +97,7 @@ export function useCanvasKeyboard({
             // ?: 快捷键提示
             if (e.key === "?" || (e.key === "/" && e.shiftKey)) {
                 e.preventDefault();
-                setShowHints((prev) => !prev);
+                setShowHints((prev: boolean) => !prev);
             }
         },
         [

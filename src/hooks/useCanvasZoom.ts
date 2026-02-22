@@ -61,5 +61,7 @@ export function useCanvasZoom({ baseW, baseH, trayWidth, trayDepth }: UseCanvasZ
         handleWheel,
         adjustZoom,
         resetZoom,
+        minX,
+        minY,
     };
 }
