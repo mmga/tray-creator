@@ -11,13 +11,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, RotateCcw, Play, Loader2, Layout, Wrench, Ruler } from "lucide-react";
+import { Download, RotateCcw, Play, Loader2, Layout, Wrench, Ruler, Share2 } from "lucide-react";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/config";
 import { BaseHoleConfig } from "@/components/BaseHoleConfig";
 import { ParamIOButtons } from "@/components/ParamIOButtons";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
 import { isAdmin } from "@/lib/permissions";
+import { exportParams } from "@/lib/param-io";
 
 interface ParameterPanelProps {
   params: TrayParams;
@@ -186,7 +187,7 @@ export default function ParameterPanel({
         <Button
           onClick={onGenerate}
           disabled={isGenerating || isOversized}
-          className="w-full h-11 blood-red text-[#f0d8b8] font-bold tracking-wider cursor-pointer transition-all duration-200 border border-[#a02020] shadow-lg shadow-[#8b1a1a30] hover:shadow-xl hover:shadow-[#8b1a1a50] hover:brightness-125 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full h-11 blood-red text-sm text-[#f0d8b8] font-bold tracking-wider cursor-pointer transition-all duration-200 border border-[#a02020] shadow-lg shadow-[#8b1a1a30] hover:shadow-xl hover:shadow-[#8b1a1a50] hover:brightness-125 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isGenerating ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -195,22 +196,30 @@ export default function ParameterPanel({
           )}
           {isGenerating ? "锻造中..." : isOversized ? "尺寸超限" : "开始锻造"}
         </Button>
-        {isAdmin && (
+        {isAdmin ? (
           <Button
             onClick={onExportSTL}
-            className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-[#8cb880] font-semibold tracking-wider cursor-pointer transition-all duration-200 border border-[#4a6741] shadow-lg shadow-[#2a352830]"
+            className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-sm text-[#8cb880] font-semibold tracking-wider cursor-pointer transition-all duration-200 border border-[#4a6741] shadow-lg shadow-[#2a352830]"
           >
             <Download className="w-4 h-4 mr-2" />
             导出 STL
+          </Button>
+        ) : (
+          <Button
+            onClick={() => exportParams("grid", params as any)}
+            className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-sm text-[#8cb880] font-semibold tracking-wider cursor-pointer transition-all duration-200 border border-[#4a6741] shadow-lg shadow-[#2a352830]"
+          >
+            <Share2 className="w-4 h-4 mr-2" />
+            导出参数
           </Button>
         )}
         <Button
           variant="outline"
           onClick={handleReset}
-          className="w-full h-9 border-[#2e2a24] text-muted-foreground cursor-pointer hover:bg-[#1c1a16] hover:text-foreground/80 hover:border-[#3d372e] transition-all duration-200"
+          className="w-full h-9 text-sm border-[#2e2a24] text-muted-foreground tracking-wider cursor-pointer hover:bg-[#1c1a16] hover:text-foreground/80 hover:border-[#3d372e] transition-all duration-200"
         >
-          <RotateCcw className="w-3.5 h-3.5 mr-2" />
-          <span className="text-sm tracking-wider">重置参数</span>
+          <RotateCcw className="w-4 h-4 mr-2" />
+          重置参数
         </Button>
         <ParamIOButtons
           mode="grid"

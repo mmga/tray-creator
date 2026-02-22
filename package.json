@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:public":"cross-env NEXT_PUBLIC_ADMIN_MODE=false next dev ",
     "build": "next build",
     "build:admin": "cross-env NEXT_PUBLIC_ADMIN_MODE=true next build",
     "build:public": "cross-env NEXT_PUBLIC_ADMIN_MODE=false next build",
