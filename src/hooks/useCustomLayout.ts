@@ -19,6 +19,7 @@ interface UseCustomLayoutReturn {
   removeSlot: (id: string) => void;
   updateSlotPosition: (id: string, x: number, y: number) => void;
   updateSlotRotation: (id: string, rotation: number) => void;
+  trimBaseplate: () => void;
   // 历史操作
   saveSnapshot: () => void;
   undo: () => void;
@@ -115,6 +116,66 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     }));
   }, []);
 
+  /**
+   * 裁剪底板：计算当前所有凹槽的最小包围盒，
+   * 并将托盘尺寸调整为该包围盒大小 + 边缘间距，
+   * 同时自动平移所有凹槽以保持居中。
+   */
+  const trimBaseplate = useCallback(() => {
+    setParams((prev) => {
+      if (prev.slots.length === 0) return prev;
+
+      pushState(prev);
+
+      // 1. Calculate bounding box of all slots
+      let minX = Infinity, maxX = -Infinity;
+      let minY = Infinity, maxY = -Infinity;
+
+      prev.slots.forEach(slot => {
+        const rad = (slot.rotation * Math.PI) / 180;
+        const a = (slot.width + HOLE_TOLERANCE) / 2;
+        const b = (slot.height + HOLE_TOLERANCE) / 2;
+        const halfW = Math.sqrt(Math.pow(a * Math.cos(rad), 2) + Math.pow(b * Math.sin(rad), 2));
+        const halfH = Math.sqrt(Math.pow(a * Math.sin(rad), 2) + Math.pow(b * Math.cos(rad), 2));
+
+        minX = Math.min(minX, slot.x - halfW);
+        maxX = Math.max(maxX, slot.x + halfW);
+        minY = Math.min(minY, slot.y - halfH);
+        maxY = Math.max(maxY, slot.y + halfH);
+      });
+
+      // 2. Calculate raw dimensions needed
+      const rawWidth = (maxX - minX) + prev.spacing * 2;
+      const rawDepth = (maxY - minY) + prev.spacing * 2;
+
+      // 3. Round up to nearest integer for clean numbers
+      const newTrayWidth = Math.ceil(rawWidth);
+      const newTrayDepth = Math.ceil(rawDepth);
+
+      // 4. Calculate shift to center the slots
+      // The old bounding box center was ((minX + maxX)/2, (minY + maxY)/2)
+      // The new space center is (newTrayWidth/2, newTrayDepth/2)
+      const oldCx = (minX + maxX) / 2;
+      const oldCy = (minY + maxY) / 2;
+      const newCx = newTrayWidth / 2;
+      const newCy = newTrayDepth / 2;
+
+      const dx = newCx - oldCx;
+      const dy = newCy - oldCy;
+
+      return {
+        ...prev,
+        trayWidth: newTrayWidth,
+        trayDepth: newTrayDepth,
+        slots: prev.slots.map(s => ({
+          ...s,
+          x: s.x + dx,
+          y: s.y + dy
+        }))
+      };
+    });
+  }, [pushState]);
+
   // 手动触发生成 3D 模型
   const handleGenerate = useCallback(() => {
     setIsGenerating(true);
@@ -154,6 +215,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     removeSlot,
     updateSlotPosition,
     updateSlotRotation,
+    trimBaseplate,
     saveSnapshot,
     undo,
     canUndo: canUndoFn(),

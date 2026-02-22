@@ -93,6 +93,7 @@ export default function Home() {
                 setParams={customModel.setParams}
                 updateParam={customModel.updateParam}
                 onAddSlot={customModel.addSlot}
+                onTrimBaseplate={customModel.trimBaseplate}
                 onGenerate={() => {
                   customModel.handleGenerate();
                   setRightView("3d");
