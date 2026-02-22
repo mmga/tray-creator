@@ -5,12 +5,12 @@ export interface FreeSlot {
   id: string; // 唯一标识（UUID）
   x: number; // 中心 X 坐标 (mm)，相对于托盘左下角
   y: number; // 中心 Y 坐标 (mm)，相对于托盘左下角
-  shape: 'circle' | 'ellipse'; 
+  shape: 'circle' | 'ellipse';
   width: number;  // 圆形时为直径，椭圆时长轴
   height: number; // 圆形时为直径，椭圆时短轴
   rotation: number; // 旋转角度 (度)
   /** 兼容旧数据 (可选) */
-  diameter?: number; 
+  diameter?: number;
 }
 
 /** 自定义布局参数（完全独立） */
@@ -29,4 +29,8 @@ export interface CustomLayoutParams {
   holeDepth: number;
   /** 圆角半径 (mm) */
   cornerRadius: number;
+  /** 是否启用底板磁吸孔 */
+  enableBaseHole: boolean;
+  /** 底板磁吸孔规格: '19.5' (19.5x1mm) | '25' (25x1.2mm) */
+  baseHoleSize: "19.5" | "25";
 }

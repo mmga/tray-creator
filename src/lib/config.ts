@@ -1,4 +1,5 @@
 import type { TrayParams, BasePreset } from "@/types/tray";
+import type { CustomLayoutParams } from "@/types/custom-tray";
 
 /**
  * ============================================
@@ -7,10 +8,17 @@ import type { TrayParams, BasePreset } from "@/types/tray";
  * ============================================
  */
 
-// ---- 公差 (mm)，静默追加到凹槽直径，不在 UI 中显示 ----
+// ═══════════════════════════════════════════
+// 1. 建模公差
+// ═══════════════════════════════════════════
+
+/** 凹槽公差 (mm)，静默追加到凹槽直径，不在 UI 中显示 */
 export const HOLE_TOLERANCE = 0.4;
 
-// ---- 磁吸孔固定参数 (不可调) ----
+// ═══════════════════════════════════════════
+// 2. 磁吸孔配置
+// ═══════════════════════════════════════════
+
 export const BASE_HOLE_CONFIG = {
   /** 规格预设 */
   presets: {
@@ -23,9 +31,14 @@ export const BASE_HOLE_CONFIG = {
   topWall: 0.6,
   /** 底部最小壁厚 (mm) */
   minBottomWall: 0.6,
+  /** 启用磁吸孔时的最小底板厚度 (mm) */
+  minBaseThickness: 2.4,
 } as const;
 
-// ---- 底座预设 ----
+// ═══════════════════════════════════════════
+// 3. 底座 & 椭圆预设
+// ═══════════════════════════════════════════
+
 export const BASE_PRESETS: BasePreset[] = [
   { name: "小型步兵 (25mm)", diameter: 25 },
   { name: "中型步兵 (28.5mm)", diameter: 28.5 },
@@ -45,10 +58,14 @@ export const ELLIPSE_PRESETS = [
   { name: "170x105mm", width: 170, height: 105 },
 ];
 
-// ---- 默认预设索引（标准步兵 32mm） ----
+// ═══════════════════════════════════════════
+// 4. 默认参数
+// ═══════════════════════════════════════════
+
+/** 默认预设索引（标准步兵 32mm） */
 export const DEFAULT_PRESET_INDEX = 2;
 
-// ---- 默认托盘参数 ----
+/** 网格模式默认托盘参数 */
 export const DEFAULT_TRAY_PARAMS: TrayParams = {
   rows: 5,
   columns: 2,
@@ -61,17 +78,61 @@ export const DEFAULT_TRAY_PARAMS: TrayParams = {
   baseHoleSize: "19.5",
 };
 
-// ---- 参数范围限制 ----
-export const PARAM_LIMITS = {
-  rows: { min: 1, max: 6, step: 1 },
-  columns: { min: 1, max: 6, step: 1 },
-  spacing: { min: 2, max: 10, step: 1 },
-  baseThickness: { min: 2, max: 4, step: 1 },
-  holeDepth: { min: 2, max: 4, step: 0.2 },
-  cornerRadius: { min: 0, max: 10, step: 1 },
+/** 自定义布局默认参数 */
+export const CUSTOM_LAYOUT_DEFAULTS: CustomLayoutParams = {
+  trayWidth: 150,
+  trayDepth: 100,
+  slots: [],
+  spacing: 5,
+  baseThickness: 3,
+  holeDepth: 2,
+  cornerRadius: 6,
+  enableBaseHole: false,
+  baseHoleSize: "19.5",
+};
+
+// ═══════════════════════════════════════════
+// 5. 参数范围与元数据（网格模式）
+// ═══════════════════════════════════════════
+
+/**
+ * 集中管理每个参数的 label / min / max / step / unit，
+ * 同时供 UI 渲染和校验使用。
+ */
+export const PARAM_CONFIG = {
+  columns: { label: "列数", min: 1, max: 6, step: 1, unit: "个" },
+  rows: { label: "行数", min: 1, max: 6, step: 1, unit: "个" },
+  spacing: { label: "间距", min: 2, max: 10, step: 1, unit: "mm" },
+  baseThickness: { label: "底板厚度", min: 2, max: 4, step: 0.2, unit: "mm" },
+  holeDepth: { label: "凹槽深度", min: 2, max: 4, step: 0.2, unit: "mm" },
+  cornerRadius: { label: "圆角半径", min: 0, max: 10, step: 1, unit: "mm" },
 } as const;
 
-// ---- 3D 渲染配置 ----
+// ═══════════════════════════════════════════
+// 6. 自定义布局参数范围
+// ═══════════════════════════════════════════
+
+export const CUSTOM_LIMITS = {
+  trayWidth: { label: "宽度", min: 50, max: 260, step: 1, unit: "mm" },
+  trayDepth: { label: "深度", min: 50, max: 260, step: 1, unit: "mm" },
+  spacing: { label: "边距", min: 2, max: 20, step: 1, unit: "mm" },
+  // 共享参数：复用 PARAM_CONFIG 的范围与元数据
+  baseThickness: PARAM_CONFIG.baseThickness,
+  holeDepth: PARAM_CONFIG.holeDepth,
+  cornerRadius: PARAM_CONFIG.cornerRadius,
+} as const;
+
+// ═══════════════════════════════════════════
+// 7. 构建限制
+// ═══════════════════════════════════════════
+
+/** 最大构建尺寸 (mm)，超过此值会警告 */
+export const MAX_BUILD_SIZE = 260;
+
+// ═══════════════════════════════════════════
+// 8. 3D 渲染配置
+// ═══════════════════════════════════════════
+
 export const RENDER_CONFIG = {
   /** 圆柱体细分段数 */
   cylinderSegments: 64,
@@ -92,32 +153,10 @@ export const RENDER_CONFIG = {
   },
 } as const;
 
-// ---- 自定义布局配置 ----
-import type { CustomLayoutParams } from "@/types/custom-tray";
+// ═══════════════════════════════════════════
+// 9. 凹槽颜色映射（2D 编辑器）
+// ═══════════════════════════════════════════
 
-export const CUSTOM_LAYOUT_DEFAULTS: CustomLayoutParams = {
-  trayWidth: 150,
-  trayDepth: 100,
-  slots: [],
-  spacing: 5,
-  baseThickness: 3,
-  holeDepth: 2,
-  cornerRadius: 6,
-};
-
-
-export const CUSTOM_LIMITS = {
-  trayWidth: { min: 50, max: 260, step: 1 },
-  trayDepth: { min: 50, max: 260, step: 1 },
-  spacing: { min: 2, max: 20, step: 1 },
-  // 复用 PARAM_LIMITS 的其他限制
-  baseThickness: PARAM_LIMITS.baseThickness,
-  holeDepth: PARAM_LIMITS.holeDepth,
-  cornerRadius: PARAM_LIMITS.cornerRadius,
-} as const;
-
-// ---- 凹槽颜色映射 (用于 2D 编辑器) ----
-// ---- 凹槽颜色映射 (用于 2D 编辑器) ----
 // 使用直径或长轴作为 Key
 export const SLOT_COLORS: Record<number, string> = {
   25: "#ef4444", // red-500
@@ -126,7 +165,7 @@ export const SLOT_COLORS: Record<number, string> = {
   40: "#84cc16", // lime-500
   50: "#06b6d4", // cyan-500
   60: "#8b5cf6", // violet-500
-  // Elliptical widths
+  // 椭圆长轴
   75: "#ec4899", // pink-500
   90: "#d946ef", // fuchsia-500
   105: "#a855f7", // purple-500

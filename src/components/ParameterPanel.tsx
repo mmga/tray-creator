@@ -1,6 +1,6 @@
 "use client";
 import type { TrayParams } from "@/types/tray";
-import { BASE_PRESETS, PARAM_LIMITS, DEFAULT_PRESET_INDEX, BASE_HOLE_CONFIG } from "@/lib/config";
+import { BASE_PRESETS, DEFAULT_PRESET_INDEX, BASE_HOLE_CONFIG, PARAM_CONFIG, MAX_BUILD_SIZE } from "@/lib/config";
 import { calculateTrayDimensions } from "@/lib/tray-model";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
@@ -13,8 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, RotateCcw, Play, Loader2, Circle, type LucideIcon } from "lucide-react";
+import { Download, RotateCcw, Play, Loader2, type LucideIcon } from "lucide-react";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/config";
+import { BaseHoleConfig } from "@/components/BaseHoleConfig";
 
 interface ParameterPanelProps {
   params: TrayParams;
@@ -101,7 +102,7 @@ export default function ParameterPanel({
   isGenerating,
 }: ParameterPanelProps) {
   const dimensions = calculateTrayDimensions(params);
-  const isOversized = dimensions.width > 260 || dimensions.depth > 260;
+  const isOversized = dimensions.width > MAX_BUILD_SIZE || dimensions.depth > MAX_BUILD_SIZE;
 
   const handlePresetChange = (value: string) => {
     const index = parseInt(value);
@@ -121,7 +122,7 @@ export default function ParameterPanel({
   const RulerIcon = require("lucide-react").Ruler as LucideIcon;
 
   return (
-    <div className="flex flex-col gap-4 h-full overflow-y-auto animate-fade-in">
+    <div className="flex flex-col gap-4 animate-fade-in">
       {/* 布局参数 */}
       <div className="iron-panel rounded-sm p-4 space-y-4">
         <SectionHeader icon={LayoutIcon} title="布局" />
@@ -151,24 +152,25 @@ export default function ParameterPanel({
         </div>
 
         <ParamSlider
-          label="列数"
+          label={PARAM_CONFIG.columns.label}
           value={params.columns}
-          config={PARAM_LIMITS.columns}
+          config={PARAM_CONFIG.columns}
           onChange={(v) => updateParam("columns", v)}
-          unit="个"
+          unit={PARAM_CONFIG.columns.unit}
         />
         <ParamSlider
-          label="行数"
+          label={PARAM_CONFIG.rows.label}
           value={params.rows}
-          config={PARAM_LIMITS.rows}
+          config={PARAM_CONFIG.rows}
           onChange={(v) => updateParam("rows", v)}
-          unit="个"
+          unit={PARAM_CONFIG.rows.unit}
         />
         <ParamSlider
-          label="间距"
+          label={PARAM_CONFIG.spacing.label}
           value={params.spacing}
-          config={PARAM_LIMITS.spacing}
+          config={PARAM_CONFIG.spacing}
           onChange={(v) => updateParam("spacing", v)}
+          unit={PARAM_CONFIG.spacing.unit}
         />
       </div>
 
@@ -177,106 +179,37 @@ export default function ParameterPanel({
         <SectionHeader icon={WrenchIcon} title="结构" />
 
         <ParamSlider
-          label="底板厚度"
+          label={PARAM_CONFIG.baseThickness.label}
           value={params.baseThickness}
           config={params.enableBaseHole
-            ? { ...PARAM_LIMITS.baseThickness, min: 3 }
-            : PARAM_LIMITS.baseThickness}
+            ? { ...PARAM_CONFIG.baseThickness, min: BASE_HOLE_CONFIG.minBaseThickness }
+            : PARAM_CONFIG.baseThickness}
           onChange={(v) => updateParam("baseThickness", v)}
+          unit={PARAM_CONFIG.baseThickness.unit}
         />
         <ParamSlider
-          label="凹槽深度"
+          label={PARAM_CONFIG.holeDepth.label}
           value={params.holeDepth}
-          config={PARAM_LIMITS.holeDepth}
+          config={PARAM_CONFIG.holeDepth}
           onChange={(v) => updateParam("holeDepth", v)}
+          unit={PARAM_CONFIG.holeDepth.unit}
         />
         <ParamSlider
-          label="圆角半径"
+          label={PARAM_CONFIG.cornerRadius.label}
           value={params.cornerRadius}
-          config={PARAM_LIMITS.cornerRadius}
+          config={PARAM_CONFIG.cornerRadius}
           onChange={(v) => updateParam("cornerRadius", v)}
+          unit={PARAM_CONFIG.cornerRadius.unit}
         />
       </div>
 
       {/* 底板孔位 */}
-      <div className="iron-panel rounded-sm p-4 space-y-4">
-        <SectionHeader icon={Circle} title="底板孔位" />
-
-        {/* 切换按钮组 */}
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => updateParam("enableBaseHole", false)}
-            className={`px-3 py-2 text-xs font-bold tracking-wider uppercase border transition-all duration-200 cursor-pointer ${!params.enableBaseHole
-              ? 'bg-primary/15 text-primary border-primary/50 shadow-inner'
-              : 'bg-[#1c1a16] text-muted-foreground border-[#2e2a24] hover:border-[#3d372e]'
-              }`}
-          >
-            普通托盘
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              updateParam("enableBaseHole", true);
-              // 磁吸孔模式下底板厚度最小 3mm
-              if (params.baseThickness < 3) {
-                updateParam("baseThickness", 3);
-              }
-            }}
-            className={`px-3 py-2 text-xs font-bold tracking-wider uppercase border transition-all duration-200 cursor-pointer ${params.enableBaseHole
-              ? 'bg-primary/15 text-primary border-primary/50 shadow-inner'
-              : 'bg-[#1c1a16] text-muted-foreground border-[#2e2a24] hover:border-[#3d372e]'
-              }`}
-          >
-            磁吸孔
-          </button>
-        </div>
-
-        {/* 磁吸孔规格选择 */}
-        {params.enableBaseHole && (
-          <div className="space-y-3">
-            <div className="space-y-1.5">
-              <Label className="text-[11px] text-muted-foreground">孔位规格</Label>
-              <Select
-                value={params.baseHoleSize}
-                onValueChange={(v: "19.5" | "25") => updateParam("baseHoleSize", v)}
-              >
-                <SelectTrigger className="h-8 bg-[#1c1a16] border-[#2e2a24] text-xs text-foreground hover:border-primary/40 cursor-pointer transition-all duration-200">
-                  <SelectValue placeholder="选择规格" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#16140f] border-[#2e2a24]">
-                  <SelectItem value="19.5" className="text-xs text-foreground/90 cursor-pointer focus:bg-primary/10 focus:text-primary">
-                    ⌀19.5mm × 0.8mm (推荐)
-                  </SelectItem>
-                  <SelectItem value="25" className="text-xs text-foreground/90 cursor-pointer focus:bg-primary/10 focus:text-primary">
-                    ⌀25.0mm × 1.2mm
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* 磁吸孔详情 */}
-            <div className="space-y-1.5 text-[11px] font-mono text-muted-foreground/70 bg-[#1c1a16] border border-[#2e2a24] p-2.5">
-              <div className="flex justify-between">
-                <span>磁铁孔</span>
-                <span className="text-foreground/80">
-                  ⌀{BASE_HOLE_CONFIG.presets[params.baseHoleSize].diameter}mm × {BASE_HOLE_CONFIG.presets[params.baseHoleSize].depth}mm
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>顶壁</span>
-                <span className="text-foreground/80">{BASE_HOLE_CONFIG.topWall}mm</span>
-              </div>
-              <div className="flex justify-between">
-                <span>底壁</span>
-                <span className="text-foreground/80">
-                  {(params.baseThickness - BASE_HOLE_CONFIG.topWall - BASE_HOLE_CONFIG.presets[params.baseHoleSize].depth).toFixed(1)}mm
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      <BaseHoleConfig
+        enableBaseHole={params.enableBaseHole}
+        baseHoleSize={params.baseHoleSize}
+        baseThickness={params.baseThickness}
+        updateParam={updateParam}
+      />
 
       {/* 模型尺寸 */}
       <div className={`iron-panel rounded-sm p-4 space-y-3 transition-all duration-300 ${isOversized ? 'border-[#8b1a1a] animate-forge-pulse' : ''}`}>
@@ -284,8 +217,8 @@ export default function ParameterPanel({
 
         <div className="grid grid-cols-3 gap-2">
           {[
-            { label: "宽度", value: dimensions.width, warn: dimensions.width > 260 },
-            { label: "深度", value: dimensions.depth, warn: dimensions.depth > 260 },
+            { label: "宽度", value: dimensions.width, warn: dimensions.width > MAX_BUILD_SIZE },
+            { label: "深度", value: dimensions.depth, warn: dimensions.depth > MAX_BUILD_SIZE },
             { label: "高度", value: dimensions.height, warn: false },
           ].map(({ label, value, warn }) => (
             <div
@@ -308,7 +241,7 @@ export default function ParameterPanel({
             <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
               <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm-.75 3.75a.75.75 0 011.5 0v4a.75.75 0 01-1.5 0v-4zM8 12a1 1 0 100-2 1 1 0 000 2z" />
             </svg>
-            <span>超过锻造极限 (260×260mm)</span>
+            <span>超过锻造极限 ({MAX_BUILD_SIZE}×{MAX_BUILD_SIZE}mm)</span>
           </div>
         )}
       </div>

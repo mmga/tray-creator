@@ -31,7 +31,7 @@ export default function Home() {
 
   // Grid Mode State
   const gridModel = useTrayModel();
-  
+
   // Custom Mode State
   const customModel = useCustomLayout();
 
@@ -73,7 +73,7 @@ export default function Home() {
       {/* Main Content */}
       <main className="flex flex-1 overflow-hidden">
         {/* Left Panel */}
-        <aside className="w-[340px] shrink-0 overflow-y-auto bg-[#0e0d0b]">
+        <aside className="w-[380px] shrink-0 overflow-y-auto bg-[#0e0d0b] [scrollbar-gutter:stable]">
           <div className="p-4 pb-6 h-full">
             {mode === "grid" ? (
               <ParameterPanel
@@ -116,16 +116,16 @@ export default function Home() {
             <TrayViewer geometry={gridModel.threeGeometry} />
           ) : (
             // Custom Mode: Toggle between 2D Canvas and 3D Viewer
-            <Tabs 
-              value={rightView} 
-              onValueChange={(v) => setRightView(v as "2d" | "3d")} 
+            <Tabs
+              value={rightView}
+              onValueChange={(v) => setRightView(v as "2d" | "3d")}
               className="flex-1 flex flex-col relative"
             >
               <div className="absolute top-3 right-5 z-20">
-                 <TabsList className="bg-[#1c1a16] border border-[#2e2a24]">
-                    <TabsTrigger value="2d" className="text-xs">2D 编辑</TabsTrigger>
-                    <TabsTrigger value="3d" className="text-xs">3D 预览</TabsTrigger>
-                 </TabsList>
+                <TabsList className="bg-[#1c1a16] border border-[#2e2a24]">
+                  <TabsTrigger value="2d" className="text-xs">2D 编辑</TabsTrigger>
+                  <TabsTrigger value="3d" className="text-xs">3D 预览</TabsTrigger>
+                </TabsList>
               </div>
 
               <TabsContent value="2d" className="absolute inset-0 m-0 p-0 data-[state=inactive]:hidden">

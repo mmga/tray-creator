@@ -1,7 +1,7 @@
 import { booleans, primitives, transforms, extrusions } from "@jscad/modeling";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { CustomLayoutParams } from "@/types/custom-tray";
-import { RENDER_CONFIG, HOLE_TOLERANCE } from "@/lib/config";
+import { RENDER_CONFIG, HOLE_TOLERANCE, BASE_HOLE_CONFIG } from "@/lib/config";
 
 const { subtract } = booleans;
 const { roundedRectangle } = primitives;
@@ -58,17 +58,17 @@ export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
     // 转换坐标到 JSCAD 中心坐标系
     const cx = slot.x - trayWidth / 2;
     const cy = slot.y - trayDepth / 2;
-    
+
     // Z: 这种拉伸是从底部 (0) 开始还是中心? 
     // extrudeLinear default is from 0 to height in Z. 
     // We need the bottom of the hole to be at `baseThickness`.
     // So translate Z to `baseThickness`.
-    const holeZ = baseThickness; 
+    const holeZ = baseThickness;
 
     const width = slot.width || slot.diameter || 0;
     const height = slot.height || slot.diameter || 0;
     const rotation = slot.rotation || 0;
-    
+
     const actualW = width + HOLE_TOLERANCE;
     const actualH = height + HOLE_TOLERANCE;
 
@@ -94,16 +94,50 @@ export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
       [cx, cy, holeZ],
       rotatedHole
     );
-    
+
     holes.push(placedHole);
   }
 
   // 4. 布尔运算
-  if (holes.length === 0) {
-    return body;
+  let tray = body;
+  if (holes.length > 0) {
+    tray = subtract(body, ...holes);
   }
 
-  return subtract(body, ...holes);
+  // 5. 底板磁吸孔 — 固定尺寸盲孔，不穿透
+  if (params.enableBaseHole) {
+    const { presets, tolerance, topWall, minBottomWall } = BASE_HOLE_CONFIG;
+    const { diameter, depth } = presets[params.baseHoleSize];
+    const bottomWall = baseThickness - topWall - depth;
+
+    if (bottomWall >= minBottomWall) {
+      const bhRadius = (diameter + tolerance) / 2;
+      const holeCenterZ = bottomWall + depth / 2;
+      const baseHoles: Geom3[] = [];
+
+      for (const slot of slots) {
+        const cx = slot.x - trayWidth / 2;
+        const cy = slot.y - trayDepth / 2;
+
+        baseHoles.push(
+          translate(
+            [cx, cy, holeCenterZ],
+            cylinder({
+              radius: bhRadius,
+              height: depth + 0.02,
+              segments: RENDER_CONFIG.cylinderSegments,
+            })
+          )
+        );
+      }
+
+      if (baseHoles.length > 0) {
+        tray = subtract(tray, ...baseHoles);
+      }
+    }
+  }
+
+  return tray;
 }
 
 /**
