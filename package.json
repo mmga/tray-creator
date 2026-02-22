@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:admin": "cross-env NEXT_PUBLIC_ADMIN_MODE=true next build",
+    "build:public": "cross-env NEXT_PUBLIC_ADMIN_MODE=false next build",
     "start": "next start",
     "lint": "eslint"
   },
@@ -29,6 +31,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/three": "^0.182.0",
+    "cross-env": "^10.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "shadcn": "^3.8.4",

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { BaseHoleConfig } from "@/components/BaseHoleConfig";
 import { ParamIOButtons } from "@/components/ParamIOButtons";
+import { isAdmin } from "@/lib/permissions";
 
 interface CustomPanelProps {
   params: CustomLayoutParams;
@@ -287,13 +288,15 @@ export default function CustomPanel({
           )}
           {isGenerating ? "锻造中..." : isOversized ? "尺寸超限" : "开始锻造"}
         </Button>
-        <Button
-          onClick={onExportSTL}
-          className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-[#8cb880] font-semibold tracking-wider cursor-pointer border border-[#4a6741] shadow-lg shadow-[#2a352830]"
-        >
-          <Download className="w-4 h-4 mr-2" />
-          导出 STL
-        </Button>
+        {isAdmin && (
+          <Button
+            onClick={onExportSTL}
+            className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-[#8cb880] font-semibold tracking-wider cursor-pointer border border-[#4a6741] shadow-lg shadow-[#2a352830]"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            导出 STL
+          </Button>
+        )}
         <Button
           variant="outline"
           onClick={handleReset}
