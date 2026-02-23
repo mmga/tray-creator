@@ -14,10 +14,10 @@ interface UseCustomLayoutReturn {
   params: CustomLayoutParams;
   setParams: React.Dispatch<React.SetStateAction<CustomLayoutParams>>;
   updateParam: <K extends keyof CustomLayoutParams>(key: K, value: CustomLayoutParams[K]) => void;
-  // 凹槽操作
   addSlot: (width: number, height?: number) => void;
   removeSlot: (id: string) => void;
   updateSlotPosition: (id: string, x: number, y: number) => void;
+  updateMultipleSlots: (updates: { id: string; x: number; y: number }[]) => void;
   updateSlotRotation: (id: string, rotation: number) => void;
   duplicateSlots: (ids: string[]) => void;
   trimBaseplate: () => void;
@@ -107,6 +107,23 @@ export function useCustomLayout(): UseCustomLayoutReturn {
       slots: prev.slots.map((s) => (s.id === id ? { ...s, x, y } : s)),
     }));
   }, []);
+
+  /**
+   * 更新多个凹槽位置（用于对齐工具等批量操作，自动记录历史）
+   */
+  const updateMultipleSlots = useCallback((updates: { id: string, x: number, y: number }[]) => {
+    setParams((prev) => {
+      pushState(prev);
+      const updatesMap = new Map(updates.map(u => [u.id, u]));
+      return {
+        ...prev,
+        slots: prev.slots.map(s => {
+          const u = updatesMap.get(s.id);
+          return u ? { ...s, x: u.x, y: u.y } : s;
+        }),
+      };
+    });
+  }, [pushState]);
 
   /**
    * 更新凹槽旋转（旋转时频繁调用，不自动记录历史）
@@ -255,6 +272,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     addSlot,
     removeSlot,
     updateSlotPosition,
+    updateMultipleSlots,
     updateSlotRotation,
     duplicateSlots,
     trimBaseplate,

@@ -18,6 +18,7 @@ interface LayoutCanvasProps {
   onUpdateSlot: (id: string, x: number, y: number) => void;
   onRemoveSlot: (id: string) => void;
   onUpdateSlotRotation?: (id: string, rotation: number) => void;
+  onUpdateMultipleSlots?: (updates: { id: string, x: number, y: number }[]) => void;
   onDuplicateSlots?: (ids: string[]) => void;
   onUndo?: () => void;
   onSaveSnapshot?: () => void;
@@ -28,6 +29,7 @@ export default function LayoutCanvas({
   onUpdateSlot,
   onRemoveSlot,
   onUpdateSlotRotation,
+  onUpdateMultipleSlots,
   onDuplicateSlots,
   onUndo,
   onSaveSnapshot,
@@ -92,8 +94,14 @@ export default function LayoutCanvas({
 
   // Helper to handle multiple updates
   const handleUpdateSlots = useCallback((updates: { id: string, x: number, y: number }[]) => {
-    updates.forEach(u => onUpdateSlot(u.id, u.x, u.y));
-  }, [onUpdateSlot]);
+    if (onUpdateMultipleSlots) {
+      onUpdateMultipleSlots(updates);
+    } else {
+      // Fallback
+      onSaveSnapshotRef.current?.();
+      updates.forEach(u => onUpdateSlot(u.id, u.x, u.y));
+    }
+  }, [onUpdateSlot, onUpdateMultipleSlots]);
 
   // Extracted canvas keyboard event hook
   useCanvasKeyboard({

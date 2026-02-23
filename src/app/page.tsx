@@ -162,6 +162,7 @@ export default function Home() {
                     onUpdateSlot={customModel.updateSlotPosition}
                     onRemoveSlot={customModel.removeSlot}
                     onUpdateSlotRotation={customModel.updateSlotRotation}
+                    onUpdateMultipleSlots={customModel.updateMultipleSlots}
                     onDuplicateSlots={customModel.duplicateSlots}
                     onUndo={customModel.undo}
                     onSaveSnapshot={customModel.saveSnapshot}
