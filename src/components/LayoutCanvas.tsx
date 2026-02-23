@@ -43,7 +43,6 @@ export default function LayoutCanvas({
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; slotId: string } | null>(null);
   const [isRotating, setIsRotating] = useState(false);
   const [showHints, setShowHints] = useState(false);
-  const [isSnapToGrid, setIsSnapToGrid] = useState(false);
 
   // Refs for DOM and logic
   const svgRef = useRef<SVGSVGElement>(null);
@@ -312,8 +311,8 @@ export default function LayoutCanvas({
       const totalPhysDy = -(svgP.y - dragStartRef.current.mouseStart.y);
 
       // Proposed Primary Phys Position
-      // Apply Step Snapping or Grid Snapping
-      const snapStep = isSnapToGrid ? 5 : 0.2; // 5mm grid snap, or 0.2mm smooth snap
+      // Apply smooth snap
+      const snapStep = 0.2; // 0.2mm smooth snap
       const roundToStep = (val: number) => Math.round(val / snapStep) * snapStep;
 
       let proposedX = roundToStep(dragSlotOrigin.x + totalPhysDx);
@@ -325,7 +324,7 @@ export default function LayoutCanvas({
       const dragRx = dragBB.halfW;
       const dragRy = dragBB.halfH;
 
-      const SNAP_THRESHOLD = isSnapToGrid ? 2.5 : 1.5; // Wider snap threshold if grid is off? Actually if grid is on, we don't necessarily want aggressive relative snapping.
+      const SNAP_THRESHOLD = 1.5;
       const guides: GuideLine[] = [];
 
       let finalX = proposedX;
@@ -577,18 +576,7 @@ export default function LayoutCanvas({
     >
       {/* Debug Info Overlay (Bottom Right) inside the canvas container or separate? */}
 
-      {/* Top Left Toolbar (Snap to Grid etc) */}
-      <div className="absolute top-4 left-4 z-50 flex items-center gap-2 bg-[#1c1a16]/80 backdrop-blur border border-[#3d372e] p-1.5 rounded-md shadow-xl text-xs">
-        <label className="flex items-center gap-1.5 cursor-pointer text-[#a39d93] hover:text-[#f0d8b8] transition-colors">
-          <input
-            type="checkbox"
-            checked={isSnapToGrid}
-            onChange={(e) => setIsSnapToGrid(e.target.checked)}
-            className="accent-[#8cb880] w-3 h-3 cursor-pointer"
-          />
-          网格吸附
-        </label>
-      </div>
+
 
       <AlignmentToolbar
         selectedIds={selectedIds}
@@ -604,7 +592,7 @@ export default function LayoutCanvas({
         className="absolute inset-0 opacity-10 pointer-events-none transition-all duration-300"
         style={{
           backgroundImage: `linear-gradient(#444 1px, transparent 1px), linear-gradient(90deg, #444 1px, transparent 1px)`,
-          backgroundSize: isSnapToGrid ? '25px 25px' : '20px 20px', // 5mm step translates to whatever scale, purely visual here
+          backgroundSize: '20px 20px',
           backgroundPosition: 'center'
         }}
       />
