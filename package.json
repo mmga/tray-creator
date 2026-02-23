@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:public":"cross-env NEXT_PUBLIC_ADMIN_MODE=false next dev ",
+    "dev:admin": "cross-env NEXT_PUBLIC_ADMIN_MODE=true next dev -p 3001",
+    "dev:public": "cross-env NEXT_PUBLIC_ADMIN_MODE=false next dev -p 3000",
     "build": "next build",
     "build:admin": "cross-env NEXT_PUBLIC_ADMIN_MODE=true next build",
     "build:public": "cross-env NEXT_PUBLIC_ADMIN_MODE=false next build",
@@ -14,10 +15,12 @@
   "dependencies": {
     "@jscad/modeling": "^2.12.7",
     "@jscad/stl-serializer": "^2.1.22",
+    "@radix-ui/react-checkbox": "^1.3.3",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "jszip": "^3.10.1",
     "lucide-react": "^0.563.0",
     "next": "16.1.6",
     "radix-ui": "^1.4.3",

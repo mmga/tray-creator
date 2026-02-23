@@ -95,9 +95,9 @@ export default function Home() {
       <ModeTabs mode={mode} onModeChange={setMode} />
 
       {/* Main Content */}
-      <main className="flex flex-1 overflow-hidden">
+      <main className="flex flex-col lg:flex-row flex-1 overflow-hidden">
         {/* Left Panel */}
-        <aside className="w-[380px] shrink-0 overflow-y-auto bg-[#0e0d0b] [scrollbar-gutter:stable]">
+        <aside className="w-full lg:w-[380px] shrink-0 overflow-y-auto bg-[#0e0d0b] [scrollbar-gutter:stable] border-b-2 lg:border-b-0 border-[#2e2a24] lg:h-full max-h-[50vh] lg:max-h-none">
           <div className="p-4 pb-6 h-full">
             {mode === "grid" ? (
               <ParameterPanel
@@ -107,6 +107,8 @@ export default function Home() {
                 onGenerate={() => {
                   gridModel.handleGenerate();
                   setRightView("3d");
+                  // Auto scroll on mobile to viewer
+                  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
                 }}
                 onExportSTL={gridModel.handleExportSTL}
                 isGenerating={gridModel.isGenerating}
@@ -122,6 +124,8 @@ export default function Home() {
                 onGenerate={() => {
                   customModel.handleGenerate();
                   setRightView("3d");
+                  // Auto scroll on mobile to viewer
+                  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
                 }}
                 onExportSTL={customModel.handleExportSTL}
                 isGenerating={customModel.isGenerating}
@@ -131,13 +135,13 @@ export default function Home() {
           </div>
         </aside>
 
-        {/* Divider */}
-        <div className="w-[3px] shrink-0 bg-gradient-to-b from-[#2e2a24] via-[#3d372e] to-[#2e2a24] relative">
+        {/* Divider (Hidden on mobile) */}
+        <div className="hidden lg:block w-[3px] shrink-0 bg-gradient-to-b from-[#2e2a24] via-[#3d372e] to-[#2e2a24] relative">
           <div className="absolute top-0 left-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-[#b8963a20] to-transparent" />
         </div>
 
         {/* Right Viewport */}
-        <section className="flex-1 bg-[#0a0908] relative flex flex-col">
+        <section className="flex-1 bg-[#0a0908] relative flex flex-col min-h-[50vh] lg:min-h-0">
           {mode === "grid" ? (
             // Grid Mode: Always 3D
             <TrayViewer geometry={gridModel.threeGeometry} />

@@ -5,6 +5,7 @@ node_modules/
 
 # Next.js
 .next/
+.next-admin/
 out/
 out_public/
 out_admin/

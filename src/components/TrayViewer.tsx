@@ -21,8 +21,6 @@ function TrayMesh({ geometry }: { geometry: THREE.BufferGeometry }) {
   useEffect(() => {
     if (meshRef.current && geometry) {
       meshRef.current.geometry = geometry;
-      geometry.computeBoundingBox();
-      geometry.computeBoundingSphere();
     }
   }, [geometry]);
 
