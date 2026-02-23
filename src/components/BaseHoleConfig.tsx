@@ -83,11 +83,11 @@ export function BaseHoleConfig({ enableBaseHole, baseHoleSize, baseThickness, up
                 <SelectValue placeholder="选择规格" />
               </SelectTrigger>
               <SelectContent className="bg-[#16140f] border-[#2e2a24]">
-                <SelectItem value="19.5" className="text-xs text-foreground/90 cursor-pointer focus:bg-primary/10 focus:text-primary">
-                  ⌀19.5mm × 0.8mm (推荐)
-                </SelectItem>
                 <SelectItem value="25" className="text-xs text-foreground/90 cursor-pointer focus:bg-primary/10 focus:text-primary">
-                  ⌀25.0mm × 1.2mm
+                  ⌀25.0mm × 1.2mm (推荐)
+                </SelectItem>
+                <SelectItem value="19.5" className="text-xs text-foreground/90 cursor-pointer focus:bg-primary/10 focus:text-primary">
+                  ⌀19.5mm × 0.8mm
                 </SelectItem>
               </SelectContent>
             </Select>

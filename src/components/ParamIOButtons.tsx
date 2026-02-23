@@ -103,7 +103,7 @@ export function ParamIOButtons({ mode, params, onImport }: ParamIOButtonsProps) 
                         ) : (
                             <Send className="w-4 h-4 mr-2" />
                         )}
-                        {isSubmitting ? "正在发送..." : "发送配置至制作者"}
+                        {isSubmitting ? "正在发送..." : "发送配置"}
                     </Button>
                 </div>
             )}

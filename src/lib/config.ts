@@ -75,7 +75,7 @@ export const DEFAULT_TRAY_PARAMS: TrayParams = {
   holeDepth: 2,
   cornerRadius: 6,
   enableBaseHole: false,
-  baseHoleSize: "19.5",
+  baseHoleSize: "25",
 };
 
 /** 自定义布局默认参数 */
@@ -88,7 +88,7 @@ export const CUSTOM_LAYOUT_DEFAULTS: CustomLayoutParams = {
   holeDepth: 2,
   cornerRadius: 6,
   enableBaseHole: false,
-  baseHoleSize: "19.5",
+  baseHoleSize: "25",
 };
 
 // ═══════════════════════════════════════════
