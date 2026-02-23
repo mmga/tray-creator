@@ -3,10 +3,10 @@
 import { useState, useCallback, useRef } from "react";
 import type { CustomLayoutParams, FreeSlot } from "@/types/custom-tray";
 import { CUSTOM_LAYOUT_DEFAULTS, HOLE_TOLERANCE } from "@/lib/config";
-import { createCustomTrayModel } from "@/lib/custom-tray-model";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
-import { exportToSTL, generateCustomSTLFilename } from "@/lib/stl-export";
+import { generateCustomSTLFilename } from "@/lib/stl-export";
 import { useUndoHistory } from "@/hooks/useUndoHistory";
+import { trayWorkerService } from "@/lib/worker/worker-service";
 import type * as THREE from "three";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 
@@ -19,6 +19,7 @@ interface UseCustomLayoutReturn {
   removeSlot: (id: string) => void;
   updateSlotPosition: (id: string, x: number, y: number) => void;
   updateSlotRotation: (id: string, rotation: number) => void;
+  duplicateSlots: (ids: string[]) => void;
   trimBaseplate: () => void;
   // 历史操作
   saveSnapshot: () => void;
@@ -26,6 +27,7 @@ interface UseCustomLayoutReturn {
   canUndo: boolean;
   // 3D 相关
   threeGeometry: THREE.BufferGeometry | null;
+  volume: number; // in mm^3
   isGenerating: boolean;
   handleGenerate: () => void;
   handleExportSTL: () => void;
@@ -34,6 +36,7 @@ interface UseCustomLayoutReturn {
 export function useCustomLayout(): UseCustomLayoutReturn {
   const [params, setParams] = useState<CustomLayoutParams>(CUSTOM_LAYOUT_DEFAULTS);
   const [threeGeometry, setThreeGeometry] = useState<THREE.BufferGeometry | null>(null);
+  const [volume, setVolume] = useState<number>(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const jscadGeomRef = useRef<Geom3 | null>(null);
 
@@ -116,6 +119,33 @@ export function useCustomLayout(): UseCustomLayoutReturn {
   }, []);
 
   /**
+   * 复制凹槽
+   */
+  const duplicateSlots = useCallback((ids: string[]) => {
+    setParams((prev) => {
+      pushState(prev);
+      const newSlots = [...prev.slots];
+      const newlyAddedIds: string[] = [];
+
+      ids.forEach(id => {
+        const slotToCopy = prev.slots.find(s => s.id === id);
+        if (slotToCopy) {
+          const newId = crypto.randomUUID();
+          newlyAddedIds.push(newId);
+          newSlots.push({
+            ...slotToCopy,
+            id: newId,
+            x: slotToCopy.x + 10, // Offset slightly to make it visible
+            y: slotToCopy.y - 10,
+          });
+        }
+      });
+
+      return { ...prev, slots: newSlots };
+    });
+  }, [pushState]);
+
+  /**
    * 裁剪底板：计算当前所有凹槽的最小包围盒，
    * 并将托盘尺寸调整为该包围盒大小 + 边缘间距，
    * 同时自动平移所有凹槽以保持居中。
@@ -175,35 +205,47 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     });
   }, [pushState]);
 
-  // 手动触发生成 3D 模型
-  const handleGenerate = useCallback(() => {
+  // 异步触发生成 3D 模型
+  const handleGenerate = useCallback(async () => {
+    if (!trayWorkerService) return;
     setIsGenerating(true);
-    setTimeout(() => {
-      try {
-        const jscadGeom = createCustomTrayModel(params);
-        jscadGeomRef.current = jscadGeom;
-        const threeGeom = jscadToThreeGeometry(jscadGeom);
-        setThreeGeometry((prev) => {
-          prev?.dispose();
-          return threeGeom;
-        });
-      } catch {
-        // 参数组合可能产生无效几何体，静默忽略
-      } finally {
-        setIsGenerating(false);
-      }
-    }, 50);
+    try {
+      const result = await trayWorkerService.generateCustom(params);
+      jscadGeomRef.current = result.geometry;
+      setVolume(result.volume);
+      const threeGeom = jscadToThreeGeometry(result.geometry);
+      setThreeGeometry((prev) => {
+        prev?.dispose();
+        return threeGeom;
+      });
+    } catch (err) {
+      console.error("生成失败:", err);
+    } finally {
+      setIsGenerating(false);
+    }
   }, [params]);
 
   // 导出 STL
-  const handleExportSTL = useCallback(() => {
-    if (!jscadGeomRef.current) return;
+  const handleExportSTL = useCallback(async () => {
+    if (!jscadGeomRef.current || !trayWorkerService) return;
     const filename = generateCustomSTLFilename(
       params.trayWidth,
       params.trayDepth,
       params.slots.length
     );
-    exportToSTL(jscadGeomRef.current, filename);
+    try {
+      const result = await trayWorkerService.exportSTL(jscadGeomRef.current, filename);
+      const url = URL.createObjectURL(result.blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("STL导出失败:", err);
+    }
   }, [params.trayWidth, params.trayDepth, params.slots.length]);
 
   return {
@@ -214,11 +256,13 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     removeSlot,
     updateSlotPosition,
     updateSlotRotation,
+    duplicateSlots,
     trimBaseplate,
     saveSnapshot,
     undo,
     canUndo: canUndoFn(),
     threeGeometry,
+    volume,
     isGenerating,
     handleGenerate,
     handleExportSTL,

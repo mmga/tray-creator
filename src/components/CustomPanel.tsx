@@ -4,6 +4,9 @@ import type { CustomLayoutParams } from "@/types/custom-tray";
 import { BASE_PRESETS, ELLIPSE_PRESETS, CUSTOM_LIMITS, PARAM_CONFIG, MAX_BUILD_SIZE } from "@/lib/config";
 import { calculateCustomTrayDimensions } from "@/lib/custom-tray-model";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { useEffect, useState } from "react";
 import {
   Download,
   RotateCcw,
@@ -34,6 +37,7 @@ interface CustomPanelProps {
   onGenerate: () => void;
   onExportSTL: () => void;
   isGenerating: boolean;
+  volume: number;
 }
 
 export default function CustomPanel({
@@ -45,9 +49,23 @@ export default function CustomPanel({
   onGenerate,
   onExportSTL,
   isGenerating,
+  volume,
 }: CustomPanelProps) {
   const dimensions = calculateCustomTrayDimensions(params);
   const isOversized = dimensions.width > MAX_BUILD_SIZE || dimensions.depth > MAX_BUILD_SIZE;
+  const [autoPreview, setAutoPreview] = useState(false);
+
+  // Auto-preview debouncing logic
+  useEffect(() => {
+    if (!autoPreview || isGenerating || isOversized) return;
+
+    // Check if right view is 3d, optional but we assume the user might be looking at either.
+    const handler = setTimeout(() => {
+      onGenerate();
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(handler);
+  }, [params, autoPreview, isOversized]);
 
   const handleReset = () => {
     // Reset to defaults but keep current logic if needed
@@ -180,8 +198,19 @@ export default function CustomPanel({
             <span className="text-lg font-mono font-bold text-primary">{params.slots.length}</span>
           </div>
           <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
-            <span className="text-[10px] text-muted-foreground block">预计耗材</span>
-            <span className="text-xs font-mono text-muted-foreground/80">计算中...</span>
+            <span className="text-[10px] text-muted-foreground block">预计耗材 (PLA)</span>
+            {volume > 0 ? (
+              <div className="flex flex-col items-center">
+                <span className="text-sm font-mono font-bold text-[#8cb880]">
+                  {((volume / 1000) * 1.24).toFixed(1)}g
+                </span>
+                <span className="text-[9px] text-muted-foreground">约 ¥{(((volume / 1000) * 1.24) / 1000 * 60).toFixed(2)}</span>
+              </div>
+            ) : (
+              <span className="text-xs font-mono text-muted-foreground/80 leading-loose">
+                {isGenerating ? "计算中..." : "待锻造"}
+              </span>
+            )}
           </div>
         </div>
 
@@ -215,8 +244,20 @@ export default function CustomPanel({
 
       <div className="wh-divider" />
 
-      {/* 操作按钮 */}
+      {/* 自动预览与操作按钮 */}
       <div className="flex flex-col gap-2.5 pb-4">
+        <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
+          <Label htmlFor="custom-auto-preview" className="text-sm cursor-pointer text-[#f0d8b8]">
+            启用自动预览
+          </Label>
+          <Switch
+            id="custom-auto-preview"
+            checked={autoPreview}
+            onCheckedChange={setAutoPreview}
+            className="data-[state=checked]:bg-[#8cb880]"
+          />
+        </div>
+
         <Button
           onClick={onGenerate}
           disabled={isGenerating || isOversized}

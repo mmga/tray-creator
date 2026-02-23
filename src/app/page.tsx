@@ -110,6 +110,7 @@ export default function Home() {
                 }}
                 onExportSTL={gridModel.handleExportSTL}
                 isGenerating={gridModel.isGenerating}
+                volume={gridModel.volume}
               />
             ) : (
               <CustomPanel
@@ -124,6 +125,7 @@ export default function Home() {
                 }}
                 onExportSTL={customModel.handleExportSTL}
                 isGenerating={customModel.isGenerating}
+                volume={customModel.volume}
               />
             )}
           </div>
@@ -160,6 +162,7 @@ export default function Home() {
                     onUpdateSlot={customModel.updateSlotPosition}
                     onRemoveSlot={customModel.removeSlot}
                     onUpdateSlotRotation={customModel.updateSlotRotation}
+                    onDuplicateSlots={customModel.duplicateSlots}
                     onUndo={customModel.undo}
                     onSaveSnapshot={customModel.saveSnapshot}
                   />

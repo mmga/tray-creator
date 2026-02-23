@@ -8,6 +8,7 @@ interface UseCanvasKeyboardOptions {
     slotsRef: React.RefObject<FreeSlot[]>;
     onUpdateSlot: (id: string, x: number, y: number) => void;
     onRemoveSlot: (id: string) => void;
+    onDuplicateSlots?: (ids: string[]) => void;
     onUndo?: () => void;
     setSelectedIds: React.Dispatch<React.SetStateAction<Set<string>>>;
     setContextMenu: React.Dispatch<React.SetStateAction<{ x: number; y: number; slotId: string; } | null>>;
@@ -28,6 +29,7 @@ export function useCanvasKeyboard({
     slotsRef,
     onUpdateSlot,
     onRemoveSlot,
+    onDuplicateSlots,
     onUndo,
     setSelectedIds,
     setContextMenu,
@@ -41,6 +43,11 @@ export function useCanvasKeyboard({
     onUpdateSlotRef.current = onUpdateSlot;
     const onUndoRef = useRef(onUndo);
     onUndoRef.current = onUndo;
+    const onDuplicateSlotsRef = useRef(onDuplicateSlots);
+    onDuplicateSlotsRef.current = onDuplicateSlots;
+
+    // 内部剪贴板状态
+    const clipboardRef = useRef<string[]>([]);
 
     const handleKeyDown = useCallback(
         (e: KeyboardEvent) => {
@@ -72,6 +79,22 @@ export function useCanvasKeyboard({
             if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
                 e.preventDefault();
                 onUndoRef.current?.();
+                return;
+            }
+
+            // Ctrl+C: 复制
+            if ((e.ctrlKey || e.metaKey) && e.key === "c") {
+                if (selectedIdsRef.current.size > 0) {
+                    clipboardRef.current = Array.from(selectedIdsRef.current);
+                }
+                return;
+            }
+
+            // Ctrl+V: 粘贴
+            if ((e.ctrlKey || e.metaKey) && e.key === "v") {
+                if (clipboardRef.current.length > 0 && onDuplicateSlotsRef.current) {
+                    onDuplicateSlotsRef.current(clipboardRef.current);
+                }
                 return;
             }
 

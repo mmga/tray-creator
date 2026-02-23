@@ -4,6 +4,8 @@ import { BASE_PRESETS, DEFAULT_PRESET_INDEX, BASE_HOLE_CONFIG, PARAM_CONFIG, MAX
 import { calculateTrayDimensions } from "@/lib/tray-model";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { useEffect, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -27,6 +29,7 @@ interface ParameterPanelProps {
   onGenerate: () => void;
   onExportSTL: () => void;
   isGenerating: boolean;
+  volume: number;
 }
 
 export default function ParameterPanel({
@@ -36,9 +39,22 @@ export default function ParameterPanel({
   onGenerate,
   onExportSTL,
   isGenerating,
+  volume,
 }: ParameterPanelProps) {
   const dimensions = calculateTrayDimensions(params);
   const isOversized = dimensions.width > MAX_BUILD_SIZE || dimensions.depth > MAX_BUILD_SIZE;
+  const [autoPreview, setAutoPreview] = useState(false);
+
+  // Auto-preview debouncing logic
+  useEffect(() => {
+    if (!autoPreview || isGenerating || isOversized) return;
+
+    const handler = setTimeout(() => {
+      onGenerate();
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(handler);
+  }, [params, autoPreview, isOversized]); // Notice we exclude onGenerate to prevent cycles, though React Hook rules technically want it. Assuming onGenerate is stable.
 
   const handlePresetChange = (value: string) => {
     const index = parseInt(value);
@@ -148,6 +164,28 @@ export default function ParameterPanel({
       <div className={`iron-panel rounded-sm p-4 space-y-3 transition-all duration-300 ${isOversized ? 'border-[#8b1a1a] animate-forge-pulse' : ''}`}>
         <SectionHeader icon={Ruler} title="模型尺寸" />
 
+        <div className="grid grid-cols-2 gap-2 mb-2">
+          <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
+            <span className="text-[10px] text-muted-foreground block">凹槽数量</span>
+            <span className="text-lg font-mono font-bold text-primary">{params.rows * params.columns}</span>
+          </div>
+          <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
+            <span className="text-[10px] text-muted-foreground block">预计耗材 (PLA)</span>
+            {volume > 0 ? (
+              <div className="flex flex-col items-center">
+                <span className="text-sm font-mono font-bold text-[#8cb880]">
+                  {((volume / 1000) * 1.24).toFixed(1)}g
+                </span>
+                <span className="text-[9px] text-muted-foreground">约 ¥{(((volume / 1000) * 1.24) / 1000 * 60).toFixed(2)}</span>
+              </div>
+            ) : (
+              <span className="text-xs font-mono text-muted-foreground/80 leading-loose">
+                {isGenerating ? "计算中..." : "待锻造"}
+              </span>
+            )}
+          </div>
+        </div>
+
         <div className="grid grid-cols-3 gap-2">
           {[
             { label: "宽度", value: dimensions.width, warn: dimensions.width > MAX_BUILD_SIZE },
@@ -182,8 +220,20 @@ export default function ParameterPanel({
       {/* Gold trim divider */}
       <div className="wh-divider" />
 
-      {/* 操作按钮 */}
+      {/* 自动预览与操作按钮 */}
       <div className="flex flex-col gap-2.5 pb-4">
+        <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
+          <Label htmlFor="auto-preview" className="text-sm cursor-pointer text-[#f0d8b8]">
+            启用自动预览
+          </Label>
+          <Switch
+            id="auto-preview"
+            checked={autoPreview}
+            onCheckedChange={setAutoPreview}
+            className="data-[state=checked]:bg-[#8cb880]"
+          />
+        </div>
+
         <Button
           onClick={onGenerate}
           disabled={isGenerating || isOversized}

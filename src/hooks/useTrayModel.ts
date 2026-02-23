@@ -2,10 +2,10 @@
 
 import { useState, useCallback, useRef } from "react";
 import type { TrayParams } from "@/types/tray";
-import { createTrayModel } from "@/lib/tray-model";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
-import { exportToSTL, generateSTLFilename } from "@/lib/stl-export";
+import { generateSTLFilename } from "@/lib/stl-export";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/config";
+import { trayWorkerService } from "@/lib/worker/worker-service";
 import type * as THREE from "three";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 
@@ -14,6 +14,7 @@ interface UseTrayModelReturn {
   setParams: React.Dispatch<React.SetStateAction<TrayParams>>;
   updateParam: <K extends keyof TrayParams>(key: K, value: TrayParams[K]) => void;
   threeGeometry: THREE.BufferGeometry | null;
+  volume: number; // in mm^3
   isGenerating: boolean;
   handleGenerate: () => void;
   handleExportSTL: () => void;
@@ -22,6 +23,7 @@ interface UseTrayModelReturn {
 export function useTrayModel(): UseTrayModelReturn {
   const [params, setParams] = useState<TrayParams>(DEFAULT_TRAY_PARAMS);
   const [threeGeometry, setThreeGeometry] = useState<THREE.BufferGeometry | null>(null);
+  const [volume, setVolume] = useState<number>(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const jscadGeomRef = useRef<Geom3 | null>(null);
 
@@ -32,36 +34,48 @@ export function useTrayModel(): UseTrayModelReturn {
     []
   );
 
-  // 手动触发生成
-  const handleGenerate = useCallback(() => {
+  // 异步触发生成
+  const handleGenerate = useCallback(async () => {
+    if (!trayWorkerService) return;
     setIsGenerating(true);
-    // 使用 setTimeout 让 UI 先更新再执行重计算
-    setTimeout(() => {
-      try {
-        const jscadGeom = createTrayModel(params);
-        jscadGeomRef.current = jscadGeom;
-        const threeGeom = jscadToThreeGeometry(jscadGeom);
-        setThreeGeometry((prev) => {
-          prev?.dispose();
-          return threeGeom;
-        });
-      } catch {
-        // 参数组合可能产生无效几何体，静默忽略
-      } finally {
-        setIsGenerating(false);
-      }
-    }, 50);
+    try {
+      const result = await trayWorkerService.generateGrid(params);
+      jscadGeomRef.current = result.geometry;
+      setVolume(result.volume);
+      const threeGeom = jscadToThreeGeometry(result.geometry);
+      setThreeGeometry((prev) => {
+        prev?.dispose();
+        return threeGeom;
+      });
+    } catch (err) {
+      console.error("生成失败:", err);
+    } finally {
+      setIsGenerating(false);
+    }
   }, [params]);
 
   // 导出 STL
-  const handleExportSTL = useCallback(() => {
-    if (!jscadGeomRef.current) return;
+  const handleExportSTL = useCallback(async () => {
+    if (!jscadGeomRef.current || !trayWorkerService) return;
     const filename = generateSTLFilename(
       params.rows,
       params.columns,
       params.holeDiameter
     );
-    exportToSTL(jscadGeomRef.current, filename);
+    try {
+      const result = await trayWorkerService.exportSTL(jscadGeomRef.current, filename);
+      // Trigger download
+      const url = URL.createObjectURL(result.blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("STL导出失败:", err);
+    }
   }, [params.rows, params.columns, params.holeDiameter]);
 
   return {
@@ -69,6 +83,7 @@ export function useTrayModel(): UseTrayModelReturn {
     setParams,
     updateParam,
     threeGeometry,
+    volume,
     isGenerating,
     handleGenerate,
     handleExportSTL,
