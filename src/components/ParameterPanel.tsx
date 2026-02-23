@@ -21,6 +21,7 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
 import { isAdmin } from "@/lib/permissions";
 import { exportParams } from "@/lib/param-io";
+import { calculateGridPrice, calculateWeight } from "@/lib/pricing";
 
 interface ParameterPanelProps {
   params: TrayParams;
@@ -170,19 +171,21 @@ export default function ParameterPanel({
             <span className="text-lg font-mono font-bold text-primary">{params.rows * params.columns}</span>
           </div>
           <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
-            <span className="text-[10px] text-muted-foreground block">预计耗材 (PLA)</span>
-            {volume > 0 ? (
-              <div className="flex flex-col items-center">
-                <span className="text-sm font-mono font-bold text-[#8cb880]">
-                  {((volume / 1000) * 1.24).toFixed(1)}g
-                </span>
-                <span className="text-[9px] text-muted-foreground">约 ¥{(((volume / 1000) * 1.24) / 1000 * 60).toFixed(2)}</span>
-              </div>
-            ) : (
-              <span className="text-xs font-mono text-muted-foreground/80 leading-loose">
-                {isGenerating ? "计算中..." : "待锻造"}
+            <span className="text-[10px] text-muted-foreground block">预估报价 & 耗材参考</span>
+            <div className="flex flex-col items-center mt-0.5">
+              <span className="text-sm font-mono font-bold text-[#eab308]">
+                ¥{calculateGridPrice(params).toFixed(2)}
               </span>
-            )}
+              {volume > 0 ? (
+                <span className="text-[9px] text-muted-foreground">
+                  PLA估重: {calculateWeight(volume).toFixed(1)}g
+                </span>
+              ) : (
+                <span className="text-[9px] text-muted-foreground">
+                  {isGenerating ? "图纸生成中..." : "待锻造"}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
