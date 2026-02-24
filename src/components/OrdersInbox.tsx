@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { trayWorkerService } from "@/lib/worker/worker-service";
 import { generateSTLFilename, generateCustomSTLFilename } from "@/lib/stl-export";
+import { useToast } from "@/hooks/useToast";
 import JSZip from "jszip";
 
 interface OrdersInboxProps {
@@ -22,6 +23,7 @@ export function OrdersInbox({ isOpen, onClose, onLoadOrder }: OrdersInboxProps) 
     const [isExporting, setIsExporting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const { toast } = useToast();
 
     const loadOrders = async () => {
         setIsLoading(true);
@@ -56,7 +58,7 @@ export function OrdersInbox({ isOpen, onClose, onLoadOrder }: OrdersInboxProps) 
                 return next;
             });
         } catch (err) {
-            alert("删除失败: " + (err instanceof Error ? err.message : String(err)));
+            toast("error", "删除失败: " + (err instanceof Error ? err.message : String(err)));
         }
     };
 

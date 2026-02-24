@@ -7,6 +7,7 @@ import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
 import { generateCustomSTLFilename } from "@/lib/stl-export";
 import { useUndoHistory } from "@/hooks/useUndoHistory";
 import { trayWorkerService } from "@/lib/worker/worker-service";
+import { useToast } from "@/hooks/useToast";
 import type * as THREE from "three";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 
@@ -39,6 +40,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
   const [volume, setVolume] = useState<number>(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const jscadGeomRef = useRef<Geom3 | null>(null);
+  const { toast } = useToast();
 
   // 撤销历史
   const { pushState, popState, canUndo: canUndoFn } = useUndoHistory<CustomLayoutParams>();
@@ -237,10 +239,11 @@ export function useCustomLayout(): UseCustomLayoutReturn {
       });
     } catch (err) {
       console.error("生成失败:", err);
+      toast("error", `模型生成失败：${err instanceof Error ? err.message : "未知错误"}`);
     } finally {
       setIsGenerating(false);
     }
-  }, [params]);
+  }, [params, toast]);
 
   // 导出 STL
   const handleExportSTL = useCallback(async () => {
@@ -262,8 +265,9 @@ export function useCustomLayout(): UseCustomLayoutReturn {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error("STL导出失败:", err);
+      toast("error", `STL 导出失败：${err instanceof Error ? err.message : "未知错误"}`);
     }
-  }, [params.trayWidth, params.trayDepth, params.slots.length]);
+  }, [params.trayWidth, params.trayDepth, params.slots.length, toast]);
 
   return {
     params,

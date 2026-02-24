@@ -6,6 +6,7 @@ import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
 import { generateSTLFilename } from "@/lib/stl-export";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/config";
 import { trayWorkerService } from "@/lib/worker/worker-service";
+import { useToast } from "@/hooks/useToast";
 import type * as THREE from "three";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 
@@ -26,6 +27,7 @@ export function useTrayModel(): UseTrayModelReturn {
   const [volume, setVolume] = useState<number>(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const jscadGeomRef = useRef<Geom3 | null>(null);
+  const { toast } = useToast();
 
   const updateParam = useCallback(
     <K extends keyof TrayParams>(key: K, value: TrayParams[K]) => {
@@ -49,10 +51,11 @@ export function useTrayModel(): UseTrayModelReturn {
       });
     } catch (err) {
       console.error("生成失败:", err);
+      toast("error", `模型生成失败：${err instanceof Error ? err.message : "未知错误"}`);
     } finally {
       setIsGenerating(false);
     }
-  }, [params]);
+  }, [params, toast]);
 
   // 导出 STL
   const handleExportSTL = useCallback(async () => {
@@ -75,8 +78,9 @@ export function useTrayModel(): UseTrayModelReturn {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error("STL导出失败:", err);
+      toast("error", `STL 导出失败：${err instanceof Error ? err.message : "未知错误"}`);
     }
-  }, [params.rows, params.columns, params.holeDiameter]);
+  }, [params.rows, params.columns, params.holeDiameter, toast]);
 
   return {
     params,

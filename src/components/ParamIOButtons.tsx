@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, Share2, Send, Loader2 } from "lucide-react";
 import { exportParams, importParams } from "@/lib/param-io";
 import { submitOrder } from "@/lib/order-api";
+import { useToast } from "@/hooks/useToast";
 import type { AppMode } from "@/types/custom-tray";
 import { isAdmin } from "@/lib/permissions";
 
@@ -17,6 +18,7 @@ interface ParamIOButtonsProps {
 export function ParamIOButtons({ mode, params, onImport }: ParamIOButtonsProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const { toast } = useToast();
 
     const handleExport = () => {
         exportParams(mode, params as any);
@@ -31,10 +33,10 @@ export function ParamIOButtons({ mode, params, onImport }: ParamIOButtonsProps) 
             setIsSubmitting(true);
             const res = await submitOrder(mode, params);
             if (res.success) {
-                alert(`提交成功！订单号: ${res.id?.split('_').pop()}`);
+                toast("success", `提交成功！订单号: ${res.id?.split('_').pop()}`);
             }
         } catch (err) {
-            alert(`提交失败：${err instanceof Error ? err.message : "未知错误"}`);
+            toast("error", `提交失败：${err instanceof Error ? err.message : "未知错误"}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -47,8 +49,9 @@ export function ParamIOButtons({ mode, params, onImport }: ParamIOButtonsProps) 
         try {
             const imported = await importParams(file, mode);
             onImport(imported);
+            toast("success", "参数导入成功");
         } catch (err) {
-            alert(`导入失败：${err instanceof Error ? err.message : "未知错误"}`);
+            toast("error", `导入失败：${err instanceof Error ? err.message : "未知错误"}`);
         }
 
         // 重置 input 以允许重复选择同一文件

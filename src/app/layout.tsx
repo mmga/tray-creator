@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Cinzel, IBM_Plex_Mono } from "next/font/google";
+import { ToastProvider, Toaster } from "@/hooks/useToast";
 import "./globals.css";
 
 const cinzel = Cinzel({
@@ -35,7 +36,10 @@ export default function RootLayout({
       <body
         className={`${cinzel.variable} ${ibmPlexMono.variable} font-sans antialiased`}
       >
-        {children}
+        <ToastProvider>
+          {children}
+          <Toaster />
+        </ToastProvider>
       </body>
     </html>
   );
