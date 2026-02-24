@@ -126,6 +126,13 @@ export default function Home() {
               params={customModel.params}
               onUpdateSlot={customModel.updateSlotPosition}
               onRemoveSlot={customModel.removeSlot}
+              onResizeTray={(width, depth) => {
+                customModel.setParams((prev) => ({
+                  ...prev,
+                  trayWidth: width,
+                  trayDepth: depth,
+                }));
+              }}
               onUpdateSlotRotation={customModel.updateSlotRotation}
               onUpdateMultipleSlots={customModel.updateMultipleSlots}
               onDuplicateSlots={customModel.duplicateSlots}

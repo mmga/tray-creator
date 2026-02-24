@@ -18,6 +18,7 @@ interface LayoutCanvasProps {
   params: CustomLayoutParams;
   onUpdateSlot: (id: string, x: number, y: number) => void;
   onRemoveSlot: (id: string) => void;
+  onResizeTray?: (width: number, depth: number) => void;
   onUpdateSlotRotation?: (id: string, rotation: number) => void;
   onUpdateMultipleSlots?: (updates: { id: string, x: number, y: number }[]) => void;
   onDuplicateSlots?: (ids: string[]) => void;
@@ -29,6 +30,7 @@ export default function LayoutCanvas({
   params,
   onUpdateSlot,
   onRemoveSlot,
+  onResizeTray,
   onUpdateSlotRotation,
   onUpdateMultipleSlots,
   onDuplicateSlots,
@@ -647,19 +649,30 @@ export default function LayoutCanvas({
     if (targets.length < 2) return;
 
     const sorted = [...targets].sort((a, b) => a.x - b.x);
+
+    // 计算冲突项在“保证间距”下所需的最小画布尺寸
+    const widths = sorted.map((slot) => getEllipseBoundingBox(slot.width, slot.height, slot.rotation).halfW * 2);
+    const halfHeights = sorted.map((slot) => getEllipseBoundingBox(slot.width, slot.height, slot.rotation).halfH);
+    const totalItemWidth = widths.reduce((sum, w) => sum + w, 0);
+    const minGap = Math.max(1, spacing);
+    const requiredWidth = Math.ceil(totalItemWidth + spacing * 2 + minGap * (sorted.length - 1));
+    const maxHalfH = Math.max(...halfHeights);
+    const requiredDepth = Math.ceil(spacing * 2 + maxHalfH * 2);
+
+    const nextTrayWidth = Math.max(trayWidth, requiredWidth);
+    const nextTrayDepth = Math.max(trayDepth, requiredDepth);
+    if (onResizeTray && (nextTrayWidth !== trayWidth || nextTrayDepth !== trayDepth)) {
+      onResizeTray(nextTrayWidth, nextTrayDepth);
+    }
+
     const availableStart = spacing;
-    const availableEnd = trayWidth - spacing;
+    const availableEnd = nextTrayWidth - spacing;
     const availableWidth = Math.max(0, availableEnd - availableStart);
 
-    const totalItemWidth = sorted.reduce((sum, slot) => {
-      const { halfW } = getEllipseBoundingBox(slot.width, slot.height, slot.rotation);
-      return sum + halfW * 2;
-    }, 0);
-
-    const gap = Math.max(0.5, (availableWidth - totalItemWidth) / (sorted.length + 1));
+    const gap = Math.max(minGap, (availableWidth - totalItemWidth) / (sorted.length + 1));
     let cursor = availableStart + gap;
 
-    const centerY = sorted.reduce((sum, slot) => sum + slot.y, 0) / sorted.length;
+    const centerY = nextTrayDepth / 2;
 
     const updates = sorted.map((slot) => {
       const { halfW, halfH } = getEllipseBoundingBox(slot.width, slot.height, slot.rotation);
@@ -667,7 +680,7 @@ export default function LayoutCanvas({
       cursor += halfW * 2 + gap;
 
       const minY = spacing + halfH;
-      const maxY = trayDepth - spacing - halfH;
+      const maxY = nextTrayDepth - spacing - halfH;
       const y = Math.max(minY, Math.min(maxY, centerY));
 
       return { id: slot.id, x, y };
@@ -675,7 +688,7 @@ export default function LayoutCanvas({
 
     handleUpdateSlots(updates);
     setSelectedIds(new Set(sorted.map((s) => s.id)));
-  }, [slots, spacing, trayWidth, trayDepth, handleUpdateSlots]);
+  }, [slots, spacing, trayWidth, trayDepth, handleUpdateSlots, onResizeTray]);
 
   // ── 碰撞摘要（用于底部提示条）──
   const collisionSummary = (() => {
