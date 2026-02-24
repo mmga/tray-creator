@@ -184,7 +184,11 @@ export default function Home() {
       </header>
 
       {/* Mode Switcher */}
-      <ModeTabs mode={mode} onModeChange={setMode} />
+      <ModeTabs mode={mode} onModeChange={(m) => {
+        setMode(m);
+        // 切换模式时，如果移动端停在2d tab但进了grid模式，回退到params
+        if (m === "grid" && mobileTab === "2d") setMobileTab("params");
+      }} />
 
       {/* ===== 桌面端布局 (≥1024px): 左右分栏 ===== */}
       <main className="hidden lg:flex flex-row flex-1 overflow-hidden">
@@ -233,14 +237,16 @@ export default function Home() {
             </div>
           )}
 
-          {/* 3D 预览 */}
-          <div className={`absolute inset-0 bg-[#0a0908] transition-opacity duration-200 ${mobileTab === '3d' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
-            {mode === "grid" ? (
-              <TrayViewer geometry={gridModel.threeGeometry} />
-            ) : (
-              <TrayViewer geometry={customModel.threeGeometry} />
-            )}
-          </div>
+          {/* 3D 预览 - 仅在选中时挂载以节省GPU资源 */}
+          {mobileTab === '3d' && (
+            <div className="absolute inset-0 bg-[#0a0908] z-10">
+              {mode === "grid" ? (
+                <TrayViewer geometry={gridModel.threeGeometry} />
+              ) : (
+                <TrayViewer geometry={customModel.threeGeometry} />
+              )}
+            </div>
+          )}
         </div>
 
         {/* 底部 Tab Bar */}
