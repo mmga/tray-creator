@@ -13,13 +13,35 @@ interface UseCanvasZoomOptions {
     trayDepth: number;
 }
 
-/** 画布缩放 & 平移 hook */
+/** 计算两个触摸点之间的距离 */
+function getTouchDistance(t1: Touch, t2: Touch) {
+    const dx = t1.clientX - t2.clientX;
+    const dy = t1.clientY - t2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+/** 计算两个触摸点的中心 */
+function getTouchCenter(t1: Touch, t2: Touch) {
+    return {
+        x: (t1.clientX + t2.clientX) / 2,
+        y: (t1.clientY + t2.clientY) / 2,
+    };
+}
+
+/** 画布缩放 & 平移 hook（支持鼠标滚轮 + 双指手势） */
 export function useCanvasZoom({ baseW, baseH, trayWidth, trayDepth }: UseCanvasZoomOptions) {
     const [zoom, setZoom] = useState(1);
     const [pan, setPan] = useState({ x: 0, y: 0 });
     const [isSpacePressed, setIsSpacePressed] = useState(false);
     const [isPanning, setIsPanning] = useState(false);
     const panStartRef = useRef({ x: 0, y: 0 });
+
+    // 双指手势状态
+    const pinchRef = useRef<{
+        initialDist: number;
+        initialZoom: number;
+        lastCenter: { x: number; y: number };
+    } | null>(null);
 
     const viewW = baseW / zoom;
     const viewH = baseH / zoom;
@@ -35,6 +57,50 @@ export function useCanvasZoom({ baseW, baseH, trayWidth, trayDepth }: UseCanvasZ
             const newZoom = z + (delta > 0 ? factor : -factor);
             return Math.min(Math.max(0.5, newZoom), 5);
         });
+    }, []);
+
+    /** 双指触摸开始 */
+    const handleTouchStart = useCallback((e: React.TouchEvent) => {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            const dist = getTouchDistance(e.touches[0], e.touches[1]);
+            const center = getTouchCenter(e.touches[0], e.touches[1]);
+            pinchRef.current = {
+                initialDist: dist,
+                initialZoom: zoom,
+                lastCenter: center,
+            };
+        }
+    }, [zoom]);
+
+    /** 双指触摸移动（缩放 + 平移） */
+    const handleTouchMove = useCallback((e: React.TouchEvent) => {
+        if (e.touches.length === 2 && pinchRef.current) {
+            e.preventDefault();
+            const dist = getTouchDistance(e.touches[0], e.touches[1]);
+            const center = getTouchCenter(e.touches[0], e.touches[1]);
+
+            // 缩放
+            const scale = dist / pinchRef.current.initialDist;
+            const newZoom = Math.min(Math.max(0.5, pinchRef.current.initialZoom * scale), 5);
+            setZoom(newZoom);
+
+            // 双指平移
+            const dx = center.x - pinchRef.current.lastCenter.x;
+            const dy = center.y - pinchRef.current.lastCenter.y;
+            // 将屏幕像素差转换为 SVG 坐标差（近似）
+            const svgScale = newZoom; // viewBox 缩放因子
+            setPan(prev => ({
+                x: prev.x + dx / (svgScale * 2),
+                y: prev.y + dy / (svgScale * 2),
+            }));
+            pinchRef.current.lastCenter = center;
+        }
+    }, []);
+
+    /** 双指触摸结束 */
+    const handleTouchEnd = useCallback(() => {
+        pinchRef.current = null;
     }, []);
 
     const adjustZoom = (amount: number) => {
@@ -59,6 +125,9 @@ export function useCanvasZoom({ baseW, baseH, trayWidth, trayDepth }: UseCanvasZ
         setIsPanning,
         panStartRef,
         handleWheel,
+        handleTouchStart,
+        handleTouchMove,
+        handleTouchEnd,
         adjustZoom,
         resetZoom,
         minX,

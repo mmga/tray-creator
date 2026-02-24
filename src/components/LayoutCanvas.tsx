@@ -71,6 +71,7 @@ export default function LayoutCanvas({
     isSpacePressed, setIsSpacePressed,
     isPanning, setIsPanning,
     panStartRef, handleWheel,
+    handleTouchStart, handleTouchMove, handleTouchEnd,
     adjustZoom, resetZoom,
   } = useCanvasZoom({
     baseW: params.trayWidth + 40, // trayWidth + (PADDING_MM * 2)
@@ -612,6 +613,9 @@ export default function LayoutCanvas({
         onPointerLeave={handlePointerUp}
         onPointerCancel={handlePointerUp}
         onWheel={handleWheel}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         preserveAspectRatio="xMidYMid meet"
       >
         {/* Tray Body */}
