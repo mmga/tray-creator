@@ -654,7 +654,10 @@ export default function LayoutCanvas({
     const widths = sorted.map((slot) => getEllipseBoundingBox(slot.width, slot.height, slot.rotation).halfW * 2);
     const halfHeights = sorted.map((slot) => getEllipseBoundingBox(slot.width, slot.height, slot.rotation).halfH);
     const totalItemWidth = widths.reduce((sum, w) => sum + w, 0);
-    const minGap = Math.max(1, spacing);
+    // 给自动调整增加安全余量，避免“刚好贴边/贴邻”时被 SAT 近似判成冲突
+    const safetyGap = 0.6;
+    const minGap = Math.max(1, spacing + safetyGap);
+    // 这里仅约束“槽位之间”的最小间距，边缘仍由 spacing 约束
     const requiredWidth = Math.ceil(totalItemWidth + spacing * 2 + minGap * (sorted.length - 1));
     const maxHalfH = Math.max(...halfHeights);
     const requiredDepth = Math.ceil(spacing * 2 + maxHalfH * 2);
@@ -665,19 +668,20 @@ export default function LayoutCanvas({
       onResizeTray(nextTrayWidth, nextTrayDepth);
     }
 
-    const availableStart = spacing;
-    const availableEnd = nextTrayWidth - spacing;
-    const availableWidth = Math.max(0, availableEnd - availableStart);
-
-    const gap = Math.max(minGap, (availableWidth - totalItemWidth) / (sorted.length + 1));
-    let cursor = availableStart + gap;
+    const availableWidth = Math.max(0, nextTrayWidth - spacing * 2);
+    const betweenGap = sorted.length > 1
+      ? Math.max(minGap, (availableWidth - totalItemWidth) / (sorted.length - 1))
+      : 0;
+    // 从左边界 spacing 开始摆放，不再强制额外前后留白
+    let cursorEdge = spacing;
 
     const centerY = nextTrayDepth / 2;
 
     const updates = sorted.map((slot) => {
       const { halfW, halfH } = getEllipseBoundingBox(slot.width, slot.height, slot.rotation);
-      const x = cursor + halfW;
-      cursor += halfW * 2 + gap;
+      const slotWidth = halfW * 2;
+      const x = cursorEdge + halfW;
+      cursorEdge += slotWidth + betweenGap;
 
       const minY = spacing + halfH;
       const maxY = nextTrayDepth - spacing - halfH;
