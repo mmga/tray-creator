@@ -81,173 +81,191 @@ export default function CustomPanel({
 
   return (
     <div className="flex flex-col gap-4 animate-fade-in">
-      {/* 托盘尺寸 */}
-      <div className="iron-panel rounded-sm p-4 space-y-4">
-        <SectionHeader icon={Layout} title="托盘尺寸" />
-        <ParamSlider
-          label={CUSTOM_LIMITS.trayWidth.label}
-          value={params.trayWidth}
-          config={CUSTOM_LIMITS.trayWidth}
-          onChange={(v) => updateParam("trayWidth", v)}
-          unit={CUSTOM_LIMITS.trayWidth.unit}
-        />
-        <ParamSlider
-          label={CUSTOM_LIMITS.trayDepth.label}
-          value={params.trayDepth}
-          config={CUSTOM_LIMITS.trayDepth}
-          onChange={(v) => updateParam("trayDepth", v)}
-          unit={CUSTOM_LIMITS.trayDepth.unit}
-        />
-        <Button
-          variant="outline"
-          onClick={onTrimBaseplate}
-          disabled={params.slots.length === 0}
-          className="w-full h-9 border-[#2e2a24] text-[#8cb880] cursor-pointer hover:bg-[#2a3528]/30 hover:border-[#4a6741] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Minimize className="w-3.5 h-3.5 mr-2" />
-          <span className="text-sm tracking-wider">裁剪底板</span>
-        </Button>
-      </div>
-
-      {/* 添加凹槽 */}
-      <div className="iron-panel rounded-sm p-4 space-y-3">
-        <SectionHeader icon={BoxSelect} title="添加圆形凹槽" />
-        <div className="grid grid-cols-3 gap-2">
-          {BASE_PRESETS.map((preset, i) => (
+      {/* 托盘尺寸 — 移动端默认展开 */}
+      <div className="iron-panel rounded-sm p-4">
+        <SectionHeader icon={Layout} title="托盘尺寸" collapsible defaultOpen={true}
+          summary={`${params.trayWidth}×${params.trayDepth}mm`}>
+          <div className="space-y-4">
+            <ParamSlider
+              label={CUSTOM_LIMITS.trayWidth.label}
+              value={params.trayWidth}
+              config={CUSTOM_LIMITS.trayWidth}
+              onChange={(v) => updateParam("trayWidth", v)}
+              unit={CUSTOM_LIMITS.trayWidth.unit}
+            />
+            <ParamSlider
+              label={CUSTOM_LIMITS.trayDepth.label}
+              value={params.trayDepth}
+              config={CUSTOM_LIMITS.trayDepth}
+              onChange={(v) => updateParam("trayDepth", v)}
+              unit={CUSTOM_LIMITS.trayDepth.unit}
+            />
             <Button
-              key={i}
               variant="outline"
-              size="sm"
-              onClick={() => onAddSlot(preset.diameter)}
-              className="h-8 text-[11px] border-[#2e2a24] bg-[#1c1a16] hover:bg-[#2e2a24] hover:text-primary transition-all"
+              onClick={onTrimBaseplate}
+              disabled={params.slots.length === 0}
+              className="w-full h-9 border-[#2e2a24] text-[#8cb880] cursor-pointer hover:bg-[#2a3528]/30 hover:border-[#4a6741] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Plus className="w-3 h-3 mr-1" />
-              {preset.diameter}
+              <Minimize className="w-3.5 h-3.5 mr-2" />
+              <span className="text-sm tracking-wider">裁剪底板</span>
             </Button>
-          ))}
-        </div>
-
-        <SectionHeader icon={BoxSelect} title="添加椭圆凹槽" />
-        <div className="grid grid-cols-2 gap-2">
-          {ELLIPSE_PRESETS.map((preset, i) => (
-            <Button
-              key={i}
-              variant="outline"
-              size="sm"
-              onClick={() => onAddSlot(preset.width, preset.height)}
-              className="h-8 text-[11px] border-[#2e2a24] bg-[#1c1a16] hover:bg-[#2e2a24] hover:text-primary transition-all"
-            >
-              <Plus className="w-3 h-3 mr-1" />
-              {preset.name.replace('mm', '')}
-            </Button>
-          ))}
-        </div>
-
-        <p className="text-[10px] text-muted-foreground/50 text-center pt-1">
-          点击上方按钮添加，在右侧画布拖拽与删除
-        </p>
+          </div>
+        </SectionHeader>
       </div>
 
-      {/* 结构参数 (独立) */}
-      <div className="iron-panel rounded-sm p-4 space-y-4">
-        <SectionHeader icon={Wrench} title="结构参数" />
+      {/* 添加凹槽 — 移动端默认展开 */}
+      <div className="iron-panel rounded-sm p-4">
+        <SectionHeader icon={BoxSelect} title="添加凹槽" collapsible defaultOpen={true}
+          summary={`已有 ${params.slots.length} 个凹槽`}>
+          <div className="space-y-3">
+            <div className="text-[10px] text-muted-foreground/70 font-bold tracking-wider uppercase mb-1">圆形</div>
+            <div className="grid grid-cols-3 gap-2">
+              {BASE_PRESETS.map((preset, i) => (
+                <Button
+                  key={i}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onAddSlot(preset.diameter)}
+                  className="h-8 text-[11px] border-[#2e2a24] bg-[#1c1a16] hover:bg-[#2e2a24] hover:text-primary transition-all"
+                >
+                  <Plus className="w-3 h-3 mr-1" />
+                  {preset.diameter}
+                </Button>
+              ))}
+            </div>
 
-        <ParamSlider
-          label={CUSTOM_LIMITS.spacing.label}
-          value={params.spacing}
-          config={CUSTOM_LIMITS.spacing}
-          onChange={(v) => updateParam("spacing", v)}
-          unit={CUSTOM_LIMITS.spacing.unit}
-        />
-        <ParamSlider
-          label={PARAM_CONFIG.baseThickness.label}
-          value={params.baseThickness}
-          config={CUSTOM_LIMITS.baseThickness}
-          onChange={(v) => updateParam("baseThickness", v)}
-          unit={PARAM_CONFIG.baseThickness.unit}
-        />
-        <ParamSlider
-          label={PARAM_CONFIG.holeDepth.label}
-          value={params.holeDepth}
-          config={CUSTOM_LIMITS.holeDepth}
-          onChange={(v) => updateParam("holeDepth", v)}
-          unit={PARAM_CONFIG.holeDepth.unit}
-        />
-        <ParamSlider
-          label={PARAM_CONFIG.cornerRadius.label}
-          value={params.cornerRadius}
-          config={CUSTOM_LIMITS.cornerRadius}
-          onChange={(v) => updateParam("cornerRadius", v)}
-          unit={PARAM_CONFIG.cornerRadius.unit}
-        />
+            <div className="text-[10px] text-muted-foreground/70 font-bold tracking-wider uppercase mb-1 mt-2">椭圆</div>
+            <div className="grid grid-cols-2 gap-2">
+              {ELLIPSE_PRESETS.map((preset, i) => (
+                <Button
+                  key={i}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onAddSlot(preset.width, preset.height)}
+                  className="h-8 text-[11px] border-[#2e2a24] bg-[#1c1a16] hover:bg-[#2e2a24] hover:text-primary transition-all"
+                >
+                  <Plus className="w-3 h-3 mr-1" />
+                  {preset.name.replace('mm', '')}
+                </Button>
+              ))}
+            </div>
+
+            <p className="text-[10px] text-muted-foreground/50 text-center pt-1">
+              点击上方按钮添加，在右侧画布拖拽与删除
+            </p>
+          </div>
+        </SectionHeader>
       </div>
 
-      {/* 底板孔位 */}
+      {/* 结构参数 — 移动端默认折叠 */}
+      <div className="iron-panel rounded-sm p-4">
+        <SectionHeader icon={Wrench} title="结构参数" collapsible defaultOpen={false}
+          summary={`间距${params.spacing}mm / 底厚${params.baseThickness}mm / 孔深${params.holeDepth}mm`}>
+          <div className="space-y-4">
+            <ParamSlider
+              label={CUSTOM_LIMITS.spacing.label}
+              value={params.spacing}
+              config={CUSTOM_LIMITS.spacing}
+              onChange={(v) => updateParam("spacing", v)}
+              unit={CUSTOM_LIMITS.spacing.unit}
+            />
+            <ParamSlider
+              label={PARAM_CONFIG.baseThickness.label}
+              value={params.baseThickness}
+              config={CUSTOM_LIMITS.baseThickness}
+              onChange={(v) => updateParam("baseThickness", v)}
+              unit={PARAM_CONFIG.baseThickness.unit}
+            />
+            <ParamSlider
+              label={PARAM_CONFIG.holeDepth.label}
+              value={params.holeDepth}
+              config={CUSTOM_LIMITS.holeDepth}
+              onChange={(v) => updateParam("holeDepth", v)}
+              unit={PARAM_CONFIG.holeDepth.unit}
+            />
+            <ParamSlider
+              label={PARAM_CONFIG.cornerRadius.label}
+              value={params.cornerRadius}
+              config={CUSTOM_LIMITS.cornerRadius}
+              onChange={(v) => updateParam("cornerRadius", v)}
+              unit={PARAM_CONFIG.cornerRadius.unit}
+            />
+          </div>
+        </SectionHeader>
+      </div>
+
+      {/* 底板孔位 — 移动端默认折叠 */}
       <BaseHoleConfig
         enableBaseHole={params.enableBaseHole}
         baseHoleSize={params.baseHoleSize}
         baseThickness={params.baseThickness}
         updateParam={updateParam}
+        collapsible
+        defaultOpen={false}
       />
 
-      {/* 模型尺寸 */}
-      <div className={`iron-panel rounded-sm p-4 space-y-3 transition-all duration-300 ${isOversized ? 'border-[#8b1a1a] animate-forge-pulse' : ''}`}>
-        <SectionHeader icon={Ruler} title="统计信息" />
-        <div className="grid grid-cols-2 gap-2 mb-2">
-          <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
-            <span className="text-[10px] text-muted-foreground block">凹槽数量</span>
-            <span className="text-lg font-mono font-bold text-primary">{params.slots.length}</span>
-          </div>
-          <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
-            <span className="text-[10px] text-muted-foreground block">预估报价 & 耗材参考</span>
-            <div className="flex flex-col items-center mt-0.5">
-              <span className="text-sm font-mono font-bold text-[#eab308]">
-                10 + 耗材克重 × 0.15
-              </span>
-              {volume > 0 ? (
-                <span className="text-[9px] text-muted-foreground">
-                  PLA估重: {calculateWeight(volume).toFixed(1)}g
-                </span>
-              ) : (
-                <span className="text-[9px] text-muted-foreground">
-                  {isGenerating ? "图纸生成中..." : ""}
-                </span>
-              )}
+      {/* 统计信息 — 移动端默认折叠 */}
+      <div className={`iron-panel rounded-sm p-4 transition-all duration-300 ${isOversized ? 'border-[#8b1a1a] animate-forge-pulse' : ''}`}>
+        <SectionHeader icon={Ruler} title="统计信息" collapsible defaultOpen={false}
+          summary={`${params.slots.length}个凹槽 / ${dimensions.width.toFixed(0)}×${dimensions.depth.toFixed(0)}mm`}>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
+                <span className="text-[10px] text-muted-foreground block">凹槽数量</span>
+                <span className="text-lg font-mono font-bold text-primary">{params.slots.length}</span>
+              </div>
+              <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
+                <span className="text-[10px] text-muted-foreground block">预估报价 & 耗材参考</span>
+                <div className="flex flex-col items-center mt-0.5">
+                  <span className="text-sm font-mono font-bold text-[#eab308]">
+                    10 + 耗材克重 × 0.15
+                  </span>
+                  {volume > 0 ? (
+                    <span className="text-[9px] text-muted-foreground">
+                      PLA估重: {calculateWeight(volume).toFixed(1)}g
+                    </span>
+                  ) : (
+                    <span className="text-[9px] text-muted-foreground">
+                      {isGenerating ? "图纸生成中..." : ""}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-3 gap-2">
-          {[
-            { label: "宽度", value: dimensions.width, warn: dimensions.width > MAX_BUILD_SIZE },
-            { label: "深度", value: dimensions.depth, warn: dimensions.depth > MAX_BUILD_SIZE },
-            { label: "高度", value: dimensions.height, warn: false },
-          ].map(({ label, value, warn }) => (
-            <div
-              key={label}
-              className={`relative text-center p-2.5 transition-colors duration-200 ${warn
-                ? 'bg-[#8b1a1a15] border border-[#8b1a1a50]'
-                : 'bg-[#1c1a16] border border-[#2e2a24]'
-                }`}
-            >
-              <p className="text-[11px] text-muted-foreground/60 mb-0.5">{label}</p>
-              <p className={`text-sm font-mono font-semibold tabular-nums ${warn ? 'text-[#c04040]' : 'text-foreground'}`}>
-                {value.toFixed(1)}
-              </p>
-              <p className="text-[10px] text-muted-foreground/40 font-mono">mm</p>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: "宽度", value: dimensions.width, warn: dimensions.width > MAX_BUILD_SIZE },
+                { label: "深度", value: dimensions.depth, warn: dimensions.depth > MAX_BUILD_SIZE },
+                { label: "高度", value: dimensions.height, warn: false },
+              ].map(({ label, value, warn }) => (
+                <div
+                  key={label}
+                  className={`relative text-center p-2.5 transition-colors duration-200 ${warn
+                    ? 'bg-[#8b1a1a15] border border-[#8b1a1a50]'
+                    : 'bg-[#1c1a16] border border-[#2e2a24]'
+                    }`}
+                >
+                  <p className="text-[11px] text-muted-foreground/60 mb-0.5">{label}</p>
+                  <p className={`text-sm font-mono font-semibold tabular-nums ${warn ? 'text-[#c04040]' : 'text-foreground'}`}>
+                    {value.toFixed(1)}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground/40 font-mono">mm</p>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        {isOversized && (
-          <div className="flex items-center justify-center gap-1.5 text-xs text-[#c04040] animate-fade-in">
-            <span>超过锻造极限</span>
+            {isOversized && (
+              <div className="flex items-center justify-center gap-1.5 text-xs text-[#c04040] animate-fade-in">
+                <span>超过锻造极限</span>
+              </div>
+            )}
           </div>
-        )}
+        </SectionHeader>
       </div>
 
       <div className="wh-divider" />
 
-      {/* 自动预览与操作按钮 */}
+      {/* 自动预览与操作按钮 — 始终展开 */}
       <div className="flex flex-col gap-2.5 pb-4">
         <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
           <Label htmlFor="custom-auto-preview" className="text-sm cursor-pointer text-[#f0d8b8]">

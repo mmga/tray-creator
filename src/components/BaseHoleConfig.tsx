@@ -9,36 +9,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Circle, type LucideIcon } from "lucide-react";
+import { Circle } from "lucide-react";
+import { SectionHeader } from "@/components/ui/SectionHeader";
 
 interface BaseHoleConfigProps {
   enableBaseHole: boolean;
   baseHoleSize: "19.5" | "25";
   baseThickness: number;
   updateParam: (key: any, value: any) => void;
+  /** 是否可折叠（移动端） */
+  collapsible?: boolean;
+  /** 默认是否展开 */
+  defaultOpen?: boolean;
 }
 
-function SectionHeader({ icon: Icon, title }: { icon: LucideIcon; title: string }) {
+export function BaseHoleConfig({ enableBaseHole, baseHoleSize, baseThickness, updateParam, collapsible = false, defaultOpen = true }: BaseHoleConfigProps) {
   return (
-    <div className="relative pb-3 mb-1">
-      <div className="flex items-center gap-2.5">
-        <div className="flex items-center justify-center w-6 h-6 border border-primary/40 bg-[#1c1a16]">
-          <Icon className="w-3.5 h-3.5 text-primary" />
-        </div>
-        <h3 className="text-xs font-bold text-primary/90 tracking-[0.2em] uppercase parchment-glow">
-          {title}
-        </h3>
-      </div>
-      {/* Gold underline */}
-      <div className="absolute bottom-0 left-0 right-0 h-px gold-trim opacity-40" />
-    </div>
-  );
-}
-
-export function BaseHoleConfig({ enableBaseHole, baseHoleSize, baseThickness, updateParam }: BaseHoleConfigProps) {
-  return (
-    <div className="iron-panel rounded-sm p-4 space-y-4">
-      <SectionHeader icon={Circle} title="底板孔位" />
+    <div className="iron-panel rounded-sm p-4">
+      <SectionHeader icon={Circle} title="底板孔位" collapsible={collapsible} defaultOpen={defaultOpen}
+        summary={enableBaseHole ? `磁吸孔 ⌀${baseHoleSize}mm` : '普通托盘'}>
+        <div className="space-y-4">
 
       {/* 切换按钮组 */}
       <div className="grid grid-cols-2 gap-2">
@@ -114,6 +104,8 @@ export function BaseHoleConfig({ enableBaseHole, baseHoleSize, baseThickness, up
           </div>
         </div>
       )}
+        </div>
+      </SectionHeader>
     </div>
   );
 }
