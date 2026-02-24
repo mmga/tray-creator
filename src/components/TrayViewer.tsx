@@ -58,8 +58,11 @@ function TrayMesh({ geometry }: { geometry: THREE.BufferGeometry }) {
  */
 function CameraAutoFit({ geometry }: { geometry: THREE.BufferGeometry }) {
   const { camera, controls } = useThree();
+  const hasFittedRef = useRef(false);
 
   useEffect(() => {
+    if (hasFittedRef.current) return;
+
     if (!geometry.boundingSphere) geometry.computeBoundingSphere();
     const sphere = geometry.boundingSphere;
     if (!sphere) return;
@@ -84,6 +87,8 @@ function CameraAutoFit({ geometry }: { geometry: THREE.BufferGeometry }) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (controls as any).update();
     }
+
+    hasFittedRef.current = true;
   }, [geometry, camera, controls]);
 
   return null;
