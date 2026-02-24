@@ -13,15 +13,21 @@ interface UseCanvasZoomOptions {
     trayDepth: number;
 }
 
+/** 触摸点的最小接口（兼容 React.Touch 和 DOM Touch） */
+interface TouchPoint {
+    clientX: number;
+    clientY: number;
+}
+
 /** 计算两个触摸点之间的距离 */
-function getTouchDistance(t1: Touch, t2: Touch) {
+function getTouchDistance(t1: TouchPoint, t2: TouchPoint) {
     const dx = t1.clientX - t2.clientX;
     const dy = t1.clientY - t2.clientY;
     return Math.sqrt(dx * dx + dy * dy);
 }
 
 /** 计算两个触摸点的中心 */
-function getTouchCenter(t1: Touch, t2: Touch) {
+function getTouchCenter(t1: TouchPoint, t2: TouchPoint) {
     return {
         x: (t1.clientX + t2.clientX) / 2,
         y: (t1.clientY + t2.clientY) / 2,
