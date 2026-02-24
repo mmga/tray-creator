@@ -17,6 +17,7 @@ interface UseTrayModelReturn {
   threeGeometry: THREE.BufferGeometry | null;
   volume: number; // in mm^3
   isGenerating: boolean;
+  isPreviewStale: boolean;
   handleGenerate: () => void;
   handleExportSTL: () => void;
 }
@@ -28,10 +29,14 @@ export function useTrayModel(): UseTrayModelReturn {
   const [isGenerating, setIsGenerating] = useState(false);
   const jscadGeomRef = useRef<Geom3 | null>(null);
   const { toast } = useToast();
+  // 追踪参数是否在上次生成后发生了变更
+  const [isPreviewStale, setIsPreviewStale] = useState(false);
+  const lastGeneratedParamsRef = useRef<string | null>(null);
 
   const updateParam = useCallback(
     <K extends keyof TrayParams>(key: K, value: TrayParams[K]) => {
       setParams((prev) => ({ ...prev, [key]: value }));
+      setIsPreviewStale(true);
     },
     []
   );
@@ -49,6 +54,8 @@ export function useTrayModel(): UseTrayModelReturn {
         prev?.dispose();
         return threeGeom;
       });
+      lastGeneratedParamsRef.current = JSON.stringify(params);
+      setIsPreviewStale(false);
     } catch (err) {
       console.error("生成失败:", err);
       toast("error", `模型生成失败：${err instanceof Error ? err.message : "未知错误"}`);
@@ -89,6 +96,7 @@ export function useTrayModel(): UseTrayModelReturn {
     threeGeometry,
     volume,
     isGenerating,
+    isPreviewStale,
     handleGenerate,
     handleExportSTL,
   };

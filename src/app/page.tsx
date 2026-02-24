@@ -104,7 +104,7 @@ export default function Home() {
   // 视口内容（共享于桌面和移动端）
   const renderViewport = () => {
     if (mode === "grid") {
-      return <TrayViewer geometry={gridModel.threeGeometry} />;
+      return <TrayViewer geometry={gridModel.threeGeometry} isStale={gridModel.isPreviewStale} />;
     }
     // Custom mode: 2D/3D toggle
     return (
@@ -136,7 +136,7 @@ export default function Home() {
         </TabsContent>
 
         <TabsContent value="3d" className="absolute inset-0 m-0 data-[state=inactive]:hidden">
-          <TrayViewer geometry={customModel.threeGeometry} />
+          <TrayViewer geometry={customModel.threeGeometry} isStale={customModel.isPreviewStale} />
         </TabsContent>
       </Tabs>
     );

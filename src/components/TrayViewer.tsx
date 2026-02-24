@@ -8,6 +8,7 @@ import { RENDER_CONFIG } from "@/lib/config";
 
 interface TrayViewerProps {
   geometry: THREE.BufferGeometry | null;
+  isStale?: boolean;
 }
 
 function TrayMesh({ geometry }: { geometry: THREE.BufferGeometry }) {
@@ -118,9 +119,15 @@ function ContextLostHandler() {
   return null;
 }
 
-export default function TrayViewer({ geometry }: TrayViewerProps) {
+export default function TrayViewer({ geometry, isStale }: TrayViewerProps) {
   return (
     <div className="relative w-full h-full min-h-[400px] overflow-hidden forged-viewport" style={{ backgroundColor: '#3d3b38' }}>
+      {/* Stale preview indicator */}
+      {isStale && geometry && (
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 px-3 py-1.5 bg-[#2a2518]/90 border border-[#5a4a2a] rounded text-xs text-[#c8a84e] font-mono tracking-wider backdrop-blur-sm">
+          ⚠ 参数已变更，预览可能与当前配置不一致
+        </div>
+      )}
       {/* Corner rivets */}
       <div className="absolute top-3 left-3 rivet z-10" />
       <div className="absolute top-3 right-3 rivet z-10" />

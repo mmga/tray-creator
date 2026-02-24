@@ -30,6 +30,7 @@ interface UseCustomLayoutReturn {
   threeGeometry: THREE.BufferGeometry | null;
   volume: number; // in mm^3
   isGenerating: boolean;
+  isPreviewStale: boolean;
   handleGenerate: () => void;
   handleExportSTL: () => void;
 }
@@ -47,6 +48,8 @@ export function useCustomLayout(): UseCustomLayoutReturn {
   // 用 ref 追踪最新 params，避免闭包陈旧
   const paramsRef = useRef(params);
   paramsRef.current = params;
+  // 追踪预览是否过期
+  const [isPreviewStale, setIsPreviewStale] = useState(false);
 
   /** 手动保存快照（供拖拽开始时调用） */
   const saveSnapshot = useCallback(() => {
@@ -65,6 +68,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     <K extends keyof CustomLayoutParams>(key: K, value: CustomLayoutParams[K]) => {
       pushState(paramsRef.current);
       setParams((prev) => ({ ...prev, [key]: value }));
+      setIsPreviewStale(true);
     },
     [pushState]
   );
@@ -237,6 +241,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
         prev?.dispose();
         return threeGeom;
       });
+      setIsPreviewStale(false);
     } catch (err) {
       console.error("生成失败:", err);
       toast("error", `模型生成失败：${err instanceof Error ? err.message : "未知错误"}`);
@@ -286,6 +291,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     threeGeometry,
     volume,
     isGenerating,
+    isPreviewStale,
     handleGenerate,
     handleExportSTL,
   };
