@@ -1,7 +1,7 @@
 import { booleans, primitives, transforms } from "@jscad/modeling";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { TrayParams } from "@/types/tray";
-import { RENDER_CONFIG, HOLE_TOLERANCE } from "@/lib/config";
+import { RENDER_CONFIG, getSlotTolerance } from "@/lib/config";
 import { createBaseBody, subtractBaseHoles, type SlotCenter } from "@/lib/model-utils";
 
 const { subtract } = booleans;
@@ -31,7 +31,7 @@ export function createTrayModel(params: TrayParams): Geom3 {
   } = params;
 
   // 实际凹槽直径（加公差）
-  const actualHoleDiameter = holeDiameter + HOLE_TOLERANCE;
+  const actualHoleDiameter = holeDiameter + getSlotTolerance(holeDiameter);
   const holeRadius = actualHoleDiameter / 2;
 
   // 计算总尺寸：(N+1) 段间距 + N 个凹槽
@@ -81,7 +81,7 @@ export function createTrayModel(params: TrayParams): Geom3 {
  */
 export function calculateTrayDimensions(params: TrayParams) {
   const { rows, columns, holeDiameter, spacing, baseThickness, holeDepth } = params;
-  const actualHoleDiameter = holeDiameter + HOLE_TOLERANCE;
+  const actualHoleDiameter = holeDiameter + getSlotTolerance(holeDiameter);
   return {
     width: (columns + 1) * spacing + columns * actualHoleDiameter,
     depth: (rows + 1) * spacing + rows * actualHoleDiameter,

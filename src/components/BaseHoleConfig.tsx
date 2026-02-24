@@ -77,7 +77,7 @@ export function BaseHoleConfig({ enableBaseHole, baseHoleSize, baseThickness, up
                       ⌀25.0mm × 1.2mm (推荐)
                     </SelectItem>
                     <SelectItem value="19.5" className="text-xs text-foreground/90 cursor-pointer focus:bg-primary/10 focus:text-primary">
-                      ⌀19.5mm × 0.8mm
+                      ⌀19.5mm × 1.2mm
                     </SelectItem>
                   </SelectContent>
                 </Select>

@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import type { CustomLayoutParams, FreeSlot } from "@/types/custom-tray";
-import { CUSTOM_LAYOUT_DEFAULTS, HOLE_TOLERANCE } from "@/lib/config";
+import { CUSTOM_LAYOUT_DEFAULTS, getSlotTolerance } from "@/lib/config";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
 import { generateCustomSTLFilename } from "@/lib/stl-export";
 import { useUndoHistory } from "@/hooks/useUndoHistory";
@@ -214,8 +214,8 @@ export function useCustomLayout(): UseCustomLayoutReturn {
 
       prev.slots.forEach((slot) => {
         const rad = (slot.rotation * Math.PI) / 180;
-        const a = (slot.width + HOLE_TOLERANCE) / 2;
-        const b = (slot.height + HOLE_TOLERANCE) / 2;
+        const a = (slot.width + getSlotTolerance(slot.width)) / 2;
+        const b = (slot.height + getSlotTolerance(slot.height)) / 2;
         const halfW = Math.sqrt(
           Math.pow(a * Math.cos(rad), 2) + Math.pow(b * Math.sin(rad), 2),
         );

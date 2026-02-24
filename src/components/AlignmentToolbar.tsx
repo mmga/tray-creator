@@ -6,7 +6,7 @@ import {
   ArrowUpToLine, ArrowDownToLine, ArrowLeftToLine, ArrowRightToLine
 } from "lucide-react";
 import { FreeSlot } from "@/types/custom-tray";
-import { HOLE_TOLERANCE } from "@/lib/config";
+import { getSlotTolerance } from "@/lib/config";
 
 // ── 常量与工具 ──────────────────────────────
 const STEP = 0.2; // 对齐步长 mm
@@ -19,8 +19,8 @@ type Update = { id: string; x: number; y: number };
 /** 计算旋转椭圆的 AABB 半尺寸（含公差） */
 function getSlotBounds(slot: FreeSlot) {
   const rad = ((slot.rotation || 0) * Math.PI) / 180;
-  const a = (slot.width + HOLE_TOLERANCE) / 2;
-  const b = (slot.height + HOLE_TOLERANCE) / 2;
+  const a = (slot.width + getSlotTolerance(slot.width)) / 2;
+  const b = (slot.height + getSlotTolerance(slot.height)) / 2;
   return {
     halfW: Math.sqrt((a * Math.cos(rad)) ** 2 + (b * Math.sin(rad)) ** 2),
     halfH: Math.sqrt((a * Math.sin(rad)) ** 2 + (b * Math.cos(rad)) ** 2),

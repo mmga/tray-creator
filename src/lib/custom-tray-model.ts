@@ -1,7 +1,7 @@
 import { booleans, primitives, transforms, extrusions } from "@jscad/modeling";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { CustomLayoutParams } from "@/types/custom-tray";
-import { RENDER_CONFIG, HOLE_TOLERANCE } from "@/lib/config";
+import { RENDER_CONFIG, getSlotTolerance } from "@/lib/config";
 import { createBaseBody, subtractBaseHoles, type SlotCenter } from "@/lib/model-utils";
 
 const { subtract } = booleans;
@@ -40,8 +40,8 @@ export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
     const height = slot.height;
     const rotation = slot.rotation || 0;
 
-    const actualW = width + HOLE_TOLERANCE;
-    const actualH = height + HOLE_TOLERANCE;
+    const actualW = width + getSlotTolerance(width);
+    const actualH = height + getSlotTolerance(height);
 
     // 2D 椭圆 → 拉伸 → 旋转 → 平移
     const holeShape2D = ellipse({

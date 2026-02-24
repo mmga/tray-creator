@@ -2,7 +2,7 @@
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import type { FreeSlot, CustomLayoutParams } from "@/types/custom-tray";
-import { HOLE_TOLERANCE } from "@/lib/config";
+import { getSlotTolerance } from "@/lib/config";
 import { getEllipsePolygon, polygonsIntersect } from "@/lib/collision";
 import AlignmentToolbar from "./AlignmentToolbar";
 import { Trash2, Undo2, Copy, XCircle } from "lucide-react";
@@ -136,13 +136,13 @@ export default function LayoutCanvas({
    * Boundary: Use precise Axis-Aligned Bounding Box (AABB) of rotated ellipse.
    */
   const getCollisionRadius = (slot: FreeSlot) => {
-    return (Math.max(slot.width, slot.height) + HOLE_TOLERANCE) / 2;
+    return (Math.max(slot.width, slot.height) + getSlotTolerance(Math.max(slot.width, slot.height))) / 2;
   };
 
   const getEllipseBoundingBox = (w: number, h: number, rotation: number) => {
     const rad = (rotation * Math.PI) / 180;
-    const a = (w + HOLE_TOLERANCE) / 2;
-    const b = (h + HOLE_TOLERANCE) / 2;
+    const a = (w + getSlotTolerance(w)) / 2;
+    const b = (h + getSlotTolerance(h)) / 2;
     const halfW = Math.sqrt(Math.pow(a * Math.cos(rad), 2) + Math.pow(b * Math.sin(rad), 2));
     const halfH = Math.sqrt(Math.pow(a * Math.sin(rad), 2) + Math.pow(b * Math.cos(rad), 2));
     return { halfW, halfH };
@@ -174,7 +174,7 @@ export default function LayoutCanvas({
     // Equivalent to: Shape A expanded by spacing/2 intersects Shape B expanded by spacing/2.
 
     // Let's generate polygon for NEW position of current slot (expanded by spacing/2)
-    const margin = spacing / 2 + HOLE_TOLERANCE / 2;
+    const margin = spacing / 2 + getSlotTolerance(currentW) / 2;
     const poly1 = getEllipsePolygon(x, y, currentW, currentH, currentRot, margin, 12); // 12 steps is good balance
 
     const collidingIds: string[] = [];
@@ -182,7 +182,8 @@ export default function LayoutCanvas({
       if (other.id === id) continue;
 
       // Expand other slot by spacing/2
-      const poly2 = getEllipsePolygon(other.x, other.y, other.width, other.height, other.rotation, margin, 12);
+      const margin2 = spacing / 2 + getSlotTolerance(other.width) / 2;
+      const poly2 = getEllipsePolygon(other.x, other.y, other.width, other.height, other.rotation, margin2, 12);
 
       if (polygonsIntersect(poly1, poly2)) {
         collidingIds.push(other.id);
@@ -689,7 +690,8 @@ export default function LayoutCanvas({
       layout.updates.forEach((u) => posMap.set(u.id, { x: u.x, y: u.y }));
 
       const getPos = (slot: FreeSlot) => posMap.get(slot.id) ?? { x: slot.x, y: slot.y };
-      const margin = spacing / 2 + HOLE_TOLERANCE / 2;
+      const marginSet = new Map<string, number>();
+      slots.forEach(s => marginSet.set(s.id, spacing / 2 + getSlotTolerance(s.width) / 2));
 
       for (let i = 0; i < slots.length; i++) {
         const a = slots[i];
@@ -708,8 +710,8 @@ export default function LayoutCanvas({
           const bMoved = layout.arrangedIds.has(b.id);
           if (!aMoved && !bMoved) continue;
 
-          const polyA = getEllipsePolygon(aPos.x, aPos.y, a.width, a.height, a.rotation, margin, 12);
-          const polyB = getEllipsePolygon(bPos.x, bPos.y, b.width, b.height, b.rotation, margin, 12);
+          const polyA = getEllipsePolygon(aPos.x, aPos.y, a.width, a.height, a.rotation, marginSet.get(a.id)!, 12);
+          const polyB = getEllipsePolygon(bPos.x, bPos.y, b.width, b.height, b.rotation, marginSet.get(b.id)!, 12);
           if (polygonsIntersect(polyA, polyB)) return true;
         }
       }
@@ -922,8 +924,8 @@ export default function LayoutCanvas({
 
           return slots.map((slot) => {
             // Geometry
-            const w = slot.width + HOLE_TOLERANCE;
-            const h = slot.height + HOLE_TOLERANCE;
+            const w = slot.width + getSlotTolerance(slot.width);
+            const h = slot.height + getSlotTolerance(slot.height);
 
             // Collision Radius (Approximation)
             const collisionR = getCollisionRadius(slot);

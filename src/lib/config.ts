@@ -12,8 +12,18 @@ import type { CustomLayoutParams } from "@/types/custom-tray";
 // 1. 建模公差
 // ═══════════════════════════════════════════
 
-/** 凹槽公差 (mm)，静默追加到凹槽直径，不在 UI 中显示 */
-export const HOLE_TOLERANCE = 0.4;
+/** 默认凹槽公差 (mm)，静默追加到凹槽直径，不在 UI 中显示 */
+export const DEFAULT_HOLE_TOLERANCE = 0.4;
+
+/** 特定直径的公差映射表 */
+export const SLOT_TOLERANCE_MAP: Record<number, number> = {
+  25: 0.2,
+};
+
+/** 根据凹槽直径获取公差 */
+export function getSlotTolerance(diameter: number): number {
+  return SLOT_TOLERANCE_MAP[diameter] ?? DEFAULT_HOLE_TOLERANCE;
+}
 
 // ═══════════════════════════════════════════
 // 2. 磁吸孔配置
@@ -22,7 +32,7 @@ export const HOLE_TOLERANCE = 0.4;
 export const BASE_HOLE_CONFIG = {
   /** 规格预设 */
   presets: {
-    "19.5": { diameter: 19.5, depth: 0.8 },
+    "19.5": { diameter: 19.5, depth: 1.2 },
     "25": { diameter: 25, depth: 1.2 },
   },
   /** 建模公差 (mm)，仅用于建模，不显示在 UI */
