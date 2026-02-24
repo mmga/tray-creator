@@ -258,98 +258,116 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, ca
 
   // ── UI ──────────
 
-  const btnClass = "p-1.5 hover:bg-neutral-700/50 rounded text-neutral-300 hover:text-white transition-colors cursor-pointer group relative disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-neutral-300";
-  const tooltipClass = "absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-black text-xs text-white rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity z-50";
+  const btnClass = "p-1.5 lg:p-1.5 hover:bg-neutral-700/50 rounded text-neutral-300 hover:text-white transition-colors cursor-pointer group relative disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-neutral-300 shrink-0";
+  const tooltipClass = "absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-black text-xs text-white rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity z-50 hidden lg:block";
 
   return (
-    <div className="absolute top-4 left-1/2 transform -translate-x-1/2 flex items-center gap-1 bg-neutral-800/90 backdrop-blur-sm border border-neutral-700 rounded-lg shadow-xl px-2 py-1.5 z-50">
+    <div className="absolute top-2 lg:top-4 left-1/2 transform -translate-x-1/2 max-w-[calc(100vw-1rem)] flex items-center bg-neutral-800/90 backdrop-blur-sm border border-neutral-700 rounded-lg shadow-xl px-1 lg:px-2 py-1 lg:py-1.5 z-50 overflow-x-auto scrollbar-none">
 
       {/* 画布对齐 */}
-      <div className="flex items-center gap-0.5 mr-2 pr-2 border-r border-neutral-700">
+      <div className="flex items-center gap-0.5 mr-1 lg:mr-2 pr-1 lg:pr-2 border-r border-neutral-700 shrink-0">
         <button className={btnClass} disabled={!hasSelection} onClick={() => handleCanvasAlign('left')}>
-          <ArrowLeftToLine size={16} strokeWidth={2.5} />
+          <ArrowLeftToLine size={14} className="lg:hidden" strokeWidth={2.5} />
+          <ArrowLeftToLine size={16} className="hidden lg:block" strokeWidth={2.5} />
           <span className={tooltipClass}>靠左对齐画布</span>
         </button>
         <button className={btnClass} disabled={!hasSelection} onClick={() => handleCanvasAlign('center-x')}>
-          <AlignCenterHorizontal size={16} />
+          <AlignCenterHorizontal size={14} className="lg:hidden" />
+          <AlignCenterHorizontal size={16} className="hidden lg:block" />
           <span className={tooltipClass}>水平居中画布</span>
         </button>
         <button className={btnClass} disabled={!hasSelection} onClick={() => handleCanvasAlign('right')}>
-          <ArrowRightToLine size={16} strokeWidth={2.5} />
+          <ArrowRightToLine size={14} className="lg:hidden" strokeWidth={2.5} />
+          <ArrowRightToLine size={16} className="hidden lg:block" strokeWidth={2.5} />
           <span className={tooltipClass}>靠右对齐画布</span>
         </button>
 
-        <div className="w-px h-4 bg-neutral-700 mx-1" />
+        <div className="w-px h-4 bg-neutral-700 mx-0.5 lg:mx-1 shrink-0" />
 
         <button className={btnClass} disabled={!hasSelection} onClick={() => handleCanvasAlign('top')}>
-          <ArrowUpToLine size={16} strokeWidth={2.5} />
+          <ArrowUpToLine size={14} className="lg:hidden" strokeWidth={2.5} />
+          <ArrowUpToLine size={16} className="hidden lg:block" strokeWidth={2.5} />
           <span className={tooltipClass}>靠上对齐画布</span>
         </button>
         <button className={btnClass} disabled={!hasSelection} onClick={() => handleCanvasAlign('center-y')}>
-          <AlignCenterVertical size={16} />
+          <AlignCenterVertical size={14} className="lg:hidden" />
+          <AlignCenterVertical size={16} className="hidden lg:block" />
           <span className={tooltipClass}>垂直居中画布</span>
         </button>
         <button className={btnClass} disabled={!hasSelection} onClick={() => handleCanvasAlign('bottom')}>
-          <ArrowDownToLine size={16} strokeWidth={2.5} />
+          <ArrowDownToLine size={14} className="lg:hidden" strokeWidth={2.5} />
+          <ArrowDownToLine size={16} className="hidden lg:block" strokeWidth={2.5} />
           <span className={tooltipClass}>靠下对齐画布</span>
         </button>
 
-        <div className="w-px h-4 bg-neutral-700 mx-1" />
+        <div className="w-px h-4 bg-neutral-700 mx-0.5 lg:mx-1 shrink-0" />
 
         {/* 画布分布 */}
         <button className={btnClass} disabled={!hasMultiple} onClick={() => handleCanvasDistribute('h')}>
-          <AlignHorizontalSpaceAround size={16} />
+          <AlignHorizontalSpaceAround size={14} className="lg:hidden" />
+          <AlignHorizontalSpaceAround size={16} className="hidden lg:block" />
           <span className={tooltipClass}>水平均匀分布于画布</span>
         </button>
         <button className={btnClass} disabled={!hasMultiple} onClick={() => handleCanvasDistribute('v')}>
-          <AlignVerticalSpaceAround size={16} />
+          <AlignVerticalSpaceAround size={14} className="lg:hidden" />
+          <AlignVerticalSpaceAround size={16} className="hidden lg:block" />
           <span className={tooltipClass}>垂直均匀分布于画布</span>
         </button>
       </div>
 
       {/* 多选对齐 */}
-      <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('left')}>
-        <AlignLeft size={18} />
-        <span className={tooltipClass}>左对齐选中项</span>
-      </button>
-      <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('center-x')}>
-        <AlignCenterHorizontal size={18} />
-        <span className={tooltipClass}>水平居中选中项</span>
-      </button>
-      <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('right')}>
-        <AlignRight size={18} />
-        <span className={tooltipClass}>右对齐选中项</span>
-      </button>
+      <div className="flex items-center gap-0.5 shrink-0">
+        <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('left')}>
+          <AlignLeft size={16} className="lg:hidden" />
+          <AlignLeft size={18} className="hidden lg:block" />
+          <span className={tooltipClass}>左对齐选中项</span>
+        </button>
+        <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('center-x')}>
+          <AlignCenterHorizontal size={16} className="lg:hidden" />
+          <AlignCenterHorizontal size={18} className="hidden lg:block" />
+          <span className={tooltipClass}>水平居中选中项</span>
+        </button>
+        <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('right')}>
+          <AlignRight size={16} className="lg:hidden" />
+          <AlignRight size={18} className="hidden lg:block" />
+          <span className={tooltipClass}>右对齐选中项</span>
+        </button>
 
-      <div className="w-px h-6 bg-neutral-700 mx-1" />
+        <div className="w-px h-6 bg-neutral-700 mx-0.5 lg:mx-1 shrink-0" />
 
-      <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('top')}>
-        <AlignStartVertical size={18} />
-        <span className={tooltipClass}>顶部对齐选中项</span>
-      </button>
-      <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('center-y')}>
-        <AlignCenterVertical size={18} />
-        <span className={tooltipClass}>垂直居中选中项</span>
-      </button>
-      <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('bottom')}>
-        <AlignEndVertical size={18} />
-        <span className={tooltipClass}>底部对齐选中项</span>
-      </button>
+        <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('top')}>
+          <AlignStartVertical size={16} className="lg:hidden" />
+          <AlignStartVertical size={18} className="hidden lg:block" />
+          <span className={tooltipClass}>顶部对齐选中项</span>
+        </button>
+        <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('center-y')}>
+          <AlignCenterVertical size={16} className="lg:hidden" />
+          <AlignCenterVertical size={18} className="hidden lg:block" />
+          <span className={tooltipClass}>垂直居中选中项</span>
+        </button>
+        <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('bottom')}>
+          <AlignEndVertical size={16} className="lg:hidden" />
+          <AlignEndVertical size={18} className="hidden lg:block" />
+          <span className={tooltipClass}>底部对齐选中项</span>
+        </button>
 
-      <div className="w-px h-6 bg-neutral-700 mx-1" />
+        <div className="w-px h-6 bg-neutral-700 mx-0.5 lg:mx-1 shrink-0" />
 
-      {/* 选中项内分布 */}
-      <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('distribute-h')}>
-        <AlignHorizontalDistributeCenter size={18} />
-        <span className={tooltipClass}>水平等距分布</span>
-      </button>
-      <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('distribute-v')}>
-        <AlignVerticalDistributeCenter size={18} />
-        <span className={tooltipClass}>垂直等距分布</span>
-      </button>
+        {/* 选中项内分布 */}
+        <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('distribute-h')}>
+          <AlignHorizontalDistributeCenter size={16} className="lg:hidden" />
+          <AlignHorizontalDistributeCenter size={18} className="hidden lg:block" />
+          <span className={tooltipClass}>水平等距分布</span>
+        </button>
+        <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('distribute-v')}>
+          <AlignVerticalDistributeCenter size={16} className="lg:hidden" />
+          <AlignVerticalDistributeCenter size={18} className="hidden lg:block" />
+          <span className={tooltipClass}>垂直等距分布</span>
+        </button>
+      </div>
 
-      <div className="ml-2 text-xs text-neutral-500 font-mono">
-        {selectedIds.size > 0 ? `${selectedIds.size} 已选择` : '未选择'}
+      <div className="ml-1 lg:ml-2 text-[10px] lg:text-xs text-neutral-500 font-mono shrink-0">
+        {selectedIds.size > 0 ? `${selectedIds.size} 选中` : '未选择'}
       </div>
     </div>
   );
