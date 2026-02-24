@@ -23,10 +23,16 @@ export function CanvasContextMenu({
 }: CanvasContextMenuProps) {
     if (!contextMenu) return null;
 
+    // 钳制菜单位置，防止超出视口（尤其是移动端小屏幕）
+    const menuW = 160; // min-w-35 ≈ 140px + padding
+    const menuH = 200; // 估算菜单高度
+    const clampedX = Math.min(contextMenu.x, (typeof window !== 'undefined' ? window.innerWidth : 400) - menuW - 8);
+    const clampedY = Math.min(contextMenu.y, (typeof window !== 'undefined' ? window.innerHeight : 800) - menuH - 8);
+
     return (
         <div
             className="fixed bg-[#2a2a2e] border border-[#444] rounded shadow-xl z-50 overflow-hidden min-w-35 flex flex-col"
-            style={{ left: contextMenu.x, top: contextMenu.y }}
+            style={{ left: Math.max(8, clampedX), top: Math.max(8, clampedY) }}
             onClick={(e) => {
                 e.stopPropagation();
                 onClose(e);

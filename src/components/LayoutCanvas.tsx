@@ -54,6 +54,9 @@ export default function LayoutCanvas({
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressFiredRef = useRef(false);
 
+  // 主触摸指针 ID（防止多指时第二根手指触发拖拽/框选）
+  const primaryPointerIdRef = useRef<number | null>(null);
+
   // Multi-drag State
   const dragStartRef = useRef<{
     mouseStart: { x: number, y: number }; // SVG coords
@@ -236,6 +239,11 @@ export default function LayoutCanvas({
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
 
+    // 多指防护：仅处理主指针的移动事件
+    if (e.pointerType === 'touch' && primaryPointerIdRef.current !== null && e.pointerId !== primaryPointerIdRef.current) {
+      return;
+    }
+
     // 移动时取消长按定时器（防止拖拽触发上下文菜单）
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
@@ -399,6 +407,15 @@ export default function LayoutCanvas({
     e.preventDefault();
     e.stopPropagation();
 
+    // 多指防护：仅追踪主指针（第一根手指），后续手指忽略
+    if (e.pointerType === 'touch') {
+      if (primaryPointerIdRef.current !== null && primaryPointerIdRef.current !== e.pointerId) {
+        // 第二根手指触碰，让 touch 事件处理双指缩放
+        return;
+      }
+      primaryPointerIdRef.current = e.pointerId;
+    }
+
     // Capture pointer for reliable tracking (especially on touch)
     (e.target as Element)?.setPointerCapture?.(e.pointerId);
 
@@ -499,18 +516,23 @@ export default function LayoutCanvas({
       if (!isCtrl) {
         setSelectedIds(new Set());
       }
-      // Start Marquee
-      const rect = parentRef.current?.getBoundingClientRect();
-      if (rect) {
-        setSelectionBox({
-          start: { x: e.clientX - rect.left, y: e.clientY - rect.top },
-          current: { x: e.clientX - rect.left, y: e.clientY - rect.top }
-        });
+      // 仅鼠标启动框选，触屏上点击空白区域只做取消选中
+      if (e.pointerType !== 'touch') {
+        const rect = parentRef.current?.getBoundingClientRect();
+        if (rect) {
+          setSelectionBox({
+            start: { x: e.clientX - rect.left, y: e.clientY - rect.top },
+            current: { x: e.clientX - rect.left, y: e.clientY - rect.top }
+          });
+        }
       }
     }
   }, [selectedIds, isSpacePressed, slots, trayDepth]);
 
   const handlePointerUp = useCallback(() => {
+    // 释放主指针追踪
+    primaryPointerIdRef.current = null;
+
     // 清除长按定时器
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
