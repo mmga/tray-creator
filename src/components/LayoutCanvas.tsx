@@ -640,6 +640,43 @@ export default function LayoutCanvas({
     }
   };
 
+  const autoAdjustSlotsByIds = useCallback((ids: Set<string>) => {
+    if (ids.size < 2) return;
+
+    const targets = slots.filter((s) => ids.has(s.id));
+    if (targets.length < 2) return;
+
+    const sorted = [...targets].sort((a, b) => a.x - b.x);
+    const availableStart = spacing;
+    const availableEnd = trayWidth - spacing;
+    const availableWidth = Math.max(0, availableEnd - availableStart);
+
+    const totalItemWidth = sorted.reduce((sum, slot) => {
+      const { halfW } = getEllipseBoundingBox(slot.width, slot.height, slot.rotation);
+      return sum + halfW * 2;
+    }, 0);
+
+    const gap = Math.max(0.5, (availableWidth - totalItemWidth) / (sorted.length + 1));
+    let cursor = availableStart + gap;
+
+    const centerY = sorted.reduce((sum, slot) => sum + slot.y, 0) / sorted.length;
+
+    const updates = sorted.map((slot) => {
+      const { halfW, halfH } = getEllipseBoundingBox(slot.width, slot.height, slot.rotation);
+      const x = cursor + halfW;
+      cursor += halfW * 2 + gap;
+
+      const minY = spacing + halfH;
+      const maxY = trayDepth - spacing - halfH;
+      const y = Math.max(minY, Math.min(maxY, centerY));
+
+      return { id: slot.id, x, y };
+    });
+
+    handleUpdateSlots(updates);
+    setSelectedIds(new Set(sorted.map((s) => s.id)));
+  }, [slots, spacing, trayWidth, trayDepth, handleUpdateSlots]);
+
   // ── 碰撞摘要（用于底部提示条）──
   const collisionSummary = (() => {
     const messages: string[] = [];
@@ -663,6 +700,22 @@ export default function LayoutCanvas({
       }
     }
     return messages;
+  })();
+
+  const collisionInvolvedIds = (() => {
+    const involved = new Set<string>();
+    for (const slot of slots) {
+      const overlaps = checkSlotCollision(slot.id, slot.x, slot.y, slot.width, slot.height, slot.rotation);
+      if (overlaps.length > 0) {
+        involved.add(slot.id);
+        overlaps.forEach((id) => involved.add(id));
+      }
+      const boundaryReasons = checkBoundaryCollision(slot.x, slot.y, slot.width, slot.height, slot.rotation);
+      if (boundaryReasons.length > 0) {
+        involved.add(slot.id);
+      }
+    }
+    return involved;
   })();
 
   return (
@@ -755,132 +808,132 @@ export default function LayoutCanvas({
           }
 
           return slots.map((slot) => {
-          // Geometry
-          const w = slot.width + HOLE_TOLERANCE;
-          const h = slot.height + HOLE_TOLERANCE;
+            // Geometry
+            const w = slot.width + HOLE_TOLERANCE;
+            const h = slot.height + HOLE_TOLERANCE;
 
-          // Collision Radius (Approximation)
-          const collisionR = getCollisionRadius(slot);
+            // Collision Radius (Approximation)
+            const collisionR = getCollisionRadius(slot);
 
-          // Position
-          const svgY = trayDepth - slot.y;
+            // Position
+            const svgY = trayDepth - slot.y;
 
-          // Collision Check (from pre-computed map)
-          const info = collisionMap.get(slot.id)!;
-          const isBoundary = info.boundaryReasons.length > 0;
-          const isOverlap = info.overlapIds.length > 0;
-          const isColliding = isBoundary || isOverlap;
-          // 此槽位是否被别人的碰撞牵连高亮（但自身并非碰撞源）
-          const isInvolvedViaOther = !isColliding && involvedIds.has(slot.id);
+            // Collision Check (from pre-computed map)
+            const info = collisionMap.get(slot.id)!;
+            const isBoundary = info.boundaryReasons.length > 0;
+            const isOverlap = info.overlapIds.length > 0;
+            const isColliding = isBoundary || isOverlap;
+            // 此槽位是否被别人的碰撞牵连高亮（但自身并非碰撞源）
+            const isInvolvedViaOther = !isColliding && involvedIds.has(slot.id);
 
-          const isHovered = hoveredId === slot.id;
-          const isDragging = draggingId === slot.id;
-          const isSelected = selectedIds.has(slot.id);
-          const color = isSelected ? "#f97316" : "#eab308"; // Orange if selected, else Yellow
+            const isHovered = hoveredId === slot.id;
+            const isDragging = draggingId === slot.id;
+            const isSelected = selectedIds.has(slot.id);
+            const color = isSelected ? "#f97316" : "#eab308"; // Orange if selected, else Yellow
 
-          return (
-            <g
-              key={slot.id}
-              transform={`translate(${slot.x}, ${svgY}) rotate(${-slot.rotation})`} // Rotation! Note: SVG Y is inverted, so maybe rotation direction needs care. -Rotation fits typical 2D intuition if Y is up.
-              onPointerDown={(e) => handlePointerDown(e, slot.id)}
-              onContextMenu={(e) => handleContextMenu(e, slot.id)}
-              onPointerEnter={() => setHoveredId(slot.id)}
-              onPointerLeave={() => setHoveredId(null)}
-              className={`transition-opacity duration-200 ${isSpacePressed ? '' : 'cursor-move'}`}
-              style={{ opacity: isDragging ? 0.9 : 1 }}
-            >
-              {/* Note: In SVG group with translation, (0,0) is center of slot. */}
+            return (
+              <g
+                key={slot.id}
+                transform={`translate(${slot.x}, ${svgY}) rotate(${-slot.rotation})`} // Rotation! Note: SVG Y is inverted, so maybe rotation direction needs care. -Rotation fits typical 2D intuition if Y is up.
+                onPointerDown={(e) => handlePointerDown(e, slot.id)}
+                onContextMenu={(e) => handleContextMenu(e, slot.id)}
+                onPointerEnter={() => setHoveredId(slot.id)}
+                onPointerLeave={() => setHoveredId(null)}
+                className={`transition-opacity duration-200 ${isSpacePressed ? '' : 'cursor-move'}`}
+                style={{ opacity: isDragging ? 0.9 : 1 }}
+              >
+                {/* Note: In SVG group with translation, (0,0) is center of slot. */}
 
-              {/* Margin / Safe Area Indicator (Approximated Circle for simplicity in Ellipse?) 
+                {/* Margin / Safe Area Indicator (Approximated Circle for simplicity in Ellipse?) 
                   If Ellipse, let's draw an Ellipse with spacing added?
                   Actually, simple: ellipse rx=w/2+spacing, ry=h/2+spacing
               */}
-              <ellipse
-                rx={w / 2 + spacing}
-                ry={h / 2 + spacing}
-                fill="none"
-                stroke={isColliding ? "#ef4444" : isInvolvedViaOther ? "#ef4444" : "#888"}
-                strokeWidth={0.25 / zoom}
-                strokeDasharray="2 2"
-                opacity={isColliding ? 1 : isInvolvedViaOther ? 0.7 : 0.6}
-                pointerEvents="none"
-              />
-
-              {/* Highlight Halo - Inside - Show if Hovered/Dragging/Colliding (Selection uses fill color) */}
-              {(isColliding || isInvolvedViaOther || isHovered || isDragging) && (
                 <ellipse
-                  rx={Math.max(0, w / 2 - 0.5 / zoom)}
-                  ry={Math.max(0, h / 2 - 0.5 / zoom)}
+                  rx={w / 2 + spacing}
+                  ry={h / 2 + spacing}
                   fill="none"
-                  stroke={isColliding || isInvolvedViaOther ? "#ef4444" : "#fbbf24"}
-                  strokeWidth={0.8 / zoom}
-                  strokeOpacity={0.8}
+                  stroke={isColliding ? "#ef4444" : isInvolvedViaOther ? "#ef4444" : "#888"}
+                  strokeWidth={0.25 / zoom}
+                  strokeDasharray="2 2"
+                  opacity={isColliding ? 1 : isInvolvedViaOther ? 0.7 : 0.6}
                   pointerEvents="none"
                 />
-              )}
 
-              {/* Slot Shape */}
-              <ellipse
-                rx={w / 2}
-                ry={h / 2}
-                fill={color}
-                fillOpacity={0.8}
-                stroke={isColliding || isInvolvedViaOther ? "#ef4444" : "#fff"}
-                strokeWidth={(isColliding || isInvolvedViaOther ? 0.5 : 0.2) / zoom}
-              />
+                {/* Highlight Halo - Inside - Show if Hovered/Dragging/Colliding (Selection uses fill color) */}
+                {(isColliding || isInvolvedViaOther || isHovered || isDragging) && (
+                  <ellipse
+                    rx={Math.max(0, w / 2 - 0.5 / zoom)}
+                    ry={Math.max(0, h / 2 - 0.5 / zoom)}
+                    fill="none"
+                    stroke={isColliding || isInvolvedViaOther ? "#ef4444" : "#fbbf24"}
+                    strokeWidth={0.8 / zoom}
+                    strokeOpacity={0.8}
+                    pointerEvents="none"
+                  />
+                )}
 
-              {/* Size Text (rotated back so it's readable? or rotate with slot?) 
+                {/* Slot Shape */}
+                <ellipse
+                  rx={w / 2}
+                  ry={h / 2}
+                  fill={color}
+                  fillOpacity={0.8}
+                  stroke={isColliding || isInvolvedViaOther ? "#ef4444" : "#fff"}
+                  strokeWidth={(isColliding || isInvolvedViaOther ? 0.5 : 0.2) / zoom}
+                />
+
+                {/* Size Text (rotated back so it's readable? or rotate with slot?) 
                   Let's rotate with slot. 
               */}
-              <text
-                dy={(Math.min(w, h) * 0.2)} // Adjusted dy
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fontSize={Math.min(w, h, 24) / 2}
-                fill="#fff"
-                fontWeight="bold"
-                pointerEvents="none"
-                style={{ userSelect: 'none' }}
-              >
-                {slot.width === slot.height ? slot.width : `${slot.width}x${slot.height}`}
-              </text>
-
-              {/* Rotation Handle - Only show when SELECTED and NOT a circle */}
-              {isSelected && Math.abs(slot.width - slot.height) > 0.01 && (
-                <g
-                  transform={`translate(${w / 2 + spacing + 4}, 0)`}
-                  onPointerDown={(e) => handleRotateMouseDown(e, slot)}
-                  className="cursor-pointer"
-                  style={{ cursor: 'grab' }}
+                <text
+                  dy={(Math.min(w, h) * 0.2)} // Adjusted dy
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fontSize={Math.min(w, h, 24) / 2}
+                  fill="#fff"
+                  fontWeight="bold"
+                  pointerEvents="none"
+                  style={{ userSelect: 'none' }}
                 >
-                  {/* Transparent bigger hit area */}
-                  <circle
-                    r={6 / zoom}
-                    fill="transparent"
-                  />
-                  {/* Connection Line - Solid */}
-                  <line
-                    x1={-(4 + spacing)}
-                    y1={0}
-                    x2={0}
-                    y2={0}
-                    stroke="#fff"
-                    strokeWidth={0.5 / zoom}
-                    pointerEvents="none"
-                  />
-                  {/* Handle Circle - Smaller & Solid */}
-                  <circle
-                    r={1.5 / zoom}
-                    fill="#fff"
-                    stroke="#2a2a2e"
-                    strokeWidth={0.5 / zoom}
-                    pointerEvents="none"
-                  />
-                </g>
-              )}
-            </g>
-          );
-        });
+                  {slot.width === slot.height ? slot.width : `${slot.width}x${slot.height}`}
+                </text>
+
+                {/* Rotation Handle - Only show when SELECTED and NOT a circle */}
+                {isSelected && Math.abs(slot.width - slot.height) > 0.01 && (
+                  <g
+                    transform={`translate(${w / 2 + spacing + 4}, 0)`}
+                    onPointerDown={(e) => handleRotateMouseDown(e, slot)}
+                    className="cursor-pointer"
+                    style={{ cursor: 'grab' }}
+                  >
+                    {/* Transparent bigger hit area */}
+                    <circle
+                      r={6 / zoom}
+                      fill="transparent"
+                    />
+                    {/* Connection Line - Solid */}
+                    <line
+                      x1={-(4 + spacing)}
+                      y1={0}
+                      x2={0}
+                      y2={0}
+                      stroke="#fff"
+                      strokeWidth={0.5 / zoom}
+                      pointerEvents="none"
+                    />
+                    {/* Handle Circle - Smaller & Solid */}
+                    <circle
+                      r={1.5 / zoom}
+                      fill="#fff"
+                      stroke="#2a2a2e"
+                      strokeWidth={0.5 / zoom}
+                      pointerEvents="none"
+                    />
+                  </g>
+                )}
+              </g>
+            );
+          });
         })()}
 
         {/* Collision connector lines — 连接冲突的槽位对，增强可理解性 */}
@@ -974,15 +1027,25 @@ export default function LayoutCanvas({
 
       {/* Collision Info Banner */}
       {collisionSummary.length > 0 && (
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 max-w-[90%] px-3 py-2 bg-[#201515]/95 border border-[#6b3030] rounded text-xs text-[#d18888] font-mono backdrop-blur-sm shadow-lg">
+        <div className="absolute top-14 lg:top-16 left-1/2 -translate-x-1/2 z-[70] max-w-[90%] px-3 py-2 bg-[#201515]/95 border border-[#6b3030] rounded text-xs text-[#d18888] font-mono backdrop-blur-sm shadow-lg">
           <div className="flex items-start gap-2">
             <span className="text-red-400 font-bold shrink-0 mt-px">⚠</span>
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-1">
               {collisionSummary.slice(0, 3).map((msg, i) => (
                 <span key={i}>{msg}</span>
               ))}
               {collisionSummary.length > 3 && (
                 <span className="text-[#d18888]/60">…另有 {collisionSummary.length - 3} 处冲突</span>
+              )}
+              {collisionInvolvedIds.size > 1 && (
+                <div className="pt-1">
+                  <button
+                    onClick={() => autoAdjustSlotsByIds(collisionInvolvedIds)}
+                    className="pointer-events-auto px-2 py-1 text-[11px] rounded border border-[#7a3b3b] bg-[#3a1c1c] text-[#f0b3b3] hover:bg-[#4a2424] transition-colors"
+                  >
+                    自动调整/对齐冲突项
+                  </button>
+                </div>
               )}
             </div>
           </div>
