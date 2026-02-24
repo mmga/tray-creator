@@ -145,17 +145,18 @@ export default function LayoutCanvas({
     return { halfW, halfH };
   };
 
-  const checkBoundaryCollision = (x: number, y: number, w: number, h: number, rot: number) => {
+  const checkBoundaryCollision = (x: number, y: number, w: number, h: number, rot: number): string[] => {
     const { halfW, halfH } = getEllipseBoundingBox(w, h, rot);
-    return (
-      x - halfW < spacing ||
-      x + halfW > trayWidth - spacing ||
-      y - halfH < spacing ||
-      y + halfH > trayDepth - spacing
-    );
+    const reasons: string[] = [];
+    if (x - halfW < spacing) reasons.push("左");
+    if (x + halfW > trayWidth - spacing) reasons.push("右");
+    if (y - halfH < spacing) reasons.push("下");
+    if (y + halfH > trayDepth - spacing) reasons.push("上");
+    return reasons;
   };
 
-  const checkSlotCollision = (id: string, x: number, y: number, currentW: number, currentH: number, currentRot: number) => {
+  /** 返回与指定槽位发生碰撞的其他槽位 ID 列表 */
+  const checkSlotCollision = (id: string, x: number, y: number, currentW: number, currentH: number, currentRot: number): string[] => {
     // Optimization: First do a broad phase check using bounding circles
     // (We keep the old logic as a fast cull, but with margin)
     // Actually, let's just use SAT for accuracy as requested by user.
@@ -173,6 +174,7 @@ export default function LayoutCanvas({
     const margin = spacing / 2 + HOLE_TOLERANCE / 2;
     const poly1 = getEllipsePolygon(x, y, currentW, currentH, currentRot, margin, 12); // 12 steps is good balance
 
+    const collidingIds: string[] = [];
     for (const other of slots) {
       if (other.id === id) continue;
 
@@ -180,17 +182,17 @@ export default function LayoutCanvas({
       const poly2 = getEllipsePolygon(other.x, other.y, other.width, other.height, other.rotation, margin, 12);
 
       if (polygonsIntersect(poly1, poly2)) {
-        return true;
+        collidingIds.push(other.id);
       }
     }
-    return false;
+    return collidingIds;
   };
 
   // Check if currently dragging slot hits the boundary
   const draggingSlotResult = slots.find(s => s.id === draggingId);
   const draggingRadius = draggingSlotResult ? getCollisionRadius(draggingSlotResult) : 0;
 
-  const isDraggingBoundaryCollision = draggingSlotResult
+  const draggingBoundaryReasons = draggingSlotResult
     ? checkBoundaryCollision(
       draggingSlotResult.x,
       draggingSlotResult.y,
@@ -198,7 +200,8 @@ export default function LayoutCanvas({
       draggingSlotResult.height,
       draggingSlotResult.rotation
     )
-    : false;
+    : [];
+  const isDraggingBoundaryCollision = draggingBoundaryReasons.length > 0;
 
   // ... (keep existing helpers)
 
@@ -637,6 +640,31 @@ export default function LayoutCanvas({
     }
   };
 
+  // ── 碰撞摘要（用于底部提示条）──
+  const collisionSummary = (() => {
+    const messages: string[] = [];
+    for (const slot of slots) {
+      const boundaryReasons = checkBoundaryCollision(slot.x, slot.y, slot.width, slot.height, slot.rotation);
+      if (boundaryReasons.length > 0) {
+        const label = slot.width === slot.height ? `${slot.width}mm` : `${slot.width}x${slot.height}mm`;
+        messages.push(`${label}(${slot.id.slice(0, 4)}) 超出${boundaryReasons.join("/")}边距`);
+      }
+      const overlapIds = checkSlotCollision(slot.id, slot.x, slot.y, slot.width, slot.height, slot.rotation);
+      for (const otherId of overlapIds) {
+        // 只报告一个方向避免重复
+        if (slot.id < otherId) {
+          const other = slots.find(s => s.id === otherId);
+          if (other) {
+            const labelA = slot.width === slot.height ? `${slot.width}mm` : `${slot.width}x${slot.height}mm`;
+            const labelB = other.width === other.height ? `${other.width}mm` : `${other.width}x${other.height}mm`;
+            messages.push(`${labelA}(${slot.id.slice(0, 4)}) 与 ${labelB}(${otherId.slice(0, 4)}) 间距不足`);
+          }
+        }
+      }
+    }
+    return messages;
+  })();
+
   return (
     <div
       ref={parentRef}
@@ -710,7 +738,23 @@ export default function LayoutCanvas({
         />
 
         {/* Slots */}
-        {slots.map((slot) => {
+        {(() => {
+          // 预计算所有碰撞信息，用于高亮冲突对方和生成摘要
+          const collisionMap = new Map<string, { boundaryReasons: string[]; overlapIds: string[] }>();
+          // 被其他碰撞槽位"牵连"高亮的 ID 集合
+          const involvedIds = new Set<string>();
+
+          for (const slot of slots) {
+            const boundaryReasons = checkBoundaryCollision(slot.x, slot.y, slot.width, slot.height, slot.rotation);
+            const overlapIds = checkSlotCollision(slot.id, slot.x, slot.y, slot.width, slot.height, slot.rotation);
+            collisionMap.set(slot.id, { boundaryReasons, overlapIds });
+            if (overlapIds.length > 0) {
+              involvedIds.add(slot.id);
+              overlapIds.forEach(id => involvedIds.add(id));
+            }
+          }
+
+          return slots.map((slot) => {
           // Geometry
           const w = slot.width + HOLE_TOLERANCE;
           const h = slot.height + HOLE_TOLERANCE;
@@ -721,11 +765,13 @@ export default function LayoutCanvas({
           // Position
           const svgY = trayDepth - slot.y;
 
-          // Collision Check
-          const isBoundary = checkBoundaryCollision(slot.x, slot.y, slot.width, slot.height, slot.rotation);
-          // Collision now uses SAT
-          const isOverlap = checkSlotCollision(slot.id, slot.x, slot.y, slot.width, slot.height, slot.rotation);
+          // Collision Check (from pre-computed map)
+          const info = collisionMap.get(slot.id)!;
+          const isBoundary = info.boundaryReasons.length > 0;
+          const isOverlap = info.overlapIds.length > 0;
           const isColliding = isBoundary || isOverlap;
+          // 此槽位是否被别人的碰撞牵连高亮（但自身并非碰撞源）
+          const isInvolvedViaOther = !isColliding && involvedIds.has(slot.id);
 
           const isHovered = hoveredId === slot.id;
           const isDragging = draggingId === slot.id;
@@ -753,20 +799,20 @@ export default function LayoutCanvas({
                 rx={w / 2 + spacing}
                 ry={h / 2 + spacing}
                 fill="none"
-                stroke={isColliding ? "#ef4444" : "#888"}
+                stroke={isColliding ? "#ef4444" : isInvolvedViaOther ? "#ef4444" : "#888"}
                 strokeWidth={0.25 / zoom}
                 strokeDasharray="2 2"
-                opacity={isColliding ? 1 : 0.6}
+                opacity={isColliding ? 1 : isInvolvedViaOther ? 0.7 : 0.6}
                 pointerEvents="none"
               />
 
               {/* Highlight Halo - Inside - Show if Hovered/Dragging/Colliding (Selection uses fill color) */}
-              {(isColliding || isHovered || isDragging) && (
+              {(isColliding || isInvolvedViaOther || isHovered || isDragging) && (
                 <ellipse
                   rx={Math.max(0, w / 2 - 0.5 / zoom)}
                   ry={Math.max(0, h / 2 - 0.5 / zoom)}
                   fill="none"
-                  stroke={isColliding ? "#ef4444" : "#fbbf24"}
+                  stroke={isColliding || isInvolvedViaOther ? "#ef4444" : "#fbbf24"}
                   strokeWidth={0.8 / zoom}
                   strokeOpacity={0.8}
                   pointerEvents="none"
@@ -779,8 +825,8 @@ export default function LayoutCanvas({
                 ry={h / 2}
                 fill={color}
                 fillOpacity={0.8}
-                stroke={isColliding ? "#ef4444" : "#fff"}
-                strokeWidth={(isColliding ? 0.5 : 0.2) / zoom}
+                stroke={isColliding || isInvolvedViaOther ? "#ef4444" : "#fff"}
+                strokeWidth={(isColliding || isInvolvedViaOther ? 0.5 : 0.2) / zoom}
               />
 
               {/* Size Text (rotated back so it's readable? or rotate with slot?) 
@@ -834,7 +880,37 @@ export default function LayoutCanvas({
               )}
             </g>
           );
-        })}
+        });
+        })()}
+
+        {/* Collision connector lines — 连接冲突的槽位对，增强可理解性 */}
+        {(() => {
+          const lines: React.ReactNode[] = [];
+          const drawn = new Set<string>();
+          for (const slot of slots) {
+            const overlapIds = checkSlotCollision(slot.id, slot.x, slot.y, slot.width, slot.height, slot.rotation);
+            for (const otherId of overlapIds) {
+              const key = [slot.id, otherId].sort().join("|");
+              if (drawn.has(key)) continue;
+              drawn.add(key);
+              const other = slots.find(s => s.id === otherId);
+              if (!other) continue;
+              lines.push(
+                <line
+                  key={`col-${key}`}
+                  x1={slot.x} y1={trayDepth - slot.y}
+                  x2={other.x} y2={trayDepth - other.y}
+                  stroke="#ef4444"
+                  strokeWidth={0.5 / zoom}
+                  strokeDasharray="3 2"
+                  opacity={0.6}
+                  pointerEvents="none"
+                />
+              );
+            }
+          }
+          return lines;
+        })()}
 
         {/* Smart Guide Lines */}
         {guideLines.map((g, i) => (
@@ -895,6 +971,23 @@ export default function LayoutCanvas({
         selectedIds={selectedIds}
         slots={slots}
       />
+
+      {/* Collision Info Banner */}
+      {collisionSummary.length > 0 && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 max-w-[90%] px-3 py-2 bg-[#201515]/95 border border-[#6b3030] rounded text-xs text-[#d18888] font-mono backdrop-blur-sm shadow-lg">
+          <div className="flex items-start gap-2">
+            <span className="text-red-400 font-bold shrink-0 mt-px">⚠</span>
+            <div className="flex flex-col gap-0.5">
+              {collisionSummary.slice(0, 3).map((msg, i) => (
+                <span key={i}>{msg}</span>
+              ))}
+              {collisionSummary.length > 3 && (
+                <span className="text-[#d18888]/60">…另有 {collisionSummary.length - 3} 处冲突</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <KeyboardHintsOverlay
         showHints={showHints}
