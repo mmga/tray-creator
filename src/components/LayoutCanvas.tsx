@@ -646,53 +646,94 @@ export default function LayoutCanvas({
   const autoAdjustSlotsByIds = useCallback((ids: Set<string>) => {
     if (ids.size < 2) return;
 
-    const targets = slots.filter((s) => ids.has(s.id));
-    if (targets.length < 2) return;
-
-    const sorted = [...targets].sort((a, b) => a.x - b.x);
-
-    // 计算冲突项在“保证间距”下所需的最小画布尺寸
-    const widths = sorted.map((slot) => getEllipseBoundingBox(slot.width, slot.height, slot.rotation).halfW * 2);
-    const halfHeights = sorted.map((slot) => getEllipseBoundingBox(slot.width, slot.height, slot.rotation).halfH);
-    const totalItemWidth = widths.reduce((sum, w) => sum + w, 0);
-    // 给自动调整增加安全余量，避免“刚好贴边/贴邻”时被 SAT 近似判成冲突
     const safetyGap = 0.6;
     const minGap = Math.max(1, spacing + safetyGap);
-    // 这里仅约束“槽位之间”的最小间距，边缘仍由 spacing 约束
-    const requiredWidth = Math.ceil(totalItemWidth + spacing * 2 + minGap * (sorted.length - 1));
-    const maxHalfH = Math.max(...halfHeights);
-    const requiredDepth = Math.ceil(spacing * 2 + maxHalfH * 2);
 
-    const nextTrayWidth = Math.max(trayWidth, requiredWidth);
-    const nextTrayDepth = Math.max(trayDepth, requiredDepth);
-    if (onResizeTray && (nextTrayWidth !== trayWidth || nextTrayDepth !== trayDepth)) {
-      onResizeTray(nextTrayWidth, nextTrayDepth);
+    const buildLayout = (candidateIds: Set<string>) => {
+      const targets = slots.filter((s) => candidateIds.has(s.id));
+      if (targets.length < 2) return null;
+
+      const sorted = [...targets].sort((a, b) => a.x - b.x);
+      const widths = sorted.map((slot) => getEllipseBoundingBox(slot.width, slot.height, slot.rotation).halfW * 2);
+      const halfHeights = sorted.map((slot) => getEllipseBoundingBox(slot.width, slot.height, slot.rotation).halfH);
+      const totalItemWidth = widths.reduce((sum, w) => sum + w, 0);
+      const requiredWidth = Math.ceil(totalItemWidth + spacing * 2 + minGap * (sorted.length - 1));
+      const maxHalfH = Math.max(...halfHeights);
+      const requiredDepth = Math.ceil(spacing * 2 + maxHalfH * 2);
+
+      const nextTrayWidth = Math.max(trayWidth, requiredWidth);
+      const nextTrayDepth = Math.max(trayDepth, requiredDepth);
+      const availableWidth = Math.max(0, nextTrayWidth - spacing * 2);
+      const betweenGap = sorted.length > 1
+        ? Math.max(minGap, (availableWidth - totalItemWidth) / (sorted.length - 1))
+        : 0;
+      let cursorEdge = spacing;
+      const centerY = nextTrayDepth / 2;
+
+      const updates = sorted.map((slot) => {
+        const { halfW, halfH } = getEllipseBoundingBox(slot.width, slot.height, slot.rotation);
+        const slotWidth = halfW * 2;
+        const x = cursorEdge + halfW;
+        cursorEdge += slotWidth + betweenGap;
+        const minY = spacing + halfH;
+        const maxY = nextTrayDepth - spacing - halfH;
+        const y = Math.max(minY, Math.min(maxY, centerY));
+        return { id: slot.id, x, y };
+      });
+
+      return { updates, nextTrayWidth, nextTrayDepth, arrangedIds: new Set(sorted.map((s) => s.id)) };
+    };
+
+    const hasGlobalConflict = (layout: NonNullable<ReturnType<typeof buildLayout>>) => {
+      const posMap = new Map<string, { x: number; y: number }>();
+      layout.updates.forEach((u) => posMap.set(u.id, { x: u.x, y: u.y }));
+
+      const getPos = (slot: FreeSlot) => posMap.get(slot.id) ?? { x: slot.x, y: slot.y };
+      const margin = spacing / 2 + HOLE_TOLERANCE / 2;
+
+      for (let i = 0; i < slots.length; i++) {
+        const a = slots[i];
+        const aPos = getPos(a);
+        const aMoved = layout.arrangedIds.has(a.id);
+
+        // 只关注“此次被移动的槽位”引入的边界问题
+        if (aMoved) {
+          const boundaryReasons = checkBoundaryCollision(aPos.x, aPos.y, a.width, a.height, a.rotation);
+          if (boundaryReasons.length > 0) return true;
+        }
+
+        for (let j = i + 1; j < slots.length; j++) {
+          const b = slots[j];
+          const bPos = getPos(b);
+          const bMoved = layout.arrangedIds.has(b.id);
+          if (!aMoved && !bMoved) continue;
+
+          const polyA = getEllipsePolygon(aPos.x, aPos.y, a.width, a.height, a.rotation, margin, 12);
+          const polyB = getEllipsePolygon(bPos.x, bPos.y, b.width, b.height, b.rotation, margin, 12);
+          if (polygonsIntersect(polyA, polyB)) return true;
+        }
+      }
+      return false;
+    };
+
+    // 第一阶段：仅调整当前冲突集
+    let layout = buildLayout(ids);
+    if (!layout) return;
+
+    // 第二阶段：如果会撞到其他凹槽，自动升级为全量凹槽排布
+    if (hasGlobalConflict(layout)) {
+      const allIds = new Set(slots.map((s) => s.id));
+      const globalLayout = buildLayout(allIds);
+      if (globalLayout) {
+        layout = globalLayout;
+      }
     }
 
-    const availableWidth = Math.max(0, nextTrayWidth - spacing * 2);
-    const betweenGap = sorted.length > 1
-      ? Math.max(minGap, (availableWidth - totalItemWidth) / (sorted.length - 1))
-      : 0;
-    // 从左边界 spacing 开始摆放，不再强制额外前后留白
-    let cursorEdge = spacing;
-
-    const centerY = nextTrayDepth / 2;
-
-    const updates = sorted.map((slot) => {
-      const { halfW, halfH } = getEllipseBoundingBox(slot.width, slot.height, slot.rotation);
-      const slotWidth = halfW * 2;
-      const x = cursorEdge + halfW;
-      cursorEdge += slotWidth + betweenGap;
-
-      const minY = spacing + halfH;
-      const maxY = nextTrayDepth - spacing - halfH;
-      const y = Math.max(minY, Math.min(maxY, centerY));
-
-      return { id: slot.id, x, y };
-    });
-
-    handleUpdateSlots(updates);
-    setSelectedIds(new Set(sorted.map((s) => s.id)));
+    if (onResizeTray && (layout.nextTrayWidth !== trayWidth || layout.nextTrayDepth !== trayDepth)) {
+      onResizeTray(layout.nextTrayWidth, layout.nextTrayDepth);
+    }
+    handleUpdateSlots(layout.updates);
+    setSelectedIds(layout.arrangedIds);
   }, [slots, spacing, trayWidth, trayDepth, handleUpdateSlots, onResizeTray]);
 
   const autoExpandTrayOnlyByIds = useCallback((ids: Set<string>) => {
