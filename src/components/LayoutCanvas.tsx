@@ -194,7 +194,7 @@ export default function LayoutCanvas({
   // ... (keep existing helpers)
 
   // Rotation Handle Logic
-  const handleRotateMouseDown = (e: React.MouseEvent, slot: FreeSlot) => {
+  const handleRotateMouseDown = (e: React.PointerEvent, slot: FreeSlot) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -227,7 +227,7 @@ export default function LayoutCanvas({
 
   // ... (Rotation Logic added previously)
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
 
     // Pan
@@ -383,9 +383,12 @@ export default function LayoutCanvas({
     }
   }, [draggingId, isPanning, isRotating, selectedIds, selectionBox, onUpdateSlot, onUpdateSlotRotation, trayDepth, slots]);
 
-  const handleMouseDown = useCallback((e: React.MouseEvent, slotId?: string) => {
+  const handlePointerDown = useCallback((e: React.PointerEvent, slotId?: string) => {
     e.preventDefault();
     e.stopPropagation();
+
+    // Capture pointer for reliable tracking (especially on touch)
+    (e.target as Element)?.setPointerCapture?.(e.pointerId);
 
     const isCtrl = e.ctrlKey || e.metaKey;
 
@@ -474,7 +477,7 @@ export default function LayoutCanvas({
     }
   }, [selectedIds, isSpacePressed, slots, trayDepth]);
 
-  const handleMouseUp = useCallback(() => {
+  const handlePointerUp = useCallback(() => {
     // End Marquee
     if (selectionBox && svgRef.current && parentRef.current) {
       const boxRect = {
@@ -541,7 +544,7 @@ export default function LayoutCanvas({
 
   // ... (useEffect click listener is fine)
 
-  const handleContextMenu = useCallback((e: React.MouseEvent, slotId: string) => {
+  const handleContextMenu = useCallback((e: React.MouseEvent | React.PointerEvent, slotId: string) => {
     e.preventDefault();
     e.stopPropagation();
     setSelectedIds(new Set([slotId]));
@@ -572,6 +575,7 @@ export default function LayoutCanvas({
     <div
       ref={parentRef}
       className={`w-full h-full bg-[#1c1a16] rounded-sm overflow-hidden relative select-none flex items-center justify-center ${isSpacePressed ? 'cursor-grab' : ''} ${isPanning ? 'cursor-grabbing' : ''}`}
+      style={{ touchAction: 'none' }}
       onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); }}
     >
       {/* Debug Info Overlay (Bottom Right) inside the canvas container or separate? */}
@@ -601,10 +605,12 @@ export default function LayoutCanvas({
         ref={svgRef}
         viewBox={viewBox}
         className={`w-full h-full max-w-full max-h-full ${isSpacePressed ? '' : 'cursor-crosshair'}`}
-        onMouseDown={(e) => handleMouseDown(e)}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        style={{ touchAction: 'none' }}
+        onPointerDown={(e) => handlePointerDown(e)}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerUp}
+        onPointerCancel={handlePointerUp}
         onWheel={handleWheel}
         preserveAspectRatio="xMidYMid meet"
       >
@@ -661,10 +667,10 @@ export default function LayoutCanvas({
             <g
               key={slot.id}
               transform={`translate(${slot.x}, ${svgY}) rotate(${-slot.rotation})`} // Rotation! Note: SVG Y is inverted, so maybe rotation direction needs care. -Rotation fits typical 2D intuition if Y is up.
-              onMouseDown={(e) => handleMouseDown(e, slot.id)}
+              onPointerDown={(e) => handlePointerDown(e, slot.id)}
               onContextMenu={(e) => handleContextMenu(e, slot.id)}
-              onMouseEnter={() => setHoveredId(slot.id)}
-              onMouseLeave={() => setHoveredId(null)}
+              onPointerEnter={() => setHoveredId(slot.id)}
+              onPointerLeave={() => setHoveredId(null)}
               className={`transition-opacity duration-200 ${isSpacePressed ? '' : 'cursor-move'}`}
               style={{ opacity: isDragging ? 0.9 : 1 }}
             >
@@ -728,7 +734,7 @@ export default function LayoutCanvas({
               {isSelected && Math.abs(slot.width - slot.height) > 0.01 && (
                 <g
                   transform={`translate(${w / 2 + spacing + 4}, 0)`}
-                  onMouseDown={(e) => handleRotateMouseDown(e, slot)}
+                  onPointerDown={(e) => handleRotateMouseDown(e, slot)}
                   className="cursor-pointer"
                   style={{ cursor: 'grab' }}
                 >
