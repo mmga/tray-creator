@@ -5,6 +5,7 @@ import type { FreeSlot, CustomLayoutParams } from "@/types/custom-tray";
 import { HOLE_TOLERANCE } from "@/lib/config";
 import { getEllipsePolygon, polygonsIntersect } from "@/lib/collision";
 import AlignmentToolbar from "./AlignmentToolbar";
+import { Trash2, Undo2, Copy, XCircle } from "lucide-react";
 
 import { useCanvasZoom } from "../hooks/useCanvasZoom";
 import { useCanvasKeyboard } from "../hooks/useCanvasKeyboard";
@@ -877,6 +878,54 @@ export default function LayoutCanvas({
         showHints={showHints}
         onClose={() => setShowHints(false)}
       />
+
+      {/* 移动端浮动操作栏 - 选中凹槽时显示 */}
+      {selectedIds.size > 0 && (
+        <div className="lg:hidden absolute bottom-14 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-neutral-800/95 backdrop-blur-sm border border-neutral-700 rounded-full shadow-xl px-3 py-1.5 z-40 animate-fade-in">
+          <span className="text-[10px] text-neutral-400 font-mono mr-1">{selectedIds.size}选中</span>
+
+          {onDuplicateSlots && (
+            <button
+              className="p-2 rounded-full hover:bg-neutral-700/60 text-neutral-300 active:text-white transition-colors"
+              onClick={() => {
+                onDuplicateSlots(Array.from(selectedIds));
+              }}
+            >
+              <Copy size={18} />
+            </button>
+          )}
+
+          {onUndo && (
+            <button
+              className="p-2 rounded-full hover:bg-neutral-700/60 text-neutral-300 active:text-white transition-colors"
+              onClick={onUndo}
+            >
+              <Undo2 size={18} />
+            </button>
+          )}
+
+          <button
+            className="p-2 rounded-full hover:bg-red-900/60 text-red-400 active:text-red-300 transition-colors"
+            onClick={() => {
+              selectedIds.forEach((id) => onRemoveSlot(id));
+              setSelectedIds(new Set());
+              setContextMenu(null);
+            }}
+          >
+            <Trash2 size={18} />
+          </button>
+
+          <button
+            className="p-2 rounded-full hover:bg-neutral-700/60 text-neutral-500 active:text-white transition-colors"
+            onClick={() => {
+              setSelectedIds(new Set());
+              setContextMenu(null);
+            }}
+          >
+            <XCircle size={16} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
