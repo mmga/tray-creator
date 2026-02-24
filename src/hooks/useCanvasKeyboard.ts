@@ -51,6 +51,12 @@ export function useCanvasKeyboard({
 
     const handleKeyDown = useCallback(
         (e: KeyboardEvent) => {
+            // 输入框/文本区域聚焦时，不拦截键盘事件，避免误操作
+            const tag = (e.target as HTMLElement)?.tagName;
+            const isEditable = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" ||
+                (e.target as HTMLElement)?.isContentEditable;
+            if (isEditable) return;
+
             // Space: 平移模式
             if (e.code === "Space" && !e.repeat) {
                 setIsSpacePressed(true);
