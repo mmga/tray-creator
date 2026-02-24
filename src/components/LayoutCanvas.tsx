@@ -690,6 +690,27 @@ export default function LayoutCanvas({
     setSelectedIds(new Set(sorted.map((s) => s.id)));
   }, [slots, spacing, trayWidth, trayDepth, handleUpdateSlots, onResizeTray]);
 
+  const autoExpandTrayOnlyByIds = useCallback((ids: Set<string>) => {
+    if (!onResizeTray || ids.size === 0) return;
+
+    const targets = slots.filter((s) => ids.has(s.id));
+    if (targets.length === 0) return;
+
+    let maxRequiredX = trayWidth;
+    let maxRequiredY = trayDepth;
+
+    for (const slot of targets) {
+      const { halfW, halfH } = getEllipseBoundingBox(slot.width, slot.height, slot.rotation);
+      // 只扩展右/上边界：不移动槽位
+      maxRequiredX = Math.max(maxRequiredX, Math.ceil(slot.x + halfW + spacing));
+      maxRequiredY = Math.max(maxRequiredY, Math.ceil(slot.y + halfH + spacing));
+    }
+
+    if (maxRequiredX !== trayWidth || maxRequiredY !== trayDepth) {
+      onResizeTray(maxRequiredX, maxRequiredY);
+    }
+  }, [onResizeTray, slots, trayWidth, trayDepth, spacing]);
+
   // ── 碰撞摘要（用于底部提示条）──
   const collisionSummary = (() => {
     const messages: string[] = [];
@@ -1050,13 +1071,19 @@ export default function LayoutCanvas({
               {collisionSummary.length > 3 && (
                 <span className="text-[#d18888]/60">…另有 {collisionSummary.length - 3} 处冲突</span>
               )}
-              {collisionInvolvedIds.size > 1 && (
-                <div className="pt-1">
+              {collisionInvolvedIds.size > 0 && (
+                <div className="pt-1 flex flex-wrap gap-2">
                   <button
                     onClick={() => autoAdjustSlotsByIds(collisionInvolvedIds)}
                     className="pointer-events-auto px-2 py-1 text-[11px] rounded border border-[#7a3b3b] bg-[#3a1c1c] text-[#f0b3b3] hover:bg-[#4a2424] transition-colors"
                   >
                     自动调整/对齐冲突项
+                  </button>
+                  <button
+                    onClick={() => autoExpandTrayOnlyByIds(collisionInvolvedIds)}
+                    className="pointer-events-auto px-2 py-1 text-[11px] rounded border border-[#5a4a2a] bg-[#2e2618] text-[#dec28a] hover:bg-[#3a301f] transition-colors"
+                  >
+                    只扩画布不移动槽位
                   </button>
                 </div>
               )}
