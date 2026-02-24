@@ -11,7 +11,7 @@ interface ModeTabsProps {
 
 export function ModeTabs({ mode, onModeChange }: ModeTabsProps) {
   return (
-    <div className="px-6 py-3 bg-[#0e0d0b] border-b border-[#2e2a24]">
+    <div className="px-3 lg:px-6 py-2 lg:py-3 bg-[#0e0d0b] border-b border-[#2e2a24]">
       <Tabs
         value={mode}
         onValueChange={(v) => onModeChange(v as AppMode)}
