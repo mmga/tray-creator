@@ -110,6 +110,12 @@ function validateGridParams(p: TrayParams) {
     ];
     for (const f of numFields) requireNumber(obj, f);
 
+    // holeDiameter 范围校验（不在 PARAM_CONFIG 中，单独处理）
+    const hd = obj.holeDiameter as number;
+    if (hd <= 0 || hd > 200) {
+        throw new Error(`holeDiameter: 超出合理范围 (0, 200]`);
+    }
+
     // 钳位到允许范围
     clampField(obj, "columns", PARAM_CONFIG.columns);
     clampField(obj, "rows", PARAM_CONFIG.rows);
@@ -128,6 +134,40 @@ function validateCustomParams(p: CustomLayoutParams) {
     for (const f of numFields) requireNumber(obj, f);
     if (!Array.isArray(obj.slots)) {
         throw new Error("缺少或无效的字段: slots");
+    }
+
+    // 校验每个 slot 的结构与值
+    const slots = obj.slots as Record<string, unknown>[];
+    for (let i = 0; i < slots.length; i++) {
+        const slot = slots[i];
+        if (!slot || typeof slot !== "object") {
+            throw new Error(`slots[${i}]: 无效的凹槽数据`);
+        }
+        // 必填字段校验
+        for (const key of ["x", "y", "width", "height", "rotation"] as const) {
+            if (typeof slot[key] !== "number" || !Number.isFinite(slot[key] as number)) {
+                throw new Error(`slots[${i}].${key}: 缺少或无效（需要有限数字）`);
+            }
+        }
+        // shape 校验
+        if (slot.shape !== "circle" && slot.shape !== "ellipse") {
+            throw new Error(`slots[${i}].shape: 必须是 "circle" 或 "ellipse"`);
+        }
+        // 值范围校验
+        const w = slot.width as number;
+        const h = slot.height as number;
+        if (w <= 0 || w > 200) {
+            throw new Error(`slots[${i}].width: 超出合理范围 (0, 200]`);
+        }
+        if (h <= 0 || h > 200) {
+            throw new Error(`slots[${i}].height: 超出合理范围 (0, 200]`);
+        }
+        // 旋转钳位到 [0, 360)
+        slot.rotation = ((slot.rotation as number) % 360 + 360) % 360;
+        // 确保有 id
+        if (typeof slot.id !== "string" || !slot.id) {
+            slot.id = crypto.randomUUID();
+        }
     }
 
     // 钳位到允许范围
