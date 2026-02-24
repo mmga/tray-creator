@@ -46,6 +46,7 @@ export default function LayoutCanvas({
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; slotId: string } | null>(null);
   const [isRotating, setIsRotating] = useState(false);
   const [showHints, setShowHints] = useState(false);
+  const [showAdjustDebug, setShowAdjustDebug] = useState(false);
 
   // Refs for DOM and logic
   const svgRef = useRef<SVGSVGElement>(null);
@@ -756,6 +757,39 @@ export default function LayoutCanvas({
     return involved;
   })();
 
+  const autoAdjustDebugInfo = (() => {
+    const targets = slots.filter((s) => collisionInvolvedIds.has(s.id));
+    if (targets.length < 2) return null;
+
+    const widths = targets.map((slot) => getEllipseBoundingBox(slot.width, slot.height, slot.rotation).halfW * 2);
+    const halfHeights = targets.map((slot) => getEllipseBoundingBox(slot.width, slot.height, slot.rotation).halfH);
+    const totalItemWidth = widths.reduce((sum, w) => sum + w, 0);
+    const safetyGap = 0.6;
+    const minGap = Math.max(1, spacing + safetyGap);
+    const requiredWidth = Math.ceil(totalItemWidth + spacing * 2 + minGap * (targets.length - 1));
+    const maxHalfH = Math.max(...halfHeights);
+    const requiredDepth = Math.ceil(spacing * 2 + maxHalfH * 2);
+
+    const nextTrayWidth = Math.max(trayWidth, requiredWidth);
+    const nextTrayDepth = Math.max(trayDepth, requiredDepth);
+    const availableWidth = Math.max(0, nextTrayWidth - spacing * 2);
+    const predictedGap = targets.length > 1
+      ? Math.max(minGap, (availableWidth - totalItemWidth) / (targets.length - 1))
+      : 0;
+
+    return {
+      targetCount: targets.length,
+      totalItemWidth,
+      minGap,
+      requiredWidth,
+      requiredDepth,
+      nextTrayWidth,
+      nextTrayDepth,
+      willResize: nextTrayWidth !== trayWidth || nextTrayDepth !== trayDepth,
+      predictedGap,
+    };
+  })();
+
   return (
     <div
       ref={parentRef}
@@ -1089,6 +1123,20 @@ export default function LayoutCanvas({
                   >
                     只扩画布不移动槽位
                   </button>
+                  <button
+                    onClick={() => setShowAdjustDebug((prev) => !prev)}
+                    className="pointer-events-auto px-2 py-1 text-[11px] rounded border border-[#3c4d6e] bg-[#1a2438] text-[#b6c7e6] hover:bg-[#22304a] transition-colors"
+                  >
+                    {showAdjustDebug ? "隐藏调试信息" : "显示调试信息"}
+                  </button>
+                </div>
+              )}
+              {showAdjustDebug && autoAdjustDebugInfo && (
+                <div className="mt-1 p-2 rounded border border-[#3c4d6e]/60 bg-[#141b2a]/90 text-[10px] text-[#b6c7e6] leading-4">
+                  <div>targets={autoAdjustDebugInfo.targetCount} totalWidth={autoAdjustDebugInfo.totalItemWidth.toFixed(2)} minGap={autoAdjustDebugInfo.minGap.toFixed(2)}</div>
+                  <div>required={autoAdjustDebugInfo.requiredWidth}×{autoAdjustDebugInfo.requiredDepth} current={trayWidth}×{trayDepth}</div>
+                  <div>next={autoAdjustDebugInfo.nextTrayWidth}×{autoAdjustDebugInfo.nextTrayDepth} resize={autoAdjustDebugInfo.willResize ? "yes" : "no"}</div>
+                  <div>predictedBetweenGap={autoAdjustDebugInfo.predictedGap.toFixed(2)} spacing={spacing}</div>
                 </div>
               )}
             </div>
