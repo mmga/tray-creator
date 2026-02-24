@@ -317,6 +317,13 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
+  /* dvh 不支持时回退到 -webkit-fill-available */
+  @supports not (height: 100dvh) {
+    .h-dvh {
+      height: -webkit-fill-available;
+    }
+  }
+
   /* 隐藏滚动条但保留滚动功能 */
   .scrollbar-none {
     -ms-overflow-style: none;
