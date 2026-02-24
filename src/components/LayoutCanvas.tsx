@@ -49,6 +49,10 @@ export default function LayoutCanvas({
   const parentRef = useRef<HTMLDivElement>(null); // To get client rect for marquee
   const rotateStartRef = useRef<{ angle: number; startRotation: number } | null>(null);
 
+  // 长按定时器（移动端替代右键菜单）
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressFiredRef = useRef(false);
+
   // Multi-drag State
   const dragStartRef = useRef<{
     mouseStart: { x: number, y: number }; // SVG coords
@@ -231,6 +235,12 @@ export default function LayoutCanvas({
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
 
+    // 移动时取消长按定时器（防止拖拽触发上下文菜单）
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+
     // Pan
     if (isPanning) {
       const dx = e.clientX - panStartRef.current.x;
@@ -391,6 +401,13 @@ export default function LayoutCanvas({
     // Capture pointer for reliable tracking (especially on touch)
     (e.target as Element)?.setPointerCapture?.(e.pointerId);
 
+    // 清除上一个长按定时器
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    longPressFiredRef.current = false;
+
     const isCtrl = e.ctrlKey || e.metaKey;
 
     // Panning Mode
@@ -398,6 +415,20 @@ export default function LayoutCanvas({
       setIsPanning(true);
       panStartRef.current = { x: e.clientX, y: e.clientY };
       return;
+    }
+
+    // 长按检测（触摸设备替代右键菜单）
+    if (slotId && e.pointerType === 'touch') {
+      const cx = e.clientX;
+      const cy = e.clientY;
+      longPressTimerRef.current = setTimeout(() => {
+        longPressFiredRef.current = true;
+        setSelectedIds(new Set([slotId]));
+        setContextMenu({ x: cx, y: cy, slotId });
+        // 取消拖拽
+        setDraggingId(null);
+        dragStartRef.current = null;
+      }, 500);
     }
 
     if (slotId) {
@@ -479,6 +510,17 @@ export default function LayoutCanvas({
   }, [selectedIds, isSpacePressed, slots, trayDepth]);
 
   const handlePointerUp = useCallback(() => {
+    // 清除长按定时器
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    // 如果长按已触发上下文菜单，跳过后续逻辑
+    if (longPressFiredRef.current) {
+      longPressFiredRef.current = false;
+      return;
+    }
+
     // End Marquee
     if (selectionBox && svgRef.current && parentRef.current) {
       const boxRect = {
@@ -809,6 +851,17 @@ export default function LayoutCanvas({
         slots={slots}
         onRotationChange={handleRotationInput}
         onDelete={handleDeleteFromMenu}
+        onDuplicate={contextMenu && onDuplicateSlots ? () => {
+          onDuplicateSlots([contextMenu.slotId]);
+          setContextMenu(null);
+        } : undefined}
+        onRotate90={contextMenu && onUpdateSlotRotation ? () => {
+          const slot = slots.find(s => s.id === contextMenu.slotId);
+          if (slot) {
+            onUpdateSlotRotation(contextMenu.slotId, (slot.rotation + 90) % 360);
+          }
+          setContextMenu(null);
+        } : undefined}
         onClose={() => setContextMenu(null)}
       />
 

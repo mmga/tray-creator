@@ -7,6 +7,8 @@ interface CanvasContextMenuProps {
     slots: FreeSlot[];
     onRotationChange: (e: React.ChangeEvent<HTMLInputElement>, id: string) => void;
     onDelete: () => void;
+    onDuplicate?: () => void;
+    onRotate90?: () => void;
     onClose: (e: React.MouseEvent) => void;
 }
 
@@ -15,13 +17,15 @@ export function CanvasContextMenu({
     slots,
     onRotationChange,
     onDelete,
+    onDuplicate,
+    onRotate90,
     onClose,
 }: CanvasContextMenuProps) {
     if (!contextMenu) return null;
 
     return (
         <div
-            className="fixed bg-[#2a2a2e] border border-[#444] rounded shadow-xl z-50 overflow-hidden min-w-[140px] flex flex-col"
+            className="fixed bg-[#2a2a2e] border border-[#444] rounded shadow-xl z-50 overflow-hidden min-w-35 flex flex-col"
             style={{ left: contextMenu.x, top: contextMenu.y }}
             onClick={(e) => {
                 e.stopPropagation();
@@ -43,14 +47,38 @@ export function CanvasContextMenu({
                 </div>
             </div>
 
+            {onRotate90 && (
+                <button
+                    className="w-full text-left px-4 py-2.5 text-sm text-neutral-300 hover:bg-[#3e3e42] hover:text-white transition-colors cursor-pointer"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onRotate90();
+                    }}
+                >
+                    旋转 90°
+                </button>
+            )}
+
+            {onDuplicate && (
+                <button
+                    className="w-full text-left px-4 py-2.5 text-sm text-neutral-300 hover:bg-[#3e3e42] hover:text-white transition-colors cursor-pointer"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onDuplicate();
+                    }}
+                >
+                    复制
+                </button>
+            )}
+
             <button
-                className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-[#3e3e42] hover:text-red-300 transition-colors cursor-pointer"
+                className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-[#3e3e42] hover:text-red-300 transition-colors cursor-pointer"
                 onClick={(e) => {
                     e.stopPropagation();
                     onDelete();
                 }}
             >
-                Delete
+                删除
             </button>
         </div>
     );
