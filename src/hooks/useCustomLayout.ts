@@ -14,11 +14,16 @@ import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 interface UseCustomLayoutReturn {
   params: CustomLayoutParams;
   setParams: React.Dispatch<React.SetStateAction<CustomLayoutParams>>;
-  updateParam: <K extends keyof CustomLayoutParams>(key: K, value: CustomLayoutParams[K]) => void;
+  updateParam: <K extends keyof CustomLayoutParams>(
+    key: K,
+    value: CustomLayoutParams[K],
+  ) => void;
   addSlot: (width: number, height?: number) => void;
   removeSlot: (id: string) => void;
   updateSlotPosition: (id: string, x: number, y: number) => void;
-  updateMultipleSlots: (updates: { id: string; x: number; y: number }[]) => void;
+  updateMultipleSlots: (
+    updates: { id: string; x: number; y: number }[],
+  ) => void;
   updateSlotRotation: (id: string, rotation: number) => void;
   duplicateSlots: (ids: string[]) => void;
   trimBaseplate: () => void;
@@ -36,15 +41,22 @@ interface UseCustomLayoutReturn {
 }
 
 export function useCustomLayout(): UseCustomLayoutReturn {
-  const [params, setParams] = useState<CustomLayoutParams>(CUSTOM_LAYOUT_DEFAULTS);
-  const [threeGeometry, setThreeGeometry] = useState<THREE.BufferGeometry | null>(null);
+  const [params, setParams] = useState<CustomLayoutParams>(
+    CUSTOM_LAYOUT_DEFAULTS,
+  );
+  const [threeGeometry, setThreeGeometry] =
+    useState<THREE.BufferGeometry | null>(null);
   const [volume, setVolume] = useState<number>(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const jscadGeomRef = useRef<Geom3 | null>(null);
   const { toast } = useToast();
 
   // 撤销历史
-  const { pushState, popState, canUndo: canUndoFn } = useUndoHistory<CustomLayoutParams>();
+  const {
+    pushState,
+    popState,
+    canUndo: canUndoFn,
+  } = useUndoHistory<CustomLayoutParams>();
   // 用 ref 追踪最新 params，避免闭包陈旧
   const paramsRef = useRef(params);
   paramsRef.current = params;
@@ -65,44 +77,53 @@ export function useCustomLayout(): UseCustomLayoutReturn {
   }, [popState]);
 
   const updateParam = useCallback(
-    <K extends keyof CustomLayoutParams>(key: K, value: CustomLayoutParams[K]) => {
+    <K extends keyof CustomLayoutParams>(
+      key: K,
+      value: CustomLayoutParams[K],
+    ) => {
       pushState(paramsRef.current);
       setParams((prev) => ({ ...prev, [key]: value }));
       setIsPreviewStale(true);
     },
-    [pushState]
+    [pushState],
   );
 
   /**
    * 添加凹槽 -> 默认放置在画布中心
    */
-  const addSlot = useCallback((width: number, height?: number) => {
-    setParams((prev) => {
-      pushState(prev);
-      const isCircle = !height || width === height;
-      const newSlot: FreeSlot = {
-        id: crypto.randomUUID(),
-        x: prev.trayWidth / 2,
-        y: prev.trayDepth / 2,
-        shape: isCircle ? 'circle' : 'ellipse',
-        width,
-        height: height || width,
-        rotation: 0,
-      };
-      return { ...prev, slots: [...prev.slots, newSlot] };
-    });
-  }, [pushState]);
+  const addSlot = useCallback(
+    (width: number, height?: number) => {
+      setParams((prev) => {
+        pushState(prev);
+        const isCircle = !height || width === height;
+        const newSlot: FreeSlot = {
+          id: crypto.randomUUID(),
+          x: prev.trayWidth / 2,
+          y: prev.trayDepth / 2,
+          shape: isCircle ? "circle" : "ellipse",
+          width,
+          height: height || width,
+          rotation: 0,
+        };
+        return { ...prev, slots: [...prev.slots, newSlot] };
+      });
+    },
+    [pushState],
+  );
 
   /**
    * 删除凹槽
    */
-  const removeSlot = useCallback((id: string) => {
-    pushState(paramsRef.current);
-    setParams((prev) => ({
-      ...prev,
-      slots: prev.slots.filter((s) => s.id !== id),
-    }));
-  }, [pushState]);
+  const removeSlot = useCallback(
+    (id: string) => {
+      pushState(paramsRef.current);
+      setParams((prev) => ({
+        ...prev,
+        slots: prev.slots.filter((s) => s.id !== id),
+      }));
+    },
+    [pushState],
+  );
 
   /**
    * 更新凹槽位置（拖拽时频繁调用，不自动记录历史）
@@ -117,19 +138,22 @@ export function useCustomLayout(): UseCustomLayoutReturn {
   /**
    * 更新多个凹槽位置（用于对齐工具等批量操作，自动记录历史）
    */
-  const updateMultipleSlots = useCallback((updates: { id: string, x: number, y: number }[]) => {
-    setParams((prev) => {
-      pushState(prev);
-      const updatesMap = new Map(updates.map(u => [u.id, u]));
-      return {
-        ...prev,
-        slots: prev.slots.map(s => {
-          const u = updatesMap.get(s.id);
-          return u ? { ...s, x: u.x, y: u.y } : s;
-        }),
-      };
-    });
-  }, [pushState]);
+  const updateMultipleSlots = useCallback(
+    (updates: { id: string; x: number; y: number }[]) => {
+      setParams((prev) => {
+        pushState(prev);
+        const updatesMap = new Map(updates.map((u) => [u.id, u]));
+        return {
+          ...prev,
+          slots: prev.slots.map((s) => {
+            const u = updatesMap.get(s.id);
+            return u ? { ...s, x: u.x, y: u.y } : s;
+          }),
+        };
+      });
+    },
+    [pushState],
+  );
 
   /**
    * 更新凹槽旋转（旋转时频繁调用，不自动记录历史）
@@ -144,29 +168,32 @@ export function useCustomLayout(): UseCustomLayoutReturn {
   /**
    * 复制凹槽
    */
-  const duplicateSlots = useCallback((ids: string[]) => {
-    setParams((prev) => {
-      pushState(prev);
-      const newSlots = [...prev.slots];
-      const newlyAddedIds: string[] = [];
+  const duplicateSlots = useCallback(
+    (ids: string[]) => {
+      setParams((prev) => {
+        pushState(prev);
+        const newSlots = [...prev.slots];
+        const newlyAddedIds: string[] = [];
 
-      ids.forEach(id => {
-        const slotToCopy = prev.slots.find(s => s.id === id);
-        if (slotToCopy) {
-          const newId = crypto.randomUUID();
-          newlyAddedIds.push(newId);
-          newSlots.push({
-            ...slotToCopy,
-            id: newId,
-            x: slotToCopy.x + 10, // Offset slightly to make it visible
-            y: slotToCopy.y - 10,
-          });
-        }
+        ids.forEach((id) => {
+          const slotToCopy = prev.slots.find((s) => s.id === id);
+          if (slotToCopy) {
+            const newId = crypto.randomUUID();
+            newlyAddedIds.push(newId);
+            newSlots.push({
+              ...slotToCopy,
+              id: newId,
+              x: slotToCopy.x + 10, // Offset slightly to make it visible
+              y: slotToCopy.y - 10,
+            });
+          }
+        });
+
+        return { ...prev, slots: newSlots };
       });
-
-      return { ...prev, slots: newSlots };
-    });
-  }, [pushState]);
+    },
+    [pushState],
+  );
 
   /**
    * 裁剪底板：计算当前所有凹槽的最小包围盒，
@@ -180,15 +207,21 @@ export function useCustomLayout(): UseCustomLayoutReturn {
       pushState(prev);
 
       // 1. Calculate bounding box of all slots
-      let minX = Infinity, maxX = -Infinity;
-      let minY = Infinity, maxY = -Infinity;
+      let minX = Infinity,
+        maxX = -Infinity;
+      let minY = Infinity,
+        maxY = -Infinity;
 
-      prev.slots.forEach(slot => {
+      prev.slots.forEach((slot) => {
         const rad = (slot.rotation * Math.PI) / 180;
         const a = (slot.width + HOLE_TOLERANCE) / 2;
         const b = (slot.height + HOLE_TOLERANCE) / 2;
-        const halfW = Math.sqrt(Math.pow(a * Math.cos(rad), 2) + Math.pow(b * Math.sin(rad), 2));
-        const halfH = Math.sqrt(Math.pow(a * Math.sin(rad), 2) + Math.pow(b * Math.cos(rad), 2));
+        const halfW = Math.sqrt(
+          Math.pow(a * Math.cos(rad), 2) + Math.pow(b * Math.sin(rad), 2),
+        );
+        const halfH = Math.sqrt(
+          Math.pow(a * Math.sin(rad), 2) + Math.pow(b * Math.cos(rad), 2),
+        );
 
         minX = Math.min(minX, slot.x - halfW);
         maxX = Math.max(maxX, slot.x + halfW);
@@ -197,8 +230,8 @@ export function useCustomLayout(): UseCustomLayoutReturn {
       });
 
       // 2. Calculate raw dimensions needed
-      const rawWidth = (maxX - minX) + prev.spacing * 2;
-      const rawDepth = (maxY - minY) + prev.spacing * 2;
+      const rawWidth = maxX - minX + prev.spacing * 2;
+      const rawDepth = maxY - minY + prev.spacing * 2;
 
       // 3. Round up to nearest integer for clean numbers
       const newTrayWidth = Math.ceil(rawWidth);
@@ -219,11 +252,11 @@ export function useCustomLayout(): UseCustomLayoutReturn {
         ...prev,
         trayWidth: newTrayWidth,
         trayDepth: newTrayDepth,
-        slots: prev.slots.map(s => ({
+        slots: prev.slots.map((s) => ({
           ...s,
           x: s.x + dx,
-          y: s.y + dy
-        }))
+          y: s.y + dy,
+        })),
       };
     });
   }, [pushState]);
@@ -244,7 +277,10 @@ export function useCustomLayout(): UseCustomLayoutReturn {
       setIsPreviewStale(false);
     } catch (err) {
       console.error("生成失败:", err);
-      toast("error", `模型生成失败：${err instanceof Error ? err.message : "未知错误"}`);
+      toast(
+        "error",
+        `模型生成失败：${err instanceof Error ? err.message : "未知错误"}`,
+      );
     } finally {
       setIsGenerating(false);
     }
@@ -256,10 +292,13 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     const filename = generateCustomSTLFilename(
       params.trayWidth,
       params.trayDepth,
-      params.slots.length
+      params.slots.length,
     );
     try {
-      const result = await trayWorkerService.exportSTL(jscadGeomRef.current, filename);
+      const result = await trayWorkerService.exportSTL(
+        jscadGeomRef.current,
+        filename,
+      );
       const url = URL.createObjectURL(result.blob);
       const link = document.createElement("a");
       link.href = url;
@@ -270,7 +309,10 @@ export function useCustomLayout(): UseCustomLayoutReturn {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error("STL导出失败:", err);
-      toast("error", `STL 导出失败：${err instanceof Error ? err.message : "未知错误"}`);
+      toast(
+        "error",
+        `STL 导出失败：${err instanceof Error ? err.message : "未知错误"}`,
+      );
     }
   }, [params.trayWidth, params.trayDepth, params.slots.length, toast]);
 
@@ -296,4 +338,3 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     handleExportSTL,
   };
 }
-

@@ -4,18 +4,20 @@ import { useEffect, useRef, useCallback } from "react";
 import type { FreeSlot } from "@/types/custom-tray";
 
 interface UseCanvasKeyboardOptions {
-    selectedIdsRef: React.RefObject<Set<string>>;
-    slotsRef: React.RefObject<FreeSlot[]>;
-    onUpdateSlot: (id: string, x: number, y: number) => void;
-    onRemoveSlot: (id: string) => void;
-    onDuplicateSlots?: (ids: string[]) => void;
-    onUndo?: () => void;
-    setSelectedIds: React.Dispatch<React.SetStateAction<Set<string>>>;
-    setContextMenu: React.Dispatch<React.SetStateAction<{ x: number; y: number; slotId: string; } | null>>;
-    setIsRotating: React.Dispatch<React.SetStateAction<boolean>>;
-    setIsSpacePressed: React.Dispatch<React.SetStateAction<boolean>>;
-    setIsPanning: React.Dispatch<React.SetStateAction<boolean>>;
-    setShowHints: React.Dispatch<React.SetStateAction<boolean>>;
+  selectedIdsRef: React.RefObject<Set<string>>;
+  slotsRef: React.RefObject<FreeSlot[]>;
+  onUpdateSlot: (id: string, x: number, y: number) => void;
+  onRemoveSlot: (id: string) => void;
+  onDuplicateSlots?: (ids: string[]) => void;
+  onUndo?: () => void;
+  setSelectedIds: React.Dispatch<React.SetStateAction<Set<string>>>;
+  setContextMenu: React.Dispatch<
+    React.SetStateAction<{ x: number; y: number; slotId: string } | null>
+  >;
+  setIsRotating: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsSpacePressed: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsPanning: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowHints: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 /**
@@ -25,138 +27,141 @@ interface UseCanvasKeyboardOptions {
  * Space 平移、Esc 取消、? 快捷键提示
  */
 export function useCanvasKeyboard({
-    selectedIdsRef,
-    slotsRef,
-    onUpdateSlot,
-    onRemoveSlot,
-    onDuplicateSlots,
-    onUndo,
-    setSelectedIds,
-    setContextMenu,
-    setIsRotating,
-    setIsSpacePressed,
-    setIsPanning,
-    setShowHints,
+  selectedIdsRef,
+  slotsRef,
+  onUpdateSlot,
+  onRemoveSlot,
+  onDuplicateSlots,
+  onUndo,
+  setSelectedIds,
+  setContextMenu,
+  setIsRotating,
+  setIsSpacePressed,
+  setIsPanning,
+  setShowHints,
 }: UseCanvasKeyboardOptions) {
-    // 使用 ref 保持回调引用稳定
-    const onUpdateSlotRef = useRef(onUpdateSlot);
-    onUpdateSlotRef.current = onUpdateSlot;
-    const onUndoRef = useRef(onUndo);
-    onUndoRef.current = onUndo;
-    const onDuplicateSlotsRef = useRef(onDuplicateSlots);
-    onDuplicateSlotsRef.current = onDuplicateSlots;
+  // 使用 ref 保持回调引用稳定
+  const onUpdateSlotRef = useRef(onUpdateSlot);
+  onUpdateSlotRef.current = onUpdateSlot;
+  const onUndoRef = useRef(onUndo);
+  onUndoRef.current = onUndo;
+  const onDuplicateSlotsRef = useRef(onDuplicateSlots);
+  onDuplicateSlotsRef.current = onDuplicateSlots;
 
-    // 内部剪贴板状态
-    const clipboardRef = useRef<string[]>([]);
+  // 内部剪贴板状态
+  const clipboardRef = useRef<string[]>([]);
 
-    const handleKeyDown = useCallback(
-        (e: KeyboardEvent) => {
-            // 输入框/文本区域聚焦时，不拦截键盘事件，避免误操作
-            const tag = (e.target as HTMLElement)?.tagName;
-            const isEditable = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" ||
-                (e.target as HTMLElement)?.isContentEditable;
-            if (isEditable) return;
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      // 输入框/文本区域聚焦时，不拦截键盘事件，避免误操作
+      const tag = (e.target as HTMLElement)?.tagName;
+      const isEditable =
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        tag === "SELECT" ||
+        (e.target as HTMLElement)?.isContentEditable;
+      if (isEditable) return;
 
-            // Space: 平移模式
-            if (e.code === "Space" && !e.repeat) {
-                setIsSpacePressed(true);
-            }
+      // Space: 平移模式
+      if (e.code === "Space" && !e.repeat) {
+        setIsSpacePressed(true);
+      }
 
-            // 方向键: 微调选中凹槽
-            const arrowCodes = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
-            if (selectedIdsRef.current.size > 0 && arrowCodes.includes(e.code)) {
-                e.preventDefault();
-                let dx = 0,
-                    dy = 0;
-                if (e.code === "ArrowLeft") dx = -1;
-                if (e.code === "ArrowRight") dx = 1;
-                if (e.code === "ArrowUp") dy = 1;
-                if (e.code === "ArrowDown") dy = -1;
+      // 方向键: 微调选中凹槽
+      const arrowCodes = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
+      if (selectedIdsRef.current.size > 0 && arrowCodes.includes(e.code)) {
+        e.preventDefault();
+        let dx = 0,
+          dy = 0;
+        if (e.code === "ArrowLeft") dx = -1;
+        if (e.code === "ArrowRight") dx = 1;
+        if (e.code === "ArrowUp") dy = 1;
+        if (e.code === "ArrowDown") dy = -1;
 
-                selectedIdsRef.current.forEach((id) => {
-                    const slot = slotsRef.current.find((s) => s.id === id);
-                    if (slot) {
-                        onUpdateSlotRef.current(id, slot.x + dx, slot.y + dy);
-                    }
-                });
-            }
+        selectedIdsRef.current.forEach((id) => {
+          const slot = slotsRef.current.find((s) => s.id === id);
+          if (slot) {
+            onUpdateSlotRef.current(id, slot.x + dx, slot.y + dy);
+          }
+        });
+      }
 
-            // Ctrl+Z: 撤销
-            if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
-                e.preventDefault();
-                onUndoRef.current?.();
-                return;
-            }
+      // Ctrl+Z: 撤销
+      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        onUndoRef.current?.();
+        return;
+      }
 
-            // Ctrl+C: 复制
-            if ((e.ctrlKey || e.metaKey) && e.key === "c") {
-                if (selectedIdsRef.current.size > 0) {
-                    clipboardRef.current = Array.from(selectedIdsRef.current);
-                }
-                return;
-            }
+      // Ctrl+C: 复制
+      if ((e.ctrlKey || e.metaKey) && e.key === "c") {
+        if (selectedIdsRef.current.size > 0) {
+          clipboardRef.current = Array.from(selectedIdsRef.current);
+        }
+        return;
+      }
 
-            // Ctrl+V: 粘贴
-            if ((e.ctrlKey || e.metaKey) && e.key === "v") {
-                if (clipboardRef.current.length > 0 && onDuplicateSlotsRef.current) {
-                    onDuplicateSlotsRef.current(clipboardRef.current);
-                }
-                return;
-            }
+      // Ctrl+V: 粘贴
+      if ((e.ctrlKey || e.metaKey) && e.key === "v") {
+        if (clipboardRef.current.length > 0 && onDuplicateSlotsRef.current) {
+          onDuplicateSlotsRef.current(clipboardRef.current);
+        }
+        return;
+      }
 
-            // Delete/Backspace: 删除选中
-            if (
-                selectedIdsRef.current.size > 0 &&
-                (e.code === "Delete" || e.code === "Backspace")
-            ) {
-                e.preventDefault();
-                selectedIdsRef.current.forEach((id) => onRemoveSlot(id));
-                setSelectedIds(new Set());
-                setContextMenu(null);
-            }
+      // Delete/Backspace: 删除选中
+      if (
+        selectedIdsRef.current.size > 0 &&
+        (e.code === "Delete" || e.code === "Backspace")
+      ) {
+        e.preventDefault();
+        selectedIdsRef.current.forEach((id) => onRemoveSlot(id));
+        setSelectedIds(new Set());
+        setContextMenu(null);
+      }
 
-            // Escape: 取消选择
-            if (e.code === "Escape") {
-                e.preventDefault();
-                setSelectedIds(new Set());
-                setContextMenu(null);
-                setIsRotating(false);
-            }
+      // Escape: 取消选择
+      if (e.code === "Escape") {
+        e.preventDefault();
+        setSelectedIds(new Set());
+        setContextMenu(null);
+        setIsRotating(false);
+      }
 
-            // ?: 快捷键提示
-            if (e.key === "?" || (e.key === "/" && e.shiftKey)) {
-                e.preventDefault();
-                setShowHints((prev: boolean) => !prev);
-            }
-        },
-        [
-            selectedIdsRef,
-            slotsRef,
-            onRemoveSlot,
-            setSelectedIds,
-            setContextMenu,
-            setIsRotating,
-            setIsSpacePressed,
-            setShowHints,
-        ],
-    );
+      // ?: 快捷键提示
+      if (e.key === "?" || (e.key === "/" && e.shiftKey)) {
+        e.preventDefault();
+        setShowHints((prev: boolean) => !prev);
+      }
+    },
+    [
+      selectedIdsRef,
+      slotsRef,
+      onRemoveSlot,
+      setSelectedIds,
+      setContextMenu,
+      setIsRotating,
+      setIsSpacePressed,
+      setShowHints,
+    ],
+  );
 
-    const handleKeyUp = useCallback(
-        (e: KeyboardEvent) => {
-            if (e.code === "Space") {
-                setIsSpacePressed(false);
-                setIsPanning(false);
-            }
-        },
-        [setIsSpacePressed, setIsPanning],
-    );
+  const handleKeyUp = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.code === "Space") {
+        setIsSpacePressed(false);
+        setIsPanning(false);
+      }
+    },
+    [setIsSpacePressed, setIsPanning],
+  );
 
-    useEffect(() => {
-        window.addEventListener("keydown", handleKeyDown);
-        window.addEventListener("keyup", handleKeyUp);
-        return () => {
-            window.removeEventListener("keydown", handleKeyDown);
-            window.removeEventListener("keyup", handleKeyUp);
-        };
-    }, [handleKeyDown, handleKeyUp]);
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [handleKeyDown, handleKeyUp]);
 }
