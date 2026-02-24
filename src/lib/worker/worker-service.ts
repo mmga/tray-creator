@@ -3,6 +3,11 @@ import type { TrayParams } from "@/types/tray";
 import type { CustomLayoutParams } from "@/types/custom-tray";
 import type { WorkerRequest, WorkerResponse } from "./tray.worker";
 
+let _nextId = 0;
+function generateRequestId(): string {
+    return `req_${++_nextId}_${Date.now()}`;
+}
+
 class TrayWorkerService {
     private worker: Worker | null = null;
     private pendingResolves: Map<string, (result: any) => void> = new Map();
@@ -24,13 +29,12 @@ class TrayWorkerService {
 
     private handleMessage(event: MessageEvent<WorkerResponse>) {
         const data = event.data;
+        const { requestId } = data;
 
-        // We cheat a bit by just grabbing the single latest promise
-        // In a more robust system we'd pass IDs back and forth
-        const resolve = Array.from(this.pendingResolves.values()).pop();
-        const reject = Array.from(this.pendingRejects.values()).pop();
-        this.pendingResolves.clear();
-        this.pendingRejects.clear();
+        const resolve = this.pendingResolves.get(requestId);
+        const reject = this.pendingRejects.get(requestId);
+        this.pendingResolves.delete(requestId);
+        this.pendingRejects.delete(requestId);
 
         if (data.type === "ERROR") {
             if (reject) reject(new Error(data.message));
@@ -40,26 +44,29 @@ class TrayWorkerService {
     }
 
     public async generateGrid(params: TrayParams): Promise<{ geometry: Geom3, volume: number }> {
+        const requestId = generateRequestId();
         return new Promise((resolve, reject) => {
-            this.pendingResolves.set("grid", (data: any) => resolve({ geometry: data.geometry, volume: data.volumeInfo }));
-            this.pendingRejects.set("grid", reject);
-            this.worker?.postMessage({ type: "GENERATE_GRID", params });
+            this.pendingResolves.set(requestId, (data: any) => resolve({ geometry: data.geometry, volume: data.volumeInfo }));
+            this.pendingRejects.set(requestId, reject);
+            this.worker?.postMessage({ type: "GENERATE_GRID", requestId, params });
         });
     }
 
     public async generateCustom(params: CustomLayoutParams): Promise<{ geometry: Geom3, volume: number }> {
+        const requestId = generateRequestId();
         return new Promise((resolve, reject) => {
-            this.pendingResolves.set("custom", (data: any) => resolve({ geometry: data.geometry, volume: data.volumeInfo }));
-            this.pendingRejects.set("custom", reject);
-            this.worker?.postMessage({ type: "GENERATE_CUSTOM", params });
+            this.pendingResolves.set(requestId, (data: any) => resolve({ geometry: data.geometry, volume: data.volumeInfo }));
+            this.pendingRejects.set(requestId, reject);
+            this.worker?.postMessage({ type: "GENERATE_CUSTOM", requestId, params });
         });
     }
 
     public async exportSTL(geometry: Geom3, filename: string): Promise<{ blob: Blob, filename: string }> {
+        const requestId = generateRequestId();
         return new Promise((resolve, reject) => {
-            this.pendingResolves.set("export", resolve);
-            this.pendingRejects.set("export", reject);
-            this.worker?.postMessage({ type: "EXPORT_STL", geometry, filename });
+            this.pendingResolves.set(requestId, resolve);
+            this.pendingRejects.set(requestId, reject);
+            this.worker?.postMessage({ type: "EXPORT_STL", requestId, geometry, filename });
         });
     }
 
