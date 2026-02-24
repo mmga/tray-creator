@@ -37,7 +37,7 @@ export function CanvasContextMenu({
                 <div className="flex items-center gap-1">
                     <input
                         type="number"
-                        className="w-full h-6 bg-[#111] border border-[#555] rounded px-1 text-xs text-secondary-foreground"
+                        className="w-full h-9 lg:h-6 bg-[#111] border border-[#555] rounded px-2 lg:px-1 text-sm lg:text-xs text-secondary-foreground"
                         value={Math.round(
                             slots.find((s) => s.id === contextMenu.slotId)?.rotation || 0,
                         )}

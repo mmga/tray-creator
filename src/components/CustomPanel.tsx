@@ -104,7 +104,7 @@ export default function CustomPanel({
               variant="outline"
               onClick={onTrimBaseplate}
               disabled={params.slots.length === 0}
-              className="w-full h-9 border-[#2e2a24] text-[#8cb880] cursor-pointer hover:bg-[#2a3528]/30 hover:border-[#4a6741] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-11 lg:h-9 border-[#2e2a24] text-[#8cb880] cursor-pointer hover:bg-[#2a3528]/30 hover:border-[#4a6741] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Minimize className="w-3.5 h-3.5 mr-2" />
               <span className="text-sm tracking-wider">裁剪底板</span>
@@ -126,7 +126,7 @@ export default function CustomPanel({
                   variant="outline"
                   size="sm"
                   onClick={() => onAddSlot(preset.diameter)}
-                  className="h-8 text-[11px] border-[#2e2a24] bg-[#1c1a16] hover:bg-[#2e2a24] hover:text-primary transition-all"
+                  className="h-11 lg:h-8 text-xs lg:text-[11px] border-[#2e2a24] bg-[#1c1a16] hover:bg-[#2e2a24] hover:text-primary transition-all"
                 >
                   <Plus className="w-3 h-3 mr-1" />
                   {preset.diameter}
@@ -142,7 +142,7 @@ export default function CustomPanel({
                   variant="outline"
                   size="sm"
                   onClick={() => onAddSlot(preset.width, preset.height)}
-                  className="h-8 text-[11px] border-[#2e2a24] bg-[#1c1a16] hover:bg-[#2e2a24] hover:text-primary transition-all"
+                  className="h-11 lg:h-8 text-xs lg:text-[11px] border-[#2e2a24] bg-[#1c1a16] hover:bg-[#2e2a24] hover:text-primary transition-all"
                 >
                   <Plus className="w-3 h-3 mr-1" />
                   {preset.name.replace('mm', '')}
@@ -311,7 +311,7 @@ export default function CustomPanel({
         <Button
           variant="outline"
           onClick={handleReset}
-          className="w-full h-9 text-sm border-[#2e2a24] text-muted-foreground tracking-wider cursor-pointer hover:bg-[#1c1a16] hover:text-foreground/80 hover:border-[#3d372e]"
+          className="w-full h-11 lg:h-9 text-sm border-[#2e2a24] text-muted-foreground tracking-wider cursor-pointer hover:bg-[#1c1a16] hover:text-foreground/80 hover:border-[#3d372e]"
         >
           <RotateCcw className="w-4 h-4 mr-2" />
           重置参数

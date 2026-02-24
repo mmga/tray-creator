@@ -281,7 +281,7 @@ export default function ParameterPanel({
         <Button
           variant="outline"
           onClick={handleReset}
-          className="w-full h-9 text-sm border-[#2e2a24] text-muted-foreground tracking-wider cursor-pointer hover:bg-[#1c1a16] hover:text-foreground/80 hover:border-[#3d372e] transition-all duration-200"
+          className="w-full h-11 lg:h-9 text-sm border-[#2e2a24] text-muted-foreground tracking-wider cursor-pointer hover:bg-[#1c1a16] hover:text-foreground/80 hover:border-[#3d372e] transition-all duration-200"
         >
           <RotateCcw className="w-4 h-4 mr-2" />
           重置参数
