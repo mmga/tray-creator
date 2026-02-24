@@ -90,9 +90,8 @@ export function SectionHeader({
             {/* 可折叠内容区 */}
             {children != null && (
                 <div
-                    className={`transition-all duration-200 ease-in-out overflow-hidden ${
-                        canCollapse && !isOpen ? 'max-h-0 opacity-0' : 'max-h-500 opacity-100'
-                    }`}
+                    className={`transition-all duration-200 ease-in-out overflow-hidden ${canCollapse && !isOpen ? 'max-h-0 opacity-0' : 'max-h-500 opacity-100'
+                        }`}
                 >
                     {children}
                 </div>

@@ -133,29 +133,29 @@ export default function ParameterPanel({
           summary={`底厚${params.baseThickness}mm / 孔深${params.holeDepth}mm / 圆角${params.cornerRadius}mm`}>
           <div className="space-y-4">
 
-        <ParamSlider
-          label={PARAM_CONFIG.baseThickness.label}
-          value={params.baseThickness}
-          config={params.enableBaseHole
-            ? { ...PARAM_CONFIG.baseThickness, min: BASE_HOLE_CONFIG.minBaseThickness }
-            : PARAM_CONFIG.baseThickness}
-          onChange={(v) => updateParam("baseThickness", v)}
-          unit={PARAM_CONFIG.baseThickness.unit}
-        />
-        <ParamSlider
-          label={PARAM_CONFIG.holeDepth.label}
-          value={params.holeDepth}
-          config={PARAM_CONFIG.holeDepth}
-          onChange={(v) => updateParam("holeDepth", v)}
-          unit={PARAM_CONFIG.holeDepth.unit}
-        />
-        <ParamSlider
-          label={PARAM_CONFIG.cornerRadius.label}
-          value={params.cornerRadius}
-          config={PARAM_CONFIG.cornerRadius}
-          onChange={(v) => updateParam("cornerRadius", v)}
-          unit={PARAM_CONFIG.cornerRadius.unit}
-        />
+            <ParamSlider
+              label={PARAM_CONFIG.baseThickness.label}
+              value={params.baseThickness}
+              config={params.enableBaseHole
+                ? { ...PARAM_CONFIG.baseThickness, min: BASE_HOLE_CONFIG.minBaseThickness }
+                : PARAM_CONFIG.baseThickness}
+              onChange={(v) => updateParam("baseThickness", v)}
+              unit={PARAM_CONFIG.baseThickness.unit}
+            />
+            <ParamSlider
+              label={PARAM_CONFIG.holeDepth.label}
+              value={params.holeDepth}
+              config={PARAM_CONFIG.holeDepth}
+              onChange={(v) => updateParam("holeDepth", v)}
+              unit={PARAM_CONFIG.holeDepth.unit}
+            />
+            <ParamSlider
+              label={PARAM_CONFIG.cornerRadius.label}
+              value={params.cornerRadius}
+              config={PARAM_CONFIG.cornerRadius}
+              onChange={(v) => updateParam("cornerRadius", v)}
+              unit={PARAM_CONFIG.cornerRadius.unit}
+            />
           </div>
         </SectionHeader>
       </div>
