@@ -14,7 +14,6 @@ interface TrayViewerProps {
 function TrayMesh({ geometry }: { geometry: THREE.BufferGeometry }) {
   const meshRef = useRef<THREE.Mesh>(null);
 
-  // 从几何体提取硬边缘线
   const edgesGeometry = useMemo(() => {
     return new THREE.EdgesGeometry(geometry, RENDER_CONFIG.edgeThreshold);
   }, [geometry]);
@@ -27,27 +26,16 @@ function TrayMesh({ geometry }: { geometry: THREE.BufferGeometry }) {
 
   return (
     <group rotation={[-Math.PI / 2, 0, 0]}>
-      {/* 实体模型 */}
-      <mesh
-        ref={meshRef}
-        geometry={geometry}
-        castShadow
-        receiveShadow
-      >
+      <mesh ref={meshRef} geometry={geometry} castShadow receiveShadow>
         <meshStandardMaterial
           color={RENDER_CONFIG.modelColor}
-          metalness={RENDER_CONFIG.modelMetalness}
-          roughness={RENDER_CONFIG.modelRoughness}
+          metalness={0.15}
+          roughness={0.75}
           side={THREE.DoubleSide}
         />
       </mesh>
-      {/* 边缘线叠加 — 极低 GPU 开销 */}
       <lineSegments geometry={edgesGeometry}>
-        <lineBasicMaterial
-          color="#58524a"
-          transparent
-          opacity={0.6}
-        />
+        <lineBasicMaterial color="#6a6258" transparent opacity={0.55} />
       </lineSegments>
     </group>
   );
@@ -169,14 +157,17 @@ export default function TrayViewer({ geometry, isStale }: TrayViewerProps) {
       >
         <ContextLostHandler />
 
-        {/* 灯光 — warm forge lighting (3-point) */}
-        <ambientLight intensity={0.4} color="#ffeedd" />
-        {/* 主光：右上前方 */}
-        <directionalLight position={[50, 80, 50]} intensity={1.2} color="#fff5e6" />
-        {/* 补光：左后方，柔和 */}
-        <directionalLight position={[-30, 40, -20]} intensity={0.35} color="#ffe8cc" />
-        {/* 侧底光：从下方打亮凹槽内壁 */}
-        <directionalLight position={[0, -30, 40]} intensity={0.25} color="#ffeedd" />
+        {/* 灯光 — 调整为凹槽清晰可见 */}
+        {/* 环境光适当降低，让阴影更明显 */}
+        <ambientLight intensity={0.25} color="#ffeecc" />
+        {/* 主光：斜上方强光，打出凹槽内部阴影 */}
+        <directionalLight position={[40, 120, 60]} intensity={1.5} color="#fff8f0" castShadow />
+        {/* 侧补光：左侧，增加凹槽内壁的层次感 */}
+        <directionalLight position={[-60, 60, 20]} intensity={0.6} color="#ffeedd" />
+        {/* 前下补光：从前下方打亮，防止整体过暗 */}
+        <directionalLight position={[0, -20, 80]} intensity={0.4} color="#ffe8cc" />
+        {/* 背光：让托盘背面轮廓可见 */}
+        <directionalLight position={[-20, 20, -60]} intensity={0.2} color="#ccddff" />
 
         {/* 托盘模型 */}
         {geometry && (

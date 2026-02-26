@@ -93,6 +93,17 @@ export function useTrayModel(): UseTrayModelReturn {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      // 同时下载 JSON 参数文件
+      const jsonFilename = filename.replace(/\.stl$/i, ".json");
+      const jsonBlob = new Blob([JSON.stringify(params, null, 2)], { type: "application/json" });
+      const jsonUrl = URL.createObjectURL(jsonBlob);
+      const jsonLink = document.createElement("a");
+      jsonLink.href = jsonUrl;
+      jsonLink.download = jsonFilename;
+      document.body.appendChild(jsonLink);
+      jsonLink.click();
+      document.body.removeChild(jsonLink);
+      URL.revokeObjectURL(jsonUrl);
     } catch (err) {
       console.error("STL导出失败:", err);
       toast(

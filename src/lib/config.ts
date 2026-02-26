@@ -155,7 +155,7 @@ export const RENDER_CONFIG = {
   /** 模型粗糙度 */
   modelRoughness: 0.5,
   /** 边缘线阈值角度 */
-  edgeThreshold: 15,
+  edgeThreshold: 45,
   /** 摄像机初始配置 */
   camera: {
     position: [120, 120, 120],
