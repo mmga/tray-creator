@@ -102,8 +102,8 @@ export function polygonsIntersect(polyA: Point[], polyB: Point[]): boolean {
         maxB = Math.max(maxB, proj);
       }
 
-      // Check for gap
-      if (maxA < minB || maxB < minA) {
+      // Check for gap with a tiny epsilon (1e-6) to handle touching edges
+      if (maxA <= minB + 1e-6 || maxB <= minA + 1e-6) {
         return false; // Found a separating axis
       }
     }

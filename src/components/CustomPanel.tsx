@@ -50,14 +50,31 @@ function getSlotAABB(slot: FreeSlot) {
 
 type ArrangeUpdate = { id: string; x: number; y: number };
 
-/** 预设1：一字排开（单行，从左到右，垂直居中） */
+/** 预设1：一字排开（单行，从左到右，垂直居中，最大的在中间对称排列） */
 function arrangeSingleRow(slots: FreeSlot[], spacing: number): ArrangeUpdate[] {
   if (slots.length === 0) return [];
+
+  // 按面积降序排序，最大的在前面
+  const sorted = [...slots].sort((a, b) => b.width * b.height - a.width * a.height);
+
+  // 遵循对称原则分配顺序：最大的在中间，次大的在左边，第三大在右边...
+  const orderedSlots: FreeSlot[] = [];
+  sorted.forEach((s, i) => {
+    if (i % 2 === 0) {
+      // 偶数索引放中间/右边（例如0放最开始，2放在0的右边，4放在2的右边，其实推入数组末尾）
+      orderedSlots.push(s);
+    } else {
+      // 奇数索引放在左边（插入数组开头）
+      orderedSlots.unshift(s);
+    }
+  });
+
   const gap = spacing;
   let cursor = spacing;
-  const maxHalfH = Math.max(...slots.map(s => getSlotAABB(s).halfH));
+  const maxHalfH = Math.max(...orderedSlots.map(s => getSlotAABB(s).halfH));
   const centerY = spacing + maxHalfH;
-  return slots.map(s => {
+
+  return orderedSlots.map(s => {
     const { halfW } = getSlotAABB(s);
     const x = cursor + halfW;
     cursor += halfW * 2 + gap;
@@ -209,11 +226,9 @@ function arrangeRing(slots: FreeSlot[], spacing: number): ArrangeUpdate[] {
   if (slots.length === 1) return [{ id: slots[0].id, x: spacing + getSlotAABB(slots[0]).halfW, y: spacing + getSlotAABB(slots[0]).halfH }];
 
   const n = slots.length;
-  // 半径 = 最大外接圆半径 * 1.5 + spacing，保证相邻不重叠
+  // 半径计算：确保相邻两个槽位的弦长（直线距离）大于等于 (2 * maxR + spacing)
   const maxR = Math.max(...slots.map(s => Math.max(getSlotAABB(s).halfW, getSlotAABB(s).halfH)));
-  // 最小圆弧间距：相邻两槽不小于 spacing
-  // 弧长 = 2πR/n >= 2*maxR + spacing  => R >= (2*maxR + spacing) * n / (2π)
-  const minRadius = ((2 * maxR + spacing) * n) / (2 * Math.PI);
+  const minRadius = (2 * maxR + spacing) / (2 * Math.sin(Math.PI / n));
   const radius = Math.max(minRadius, maxR * 2 + spacing);
 
   const centerX = spacing + radius + maxR;

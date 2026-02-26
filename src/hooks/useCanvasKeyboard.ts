@@ -73,10 +73,11 @@ export function useCanvasKeyboard({
         e.preventDefault();
         let dx = 0,
           dy = 0;
-        if (e.code === "ArrowLeft") dx = -1;
-        if (e.code === "ArrowRight") dx = 1;
-        if (e.code === "ArrowUp") dy = 1;
-        if (e.code === "ArrowDown") dy = -1;
+        const step = 0.2;
+        if (e.code === "ArrowLeft") dx = -step;
+        if (e.code === "ArrowRight") dx = step;
+        if (e.code === "ArrowUp") dy = step;
+        if (e.code === "ArrowDown") dy = -step;
 
         selectedIdsRef.current.forEach((id) => {
           const slot = slotsRef.current.find((s) => s.id === id);

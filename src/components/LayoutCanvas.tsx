@@ -151,10 +151,10 @@ export default function LayoutCanvas({
   const checkBoundaryCollision = (x: number, y: number, w: number, h: number, rot: number): string[] => {
     const { halfW, halfH } = getEllipseBoundingBox(w, h, rot);
     const reasons: string[] = [];
-    if (x - halfW < spacing) reasons.push("左");
-    if (x + halfW > trayWidth - spacing) reasons.push("右");
-    if (y - halfH < spacing) reasons.push("下");
-    if (y + halfH > trayDepth - spacing) reasons.push("上");
+    if (x - halfW < spacing - 1e-6) reasons.push("左");
+    if (x + halfW > trayWidth - spacing + 1e-6) reasons.push("右");
+    if (y - halfH < spacing - 1e-6) reasons.push("下");
+    if (y + halfH > trayDepth - spacing + 1e-6) reasons.push("上");
     return reasons;
   };
 
