@@ -1,9 +1,8 @@
 "use client";
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Grid3X3, MousePointer2, ClipboardList } from "lucide-react";
+import { Grid3X3, MousePointer2 } from "lucide-react";
 import type { AppMode } from "@/types/custom-tray";
-import { isAdmin } from "@/lib/permissions";
 
 interface ModeTabsProps {
   mode: AppMode;
@@ -18,7 +17,7 @@ export function ModeTabs({ mode, onModeChange }: ModeTabsProps) {
         onValueChange={(v) => onModeChange(v as AppMode)}
         className="w-full"
       >
-        <TabsList className={`grid w-full max-w-[400px] ${isAdmin ? 'grid-cols-3' : 'grid-cols-2'} bg-[#1c1a16] border border-[#2e2a24]`}>
+        <TabsList className="grid w-full max-w-[400px] grid-cols-2 bg-[#1c1a16] border border-[#2e2a24]">
           <TabsTrigger
             value="grid"
             className="data-[state=active]:bg-[#2e2a24] data-[state=active]:text-primary text-muted-foreground transition-all duration-200"
@@ -33,15 +32,6 @@ export function ModeTabs({ mode, onModeChange }: ModeTabsProps) {
             <MousePointer2 className="w-4 h-4 mr-2" />
             <span className="tracking-wider text-xs font-bold uppercase">自定义模式</span>
           </TabsTrigger>
-          {isAdmin && (
-            <TabsTrigger
-              value="orders"
-              className="data-[state=active]:bg-[#2e2a24] data-[state=active]:text-primary text-muted-foreground transition-all duration-200"
-            >
-              <ClipboardList className="w-4 h-4 mr-2" />
-              <span className="tracking-wider text-xs font-bold uppercase">订单</span>
-            </TabsTrigger>
-          )}
         </TabsList>
       </Tabs>
     </div>

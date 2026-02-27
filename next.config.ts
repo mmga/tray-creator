@@ -3,7 +3,8 @@ import type { NextConfig } from "next";
 const isAdmin = process.env.NEXT_PUBLIC_ADMIN_MODE === 'true';
 
 const nextConfig: NextConfig = {
-  output: 'export',
+  // 仅生产构建时启用静态导出；开发模式下关闭以支持本地 API Mock
+  output: process.env.NODE_ENV === 'production' ? 'export' : undefined,
   images: {
     unoptimized: true,
   },

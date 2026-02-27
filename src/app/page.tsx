@@ -9,12 +9,14 @@ import type { AppMode } from "@/types/custom-tray";
 import { Boxes, Settings2, PenTool, Eye, ClipboardList } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { isAdmin } from "@/lib/permissions";
+import type { TrayParams } from "@/types/tray";
+import type { CustomLayoutParams } from "@/types/custom-tray";
 
 // Lazy load components
 const ParameterPanel = dynamic(() => import("@/components/ParameterPanel"), { ssr: false });
 const CustomPanel = dynamic(() => import("@/components/CustomPanel"), { ssr: false });
 const LayoutCanvas = dynamic(() => import("@/components/LayoutCanvas"), { ssr: false });
-const OrderListPanel = dynamic(() => import("@/components/OrderListPanel"), { ssr: false });
+const OrderListDialog = dynamic(() => import("@/components/OrderListPanel"), { ssr: false });
 const TrayViewer = dynamic(() => import("@/components/TrayViewer"), {
   ssr: false,
   loading: () => (
@@ -44,6 +46,7 @@ export default function Home() {
   const [mode, setMode] = useState<AppMode>("grid");
   const [rightView, setRightView] = useState<"2d" | "3d">("2d");
   const [mobileTab, setMobileTab] = useState<"params" | "2d" | "3d">("params");
+  const [ordersOpen, setOrdersOpen] = useState(false);
   const isMobile = useIsMobile();
 
   // Grid Mode State
@@ -51,6 +54,17 @@ export default function Home() {
 
   // Custom Mode State
   const customModel = useCustomLayout();
+
+  /** 从订单导入配置 */
+  const handleImportOrder = (orderMode: AppMode, params: unknown) => {
+    if (orderMode === "grid") {
+      gridModel.setParams(params as TrayParams);
+      setMode("grid");
+    } else {
+      customModel.setParams(params as CustomLayoutParams);
+      setMode("custom");
+    }
+  };
 
   // 参数面板内容（共享于桌面和移动端）
   const renderParameterPanel = () =>
@@ -68,7 +82,7 @@ export default function Home() {
         isGenerating={gridModel.isGenerating}
         volume={gridModel.volume}
       />
-    ) : mode === "custom" ? (
+    ) : (
       <CustomPanel
         params={customModel.params}
         effectiveDimensions={customModel.effectiveDimensions}
@@ -84,23 +98,10 @@ export default function Home() {
         isGenerating={customModel.isGenerating}
         volume={customModel.volume}
       />
-    ) : (
-      <OrderListPanel />
     );
 
   // 视口内容（共享于桌面和移动端）
   const renderViewport = () => {
-    if (mode === "orders") {
-      return (
-        <div className="w-full h-full flex items-center justify-center bg-[#0a0908]">
-          <div className="text-center text-muted-foreground">
-            <ClipboardList className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p className="text-sm font-mono tracking-wider">订单管理</p>
-            <p className="text-xs mt-1 opacity-60">在左侧面板查看订单列表</p>
-          </div>
-        </div>
-      );
-    }
     if (mode === "grid") {
       return <TrayViewer geometry={gridModel.threeGeometry} isStale={gridModel.isPreviewStale} />;
     }
@@ -170,6 +171,15 @@ export default function Home() {
             </div>
           </div>
           <div className="flex items-center gap-2 text-white">
+            {isAdmin && (
+              <button
+                onClick={() => setOrdersOpen(true)}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-mono font-medium bg-[#1c1a16] text-muted-foreground border border-[#2e2a24] tracking-wider hover:bg-[#252220] hover:text-primary transition-colors cursor-pointer"
+              >
+                <ClipboardList className="w-3 h-3" />
+                订单
+              </button>
+            )}
             <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-mono font-medium bg-[#1c1a16] text-muted-foreground border border-[#2e2a24] tracking-wider">
               <span className="w-1.5 h-1.5 rounded-full bg-[#8b1a1a] animate-ember" />
               FORGE v0.2
@@ -273,6 +283,13 @@ export default function Home() {
         </nav>
       </div>
 
+      {isAdmin && (
+        <OrderListDialog
+          open={ordersOpen}
+          onClose={() => setOrdersOpen(false)}
+          onImportOrder={handleImportOrder}
+        />
+      )}
     </div>
   );
 }
