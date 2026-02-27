@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, RotateCcw, Play, Loader2, Layout, Wrench, Ruler, Share2 } from "lucide-react";
+import { Download, RotateCcw, Play, Loader2, Layout, Wrench, Ruler, Share2, Send } from "lucide-react";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/config";
 import { BaseHoleConfig } from "@/components/BaseHoleConfig";
 import { ParamIOButtons } from "@/components/ParamIOButtons";
@@ -22,6 +22,8 @@ import { ParamSlider } from "@/components/ui/ParamSlider";
 import { isAdmin } from "@/lib/permissions";
 import { exportParams } from "@/lib/param-io";
 import { calculateGridPrice, calculateWeight } from "@/lib/pricing";
+import { sendConfigToKV } from "@/lib/edgeone-kv";
+import { useToast } from "@/hooks/useToast";
 
 interface ParameterPanelProps {
   params: TrayParams;
@@ -45,6 +47,8 @@ export default function ParameterPanel({
   const dimensions = calculateTrayDimensions(params);
   const isOversized = dimensions.width > MAX_BUILD_SIZE || dimensions.depth > MAX_BUILD_SIZE;
   const [autoPreview, setAutoPreview] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const { toast } = useToast();
 
   // Auto-preview debouncing logic
   useEffect(() => {
@@ -270,13 +274,36 @@ export default function ParameterPanel({
             导出 STL
           </Button>
         ) : (
-          <Button
-            onClick={() => exportParams("grid", params as any)}
-            className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-sm text-[#8cb880] font-semibold tracking-wider cursor-pointer transition-all duration-200 border border-[#4a6741] shadow-lg shadow-[#2a352830]"
-          >
-            <Share2 className="w-4 h-4 mr-2" />
-            导出参数
-          </Button>
+          <>
+            <Button
+              onClick={() => exportParams("grid", params as any)}
+              className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-sm text-[#8cb880] font-semibold tracking-wider cursor-pointer transition-all duration-200 border border-[#4a6741] shadow-lg shadow-[#2a352830]"
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              导出参数
+            </Button>
+            <Button
+              disabled={isSending}
+              onClick={async () => {
+                setIsSending(true);
+                const result = await sendConfigToKV("grid", params);
+                setIsSending(false);
+                if (result.success) {
+                  toast("success", `配置已发送 (${result.orderId})`);
+                } else {
+                  toast("error", `发送失败：${result.error}`);
+                }
+              }}
+              className="w-full h-10 bg-[#1e2a3a] hover:bg-[#283848] text-sm text-[#7eb8d8] font-semibold tracking-wider cursor-pointer transition-all duration-200 border border-[#3a5a7a] shadow-lg shadow-[#1e2a3a30] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4 mr-2" />
+              )}
+              {isSending ? "发送中..." : "发送配置"}
+            </Button>
+          </>
         )}
         <Button
           variant="outline"

@@ -17,6 +17,7 @@ import {
   Ruler,
   BoxSelect,
   Share2,
+  Send,
 } from "lucide-react";
 import { BaseHoleConfig } from "@/components/BaseHoleConfig";
 import { ParamIOButtons } from "@/components/ParamIOButtons";
@@ -24,7 +25,9 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
 import { isAdmin } from "@/lib/permissions";
 import { exportParams } from "@/lib/param-io";
-import { calculateWeight } from "@/lib/pricing";
+import { calculateWeight, calculateCustomPrice } from "@/lib/pricing";
+import { sendConfigToKV } from "@/lib/edgeone-kv";
+import { useToast } from "@/hooks/useToast";
 
 // ── Props ──────────────────────────────
 
@@ -56,6 +59,8 @@ export default function CustomPanel({
   const effectiveDepth = effectiveDimensions.depth;
   const isOversized = effectiveWidth > MAX_BUILD_SIZE || effectiveDepth > MAX_BUILD_SIZE;
   const [autoPreview, setAutoPreview] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const { toast } = useToast();
 
   // Auto-preview debouncing logic
   useEffect(() => {
@@ -203,11 +208,11 @@ export default function CustomPanel({
                 <span className="text-[10px] text-muted-foreground block">预估报价 & 耗材参考</span>
                 <div className="flex flex-col items-center mt-0.5">
                   <span className="text-sm font-mono font-bold text-[#eab308]">
-                    10 + 耗材克重 × 0.15
+                    ¥{calculateCustomPrice(params, volume).toFixed(1)}
                   </span>
                   {volume > 0 ? (
                     <span className="text-[9px] text-muted-foreground">
-                      PLA估重: {calculateWeight(volume).toFixed(1)}g
+                      估重: {calculateWeight(volume).toFixed(1)}g
                     </span>
                   ) : (
                     <span className="text-[9px] text-muted-foreground">
@@ -288,13 +293,36 @@ export default function CustomPanel({
             导出 STL
           </Button>
         ) : (
-          <Button
-            onClick={() => exportParams("custom", params as any)}
-            className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-sm text-[#8cb880] font-semibold tracking-wider cursor-pointer border border-[#4a6741] shadow-lg shadow-[#2a352830]"
-          >
-            <Share2 className="w-4 h-4 mr-2" />
-            导出参数
-          </Button>
+          <>
+            <Button
+              onClick={() => exportParams("custom", params as any)}
+              className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-sm text-[#8cb880] font-semibold tracking-wider cursor-pointer border border-[#4a6741] shadow-lg shadow-[#2a352830]"
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              导出参数
+            </Button>
+            <Button
+              disabled={isSending}
+              onClick={async () => {
+                setIsSending(true);
+                const result = await sendConfigToKV("custom", params);
+                setIsSending(false);
+                if (result.success) {
+                  toast("success", `配置已发送 (${result.orderId})`);
+                } else {
+                  toast("error", `发送失败：${result.error}`);
+                }
+              }}
+              className="w-full h-10 bg-[#1e2a3a] hover:bg-[#283848] text-sm text-[#7eb8d8] font-semibold tracking-wider cursor-pointer transition-all duration-200 border border-[#3a5a7a] shadow-lg shadow-[#1e2a3a30] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4 mr-2" />
+              )}
+              {isSending ? "发送中..." : "发送配置"}
+            </Button>
+          </>
         )}
         <Button
           variant="outline"

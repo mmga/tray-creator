@@ -58,27 +58,8 @@ export function getEquivalentDiameter(width: number, height: number): number {
     return Math.sqrt(width * height);
 }
 
-/**
- * 计算自定义模式的报价
- * 规则：基础起步价 (例如 10元) + (按体积计算的PLA耗材原价) + 孔位费(仅算引磁片附加费)
- * 如果用户只要看设计不想算体积，volume 传 0，只显示起步价。
- */
 export function calculateCustomPrice(params: CustomLayoutParams, volume: number): number {
-    const slotCount = params.slots.length;
-    if (slotCount === 0) return 0; // 若无内容则不计费
-
-    // 1. 体积耗材预估价 (体积 -> 重量 -> 价格)
-    let materialPrice = 0;
-    if (volume > 0) {
-        const weightGrams = (volume / 1000) * PRICING_CONFIG.plaDensity;
-        materialPrice = (weightGrams / 1000) * PRICING_CONFIG.plaCostPerKg;
-    }
-
-    // 2. 引磁片附加费
-    let magnetPrice = 0;
-    if (params.enableBaseHole) {
-        magnetPrice += slotCount * PRICING_CONFIG.pricePerMagnet;
-    }
-
-    return PRICING_CONFIG.customBasePrice + materialPrice + magnetPrice;
+    if (volume <= 0) return 0;
+    const weight = calculateWeight(volume);
+    return weight * 0.4;
 }
