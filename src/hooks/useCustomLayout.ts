@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
 import type { CustomLayoutParams, FreeSlot } from "@/types/custom-tray";
 import { CUSTOM_LAYOUT_DEFAULTS, getSlotTolerance } from "@/lib/config";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
@@ -27,6 +27,22 @@ interface UseCustomLayoutReturn {
   updateSlotRotation: (id: string, rotation: number) => void;
   duplicateSlots: (ids: string[]) => void;
   trimBaseplate: () => void;
+  calculateEffectiveDimensions: () => {
+    width: number;
+    depth: number;
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+  };
+  effectiveDimensions: {
+    width: number;
+    depth: number;
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+  };
   // 历史操作
   saveSnapshot: () => void;
   undo: () => void;
@@ -63,6 +79,60 @@ export function useCustomLayout(): UseCustomLayoutReturn {
   // 追踪预览是否过期
   const [isPreviewStale, setIsPreviewStale] = useState(false);
 
+  const getSlotBoundingHalfSize = useCallback((slot: FreeSlot) => {
+    const rad = (slot.rotation * Math.PI) / 180;
+    const a = (slot.width + getSlotTolerance(slot.width)) / 2;
+    const b = (slot.height + getSlotTolerance(slot.height)) / 2;
+    const halfW = Math.sqrt(
+      Math.pow(a * Math.cos(rad), 2) + Math.pow(b * Math.sin(rad), 2),
+    );
+    const halfH = Math.sqrt(
+      Math.pow(a * Math.sin(rad), 2) + Math.pow(b * Math.cos(rad), 2),
+    );
+    return { halfW, halfH };
+  }, []);
+
+  const calculateEffectiveDimensions = useCallback(() => {
+    const current = paramsRef.current;
+    if (current.slots.length === 0) {
+      return {
+        width: 0,
+        depth: 0,
+        minX: 0,
+        maxX: 0,
+        minY: 0,
+        maxY: 0,
+      };
+    }
+
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+    current.slots.forEach((slot) => {
+      const { halfW, halfH } = getSlotBoundingHalfSize(slot);
+      minX = Math.min(minX, slot.x - halfW);
+      maxX = Math.max(maxX, slot.x + halfW);
+      minY = Math.min(minY, slot.y - halfH);
+      maxY = Math.max(maxY, slot.y + halfH);
+    });
+
+    return {
+      width: Math.ceil(maxX - minX + current.spacing * 2),
+      depth: Math.ceil(maxY - minY + current.spacing * 2),
+      minX,
+      maxX,
+      minY,
+      maxY,
+    };
+  }, [getSlotBoundingHalfSize]);
+
+  const effectiveDimensions = useMemo(
+    () => calculateEffectiveDimensions(),
+    [params, calculateEffectiveDimensions],
+  );
+
   /** 手动保存快照（供拖拽开始时调用） */
   const saveSnapshot = useCallback(() => {
     pushState(paramsRef.current);
@@ -96,19 +166,34 @@ export function useCustomLayout(): UseCustomLayoutReturn {
       setParams((prev) => {
         pushState(prev);
         const isCircle = !height || width === height;
+        const slotHeight = height || width;
+        const newSlotHalfW =
+          (width + getSlotTolerance(Math.max(width, slotHeight))) / 2;
+
+        let nextX = prev.trayWidth / 2;
+        let nextY = prev.trayDepth / 2;
+
+        if (prev.slots.length > 0) {
+          const lastSlot = prev.slots[prev.slots.length - 1];
+          const lastHalf = getSlotBoundingHalfSize(lastSlot);
+          nextX = lastSlot.x + lastHalf.halfW + prev.spacing + newSlotHalfW;
+          nextY = lastSlot.y;
+        }
+
         const newSlot: FreeSlot = {
           id: crypto.randomUUID(),
-          x: prev.trayWidth / 2,
-          y: prev.trayDepth / 2,
+          x: nextX,
+          y: nextY,
           shape: isCircle ? "circle" : "ellipse",
           width,
-          height: height || width,
+          height: slotHeight,
           rotation: 0,
         };
         return { ...prev, slots: [...prev.slots, newSlot] };
       });
+      setIsPreviewStale(true);
     },
-    [pushState],
+    [getSlotBoundingHalfSize, pushState],
   );
 
   /**
@@ -121,6 +206,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
         ...prev,
         slots: prev.slots.filter((s) => s.id !== id),
       }));
+      setIsPreviewStale(true);
     },
     [pushState],
   );
@@ -133,6 +219,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
       ...prev,
       slots: prev.slots.map((s) => (s.id === id ? { ...s, x, y } : s)),
     }));
+    setIsPreviewStale(true);
   }, []);
 
   /**
@@ -151,6 +238,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
           }),
         };
       });
+      setIsPreviewStale(true);
     },
     [pushState],
   );
@@ -163,6 +251,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
       ...prev,
       slots: prev.slots.map((s) => (s.id === id ? { ...s, rotation } : s)),
     }));
+    setIsPreviewStale(true);
   }, []);
 
   /**
@@ -191,6 +280,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
 
         return { ...prev, slots: newSlots };
       });
+      setIsPreviewStale(true);
     },
     [pushState],
   );
@@ -206,42 +296,18 @@ export function useCustomLayout(): UseCustomLayoutReturn {
 
       pushState(prev);
 
-      // 1. Calculate bounding box of all slots
-      let minX = Infinity,
-        maxX = -Infinity;
-      let minY = Infinity,
-        maxY = -Infinity;
+      const current = paramsRef.current;
+      const dims = calculateEffectiveDimensions();
+      if (dims.width <= 0 || dims.depth <= 0) return prev;
 
-      prev.slots.forEach((slot) => {
-        const rad = (slot.rotation * Math.PI) / 180;
-        const a = (slot.width + getSlotTolerance(slot.width)) / 2;
-        const b = (slot.height + getSlotTolerance(slot.height)) / 2;
-        const halfW = Math.sqrt(
-          Math.pow(a * Math.cos(rad), 2) + Math.pow(b * Math.sin(rad), 2),
-        );
-        const halfH = Math.sqrt(
-          Math.pow(a * Math.sin(rad), 2) + Math.pow(b * Math.cos(rad), 2),
-        );
-
-        minX = Math.min(minX, slot.x - halfW);
-        maxX = Math.max(maxX, slot.x + halfW);
-        minY = Math.min(minY, slot.y - halfH);
-        maxY = Math.max(maxY, slot.y + halfH);
-      });
-
-      // 2. Calculate raw dimensions needed
-      const rawWidth = maxX - minX + prev.spacing * 2;
-      const rawDepth = maxY - minY + prev.spacing * 2;
-
-      // 3. Round up to nearest integer for clean numbers
-      const newTrayWidth = Math.ceil(rawWidth);
-      const newTrayDepth = Math.ceil(rawDepth);
+      const newTrayWidth = dims.width;
+      const newTrayDepth = dims.depth;
 
       // 4. Calculate shift to center the slots
       // The old bounding box center was ((minX + maxX)/2, (minY + maxY)/2)
       // The new space center is (newTrayWidth/2, newTrayDepth/2)
-      const oldCx = (minX + maxX) / 2;
-      const oldCy = (minY + maxY) / 2;
+      const oldCx = (dims.minX + dims.maxX) / 2;
+      const oldCy = (dims.minY + dims.maxY) / 2;
       const newCx = newTrayWidth / 2;
       const newCy = newTrayDepth / 2;
 
@@ -252,14 +318,15 @@ export function useCustomLayout(): UseCustomLayoutReturn {
         ...prev,
         trayWidth: newTrayWidth,
         trayDepth: newTrayDepth,
-        slots: prev.slots.map((s) => ({
+        slots: current.slots.map((s) => ({
           ...s,
           x: s.x + dx,
           y: s.y + dy,
         })),
       };
     });
-  }, [pushState]);
+    setIsPreviewStale(true);
+  }, [calculateEffectiveDimensions, pushState]);
 
   // 异步触发生成 3D 模型
   const handleGenerate = useCallback(async () => {
@@ -338,6 +405,8 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     updateSlotRotation,
     duplicateSlots,
     trimBaseplate,
+    calculateEffectiveDimensions,
+    effectiveDimensions,
     saveSnapshot,
     undo,
     canUndo: canUndoFn(),
