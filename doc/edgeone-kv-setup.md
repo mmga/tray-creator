@@ -22,7 +22,7 @@
 ### 第二步：创建边缘函数 (Edge Function)
 1. 在左侧导航栏找到 **边缘计算 (Edge Computing)** -> **边缘函数 (Edge Functions)**。
 2. 点击“新建函数”，基础模板选择一个空白 JavaScript 模板。
-3. 将我们项目中的 `edge-function-blueprint.js`（由于这是文档，我把代码附在最下方）的全部代码粘贴到代码编辑器中。
+3. 将项目中的 `edgeone/orders.js` 代码粘贴到函数编辑器中（或直接在 EdgeOne 控制台创建同名函数内容）。
 
 ### 第三步：配置环境变量与空间绑定
 在函数的配置页面（或环境设置页的右侧）：
