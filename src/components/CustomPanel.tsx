@@ -1,7 +1,7 @@
 "use client";
 
-import type { CustomLayoutParams, FreeSlot } from "@/types/custom-tray";
-import { BASE_PRESETS, ELLIPSE_PRESETS, CUSTOM_LIMITS, PARAM_CONFIG, MAX_BUILD_SIZE, getSlotTolerance } from "@/lib/config";
+import type { CustomLayoutParams } from "@/types/custom-tray";
+import { BASE_PRESETS, ELLIPSE_PRESETS, CUSTOM_LIMITS, PARAM_CONFIG, MAX_BUILD_SIZE } from "@/lib/config";
 import { calculateCustomTrayDimensions } from "@/lib/custom-tray-model";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -13,17 +13,11 @@ import {
   Play,
   Loader2,
   Plus,
-  Trash2,
   Layout,
   Wrench,
   Ruler,
   BoxSelect,
   Share2,
-  LayoutGrid,
-  Rows2,
-  Grid2x2,
-  CrosshairIcon,
-  CircleDot,
 } from "lucide-react";
 import { BaseHoleConfig } from "@/components/BaseHoleConfig";
 import { ParamIOButtons } from "@/components/ParamIOButtons";
@@ -32,217 +26,6 @@ import { ParamSlider } from "@/components/ui/ParamSlider";
 import { isAdmin } from "@/lib/permissions";
 import { exportParams } from "@/lib/param-io";
 import { calculateWeight } from "@/lib/pricing";
-
-// ── 排列预设辅助函数 ──────────────────────────────
-
-/** 计算旋转椭圆的 AABB 半尺寸（含公差） */
-function getSlotAABB(slot: FreeSlot) {
-  const rad = ((slot.rotation || 0) * Math.PI) / 180;
-  const tol = getSlotTolerance(Math.max(slot.width, slot.height));
-  const a = (slot.width + tol) / 2;
-  const b = (slot.height + tol) / 2;
-  return {
-    halfW: Math.sqrt((a * Math.cos(rad)) ** 2 + (b * Math.sin(rad)) ** 2),
-    halfH: Math.sqrt((a * Math.sin(rad)) ** 2 + (b * Math.cos(rad)) ** 2),
-  };
-}
-
-type ArrangeUpdate = { id: string; x: number; y: number };
-
-/** 预设1：一字排开（单行，从左到右，垂直居中，最大的在中间对称排列） */
-function arrangeSingleRow(slots: FreeSlot[], spacing: number): ArrangeUpdate[] {
-  if (slots.length === 0) return [];
-
-  // 按面积降序排序，最大的在前面
-  const sorted = [...slots].sort((a, b) => b.width * b.height - a.width * a.height);
-
-  // 遵循对称原则分配顺序：最大的在中间，次大的在左边，第三大在右边...
-  const orderedSlots: FreeSlot[] = [];
-  sorted.forEach((s, i) => {
-    if (i % 2 === 0) {
-      // 偶数索引放中间/右边（例如0放最开始，2放在0的右边，4放在2的右边，其实推入数组末尾）
-      orderedSlots.push(s);
-    } else {
-      // 奇数索引放在左边（插入数组开头）
-      orderedSlots.unshift(s);
-    }
-  });
-
-  const gap = spacing;
-  let cursor = spacing;
-  const maxHalfH = Math.max(...orderedSlots.map(s => getSlotAABB(s).halfH));
-  const centerY = spacing + maxHalfH;
-
-  return orderedSlots.map(s => {
-    const { halfW } = getSlotAABB(s);
-    const x = cursor + halfW;
-    cursor += halfW * 2 + gap;
-    return { id: s.id, x, y: centerY };
-  });
-}
-
-/** 预设2：双行并排（按面积降序，大的在上行，小的在下行，两行整体居中） */
-function arrangeDoubleRow(slots: FreeSlot[], spacing: number): ArrangeUpdate[] {
-  if (slots.length === 0) return [];
-  const gap = spacing;
-  // 按面积降序排序
-  const sorted = [...slots].sort((a, b) => b.width * b.height - a.width * a.height);
-  // 奇数索引 → 第0行（上），偶数索引 → 第1行（下）
-  const row0 = sorted.filter((_, i) => i % 2 === 0);
-  const row1 = sorted.filter((_, i) => i % 2 === 1);
-
-  const layoutRow = (rowSlots: FreeSlot[], baseY: number) => {
-    let cursor = spacing;
-    return rowSlots.map(s => {
-      const { halfW } = getSlotAABB(s);
-      const x = cursor + halfW;
-      cursor += halfW * 2 + gap;
-      return { id: s.id, x, y: baseY };
-    });
-  };
-
-  const maxHalfH0 = row0.length > 0 ? Math.max(...row0.map(s => getSlotAABB(s).halfH)) : 0;
-  const maxHalfH1 = row1.length > 0 ? Math.max(...row1.map(s => getSlotAABB(s).halfH)) : 0;
-  const rowH0 = maxHalfH0 * 2;
-  const rowH1 = maxHalfH1 * 2;
-
-  const y0 = spacing + maxHalfH0;
-  const y1 = y0 + rowH0 / 2 + gap + maxHalfH1;
-
-  return [
-    ...layoutRow(row0, y0),
-    ...layoutRow(row1, y1),
-  ];
-}
-
-/** 预设3：方阵网格（cols = ceil(sqrt(n))，行列均匀排布） */
-function arrangeGrid(slots: FreeSlot[], spacing: number): ArrangeUpdate[] {
-  if (slots.length === 0) return [];
-  const n = slots.length;
-  const cols = Math.ceil(Math.sqrt(n));
-  const updates: ArrangeUpdate[] = [];
-
-  // 先按面积降序，使大的排前面
-  const sorted = [...slots].sort((a, b) => b.width * b.height - a.width * a.height);
-
-  // 每列的最大半宽、每行的最大半高
-  const colMaxHalfW: number[] = Array(cols).fill(0);
-  const rowMaxHalfH: number[] = [];
-  const rows = Math.ceil(n / cols);
-  for (let r = 0; r < rows; r++) rowMaxHalfH.push(0);
-
-  sorted.forEach((s, i) => {
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const { halfW, halfH } = getSlotAABB(s);
-    colMaxHalfW[col] = Math.max(colMaxHalfW[col], halfW);
-    rowMaxHalfH[row] = Math.max(rowMaxHalfH[row], halfH);
-  });
-
-  // 计算各列 x 起始位置
-  const colCenterX: number[] = [];
-  let cx = spacing;
-  for (let c = 0; c < cols; c++) {
-    cx += colMaxHalfW[c];
-    colCenterX.push(cx);
-    cx += colMaxHalfW[c] + spacing;
-  }
-
-  // 计算各行 y 起始位置
-  const rowCenterY: number[] = [];
-  let cy = spacing;
-  for (let r = 0; r < rows; r++) {
-    cy += rowMaxHalfH[r];
-    rowCenterY.push(cy);
-    cy += rowMaxHalfH[r] + spacing;
-  }
-
-  sorted.forEach((s, i) => {
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    updates.push({ id: s.id, x: colCenterX[col], y: rowCenterY[row] });
-  });
-
-  return updates;
-}
-
-/** 预设4：十字展开（最大的居中，其余按上下左右放射，超过5个降级为单行） */
-function arrangeCross(slots: FreeSlot[], spacing: number): ArrangeUpdate[] {
-  if (slots.length === 0) return [];
-  if (slots.length > 9) return arrangeSingleRow(slots, spacing);
-
-  // 最大的居中
-  const sorted = [...slots].sort((a, b) => b.width * b.height - a.width * a.height);
-  const center = sorted[0];
-  const rest = sorted.slice(1);
-  const { halfW: cHW, halfH: cHH } = getSlotAABB(center);
-
-  const gap = spacing;
-  const cx = spacing + cHW;
-  const cy = spacing + cHH;
-
-  // 为了对称，整体先按原点布置，最后偏移
-  const positions: { id: string; dx: number; dy: number }[] = [
-    { id: center.id, dx: 0, dy: 0 },
-  ];
-
-  // 方向顺序：上 → 右 → 下 → 左 → 右上 → 右下 → 左下 → 左上
-  const directions = [
-    [0, 1], [1, 0], [0, -1], [-1, 0],
-    [1, 1], [1, -1], [-1, -1], [-1, 1],
-  ];
-
-  rest.forEach((s, i) => {
-    const dir = directions[i % directions.length];
-    const { halfW, halfH } = getSlotAABB(s);
-    // 偏移 = 中心半宽/高 + gap + 邻居半宽/高
-    const dx = dir[0] * (cHW + gap + halfW);
-    const dy = dir[1] * (cHH + gap + halfH);
-    positions.push({ id: s.id, dx, dy });
-  });
-
-  // 求整体包围盒最小值，做偏移让所有坐标 >= spacing
-  const absPositions = positions.map(p => {
-    const s = slots.find(sl => sl.id === p.id)!;
-    const { halfW, halfH } = getSlotAABB(s);
-    return { id: p.id, x: p.dx, y: p.dy, halfW, halfH };
-  });
-  const minX = Math.min(...absPositions.map(p => p.x - p.halfW));
-  const minY = Math.min(...absPositions.map(p => p.y - p.halfH));
-  const offsetX = spacing - minX;
-  const offsetY = spacing - minY;
-
-  return absPositions.map(p => ({
-    id: p.id,
-    x: p.x + offsetX,
-    y: p.y + offsetY,
-  }));
-}
-
-/** 预设5：周环排列（均匀分布在圆周上，适合 2–16 个） */
-function arrangeRing(slots: FreeSlot[], spacing: number): ArrangeUpdate[] {
-  if (slots.length === 0) return [];
-  if (slots.length === 1) return [{ id: slots[0].id, x: spacing + getSlotAABB(slots[0]).halfW, y: spacing + getSlotAABB(slots[0]).halfH }];
-
-  const n = slots.length;
-  // 半径计算：确保相邻两个槽位的弦长（直线距离）大于等于 (2 * maxR + spacing)
-  const maxR = Math.max(...slots.map(s => Math.max(getSlotAABB(s).halfW, getSlotAABB(s).halfH)));
-  const minRadius = (2 * maxR + spacing) / (2 * Math.sin(Math.PI / n));
-  const radius = Math.max(minRadius, maxR * 2 + spacing);
-
-  const centerX = spacing + radius + maxR;
-  const centerY = spacing + radius + maxR;
-
-  return slots.map((s, i) => {
-    // 从顶部开始，顺时针排列
-    const angle = (2 * Math.PI * i) / n - Math.PI / 2;
-    return {
-      id: s.id,
-      x: Math.round((centerX + radius * Math.cos(angle)) * 10) / 10,
-      y: Math.round((centerY + radius * Math.sin(angle)) * 10) / 10,
-    };
-  });
-}
 
 // ── Props ──────────────────────────────
 
@@ -256,8 +39,6 @@ interface CustomPanelProps {
   onExportSTL: () => void;
   isGenerating: boolean;
   volume: number;
-  onArrangeSlots?: (updates: { id: string; x: number; y: number }[]) => void;
-  onSaveSnapshot?: () => void;
 }
 
 export default function CustomPanel({
@@ -270,16 +51,7 @@ export default function CustomPanel({
   onExportSTL,
   isGenerating,
   volume,
-  onArrangeSlots,
-  onSaveSnapshot,
 }: CustomPanelProps) {
-
-  /** 执行排列预设：保存快照 → 更新坐标 → 裁剪底板 */
-  const applyPreset = (updates: { id: string; x: number; y: number }[]) => {
-    if (updates.length === 0) return;
-    onSaveSnapshot?.();
-    onArrangeSlots?.(updates);
-  };
   const dimensions = calculateCustomTrayDimensions(params);
   const effectiveWidth = effectiveDimensions.width;
   const effectiveDepth = effectiveDimensions.depth;
@@ -351,38 +123,6 @@ export default function CustomPanel({
             <p className="text-[10px] text-muted-foreground/50 text-center pt-1">
               点击上方按钮添加，在右侧画布拖拽与删除
             </p>
-
-            {/* ── 快速排列预设 ── */}
-            {params.slots.length >= 2 && (
-              <>
-                <div className="h-px bg-[#2e2a24] my-2" />
-                <div className="text-[10px] text-muted-foreground/70 font-bold tracking-wider uppercase mb-1.5">
-                  快速排列
-                </div>
-                <div className="grid grid-cols-5 gap-1.5">
-                  {([
-                    { key: 'row', label: '一行', title: '一字排开', icon: LayoutGrid, fn: () => arrangeSingleRow(params.slots, params.spacing) },
-                    { key: 'double', label: '两行', title: '双行并排', icon: Rows2, fn: () => arrangeDoubleRow(params.slots, params.spacing) },
-                    { key: 'grid', label: '网格', title: '方阵网格', icon: Grid2x2, fn: () => arrangeGrid(params.slots, params.spacing) },
-                    { key: 'cross', label: '十字', title: `十字展开${params.slots.length > 9 ? '（已降级为单行）' : ''}`, icon: CrosshairIcon, fn: () => arrangeCross(params.slots, params.spacing) },
-                    { key: 'ring', label: '环绕', title: '周环排列', icon: CircleDot, fn: () => arrangeRing(params.slots, params.spacing) },
-                  ] as const).map(({ key, label, title, icon: Icon, fn }) => (
-                    <button
-                      key={key}
-                      title={title}
-                      onClick={() => applyPreset(fn())}
-                      className="flex flex-col items-center gap-0.5 py-1.5 text-[10px] font-bold tracking-wider border border-[#2e2a24] bg-[#1a1915] hover:bg-[#2e2a24] hover:text-primary hover:border-[#4a6741] text-muted-foreground transition-all rounded-sm cursor-pointer"
-                    >
-                      <Icon className="w-3.5 h-3.5" />
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-[10px] text-muted-foreground/40 text-center pt-1">
-                  自动排列后裁剪底板
-                </p>
-              </>
-            )}
           </div>
         </SectionHeader>
       </div>

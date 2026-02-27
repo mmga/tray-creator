@@ -98,8 +98,6 @@ export default function Home() {
         onExportSTL={customModel.handleExportSTL}
         isGenerating={customModel.isGenerating}
         volume={customModel.volume}
-        onArrangeSlots={customModel.updateMultipleSlots}
-        onSaveSnapshot={customModel.saveSnapshot}
       />
     );
 
