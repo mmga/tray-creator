@@ -2,7 +2,7 @@
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import type { FreeSlot, CustomLayoutParams } from "@/types/custom-tray";
-import { getSlotTolerance } from "@/lib/config";
+import { getSlotTolerance, MAX_BUILD_SIZE } from "@/lib/config";
 import { getEllipsePolygon, polygonsIntersect } from "@/lib/collision";
 import AlignmentToolbar from "./AlignmentToolbar";
 import { Trash2, Undo2, Copy, XCircle } from "lucide-react";
@@ -148,15 +148,7 @@ export default function LayoutCanvas({
     return { halfW, halfH };
   };
 
-  const checkBoundaryCollision = (x: number, y: number, w: number, h: number, rot: number): string[] => {
-    const { halfW, halfH } = getEllipseBoundingBox(w, h, rot);
-    const reasons: string[] = [];
-    if (x - halfW < spacing - 1e-6) reasons.push("左");
-    if (x + halfW > trayWidth - spacing + 1e-6) reasons.push("右");
-    if (y - halfH < spacing - 1e-6) reasons.push("下");
-    if (y + halfH > trayDepth - spacing + 1e-6) reasons.push("上");
-    return reasons;
-  };
+  const checkBoundaryCollision = (): string[] => [];
 
   /** 返回与指定槽位发生碰撞的其他槽位 ID 列表 */
   const checkSlotCollision = (id: string, x: number, y: number, currentW: number, currentH: number, currentRot: number): string[] => {
@@ -191,21 +183,6 @@ export default function LayoutCanvas({
     }
     return collidingIds;
   };
-
-  // Check if currently dragging slot hits the boundary
-  const draggingSlotResult = slots.find(s => s.id === draggingId);
-  const draggingRadius = draggingSlotResult ? getCollisionRadius(draggingSlotResult) : 0;
-
-  const draggingBoundaryReasons = draggingSlotResult
-    ? checkBoundaryCollision(
-      draggingSlotResult.x,
-      draggingSlotResult.y,
-      draggingSlotResult.width,
-      draggingSlotResult.height,
-      draggingSlotResult.rotation
-    )
-    : [];
-  const isDraggingBoundaryCollision = draggingBoundaryReasons.length > 0;
 
   // ... (keep existing helpers)
 
@@ -698,12 +675,6 @@ export default function LayoutCanvas({
         const aPos = getPos(a);
         const aMoved = layout.arrangedIds.has(a.id);
 
-        // 只关注“此次被移动的槽位”引入的边界问题
-        if (aMoved) {
-          const boundaryReasons = checkBoundaryCollision(aPos.x, aPos.y, a.width, a.height, a.rotation);
-          if (boundaryReasons.length > 0) return true;
-        }
-
         for (let j = i + 1; j < slots.length; j++) {
           const b = slots[j];
           const bPos = getPos(b);
@@ -763,11 +734,6 @@ export default function LayoutCanvas({
   const collisionSummary = (() => {
     const messages: string[] = [];
     for (const slot of slots) {
-      const boundaryReasons = checkBoundaryCollision(slot.x, slot.y, slot.width, slot.height, slot.rotation);
-      if (boundaryReasons.length > 0) {
-        const label = slot.width === slot.height ? `${slot.width}mm` : `${slot.width}x${slot.height}mm`;
-        messages.push(`${label}(${slot.id.slice(0, 4)}) 超出${boundaryReasons.join("/")}边距`);
-      }
       const overlapIds = checkSlotCollision(slot.id, slot.x, slot.y, slot.width, slot.height, slot.rotation);
       for (const otherId of overlapIds) {
         // 只报告一个方向避免重复
@@ -792,13 +758,55 @@ export default function LayoutCanvas({
         involved.add(slot.id);
         overlaps.forEach((id) => involved.add(id));
       }
-      const boundaryReasons = checkBoundaryCollision(slot.x, slot.y, slot.width, slot.height, slot.rotation);
-      if (boundaryReasons.length > 0) {
-        involved.add(slot.id);
-      }
     }
     return involved;
   })();
+
+  const effectiveBaseplate = (() => {
+    if (slots.length === 0) {
+      return {
+        hasSlots: false,
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0,
+      };
+    }
+
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+    for (const slot of slots) {
+      const { halfW, halfH } = getEllipseBoundingBox(
+        slot.width,
+        slot.height,
+        slot.rotation,
+      );
+      minX = Math.min(minX, slot.x - halfW);
+      maxX = Math.max(maxX, slot.x + halfW);
+      minY = Math.min(minY, slot.y - halfH);
+      maxY = Math.max(maxY, slot.y + halfH);
+    }
+
+    const width = Math.max(0, maxX - minX + spacing * 2);
+    const height = Math.max(0, maxY - minY + spacing * 2);
+    const left = minX - spacing;
+    const top = trayDepth - (maxY + spacing);
+
+    return {
+      hasSlots: true,
+      x: left,
+      y: top,
+      width,
+      height,
+    };
+  })();
+
+  const isEffectiveOversized =
+    effectiveBaseplate.width > MAX_BUILD_SIZE ||
+    effectiveBaseplate.height > MAX_BUILD_SIZE;
 
   const autoAdjustDebugInfo = (() => {
     const targets = slots.filter((s) => collisionInvolvedIds.has(s.id));
@@ -879,31 +887,33 @@ export default function LayoutCanvas({
         onTouchEnd={handleTouchEnd}
         preserveAspectRatio="xMidYMid meet"
       >
-        {/* Tray Body */}
+        {/* Virtual Canvas (outer) */}
         <rect
           x={0}
           y={0}
           width={trayWidth}
           height={trayDepth}
-          fill="#2a2a2e"
-          stroke="#58524a"
+          fill="none"
+          stroke="#4b5563"
           strokeWidth={0.5 / zoom}
-          rx={params.cornerRadius}
+          strokeDasharray={`${3 / zoom} ${3 / zoom}`}
+          strokeOpacity={0.9}
         />
 
-        {/* Safe Area */}
-        <rect
-          x={spacing}
-          y={spacing}
-          width={Math.max(0, trayWidth - spacing * 2)}
-          height={Math.max(0, trayDepth - spacing * 2)}
-          fill="none"
-          stroke={isDraggingBoundaryCollision ? "#ef4444" : "#666"}
-          strokeWidth={0.25 / zoom}
-          strokeDasharray="2 2"
-          strokeOpacity={isDraggingBoundaryCollision ? 1 : 0.5}
-          className="transition-colors duration-200"
-        />
+        {/* Effective Baseplate (inner) */}
+        {effectiveBaseplate.hasSlots && (
+          <rect
+            x={effectiveBaseplate.x}
+            y={effectiveBaseplate.y}
+            width={effectiveBaseplate.width}
+            height={effectiveBaseplate.height}
+            fill="none"
+            stroke="#8b7355"
+            strokeWidth={0.7 / zoom}
+            rx={Math.max(0, Math.min(params.cornerRadius, effectiveBaseplate.width / 2, effectiveBaseplate.height / 2))}
+            strokeOpacity={0.95}
+          />
+        )}
 
         {/* Slots */}
         {(() => {
@@ -913,7 +923,7 @@ export default function LayoutCanvas({
           const involvedIds = new Set<string>();
 
           for (const slot of slots) {
-            const boundaryReasons = checkBoundaryCollision(slot.x, slot.y, slot.width, slot.height, slot.rotation);
+            const boundaryReasons: string[] = [];
             const overlapIds = checkSlotCollision(slot.id, slot.x, slot.y, slot.width, slot.height, slot.rotation);
             collisionMap.set(slot.id, { boundaryReasons, overlapIds });
             if (overlapIds.length > 0) {
@@ -1139,6 +1149,12 @@ export default function LayoutCanvas({
         selectedIds={selectedIds}
         slots={slots}
       />
+
+      {isEffectiveOversized && (
+        <div className="absolute top-14 lg:top-16 right-3 z-[72] px-3 py-1.5 bg-[#3b1515]/90 border border-[#8b1a1a] rounded text-xs text-[#f2b8b8] font-mono backdrop-blur-sm">
+          有效底板超限: {effectiveBaseplate.width.toFixed(0)} × {effectiveBaseplate.height.toFixed(0)} mm
+        </div>
+      )}
 
       {/* Collision Info Banner */}
       {collisionSummary.length > 0 && (
