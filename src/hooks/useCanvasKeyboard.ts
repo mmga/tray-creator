@@ -11,9 +11,6 @@ interface UseCanvasKeyboardOptions {
   onDuplicateSlots?: (ids: string[]) => void;
   onUndo?: () => void;
   setSelectedIds: React.Dispatch<React.SetStateAction<Set<string>>>;
-  setContextMenu: React.Dispatch<
-    React.SetStateAction<{ x: number; y: number; slotId: string } | null>
-  >;
   setIsRotating: React.Dispatch<React.SetStateAction<boolean>>;
   setIsSpacePressed: React.Dispatch<React.SetStateAction<boolean>>;
   setIsPanning: React.Dispatch<React.SetStateAction<boolean>>;
@@ -34,7 +31,6 @@ export function useCanvasKeyboard({
   onDuplicateSlots,
   onUndo,
   setSelectedIds,
-  setContextMenu,
   setIsRotating,
   setIsSpacePressed,
   setIsPanning,
@@ -118,14 +114,12 @@ export function useCanvasKeyboard({
         e.preventDefault();
         selectedIdsRef.current.forEach((id) => onRemoveSlot(id));
         setSelectedIds(new Set());
-        setContextMenu(null);
       }
 
       // Escape: 取消选择
       if (e.code === "Escape") {
         e.preventDefault();
         setSelectedIds(new Set());
-        setContextMenu(null);
         setIsRotating(false);
       }
 
@@ -140,7 +134,6 @@ export function useCanvasKeyboard({
       slotsRef,
       onRemoveSlot,
       setSelectedIds,
-      setContextMenu,
       setIsRotating,
       setIsSpacePressed,
       setShowHints,

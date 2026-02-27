@@ -12,7 +12,6 @@ import { useCanvasKeyboard } from "../hooks/useCanvasKeyboard";
 import { CanvasStatusBar } from "./canvas/CanvasStatusBar";
 import { CanvasZoomControls } from "./canvas/CanvasZoomControls";
 import { KeyboardHintsOverlay } from "./canvas/KeyboardHintsOverlay";
-import { CanvasContextMenu } from "./canvas/CanvasContextMenu";
 
 interface LayoutCanvasProps {
   params: CustomLayoutParams;
@@ -43,7 +42,6 @@ export default function LayoutCanvas({
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   // Hoisted state (must be before hooks to avoid reference errors)
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; slotId: string } | null>(null);
   const [isRotating, setIsRotating] = useState(false);
   const [showHints, setShowHints] = useState(false);
   const [showAdjustDebug, setShowAdjustDebug] = useState(false);
@@ -52,10 +50,6 @@ export default function LayoutCanvas({
   const svgRef = useRef<SVGSVGElement>(null);
   const parentRef = useRef<HTMLDivElement>(null); // To get client rect for marquee
   const rotateStartRef = useRef<{ angle: number; startRotation: number } | null>(null);
-
-  // 长按定时器（移动端替代右键菜单）
-  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const longPressFiredRef = useRef(false);
 
   // 主触摸指针 ID（防止多指时第二根手指触发拖拽/框选）
   const primaryPointerIdRef = useRef<number | null>(null);
@@ -123,7 +117,6 @@ export default function LayoutCanvas({
     onDuplicateSlots,
     onUndo,
     setSelectedIds,
-    setContextMenu,
     setIsRotating,
     setIsSpacePressed,
     setIsPanning,
@@ -226,12 +219,6 @@ export default function LayoutCanvas({
     // 多指防护：仅处理主指针的移动事件
     if (e.pointerType === 'touch' && primaryPointerIdRef.current !== null && e.pointerId !== primaryPointerIdRef.current) {
       return;
-    }
-
-    // 移动时取消长按定时器（防止拖拽触发上下文菜单）
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
     }
 
     // Pan
@@ -403,13 +390,6 @@ export default function LayoutCanvas({
     // Capture pointer for reliable tracking (especially on touch)
     (e.target as Element)?.setPointerCapture?.(e.pointerId);
 
-    // 清除上一个长按定时器
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-    longPressFiredRef.current = false;
-
     const isCtrl = e.ctrlKey || e.metaKey;
 
     // Panning Mode
@@ -417,20 +397,6 @@ export default function LayoutCanvas({
       setIsPanning(true);
       panStartRef.current = { x: e.clientX, y: e.clientY };
       return;
-    }
-
-    // 长按检测（触摸设备替代右键菜单）
-    if (slotId && e.pointerType === 'touch') {
-      const cx = e.clientX;
-      const cy = e.clientY;
-      longPressTimerRef.current = setTimeout(() => {
-        longPressFiredRef.current = true;
-        setSelectedIds(new Set([slotId]));
-        setContextMenu({ x: cx, y: cy, slotId });
-        // 取消拖拽
-        setDraggingId(null);
-        dragStartRef.current = null;
-      }, 500);
     }
 
     if (slotId) {
@@ -517,17 +483,6 @@ export default function LayoutCanvas({
     // 释放主指针追踪
     primaryPointerIdRef.current = null;
 
-    // 清除长按定时器
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-    // 如果长按已触发上下文菜单，跳过后续逻辑
-    if (longPressFiredRef.current) {
-      longPressFiredRef.current = false;
-      return;
-    }
-
     // End Marquee
     if (selectionBox && svgRef.current && parentRef.current) {
       const boxRect = {
@@ -589,37 +544,6 @@ export default function LayoutCanvas({
     dragStartRef.current = null;
     setGuideLines([]);
   }, [selectionBox, selectedIds, slots, trayDepth]);
-
-  // Context Menu Helpers
-
-  // ... (useEffect click listener is fine)
-
-  const handleContextMenu = useCallback((e: React.MouseEvent | React.PointerEvent, slotId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setSelectedIds(new Set([slotId]));
-    setContextMenu({ x: e.clientX, y: e.clientY, slotId });
-  }, []);
-
-  const handleDeleteFromMenu = () => {
-    if (contextMenu?.slotId) {
-      onRemoveSlot(contextMenu.slotId);
-      setContextMenu(null);
-    }
-  };
-
-  const handleRotationInput = (e: React.ChangeEvent<HTMLInputElement>, id: string) => {
-    const valStr = e.target.value;
-    if (valStr === '') {
-      if (onUpdateSlotRotation) onUpdateSlotRotation(id, 0);
-      return;
-    }
-    const val = parseFloat(valStr);
-    if (!isNaN(val) && onUpdateSlotRotation) {
-      // 限定为 1 度为步长，不使用小数
-      onUpdateSlotRotation(id, Math.round(val));
-    }
-  };
 
   const autoAdjustSlotsByIds = useCallback((ids: Set<string>) => {
     if (ids.size < 2) return;
@@ -846,7 +770,6 @@ export default function LayoutCanvas({
       ref={parentRef}
       className={`w-full h-full bg-[#1c1a16] rounded-sm overflow-hidden relative select-none flex items-center justify-center ${isSpacePressed ? 'cursor-grab' : ''} ${isPanning ? 'cursor-grabbing' : ''}`}
       style={{ touchAction: 'none' }}
-      onContextMenu={(e) => { e.preventDefault(); setContextMenu(null); }}
     >
       {/* Debug Info Overlay (Bottom Right) inside the canvas container or separate? */}
 
@@ -959,7 +882,6 @@ export default function LayoutCanvas({
                 key={slot.id}
                 transform={`translate(${slot.x}, ${svgY}) rotate(${-slot.rotation})`} // Rotation! Note: SVG Y is inverted, so maybe rotation direction needs care. -Rotation fits typical 2D intuition if Y is up.
                 onPointerDown={(e) => handlePointerDown(e, slot.id)}
-                onContextMenu={(e) => handleContextMenu(e, slot.id)}
                 onPointerEnter={() => setHoveredId(slot.id)}
                 onPointerLeave={() => setHoveredId(null)}
                 className={`transition-opacity duration-200 ${isSpacePressed ? '' : 'cursor-move'}`}
@@ -1121,25 +1043,6 @@ export default function LayoutCanvas({
         onShowHints={() => setShowHints(true)}
       />
 
-      <CanvasContextMenu
-        contextMenu={contextMenu}
-        slots={slots}
-        onRotationChange={handleRotationInput}
-        onDelete={handleDeleteFromMenu}
-        onDuplicate={contextMenu && onDuplicateSlots ? () => {
-          onDuplicateSlots([contextMenu.slotId]);
-          setContextMenu(null);
-        } : undefined}
-        onRotate90={contextMenu && onUpdateSlotRotation ? () => {
-          const slot = slots.find(s => s.id === contextMenu.slotId);
-          if (slot) {
-            onUpdateSlotRotation(contextMenu.slotId, (slot.rotation + 90) % 360);
-          }
-          setContextMenu(null);
-        } : undefined}
-        onClose={() => setContextMenu(null)}
-      />
-
       <CanvasStatusBar
         trayWidth={trayWidth}
         trayDepth={trayDepth}
@@ -1236,7 +1139,6 @@ export default function LayoutCanvas({
             onClick={() => {
               selectedIds.forEach((id) => onRemoveSlot(id));
               setSelectedIds(new Set());
-              setContextMenu(null);
             }}
           >
             <Trash2 size={18} />
@@ -1246,7 +1148,6 @@ export default function LayoutCanvas({
             className="p-2 rounded-full hover:bg-neutral-700/60 text-neutral-500 active:text-white transition-colors"
             onClick={() => {
               setSelectedIds(new Set());
-              setContextMenu(null);
             }}
           >
             <XCircle size={16} />

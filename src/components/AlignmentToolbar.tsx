@@ -1,7 +1,6 @@
 import {
   AlignLeft, AlignCenterHorizontal, AlignRight,
   AlignStartVertical, AlignCenterVertical, AlignEndVertical,
-  AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter,
   Rows2,
   Columns2,
 } from "lucide-react";
@@ -12,7 +11,7 @@ import { getSlotTolerance } from "@/lib/config";
 const STEP = 0.2; // 对齐步长 mm
 const roundToStep = (val: number) => Math.round(val / STEP) * STEP;
 
-type AlignType = 'left' | 'center-x' | 'right' | 'top' | 'center-y' | 'bottom' | 'distribute-h' | 'distribute-v';
+type AlignType = 'left' | 'center-x' | 'right' | 'top' | 'center-y' | 'bottom';
 type ArrangeType = 'row' | 'column';
 type Update = { id: string; x: number; y: number };
 
@@ -39,7 +38,6 @@ interface AlignmentToolbarProps {
 export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, spacing }: AlignmentToolbarProps) {
   const hasSelection = selectedIds.size > 0;
   const hasMultiple = selectedIds.size > 1;
-  const hasAtLeastThree = selectedIds.size > 2;
 
   /** 获取选中项的总包围盒 */
   const getSelectionBounds = (selected: FreeSlot[]) => {
@@ -123,12 +121,6 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, sp
           updates.push({ id: s.id, x: s.x, y: roundToStep(minY + halfH) });
         });
         break;
-      case 'distribute-h':
-        distributeAxis(selected, 'x', minX, maxX, updates);
-        break;
-      case 'distribute-v':
-        distributeAxis(selected, 'y', minY, maxY, updates);
-        break;
     }
 
     if (updates.length > 0) onUpdateSlots(updates);
@@ -173,69 +165,9 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, sp
     if (updates.length > 0) onUpdateSlots(updates);
   };
 
-  /**
-   * 在选中项包围盒内等距分布
-   * - n=2 时：首尾贴边
-   * - n>2 时：首尾固定，中间等距
-   */
-  function distributeAxis(
-    selected: FreeSlot[],
-    axis: 'x' | 'y',
-    rangeMin: number,
-    rangeMax: number,
-    updates: Update[]
-  ) {
-    const n = selected.length;
-    if (n < 2) return;
-
-    const sorted = [...selected].sort((a, b) => a[axis] - b[axis]);
-    const getHalf = (s: FreeSlot) => axis === 'x' ? getSlotBounds(s).halfW : getSlotBounds(s).halfH;
-
-    if (n === 2) {
-      // 2 个元素：各自贴到包围盒两端
-      const h0 = getHalf(sorted[0]);
-      const h1 = getHalf(sorted[1]);
-      if (axis === 'x') {
-        updates.push({ id: sorted[0].id, x: roundToStep(rangeMin + h0), y: sorted[0].y });
-        updates.push({ id: sorted[1].id, x: roundToStep(rangeMax - h1), y: sorted[1].y });
-      } else {
-        updates.push({ id: sorted[0].id, x: sorted[0].x, y: roundToStep(rangeMin + h0) });
-        updates.push({ id: sorted[1].id, x: sorted[1].x, y: roundToStep(rangeMax - h1) });
-      }
-      return;
-    }
-
-    // n>2：首尾固定，中间等距
-    const totalSpace = rangeMax - rangeMin;
-    const totalItemSize = sorted.reduce((sum, s) => sum + getHalf(s) * 2, 0);
-    const gap = (totalSpace - totalItemSize) / (n - 1);
-
-    // 使用第一个排序元素自身的半宽作为起始边缘
-    const firstHalf = getHalf(sorted[0]);
-    let currentEdge = rangeMin + firstHalf * 2 + gap; // 第一个元素占据的空间后
-
-    sorted.forEach((s, i) => {
-      const half = getHalf(s);
-      if (i === 0) {
-        // 第一个：贴左/上
-        if (axis === 'x') updates.push({ id: s.id, x: roundToStep(rangeMin + half), y: s.y });
-        else updates.push({ id: s.id, x: s.x, y: roundToStep(rangeMin + half) });
-      } else if (i === n - 1) {
-        // 最后一个：贴右/下
-        if (axis === 'x') updates.push({ id: s.id, x: roundToStep(rangeMax - half), y: s.y });
-        else updates.push({ id: s.id, x: s.x, y: roundToStep(rangeMax - half) });
-      } else {
-        // 中间：等距
-        if (axis === 'x') updates.push({ id: s.id, x: roundToStep(currentEdge + half), y: s.y });
-        else updates.push({ id: s.id, x: s.x, y: roundToStep(currentEdge + half) });
-        currentEdge += half * 2 + gap;
-      }
-    });
-  }
-
   // ── UI ──────────
 
-  const btnClass = "p-1.5 lg:p-1.5 hover:bg-neutral-700/50 rounded text-neutral-300 hover:text-white transition-colors cursor-pointer group relative disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-neutral-300 shrink-0";
+  const btnClass = "h-8 px-2 lg:px-2.5 hover:bg-neutral-700/50 rounded text-neutral-300 hover:text-white transition-colors cursor-pointer group relative disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-neutral-300 shrink-0 inline-flex items-center gap-1";
   const tooltipClass = "absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-black text-xs text-white rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity z-50 hidden lg:block";
 
   if (!hasSelection) return null;
@@ -245,36 +177,36 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, sp
       {/* 组内对齐 */}
       <div className="flex items-center gap-0.5 mr-1 lg:mr-2 pr-1 lg:pr-2 border-r border-neutral-700 shrink-0">
         <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('left')}>
-          <AlignLeft size={16} className="lg:hidden" />
-          <AlignLeft size={18} className="hidden lg:block" />
+          <AlignLeft size={16} />
+          <span className="hidden lg:inline text-[10px]">左</span>
           <span className={tooltipClass}>左对齐选中项</span>
         </button>
         <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('center-x')}>
-          <AlignCenterHorizontal size={16} className="lg:hidden" />
-          <AlignCenterHorizontal size={18} className="hidden lg:block" />
+          <AlignCenterHorizontal size={16} />
+          <span className="hidden lg:inline text-[10px]">中</span>
           <span className={tooltipClass}>水平居中选中项</span>
         </button>
         <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('right')}>
-          <AlignRight size={16} className="lg:hidden" />
-          <AlignRight size={18} className="hidden lg:block" />
+          <AlignRight size={16} />
+          <span className="hidden lg:inline text-[10px]">右</span>
           <span className={tooltipClass}>右对齐选中项</span>
         </button>
 
         <div className="w-px h-6 bg-neutral-700 mx-0.5 lg:mx-1 shrink-0" />
 
         <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('top')}>
-          <AlignStartVertical size={16} className="lg:hidden" />
-          <AlignStartVertical size={18} className="hidden lg:block" />
+          <AlignStartVertical size={16} />
+          <span className="hidden lg:inline text-[10px]">上</span>
           <span className={tooltipClass}>顶部对齐选中项</span>
         </button>
         <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('center-y')}>
-          <AlignCenterVertical size={16} className="lg:hidden" />
-          <AlignCenterVertical size={18} className="hidden lg:block" />
+          <AlignCenterVertical size={16} />
+          <span className="hidden lg:inline text-[10px]">中</span>
           <span className={tooltipClass}>垂直居中选中项</span>
         </button>
         <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('bottom')}>
-          <AlignEndVertical size={16} className="lg:hidden" />
-          <AlignEndVertical size={18} className="hidden lg:block" />
+          <AlignEndVertical size={16} />
+          <span className="hidden lg:inline text-[10px]">下</span>
           <span className={tooltipClass}>底部对齐选中项</span>
         </button>
       </div>
@@ -282,28 +214,14 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, sp
       {/* 排成一排/列 */}
       <div className="flex items-center gap-0.5 mr-1 lg:mr-2 pr-1 lg:pr-2 border-r border-neutral-700 shrink-0">
         <button className={btnClass} disabled={!hasMultiple} onClick={() => handleArrange('row')}>
-          <Rows2 size={16} className="lg:hidden" />
-          <Rows2 size={18} className="hidden lg:block" />
+          <Rows2 size={16} />
+          <span className="hidden lg:inline text-[10px]">一排</span>
           <span className={tooltipClass}>排成一排（间距+{spacing}mm）</span>
         </button>
         <button className={btnClass} disabled={!hasMultiple} onClick={() => handleArrange('column')}>
-          <Columns2 size={16} className="lg:hidden" />
-          <Columns2 size={18} className="hidden lg:block" />
+          <Columns2 size={16} />
+          <span className="hidden lg:inline text-[10px]">一列</span>
           <span className={tooltipClass}>排成一列（间距+{spacing}mm）</span>
-        </button>
-      </div>
-
-      {/* 组内分布 */}
-      <div className="flex items-center gap-0.5 shrink-0">
-        <button className={btnClass} disabled={!hasAtLeastThree} onClick={() => handleAlign('distribute-h')}>
-          <AlignHorizontalDistributeCenter size={16} className="lg:hidden" />
-          <AlignHorizontalDistributeCenter size={18} className="hidden lg:block" />
-          <span className={tooltipClass}>水平等距分布</span>
-        </button>
-        <button className={btnClass} disabled={!hasAtLeastThree} onClick={() => handleAlign('distribute-v')}>
-          <AlignVerticalDistributeCenter size={16} className="lg:hidden" />
-          <AlignVerticalDistributeCenter size={18} className="hidden lg:block" />
-          <span className={tooltipClass}>垂直等距分布</span>
         </button>
       </div>
 
