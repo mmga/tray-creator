@@ -6,13 +6,15 @@ import { useTrayModel } from "@/hooks/useTrayModel";
 import { useCustomLayout } from "@/hooks/useCustomLayout";
 import { ModeTabs } from "@/components/ModeTabs";
 import type { AppMode } from "@/types/custom-tray";
-import { Boxes, Settings2, PenTool, Eye } from "lucide-react";
+import { Boxes, Settings2, PenTool, Eye, ClipboardList } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { isAdmin } from "@/lib/permissions";
 
 // Lazy load components
 const ParameterPanel = dynamic(() => import("@/components/ParameterPanel"), { ssr: false });
 const CustomPanel = dynamic(() => import("@/components/CustomPanel"), { ssr: false });
 const LayoutCanvas = dynamic(() => import("@/components/LayoutCanvas"), { ssr: false });
+const OrderListPanel = dynamic(() => import("@/components/OrderListPanel"), { ssr: false });
 const TrayViewer = dynamic(() => import("@/components/TrayViewer"), {
   ssr: false,
   loading: () => (
@@ -66,7 +68,7 @@ export default function Home() {
         isGenerating={gridModel.isGenerating}
         volume={gridModel.volume}
       />
-    ) : (
+    ) : mode === "custom" ? (
       <CustomPanel
         params={customModel.params}
         effectiveDimensions={customModel.effectiveDimensions}
@@ -82,10 +84,23 @@ export default function Home() {
         isGenerating={customModel.isGenerating}
         volume={customModel.volume}
       />
+    ) : (
+      <OrderListPanel />
     );
 
   // 视口内容（共享于桌面和移动端）
   const renderViewport = () => {
+    if (mode === "orders") {
+      return (
+        <div className="w-full h-full flex items-center justify-center bg-[#0a0908]">
+          <div className="text-center text-muted-foreground">
+            <ClipboardList className="w-12 h-12 mx-auto mb-3 opacity-30" />
+            <p className="text-sm font-mono tracking-wider">订单管理</p>
+            <p className="text-xs mt-1 opacity-60">在左侧面板查看订单列表</p>
+          </div>
+        </div>
+      );
+    }
     if (mode === "grid") {
       return <TrayViewer geometry={gridModel.threeGeometry} isStale={gridModel.isPreviewStale} />;
     }

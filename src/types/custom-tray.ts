@@ -1,4 +1,4 @@
-export type AppMode = "grid" | "custom";
+export type AppMode = "grid" | "custom" | "orders";
 
 /** 自由放置的凹槽 */
 export interface FreeSlot {

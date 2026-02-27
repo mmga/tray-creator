@@ -26,8 +26,9 @@ import { ParamSlider } from "@/components/ui/ParamSlider";
 import { isAdmin } from "@/lib/permissions";
 import { exportParams } from "@/lib/param-io";
 import { calculateWeight, calculateCustomPrice } from "@/lib/pricing";
-import { sendConfigToKV } from "@/lib/edgeone-kv";
+import { sendConfigToKV, buildPayload, serializePayload } from "@/lib/edgeone-kv";
 import { useToast } from "@/hooks/useToast";
+import { ConfirmSendDialog } from "@/components/ConfirmSendDialog";
 
 // ── Props ──────────────────────────────
 
@@ -60,6 +61,8 @@ export default function CustomPanel({
   const isOversized = effectiveWidth > MAX_BUILD_SIZE || effectiveDepth > MAX_BUILD_SIZE;
   const [autoPreview, setAutoPreview] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [pendingJson, setPendingJson] = useState("");
   const { toast } = useToast();
 
   // Auto-preview debouncing logic
@@ -302,25 +305,15 @@ export default function CustomPanel({
               导出参数
             </Button>
             <Button
-              disabled={isSending}
-              onClick={async () => {
-                setIsSending(true);
-                const result = await sendConfigToKV("custom", params);
-                setIsSending(false);
-                if (result.success) {
-                  toast("success", `配置已发送 (${result.orderId})`);
-                } else {
-                  toast("error", `发送失败：${result.error}`);
-                }
+              onClick={() => {
+                const payload = buildPayload("custom", params);
+                setPendingJson(serializePayload(payload));
+                setDialogOpen(true);
               }}
-              className="w-full h-10 bg-[#1e2a3a] hover:bg-[#283848] text-sm text-[#7eb8d8] font-semibold tracking-wider cursor-pointer transition-all duration-200 border border-[#3a5a7a] shadow-lg shadow-[#1e2a3a30] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-10 bg-[#1e2a3a] hover:bg-[#283848] text-sm text-[#7eb8d8] font-semibold tracking-wider cursor-pointer transition-all duration-200 border border-[#3a5a7a] shadow-lg shadow-[#1e2a3a30]"
             >
-              {isSending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4 mr-2" />
-              )}
-              {isSending ? "发送中..." : "发送配置"}
+              <Send className="w-4 h-4 mr-2" />
+              发送配置
             </Button>
           </>
         )}
@@ -338,6 +331,24 @@ export default function CustomPanel({
           onImport={(p) => setParams(p as CustomLayoutParams)}
         />
       </div>
+
+      <ConfirmSendDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        jsonData={pendingJson}
+        isSending={isSending}
+        onConfirm={async () => {
+          setIsSending(true);
+          const result = await sendConfigToKV("custom", params);
+          setIsSending(false);
+          setDialogOpen(false);
+          if (result.success) {
+            toast("success", `配置已发送 (${result.orderId})`);
+          } else {
+            toast("error", `发送失败：${result.error}`);
+          }
+        }}
+      />
     </div>
   );
 }

@@ -15,6 +15,36 @@ interface SendResult {
     error?: string;
 }
 
+// ── Payload 构建 ──────────────────────────
+
+/** JSON 精度截断 replacer */
+function precisionReplacer(_key: string, value: unknown) {
+    if (typeof value === "number") {
+        return Math.round(value * 1000) / 1000;
+    }
+    return value;
+}
+
+/** 构造待发送的 payload 对象（供弹窗预览） */
+export function buildPayload(
+    mode: AppMode,
+    params: TrayParams | CustomLayoutParams,
+) {
+    return {
+        version: 1,
+        mode,
+        params,
+        submittedAt: new Date().toISOString(),
+    };
+}
+
+/** 序列化 payload 为 JSON 字符串（含精度截断） */
+export function serializePayload(payload: unknown): string {
+    return JSON.stringify(payload, precisionReplacer, 2);
+}
+
+// ── 发送配置 ──────────────────────────────
+
 /**
  * 将当前参数配置发送到 EdgeOne KV 存储
  */
@@ -28,20 +58,8 @@ export async function sendConfigToKV(
         return { success: false, error: "EdgeOne KV URL 未配置" };
     }
 
-    // 序列化：复用 param-io.ts 的精度截断逻辑
-    const payload = {
-        version: 1,
-        mode,
-        params,
-        submittedAt: new Date().toISOString(),
-    };
-
-    const body = JSON.stringify(payload, (_key, value) => {
-        if (typeof value === "number") {
-            return Math.round(value * 1000) / 1000;
-        }
-        return value;
-    });
+    const payload = buildPayload(mode, params);
+    const body = JSON.stringify(payload, precisionReplacer);
 
     try {
         const res = await fetch(url, {
@@ -65,5 +83,53 @@ export async function sendConfigToKV(
             success: false,
             error: e instanceof Error ? e.message : "网络错误",
         };
+    }
+}
+
+// ── 查询订单（Admin） ────────────────────
+
+interface OrderListResult {
+    success: boolean;
+    keys?: string[];
+    error?: string;
+}
+
+interface OrderDetailResult {
+    success: boolean;
+    data?: unknown;
+    error?: string;
+}
+
+/** 获取所有订单 key 列表 */
+export async function fetchOrderList(): Promise<OrderListResult> {
+    const url = EDGE_FUNCTION_URL;
+    if (!url) return { success: false, error: "EdgeOne KV URL 未配置" };
+
+    try {
+        const res = await fetch(url, { method: "GET" });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+            return { success: false, error: data.error || `HTTP ${res.status}` };
+        }
+        return { success: true, keys: data.keys };
+    } catch (e) {
+        return { success: false, error: e instanceof Error ? e.message : "网络错误" };
+    }
+}
+
+/** 获取指定订单详情 */
+export async function fetchOrderDetail(key: string): Promise<OrderDetailResult> {
+    const url = EDGE_FUNCTION_URL;
+    if (!url) return { success: false, error: "EdgeOne KV URL 未配置" };
+
+    try {
+        const res = await fetch(`${url}?key=${encodeURIComponent(key)}`, { method: "GET" });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+            return { success: false, error: data.error || `HTTP ${res.status}` };
+        }
+        return { success: true, data: data.data };
+    } catch (e) {
+        return { success: false, error: e instanceof Error ? e.message : "网络错误" };
     }
 }
