@@ -2,9 +2,8 @@
 
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Upload, Share2, Send, Loader2 } from "lucide-react";
+import { Upload, Share2 } from "lucide-react";
 import { exportParams, importParams } from "@/lib/param-io";
-import { submitOrder } from "@/lib/order-api";
 import { useToast } from "@/hooks/useToast";
 import type { AppMode } from "@/types/custom-tray";
 import { isAdmin } from "@/lib/permissions";
@@ -17,7 +16,6 @@ interface ParamIOButtonsProps {
 
 export function ParamIOButtons({ mode, params, onImport }: ParamIOButtonsProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const { toast } = useToast();
 
     const handleExport = () => {
@@ -26,20 +24,6 @@ export function ParamIOButtons({ mode, params, onImport }: ParamIOButtonsProps) 
 
     const handleImportClick = () => {
         fileInputRef.current?.click();
-    };
-
-    const handleSubmitOrder = async () => {
-        try {
-            setIsSubmitting(true);
-            const res = await submitOrder(mode, params);
-            if (res.success) {
-                toast("success", `提交成功！订单号: ${res.id?.split('_').pop()}`);
-            }
-        } catch (err) {
-            toast("error", `提交失败：${err instanceof Error ? err.message : "未知错误"}`);
-        } finally {
-            setIsSubmitting(false);
-        }
     };
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,24 +76,6 @@ export function ParamIOButtons({ mode, params, onImport }: ParamIOButtonsProps) 
                 </Button>
             </div>
 
-            {/* 底排按钮 (客户提交订单) */}
-            {!isAdmin && (
-                <div className="flex mt-2">
-                    <Button
-                        variant="outline"
-                        onClick={handleSubmitOrder}
-                        disabled={isSubmitting}
-                        className="w-full h-10 border-[#4a6741] text-[#8cb880] hover:bg-[#2a3528] hover:text-[#a5cd99] transition-all flex items-center justify-center font-bold tracking-widest shadow-lg shadow-[#2a352820]"
-                    >
-                        {isSubmitting ? (
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                            <Send className="w-4 h-4 mr-2" />
-                        )}
-                        {isSubmitting ? "正在发送..." : "发送配置"}
-                    </Button>
-                </div>
-            )}
         </>
     );
 }

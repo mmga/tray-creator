@@ -8,9 +8,6 @@ import { ModeTabs } from "@/components/ModeTabs";
 import type { AppMode } from "@/types/custom-tray";
 import { Boxes, Settings2, PenTool, Eye } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { isAdmin } from "@/lib/permissions";
-import { Inbox } from "lucide-react";
-import { OrdersInbox } from "@/components/OrdersInbox";
 
 // Lazy load components
 const ParameterPanel = dynamic(() => import("@/components/ParameterPanel"), { ssr: false });
@@ -45,7 +42,6 @@ export default function Home() {
   const [mode, setMode] = useState<AppMode>("grid");
   const [rightView, setRightView] = useState<"2d" | "3d">("2d");
   const [mobileTab, setMobileTab] = useState<"params" | "2d" | "3d">("params");
-  const [isInboxOpen, setIsInboxOpen] = useState(false);
   const isMobile = useIsMobile();
 
   // Grid Mode State
@@ -53,19 +49,6 @@ export default function Home() {
 
   // Custom Mode State
   const customModel = useCustomLayout();
-
-  const handleLoadOrder = (orderMode: AppMode, params: unknown) => {
-    setMode(orderMode);
-    if (orderMode === "grid") {
-      gridModel.setParams(params as any);
-      setRightView("3d");
-      setMobileTab("3d");
-    } else {
-      customModel.setParams(params as any);
-      setRightView("2d");
-      setMobileTab("2d");
-    }
-  };
 
   // 参数面板内容（共享于桌面和移动端）
   const renderParameterPanel = () =>
@@ -172,15 +155,6 @@ export default function Home() {
             </div>
           </div>
           <div className="flex items-center gap-2 text-white">
-            {isAdmin && (
-              <button
-                onClick={() => setIsInboxOpen(true)}
-                className="flex items-center gap-1.5 px-2 lg:px-3 py-1 text-xs font-semibold bg-[#2a3528] text-[#8cb880] border border-[#4a6741] hover:bg-[#354530] transition-colors shadow-lg shadow-[#2a352830]"
-              >
-                <Inbox className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">收件箱</span>
-              </button>
-            )}
             <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-mono font-medium bg-[#1c1a16] text-muted-foreground border border-[#2e2a24] tracking-wider">
               <span className="w-1.5 h-1.5 rounded-full bg-[#8b1a1a] animate-ember" />
               FORGE v0.2
@@ -284,14 +258,6 @@ export default function Home() {
         </nav>
       </div>
 
-      {/* Admin Inbox Modal */}
-      {isAdmin && (
-        <OrdersInbox
-          isOpen={isInboxOpen}
-          onClose={() => setIsInboxOpen(false)}
-          onLoadOrder={handleLoadOrder}
-        />
-      )}
     </div>
   );
 }
