@@ -8,6 +8,7 @@ interface CanvasStatusBarProps {
     zoom: number;
     selectedIds: Set<string>;
     slots: FreeSlot[];
+    collisionErrorCount?: number;
 }
 
 export function CanvasStatusBar({
@@ -16,6 +17,7 @@ export function CanvasStatusBar({
     zoom,
     selectedIds,
     slots,
+    collisionErrorCount = 0,
 }: CanvasStatusBarProps) {
     return (
         <div className="absolute bottom-2 left-2 right-12 flex items-end justify-between pointer-events-none px-2 pb-1">
@@ -24,6 +26,9 @@ export function CanvasStatusBar({
                     CANVAS: {trayWidth}mm × {trayDepth}mm
                 </span>
                 <span>ZOOM: {Math.round(zoom * 100)}%</span>
+                <span className={collisionErrorCount > 0 ? "text-red-400" : "text-emerald-400"}>
+                    ERRORS: {collisionErrorCount}
+                </span>
 
                 {selectedIds.size === 1 &&
                     (() => {

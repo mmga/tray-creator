@@ -36,7 +36,6 @@ interface AlignmentToolbarProps {
 }
 
 export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, spacing }: AlignmentToolbarProps) {
-  const hasSelection = selectedIds.size > 0;
   const hasMultiple = selectedIds.size > 1;
 
   /** 获取选中项的总包围盒 */
@@ -169,8 +168,6 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, sp
 
   const btnClass = "h-8 px-2 lg:px-2.5 hover:bg-neutral-700/50 rounded text-neutral-300 hover:text-white transition-colors cursor-pointer group relative disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-neutral-300 shrink-0 inline-flex items-center gap-1";
   const tooltipClass = "absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-black text-xs text-white rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity z-50 hidden lg:block";
-
-  if (!hasSelection) return null;
 
   return (
     <div className="absolute top-2 lg:top-4 left-1/2 transform -translate-x-1/2 max-w-[calc(100vw-1rem)] flex items-center bg-neutral-800/90 backdrop-blur-sm border border-neutral-700 rounded-lg shadow-xl px-1 lg:px-2 py-1 lg:py-1.5 z-50 overflow-x-auto scrollbar-none">

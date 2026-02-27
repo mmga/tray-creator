@@ -44,7 +44,6 @@ export default function LayoutCanvas({
   // Hoisted state (must be before hooks to avoid reference errors)
   const [isRotating, setIsRotating] = useState(false);
   const [showHints, setShowHints] = useState(false);
-  const [showAdjustDebug, setShowAdjustDebug] = useState(false);
 
   // Refs for DOM and logic
   const svgRef = useRef<SVGSVGElement>(null);
@@ -545,145 +544,18 @@ export default function LayoutCanvas({
     setGuideLines([]);
   }, [selectionBox, selectedIds, slots, trayDepth]);
 
-  const autoAdjustSlotsByIds = useCallback((ids: Set<string>) => {
-    if (ids.size < 2) return;
-
-    const safetyGap = 0.6;
-    const minGap = Math.max(1, spacing + safetyGap);
-
-    const buildLayout = (candidateIds: Set<string>) => {
-      const targets = slots.filter((s) => candidateIds.has(s.id));
-      if (targets.length < 2) return null;
-
-      const sorted = [...targets].sort((a, b) => a.x - b.x);
-      const widths = sorted.map((slot) => getEllipseBoundingBox(slot.width, slot.height, slot.rotation).halfW * 2);
-      const halfHeights = sorted.map((slot) => getEllipseBoundingBox(slot.width, slot.height, slot.rotation).halfH);
-      const totalItemWidth = widths.reduce((sum, w) => sum + w, 0);
-      const requiredWidth = Math.ceil(totalItemWidth + spacing * 2 + minGap * (sorted.length - 1));
-      const maxHalfH = Math.max(...halfHeights);
-      const requiredDepth = Math.ceil(spacing * 2 + maxHalfH * 2);
-
-      const nextTrayWidth = Math.max(trayWidth, requiredWidth);
-      const nextTrayDepth = Math.max(trayDepth, requiredDepth);
-      const availableWidth = Math.max(0, nextTrayWidth - spacing * 2);
-      const betweenGap = sorted.length > 1
-        ? Math.max(minGap, (availableWidth - totalItemWidth) / (sorted.length - 1))
-        : 0;
-      let cursorEdge = spacing;
-      const centerY = nextTrayDepth / 2;
-
-      const updates = sorted.map((slot) => {
-        const { halfW, halfH } = getEllipseBoundingBox(slot.width, slot.height, slot.rotation);
-        const slotWidth = halfW * 2;
-        const x = cursorEdge + halfW;
-        cursorEdge += slotWidth + betweenGap;
-        const minY = spacing + halfH;
-        const maxY = nextTrayDepth - spacing - halfH;
-        const y = Math.max(minY, Math.min(maxY, centerY));
-        return { id: slot.id, x, y };
-      });
-
-      return { updates, nextTrayWidth, nextTrayDepth, arrangedIds: new Set(sorted.map((s) => s.id)) };
-    };
-
-    const hasGlobalConflict = (layout: NonNullable<ReturnType<typeof buildLayout>>) => {
-      const posMap = new Map<string, { x: number; y: number }>();
-      layout.updates.forEach((u) => posMap.set(u.id, { x: u.x, y: u.y }));
-
-      const getPos = (slot: FreeSlot) => posMap.get(slot.id) ?? { x: slot.x, y: slot.y };
-      const marginSet = new Map<string, number>();
-      slots.forEach(s => marginSet.set(s.id, spacing / 2 + getSlotTolerance(s.width) / 2));
-
-      for (let i = 0; i < slots.length; i++) {
-        const a = slots[i];
-        const aPos = getPos(a);
-        const aMoved = layout.arrangedIds.has(a.id);
-
-        for (let j = i + 1; j < slots.length; j++) {
-          const b = slots[j];
-          const bPos = getPos(b);
-          const bMoved = layout.arrangedIds.has(b.id);
-          if (!aMoved && !bMoved) continue;
-
-          const polyA = getEllipsePolygon(aPos.x, aPos.y, a.width, a.height, a.rotation, marginSet.get(a.id)!, 12);
-          const polyB = getEllipsePolygon(bPos.x, bPos.y, b.width, b.height, b.rotation, marginSet.get(b.id)!, 12);
-          if (polygonsIntersect(polyA, polyB)) return true;
-        }
-      }
-      return false;
-    };
-
-    // 第一阶段：仅调整当前冲突集
-    let layout = buildLayout(ids);
-    if (!layout) return;
-
-    // 第二阶段：如果会撞到其他凹槽，自动升级为全量凹槽排布
-    if (hasGlobalConflict(layout)) {
-      const allIds = new Set(slots.map((s) => s.id));
-      const globalLayout = buildLayout(allIds);
-      if (globalLayout) {
-        layout = globalLayout;
-      }
-    }
-
-    if (onResizeTray && (layout.nextTrayWidth !== trayWidth || layout.nextTrayDepth !== trayDepth)) {
-      onResizeTray(layout.nextTrayWidth, layout.nextTrayDepth);
-    }
-    handleUpdateSlots(layout.updates);
-    setSelectedIds(layout.arrangedIds);
-  }, [slots, spacing, trayWidth, trayDepth, handleUpdateSlots, onResizeTray]);
-
-  const autoExpandTrayOnlyByIds = useCallback((ids: Set<string>) => {
-    if (!onResizeTray || ids.size === 0) return;
-
-    const targets = slots.filter((s) => ids.has(s.id));
-    if (targets.length === 0) return;
-
-    let maxRequiredX = trayWidth;
-    let maxRequiredY = trayDepth;
-
-    for (const slot of targets) {
-      const { halfW, halfH } = getEllipseBoundingBox(slot.width, slot.height, slot.rotation);
-      // 只扩展右/上边界：不移动槽位
-      maxRequiredX = Math.max(maxRequiredX, Math.ceil(slot.x + halfW + spacing));
-      maxRequiredY = Math.max(maxRequiredY, Math.ceil(slot.y + halfH + spacing));
-    }
-
-    if (maxRequiredX !== trayWidth || maxRequiredY !== trayDepth) {
-      onResizeTray(maxRequiredX, maxRequiredY);
-    }
-  }, [onResizeTray, slots, trayWidth, trayDepth, spacing]);
-
-  // ── 碰撞摘要（用于底部提示条）──
-  const collisionSummary = (() => {
-    const messages: string[] = [];
+  const collisionErrorCount = (() => {
+    let count = 0;
     for (const slot of slots) {
       const overlapIds = checkSlotCollision(slot.id, slot.x, slot.y, slot.width, slot.height, slot.rotation);
       for (const otherId of overlapIds) {
         // 只报告一个方向避免重复
         if (slot.id < otherId) {
-          const other = slots.find(s => s.id === otherId);
-          if (other) {
-            const labelA = slot.width === slot.height ? `${slot.width}mm` : `${slot.width}x${slot.height}mm`;
-            const labelB = other.width === other.height ? `${other.width}mm` : `${other.width}x${other.height}mm`;
-            messages.push(`${labelA}(${slot.id.slice(0, 4)}) 与 ${labelB}(${otherId.slice(0, 4)}) 间距不足`);
-          }
+          count += 1;
         }
       }
     }
-    return messages;
-  })();
-
-  const collisionInvolvedIds = (() => {
-    const involved = new Set<string>();
-    for (const slot of slots) {
-      const overlaps = checkSlotCollision(slot.id, slot.x, slot.y, slot.width, slot.height, slot.rotation);
-      if (overlaps.length > 0) {
-        involved.add(slot.id);
-        overlaps.forEach((id) => involved.add(id));
-      }
-    }
-    return involved;
+    return count;
   })();
 
   const effectiveBaseplate = (() => {
@@ -731,39 +603,6 @@ export default function LayoutCanvas({
   const isEffectiveOversized =
     effectiveBaseplate.width > MAX_BUILD_SIZE ||
     effectiveBaseplate.height > MAX_BUILD_SIZE;
-
-  const autoAdjustDebugInfo = (() => {
-    const targets = slots.filter((s) => collisionInvolvedIds.has(s.id));
-    if (targets.length < 2) return null;
-
-    const widths = targets.map((slot) => getEllipseBoundingBox(slot.width, slot.height, slot.rotation).halfW * 2);
-    const halfHeights = targets.map((slot) => getEllipseBoundingBox(slot.width, slot.height, slot.rotation).halfH);
-    const totalItemWidth = widths.reduce((sum, w) => sum + w, 0);
-    const safetyGap = 0.6;
-    const minGap = Math.max(1, spacing + safetyGap);
-    const requiredWidth = Math.ceil(totalItemWidth + spacing * 2 + minGap * (targets.length - 1));
-    const maxHalfH = Math.max(...halfHeights);
-    const requiredDepth = Math.ceil(spacing * 2 + maxHalfH * 2);
-
-    const nextTrayWidth = Math.max(trayWidth, requiredWidth);
-    const nextTrayDepth = Math.max(trayDepth, requiredDepth);
-    const availableWidth = Math.max(0, nextTrayWidth - spacing * 2);
-    const predictedGap = targets.length > 1
-      ? Math.max(minGap, (availableWidth - totalItemWidth) / (targets.length - 1))
-      : 0;
-
-    return {
-      targetCount: targets.length,
-      totalItemWidth,
-      minGap,
-      requiredWidth,
-      requiredDepth,
-      nextTrayWidth,
-      nextTrayDepth,
-      willResize: nextTrayWidth !== trayWidth || nextTrayDepth !== trayDepth,
-      predictedGap,
-    };
-  })();
 
   return (
     <div
@@ -1049,58 +888,12 @@ export default function LayoutCanvas({
         zoom={zoom}
         selectedIds={selectedIds}
         slots={slots}
+        collisionErrorCount={collisionErrorCount}
       />
 
       {isEffectiveOversized && (
         <div className="absolute top-14 lg:top-16 right-3 z-[72] px-3 py-1.5 bg-[#3b1515]/90 border border-[#8b1a1a] rounded text-xs text-[#f2b8b8] font-mono backdrop-blur-sm">
           有效底板超限: {effectiveBaseplate.width.toFixed(0)} × {effectiveBaseplate.height.toFixed(0)} mm
-        </div>
-      )}
-
-      {/* Collision Info Banner */}
-      {collisionSummary.length > 0 && (
-        <div className="absolute top-14 lg:top-16 left-1/2 -translate-x-1/2 z-[70] max-w-[90%] px-3 py-2 bg-[#201515]/95 border border-[#6b3030] rounded text-xs text-[#d18888] font-mono backdrop-blur-sm shadow-lg">
-          <div className="flex items-start gap-2">
-            <span className="text-red-400 font-bold shrink-0 mt-px">⚠</span>
-            <div className="flex flex-col gap-1">
-              {collisionSummary.slice(0, 3).map((msg, i) => (
-                <span key={i}>{msg}</span>
-              ))}
-              {collisionSummary.length > 3 && (
-                <span className="text-[#d18888]/60">…另有 {collisionSummary.length - 3} 处冲突</span>
-              )}
-              {collisionInvolvedIds.size > 0 && (
-                <div className="pt-1 flex flex-wrap gap-2">
-                  <button
-                    onClick={() => autoAdjustSlotsByIds(collisionInvolvedIds)}
-                    className="pointer-events-auto px-2 py-1 text-[11px] rounded border border-[#7a3b3b] bg-[#3a1c1c] text-[#f0b3b3] hover:bg-[#4a2424] transition-colors"
-                  >
-                    自动调整/对齐冲突项
-                  </button>
-                  <button
-                    onClick={() => autoExpandTrayOnlyByIds(collisionInvolvedIds)}
-                    className="pointer-events-auto px-2 py-1 text-[11px] rounded border border-[#5a4a2a] bg-[#2e2618] text-[#dec28a] hover:bg-[#3a301f] transition-colors"
-                  >
-                    只扩画布不移动槽位
-                  </button>
-                  <button
-                    onClick={() => setShowAdjustDebug((prev) => !prev)}
-                    className="pointer-events-auto px-2 py-1 text-[11px] rounded border border-[#3c4d6e] bg-[#1a2438] text-[#b6c7e6] hover:bg-[#22304a] transition-colors"
-                  >
-                    {showAdjustDebug ? "隐藏调试信息" : "显示调试信息"}
-                  </button>
-                </div>
-              )}
-              {showAdjustDebug && autoAdjustDebugInfo && (
-                <div className="mt-1 p-2 rounded border border-[#3c4d6e]/60 bg-[#141b2a]/90 text-[10px] text-[#b6c7e6] leading-4">
-                  <div>targets={autoAdjustDebugInfo.targetCount} totalWidth={autoAdjustDebugInfo.totalItemWidth.toFixed(2)} minGap={autoAdjustDebugInfo.minGap.toFixed(2)}</div>
-                  <div>required={autoAdjustDebugInfo.requiredWidth}×{autoAdjustDebugInfo.requiredDepth} current={trayWidth}×{trayDepth}</div>
-                  <div>next={autoAdjustDebugInfo.nextTrayWidth}×{autoAdjustDebugInfo.nextTrayDepth} resize={autoAdjustDebugInfo.willResize ? "yes" : "no"}</div>
-                  <div>predictedBetweenGap={autoAdjustDebugInfo.predictedGap.toFixed(2)} spacing={spacing}</div>
-                </div>
-              )}
-            </div>
-          </div>
         </div>
       )}
 
