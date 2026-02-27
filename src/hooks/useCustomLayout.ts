@@ -174,7 +174,8 @@ export function useCustomLayout(): UseCustomLayoutReturn {
         }
 
         if (key === "boundarySpacingIndependent") {
-          const independent = value as CustomLayoutParams["boundarySpacingIndependent"];
+          const independent =
+            value as CustomLayoutParams["boundarySpacingIndependent"];
           if (!independent) {
             return {
               ...prev,

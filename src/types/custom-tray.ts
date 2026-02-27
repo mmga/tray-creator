@@ -5,8 +5,8 @@ export interface FreeSlot {
   id: string; // 唯一标识（UUID）
   x: number; // 中心 X 坐标 (mm)，相对于托盘左下角
   y: number; // 中心 Y 坐标 (mm)，相对于托盘左下角
-  shape: 'circle' | 'ellipse';
-  width: number;  // 圆形时为直径，椭圆时长轴
+  shape: "circle" | "ellipse";
+  width: number; // 圆形时为直径，椭圆时长轴
   height: number; // 圆形时为直径，椭圆时短轴
   rotation: number; // 旋转角度 (度)
 }
