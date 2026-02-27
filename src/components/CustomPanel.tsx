@@ -84,19 +84,19 @@ export default function CustomPanel({
   return (
     <div className="flex flex-col gap-4 animate-fade-in">
       {/* 添加凹槽 — 移动端默认展开 */}
-      <div className="iron-panel rounded-sm p-4">
+      <div className="iron-panel rounded-sm p-3">
         <SectionHeader icon={BoxSelect} title="添加凹槽" collapsible defaultOpen={true}
           summary={`已有 ${params.slots.length} 个凹槽`}>
-          <div className="space-y-3">
-            <div className="text-[10px] text-muted-foreground/70 font-bold tracking-wider uppercase mb-1">圆形</div>
-            <div className="grid grid-cols-3 gap-2">
+          <div className="space-y-2">
+            <div className="text-[10px] text-muted-foreground/70 font-bold tracking-wider uppercase mb-0.5">圆形</div>
+            <div className="grid grid-cols-3 gap-1.5">
               {BASE_PRESETS.map((preset, i) => (
                 <Button
                   key={i}
                   variant="outline"
                   size="sm"
                   onClick={() => onAddSlot(preset.diameter)}
-                  className="h-11 lg:h-8 text-xs lg:text-[11px] border-[#2e2a24] bg-[#1c1a16] hover:bg-[#2e2a24] hover:text-primary transition-all"
+                  className="h-10 lg:h-7 text-xs lg:text-[11px] border-[#2e2a24] bg-[#1c1a16] hover:bg-[#2e2a24] hover:text-primary transition-all"
                 >
                   <Plus className="w-3 h-3 mr-1" />
                   {preset.diameter}
@@ -104,25 +104,21 @@ export default function CustomPanel({
               ))}
             </div>
 
-            <div className="text-[10px] text-muted-foreground/70 font-bold tracking-wider uppercase mb-1 mt-2">椭圆</div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="text-[10px] text-muted-foreground/70 font-bold tracking-wider uppercase mb-0.5 mt-1.5">椭圆</div>
+            <div className="grid grid-cols-2 gap-1.5">
               {ELLIPSE_PRESETS.map((preset, i) => (
                 <Button
                   key={i}
                   variant="outline"
                   size="sm"
                   onClick={() => onAddSlot(preset.width, preset.height)}
-                  className="h-11 lg:h-8 text-xs lg:text-[11px] border-[#2e2a24] bg-[#1c1a16] hover:bg-[#2e2a24] hover:text-primary transition-all"
+                  className="h-10 lg:h-7 text-xs lg:text-[11px] border-[#2e2a24] bg-[#1c1a16] hover:bg-[#2e2a24] hover:text-primary transition-all"
                 >
                   <Plus className="w-3 h-3 mr-1" />
                   {preset.name.replace('mm', '')}
                 </Button>
               ))}
             </div>
-
-            <p className="text-[10px] text-muted-foreground/50 text-center pt-1">
-              点击上方按钮添加，在右侧画布拖拽与删除
-            </p>
           </div>
         </SectionHeader>
       </div>
