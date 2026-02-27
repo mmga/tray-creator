@@ -86,10 +86,10 @@ export default function Home() {
     ) : (
       <CustomPanel
         params={customModel.params}
+        effectiveDimensions={customModel.effectiveDimensions}
         setParams={customModel.setParams}
         updateParam={customModel.updateParam}
         onAddSlot={customModel.addSlot}
-        onTrimBaseplate={customModel.trimBaseplate}
         onGenerate={() => {
           customModel.handleGenerate();
           setRightView("3d");

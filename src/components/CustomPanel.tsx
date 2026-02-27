@@ -14,7 +14,6 @@ import {
   Loader2,
   Plus,
   Trash2,
-  Minimize,
   Layout,
   Wrench,
   Ruler,
@@ -249,10 +248,10 @@ function arrangeRing(slots: FreeSlot[], spacing: number): ArrangeUpdate[] {
 
 interface CustomPanelProps {
   params: CustomLayoutParams;
+  effectiveDimensions: { width: number; depth: number };
   updateParam: <K extends keyof CustomLayoutParams>(key: K, value: CustomLayoutParams[K]) => void;
   setParams: React.Dispatch<React.SetStateAction<CustomLayoutParams>>;
   onAddSlot: (width: number, height?: number) => void;
-  onTrimBaseplate: () => void;
   onGenerate: () => void;
   onExportSTL: () => void;
   isGenerating: boolean;
@@ -263,10 +262,10 @@ interface CustomPanelProps {
 
 export default function CustomPanel({
   params,
+  effectiveDimensions,
   updateParam,
   setParams,
   onAddSlot,
-  onTrimBaseplate,
   onGenerate,
   onExportSTL,
   isGenerating,
@@ -280,11 +279,11 @@ export default function CustomPanel({
     if (updates.length === 0) return;
     onSaveSnapshot?.();
     onArrangeSlots?.(updates);
-    // 稍等一帧让坐标更新到 params.slots 后再裁剪
-    setTimeout(() => onTrimBaseplate(), 0);
   };
   const dimensions = calculateCustomTrayDimensions(params);
-  const isOversized = dimensions.width > MAX_BUILD_SIZE || dimensions.depth > MAX_BUILD_SIZE;
+  const effectiveWidth = effectiveDimensions.width;
+  const effectiveDepth = effectiveDimensions.depth;
+  const isOversized = effectiveWidth > MAX_BUILD_SIZE || effectiveDepth > MAX_BUILD_SIZE;
   const [autoPreview, setAutoPreview] = useState(false);
 
   // Auto-preview debouncing logic
@@ -312,38 +311,6 @@ export default function CustomPanel({
 
   return (
     <div className="flex flex-col gap-4 animate-fade-in">
-      {/* 托盘尺寸 — 移动端默认展开 */}
-      <div className="iron-panel rounded-sm p-4">
-        <SectionHeader icon={Layout} title="托盘尺寸" collapsible defaultOpen={true}
-          summary={`${params.trayWidth}×${params.trayDepth}mm`}>
-          <div className="space-y-4">
-            <ParamSlider
-              label={CUSTOM_LIMITS.trayWidth.label}
-              value={params.trayWidth}
-              config={CUSTOM_LIMITS.trayWidth}
-              onChange={(v) => updateParam("trayWidth", v)}
-              unit={CUSTOM_LIMITS.trayWidth.unit}
-            />
-            <ParamSlider
-              label={CUSTOM_LIMITS.trayDepth.label}
-              value={params.trayDepth}
-              config={CUSTOM_LIMITS.trayDepth}
-              onChange={(v) => updateParam("trayDepth", v)}
-              unit={CUSTOM_LIMITS.trayDepth.unit}
-            />
-            <Button
-              variant="outline"
-              onClick={onTrimBaseplate}
-              disabled={params.slots.length === 0}
-              className="w-full h-11 lg:h-9 border-[#2e2a24] text-[#8cb880] cursor-pointer hover:bg-[#2a3528]/30 hover:border-[#4a6741] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Minimize className="w-3.5 h-3.5 mr-2" />
-              <span className="text-sm tracking-wider">裁剪底板</span>
-            </Button>
-          </div>
-        </SectionHeader>
-      </div>
-
       {/* 添加凹槽 — 移动端默认展开 */}
       <div className="iron-panel rounded-sm p-4">
         <SectionHeader icon={BoxSelect} title="添加凹槽" collapsible defaultOpen={true}
@@ -470,7 +437,7 @@ export default function CustomPanel({
       {/* 统计信息 — 移动端默认折叠 */}
       <div className={`iron-panel rounded-sm p-4 transition-all duration-300 ${isOversized ? 'border-[#8b1a1a] animate-forge-pulse' : ''}`}>
         <SectionHeader icon={Ruler} title="统计信息" collapsible defaultOpen={false}
-          summary={`${params.slots.length}个凹槽 / ${dimensions.width.toFixed(0)}×${dimensions.depth.toFixed(0)}mm`}>
+          summary={`${params.slots.length}个凹槽 / ${effectiveWidth.toFixed(0)}×${effectiveDepth.toFixed(0)}mm`}>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-2 mb-2">
               <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
@@ -498,8 +465,8 @@ export default function CustomPanel({
 
             <div className="grid grid-cols-3 gap-2">
               {[
-                { label: "宽度", value: dimensions.width, warn: dimensions.width > MAX_BUILD_SIZE },
-                { label: "深度", value: dimensions.depth, warn: dimensions.depth > MAX_BUILD_SIZE },
+                { label: "宽度", value: effectiveWidth, warn: effectiveWidth > MAX_BUILD_SIZE },
+                { label: "深度", value: effectiveDepth, warn: effectiveDepth > MAX_BUILD_SIZE },
                 { label: "高度", value: dimensions.height, warn: false },
               ].map(({ label, value, warn }) => (
                 <div
@@ -522,6 +489,35 @@ export default function CustomPanel({
                 <span>超过锻造极限</span>
               </div>
             )}
+            <div className="text-[11px] text-muted-foreground/80 text-center pt-1">
+              有效底板尺寸: {effectiveWidth.toFixed(0)} × {effectiveDepth.toFixed(0)} mm
+            </div>
+          </div>
+        </SectionHeader>
+      </div>
+
+      {/* 底板尺寸（高级） — 默认折叠 */}
+      <div className="iron-panel rounded-sm p-4">
+        <SectionHeader icon={Layout} title="底板尺寸（高级）" collapsible defaultOpen={false}
+          summary={`${params.trayWidth}×${params.trayDepth}mm`}>
+          <div className="space-y-4">
+            <p className="text-[11px] text-muted-foreground/75 leading-5">
+              底板尺寸根据凹槽位置自动计算，如需手动调整可在此修改
+            </p>
+            <ParamSlider
+              label={CUSTOM_LIMITS.trayWidth.label}
+              value={params.trayWidth}
+              config={CUSTOM_LIMITS.trayWidth}
+              onChange={(v) => updateParam("trayWidth", v)}
+              unit={CUSTOM_LIMITS.trayWidth.unit}
+            />
+            <ParamSlider
+              label={CUSTOM_LIMITS.trayDepth.label}
+              value={params.trayDepth}
+              config={CUSTOM_LIMITS.trayDepth}
+              onChange={(v) => updateParam("trayDepth", v)}
+              unit={CUSTOM_LIMITS.trayDepth.unit}
+            />
           </div>
         </SectionHeader>
       </div>
