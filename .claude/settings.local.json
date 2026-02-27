@@ -1,7 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "Bash(pnpm install:*)"
+      "Bash(pnpm install:*)",
+      "Bash(npx knip:*)",
+      "Bash(npx depcheck:*)",
+      "Bash(npx ts-prune:*)",
+      "Bash(npm run)",
+      "Bash(npm run build)",
+      "Bash(npm run lint)",
+      "Bash(git stash:*)",
+      "Bash(npx eslint src/hooks/useToast.tsx)"
     ]
   }
 }
