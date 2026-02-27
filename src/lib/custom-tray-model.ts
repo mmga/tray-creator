@@ -33,6 +33,10 @@ function getSlotBoundingHalfSize(
 }
 
 function calculateEffectiveBaseplate(params: CustomLayoutParams) {
+  const boundarySpacing = params.boundarySpacingIndependent
+    ? params.boundarySpacing
+    : params.spacing;
+
   if (params.slots.length === 0) {
     return {
       hasSlots: false,
@@ -64,8 +68,8 @@ function calculateEffectiveBaseplate(params: CustomLayoutParams) {
 
   return {
     hasSlots: true,
-    width: Math.ceil(maxX - minX + params.spacing * 2),
-    depth: Math.ceil(maxY - minY + params.spacing * 2),
+    width: Math.ceil(maxX - minX + boundarySpacing * 2),
+    depth: Math.ceil(maxY - minY + boundarySpacing * 2),
     minX,
     maxX,
     minY,

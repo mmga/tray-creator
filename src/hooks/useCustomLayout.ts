@@ -79,6 +79,13 @@ export function useCustomLayout(): UseCustomLayoutReturn {
   // 追踪预览是否过期
   const [isPreviewStale, setIsPreviewStale] = useState(false);
 
+  const resolveBoundarySpacing = useCallback((current: CustomLayoutParams) => {
+    if (current.boundarySpacingIndependent) {
+      return current.boundarySpacing;
+    }
+    return current.spacing;
+  }, []);
+
   const getSlotBoundingHalfSize = useCallback((slot: FreeSlot) => {
     const rad = (slot.rotation * Math.PI) / 180;
     const a = (slot.width + getSlotTolerance(slot.width)) / 2;
@@ -94,6 +101,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
 
   const calculateEffectiveDimensions = useCallback(() => {
     const current = paramsRef.current;
+    const boundarySpacing = resolveBoundarySpacing(current);
     if (current.slots.length === 0) {
       return {
         width: 0,
@@ -119,14 +127,14 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     });
 
     return {
-      width: Math.ceil(maxX - minX + current.spacing * 2),
-      depth: Math.ceil(maxY - minY + current.spacing * 2),
+      width: Math.ceil(maxX - minX + boundarySpacing * 2),
+      depth: Math.ceil(maxY - minY + boundarySpacing * 2),
       minX,
       maxX,
       minY,
       maxY,
     };
-  }, [getSlotBoundingHalfSize]);
+  }, [getSlotBoundingHalfSize, resolveBoundarySpacing]);
 
   const effectiveDimensions = useMemo(
     () => calculateEffectiveDimensions(),
@@ -152,7 +160,37 @@ export function useCustomLayout(): UseCustomLayoutReturn {
       value: CustomLayoutParams[K],
     ) => {
       pushState(paramsRef.current);
-      setParams((prev) => ({ ...prev, [key]: value }));
+      setParams((prev) => {
+        if (key === "spacing") {
+          const nextSpacing = value as CustomLayoutParams["spacing"];
+          if (!prev.boundarySpacingIndependent) {
+            return {
+              ...prev,
+              spacing: nextSpacing,
+              boundarySpacing: nextSpacing,
+            };
+          }
+          return { ...prev, spacing: nextSpacing };
+        }
+
+        if (key === "boundarySpacingIndependent") {
+          const independent = value as CustomLayoutParams["boundarySpacingIndependent"];
+          if (!independent) {
+            return {
+              ...prev,
+              boundarySpacingIndependent: false,
+              boundarySpacing: prev.spacing,
+            };
+          }
+          return {
+            ...prev,
+            boundarySpacingIndependent: true,
+            boundarySpacing: prev.boundarySpacing ?? prev.spacing,
+          };
+        }
+
+        return { ...prev, [key]: value };
+      });
       setIsPreviewStale(true);
     },
     [pushState],

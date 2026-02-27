@@ -145,6 +145,12 @@ function validateCustomParams(p: CustomLayoutParams) {
     "cornerRadius",
   ];
   for (const f of numFields) requireNumber(obj, f);
+  if (typeof obj.boundarySpacing !== "number") {
+    obj.boundarySpacing = obj.spacing;
+  }
+  if (typeof obj.boundarySpacingIndependent !== "boolean") {
+    obj.boundarySpacingIndependent = false;
+  }
   if (!Array.isArray(obj.slots)) {
     throw new Error("缺少或无效的字段: slots");
   }
@@ -190,7 +196,12 @@ function validateCustomParams(p: CustomLayoutParams) {
   clampField(obj, "trayWidth", CUSTOM_LIMITS.trayWidth);
   clampField(obj, "trayDepth", CUSTOM_LIMITS.trayDepth);
   clampField(obj, "spacing", CUSTOM_LIMITS.spacing);
+  clampField(obj, "boundarySpacing", CUSTOM_LIMITS.boundarySpacing);
   clampField(obj, "baseThickness", CUSTOM_LIMITS.baseThickness);
   clampField(obj, "holeDepth", CUSTOM_LIMITS.holeDepth);
   clampField(obj, "cornerRadius", CUSTOM_LIMITS.cornerRadius);
+
+  if (!obj.boundarySpacingIndependent) {
+    obj.boundarySpacing = obj.spacing;
+  }
 }

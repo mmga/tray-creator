@@ -85,6 +85,9 @@ export default function LayoutCanvas({
   });
 
   const { trayWidth, trayDepth, slots, spacing } = params;
+  const boundarySpacing = params.boundarySpacingIndependent
+    ? params.boundarySpacing
+    : spacing;
   const selectedIdsRef = useRef(selectedIds);
   const slotsRef = useRef(params.slots);
   const onUpdateSlotRef = useRef(onUpdateSlot);
@@ -586,10 +589,10 @@ export default function LayoutCanvas({
       maxY = Math.max(maxY, slot.y + halfH);
     }
 
-    const width = Math.max(0, maxX - minX + spacing * 2);
-    const height = Math.max(0, maxY - minY + spacing * 2);
-    const left = minX - spacing;
-    const top = trayDepth - (maxY + spacing);
+    const width = Math.max(0, maxX - minX + boundarySpacing * 2);
+    const height = Math.max(0, maxY - minY + boundarySpacing * 2);
+    const left = minX - boundarySpacing;
+    const top = trayDepth - (maxY + boundarySpacing);
 
     return {
       hasSlots: true,

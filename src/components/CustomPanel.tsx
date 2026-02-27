@@ -13,7 +13,6 @@ import {
   Play,
   Loader2,
   Plus,
-  Layout,
   Wrench,
   Ruler,
   BoxSelect,
@@ -126,7 +125,7 @@ export default function CustomPanel({
       {/* 结构参数 — 移动端默认折叠 */}
       <div className="iron-panel rounded-sm p-4">
         <SectionHeader icon={Wrench} title="结构参数" collapsible defaultOpen={false}
-          summary={`间距${params.spacing}mm / 底厚${params.baseThickness}mm / 孔深${params.holeDepth}mm`}>
+          summary={`槽距${params.spacing}mm / 边距${(params.boundarySpacingIndependent ? params.boundarySpacing : params.spacing)}mm / 底厚${params.baseThickness}mm`}>
           <div className="space-y-4">
             <ParamSlider
               label={CUSTOM_LIMITS.spacing.label}
@@ -135,6 +134,26 @@ export default function CustomPanel({
               onChange={(v) => updateParam("spacing", v)}
               unit={CUSTOM_LIMITS.spacing.unit}
             />
+            <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
+              <Label htmlFor="custom-boundary-spacing-independent" className="text-sm cursor-pointer text-[#f0d8b8]">
+                边界间距独立调整
+              </Label>
+              <Switch
+                id="custom-boundary-spacing-independent"
+                checked={params.boundarySpacingIndependent}
+                onCheckedChange={(checked) => updateParam("boundarySpacingIndependent", checked)}
+                className="data-[state=checked]:bg-[#8cb880]"
+              />
+            </div>
+            {params.boundarySpacingIndependent && (
+              <ParamSlider
+                label={CUSTOM_LIMITS.boundarySpacing.label}
+                value={params.boundarySpacing}
+                config={CUSTOM_LIMITS.boundarySpacing}
+                onChange={(v) => updateParam("boundarySpacing", v)}
+                unit={CUSTOM_LIMITS.boundarySpacing.unit}
+              />
+            )}
             <ParamSlider
               label={PARAM_CONFIG.baseThickness.label}
               value={params.baseThickness}
@@ -228,32 +247,6 @@ export default function CustomPanel({
             <div className="text-[11px] text-muted-foreground/80 text-center pt-1">
               有效底板尺寸: {effectiveWidth.toFixed(0)} × {effectiveDepth.toFixed(0)} mm
             </div>
-          </div>
-        </SectionHeader>
-      </div>
-
-      {/* 底板尺寸（高级） — 默认折叠 */}
-      <div className="iron-panel rounded-sm p-4">
-        <SectionHeader icon={Layout} title="底板尺寸（高级）" collapsible defaultOpen={false}
-          summary={`${params.trayWidth}×${params.trayDepth}mm`}>
-          <div className="space-y-4">
-            <p className="text-[11px] text-muted-foreground/75 leading-5">
-              底板尺寸根据凹槽位置自动计算，如需手动调整可在此修改
-            </p>
-            <ParamSlider
-              label={CUSTOM_LIMITS.trayWidth.label}
-              value={params.trayWidth}
-              config={CUSTOM_LIMITS.trayWidth}
-              onChange={(v) => updateParam("trayWidth", v)}
-              unit={CUSTOM_LIMITS.trayWidth.unit}
-            />
-            <ParamSlider
-              label={CUSTOM_LIMITS.trayDepth.label}
-              value={params.trayDepth}
-              config={CUSTOM_LIMITS.trayDepth}
-              onChange={(v) => updateParam("trayDepth", v)}
-              unit={CUSTOM_LIMITS.trayDepth.unit}
-            />
           </div>
         </SectionHeader>
       </div>

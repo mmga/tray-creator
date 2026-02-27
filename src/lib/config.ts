@@ -94,6 +94,8 @@ export const CUSTOM_LAYOUT_DEFAULTS: CustomLayoutParams = {
   trayDepth: 260,
   slots: [],
   spacing: 5,
+  boundarySpacing: 5,
+  boundarySpacingIndependent: false,
   baseThickness: 3,
   holeDepth: 2.6,
   cornerRadius: 6,
@@ -125,7 +127,8 @@ export const PARAM_CONFIG = {
 export const CUSTOM_LIMITS = {
   trayWidth: { label: "宽度", min: 50, max: 260, step: 1, unit: "mm" },
   trayDepth: { label: "深度", min: 50, max: 260, step: 1, unit: "mm" },
-  spacing: { label: "边距", min: 2, max: 20, step: 1, unit: "mm" },
+  spacing: { label: "凹槽间距", min: 2, max: 20, step: 1, unit: "mm" },
+  boundarySpacing: { label: "边界间距", min: 2, max: 20, step: 1, unit: "mm" },
   // 共享参数：复用 PARAM_CONFIG 的范围与元数据
   baseThickness: PARAM_CONFIG.baseThickness,
   holeDepth: PARAM_CONFIG.holeDepth,

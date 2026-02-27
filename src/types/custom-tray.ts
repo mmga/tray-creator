@@ -19,8 +19,12 @@ export interface CustomLayoutParams {
   trayDepth: number;
   /** 凹槽列表 */
   slots: FreeSlot[];
-  /** 边距 (mm)，凹槽距托盘边缘的最小距离 */
+  /** 凹槽间距 (mm)，凹槽与凹槽之间的最小距离 */
   spacing: number;
+  /** 边界间距 (mm)，凹槽到有效底板边界的最小距离 */
+  boundarySpacing: number;
+  /** 是否独立调整边界间距（false 时跟随 spacing） */
+  boundarySpacingIndependent: boolean;
   /** 底板厚度 (mm) */
   baseThickness: number;
   /** 凹槽深度 (mm) */
