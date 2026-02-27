@@ -90,8 +90,8 @@ export const DEFAULT_TRAY_PARAMS: TrayParams = {
 
 /** 自定义布局默认参数 */
 export const CUSTOM_LAYOUT_DEFAULTS: CustomLayoutParams = {
-  trayWidth: 150,
-  trayDepth: 100,
+  trayWidth: 260,
+  trayDepth: 260,
   slots: [],
   spacing: 5,
   baseThickness: 3,
