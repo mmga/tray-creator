@@ -856,8 +856,6 @@ export default function LayoutCanvas({
         selectedIds={selectedIds}
         slots={slots}
         onUpdateSlots={handleUpdateSlots}
-        canvasWidth={trayWidth}
-        canvasHeight={trayDepth}
         spacing={spacing}
       />
       {/* ... (Background Grid and SVG setup unchanged) ... */}
