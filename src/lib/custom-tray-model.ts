@@ -11,6 +11,64 @@ const { extrudeLinear } = extrusions;
 
 const DEG_TO_RAD = Math.PI / 180;
 
+function getSlotBoundingHalfSize(
+  width: number,
+  height: number,
+  rotation: number,
+) {
+  const rad = (rotation * Math.PI) / 180;
+  const a = (width + getSlotTolerance(width)) / 2;
+  const b = (height + getSlotTolerance(height)) / 2;
+  const halfW = Math.sqrt(
+    Math.pow(a * Math.cos(rad), 2) + Math.pow(b * Math.sin(rad), 2),
+  );
+  const halfH = Math.sqrt(
+    Math.pow(a * Math.sin(rad), 2) + Math.pow(b * Math.cos(rad), 2),
+  );
+  return { halfW, halfH };
+}
+
+function calculateEffectiveBaseplate(params: CustomLayoutParams) {
+  if (params.slots.length === 0) {
+    return {
+      hasSlots: false,
+      width: 0,
+      depth: 0,
+      minX: 0,
+      maxX: 0,
+      minY: 0,
+      maxY: 0,
+    };
+  }
+
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+
+  params.slots.forEach((slot) => {
+    const { halfW, halfH } = getSlotBoundingHalfSize(
+      slot.width,
+      slot.height,
+      slot.rotation,
+    );
+    minX = Math.min(minX, slot.x - halfW);
+    maxX = Math.max(maxX, slot.x + halfW);
+    minY = Math.min(minY, slot.y - halfH);
+    maxY = Math.max(maxY, slot.y + halfH);
+  });
+
+  return {
+    hasSlots: true,
+    width: Math.ceil(maxX - minX + params.spacing * 2),
+    depth: Math.ceil(maxY - minY + params.spacing * 2),
+    minX,
+    maxX,
+    minY,
+    maxY,
+  };
+}
+
 /**
  * 根据自定义参数生成托盘 3D 模型
  *
@@ -20,8 +78,13 @@ const DEG_TO_RAD = Math.PI / 180;
  * - 转换公式：jscad_x = user_x - width/2, jscad_y = user_y - depth/2
  */
 export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
-  const { trayWidth, trayDepth, slots, baseThickness, holeDepth, cornerRadius } = params;
+  const { slots, baseThickness, holeDepth, cornerRadius } = params;
+  const effective = calculateEffectiveBaseplate(params);
+  const trayWidth = effective.hasSlots ? effective.width : params.trayWidth;
+  const trayDepth = effective.hasSlots ? effective.depth : params.trayDepth;
   const totalHeight = baseThickness + holeDepth;
+  const sourceCenterX = effective.hasSlots ? (effective.minX + effective.maxX) / 2 : trayWidth / 2;
+  const sourceCenterY = effective.hasSlots ? (effective.minY + effective.maxY) / 2 : trayDepth / 2;
 
   // 1. 创建底板实体
   const body = createBaseBody(trayWidth, trayDepth, totalHeight, cornerRadius);
@@ -31,9 +94,12 @@ export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
   const centers: SlotCenter[] = [];
 
   for (const slot of slots) {
+    const normalizedX = slot.x - sourceCenterX + trayWidth / 2;
+    const normalizedY = slot.y - sourceCenterY + trayDepth / 2;
+
     // 用户坐标 → JSCAD 中心坐标
-    const cx = slot.x - trayWidth / 2;
-    const cy = slot.y - trayDepth / 2;
+    const cx = normalizedX - trayWidth / 2;
+    const cy = normalizedY - trayDepth / 2;
     centers.push({ cx, cy });
 
     const width = slot.width;
@@ -71,9 +137,10 @@ export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
  * 计算自定义托盘的边界尺寸
  */
 export function calculateCustomTrayDimensions(params: CustomLayoutParams) {
+  const effective = calculateEffectiveBaseplate(params);
   return {
-    width: params.trayWidth,
-    depth: params.trayDepth,
+    width: effective.hasSlots ? effective.width : params.trayWidth,
+    depth: effective.hasSlots ? effective.depth : params.trayDepth,
     height: params.baseThickness + params.holeDepth,
   };
 }

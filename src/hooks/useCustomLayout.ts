@@ -356,9 +356,11 @@ export function useCustomLayout(): UseCustomLayoutReturn {
   // 导出 STL
   const handleExportSTL = useCallback(async () => {
     if (!jscadGeomRef.current || !trayWorkerService) return;
+    const exportWidth = effectiveDimensions.width > 0 ? effectiveDimensions.width : params.trayWidth;
+    const exportDepth = effectiveDimensions.depth > 0 ? effectiveDimensions.depth : params.trayDepth;
     const filename = generateCustomSTLFilename(
-      params.trayWidth,
-      params.trayDepth,
+      exportWidth,
+      exportDepth,
       params.slots.length,
     );
     try {
@@ -392,7 +394,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
         `STL 导出失败：${err instanceof Error ? err.message : "未知错误"}`,
       );
     }
-  }, [params.trayWidth, params.trayDepth, params.slots.length, toast]);
+  }, [effectiveDimensions.depth, effectiveDimensions.width, params.slots.length, params.trayDepth, params.trayWidth, toast]);
 
   return {
     params,
