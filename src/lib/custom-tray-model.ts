@@ -2,7 +2,11 @@ import { booleans, primitives, transforms, extrusions } from "@jscad/modeling";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { CustomLayoutParams } from "@/types/custom-tray";
 import { RENDER_CONFIG, getSlotTolerance } from "@/lib/config";
-import { createBaseBody, subtractBaseHoles, type SlotCenter } from "@/lib/model-utils";
+import {
+  createBaseBody,
+  subtractBaseHoles,
+  type SlotCenter,
+} from "@/lib/model-utils";
 
 const { subtract } = booleans;
 const { translate, rotateZ } = transforms;
@@ -83,8 +87,12 @@ export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
   const trayWidth = effective.hasSlots ? effective.width : params.trayWidth;
   const trayDepth = effective.hasSlots ? effective.depth : params.trayDepth;
   const totalHeight = baseThickness + holeDepth;
-  const sourceCenterX = effective.hasSlots ? (effective.minX + effective.maxX) / 2 : trayWidth / 2;
-  const sourceCenterY = effective.hasSlots ? (effective.minY + effective.maxY) / 2 : trayDepth / 2;
+  const sourceCenterX = effective.hasSlots
+    ? (effective.minX + effective.maxX) / 2
+    : trayWidth / 2;
+  const sourceCenterY = effective.hasSlots
+    ? (effective.minY + effective.maxY) / 2
+    : trayDepth / 2;
 
   // 1. 创建底板实体
   const body = createBaseBody(trayWidth, trayDepth, totalHeight, cornerRadius);

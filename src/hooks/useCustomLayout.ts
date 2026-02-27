@@ -356,8 +356,14 @@ export function useCustomLayout(): UseCustomLayoutReturn {
   // 导出 STL
   const handleExportSTL = useCallback(async () => {
     if (!jscadGeomRef.current || !trayWorkerService) return;
-    const exportWidth = effectiveDimensions.width > 0 ? effectiveDimensions.width : params.trayWidth;
-    const exportDepth = effectiveDimensions.depth > 0 ? effectiveDimensions.depth : params.trayDepth;
+    const exportWidth =
+      effectiveDimensions.width > 0
+        ? effectiveDimensions.width
+        : params.trayWidth;
+    const exportDepth =
+      effectiveDimensions.depth > 0
+        ? effectiveDimensions.depth
+        : params.trayDepth;
     const filename = generateCustomSTLFilename(
       exportWidth,
       exportDepth,
@@ -378,7 +384,9 @@ export function useCustomLayout(): UseCustomLayoutReturn {
       URL.revokeObjectURL(url);
       // 同时下载 JSON 参数文件
       const jsonFilename = filename.replace(/\.stl$/i, ".json");
-      const jsonBlob = new Blob([JSON.stringify(params, null, 2)], { type: "application/json" });
+      const jsonBlob = new Blob([JSON.stringify(params, null, 2)], {
+        type: "application/json",
+      });
       const jsonUrl = URL.createObjectURL(jsonBlob);
       const jsonLink = document.createElement("a");
       jsonLink.href = jsonUrl;
@@ -394,7 +402,14 @@ export function useCustomLayout(): UseCustomLayoutReturn {
         `STL 导出失败：${err instanceof Error ? err.message : "未知错误"}`,
       );
     }
-  }, [effectiveDimensions.depth, effectiveDimensions.width, params.slots.length, params.trayDepth, params.trayWidth, toast]);
+  }, [
+    effectiveDimensions.depth,
+    effectiveDimensions.width,
+    params.slots.length,
+    params.trayDepth,
+    params.trayWidth,
+    toast,
+  ]);
 
   return {
     params,
