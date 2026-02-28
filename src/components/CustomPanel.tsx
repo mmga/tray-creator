@@ -38,7 +38,7 @@ interface CustomPanelProps {
   updateParam: <K extends keyof CustomLayoutParams>(key: K, value: CustomLayoutParams[K]) => void;
   setParams: React.Dispatch<React.SetStateAction<CustomLayoutParams>>;
   onAddSlot: (width: number, height?: number) => void;
-  onGenerate: () => void;
+  onGenerate: (options?: { shouldSwitchView?: boolean }) => void;
   onExportSTL: () => void;
   isGenerating: boolean;
   volume: number;
@@ -59,7 +59,7 @@ export default function CustomPanel({
   const effectiveWidth = effectiveDimensions.width;
   const effectiveDepth = effectiveDimensions.depth;
   const isOversized = effectiveWidth > MAX_BUILD_SIZE || effectiveDepth > MAX_BUILD_SIZE;
-  const [autoPreview, setAutoPreview] = useState(true);
+  const [autoPreview, setAutoPreview] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [pendingJson, setPendingJson] = useState("");
@@ -71,7 +71,7 @@ export default function CustomPanel({
 
     // Check if right view is 3d, optional but we assume the user might be looking at either.
     const handler = setTimeout(() => {
-      onGenerate();
+      onGenerate({ shouldSwitchView: false });
     }, 500); // 500ms debounce
 
     return () => clearTimeout(handler);
@@ -276,7 +276,7 @@ export default function CustomPanel({
         </div>
 
         <Button
-          onClick={onGenerate}
+          onClick={() => onGenerate({ shouldSwitchView: true })}
           disabled={isGenerating || isOversized}
           className="w-full h-11 blood-red text-sm text-[#f0d8b8] font-bold tracking-wider cursor-pointer border border-[#a02020] shadow-lg shadow-[#8b1a1a30] hover:shadow-xl hover:shadow-[#8b1a1a50] hover:brightness-125 disabled:opacity-50 disabled:cursor-not-allowed"
         >

@@ -73,10 +73,12 @@ export default function Home() {
         params={gridModel.params}
         setParams={gridModel.setParams}
         updateParam={gridModel.updateParam}
-        onGenerate={() => {
+        onGenerate={(options?: { shouldSwitchView?: boolean }) => {
           gridModel.handleGenerate();
-          setRightView("3d");
-          if (isMobile) setMobileTab("3d");
+          if (options?.shouldSwitchView !== false) {
+            setRightView("3d");
+            if (isMobile) setMobileTab("3d");
+          }
         }}
         onExportSTL={gridModel.handleExportSTL}
         isGenerating={gridModel.isGenerating}
@@ -89,10 +91,12 @@ export default function Home() {
         setParams={customModel.setParams}
         updateParam={customModel.updateParam}
         onAddSlot={customModel.addSlot}
-        onGenerate={() => {
+        onGenerate={(options?: { shouldSwitchView?: boolean }) => {
           customModel.handleGenerate();
-          setRightView("3d");
-          if (isMobile) setMobileTab("3d");
+          if (options?.shouldSwitchView !== false) {
+            setRightView("3d");
+            if (isMobile) setMobileTab("3d");
+          }
         }}
         onExportSTL={customModel.handleExportSTL}
         isGenerating={customModel.isGenerating}
