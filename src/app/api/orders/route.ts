@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 
+export const dynamic = "force-static";
+export const revalidate = false;
+
 /**
  * 本地 Admin API 代理：转发到线上 EdgeOne /api/orders
  * 不再提供本地 Mock，未配置环境变量时直接报错
