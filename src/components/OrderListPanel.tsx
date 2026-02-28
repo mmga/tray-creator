@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Loader2, ChevronDown, ChevronRight, X, Download, ClipboardList } from "lucide-react";
-import { fetchOrderList, fetchOrderDetail } from "@/lib/edgeone-kv";
+import { RefreshCw, Loader2, ChevronDown, ChevronRight, X, Download, ClipboardList, Trash2 } from "lucide-react";
+import { fetchOrderList, fetchOrderDetail, deleteOrder } from "@/lib/edgeone-kv";
 import type { AppMode } from "@/types/custom-tray";
 
 /** 从 order key 解析可读的时间 */
@@ -47,6 +47,7 @@ export default function OrderListDialog({ open, onClose, onImportOrder }: OrderL
     const [expandedKey, setExpandedKey] = useState<string | null>(null);
     const [details, setDetails] = useState<Record<string, unknown>>({});
     const [loadingDetail, setLoadingDetail] = useState<string | null>(null);
+    const [deletingKey, setDeletingKey] = useState<string | null>(null);
 
     // ESC 关闭
     const handleKeyDown = useCallback(
@@ -107,6 +108,29 @@ export default function OrderListDialog({ open, onClose, onImportOrder }: OrderL
         if (!mode) return;
         onImportOrder(mode, data.params);
         onClose();
+    };
+
+    const handleDelete = async (key: string) => {
+        const ok = window.confirm(`确认删除订单？\n${key}`);
+        if (!ok) return;
+
+        setDeletingKey(key);
+        setError(null);
+        const result = await deleteOrder(key);
+        setDeletingKey(null);
+
+        if (!result.success) {
+            setError(result.error || "删除失败");
+            return;
+        }
+
+        setKeys((prev) => prev.filter((k) => k !== key));
+        setDetails((prev) => {
+            const next = { ...prev };
+            delete next[key];
+            return next;
+        });
+        if (expandedKey === key) setExpandedKey(null);
     };
 
     if (!open) return null;
@@ -193,15 +217,36 @@ export default function OrderListDialog({ open, onClose, onImportOrder }: OrderL
                                                 <pre className="text-[11px] font-mono text-[#8cb880] overflow-auto max-h-[250px] whitespace-pre-wrap break-all leading-relaxed mb-2">
                                                     {JSON.stringify(detail, null, 2)}
                                                 </pre>
-                                                {orderMode && (
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    {orderMode ? (
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => handleImport(key)}
+                                                            className="h-8 text-xs bg-[#2a3528] hover:bg-[#354530] text-[#8cb880] font-semibold border border-[#4a6741] cursor-pointer"
+                                                        >
+                                                            <Download className="w-3.5 h-3.5 mr-1.5" />
+                                                            导入
+                                                        </Button>
+                                                    ) : <div />}
                                                     <Button
                                                         size="sm"
-                                                        onClick={() => handleImport(key)}
-                                                        className="w-full h-8 text-xs bg-[#2a3528] hover:bg-[#354530] text-[#8cb880] font-semibold border border-[#4a6741] cursor-pointer"
+                                                        variant="outline"
+                                                        onClick={() => handleDelete(key)}
+                                                        disabled={deletingKey === key}
+                                                        className="h-8 text-xs border-[#8b1a1a80] text-[#d46a6a] hover:bg-[#8b1a1a20] cursor-pointer"
                                                     >
-                                                        <Download className="w-3.5 h-3.5 mr-1.5" />
-                                                        导入到「{modeName(orderMode)}」模式
+                                                        {deletingKey === key ? (
+                                                            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                                                        ) : (
+                                                            <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                                                        )}
+                                                        删除
                                                     </Button>
+                                                </div>
+                                                {orderMode && (
+                                                    <div className="mt-1 text-[10px] text-muted-foreground">
+                                                        可导入到「{modeName(orderMode)}」模式
+                                                    </div>
                                                 )}
                                             </>
                                         ) : null}

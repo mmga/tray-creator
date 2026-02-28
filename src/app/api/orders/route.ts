@@ -78,6 +78,19 @@ async function proxyGetByKey(key: string) {
   return toProxyResponse(res);
 }
 
+async function proxyDeleteByKey(key: string) {
+  const res = await fetch(EDGEONE_KV_URL!, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${ADMIN_API_TOKEN}`,
+    },
+    body: JSON.stringify({ action: "delete", key }),
+    cache: "no-store",
+  });
+  return toProxyResponse(res);
+}
+
 // POST /api/orders — 提交配置
 export async function POST(request: Request) {
   const missing = getMissingConfigError();
@@ -99,6 +112,14 @@ export async function POST(request: Request) {
         typeof (parsed as { key?: unknown }).key === "string"
       ) {
         return await proxyGetByKey((parsed as { key: string }).key);
+      }
+      if (
+        parsed &&
+        typeof parsed === "object" &&
+        (parsed as { action?: string }).action === "delete" &&
+        typeof (parsed as { key?: unknown }).key === "string"
+      ) {
+        return await proxyDeleteByKey((parsed as { key: string }).key);
       }
     } catch {
       // 非 JSON body 按普通订单提交处理

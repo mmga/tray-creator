@@ -100,6 +100,11 @@ interface OrderDetailResult {
   error?: string;
 }
 
+interface OrderDeleteResult {
+  success: boolean;
+  error?: string;
+}
+
 /** 获取所有订单 key 列表 */
 export async function fetchOrderList(): Promise<OrderListResult> {
   const url = EDGE_FUNCTION_URL;
@@ -138,6 +143,38 @@ export async function fetchOrderDetail(
       return { success: false, error: data.error || `HTTP ${res.status}` };
     }
     return { success: true, data: data.data };
+  } catch (e) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "网络错误",
+    };
+  }
+}
+
+/** 删除指定订单 */
+export async function deleteOrder(key: string): Promise<OrderDeleteResult> {
+  const url = EDGE_FUNCTION_URL;
+  if (!url) return { success: false, error: "EdgeOne KV URL 未配置" };
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete", key }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      return { success: false, error: data.error || `HTTP ${res.status}` };
+    }
+
+    if (data.key !== key) {
+      return {
+        success: false,
+        error: "上游接口暂不支持删除动作，请先部署最新 Edge Function",
+      };
+    }
+
+    return { success: true };
   } catch (e) {
     return {
       success: false,
