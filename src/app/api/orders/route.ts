@@ -52,15 +52,27 @@ async function proxyGet(request: Request) {
   return toProxyResponse(res);
 }
 
-async function proxyPost(request: Request) {
-  const body = await request.text();
-  const res = await fetch(buildProxyUrl(request), {
+async function proxyPostRaw(body: string) {
+  const res = await fetch(EDGEONE_KV_URL!, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${ADMIN_API_TOKEN}`,
     },
     body,
+    cache: "no-store",
+  });
+  return toProxyResponse(res);
+}
+
+async function proxyGetByKey(key: string) {
+  const targetUrl = new URL(EDGEONE_KV_URL!);
+  targetUrl.searchParams.set("key", key);
+  const res = await fetch(targetUrl.toString(), {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${ADMIN_API_TOKEN}`,
+    },
     cache: "no-store",
   });
   return toProxyResponse(res);
@@ -77,7 +89,22 @@ export async function POST(request: Request) {
   }
 
   try {
-    return await proxyPost(request);
+    const raw = await request.text();
+    try {
+      const parsed = JSON.parse(raw);
+      if (
+        parsed &&
+        typeof parsed === "object" &&
+        (parsed as { action?: string }).action === "detail" &&
+        typeof (parsed as { key?: unknown }).key === "string"
+      ) {
+        return await proxyGetByKey((parsed as { key: string }).key);
+      }
+    } catch {
+      // 非 JSON body 按普通订单提交处理
+    }
+
+    return await proxyPostRaw(raw);
   } catch (e) {
     return NextResponse.json(
       { success: false, error: e instanceof Error ? e.message : "Proxy error" },

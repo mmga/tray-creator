@@ -47,7 +47,7 @@ export default function ParameterPanel({
 }: ParameterPanelProps) {
   const dimensions = calculateTrayDimensions(params);
   const isOversized = dimensions.width > MAX_BUILD_SIZE || dimensions.depth > MAX_BUILD_SIZE;
-  const [autoPreview, setAutoPreview] = useState(false);
+  const [autoPreview, setAutoPreview] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [pendingJson, setPendingJson] = useState("");

@@ -59,7 +59,7 @@ export default function CustomPanel({
   const effectiveWidth = effectiveDimensions.width;
   const effectiveDepth = effectiveDimensions.depth;
   const isOversized = effectiveWidth > MAX_BUILD_SIZE || effectiveDepth > MAX_BUILD_SIZE;
-  const [autoPreview, setAutoPreview] = useState(false);
+  const [autoPreview, setAutoPreview] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [pendingJson, setPendingJson] = useState("");
