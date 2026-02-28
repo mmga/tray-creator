@@ -4,7 +4,7 @@ import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 /**
  * 将 JSCAD 几何体导出为 STL 并触发浏览器下载
  */
-export function exportToSTL(geometry: Geom3, filename: string): void {
+function exportToSTL(geometry: Geom3, filename: string): void {
   const rawData = stlSerializer.serialize({ binary: true }, geometry);
   const blob = new Blob(rawData as BlobPart[], {
     type: "application/octet-stream",

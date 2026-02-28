@@ -13,10 +13,10 @@ import type { CustomLayoutParams } from "@/types/custom-tray";
 // ═══════════════════════════════════════════
 
 /** 默认凹槽公差 (mm)，静默追加到凹槽直径，不在 UI 中显示 */
-export const DEFAULT_HOLE_TOLERANCE = 0.4;
+const DEFAULT_HOLE_TOLERANCE = 0.4;
 
 /** 特定直径的公差映射表 */
-export const SLOT_TOLERANCE_MAP: Record<number, number> = {
+const SLOT_TOLERANCE_MAP: Record<number, number> = {
   25: 0.2,
 };
 
@@ -171,7 +171,7 @@ export const RENDER_CONFIG = {
 // ═══════════════════════════════════════════
 
 // 使用直径或长轴作为 Key
-export const SLOT_COLORS: Record<number, string> = {
+const SLOT_COLORS: Record<number, string> = {
   25: "#ef4444", // red-500
   28.5: "#f97316", // orange-500
   32: "#eab308", // yellow-500

@@ -8,7 +8,7 @@ import type { CustomLayoutParams } from "@/types/custom-tray";
  */
 
 // 阶梯孔位价格表
-export function getSlotPrice(diameter: number): number {
+function getSlotPrice(diameter: number): number {
     if (diameter <= 25.01) return 0.5;
     if (diameter <= 28.51) return 0.6;
     if (diameter <= 32.01) return 0.8;
@@ -18,9 +18,8 @@ export function getSlotPrice(diameter: number): number {
 }
 
 // 基础定价参数
-export const PRICING_CONFIG = {
+const PRICING_CONFIG = {
     pricePerMagnet: 0.3,    // 每个磁吸孔的附加价格 (元)
-    customBasePrice: 10.0,  // 自定义模式的起步价/底价 (元)
     plaCostPerKg: 60,       // PLA耗材每千克价格 (元)
     plaDensity: 1.24,       // PLA密度 (g/cm³)
     infillRatio: 0.6,       // 3D打印有效填充率 (托盘薄件占比高，实心度约60%-70%)
@@ -54,7 +53,7 @@ export function calculateGridPrice(params: TrayParams): number {
 /**
  * 根据椭圆或圆形的宽高，计算等效圆面积对应的直径
  */
-export function getEquivalentDiameter(width: number, height: number): number {
+function getEquivalentDiameter(width: number, height: number): number {
     return Math.sqrt(width * height);
 }
 
