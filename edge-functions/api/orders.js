@@ -38,45 +38,57 @@ export async function onRequestPost({ request }) {
 // ?key=xxx  → 返回指定订单
 // 无参数    → 列出所有订单 key
 export async function onRequestGet(context) {
-  const { request, env } = context;
-  const adminToken = env?.ADMIN_TOKEN || globalThis.ADMIN_TOKEN;
-  if (!adminToken) {
+  try {
+    const { request, env } = context;
+    const adminToken = env?.ADMIN_TOKEN || globalThis.ADMIN_TOKEN;
+    if (!adminToken) {
+      return jsonResponse(
+        { success: false, error: "ADMIN_TOKEN not configured" },
+        500,
+      );
+    }
+
+    const authHeader = request.headers.get("Authorization");
+    if (authHeader !== `Bearer ${adminToken}`) {
+      return jsonResponse({ success: false, error: "Forbidden" }, 403);
+    }
+
+    const url = new URL(request.url);
+    const key = url.searchParams.get("key");
+
+    if (key) {
+      const value = await orders.get(key);
+      if (!value) {
+        return jsonResponse({ success: false, error: "Not found" }, 404);
+      }
+      return jsonResponse({ success: true, data: JSON.parse(value) });
+    }
+
+    let allKeys = [];
+    let cursor = null;
+
+    do {
+      const listOptions = {
+        prefix: "order_",
+        limit: 100,
+      };
+      if (cursor) {
+        listOptions.cursor = cursor;
+      }
+
+      const result = await orders.list(listOptions);
+      const keys = Array.isArray(result?.keys) ? result.keys : [];
+      allKeys = allKeys.concat(keys.map((k) => k?.key).filter(Boolean));
+      cursor = result?.complete ? null : result?.cursor || null;
+    } while (cursor);
+
+    return jsonResponse({ success: true, keys: allKeys });
+  } catch (e) {
     return jsonResponse(
-      { success: false, error: "ADMIN_TOKEN not configured" },
+      { success: false, error: e?.message || "GET handler error" },
       500,
     );
   }
-
-  const authHeader = request.headers.get("Authorization");
-  if (authHeader !== `Bearer ${adminToken}`) {
-    return jsonResponse({ success: false, error: "Forbidden" }, 403);
-  }
-
-  const url = new URL(request.url);
-  const key = url.searchParams.get("key");
-
-  if (key) {
-    const value = await orders.get(key);
-    if (!value) {
-      return jsonResponse({ success: false, error: "Not found" }, 404);
-    }
-    return jsonResponse({ success: true, data: JSON.parse(value) });
-  }
-
-  // 遍历所有 key
-  let allKeys = [];
-  let cursor;
-  do {
-    const result = await orders.list({
-      prefix: "order_",
-      limit: 100,
-      cursor,
-    });
-    allKeys = allKeys.concat(result.keys.map((k) => k.key));
-    cursor = result.complete ? null : result.cursor;
-  } while (cursor);
-
-  return jsonResponse({ success: true, keys: allKeys });
 }
 
 // ── OPTIONS — CORS 预检 ──────────────────────
