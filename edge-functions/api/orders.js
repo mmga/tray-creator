@@ -19,9 +19,14 @@ function jsonResponse(data, status = 200) {
   });
 }
 
+function resolveAdminToken(env) {
+  return env?.ADMIN_TOKEN || globalThis.ADMIN_TOKEN;
+}
+
 // ── POST /api/orders — 提交配置 ──────────────
-export async function onRequestPost({ request }) {
+export async function onRequestPost(context) {
   try {
+    const { request, env } = context;
     const body = await request.text();
     // 校验为合法 JSON
     const payload = JSON.parse(body);
@@ -33,7 +38,7 @@ export async function onRequestPost({ request }) {
       payload.action === "delete" &&
       typeof payload.key === "string"
     ) {
-      const adminToken = globalThis.ADMIN_TOKEN;
+      const adminToken = resolveAdminToken(env);
       if (!adminToken) {
         return jsonResponse(
           { success: false, error: "ADMIN_TOKEN not configured" },
@@ -65,7 +70,7 @@ export async function onRequestPost({ request }) {
 export async function onRequestGet(context) {
   try {
     const { request, env } = context;
-    const adminToken = env?.ADMIN_TOKEN || globalThis.ADMIN_TOKEN;
+    const adminToken = resolveAdminToken(env);
     if (!adminToken) {
       return jsonResponse(
         { success: false, error: "ADMIN_TOKEN not configured" },
@@ -121,7 +126,7 @@ export async function onRequestGet(context) {
 export async function onRequestDelete(context) {
   try {
     const { request, env } = context;
-    const adminToken = env?.ADMIN_TOKEN || globalThis.ADMIN_TOKEN;
+    const adminToken = resolveAdminToken(env);
     if (!adminToken) {
       return jsonResponse(
         { success: false, error: "ADMIN_TOKEN not configured" },
