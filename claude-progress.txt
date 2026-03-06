@@ -1,0 +1,12 @@
+# 项目进度 — 访问统计功能
+
+## Session 1 - 调研与初始化 (2026-03-06)
+- 完成现有项目架构调研，确认 Public 端为纯静态导出，需走 EdgeOne 边缘函数 + KV
+- 编写了分析文档 access_statistics_analysis.md
+- 用户确认需要：事件追踪、Referrer 来源、设备分布、Admin 面板（低优先级）
+- 创建了 feature_list.json，共 28 个功能测试用例
+  - high 优先级：18 个（边缘函数、前端上报、事件追踪、来源/设备记录、本地代理、兼容性）
+  - medium 优先级：7 个（Admin 面板可视化）
+  - low 优先级：1 个（数据导出）
+  - 2 个 medium 样式类
+- 待开始实现功能

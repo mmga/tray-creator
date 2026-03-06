@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { reportPageView } from "@/lib/analytics";
 import dynamic from "next/dynamic";
 import { useTrayModel } from "@/hooks/useTrayModel";
 import { useCustomLayout } from "@/hooks/useCustomLayout";
@@ -48,6 +49,11 @@ export default function Home() {
   const [mobileTab, setMobileTab] = useState<"params" | "2d" | "3d">("params");
   const [ordersOpen, setOrdersOpen] = useState(false);
   const isMobile = useIsMobile();
+
+  // ── 访问统计上报 (仅一次) ──
+  useEffect(() => {
+    reportPageView();
+  }, []);
 
   // Grid Mode State
   const gridModel = useTrayModel();

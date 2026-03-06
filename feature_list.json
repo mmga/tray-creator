@@ -1,0 +1,349 @@
+[
+  {
+    "id": 1,
+    "category": "functional",
+    "priority": "high",
+    "description": "EdgeOne 边缘函数 stats.js — POST /api/stats 接收上报事件",
+    "steps": [
+      "创建 edge-functions/api/stats.js",
+      "实现 onRequestPost 解析 { event, fingerprint, referrer, userAgent }",
+      "PV 计数：自增 stats_pv_total 和 stats_pv_{date}",
+      "无需鉴权，任何人可 POST 上报",
+      "返回 { success: true }"
+    ],
+    "passes": true
+  },
+  {
+    "id": 2,
+    "category": "functional",
+    "priority": "high",
+    "description": "EdgeOne 边缘函数 stats.js — UV 去重",
+    "steps": [
+      "接收 fingerprint 字段",
+      "将 fingerprint 写入 stats_uv_{date} 的 Set 结构（JSON 数组 + 去重）",
+      "验证同一 fingerprint 不会重复计入 UV"
+    ],
+    "passes": true
+  },
+  {
+    "id": 3,
+    "category": "functional",
+    "priority": "high",
+    "description": "EdgeOne 边缘函数 stats.js — CORS 支持",
+    "steps": [
+      "实现 onRequestOptions 返回正确的 CORS 头",
+      "与 orders.js 保持一致的 corsHeaders",
+      "验证跨域 POST 请求可正常工作"
+    ],
+    "passes": true
+  },
+  {
+    "id": 4,
+    "category": "functional",
+    "priority": "high",
+    "description": "前端 analytics.ts — 基础模块和 fingerprint 生成",
+    "steps": [
+      "创建 src/lib/analytics.ts",
+      "实现 getFingerprint() 基于 screen/language/timezone 生成简单指纹",
+      "导出 STATS_URL 常量，支持 NEXT_PUBLIC_EDGEONE_KV_URL 或相对路径"
+    ],
+    "passes": true
+  },
+  {
+    "id": 5,
+    "category": "functional",
+    "priority": "high",
+    "description": "前端 analytics.ts — reportPageView 函数",
+    "steps": [
+      "实现 reportPageView() fire-and-forget 上报",
+      "发送 event='page_view'、fingerprint、referrer、userAgent",
+      "使用 keepalive: true 确保页面卸载时也能发送",
+      "catch 错误不影响页面正常运行"
+    ],
+    "passes": true
+  },
+  {
+    "id": 6,
+    "category": "functional",
+    "priority": "high",
+    "description": "在 layout.tsx 或 page.tsx 中集成 PV 上报",
+    "steps": [
+      "在合适的组件中 useEffect 调用 reportPageView()",
+      "确保每次页面加载只上报一次",
+      "验证开发模式和生产模式都正常工作"
+    ],
+    "passes": true
+  },
+  {
+    "id": 7,
+    "category": "functional",
+    "priority": "high",
+    "description": "事件追踪 — reportAction 函数",
+    "steps": [
+      "实现 reportAction(action: string) 通用事件上报",
+      "支持的 action 类型：generate_3d、export_stl、submit_order",
+      "fire-and-forget 方式，不阻塞用户操作"
+    ],
+    "passes": true
+  },
+  {
+    "id": 8,
+    "category": "functional",
+    "priority": "high",
+    "description": "事件追踪 — 生成 3D 模型操作上报",
+    "steps": [
+      "在 grid 模式 handleGenerate 后调用 reportAction('generate_3d')",
+      "在 custom 模式 handleGenerate 后同样调用",
+      "边缘函数将计数存入 stats_actions_generate_3d"
+    ],
+    "passes": true
+  },
+  {
+    "id": 9,
+    "category": "functional",
+    "priority": "high",
+    "description": "事件追踪 — 导出 STL 操作上报",
+    "steps": [
+      "在 handleExportSTL 成功后调用 reportAction('export_stl')",
+      "边缘函数将计数存入 stats_actions_export_stl",
+      "验证导出失败时不上报"
+    ],
+    "passes": true
+  },
+  {
+    "id": 10,
+    "category": "functional",
+    "priority": "high",
+    "description": "事件追踪 — 提交订单操作上报",
+    "steps": [
+      "在 sendConfigToKV 成功后调用 reportAction('submit_order')",
+      "边缘函数将计数存入 stats_actions_submit_order",
+      "验证订单提交失败时不上报"
+    ],
+    "passes": true
+  },
+  {
+    "id": 11,
+    "category": "functional",
+    "priority": "high",
+    "description": "边缘函数 stats.js — action 事件计数",
+    "steps": [
+      "POST body 中 event 非 page_view 时，按 action 名称分别计数",
+      "KV key 格式：stats_actions_{action}",
+      "支持 generate_3d、export_stl、submit_order 三种"
+    ],
+    "passes": true
+  },
+  {
+    "id": 12,
+    "category": "functional",
+    "priority": "high",
+    "description": "Referrer 来源记录",
+    "steps": [
+      "前端上报时附带 document.referrer",
+      "边缘函数解析 referrer 域名并计数",
+      "KV key 格式：stats_referrer_{date}，值为 JSON { domain: count }",
+      "空 referrer（直接访问）记为 direct"
+    ],
+    "passes": true
+  },
+  {
+    "id": 13,
+    "category": "functional",
+    "priority": "high",
+    "description": "设备分布记录",
+    "steps": [
+      "前端上报时附带 navigator.userAgent",
+      "边缘函数从 UA 中判断 mobile/desktop/tablet",
+      "KV key 格式：stats_device_{date}，值为 JSON { mobile: n, desktop: n, tablet: n }",
+      "验证常见 UA 能正确分类"
+    ],
+    "passes": true
+  },
+  {
+    "id": 14,
+    "category": "functional",
+    "priority": "high",
+    "description": "边缘函数 stats.js — GET /api/stats 查询接口（需鉴权）",
+    "steps": [
+      "实现 onRequestGet 验证 Authorization Bearer token",
+      "支持查询参数 ?range=7d|30d|all",
+      "返回 { pv_total, uv_today, daily: [...], actions: {...}, referrers: {...}, devices: {...} }",
+      "未授权返回 403"
+    ],
+    "passes": true
+  },
+  {
+    "id": 15,
+    "category": "functional",
+    "priority": "high",
+    "description": "本地 Admin 代理 — stats route.ts",
+    "steps": [
+      "创建 src/app/api/stats/route.ts",
+      "参照 orders/route.ts 的代理模式",
+      "GET 请求代理到 EdgeOne stats 边缘函数",
+      "附加 Authorization header"
+    ],
+    "passes": true
+  },
+  {
+    "id": 16,
+    "category": "functional",
+    "priority": "high",
+    "description": "防刷保护 — 频率限制",
+    "steps": [
+      "同一 fingerprint 在短时间内（如 5 秒）的重复上报仅计 1 次",
+      "边缘函数或前端侧通过 debounce 实现",
+      "验证快速刷新不会膨胀 PV"
+    ],
+    "passes": true
+  },
+  {
+    "id": 17,
+    "category": "functional",
+    "priority": "high",
+    "description": "边缘函数 stats.js — 原子计数的可靠性",
+    "steps": [
+      "KV read-modify-write 需处理竞态（KV 最终一致即可）",
+      "验证并发上报不会丢失计数",
+      "使用 try-catch 处理 KV 操作异常，返回 5xx"
+    ],
+    "passes": true
+  },
+  {
+    "id": 18,
+    "category": "functional",
+    "priority": "medium",
+    "description": "Admin 面板 — StatsPanel 组件骨架",
+    "steps": [
+      "创建 src/components/StatsPanel.tsx",
+      "在 header 中 admin 模式下显示「统计」按钮",
+      "点击弹出 Dialog 展示统计数据",
+      "加载时调用 GET /api/stats 获取数据"
+    ],
+    "passes": false
+  },
+  {
+    "id": 19,
+    "category": "functional",
+    "priority": "medium",
+    "description": "Admin 面板 — PV/UV 概览卡片",
+    "steps": [
+      "展示总 PV、今日 PV、今日 UV",
+      "使用与现有设计风格一致的卡片组件",
+      "数据加载中显示 skeleton"
+    ],
+    "passes": false
+  },
+  {
+    "id": 20,
+    "category": "functional",
+    "priority": "medium",
+    "description": "Admin 面板 — 日 PV 趋势折线图",
+    "steps": [
+      "支持 7 天 / 30 天切换",
+      "使用 Canvas 或 SVG 绘制简单折线图",
+      "无需引入第三方图表库"
+    ],
+    "passes": false
+  },
+  {
+    "id": 21,
+    "category": "functional",
+    "priority": "medium",
+    "description": "Admin 面板 — 操作事件汇总",
+    "steps": [
+      "展示 generate_3d、export_stl、submit_order 的总计数",
+      "使用列表或表格形式",
+      "计算关键漏斗转化率（访问→生成→导出→下单）"
+    ],
+    "passes": false
+  },
+  {
+    "id": 22,
+    "category": "functional",
+    "priority": "medium",
+    "description": "Admin 面板 — 来源分布",
+    "steps": [
+      "展示 referrer 域名排名（Top 10）",
+      "显示 direct（直接访问）占比",
+      "使用横向条形图或表格"
+    ],
+    "passes": false
+  },
+  {
+    "id": 23,
+    "category": "functional",
+    "priority": "medium",
+    "description": "Admin 面板 — 设备分布",
+    "steps": [
+      "展示 mobile / desktop / tablet 的比例",
+      "使用饼图或简单的百分比条",
+      "支持按日期范围筛选"
+    ],
+    "passes": false
+  },
+  {
+    "id": 24,
+    "category": "style",
+    "priority": "medium",
+    "description": "Admin 面板 — UI 风格一致性",
+    "steps": [
+      "统计面板使用与现有暗色战锤风格一致的配色",
+      "使用 Cinzel / IBM Plex Mono 字体",
+      "金色边框和装饰元素与 header 保持一致",
+      "数据加载和空状态有合适的占位符"
+    ],
+    "passes": false
+  },
+  {
+    "id": 25,
+    "category": "functional",
+    "priority": "low",
+    "description": "Admin 面板 — 数据导出",
+    "steps": [
+      "支持将统计数据导出为 CSV",
+      "包含日期、PV、UV、各操作计数",
+      "点击导出按钮触发下载"
+    ],
+    "passes": false
+  },
+  {
+    "id": 26,
+    "category": "functional",
+    "priority": "high",
+    "description": "环境变量配置更新",
+    "steps": [
+      "更新 .env.example 添加 stats 相关说明",
+      "确保 stats 边缘函数 URL 可配置",
+      "文档化 EdgeOne 控制台所需的 KV 变量绑定配置"
+    ],
+    "passes": true
+  },
+  {
+    "id": 27,
+    "category": "functional",
+    "priority": "high",
+    "description": "静态导出兼容性验证",
+    "steps": [
+      "运行 pnpm build:public 确保静态导出成功",
+      "analytics.ts 不引用任何 server-only API",
+      "stats route.ts 仅在 admin 模式时参与构建",
+      "验证 out_public/ 产物正常"
+    ],
+    "passes": false
+  },
+  {
+    "id": 28,
+    "category": "functional",
+    "priority": "high",
+    "description": "开发模式本地测试",
+    "steps": [
+      "pnpm dev:public 启动，页面加载时控制台无报错",
+      "Network 面板可看到 /api/stats POST 请求（允许 404 因为本地无边缘函数）",
+      "reportAction 在对应操作后触发",
+      "fingerprint 在同浏览器下稳定一致"
+    ],
+    "passes": false
+  }
+]
