@@ -171,7 +171,7 @@ export const STEPPED_LIMITS = {
   baseThickness: PARAM_CONFIG.baseThickness,
   cornerRadius: PARAM_CONFIG.cornerRadius,
   holeDepth: { label: "凹槽深度", min: 2, max: 20, step: 0.5, unit: "mm" },
-  bottomHeight: { label: "生长高度", min: 3, max: 100, step: 0.5, unit: "mm" },
+  bottomHeight: { label: "生长高度", min: 0, max: 100, step: 1, unit: "mm" },
   bottomExpandMargin: {
     label: "底部外扩边距",
     min: 0,

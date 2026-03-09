@@ -86,7 +86,7 @@ function calculateEffectiveBaseplate(params: SteppedLayoutParams) {
  * - 凹槽：全局固定深度 holeDepth，从柱顶向下挖
  */
 export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
-  const { slots, baseThickness, cornerRadius, bottomExpandMargin, holeDepth } = params;
+  const { slots, baseThickness, cornerRadius, spacing, holeDepth } = params;
   const effective = calculateEffectiveBaseplate(params);
   const trayWidth = effective.hasSlots ? effective.width : params.trayWidth;
   const trayDepth = effective.hasSlots ? effective.depth : params.trayDepth;
@@ -99,7 +99,12 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
     : trayDepth / 2;
 
   // 1. 底板实体
-  const basePlate = createBaseBody(trayWidth, trayDepth, baseThickness, cornerRadius);
+  const basePlate = createBaseBody(
+    trayWidth,
+    trayDepth,
+    baseThickness,
+    cornerRadius,
+  );
 
   const columns: Geom3[] = [];
   const holes: Geom3[] = [];
@@ -118,30 +123,40 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
     const columnHeight = baseThickness + slot.bottomHeight;
 
     // 2. 柱子：外扩形状，从 z=0 生长到 z=baseThickness+slot.bottomHeight
-    const expandedW = actualW + bottomExpandMargin * 2;
-    const expandedH = actualH + bottomExpandMargin * 2;
-    const columnShape = ellipse({
-      radius: [expandedW / 2, expandedH / 2],
-      segments: RENDER_CONFIG.cylinderSegments,
-    });
-    const column3D = extrudeLinear({ height: columnHeight }, columnShape);
-    const rotatedColumn = rotateZ(rotation * DEG_TO_RAD, column3D);
-    columns.push(translate([cx, cy, 0], rotatedColumn));
+    // 当 bottomHeight=0 时跳过柱子（凹槽直接在底板上挖）
+    if (slot.bottomHeight > 0) {
+      const expandedW = actualW + spacing;
+      const expandedH = actualH + spacing;
+      const columnShape = ellipse({
+        radius: [expandedW / 2, expandedH / 2],
+        segments: RENDER_CONFIG.cylinderSegments,
+      });
+      const column3D = extrudeLinear({ height: columnHeight }, columnShape);
+      const rotatedColumn = rotateZ(rotation * DEG_TO_RAD, column3D);
+      columns.push(translate([cx, cy, 0], rotatedColumn));
+    }
 
     // 3. 凹槽孔：实际尺寸，从柱顶向下挖 holeDepth
-    const clampedHoleDepth = Math.min(holeDepth, slot.bottomHeight);
+    const clampedHoleDepth =
+      slot.bottomHeight > 0
+        ? Math.min(holeDepth, slot.bottomHeight)
+        : Math.min(holeDepth, baseThickness);
     const holeShape = ellipse({
       radius: [actualW / 2, actualH / 2],
       segments: RENDER_CONFIG.cylinderSegments,
     });
-    const hole3D = extrudeLinear({ height: clampedHoleDepth + 0.02 }, holeShape);
+    const hole3D = extrudeLinear(
+      { height: clampedHoleDepth + 0.02 },
+      holeShape,
+    );
     const rotatedHole = rotateZ(rotation * DEG_TO_RAD, hole3D);
     const holeZ = columnHeight - clampedHoleDepth;
     holes.push(translate([cx, cy, holeZ], rotatedHole));
   }
 
   // 4. 底板 union 所有柱子
-  let solid: Geom3 = columns.length > 0 ? union(basePlate, ...columns) : basePlate;
+  let solid: Geom3 =
+    columns.length > 0 ? union(basePlate, ...columns) : basePlate;
 
   // 5. 减去凹槽
   let tray = holes.length > 0 ? subtract(solid, ...holes) : solid;

@@ -726,6 +726,29 @@ export default function LayoutCanvas({
             const isSelected = selectedIds.has(slot.id);
             const color = isSelected ? "#f97316" : "#eab308"; // Orange if selected, else Yellow
 
+            // Heatmap color for bottomHeight label text
+            const bhLabelColor = (() => {
+              if (!('bottomHeight' in slot)) return "#86efac";
+              const bh = (slot as { bottomHeight: number }).bottomHeight;
+              const t = Math.min(1, bh / 50);
+              const stops: [number, number, number][] = [
+                [134, 239, 172], // t=0  green-300 (0mm)
+                [74, 222, 128],  // t=0.2 green-400
+                [250, 204, 21],  // t=0.4 yellow-400
+                [251, 146, 60],  // t=0.6 orange-400
+                [248, 113, 113], // t=0.8 red-400
+                [239, 68, 68],   // t=1.0 red-500
+              ];
+              const idx = t * (stops.length - 1);
+              const lo = Math.floor(idx);
+              const hi = Math.min(lo + 1, stops.length - 1);
+              const f = idx - lo;
+              const r = Math.round(stops[lo][0] + f * (stops[hi][0] - stops[lo][0]));
+              const g = Math.round(stops[lo][1] + f * (stops[hi][1] - stops[lo][1]));
+              const b = Math.round(stops[lo][2] + f * (stops[hi][2] - stops[lo][2]));
+              return `rgb(${r},${g},${b})`;
+            })();
+
             return (
               <g
                 key={slot.id}
@@ -776,11 +799,9 @@ export default function LayoutCanvas({
                   strokeWidth={(isColliding || isInvolvedViaOther ? 0.5 : 0.2) / zoom}
                 />
 
-                {/* Size Text (rotated back so it's readable? or rotate with slot?) 
-                  Let's rotate with slot. 
-              */}
+                {/* Size Text */}
                 <text
-                  dy={(Math.min(w, h) * 0.2)} // Adjusted dy
+                  dy={'bottomHeight' in slot ? -Math.min(w, h) * 0.12 : Math.min(w, h) * 0.2}
                   textAnchor="middle"
                   dominantBaseline="middle"
                   fontSize={Math.min(w, h, 24) / 2}
@@ -792,19 +813,19 @@ export default function LayoutCanvas({
                   {slot.width === slot.height ? slot.width : `${slot.width}x${slot.height}`}
                 </text>
 
-                {/* Stepped slot: show bottomHeight label when selected */}
-                {'bottomHeight' in slot && isSelected && (
+                {/* Stepped slot: always show bottomHeight label inside the circle */}
+                {'bottomHeight' in slot && (
                   <text
-                    dy={h / 2 + 4 / zoom}
+                    dy={Math.min(w, h) * 0.24}
                     textAnchor="middle"
-                    dominantBaseline="hanging"
-                    fontSize={Math.max(2.5, Math.min(4, 8 / zoom))}
-                    fill="#86efac"
+                    dominantBaseline="middle"
+                    fontSize={Math.max(2, Math.min(w, h, 18) / 3.5)}
+                    fill={bhLabelColor}
                     fontWeight="bold"
                     pointerEvents="none"
                     style={{ userSelect: 'none' }}
                   >
-                    {`底部 ${(slot as { bottomHeight: number }).bottomHeight}mm`}
+                    {`↑${(slot as { bottomHeight: number }).bottomHeight}mm`}
                   </text>
                 )}
 

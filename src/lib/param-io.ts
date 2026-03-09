@@ -305,7 +305,7 @@ function validateSteppedParams(p: SteppedLayoutParams) {
     if (
       typeof slot.bottomHeight !== "number" ||
       !Number.isFinite(slot.bottomHeight as number) ||
-      (slot.bottomHeight as number) <= 0
+      (slot.bottomHeight as number) < 0
     ) {
       slot.bottomHeight = STEPPED_SLOT_DEFAULTS.bottomHeight;
     }

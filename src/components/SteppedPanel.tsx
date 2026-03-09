@@ -209,13 +209,6 @@ export default function SteppedPanel({
                             unit={STEPPED_LIMITS.holeDepth.unit}
                         />
                         <ParamSlider
-                            label={STEPPED_LIMITS.bottomExpandMargin.label}
-                            value={params.bottomExpandMargin}
-                            config={STEPPED_LIMITS.bottomExpandMargin}
-                            onChange={(v) => updateParam("bottomExpandMargin", v)}
-                            unit={STEPPED_LIMITS.bottomExpandMargin.unit}
-                        />
-                        <ParamSlider
                             label={PARAM_CONFIG.cornerRadius.label}
                             value={params.cornerRadius}
                             config={STEPPED_LIMITS.cornerRadius}
