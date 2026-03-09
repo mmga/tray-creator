@@ -30,7 +30,7 @@ interface ParameterPanelProps {
   params: TrayParams;
   updateParam: <K extends keyof TrayParams>(key: K, value: TrayParams[K]) => void;
   setParams: React.Dispatch<React.SetStateAction<TrayParams>>;
-  onGenerate: () => void;
+  onGenerate: (options?: { shouldSwitchView?: boolean }) => void;
   onExportSTL: () => void;
   isGenerating: boolean;
   volume: number;
@@ -47,7 +47,7 @@ export default function ParameterPanel({
 }: ParameterPanelProps) {
   const dimensions = calculateTrayDimensions(params);
   const isOversized = dimensions.width > MAX_BUILD_SIZE || dimensions.depth > MAX_BUILD_SIZE;
-  const [autoPreview, setAutoPreview] = useState(true);
+  const [autoPreview, setAutoPreview] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [pendingJson, setPendingJson] = useState("");
@@ -58,7 +58,7 @@ export default function ParameterPanel({
     if (!autoPreview || isGenerating || isOversized) return;
 
     const handler = setTimeout(() => {
-      onGenerate();
+      onGenerate({ shouldSwitchView: false });
     }, 500); // 500ms debounce
 
     return () => clearTimeout(handler);
@@ -257,7 +257,7 @@ export default function ParameterPanel({
         </div>
 
         <Button
-          onClick={onGenerate}
+          onClick={() => onGenerate({ shouldSwitchView: true })}
           disabled={isGenerating || isOversized}
           className="w-full h-11 blood-red text-sm text-[#f0d8b8] font-bold tracking-wider cursor-pointer transition-all duration-200 border border-[#a02020] shadow-lg shadow-[#8b1a1a30] hover:shadow-xl hover:shadow-[#8b1a1a50] hover:brightness-125 disabled:opacity-50 disabled:cursor-not-allowed"
         >
