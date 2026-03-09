@@ -2,11 +2,7 @@ import { booleans, primitives, transforms, extrusions } from "@jscad/modeling";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 import { RENDER_CONFIG, getSlotTolerance } from "@/lib/config";
-import {
-  createBaseBody,
-  subtractBaseHoles,
-  type SlotCenter,
-} from "@/lib/model-utils";
+import { createBaseBody } from "@/lib/model-utils";
 
 const { subtract, union } = booleans;
 const { translate, rotateZ } = transforms;
@@ -80,13 +76,13 @@ function calculateEffectiveBaseplate(params: SteppedLayoutParams) {
 /**
  * 根据阶梯底座参数生成托盘 3D 模型
  *
- * 结构说明（从底部向上增长）：
- * - 底板：全宽底板，高度 = baseThickness
- * - 柱子：每个凹槽对应一个外扩柱子，从底板底部向上生长，高度 = baseThickness + slot.bottomHeight
- * - 凹槽：全局固定深度 holeDepth，从柱顶向下挖
+ * 结构说明（独立圆柱单元）：
+ * - 无底板
+ * - 每个凹槽是一个独立椭圆柱，高度 = slot.bottomHeight
+ * - 全局固定深度 holeDepth 从柱顶向下挖出凹槽
  */
 export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
-  const { slots, baseThickness, cornerRadius, spacing, holeDepth } = params;
+  const { slots, cornerRadius, spacing, holeDepth } = params;
   const effective = calculateEffectiveBaseplate(params);
   const trayWidth = effective.hasSlots ? effective.width : params.trayWidth;
   const trayDepth = effective.hasSlots ? effective.depth : params.trayDepth;
@@ -98,49 +94,33 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
     ? (effective.minY + effective.maxY) / 2
     : trayDepth / 2;
 
-  // 1. 底板实体
-  const basePlate = createBaseBody(
-    trayWidth,
-    trayDepth,
-    baseThickness,
-    cornerRadius,
-  );
-
   const columns: Geom3[] = [];
   const holes: Geom3[] = [];
-  const centers: SlotCenter[] = [];
 
   for (const slot of slots) {
     const normalizedX = slot.x - sourceCenterX + trayWidth / 2;
     const normalizedY = slot.y - sourceCenterY + trayDepth / 2;
     const cx = normalizedX - trayWidth / 2;
     const cy = normalizedY - trayDepth / 2;
-    centers.push({ cx, cy });
 
     const rotation = slot.rotation || 0;
     const actualW = slot.width + getSlotTolerance(slot.width);
     const actualH = slot.height + getSlotTolerance(slot.height);
-    const columnHeight = baseThickness + slot.bottomHeight;
+    const columnHeight = Math.max(slot.bottomHeight, 3);
 
-    // 2. 柱子：外扩形状，从 z=0 生长到 z=baseThickness+slot.bottomHeight
-    // 当 bottomHeight=0 时跳过柱子（凹槽直接在底板上挖）
-    if (slot.bottomHeight > 0) {
-      const expandedW = actualW + spacing;
-      const expandedH = actualH + spacing;
-      const columnShape = ellipse({
-        radius: [expandedW / 2, expandedH / 2],
-        segments: RENDER_CONFIG.cylinderSegments,
-      });
-      const column3D = extrudeLinear({ height: columnHeight }, columnShape);
-      const rotatedColumn = rotateZ(rotation * DEG_TO_RAD, column3D);
-      columns.push(translate([cx, cy, 0], rotatedColumn));
-    }
+    // 柱子：外扩形状，高度 = slot.bottomHeight
+    const expandedW = actualW + spacing;
+    const expandedH = actualH + spacing;
+    const columnShape = ellipse({
+      radius: [expandedW / 2, expandedH / 2],
+      segments: RENDER_CONFIG.cylinderSegments,
+    });
+    const column3D = extrudeLinear({ height: columnHeight }, columnShape);
+    const rotatedColumn = rotateZ(rotation * DEG_TO_RAD, column3D);
+    columns.push(translate([cx, cy, 0], rotatedColumn));
 
-    // 3. 凹槽孔：实际尺寸，从柱顶向下挖 holeDepth
-    const clampedHoleDepth =
-      slot.bottomHeight > 0
-        ? Math.min(holeDepth, slot.bottomHeight)
-        : Math.min(holeDepth, baseThickness);
+    // 凹槽孔：实际尺寸，从柱顶向下挖 holeDepth
+    const clampedHoleDepth = Math.min(holeDepth, columnHeight);
     const holeShape = ellipse({
       radius: [actualW / 2, actualH / 2],
       segments: RENDER_CONFIG.cylinderSegments,
@@ -154,17 +134,16 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
     holes.push(translate([cx, cy, holeZ], rotatedHole));
   }
 
-  // 4. 底板 union 所有柱子
-  let solid: Geom3 =
-    columns.length > 0 ? union(basePlate, ...columns) : basePlate;
-
-  // 5. 减去凹槽
-  let tray = holes.length > 0 ? subtract(solid, ...holes) : solid;
-
-  // 6. 底板磁吸孔
-  if (params.enableBaseHole) {
-    tray = subtractBaseHoles(tray, centers, baseThickness, params.baseHoleSize);
+  if (columns.length === 0) {
+    // 无槽时返回一个极薄的占位体
+    return createBaseBody(trayWidth, trayDepth, 0.1, cornerRadius);
   }
+
+  // 所有柱子合并
+  const solid: Geom3 = columns.length === 1 ? columns[0] : union(...columns);
+
+  // 减去凹槽
+  const tray = holes.length > 0 ? subtract(solid, ...holes) : solid;
 
   return tray;
 }
@@ -174,13 +153,13 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
  */
 export function calculateSteppedTrayDimensions(params: SteppedLayoutParams) {
   const effective = calculateEffectiveBaseplate(params);
-  const maxRise =
+  const maxHeight =
     params.slots.length > 0
-      ? Math.max(...params.slots.map((s) => s.bottomHeight))
+      ? Math.max(...params.slots.map((s) => Math.max(s.bottomHeight, 3)))
       : 0;
   return {
     width: effective.hasSlots ? effective.width : params.trayWidth,
     depth: effective.hasSlots ? effective.depth : params.trayDepth,
-    height: params.baseThickness + maxRise,
+    height: maxHeight,
   };
 }

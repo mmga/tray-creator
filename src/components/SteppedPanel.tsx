@@ -165,7 +165,7 @@ export default function SteppedPanel({
             {/* 结构参数 */}
             <div className="iron-panel rounded-sm p-4">
                 <SectionHeader icon={Wrench} title="结构参数" collapsible defaultOpen={false}
-                    summary={`槽距${params.spacing}mm / 边距${(params.boundarySpacingIndependent ? params.boundarySpacing : params.spacing)}mm / 底厚${params.baseThickness}mm`}>
+                    summary={`槽距${params.spacing}mm / 边距${(params.boundarySpacingIndependent ? params.boundarySpacing : params.spacing)}mm`}>
                     <div className="space-y-4">
                         <ParamSlider
                             label={STEPPED_LIMITS.spacing.label}
@@ -195,13 +195,6 @@ export default function SteppedPanel({
                             />
                         )}
                         <ParamSlider
-                            label={PARAM_CONFIG.baseThickness.label}
-                            value={params.baseThickness}
-                            config={STEPPED_LIMITS.baseThickness}
-                            onChange={(v) => updateParam("baseThickness", v)}
-                            unit={PARAM_CONFIG.baseThickness.unit}
-                        />
-                        <ParamSlider
                             label={STEPPED_LIMITS.holeDepth.label}
                             value={params.holeDepth}
                             config={STEPPED_LIMITS.holeDepth}
@@ -218,16 +211,6 @@ export default function SteppedPanel({
                     </div>
                 </SectionHeader>
             </div>
-
-            {/* 底板孔位 */}
-            <BaseHoleConfig
-                enableBaseHole={params.enableBaseHole}
-                baseHoleSize={params.baseHoleSize}
-                baseThickness={params.baseThickness}
-                updateParam={updateParam}
-                collapsible
-                defaultOpen={false}
-            />
 
             {/* 统计信息 */}
             <div className={`iron-panel rounded-sm p-4 transition-all duration-300 ${isOversized ? 'border-[#8b1a1a] animate-forge-pulse' : ''}`}>
