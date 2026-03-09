@@ -11,7 +11,7 @@
       "确认现有 \"grid\" | \"custom\" 仍可正常使用",
       "TypeScript 编译无报错"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 2,
@@ -25,7 +25,7 @@
       "点击标签页可正常切换，不报错",
       "切换回网格/自定义模式后标签高亮正确"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 3,
@@ -39,7 +39,7 @@
       "右侧视口区域能渲染出 2D/3D 切换标签",
       "无 React 渲染错误或控制台异常"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 4,
@@ -53,7 +53,7 @@
       "切换到阶梯底座模式再切回，确认前两种模式数据未丢失",
       "确认无控制台报错"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 5,
@@ -67,7 +67,7 @@
       "确认 wallHeight: number 和 bottomHeight: number 字段存在",
       "TypeScript 编译无报错"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 6,
@@ -81,7 +81,7 @@
       "确认保留与 CustomLayoutParams 共享的字段（trayWidth, trayDepth, spacing 等）",
       "TypeScript 编译无报错"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 7,
@@ -96,7 +96,7 @@
       "确认 slots 默认为空数组",
       "确认 wallHeight/bottomHeight 有合理的全局默认值供新增槽位使用"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 8,
@@ -110,7 +110,7 @@
       "确认 STEPPED_LIMITS 包含 bottomExpandMargin 的 min/max/step/unit",
       "所有范围合理（如 wallHeight min >= 0.5, bottomHeight min >= 0.5）"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 9,
@@ -124,7 +124,7 @@
       "hook 返回 setParams / updateParam / addSlot / removeSlot",
       "初始 params 等同于 STEPPED_LAYOUT_DEFAULTS"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 10,
@@ -138,7 +138,7 @@
       "检查新增槽位的 bottomHeight 等于配置默认值",
       "新增槽位具有正确的 shape/width/height/rotation 等基础字段"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 11,
@@ -152,7 +152,7 @@
       "调用 updateSlotBottomHeight(id, 2.0)，确认该槽 bottomHeight 变为 2.0",
       "其他槽位不受影响"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 12,
@@ -167,7 +167,7 @@
       "再次 undo，确认槽位被移除",
       "确认 canUndo 在无历史时为 false"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 13,
@@ -181,7 +181,7 @@
       "调用 updateSlotRotation(id, 45)，确认旋转更新",
       "确认不影响 wallHeight / bottomHeight"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 14,
@@ -195,7 +195,7 @@
       "确认新槽位继承原槽的 wallHeight 和 bottomHeight",
       "确认新槽位有独立的 id"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 15,
@@ -208,7 +208,7 @@
       "检查 effectiveDimensions 的 width/depth 是否正确反映边界包围盒 + boundarySpacing",
       "无槽位时返回 width=0, depth=0"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 16,
@@ -223,7 +223,7 @@
       "确认 threeGeometry 不为 null",
       "确认 volume > 0"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 17,
@@ -237,7 +237,7 @@
       "确认文件名包含 stepped 标识",
       "下载的 STL 文件大小 > 0"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 18,
@@ -252,7 +252,7 @@
       "显示底板厚度和圆角半径滑杆",
       "拖动滑杆可正常调整参数值"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 19,
@@ -266,7 +266,7 @@
       "滑杆默认值为 1.0mm",
       "拖动滑杆可调整 bottomExpandMargin 参数"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 20,
@@ -280,7 +280,7 @@
       "点击 60x35.5mm 椭圆预设，画布中添加对应椭圆凹槽",
       "新添加的凹槽具有默认的 wallHeight 和 bottomHeight"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 21,
@@ -294,7 +294,7 @@
       "修改墙高，确认值更新且 3D 预览标记为过期",
       "修改底部高度，确认值更新且 3D 预览标记为过期"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 22,
@@ -307,7 +307,7 @@
       "确认面板中不显示「墙高」和「底部高度」控件",
       "或显示提示文字如「请选择凹槽以编辑参数」"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 23,
@@ -321,7 +321,7 @@
       "2D 画布中正确显示所有凹槽的位置和大小",
       "凹槽颜色与自定义模式一致（按尺寸映射）"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 24,
@@ -335,7 +335,7 @@
       "凹槽跟随鼠标移动，位置实时更新",
       "释放后新位置被保存"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 25,
@@ -349,7 +349,7 @@
       "确认凹槽在画布上正确旋转",
       "确认旋转值被保存到 slot.rotation"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 26,
@@ -363,7 +363,7 @@
       "使用对齐工具（AlignmentToolbar）执行左对齐",
       "确认选中凹槽按预期对齐"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 27,
@@ -377,7 +377,7 @@
       "修改其中一个凹槽的 wallHeight/bottomHeight",
       "确认碰撞检测行为不变（Z 轴不影响 2D 碰撞）"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 28,
@@ -391,7 +391,7 @@
       "按 Ctrl+Z 撤销",
       "所有操作正常执行无报错"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 29,
@@ -405,7 +405,7 @@
       "生成完成后自动切换到 3D 视图",
       "3D 视图中显示阶梯底座模型"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 30,
@@ -419,7 +419,7 @@
       "文件名包含 stepped 标识",
       "文件可被 3D 打印切片软件打开"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 31,
@@ -433,7 +433,7 @@
       "磁吸孔参数正确写入 SteppedLayoutParams",
       "生成的 3D 模型底部有磁吸孔"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 32,
@@ -447,7 +447,7 @@
       "返回的 Geom3 为一个标准圆角矩形柱体",
       "总高度等于 max(所有槽 bottomHeight + wallHeight) 或 baseThickness + max(wallHeight)"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 33,
@@ -461,7 +461,7 @@
       "在 3D 视图中观察凹槽从顶面向下挖掘",
       "凹槽深度（墙高度）视觉上约等于 3.0mm"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 34,
@@ -475,7 +475,7 @@
       "在 3D 视图中确认凹槽底部下方有一个比凹槽大一圈的圆柱平台",
       "平台半径 ≈ 凹槽半径 + 1.0mm（含公差）"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 35,
@@ -489,7 +489,7 @@
       "确认凹槽底部下方仍有 1.0mm 实体材料",
       "确认外扩底部平台也不穿透托盘底面"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 36,
@@ -503,7 +503,7 @@
       "确认 A 的凹槽比 B 浅",
       "两个凹槽的墙高差异在 3D 视图中可见"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 37,
@@ -517,7 +517,7 @@
       "确认 B 的底部平台比 A 更高（离托盘底面更远）",
       "两者的底部平台在 3D 视图中高度不同"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 38,
@@ -532,7 +532,7 @@
       "底部平台是一个比椭圆大一圈（各方向+2mm）的形状",
       "旋转角度与凹槽一致"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 39,
@@ -546,7 +546,7 @@
       "重新生成 3D 模型",
       "确认底部平台明显变大"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 40,
@@ -560,7 +560,7 @@
       "确认每个凹槽底部有磁吸孔",
       "磁吸孔不与底部平台或墙体冲突"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 41,
@@ -574,7 +574,7 @@
       "托盘总高度应为 max(2+1, 3+2) = 5mm",
       "确认 calculateSteppedTrayDimensions 返回的 height 正确"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 42,
@@ -588,7 +588,7 @@
       "确认 onmessage handler 中有对应 case 分支",
       "分支调用 createSteppedTrayModel() 并返回 geometry + volumeInfo"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 43,
@@ -602,7 +602,7 @@
       "方法返回 Promise<{ geometry: Geom3; volume: number }>",
       "内部发送 GENERATE_STEPPED 消息"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 44,
@@ -616,7 +616,7 @@
       "3D 视图正确渲染返回的几何体",
       "volume 值合理（> 0, 非 NaN）"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 45,
@@ -630,7 +630,7 @@
       "确认 Worker 返回 ERROR 类型响应",
       "确认 UI 显示 toast 错误提示，不会崩溃"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 46,
@@ -643,7 +643,7 @@
       "在自定义模式下生成 3D 模型，确认正常",
       "Worker 无多余的 console.error 或异常"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 47,
@@ -658,7 +658,7 @@
       "JSON 中每个 slot 包含 wallHeight 和 bottomHeight 字段",
       "JSON 中包含 bottomExpandMargin"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 48,
@@ -673,7 +673,7 @@
       "确认所有参数完整恢复（包括每槽的 wallHeight/bottomHeight）",
       "画布正确渲染导入的凹槽"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 49,
@@ -688,7 +688,7 @@
       "所有 slot 自动获得默认 wallHeight 和 bottomHeight",
       "bottomExpandMargin 自动设为默认值 1.0"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 50,
@@ -703,7 +703,7 @@
       "导入时确认被钳位到 max 范围",
       "缺少 wallHeight 字段的 slot 自动补默认值"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 51,
@@ -717,7 +717,7 @@
       "用 version: 2 的 stepped 文件导入，能成功",
       "用 version: 0 的文件导入，给出友好错误提示"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 52,
@@ -731,7 +731,7 @@
       "报价值 > 0 且合理",
       "修改凹槽数量或尺寸后报价更新"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 53,
@@ -745,7 +745,7 @@
       "增大 bottomHeight，重新生成，确认报价变化",
       "报价变化方向合理（更大凹槽深度 = 更少材料 = 更低价格，或反之视定价策略）"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 54,
@@ -759,7 +759,7 @@
       "显示托盘总高度（基于最大 wallHeight + bottomHeight）",
       "修改参数后信息实时更新"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 55,
@@ -772,7 +772,7 @@
       "面板显示超尺寸警告",
       "警告文案清晰说明超过最大构建尺寸"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 56,
@@ -785,7 +785,7 @@
       "开启独立边界间距开关，确认边界间距可独立调整",
       "修改凹槽间距，确认边界间距在非独立模式下联动更新"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 57,
@@ -799,7 +799,7 @@
       "确认不报错、不穿底",
       "geometry 有效（非空多边形）"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 58,
@@ -813,7 +813,7 @@
       "确认不报错",
       "geometry 有效、体积合理"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 59,
@@ -827,7 +827,7 @@
       "底部平台直径与凹槽直径一致（无外扩）",
       "模型正常无破面"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 60,
@@ -841,7 +841,7 @@
       "缩放/平移后凹槽渲染位置正确",
       "zoom 控件 + / - / reset 按钮正常"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 61,
@@ -855,7 +855,7 @@
       "选中凹槽时显示选中凹槽信息",
       "信息实时更新"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 62,
@@ -869,7 +869,7 @@
       "底板尺寸缩小到恰好包围凹槽 + 边界间距",
       "凹槽位置未改变"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 63,
@@ -883,7 +883,7 @@
       "确认 3 个凹槽位置同时更新",
       "wallHeight/bottomHeight 不受影响"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 64,
@@ -897,7 +897,7 @@
       "点击生成，确认 3D 模型正确",
       "导出 STL，确认文件可下载"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 65,
@@ -912,7 +912,7 @@
       "生成 3D 模型和导出 STL 正常",
       "导入/导出参数正常"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 66,
@@ -925,7 +925,7 @@
       "通过订单导入 custom 模式配置，确认正常加载",
       "如果支持 stepped 订单导入，确认也能正常加载"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 67,
@@ -939,7 +939,7 @@
       "导入按钮可选择文件并成功加载",
       "加载后参数完整恢复"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 68,
@@ -954,7 +954,7 @@
       "确认 2 个选中槽的 wallHeight 同时更新",
       "未选中的槽不受影响"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 69,
@@ -967,7 +967,7 @@
       "画布上或附近显示该槽的 wallHeight 和 bottomHeight 数值",
       "未选中时不显示数值标注"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 70,
@@ -981,7 +981,7 @@
       "确认无崩溃、无破面",
       "重叠区域在 3D 视图中表现合理"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 71,
@@ -995,7 +995,7 @@
       "选中态/未选中态颜色对比度足够",
       "与整体暗色主题协调"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 72,
@@ -1009,7 +1009,7 @@
       "滑杆/按钮/开关样式一致",
       "间距和排版一致"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 73,
@@ -1023,7 +1023,7 @@
       "wallHeight 和 bottomHeight 滑杆标签清晰",
       "与上方全局参数区视觉分离"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 74,
@@ -1037,7 +1037,7 @@
       "单位显示 mm",
       "有 tooltip 或说明解释此参数含义"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 75,
@@ -1050,7 +1050,7 @@
       "图标与「网格模式」「自定义模式」图标风格统一",
       "图标大小一致"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 76,
@@ -1064,7 +1064,7 @@
       "不出现水平滚动条或内容溢出",
       "滑杆和按钮触摸可操作"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 77,
@@ -1078,7 +1078,7 @@
       "光照和材质与其他模式一致",
       "边缘线正确描绘阶梯结构"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 78,
@@ -1091,7 +1091,7 @@
       "按钮大小和间距与 CustomPanel 一致",
       "hover 效果一致"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 79,
@@ -1104,7 +1104,7 @@
       "数值格式化一致（保留 2 位小数等）",
       "文字颜色和字号与 CustomPanel 一致"
     ],
-    "passes": false
+    "passes": true
   },
   {
     "id": 80,
@@ -1117,6 +1117,6 @@
       "若有，折叠/展开动画与 CustomPanel 一致",
       "折叠状态下不影响其他区域布局"
     ],
-    "passes": false
+    "passes": true
   }
 ]

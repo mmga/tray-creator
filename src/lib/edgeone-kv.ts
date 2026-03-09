@@ -1,5 +1,5 @@
 import type { TrayParams } from "@/types/tray";
-import type { CustomLayoutParams, AppMode } from "@/types/custom-tray";
+import type { CustomLayoutParams, SteppedLayoutParams, AppMode } from "@/types/custom-tray";
 
 // ═══════════════════════════════════════════
 // EdgeOne KV 配置发送工具
@@ -28,7 +28,7 @@ function precisionReplacer(_key: string, value: unknown) {
 /** 构造待发送的 payload 对象（供弹窗预览） */
 export function buildPayload(
   mode: AppMode,
-  params: TrayParams | CustomLayoutParams,
+  params: TrayParams | CustomLayoutParams | SteppedLayoutParams,
 ) {
   return {
     version: 1,
@@ -50,7 +50,7 @@ export function serializePayload(payload: unknown): string {
  */
 export async function sendConfigToKV(
   mode: AppMode,
-  params: TrayParams | CustomLayoutParams,
+  params: TrayParams | CustomLayoutParams | SteppedLayoutParams,
 ): Promise<SendResult> {
   const url = EDGE_FUNCTION_URL;
 

@@ -1,6 +1,6 @@
 import type { TrayParams } from "@/types/tray";
-import type { CustomLayoutParams, AppMode } from "@/types/custom-tray";
-import { PARAM_CONFIG, CUSTOM_LIMITS } from "@/lib/config";
+import type { CustomLayoutParams, SteppedLayoutParams, AppMode } from "@/types/custom-tray";
+import { PARAM_CONFIG, CUSTOM_LIMITS, STEPPED_LIMITS, STEPPED_SLOT_DEFAULTS } from "@/lib/config";
 
 // ═══════════════════════════════════════════
 // 参数导入导出工具
@@ -9,7 +9,7 @@ import { PARAM_CONFIG, CUSTOM_LIMITS } from "@/lib/config";
 interface ParamFile {
   version: number;
   mode: AppMode;
-  params: TrayParams | CustomLayoutParams;
+  params: TrayParams | CustomLayoutParams | SteppedLayoutParams;
 }
 
 const CURRENT_VERSION = 1;
@@ -19,7 +19,7 @@ const CURRENT_VERSION = 1;
 /** 将参数序列化为 JSON 并触发浏览器下载 */
 export function exportParams(
   mode: AppMode,
-  params: TrayParams | CustomLayoutParams,
+  params: TrayParams | CustomLayoutParams | SteppedLayoutParams,
 ) {
   const data: ParamFile = { version: CURRENT_VERSION, mode, params };
   // 使用 replacer 函数将导出的数字截断至最多 3 位小数，避免浮点数精度溢出（如 27.400000000000006 => 27.4）
@@ -51,7 +51,7 @@ export function exportParams(
 export function importParams(
   file: File,
   expectedMode: AppMode,
-): Promise<TrayParams | CustomLayoutParams> {
+): Promise<TrayParams | CustomLayoutParams | SteppedLayoutParams> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -65,15 +65,49 @@ export function importParams(
         if (data.version !== CURRENT_VERSION) {
           throw new Error(`不支持的版本号: ${data.version}`);
         }
+
+        // 支持 custom → stepped 自动迁移
+        if (data.mode === "custom" && expectedMode === "stepped") {
+          const customParams = data.params as CustomLayoutParams;
+          validateCustomParams(customParams);
+          const steppedParams: SteppedLayoutParams = {
+            trayWidth: customParams.trayWidth,
+            trayDepth: customParams.trayDepth,
+            slots: customParams.slots.map((s) => ({
+              ...s,
+              wallHeight: customParams.holeDepth || STEPPED_SLOT_DEFAULTS.wallHeight,
+              bottomHeight: customParams.baseThickness || STEPPED_SLOT_DEFAULTS.bottomHeight,
+            })),
+            spacing: customParams.spacing,
+            boundarySpacing: customParams.boundarySpacing,
+            boundarySpacingIndependent: customParams.boundarySpacingIndependent,
+            baseThickness: customParams.baseThickness,
+            cornerRadius: customParams.cornerRadius,
+            bottomExpandMargin: 1.0,
+            enableBaseHole: customParams.enableBaseHole,
+            baseHoleSize: customParams.baseHoleSize,
+          };
+          validateSteppedParams(steppedParams);
+          resolve(steppedParams);
+          return;
+        }
+
         if (data.mode !== expectedMode) {
+          const modeNames: Record<string, string> = {
+            grid: "网格",
+            custom: "自定义",
+            stepped: "自定义阶梯底座",
+          };
           throw new Error(
-            `模式不匹配：文件为「${data.mode === "grid" ? "网格" : "自定义"}」模式，当前为「${expectedMode === "grid" ? "网格" : "自定义"}」模式`,
+            `模式不匹配：文件为「${modeNames[data.mode] || data.mode}」模式，当前为「${modeNames[expectedMode] || expectedMode}」模式`,
           );
         }
 
         // 校验并钳位参数
         if (expectedMode === "grid") {
           validateGridParams(data.params as TrayParams);
+        } else if (expectedMode === "stepped") {
+          validateSteppedParams(data.params as SteppedLayoutParams);
         } else {
           validateCustomParams(data.params as CustomLayoutParams);
         }
@@ -200,6 +234,83 @@ function validateCustomParams(p: CustomLayoutParams) {
   clampField(obj, "baseThickness", CUSTOM_LIMITS.baseThickness);
   clampField(obj, "holeDepth", CUSTOM_LIMITS.holeDepth);
   clampField(obj, "cornerRadius", CUSTOM_LIMITS.cornerRadius);
+
+  if (!obj.boundarySpacingIndependent) {
+    obj.boundarySpacing = obj.spacing;
+  }
+}
+
+function validateSteppedParams(p: SteppedLayoutParams) {
+  const obj = p as unknown as Record<string, unknown>;
+  const numFields = [
+    "trayWidth",
+    "trayDepth",
+    "spacing",
+    "baseThickness",
+    "cornerRadius",
+    "bottomExpandMargin",
+  ];
+  for (const f of numFields) requireNumber(obj, f);
+  if (typeof obj.boundarySpacing !== "number") {
+    obj.boundarySpacing = obj.spacing;
+  }
+  if (typeof obj.boundarySpacingIndependent !== "boolean") {
+    obj.boundarySpacingIndependent = false;
+  }
+  if (!Array.isArray(obj.slots)) {
+    throw new Error("缺少或无效的字段: slots");
+  }
+
+  // 校验每个 slot
+  const slots = obj.slots as Record<string, unknown>[];
+  for (let i = 0; i < slots.length; i++) {
+    const slot = slots[i];
+    if (!slot || typeof slot !== "object") {
+      throw new Error(`slots[${i}]: 无效的凹槽数据`);
+    }
+    for (const key of ["x", "y", "width", "height", "rotation"] as const) {
+      if (
+        typeof slot[key] !== "number" ||
+        !Number.isFinite(slot[key] as number)
+      ) {
+        throw new Error(`slots[${i}].${key}: 缺少或无效（需要有限数字）`);
+      }
+    }
+    if (slot.shape !== "circle" && slot.shape !== "ellipse") {
+      throw new Error(`slots[${i}].shape: 必须是 "circle" 或 "ellipse"`);
+    }
+    const w = slot.width as number;
+    const h = slot.height as number;
+    if (w <= 0 || w > 200) {
+      throw new Error(`slots[${i}].width: 超出合理范围 (0, 200]`);
+    }
+    if (h <= 0 || h > 200) {
+      throw new Error(`slots[${i}].height: 超出合理范围 (0, 200]`);
+    }
+    slot.rotation = (((slot.rotation as number) % 360) + 360) % 360;
+    if (typeof slot.id !== "string" || !slot.id) {
+      slot.id = crypto.randomUUID();
+    }
+    // 自动补齐 wallHeight / bottomHeight
+    if (typeof slot.wallHeight !== "number" || !Number.isFinite(slot.wallHeight as number) || (slot.wallHeight as number) <= 0) {
+      slot.wallHeight = STEPPED_SLOT_DEFAULTS.wallHeight;
+    }
+    if (typeof slot.bottomHeight !== "number" || !Number.isFinite(slot.bottomHeight as number) || (slot.bottomHeight as number) <= 0) {
+      slot.bottomHeight = STEPPED_SLOT_DEFAULTS.bottomHeight;
+    }
+    // 钳位
+    slot.wallHeight = Math.max(STEPPED_LIMITS.wallHeight.min, Math.min(STEPPED_LIMITS.wallHeight.max, slot.wallHeight as number));
+    slot.bottomHeight = Math.max(STEPPED_LIMITS.bottomHeight.min, Math.min(STEPPED_LIMITS.bottomHeight.max, slot.bottomHeight as number));
+  }
+
+  // 钳位全局参数
+  clampField(obj, "trayWidth", STEPPED_LIMITS.trayWidth);
+  clampField(obj, "trayDepth", STEPPED_LIMITS.trayDepth);
+  clampField(obj, "spacing", STEPPED_LIMITS.spacing);
+  clampField(obj, "boundarySpacing", STEPPED_LIMITS.boundarySpacing);
+  clampField(obj, "baseThickness", STEPPED_LIMITS.baseThickness);
+  clampField(obj, "cornerRadius", STEPPED_LIMITS.cornerRadius);
+  clampField(obj, "bottomExpandMargin", STEPPED_LIMITS.bottomExpandMargin);
 
   if (!obj.boundarySpacingIndependent) {
     obj.boundarySpacing = obj.spacing;

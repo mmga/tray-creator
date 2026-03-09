@@ -1,6 +1,6 @@
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { TrayParams } from "@/types/tray";
-import type { CustomLayoutParams } from "@/types/custom-tray";
+import type { CustomLayoutParams, SteppedLayoutParams } from "@/types/custom-tray";
 import type { WorkerRequest, WorkerResponse } from "./tray.worker";
 
 let _nextId = 0;
@@ -66,6 +66,19 @@ class TrayWorkerService {
       );
       this.pendingRejects.set(requestId, reject);
       this.worker?.postMessage({ type: "GENERATE_CUSTOM", requestId, params });
+    });
+  }
+
+  public async generateStepped(
+    params: SteppedLayoutParams,
+  ): Promise<{ geometry: Geom3; volume: number }> {
+    const requestId = generateRequestId();
+    return new Promise((resolve, reject) => {
+      this.pendingResolves.set(requestId, (data: any) =>
+        resolve({ geometry: data.geometry, volume: data.volumeInfo }),
+      );
+      this.pendingRejects.set(requestId, reject);
+      this.worker?.postMessage({ type: "GENERATE_STEPPED", requestId, params });
     });
   }
 

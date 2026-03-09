@@ -1,5 +1,5 @@
 import type { TrayParams } from "@/types/tray";
-import type { CustomLayoutParams } from "@/types/custom-tray";
+import type { CustomLayoutParams, SteppedLayoutParams } from "@/types/custom-tray";
 
 /**
  * ============================================
@@ -58,6 +58,12 @@ function getEquivalentDiameter(width: number, height: number): number {
 }
 
 export function calculateCustomPrice(params: CustomLayoutParams, volume: number): number {
+    if (volume <= 0) return 0;
+    const weight = calculateWeight(volume);
+    return weight * 0.4;
+}
+
+export function calculateSteppedPrice(params: SteppedLayoutParams, volume: number): number {
     if (volume <= 0) return 0;
     const weight = calculateWeight(volume);
     return weight * 0.4;

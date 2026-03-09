@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback, useEffect } from "react";
-import type { FreeSlot, CustomLayoutParams } from "@/types/custom-tray";
+import type { FreeSlot, CustomLayoutParams, SteppedLayoutParams } from "@/types/custom-tray";
 import { getSlotTolerance, MAX_BUILD_SIZE } from "@/lib/config";
 import { getEllipsePolygon, polygonsIntersect } from "@/lib/collision";
 import AlignmentToolbar from "./AlignmentToolbar";
@@ -14,7 +14,7 @@ import { CanvasZoomControls } from "./canvas/CanvasZoomControls";
 import { KeyboardHintsOverlay } from "./canvas/KeyboardHintsOverlay";
 
 interface LayoutCanvasProps {
-  params: CustomLayoutParams;
+  params: CustomLayoutParams | SteppedLayoutParams;
   onUpdateSlot: (id: string, x: number, y: number) => void;
   onRemoveSlot: (id: string) => void;
   onResizeTray?: (width: number, depth: number) => void;
@@ -23,6 +23,7 @@ interface LayoutCanvasProps {
   onDuplicateSlots?: (ids: string[]) => void;
   onUndo?: () => void;
   onSaveSnapshot?: () => void;
+  onSelectionChange?: (ids: string[]) => void;
 }
 
 export default function LayoutCanvas({
@@ -35,6 +36,7 @@ export default function LayoutCanvas({
   onDuplicateSlots,
   onUndo,
   onSaveSnapshot,
+  onSelectionChange,
 }: LayoutCanvasProps) {
   // Core State
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -98,6 +100,11 @@ export default function LayoutCanvas({
   onUpdateSlotRef.current = onUpdateSlot;
   onUndoRef.current = onUndo;
   onSaveSnapshotRef.current = onSaveSnapshot;
+
+  // Notify parent of selection changes (for stepped mode per-slot editing)
+  useEffect(() => {
+    onSelectionChange?.(Array.from(selectedIds));
+  }, [selectedIds, onSelectionChange]);
 
   // Helper to handle multiple updates
   const handleUpdateSlots = useCallback((updates: { id: string, x: number, y: number }[]) => {

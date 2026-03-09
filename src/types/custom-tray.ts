@@ -1,4 +1,4 @@
-export type AppMode = "grid" | "custom";
+export type AppMode = "grid" | "custom" | "stepped";
 
 /** 自由放置的凹槽 */
 export interface FreeSlot {
@@ -9,6 +9,14 @@ export interface FreeSlot {
   width: number; // 圆形时为直径，椭圆时长轴
   height: number; // 圆形时为直径，椭圆时短轴
   rotation: number; // 旋转角度 (度)
+}
+
+/** 阶梯底座凹槽：继承 FreeSlot，新增每槽独立的墙高和底部高度 */
+export interface SteppedSlot extends FreeSlot {
+  /** 墙高度 (mm)，凹槽从顶面向下的深度 */
+  wallHeight: number;
+  /** 底部高度 (mm)，凹槽底部的保底厚度 */
+  bottomHeight: number;
 }
 
 /** 自定义布局参数（完全独立） */
@@ -34,5 +42,31 @@ export interface CustomLayoutParams {
   /** 是否启用底板磁吸孔 */
   enableBaseHole: boolean;
   /** 底板磁吸孔规格: '19.5' (19.5x1mm) | '25' (25x1.2mm) */
+  baseHoleSize: "19.5" | "25";
+}
+
+/** 阶梯底座布局参数 */
+export interface SteppedLayoutParams {
+  /** 托盘宽度 (mm) */
+  trayWidth: number;
+  /** 托盘深度 (mm) */
+  trayDepth: number;
+  /** 阶梯底座凹槽列表 */
+  slots: SteppedSlot[];
+  /** 凹槽间距 (mm) */
+  spacing: number;
+  /** 边界间距 (mm) */
+  boundarySpacing: number;
+  /** 是否独立调整边界间距 */
+  boundarySpacingIndependent: boolean;
+  /** 底板厚度 (mm) */
+  baseThickness: number;
+  /** 圆角半径 (mm) */
+  cornerRadius: number;
+  /** 底部外扩边距 (mm)，全局参数 */
+  bottomExpandMargin: number;
+  /** 是否启用底板磁吸孔 */
+  enableBaseHole: boolean;
+  /** 底板磁吸孔规格 */
   baseHoleSize: "19.5" | "25";
 }
