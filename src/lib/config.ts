@@ -113,6 +113,7 @@ export const STEPPED_LAYOUT_DEFAULTS: SteppedLayoutParams = {
   slots: [],
   spacing: 5,
   holeDepth: 3,
+  smoothingRadius: 60,
 };
 
 /** 阶梯底座新增槽位默认生长高度 */
@@ -162,6 +163,7 @@ export const STEPPED_LIMITS = {
   spacing: { label: "凹槽间距", min: 2, max: 20, step: 1, unit: "mm" },
   holeDepth: { label: "凹槽深度", min: 0.2, max: 20, step: 0.2, unit: "mm" },
   bottomHeight: { label: "圆柱高度", min: 3, max: 100, step: 1, unit: "mm" },
+  smoothingRadius: { label: "平滑半径", min: 1, max: 150, step: 1, unit: "mm" },
 } as const;
 
 // ═══════════════════════════════════════════

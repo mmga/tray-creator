@@ -14,7 +14,9 @@
       "Bash(npm test)",
       "Bash(pnpm remove:*)",
       "Bash(pnpm build:*)",
-      "Bash(pnpm add:*)"
+      "Bash(pnpm add:*)",
+      "WebFetch(domain:arxiv.org)",
+      "Bash(curl:*)"
     ]
   }
 }

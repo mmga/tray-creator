@@ -163,6 +163,7 @@ export default function Home() {
               onUndo={model.undo}
               onSaveSnapshot={model.saveSnapshot}
               onSelectionChange={mode === "stepped" ? setSelectedSlotIds : undefined}
+              outlinePreview={mode === "stepped" ? steppedModel.outlinePreview : undefined}
             />
           </div>
         </TabsContent>

@@ -9,6 +9,7 @@ import {
   CUSTOM_LIMITS,
   STEPPED_LIMITS,
   STEPPED_SLOT_DEFAULTS,
+  STEPPED_LAYOUT_DEFAULTS,
 } from "@/lib/config";
 
 // ═══════════════════════════════════════════
@@ -88,6 +89,7 @@ export function importParams(
             })),
             spacing: customParams.spacing,
             holeDepth: customParams.holeDepth || 3,
+            smoothingRadius: STEPPED_LAYOUT_DEFAULTS.smoothingRadius,
           };
           validateSteppedParams(steppedParams);
           resolve(steppedParams);
@@ -299,4 +301,22 @@ function validateSteppedParams(p: SteppedLayoutParams) {
   clampField(obj, "trayDepth", STEPPED_LIMITS.trayDepth);
   clampField(obj, "spacing", STEPPED_LIMITS.spacing);
   clampField(obj, "holeDepth", STEPPED_LIMITS.holeDepth);
+
+  // 自动补齐 smoothingRadius（兼容旧版 bridgeRadius）
+  if (
+    typeof obj.smoothingRadius !== "number" ||
+    !Number.isFinite(obj.smoothingRadius as number)
+  ) {
+    // 尝试从旧的 bridgeRadius 读取
+    if (
+      typeof obj.bridgeRadius === "number" &&
+      Number.isFinite(obj.bridgeRadius as number)
+    ) {
+      obj.smoothingRadius = obj.bridgeRadius;
+    } else {
+      obj.smoothingRadius = STEPPED_LAYOUT_DEFAULTS.smoothingRadius;
+    }
+  }
+  delete obj.bridgeRadius;
+  clampField(obj, "smoothingRadius", STEPPED_LIMITS.smoothingRadius);
 }

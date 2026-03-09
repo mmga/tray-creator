@@ -51,8 +51,29 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
         volumeInfo: volume,
       });
     } else if (req.type === "GENERATE_STEPPED") {
+      const shouldDebug =
+        Boolean(
+          (req.params as { debugOrientation?: boolean }).debugOrientation,
+        ) ||
+        (Array.isArray(req.params?.slots) && req.params.slots.length === 2);
+      if (shouldDebug) {
+        console.info("[STEPPED_ORIENT]", "worker_request", {
+          requestId,
+          slots: req.params?.slots?.length ?? 0,
+          spacing: req.params?.spacing,
+          smoothingRadius: req.params?.smoothingRadius,
+          holeDepth: req.params?.holeDepth,
+        });
+      }
+
       const geometry = createSteppedTrayModel(req.params);
       const volume = measureVolume(geometry);
+      if (shouldDebug) {
+        console.info("[STEPPED_ORIENT]", "worker_result", {
+          requestId,
+          volume,
+        });
+      }
       self.postMessage({
         type: "GENERATION_SUCCESS",
         requestId,

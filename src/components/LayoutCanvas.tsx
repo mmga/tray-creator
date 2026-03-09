@@ -2,6 +2,7 @@
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import type { FreeSlot, CustomLayoutParams, SteppedLayoutParams } from "@/types/custom-tray";
+import type { OutlineData } from "@/lib/outline-geometry";
 import { getSlotTolerance, MAX_BUILD_SIZE } from "@/lib/config";
 import { getEllipsePolygon, polygonsIntersect } from "@/lib/collision";
 import AlignmentToolbar from "./AlignmentToolbar";
@@ -24,6 +25,8 @@ interface LayoutCanvasProps {
   onUndo?: () => void;
   onSaveSnapshot?: () => void;
   onSelectionChange?: (ids: string[]) => void;
+  // 轮廓预览（Stepped 模式）
+  outlinePreview?: OutlineData | null;
 }
 
 export default function LayoutCanvas({
@@ -37,6 +40,7 @@ export default function LayoutCanvas({
   onUndo,
   onSaveSnapshot,
   onSelectionChange,
+  outlinePreview,
 }: LayoutCanvasProps) {
   // Core State
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -87,8 +91,8 @@ export default function LayoutCanvas({
   });
 
   const { trayWidth, trayDepth, slots, spacing } = params;
-  const boundarySpacing = params.boundarySpacingIndependent
-    ? params.boundarySpacing
+  const boundarySpacing = 'boundarySpacingIndependent' in params && params.boundarySpacingIndependent
+    ? (params as CustomLayoutParams).boundarySpacing
     : spacing;
   const selectedIdsRef = useRef(selectedIds);
   const slotsRef = useRef(params.slots);
@@ -680,7 +684,7 @@ export default function LayoutCanvas({
             fill="none"
             stroke="#8b7355"
             strokeWidth={0.7 / zoom}
-            rx={Math.max(0, Math.min(params.cornerRadius, effectiveBaseplate.width / 2, effectiveBaseplate.height / 2))}
+            rx={Math.max(0, Math.min('cornerRadius' in params ? params.cornerRadius : 0, effectiveBaseplate.width / 2, effectiveBaseplate.height / 2))}
             strokeOpacity={0.95}
           />
         )}
@@ -904,6 +908,24 @@ export default function LayoutCanvas({
             : <line key={`guide-${i}`} x1={minX} y1={g.value} x2={minX + viewW} y2={g.value}
               stroke="#38bdf8" strokeWidth={0.3 / zoom} strokeDasharray="2 2" pointerEvents="none" opacity={0.8} />
         ))}
+
+        {/* 底座轮廓预览 */}
+        {outlinePreview && outlinePreview.points.length >= 3 && (() => {
+          // 将用户坐标 (x, y) 转为 SVG 坐标 (x, trayDepth - y)
+          const pathData = outlinePreview.points
+            .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${(trayDepth - p.y).toFixed(2)}`)
+            .join(' ') + ' Z';
+          return (
+            <path
+              d={pathData}
+              fill="rgba(139, 115, 85, 0.12)"
+              stroke="#c9a66b"
+              strokeWidth={0.8 / zoom}
+              strokeOpacity={0.9}
+              pointerEvents="none"
+            />
+          );
+        })()}
       </svg>
 
       {/* Marquee Selection Box */}

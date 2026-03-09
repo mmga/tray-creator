@@ -181,6 +181,13 @@ export default function SteppedPanel({
                             onChange={(v) => updateParam("holeDepth", v)}
                             unit={STEPPED_LIMITS.holeDepth.unit}
                         />
+                        <ParamSlider
+                            label={STEPPED_LIMITS.smoothingRadius.label}
+                            value={params.smoothingRadius}
+                            config={STEPPED_LIMITS.smoothingRadius}
+                            onChange={(v) => updateParam("smoothingRadius", v)}
+                            unit={STEPPED_LIMITS.smoothingRadius.unit}
+                        />
                     </div>
                 </SectionHeader>
             </div>

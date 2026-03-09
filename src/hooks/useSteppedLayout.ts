@@ -17,6 +17,11 @@ import { trayWorkerService } from "@/lib/worker/worker-service";
 import { useToast } from "@/hooks/useToast";
 import type * as THREE from "three";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
+import {
+  generateOutline,
+  type OutlineCircle,
+  type OutlineData,
+} from "@/lib/outline-geometry";
 
 export interface UseSteppedLayoutReturn {
   params: SteppedLayoutParams;
@@ -58,6 +63,8 @@ export interface UseSteppedLayoutReturn {
   isPreviewStale: boolean;
   handleGenerate: () => void;
   handleExportSTL: () => void;
+  // 2D 轮廓预览
+  outlinePreview: OutlineData | null;
 }
 
 export function useSteppedLayout(): UseSteppedLayoutReturn {
@@ -397,6 +404,23 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     }
   }, [effectiveDimensions.depth, effectiveDimensions.width, params, toast]);
 
+  // 自动计算轮廓预览（响应 params 变化）
+  const outlinePreviewAuto = useMemo<OutlineData | null>(() => {
+    if (params.slots.length === 0) return null;
+
+    const circles: OutlineCircle[] = params.slots.map((slot) => {
+      const actualW = slot.width + getSlotTolerance(slot.width);
+      const actualH = slot.height + getSlotTolerance(slot.height);
+      return {
+        cx: slot.x,
+        cy: slot.y,
+        rOuter: Math.max(actualW, actualH) / 2 + params.spacing,
+      };
+    });
+
+    return generateOutline(circles, params.smoothingRadius, 64);
+  }, [params]);
+
   return {
     params,
     setParams,
@@ -420,5 +444,6 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     isPreviewStale,
     handleGenerate,
     handleExportSTL,
+    outlinePreview: outlinePreviewAuto,
   };
 }

@@ -55,4 +55,8 @@ export interface SteppedLayoutParams {
   spacing: number;
   /** 凹槽深度 (mm)，全局固定，从柱顶向下挖的深度 */
   holeDepth: number;
+  /** 平滑半径 (mm)，控制底座轮廓的圆滑程度 */
+  smoothingRadius: number;
+  /** 调试开关：输出面朝向/体积日志（仅开发调试） */
+  debugOrientation?: boolean;
 }

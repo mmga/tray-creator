@@ -9,6 +9,25 @@ const _v2 = new THREE.Vector3();
 const _edge1 = new THREE.Vector3();
 const _edge2 = new THREE.Vector3();
 const _normal = new THREE.Vector3();
+const _triNormal = new THREE.Vector3();
+
+function projectTo2D(
+  vertices: number[][],
+  normal: THREE.Vector3,
+): THREE.Vector2[] {
+  const ax = Math.abs(normal.x);
+  const ay = Math.abs(normal.y);
+  const az = Math.abs(normal.z);
+
+  // Drop the dominant axis to get a stable 2D projection.
+  if (ax >= ay && ax >= az) {
+    return vertices.map((v) => new THREE.Vector2(v[1], v[2]));
+  }
+  if (ay >= ax && ay >= az) {
+    return vertices.map((v) => new THREE.Vector2(v[0], v[2]));
+  }
+  return vertices.map((v) => new THREE.Vector2(v[0], v[1]));
+}
 
 /**
  * 将 JSCAD geom3 几何体转换为 Three.js BufferGeometry
@@ -25,7 +44,19 @@ export function jscadToThreeGeometry(jscadGeom: Geom3): THREE.BufferGeometry {
 
   let triangleCount = 0;
   for (const poly of polygons) {
-    triangleCount += poly.vertices.length - 2;
+    const vertices = poly.vertices;
+    if (vertices.length < 3) continue;
+
+    _v0.set(vertices[0][0], vertices[0][1], vertices[0][2]);
+    _v1.set(vertices[1][0], vertices[1][1], vertices[1][2]);
+    _v2.set(vertices[2][0], vertices[2][1], vertices[2][2]);
+    _edge1.subVectors(_v1, _v0);
+    _edge2.subVectors(_v2, _v0);
+    _normal.crossVectors(_edge1, _edge2).normalize();
+
+    const contour2D = projectTo2D(vertices, _normal);
+    const tris = THREE.ShapeUtils.triangulateShape(contour2D, []);
+    triangleCount += tris.length;
   }
 
   const positions = new Float32Array(triangleCount * 3 * 3);
@@ -35,9 +66,7 @@ export function jscadToThreeGeometry(jscadGeom: Geom3): THREE.BufferGeometry {
 
   for (const poly of polygons) {
     const vertices = poly.vertices;
-    const n = vertices.length;
-
-    if (n < 3) continue;
+    if (vertices.length < 3) continue;
 
     _v0.set(vertices[0][0], vertices[0][1], vertices[0][2]);
     _v1.set(vertices[1][0], vertices[1][1], vertices[1][2]);
@@ -47,10 +76,26 @@ export function jscadToThreeGeometry(jscadGeom: Geom3): THREE.BufferGeometry {
     _edge2.subVectors(_v2, _v0);
     _normal.crossVectors(_edge1, _edge2).normalize();
 
-    for (let i = 1; i < n - 1; i++) {
-      const a = vertices[0];
-      const b = vertices[i];
-      const c = vertices[i + 1];
+    const contour2D = projectTo2D(vertices, _normal);
+    const tris = THREE.ShapeUtils.triangulateShape(contour2D, []);
+
+    for (const tri of tris) {
+      let a = vertices[tri[0]];
+      let b = vertices[tri[1]];
+      let c = vertices[tri[2]];
+
+      // Keep triangle winding consistent with the polygon normal.
+      _v0.set(a[0], a[1], a[2]);
+      _v1.set(b[0], b[1], b[2]);
+      _v2.set(c[0], c[1], c[2]);
+      _edge1.subVectors(_v1, _v0);
+      _edge2.subVectors(_v2, _v0);
+      _triNormal.crossVectors(_edge1, _edge2).normalize();
+      if (_triNormal.dot(_normal) < 0) {
+        const tmp = b;
+        b = c;
+        c = tmp;
+      }
 
       positions[offset] = a[0];
       positions[offset + 1] = a[1];
