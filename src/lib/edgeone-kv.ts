@@ -1,5 +1,9 @@
 import type { TrayParams } from "@/types/tray";
-import type { CustomLayoutParams, SteppedLayoutParams, AppMode } from "@/types/custom-tray";
+import type {
+  CustomLayoutParams,
+  SteppedLayoutParams,
+  AppMode,
+} from "@/types/custom-tray";
 
 // ═══════════════════════════════════════════
 // EdgeOne KV 配置发送工具

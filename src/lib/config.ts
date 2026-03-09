@@ -1,5 +1,8 @@
 import type { TrayParams, BasePreset } from "@/types/tray";
-import type { CustomLayoutParams, SteppedLayoutParams } from "@/types/custom-tray";
+import type {
+  CustomLayoutParams,
+  SteppedLayoutParams,
+} from "@/types/custom-tray";
 
 /**
  * ============================================
@@ -169,7 +172,13 @@ export const STEPPED_LIMITS = {
   cornerRadius: PARAM_CONFIG.cornerRadius,
   wallHeight: { label: "墙高", min: 0.5, max: 10, step: 0.2, unit: "mm" },
   bottomHeight: { label: "底部高度", min: 0.5, max: 10, step: 0.2, unit: "mm" },
-  bottomExpandMargin: { label: "底部外扩边距", min: 0, max: 5, step: 0.5, unit: "mm" },
+  bottomExpandMargin: {
+    label: "底部外扩边距",
+    min: 0,
+    max: 5,
+    step: 0.5,
+    unit: "mm",
+  },
 } as const;
 
 // ═══════════════════════════════════════════

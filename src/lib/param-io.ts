@@ -1,6 +1,15 @@
 import type { TrayParams } from "@/types/tray";
-import type { CustomLayoutParams, SteppedLayoutParams, AppMode } from "@/types/custom-tray";
-import { PARAM_CONFIG, CUSTOM_LIMITS, STEPPED_LIMITS, STEPPED_SLOT_DEFAULTS } from "@/lib/config";
+import type {
+  CustomLayoutParams,
+  SteppedLayoutParams,
+  AppMode,
+} from "@/types/custom-tray";
+import {
+  PARAM_CONFIG,
+  CUSTOM_LIMITS,
+  STEPPED_LIMITS,
+  STEPPED_SLOT_DEFAULTS,
+} from "@/lib/config";
 
 // ═══════════════════════════════════════════
 // 参数导入导出工具
@@ -75,8 +84,11 @@ export function importParams(
             trayDepth: customParams.trayDepth,
             slots: customParams.slots.map((s) => ({
               ...s,
-              wallHeight: customParams.holeDepth || STEPPED_SLOT_DEFAULTS.wallHeight,
-              bottomHeight: customParams.baseThickness || STEPPED_SLOT_DEFAULTS.bottomHeight,
+              wallHeight:
+                customParams.holeDepth || STEPPED_SLOT_DEFAULTS.wallHeight,
+              bottomHeight:
+                customParams.baseThickness ||
+                STEPPED_SLOT_DEFAULTS.bottomHeight,
             })),
             spacing: customParams.spacing,
             boundarySpacing: customParams.boundarySpacing,
@@ -292,15 +304,29 @@ function validateSteppedParams(p: SteppedLayoutParams) {
       slot.id = crypto.randomUUID();
     }
     // 自动补齐 wallHeight / bottomHeight
-    if (typeof slot.wallHeight !== "number" || !Number.isFinite(slot.wallHeight as number) || (slot.wallHeight as number) <= 0) {
+    if (
+      typeof slot.wallHeight !== "number" ||
+      !Number.isFinite(slot.wallHeight as number) ||
+      (slot.wallHeight as number) <= 0
+    ) {
       slot.wallHeight = STEPPED_SLOT_DEFAULTS.wallHeight;
     }
-    if (typeof slot.bottomHeight !== "number" || !Number.isFinite(slot.bottomHeight as number) || (slot.bottomHeight as number) <= 0) {
+    if (
+      typeof slot.bottomHeight !== "number" ||
+      !Number.isFinite(slot.bottomHeight as number) ||
+      (slot.bottomHeight as number) <= 0
+    ) {
       slot.bottomHeight = STEPPED_SLOT_DEFAULTS.bottomHeight;
     }
     // 钳位
-    slot.wallHeight = Math.max(STEPPED_LIMITS.wallHeight.min, Math.min(STEPPED_LIMITS.wallHeight.max, slot.wallHeight as number));
-    slot.bottomHeight = Math.max(STEPPED_LIMITS.bottomHeight.min, Math.min(STEPPED_LIMITS.bottomHeight.max, slot.bottomHeight as number));
+    slot.wallHeight = Math.max(
+      STEPPED_LIMITS.wallHeight.min,
+      Math.min(STEPPED_LIMITS.wallHeight.max, slot.wallHeight as number),
+    );
+    slot.bottomHeight = Math.max(
+      STEPPED_LIMITS.bottomHeight.min,
+      Math.min(STEPPED_LIMITS.bottomHeight.max, slot.bottomHeight as number),
+    );
   }
 
   // 钳位全局参数

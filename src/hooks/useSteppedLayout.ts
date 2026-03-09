@@ -1,8 +1,16 @@
 "use client";
 
 import { useState, useCallback, useRef, useMemo } from "react";
-import type { SteppedLayoutParams, SteppedSlot, FreeSlot } from "@/types/custom-tray";
-import { STEPPED_LAYOUT_DEFAULTS, STEPPED_SLOT_DEFAULTS, getSlotTolerance } from "@/lib/config";
+import type {
+  SteppedLayoutParams,
+  SteppedSlot,
+  FreeSlot,
+} from "@/types/custom-tray";
+import {
+  STEPPED_LAYOUT_DEFAULTS,
+  STEPPED_SLOT_DEFAULTS,
+  getSlotTolerance,
+} from "@/lib/config";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
 import { useUndoHistory } from "@/hooks/useUndoHistory";
 import { trayWorkerService } from "@/lib/worker/worker-service";
@@ -29,7 +37,10 @@ export interface UseSteppedLayoutReturn {
   updateSlotWallHeight: (id: string, wallHeight: number) => void;
   updateSlotBottomHeight: (id: string, bottomHeight: number) => void;
   updateSelectedSlotsWallHeight: (ids: string[], wallHeight: number) => void;
-  updateSelectedSlotsBottomHeight: (ids: string[], bottomHeight: number) => void;
+  updateSelectedSlotsBottomHeight: (
+    ids: string[],
+    bottomHeight: number,
+  ) => void;
   effectiveDimensions: {
     width: number;
     depth: number;
@@ -293,9 +304,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
       pushState(paramsRef.current);
       setParams((prev) => ({
         ...prev,
-        slots: prev.slots.map((s) =>
-          s.id === id ? { ...s, wallHeight } : s,
-        ),
+        slots: prev.slots.map((s) => (s.id === id ? { ...s, wallHeight } : s)),
       }));
       setIsPreviewStale(true);
     },
@@ -447,12 +456,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
         `STL 导出失败：${err instanceof Error ? err.message : "未知错误"}`,
       );
     }
-  }, [
-    effectiveDimensions.depth,
-    effectiveDimensions.width,
-    params,
-    toast,
-  ]);
+  }, [effectiveDimensions.depth, effectiveDimensions.width, params, toast]);
 
   return {
     params,

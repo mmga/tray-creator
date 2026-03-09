@@ -1,6 +1,9 @@
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { TrayParams } from "@/types/tray";
-import type { CustomLayoutParams, SteppedLayoutParams } from "@/types/custom-tray";
+import type {
+  CustomLayoutParams,
+  SteppedLayoutParams,
+} from "@/types/custom-tray";
 import type { WorkerRequest, WorkerResponse } from "./tray.worker";
 
 let _nextId = 0;
