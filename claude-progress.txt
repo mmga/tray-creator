@@ -1,12 +1,26 @@
 # 项目进度 — 访问统计功能
 
 ## Session 1 - 调研与初始化 (2026-03-06)
-- 完成现有项目架构调研，确认 Public 端为纯静态导出，需走 EdgeOne 边缘函数 + KV
+- 完成现有项目架构调研，确认 Public 端为纯静态导出，需要 EdgeOne 边缘函数 + KV
 - 编写了分析文档 access_statistics_analysis.md
 - 用户确认需要：事件追踪、Referrer 来源、设备分布、Admin 面板（低优先级）
 - 创建了 feature_list.json，共 28 个功能测试用例
   - high 优先级：18 个（边缘函数、前端上报、事件追踪、来源/设备记录、本地代理、兼容性）
   - medium 优先级：7 个（Admin 面板可视化）
   - low 优先级：1 个（数据导出）
-  - 2 个 medium 样式类
+  - 2 个 medium 样式
 - 待开始实现功能
+
+## Session 2 - 批量实现核心功能 (2026-03-06)
+- 实现了: EdgeOne 边缘函数 stats.js (POST/GET/OPTIONS)
+  - PV/UV 统计、事件追踪、Referrer 来源、设备分布、GET 查询接口（需鉴权）、CORS
+- 实现了: 前端 analytics.ts 模块
+  - fingerprint 生成、reportPageView、reportAction、5秒防刷 debounce、keepalive
+- 实现了: Admin 代理 stats route.ts
+- 集成点: page.tsx (PV)、useTrayModel.ts (generate_3d + export_stl)、
+  useCustomLayout.ts (generate_3d + export_stl)、ParameterPanel.tsx (submit_order)、
+  CustomPanel.tsx (submit_order)
+- 更新了 .env.example 添加 EDGEONE_STATS_URL 和 NEXT_PUBLIC_EDGEONE_STATS_URL
+- 测试 #1-17, #26 标记为通过 (build 编译成功，TypeScript 类型检查通过)
+- 当前进度: 18/28 测试通过
+- 下一步建议: #18-25 Admin 面板 UI 组件，或 #27-28 兼容性验证
