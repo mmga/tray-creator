@@ -112,14 +112,7 @@ export const STEPPED_LAYOUT_DEFAULTS: SteppedLayoutParams = {
   trayDepth: 260,
   slots: [],
   spacing: 5,
-  boundarySpacing: 5,
-  boundarySpacingIndependent: false,
-  baseThickness: 3,
-  cornerRadius: 6,
-  bottomExpandMargin: 1.0,
   holeDepth: 3,
-  enableBaseHole: false,
-  baseHoleSize: "25",
 };
 
 /** 阶梯底座新增槽位默认生长高度 */
@@ -167,18 +160,8 @@ export const STEPPED_LIMITS = {
   trayWidth: { label: "宽度", min: 50, max: 260, step: 1, unit: "mm" },
   trayDepth: { label: "深度", min: 50, max: 260, step: 1, unit: "mm" },
   spacing: { label: "凹槽间距", min: 2, max: 20, step: 1, unit: "mm" },
-  boundarySpacing: { label: "边界间距", min: 2, max: 20, step: 1, unit: "mm" },
-  baseThickness: PARAM_CONFIG.baseThickness,
-  cornerRadius: PARAM_CONFIG.cornerRadius,
-  holeDepth: { label: "凹槽深度", min: 2, max: 20, step: 0.5, unit: "mm" },
+  holeDepth: { label: "凹槽深度", min: 0.2, max: 20, step: 0.2, unit: "mm" },
   bottomHeight: { label: "圆柱高度", min: 3, max: 100, step: 1, unit: "mm" },
-  bottomExpandMargin: {
-    label: "底部外扩边距",
-    min: 0,
-    max: 5,
-    step: 0.5,
-    unit: "mm",
-  },
 } as const;
 
 // ═══════════════════════════════════════════

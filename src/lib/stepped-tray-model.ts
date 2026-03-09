@@ -2,7 +2,6 @@ import { booleans, primitives, transforms, extrusions } from "@jscad/modeling";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 import { RENDER_CONFIG, getSlotTolerance } from "@/lib/config";
-import { createBaseBody } from "@/lib/model-utils";
 
 const { subtract, union } = booleans;
 const { translate, rotateZ } = transforms;
@@ -29,9 +28,7 @@ function getSlotBoundingHalfSize(
 }
 
 function calculateEffectiveBaseplate(params: SteppedLayoutParams) {
-  const boundarySpacing = params.boundarySpacingIndependent
-    ? params.boundarySpacing
-    : params.spacing;
+  const boundarySpacing = params.spacing;
 
   if (params.slots.length === 0) {
     return {
@@ -82,7 +79,7 @@ function calculateEffectiveBaseplate(params: SteppedLayoutParams) {
  * - 全局固定深度 holeDepth 从柱顶向下挖出凹槽
  */
 export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
-  const { slots, cornerRadius, spacing, holeDepth } = params;
+  const { slots, spacing, holeDepth } = params;
   const effective = calculateEffectiveBaseplate(params);
   const trayWidth = effective.hasSlots ? effective.width : params.trayWidth;
   const trayDepth = effective.hasSlots ? effective.depth : params.trayDepth;
@@ -135,8 +132,9 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
   }
 
   if (columns.length === 0) {
-    // 无槽时返回一个极薄的占位体
-    return createBaseBody(trayWidth, trayDepth, 0.1, cornerRadius);
+    // 无槽时返回单个极薄椭圆柱占位体
+    const ph = extrudeLinear({ height: 0.1 }, ellipse({ radius: [1, 1], segments: 4 }));
+    return ph;
   }
 
   // 所有柱子合并

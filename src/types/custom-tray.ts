@@ -51,22 +51,8 @@ export interface SteppedLayoutParams {
   trayDepth: number;
   /** 阶梯底座凹槽列表 */
   slots: SteppedSlot[];
-  /** 凹槽间距 (mm) */
+  /** 凹槽间距 (mm)，同时作为柱子外扩量 */
   spacing: number;
-  /** 边界间距 (mm) */
-  boundarySpacing: number;
-  /** 是否独立调整边界间距 */
-  boundarySpacingIndependent: boolean;
-  /** 底板厚度 (mm) */
-  baseThickness: number;
-  /** 圆角半径 (mm) */
-  cornerRadius: number;
-  /** 底部外扩边距 (mm)，全局参数 */
-  bottomExpandMargin: number;
   /** 凹槽深度 (mm)，全局固定，从柱顶向下挖的深度 */
   holeDepth: number;
-  /** 是否启用底板磁吸孔 */
-  enableBaseHole: boolean;
-  /** 底板磁吸孔规格 */
-  baseHoleSize: "19.5" | "25";
 }

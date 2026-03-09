@@ -87,14 +87,7 @@ export function importParams(
               bottomHeight: STEPPED_SLOT_DEFAULTS.bottomHeight,
             })),
             spacing: customParams.spacing,
-            boundarySpacing: customParams.boundarySpacing,
-            boundarySpacingIndependent: customParams.boundarySpacingIndependent,
-            baseThickness: customParams.baseThickness,
-            cornerRadius: customParams.cornerRadius,
-            bottomExpandMargin: 1.0,
             holeDepth: customParams.holeDepth || 3,
-            enableBaseHole: customParams.enableBaseHole,
-            baseHoleSize: customParams.baseHoleSize,
           };
           validateSteppedParams(steppedParams);
           resolve(steppedParams);
@@ -251,22 +244,8 @@ function validateCustomParams(p: CustomLayoutParams) {
 
 function validateSteppedParams(p: SteppedLayoutParams) {
   const obj = p as unknown as Record<string, unknown>;
-  const numFields = [
-    "trayWidth",
-    "trayDepth",
-    "spacing",
-    "baseThickness",
-    "cornerRadius",
-    "bottomExpandMargin",
-    "holeDepth",
-  ];
-  for (const f of numFields) requireNumber(obj, f);
-  if (typeof obj.boundarySpacing !== "number") {
-    obj.boundarySpacing = obj.spacing;
-  }
-  if (typeof obj.boundarySpacingIndependent !== "boolean") {
-    obj.boundarySpacingIndependent = false;
-  }
+  for (const f of ["trayWidth", "trayDepth", "spacing", "holeDepth"])
+    requireNumber(obj, f);
   if (!Array.isArray(obj.slots)) {
     throw new Error("缺少或无效的字段: slots");
   }
@@ -319,13 +298,5 @@ function validateSteppedParams(p: SteppedLayoutParams) {
   clampField(obj, "trayWidth", STEPPED_LIMITS.trayWidth);
   clampField(obj, "trayDepth", STEPPED_LIMITS.trayDepth);
   clampField(obj, "spacing", STEPPED_LIMITS.spacing);
-  clampField(obj, "boundarySpacing", STEPPED_LIMITS.boundarySpacing);
-  clampField(obj, "baseThickness", STEPPED_LIMITS.baseThickness);
-  clampField(obj, "cornerRadius", STEPPED_LIMITS.cornerRadius);
   clampField(obj, "holeDepth", STEPPED_LIMITS.holeDepth);
-  clampField(obj, "bottomExpandMargin", STEPPED_LIMITS.bottomExpandMargin);
-
-  if (!obj.boundarySpacingIndependent) {
-    obj.boundarySpacing = obj.spacing;
-  }
 }

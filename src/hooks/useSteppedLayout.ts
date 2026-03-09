@@ -80,13 +80,6 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
   paramsRef.current = params;
   const [isPreviewStale, setIsPreviewStale] = useState(false);
 
-  const resolveBoundarySpacing = useCallback((current: SteppedLayoutParams) => {
-    if (current.boundarySpacingIndependent) {
-      return current.boundarySpacing;
-    }
-    return current.spacing;
-  }, []);
-
   const getSlotBoundingHalfSize = useCallback((slot: FreeSlot) => {
     const rad = (slot.rotation * Math.PI) / 180;
     const a = (slot.width + getSlotTolerance(slot.width)) / 2;
@@ -102,7 +95,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
 
   const calculateEffectiveDimensions = useCallback(() => {
     const current = paramsRef.current;
-    const boundarySpacing = resolveBoundarySpacing(current);
+    const boundarySpacing = current.spacing;
     if (current.slots.length === 0) {
       return { width: 0, depth: 0, minX: 0, maxX: 0, minY: 0, maxY: 0 };
     }
@@ -128,7 +121,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
       minY,
       maxY,
     };
-  }, [getSlotBoundingHalfSize, resolveBoundarySpacing]);
+  }, [getSlotBoundingHalfSize]);
 
   const effectiveDimensions = useMemo(
     () => calculateEffectiveDimensions(),
@@ -155,31 +148,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
       setParams((prev) => {
         if (key === "spacing") {
           const nextSpacing = value as SteppedLayoutParams["spacing"];
-          if (!prev.boundarySpacingIndependent) {
-            return {
-              ...prev,
-              spacing: nextSpacing,
-              boundarySpacing: nextSpacing,
-            };
-          }
           return { ...prev, spacing: nextSpacing };
-        }
-
-        if (key === "boundarySpacingIndependent") {
-          const independent =
-            value as SteppedLayoutParams["boundarySpacingIndependent"];
-          if (!independent) {
-            return {
-              ...prev,
-              boundarySpacingIndependent: false,
-              boundarySpacing: prev.spacing,
-            };
-          }
-          return {
-            ...prev,
-            boundarySpacingIndependent: true,
-            boundarySpacing: prev.boundarySpacing ?? prev.spacing,
-          };
         }
 
         return { ...prev, [key]: value };

@@ -165,7 +165,7 @@ export default function SteppedPanel({
             {/* 结构参数 */}
             <div className="iron-panel rounded-sm p-4">
                 <SectionHeader icon={Wrench} title="结构参数" collapsible defaultOpen={false}
-                    summary={`槽距${params.spacing}mm / 边距${(params.boundarySpacingIndependent ? params.boundarySpacing : params.spacing)}mm`}>
+                    summary={`槽距${params.spacing}mm / 凹槽深度${params.holeDepth}mm`}>
                     <div className="space-y-4">
                         <ParamSlider
                             label={STEPPED_LIMITS.spacing.label}
@@ -174,39 +174,12 @@ export default function SteppedPanel({
                             onChange={(v) => updateParam("spacing", v)}
                             unit={STEPPED_LIMITS.spacing.unit}
                         />
-                        <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
-                            <Label htmlFor="stepped-boundary-spacing-independent" className="text-sm cursor-pointer text-[#f0d8b8]">
-                                边界间距独立调整
-                            </Label>
-                            <Switch
-                                id="stepped-boundary-spacing-independent"
-                                checked={params.boundarySpacingIndependent}
-                                onCheckedChange={(checked) => updateParam("boundarySpacingIndependent", checked)}
-                                className="data-[state=checked]:bg-[#8cb880]"
-                            />
-                        </div>
-                        {params.boundarySpacingIndependent && (
-                            <ParamSlider
-                                label={STEPPED_LIMITS.boundarySpacing.label}
-                                value={params.boundarySpacing}
-                                config={STEPPED_LIMITS.boundarySpacing}
-                                onChange={(v) => updateParam("boundarySpacing", v)}
-                                unit={STEPPED_LIMITS.boundarySpacing.unit}
-                            />
-                        )}
                         <ParamSlider
                             label={STEPPED_LIMITS.holeDepth.label}
                             value={params.holeDepth}
                             config={STEPPED_LIMITS.holeDepth}
                             onChange={(v) => updateParam("holeDepth", v)}
                             unit={STEPPED_LIMITS.holeDepth.unit}
-                        />
-                        <ParamSlider
-                            label={PARAM_CONFIG.cornerRadius.label}
-                            value={params.cornerRadius}
-                            config={STEPPED_LIMITS.cornerRadius}
-                            onChange={(v) => updateParam("cornerRadius", v)}
-                            unit={PARAM_CONFIG.cornerRadius.unit}
                         />
                     </div>
                 </SectionHeader>
