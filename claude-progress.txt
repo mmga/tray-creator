@@ -1,0 +1,32 @@
+# 自定义阶梯底座 - 开发进度日志
+
+## 项目概述
+在现有 tray-creator 应用中新增「自定义阶梯底座」模式标签页。
+复用现有自定义模式的 2D 编辑交互，但引入"墙 + 底部平台"分层凹槽结构，
+支持每槽独立设置 wallHeight / bottomHeight，以及全局 bottomExpandMargin。
+
+- 需求文档: doc/custom-layered.md
+- 功能清单: feature_list.json (80 项)
+
+## 统计
+- 总功能: 80
+- 已通过: 0
+- functional: 70 项 (high: 46, medium: 20, low: 4)
+- style: 10 项 (high: 2, medium: 4, low: 4)
+
+## Phase 分布
+- Phase 1 (Mode 框架接入): 4 functional + 1 style = 5 项
+- Phase 2 (类型与配置): 4 项
+- Phase 3 (状态管理 hook): 9 项
+- Phase 4 (UI 面板与 2D 编辑): 22 functional + 9 style = 31 项
+- Phase 5 (几何生成器): 10 项
+- Phase 6 (Worker/Service): 5 项
+- Phase 7 (导入导出兼容): 5 项
+- Phase 8 (价格与尺寸): 2 项
+- Phase 9 (回归验证): 3 项
+
+## 初始化
+- 日期: 2026-03-09
+- 创建 feature_list.json (80 个功能测试用例)
+- 创建 claude-progress.txt (本文件)
+- 下一步: 从 Phase 1 的 #1 开始实现

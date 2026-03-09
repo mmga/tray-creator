@@ -1,0 +1,1122 @@
+[
+  {
+    "id": 1,
+    "category": "functional",
+    "priority": "high",
+    "phase": 1,
+    "description": "扩展 AppMode 类型，新增 \"stepped\" 模式值",
+    "steps": [
+      "打开 src/types/custom-tray.ts",
+      "确认 AppMode 包含 \"stepped\" 值",
+      "确认现有 \"grid\" | \"custom\" 仍可正常使用",
+      "TypeScript 编译无报错"
+    ],
+    "passes": false
+  },
+  {
+    "id": 2,
+    "category": "functional",
+    "priority": "high",
+    "phase": 1,
+    "description": "ModeTabs 新增「自定义阶梯底座」标签页入口",
+    "steps": [
+      "打开应用，检查顶部标签栏",
+      "确认出现第三个标签页「自定义阶梯底座」",
+      "点击标签页可正常切换，不报错",
+      "切换回网格/自定义模式后标签高亮正确"
+    ],
+    "passes": false
+  },
+  {
+    "id": 3,
+    "category": "functional",
+    "priority": "high",
+    "phase": 1,
+    "description": "page.tsx 中阶梯底座模式分支渲染框架就位",
+    "steps": [
+      "切换到「自定义阶梯底座」模式",
+      "左侧面板区域能渲染出 SteppedPanel（即使内容为占位）",
+      "右侧视口区域能渲染出 2D/3D 切换标签",
+      "无 React 渲染错误或控制台异常"
+    ],
+    "passes": false
+  },
+  {
+    "id": 4,
+    "category": "functional",
+    "priority": "high",
+    "phase": 1,
+    "description": "切换模式时旧 grid/custom 功能无回归",
+    "steps": [
+      "在网格模式下修改参数并生成 3D 模型",
+      "切换到自定义模式，添加凹槽并生成 3D 模型",
+      "切换到阶梯底座模式再切回，确认前两种模式数据未丢失",
+      "确认无控制台报错"
+    ],
+    "passes": false
+  },
+  {
+    "id": 5,
+    "category": "functional",
+    "priority": "high",
+    "phase": 2,
+    "description": "定义 SteppedSlot 接口：继承 FreeSlot 并新增 wallHeight / bottomHeight",
+    "steps": [
+      "打开 src/types/custom-tray.ts",
+      "确认 SteppedSlot extends FreeSlot",
+      "确认 wallHeight: number 和 bottomHeight: number 字段存在",
+      "TypeScript 编译无报错"
+    ],
+    "passes": false
+  },
+  {
+    "id": 6,
+    "category": "functional",
+    "priority": "high",
+    "phase": 2,
+    "description": "定义 SteppedLayoutParams 接口，包含每槽独立高度字段和全局 bottomExpandMargin",
+    "steps": [
+      "确认 SteppedLayoutParams 包含 slots: SteppedSlot[]",
+      "确认 bottomExpandMargin: number 字段存在（全局）",
+      "确认保留与 CustomLayoutParams 共享的字段（trayWidth, trayDepth, spacing 等）",
+      "TypeScript 编译无报错"
+    ],
+    "passes": false
+  },
+  {
+    "id": 7,
+    "category": "functional",
+    "priority": "high",
+    "phase": 2,
+    "description": "config.ts 新增阶梯底座默认参数 STEPPED_LAYOUT_DEFAULTS",
+    "steps": [
+      "打开 src/lib/config.ts",
+      "确认 STEPPED_LAYOUT_DEFAULTS 存在且类型为 SteppedLayoutParams",
+      "确认 bottomExpandMargin 默认值为 1.0",
+      "确认 slots 默认为空数组",
+      "确认 wallHeight/bottomHeight 有合理的全局默认值供新增槽位使用"
+    ],
+    "passes": false
+  },
+  {
+    "id": 8,
+    "category": "functional",
+    "priority": "high",
+    "phase": 2,
+    "description": "config.ts 新增阶梯底座参数范围限制 STEPPED_LIMITS",
+    "steps": [
+      "确认 STEPPED_LIMITS 包含 wallHeight 的 min/max/step/unit",
+      "确认 STEPPED_LIMITS 包含 bottomHeight 的 min/max/step/unit",
+      "确认 STEPPED_LIMITS 包含 bottomExpandMargin 的 min/max/step/unit",
+      "所有范围合理（如 wallHeight min >= 0.5, bottomHeight min >= 0.5）"
+    ],
+    "passes": false
+  },
+  {
+    "id": 9,
+    "category": "functional",
+    "priority": "high",
+    "phase": 3,
+    "description": "useSteppedLayout hook 初始化状态并返回 params 和基础 API",
+    "steps": [
+      "src/hooks/useSteppedLayout.ts 文件存在",
+      "hook 返回 params（类型为 SteppedLayoutParams）",
+      "hook 返回 setParams / updateParam / addSlot / removeSlot",
+      "初始 params 等同于 STEPPED_LAYOUT_DEFAULTS"
+    ],
+    "passes": false
+  },
+  {
+    "id": 10,
+    "category": "functional",
+    "priority": "high",
+    "phase": 3,
+    "description": "useSteppedLayout.addSlot 自动填充默认 wallHeight 和 bottomHeight",
+    "steps": [
+      "调用 addSlot(32) 添加 32mm 圆形凹槽",
+      "检查新增槽位的 wallHeight 等于配置默认值",
+      "检查新增槽位的 bottomHeight 等于配置默认值",
+      "新增槽位具有正确的 shape/width/height/rotation 等基础字段"
+    ],
+    "passes": false
+  },
+  {
+    "id": 11,
+    "category": "functional",
+    "priority": "high",
+    "phase": 3,
+    "description": "useSteppedLayout 提供 updateSlotWallHeight 和 updateSlotBottomHeight API",
+    "steps": [
+      "先添加一个槽位，记录其 id",
+      "调用 updateSlotWallHeight(id, 3.0)，确认该槽 wallHeight 变为 3.0",
+      "调用 updateSlotBottomHeight(id, 2.0)，确认该槽 bottomHeight 变为 2.0",
+      "其他槽位不受影响"
+    ],
+    "passes": false
+  },
+  {
+    "id": 12,
+    "category": "functional",
+    "priority": "high",
+    "phase": 3,
+    "description": "useSteppedLayout 撤销/重做功能正常",
+    "steps": [
+      "添加一个槽位",
+      "修改其 wallHeight",
+      "调用 undo，确认 wallHeight 回到修改前的值",
+      "再次 undo，确认槽位被移除",
+      "确认 canUndo 在无历史时为 false"
+    ],
+    "passes": false
+  },
+  {
+    "id": 13,
+    "category": "functional",
+    "priority": "high",
+    "phase": 3,
+    "description": "useSteppedLayout 的 updateSlotPosition / updateSlotRotation 正常工作",
+    "steps": [
+      "添加槽位并记录初始 x,y",
+      "调用 updateSlotPosition(id, 100, 100)，确认坐标更新",
+      "调用 updateSlotRotation(id, 45)，确认旋转更新",
+      "确认不影响 wallHeight / bottomHeight"
+    ],
+    "passes": false
+  },
+  {
+    "id": 14,
+    "category": "functional",
+    "priority": "high",
+    "phase": 3,
+    "description": "useSteppedLayout 的 duplicateSlots 保留每槽高度字段",
+    "steps": [
+      "添加槽位并设置自定义 wallHeight=3.5, bottomHeight=1.5",
+      "调用 duplicateSlots([id])",
+      "确认新槽位继承原槽的 wallHeight 和 bottomHeight",
+      "确认新槽位有独立的 id"
+    ],
+    "passes": false
+  },
+  {
+    "id": 15,
+    "category": "functional",
+    "priority": "high",
+    "phase": 3,
+    "description": "useSteppedLayout 的 effectiveDimensions 计算正确",
+    "steps": [
+      "添加两个槽位到不同位置",
+      "检查 effectiveDimensions 的 width/depth 是否正确反映边界包围盒 + boundarySpacing",
+      "无槽位时返回 width=0, depth=0"
+    ],
+    "passes": false
+  },
+  {
+    "id": 16,
+    "category": "functional",
+    "priority": "high",
+    "phase": 3,
+    "description": "useSteppedLayout 连接 worker 生成 3D 模型并返回 threeGeometry",
+    "steps": [
+      "添加一个槽位",
+      "调用 handleGenerate()",
+      "确认 isGenerating 先变为 true 再变为 false",
+      "确认 threeGeometry 不为 null",
+      "确认 volume > 0"
+    ],
+    "passes": false
+  },
+  {
+    "id": 17,
+    "category": "functional",
+    "priority": "high",
+    "phase": 3,
+    "description": "useSteppedLayout 的 handleExportSTL 正常工作",
+    "steps": [
+      "生成 3D 模型后调用 handleExportSTL()",
+      "确认浏览器触发下载",
+      "确认文件名包含 stepped 标识",
+      "下载的 STL 文件大小 > 0"
+    ],
+    "passes": false
+  },
+  {
+    "id": 18,
+    "category": "functional",
+    "priority": "high",
+    "phase": 4,
+    "description": "SteppedPanel 渲染基础参数区：底板尺寸、间距、底板厚度、圆角",
+    "steps": [
+      "切换到阶梯底座模式",
+      "左侧面板显示宽度/深度滑杆",
+      "显示凹槽间距和边界间距滑杆",
+      "显示底板厚度和圆角半径滑杆",
+      "拖动滑杆可正常调整参数值"
+    ],
+    "passes": false
+  },
+  {
+    "id": 19,
+    "category": "functional",
+    "priority": "high",
+    "phase": 4,
+    "description": "SteppedPanel 渲染全局 bottomExpandMargin 滑杆",
+    "steps": [
+      "切换到阶梯底座模式",
+      "面板中存在「底部外扩边距」滑杆",
+      "滑杆默认值为 1.0mm",
+      "拖动滑杆可调整 bottomExpandMargin 参数"
+    ],
+    "passes": false
+  },
+  {
+    "id": 20,
+    "category": "functional",
+    "priority": "high",
+    "phase": 4,
+    "description": "SteppedPanel 提供凹槽预设按钮（圆形 + 椭圆）",
+    "steps": [
+      "阶梯底座面板中显示与自定义模式相同的凹槽预设按钮",
+      "点击 25mm 预设，画布中添加一个 25mm 圆形凹槽",
+      "点击 60x35.5mm 椭圆预设，画布中添加对应椭圆凹槽",
+      "新添加的凹槽具有默认的 wallHeight 和 bottomHeight"
+    ],
+    "passes": false
+  },
+  {
+    "id": 21,
+    "category": "functional",
+    "priority": "high",
+    "phase": 4,
+    "description": "SteppedPanel 选中槽后显示每槽 wallHeight / bottomHeight 编辑区",
+    "steps": [
+      "添加一个凹槽并在 2D 画布中选中它",
+      "面板中出现该槽的「墙高」和「底部高度」参数控件",
+      "修改墙高，确认值更新且 3D 预览标记为过期",
+      "修改底部高度，确认值更新且 3D 预览标记为过期"
+    ],
+    "passes": false
+  },
+  {
+    "id": 22,
+    "category": "functional",
+    "priority": "high",
+    "phase": 4,
+    "description": "SteppedPanel 未选中槽时不显示每槽参数编辑区",
+    "steps": [
+      "添加凹槽后取消选中（点击画布空白区域）",
+      "确认面板中不显示「墙高」和「底部高度」控件",
+      "或显示提示文字如「请选择凹槽以编辑参数」"
+    ],
+    "passes": false
+  },
+  {
+    "id": 23,
+    "category": "functional",
+    "priority": "high",
+    "phase": 4,
+    "description": "2D LayoutCanvas 在阶梯底座模式下正常渲染凹槽",
+    "steps": [
+      "切换到阶梯底座模式",
+      "添加多个凹槽",
+      "2D 画布中正确显示所有凹槽的位置和大小",
+      "凹槽颜色与自定义模式一致（按尺寸映射）"
+    ],
+    "passes": false
+  },
+  {
+    "id": 24,
+    "category": "functional",
+    "priority": "high",
+    "phase": 4,
+    "description": "2D LayoutCanvas 在阶梯底座模式下支持拖拽移动凹槽",
+    "steps": [
+      "在 2D 画布中添加一个凹槽",
+      "鼠标按住凹槽并拖动",
+      "凹槽跟随鼠标移动，位置实时更新",
+      "释放后新位置被保存"
+    ],
+    "passes": false
+  },
+  {
+    "id": 25,
+    "category": "functional",
+    "priority": "high",
+    "phase": 4,
+    "description": "2D LayoutCanvas 在阶梯底座模式下支持旋转凹槽",
+    "steps": [
+      "添加一个椭圆凹槽",
+      "使用旋转操作（快捷键或控件）旋转凹槽",
+      "确认凹槽在画布上正确旋转",
+      "确认旋转值被保存到 slot.rotation"
+    ],
+    "passes": false
+  },
+  {
+    "id": 26,
+    "category": "functional",
+    "priority": "high",
+    "phase": 4,
+    "description": "2D LayoutCanvas 在阶梯底座模式下支持多选与对齐",
+    "steps": [
+      "添加 3 个以上凹槽",
+      "框选或 Shift 点选多个凹槽",
+      "使用对齐工具（AlignmentToolbar）执行左对齐",
+      "确认选中凹槽按预期对齐"
+    ],
+    "passes": false
+  },
+  {
+    "id": 27,
+    "category": "functional",
+    "priority": "high",
+    "phase": 4,
+    "description": "2D LayoutCanvas 在阶梯底座模式下碰撞检测正常（纯 2D，不受 Z 轴影响）",
+    "steps": [
+      "添加两个凹槽并拖近使其 2D 投影重叠",
+      "确认碰撞检测标红或阻止重叠",
+      "修改其中一个凹槽的 wallHeight/bottomHeight",
+      "确认碰撞检测行为不变（Z 轴不影响 2D 碰撞）"
+    ],
+    "passes": false
+  },
+  {
+    "id": 28,
+    "category": "functional",
+    "priority": "high",
+    "phase": 4,
+    "description": "2D LayoutCanvas 在阶梯底座模式下支持键盘快捷键（删除、复制、撤销）",
+    "steps": [
+      "选中凹槽后按 Delete/Backspace 删除",
+      "选中凹槽后按 Ctrl+D 复制",
+      "按 Ctrl+Z 撤销",
+      "所有操作正常执行无报错"
+    ],
+    "passes": false
+  },
+  {
+    "id": 29,
+    "category": "functional",
+    "priority": "high",
+    "phase": 4,
+    "description": "SteppedPanel 生成按钮调用 handleGenerate 并切换到 3D 视图",
+    "steps": [
+      "添加凹槽后点击「生成」按钮",
+      "按钮显示 loading 状态",
+      "生成完成后自动切换到 3D 视图",
+      "3D 视图中显示阶梯底座模型"
+    ],
+    "passes": false
+  },
+  {
+    "id": 30,
+    "category": "functional",
+    "priority": "high",
+    "phase": 4,
+    "description": "SteppedPanel 导出 STL 按钮正常工作",
+    "steps": [
+      "生成 3D 模型后点击「导出 STL」按钮",
+      "浏览器触发文件下载",
+      "文件名包含 stepped 标识",
+      "文件可被 3D 打印切片软件打开"
+    ],
+    "passes": false
+  },
+  {
+    "id": 31,
+    "category": "functional",
+    "priority": "high",
+    "phase": 4,
+    "description": "SteppedPanel 磁吸孔配置区正常复用",
+    "steps": [
+      "阶梯底座面板中显示磁吸孔开关",
+      "开启磁吸孔后显示规格选择（19.5mm / 25mm）",
+      "磁吸孔参数正确写入 SteppedLayoutParams",
+      "生成的 3D 模型底部有磁吸孔"
+    ],
+    "passes": false
+  },
+  {
+    "id": 32,
+    "category": "functional",
+    "priority": "high",
+    "phase": 5,
+    "description": "stepped-tray-model: 基础底板实体生成正确",
+    "steps": [
+      "创建一个无凹槽的阶梯底座参数",
+      "调用 createSteppedTrayModel()",
+      "返回的 Geom3 为一个标准圆角矩形柱体",
+      "总高度等于 max(所有槽 bottomHeight + wallHeight) 或 baseThickness + max(wallHeight)"
+    ],
+    "passes": false
+  },
+  {
+    "id": 33,
+    "category": "functional",
+    "priority": "high",
+    "phase": 5,
+    "description": "stepped-tray-model: 凹槽「墙」部分正确生成（深度 = wallHeight）",
+    "steps": [
+      "添加一个 32mm 圆形凹槽，wallHeight=3.0",
+      "生成 3D 模型",
+      "在 3D 视图中观察凹槽从顶面向下挖掘",
+      "凹槽深度（墙高度）视觉上约等于 3.0mm"
+    ],
+    "passes": false
+  },
+  {
+    "id": 34,
+    "category": "functional",
+    "priority": "high",
+    "phase": 5,
+    "description": "stepped-tray-model: 凹槽「底部平台」正确生成（外扩 bottomExpandMargin 后的圆柱体）",
+    "steps": [
+      "添加一个 32mm 圆形凹槽，bottomHeight=2.0，bottomExpandMargin=1.0",
+      "生成 3D 模型",
+      "在 3D 视图中确认凹槽底部下方有一个比凹槽大一圈的圆柱平台",
+      "平台半径 ≈ 凹槽半径 + 1.0mm（含公差）"
+    ],
+    "passes": false
+  },
+  {
+    "id": 35,
+    "category": "functional",
+    "priority": "high",
+    "phase": 5,
+    "description": "stepped-tray-model: bottomHeight 作为保底厚度工作正确，底部平台不穿底",
+    "steps": [
+      "设置一个凹槽 bottomHeight=1.0（最小值），wallHeight=3.0",
+      "生成 3D 模型",
+      "确认凹槽底部下方仍有 1.0mm 实体材料",
+      "确认外扩底部平台也不穿透托盘底面"
+    ],
+    "passes": false
+  },
+  {
+    "id": 36,
+    "category": "functional",
+    "priority": "high",
+    "phase": 5,
+    "description": "stepped-tray-model: 多个凹槽不同 wallHeight 独立生效",
+    "steps": [
+      "添加凹槽 A（wallHeight=2.0）和凹槽 B（wallHeight=4.0）",
+      "生成 3D 模型",
+      "确认 A 的凹槽比 B 浅",
+      "两个凹槽的墙高差异在 3D 视图中可见"
+    ],
+    "passes": false
+  },
+  {
+    "id": 37,
+    "category": "functional",
+    "priority": "high",
+    "phase": 5,
+    "description": "stepped-tray-model: 多个凹槽不同 bottomHeight 独立生效",
+    "steps": [
+      "添加凹槽 A（bottomHeight=1.0）和凹槽 B（bottomHeight=3.0）",
+      "生成 3D 模型",
+      "确认 B 的底部平台比 A 更高（离托盘底面更远）",
+      "两者的底部平台在 3D 视图中高度不同"
+    ],
+    "passes": false
+  },
+  {
+    "id": 38,
+    "category": "functional",
+    "priority": "high",
+    "phase": 5,
+    "description": "stepped-tray-model: 椭圆凹槽的底部平台正确外扩（含旋转）",
+    "steps": [
+      "添加一个 60x35.5mm 椭圆凹槽并旋转 45°",
+      "设置 bottomExpandMargin=2.0",
+      "生成 3D 模型",
+      "底部平台是一个比椭圆大一圈（各方向+2mm）的形状",
+      "旋转角度与凹槽一致"
+    ],
+    "passes": false
+  },
+  {
+    "id": 39,
+    "category": "functional",
+    "priority": "high",
+    "phase": 5,
+    "description": "stepped-tray-model: 调整 bottomExpandMargin 后底部平台大小变化",
+    "steps": [
+      "添加一个凹槽并生成 3D 模型",
+      "将 bottomExpandMargin 从 1.0 改为 3.0",
+      "重新生成 3D 模型",
+      "确认底部平台明显变大"
+    ],
+    "passes": false
+  },
+  {
+    "id": 40,
+    "category": "functional",
+    "priority": "high",
+    "phase": 5,
+    "description": "stepped-tray-model: 磁吸孔在阶梯底座模式下正确减去",
+    "steps": [
+      "添加凹槽并启用磁吸孔（25mm 规格）",
+      "生成 3D 模型",
+      "确认每个凹槽底部有磁吸孔",
+      "磁吸孔不与底部平台或墙体冲突"
+    ],
+    "passes": false
+  },
+  {
+    "id": 41,
+    "category": "functional",
+    "priority": "high",
+    "phase": 5,
+    "description": "stepped-tray-model: 托盘总高度由最大 (bottomHeight + wallHeight) 决定",
+    "steps": [
+      "添加凹槽 A（wallHeight=2, bottomHeight=1）和凹槽 B（wallHeight=3, bottomHeight=2）",
+      "生成 3D 模型",
+      "托盘总高度应为 max(2+1, 3+2) = 5mm",
+      "确认 calculateSteppedTrayDimensions 返回的 height 正确"
+    ],
+    "passes": false
+  },
+  {
+    "id": 42,
+    "category": "functional",
+    "priority": "high",
+    "phase": 6,
+    "description": "tray.worker.ts 新增 GENERATE_STEPPED 任务类型",
+    "steps": [
+      "打开 src/lib/worker/tray.worker.ts",
+      "确认 WorkerRequest 联合类型包含 GENERATE_STEPPED",
+      "确认 onmessage handler 中有对应 case 分支",
+      "分支调用 createSteppedTrayModel() 并返回 geometry + volumeInfo"
+    ],
+    "passes": false
+  },
+  {
+    "id": 43,
+    "category": "functional",
+    "priority": "high",
+    "phase": 6,
+    "description": "worker-service.ts 新增 generateStepped() 方法",
+    "steps": [
+      "打开 src/lib/worker/worker-service.ts",
+      "确认 TrayWorkerService 类有 generateStepped(params: SteppedLayoutParams) 方法",
+      "方法返回 Promise<{ geometry: Geom3; volume: number }>",
+      "内部发送 GENERATE_STEPPED 消息"
+    ],
+    "passes": false
+  },
+  {
+    "id": 44,
+    "category": "functional",
+    "priority": "high",
+    "phase": 6,
+    "description": "Worker 生成阶梯底座模型端到端正常",
+    "steps": [
+      "在 UI 中添加凹槽并点击生成",
+      "确认 Worker 无错误消息",
+      "3D 视图正确渲染返回的几何体",
+      "volume 值合理（> 0, 非 NaN）"
+    ],
+    "passes": false
+  },
+  {
+    "id": 45,
+    "category": "functional",
+    "priority": "high",
+    "phase": 6,
+    "description": "Worker 错误处理：参数无效时返回友好错误信息",
+    "steps": [
+      "构造一个无效参数（如 wallHeight=0 或 bottomHeight=-1）",
+      "触发生成",
+      "确认 Worker 返回 ERROR 类型响应",
+      "确认 UI 显示 toast 错误提示，不会崩溃"
+    ],
+    "passes": false
+  },
+  {
+    "id": 46,
+    "category": "functional",
+    "priority": "high",
+    "phase": 6,
+    "description": "旧 GENERATE_GRID 和 GENERATE_CUSTOM 任务不受新worker分支影响",
+    "steps": [
+      "在网格模式下生成 3D 模型，确认正常",
+      "在自定义模式下生成 3D 模型，确认正常",
+      "Worker 无多余的 console.error 或异常"
+    ],
+    "passes": false
+  },
+  {
+    "id": 47,
+    "category": "functional",
+    "priority": "high",
+    "phase": 7,
+    "description": "param-io: 阶梯底座模式参数可正常导出为 JSON 文件",
+    "steps": [
+      "在阶梯底座模式下添加凹槽并设置自定义 wallHeight/bottomHeight",
+      "点击导出参数",
+      "下载的 JSON 包含 mode: \"stepped\"",
+      "JSON 中每个 slot 包含 wallHeight 和 bottomHeight 字段",
+      "JSON 中包含 bottomExpandMargin"
+    ],
+    "passes": false
+  },
+  {
+    "id": 48,
+    "category": "functional",
+    "priority": "high",
+    "phase": 7,
+    "description": "param-io: 阶梯底座模式参数可正常导入",
+    "steps": [
+      "导出一份阶梯底座参数文件",
+      "重新加载页面并切换到阶梯底座模式",
+      "导入上述文件",
+      "确认所有参数完整恢复（包括每槽的 wallHeight/bottomHeight）",
+      "画布正确渲染导入的凹槽"
+    ],
+    "passes": false
+  },
+  {
+    "id": 49,
+    "category": "functional",
+    "priority": "high",
+    "phase": 7,
+    "description": "param-io: 导入旧 custom 格式文件时自动补齐阶梯底座新字段",
+    "steps": [
+      "准备一份旧 custom 模式的参数 JSON（无 wallHeight/bottomHeight/bottomExpandMargin）",
+      "在阶梯底座模式下尝试导入此文件",
+      "导入成功，无报错",
+      "所有 slot 自动获得默认 wallHeight 和 bottomHeight",
+      "bottomExpandMargin 自动设为默认值 1.0"
+    ],
+    "passes": false
+  },
+  {
+    "id": 50,
+    "category": "functional",
+    "priority": "high",
+    "phase": 7,
+    "description": "param-io: 阶梯底座参数校验逻辑完备",
+    "steps": [
+      "手动编辑 JSON 文件，将 slot 的 wallHeight 设为 -1",
+      "导入时确认报错或被钳位到合理范围",
+      "将 bottomExpandMargin 设为 9999",
+      "导入时确认被钳位到 max 范围",
+      "缺少 wallHeight 字段的 slot 自动补默认值"
+    ],
+    "passes": false
+  },
+  {
+    "id": 51,
+    "category": "functional",
+    "priority": "medium",
+    "phase": 7,
+    "description": "param-io: 版本号升级后旧版本文件的兼容处理",
+    "steps": [
+      "确认新版本号（如 version: 2）",
+      "用 version: 1 的 custom 文件导入阶梯底座模式，能成功",
+      "用 version: 2 的 stepped 文件导入，能成功",
+      "用 version: 0 的文件导入，给出友好错误提示"
+    ],
+    "passes": false
+  },
+  {
+    "id": 52,
+    "category": "functional",
+    "priority": "medium",
+    "phase": 8,
+    "description": "pricing: 阶梯底座模式报价逻辑就位",
+    "steps": [
+      "在阶梯底座模式下生成模型",
+      "面板中显示报价/重量信息",
+      "报价值 > 0 且合理",
+      "修改凹槽数量或尺寸后报价更新"
+    ],
+    "passes": false
+  },
+  {
+    "id": 53,
+    "category": "functional",
+    "priority": "medium",
+    "phase": 8,
+    "description": "pricing: 不同 wallHeight 和 bottomHeight 影响体积和报价",
+    "steps": [
+      "创建一个凹槽，记录初始报价",
+      "增大 wallHeight，重新生成，确认报价变化",
+      "增大 bottomHeight，重新生成，确认报价变化",
+      "报价变化方向合理（更大凹槽深度 = 更少材料 = 更低价格，或反之视定价策略）"
+    ],
+    "passes": false
+  },
+  {
+    "id": 54,
+    "category": "functional",
+    "priority": "medium",
+    "phase": 4,
+    "description": "SteppedPanel 实时显示尺寸信息（有效底板宽度、深度、总高度）",
+    "steps": [
+      "添加凹槽后查看面板尺寸信息区",
+      "显示有效底板宽度和深度",
+      "显示托盘总高度（基于最大 wallHeight + bottomHeight）",
+      "修改参数后信息实时更新"
+    ],
+    "passes": false
+  },
+  {
+    "id": 55,
+    "category": "functional",
+    "priority": "medium",
+    "phase": 4,
+    "description": "SteppedPanel 超尺寸警告（> MAX_BUILD_SIZE）",
+    "steps": [
+      "添加足够多凹槽使有效底板超过 260mm",
+      "面板显示超尺寸警告",
+      "警告文案清晰说明超过最大构建尺寸"
+    ],
+    "passes": false
+  },
+  {
+    "id": 56,
+    "category": "functional",
+    "priority": "medium",
+    "phase": 4,
+    "description": "SteppedPanel 边界间距独立开关正常工作",
+    "steps": [
+      "关闭独立边界间距开关，确认边界间距跟随凹槽间距",
+      "开启独立边界间距开关，确认边界间距可独立调整",
+      "修改凹槽间距，确认边界间距在非独立模式下联动更新"
+    ],
+    "passes": false
+  },
+  {
+    "id": 57,
+    "category": "functional",
+    "priority": "medium",
+    "phase": 5,
+    "description": "stepped-tray-model: 极限参数不崩溃（最小 wallHeight + 最小 bottomHeight）",
+    "steps": [
+      "设置 wallHeight = min, bottomHeight = min",
+      "生成 3D 模型",
+      "确认不报错、不穿底",
+      "geometry 有效（非空多边形）"
+    ],
+    "passes": false
+  },
+  {
+    "id": 58,
+    "category": "functional",
+    "priority": "medium",
+    "phase": 5,
+    "description": "stepped-tray-model: 极限参数不崩溃（最大 wallHeight + 最大 bottomHeight）",
+    "steps": [
+      "设置 wallHeight = max, bottomHeight = max",
+      "生成 3D 模型",
+      "确认不报错",
+      "geometry 有效、体积合理"
+    ],
+    "passes": false
+  },
+  {
+    "id": 59,
+    "category": "functional",
+    "priority": "medium",
+    "phase": 5,
+    "description": "stepped-tray-model: bottomExpandMargin=0 时底部平台与凹槽等大",
+    "steps": [
+      "设置 bottomExpandMargin=0",
+      "生成 3D 模型",
+      "底部平台直径与凹槽直径一致（无外扩）",
+      "模型正常无破面"
+    ],
+    "passes": false
+  },
+  {
+    "id": 60,
+    "category": "functional",
+    "priority": "medium",
+    "phase": 4,
+    "description": "2D 画布缩放与平移在阶梯底座模式下正常工作",
+    "steps": [
+      "使用滚轮缩放画布",
+      "使用右键或中键拖拽平移画布",
+      "缩放/平移后凹槽渲染位置正确",
+      "zoom 控件 + / - / reset 按钮正常"
+    ],
+    "passes": false
+  },
+  {
+    "id": 61,
+    "category": "functional",
+    "priority": "medium",
+    "phase": 4,
+    "description": "2D 画布状态栏在阶梯底座模式下正确显示信息",
+    "steps": [
+      "添加凹槽后查看状态栏",
+      "显示凹槽数量",
+      "选中凹槽时显示选中凹槽信息",
+      "信息实时更新"
+    ],
+    "passes": false
+  },
+  {
+    "id": 62,
+    "category": "functional",
+    "priority": "medium",
+    "phase": 3,
+    "description": "useSteppedLayout 的 trimBaseplate 正常工作",
+    "steps": [
+      "添加凹槽后手动扩大底板宽度到 260mm",
+      "调用 trimBaseplate / 点击裁剪按钮",
+      "底板尺寸缩小到恰好包围凹槽 + 边界间距",
+      "凹槽位置未改变"
+    ],
+    "passes": false
+  },
+  {
+    "id": 63,
+    "category": "functional",
+    "priority": "medium",
+    "phase": 3,
+    "description": "useSteppedLayout 的 updateMultipleSlots 正常工作",
+    "steps": [
+      "添加 3 个凹槽",
+      "框选全部后拖拽移动",
+      "确认 3 个凹槽位置同时更新",
+      "wallHeight/bottomHeight 不受影响"
+    ],
+    "passes": false
+  },
+  {
+    "id": 64,
+    "category": "functional",
+    "priority": "medium",
+    "phase": 9,
+    "description": "回归：网格模式生成 3D 模型和导出 STL 不受影响",
+    "steps": [
+      "切换到网格模式",
+      "设置 5x2 网格，32mm 凹槽",
+      "点击生成，确认 3D 模型正确",
+      "导出 STL，确认文件可下载"
+    ],
+    "passes": false
+  },
+  {
+    "id": 65,
+    "category": "functional",
+    "priority": "medium",
+    "phase": 9,
+    "description": "回归：自定义模式全功能不受影响",
+    "steps": [
+      "切换到自定义模式",
+      "添加多个不同尺寸凹槽",
+      "拖拽、旋转、对齐、撤销全部正常",
+      "生成 3D 模型和导出 STL 正常",
+      "导入/导出参数正常"
+    ],
+    "passes": false
+  },
+  {
+    "id": 66,
+    "category": "functional",
+    "priority": "medium",
+    "phase": 9,
+    "description": "回归：订单导入在所有三种模式下正常",
+    "steps": [
+      "通过订单导入 grid 模式配置，确认正常加载",
+      "通过订单导入 custom 模式配置，确认正常加载",
+      "如果支持 stepped 订单导入，确认也能正常加载"
+    ],
+    "passes": false
+  },
+  {
+    "id": 67,
+    "category": "functional",
+    "priority": "medium",
+    "phase": 4,
+    "description": "SteppedPanel 参数导入导出按钮正常工作",
+    "steps": [
+      "阶梯底座面板中的导出按钮可点击",
+      "导出文件名包含 stepped 标识",
+      "导入按钮可选择文件并成功加载",
+      "加载后参数完整恢复"
+    ],
+    "passes": false
+  },
+  {
+    "id": 68,
+    "category": "functional",
+    "priority": "medium",
+    "phase": 4,
+    "description": "SteppedPanel 多选凹槽时可批量设置 wallHeight/bottomHeight",
+    "steps": [
+      "添加 3 个凹槽",
+      "多选 2 个凹槽",
+      "在面板中修改 wallHeight",
+      "确认 2 个选中槽的 wallHeight 同时更新",
+      "未选中的槽不受影响"
+    ],
+    "passes": false
+  },
+  {
+    "id": 69,
+    "category": "functional",
+    "priority": "low",
+    "phase": 4,
+    "description": "2D 画布中选中槽时显示当前 wallHeight/bottomHeight 数值标注",
+    "steps": [
+      "选中一个凹槽",
+      "画布上或附近显示该槽的 wallHeight 和 bottomHeight 数值",
+      "未选中时不显示数值标注"
+    ],
+    "passes": false
+  },
+  {
+    "id": 70,
+    "category": "functional",
+    "priority": "low",
+    "phase": 5,
+    "description": "stepped-tray-model: 多凹槽底部平台重叠时布尔运算稳定",
+    "steps": [
+      "添加两个相邻凹槽，外扩 margin 设为较大值使底部平台重叠",
+      "生成 3D 模型",
+      "确认无崩溃、无破面",
+      "重叠区域在 3D 视图中表现合理"
+    ],
+    "passes": false
+  },
+  {
+    "id": 71,
+    "category": "style",
+    "priority": "high",
+    "phase": 4,
+    "description": "ModeTabs 三标签页布局视觉和谐",
+    "steps": [
+      "查看标签页从 2 列变为 3 列后的视觉效果",
+      "标签文字不截断、不溢出",
+      "选中态/未选中态颜色对比度足够",
+      "与整体暗色主题协调"
+    ],
+    "passes": false
+  },
+  {
+    "id": 72,
+    "category": "style",
+    "priority": "high",
+    "phase": 4,
+    "description": "SteppedPanel 整体布局与 CustomPanel 风格一致",
+    "steps": [
+      "对比 SteppedPanel 和 CustomPanel 的视觉风格",
+      "section header 样式一致",
+      "滑杆/按钮/开关样式一致",
+      "间距和排版一致"
+    ],
+    "passes": false
+  },
+  {
+    "id": 73,
+    "category": "style",
+    "priority": "medium",
+    "phase": 4,
+    "description": "每槽参数编辑区视觉分区清晰",
+    "steps": [
+      "选中凹槽后出现的参数编辑区",
+      "有清晰的 section header（如「选中凹槽参数」）",
+      "wallHeight 和 bottomHeight 滑杆标签清晰",
+      "与上方全局参数区视觉分离"
+    ],
+    "passes": false
+  },
+  {
+    "id": 74,
+    "category": "style",
+    "priority": "medium",
+    "phase": 4,
+    "description": "SteppedPanel bottomExpandMargin 滑杆标签和说明清晰",
+    "steps": [
+      "查看底部外扩边距滑杆标签",
+      "标签文字为「底部外扩边距」",
+      "单位显示 mm",
+      "有 tooltip 或说明解释此参数含义"
+    ],
+    "passes": false
+  },
+  {
+    "id": 75,
+    "category": "style",
+    "priority": "medium",
+    "phase": 1,
+    "description": "「自定义阶梯底座」标签页图标合适",
+    "steps": [
+      "标签页显示与模式含义匹配的图标",
+      "图标与「网格模式」「自定义模式」图标风格统一",
+      "图标大小一致"
+    ],
+    "passes": false
+  },
+  {
+    "id": 76,
+    "category": "style",
+    "priority": "medium",
+    "phase": 4,
+    "description": "移动端（< 1024px）阶梯底座模式布局自适应",
+    "steps": [
+      "在移动端宽度下打开阶梯底座模式",
+      "参数面板 / 2D / 3D 分标签切换正常",
+      "不出现水平滚动条或内容溢出",
+      "滑杆和按钮触摸可操作"
+    ],
+    "passes": false
+  },
+  {
+    "id": 77,
+    "category": "style",
+    "priority": "low",
+    "phase": 4,
+    "description": "3D 预览中阶梯底座模型渲染效果清晰",
+    "steps": [
+      "生成阶梯底座模型并在 3D 视图中查看",
+      "墙体和底部平台的阶梯结构视觉可辨",
+      "光照和材质与其他模式一致",
+      "边缘线正确描绘阶梯结构"
+    ],
+    "passes": false
+  },
+  {
+    "id": 78,
+    "category": "style",
+    "priority": "low",
+    "phase": 4,
+    "description": "SteppedPanel 凹槽预设按钮区与 CustomPanel 一致",
+    "steps": [
+      "圆形预设和椭圆预设按钮分区显示",
+      "按钮大小和间距与 CustomPanel 一致",
+      "hover 效果一致"
+    ],
+    "passes": false
+  },
+  {
+    "id": 79,
+    "category": "style",
+    "priority": "low",
+    "phase": 4,
+    "description": "SteppedPanel 报价/重量区域样式与其他模式一致",
+    "steps": [
+      "报价和重量显示在面板底部",
+      "数值格式化一致（保留 2 位小数等）",
+      "文字颜色和字号与 CustomPanel 一致"
+    ],
+    "passes": false
+  },
+  {
+    "id": 80,
+    "category": "style",
+    "priority": "low",
+    "phase": 4,
+    "description": "SteppedPanel 各 section 折叠/展开行为一致（如有）",
+    "steps": [
+      "检查面板各区域是否有折叠功能",
+      "若有，折叠/展开动画与 CustomPanel 一致",
+      "折叠状态下不影响其他区域布局"
+    ],
+    "passes": false
+  }
+]
