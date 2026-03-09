@@ -9,7 +9,12 @@
       "Bash(npm run build)",
       "Bash(npm run lint)",
       "Bash(git stash:*)",
-      "Bash(npx eslint src/hooks/useToast.tsx)"
+      "Bash(npx eslint src/hooks/useToast.tsx)",
+      "Bash(echo:*)",
+      "Bash(npm test)",
+      "Bash(pnpm remove:*)",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm add:*)"
     ]
   }
 }
