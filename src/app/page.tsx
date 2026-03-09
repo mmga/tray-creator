@@ -51,6 +51,8 @@ export default function Home() {
   const [rightView, setRightView] = useState<"2d" | "3d">("2d");
   const [mobileTab, setMobileTab] = useState<"params" | "2d" | "3d">("params");
   const [ordersOpen, setOrdersOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
+  const [selectedSlotIds, setSelectedSlotIds] = useState<string[]>([]);
   const isMobile = useIsMobile();
 
   // ── 访问统计上报 (仅一次) ──
