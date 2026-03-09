@@ -84,11 +84,7 @@ export function importParams(
             trayDepth: customParams.trayDepth,
             slots: customParams.slots.map((s) => ({
               ...s,
-              wallHeight:
-                customParams.holeDepth || STEPPED_SLOT_DEFAULTS.wallHeight,
-              bottomHeight:
-                customParams.baseThickness ||
-                STEPPED_SLOT_DEFAULTS.bottomHeight,
+              bottomHeight: STEPPED_SLOT_DEFAULTS.bottomHeight,
             })),
             spacing: customParams.spacing,
             boundarySpacing: customParams.boundarySpacing,
@@ -96,6 +92,7 @@ export function importParams(
             baseThickness: customParams.baseThickness,
             cornerRadius: customParams.cornerRadius,
             bottomExpandMargin: 1.0,
+            holeDepth: customParams.holeDepth || 3,
             enableBaseHole: customParams.enableBaseHole,
             baseHoleSize: customParams.baseHoleSize,
           };
@@ -261,6 +258,7 @@ function validateSteppedParams(p: SteppedLayoutParams) {
     "baseThickness",
     "cornerRadius",
     "bottomExpandMargin",
+    "holeDepth",
   ];
   for (const f of numFields) requireNumber(obj, f);
   if (typeof obj.boundarySpacing !== "number") {
@@ -303,14 +301,7 @@ function validateSteppedParams(p: SteppedLayoutParams) {
     if (typeof slot.id !== "string" || !slot.id) {
       slot.id = crypto.randomUUID();
     }
-    // 自动补齐 wallHeight / bottomHeight
-    if (
-      typeof slot.wallHeight !== "number" ||
-      !Number.isFinite(slot.wallHeight as number) ||
-      (slot.wallHeight as number) <= 0
-    ) {
-      slot.wallHeight = STEPPED_SLOT_DEFAULTS.wallHeight;
-    }
+    // 自动补齐 bottomHeight
     if (
       typeof slot.bottomHeight !== "number" ||
       !Number.isFinite(slot.bottomHeight as number) ||
@@ -318,11 +309,6 @@ function validateSteppedParams(p: SteppedLayoutParams) {
     ) {
       slot.bottomHeight = STEPPED_SLOT_DEFAULTS.bottomHeight;
     }
-    // 钳位
-    slot.wallHeight = Math.max(
-      STEPPED_LIMITS.wallHeight.min,
-      Math.min(STEPPED_LIMITS.wallHeight.max, slot.wallHeight as number),
-    );
     slot.bottomHeight = Math.max(
       STEPPED_LIMITS.bottomHeight.min,
       Math.min(STEPPED_LIMITS.bottomHeight.max, slot.bottomHeight as number),
@@ -336,6 +322,7 @@ function validateSteppedParams(p: SteppedLayoutParams) {
   clampField(obj, "boundarySpacing", STEPPED_LIMITS.boundarySpacing);
   clampField(obj, "baseThickness", STEPPED_LIMITS.baseThickness);
   clampField(obj, "cornerRadius", STEPPED_LIMITS.cornerRadius);
+  clampField(obj, "holeDepth", STEPPED_LIMITS.holeDepth);
   clampField(obj, "bottomExpandMargin", STEPPED_LIMITS.bottomExpandMargin);
 
   if (!obj.boundarySpacingIndependent) {

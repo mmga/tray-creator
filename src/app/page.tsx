@@ -83,11 +83,7 @@ export default function Home() {
           params={gridModel.params}
           setParams={gridModel.setParams}
           updateParam={gridModel.updateParam}
-          onGenerate={() => {
-            gridModel.handleGenerate();
-            setRightView("3d");
-            if (isMobile) setMobileTab("3d");
-          }}
+          onGenerate={gridModel.handleGenerate}
           onExportSTL={gridModel.handleExportSTL}
           isGenerating={gridModel.isGenerating}
           volume={gridModel.volume}
@@ -102,18 +98,12 @@ export default function Home() {
           setParams={steppedModel.setParams}
           updateParam={steppedModel.updateParam}
           onAddSlot={steppedModel.addSlot}
-          onGenerate={() => {
-            steppedModel.handleGenerate();
-            setRightView("3d");
-            if (isMobile) setMobileTab("3d");
-          }}
+          onGenerate={steppedModel.handleGenerate}
           onExportSTL={steppedModel.handleExportSTL}
           isGenerating={steppedModel.isGenerating}
           volume={steppedModel.volume}
           selectedSlotIds={selectedSlotIds}
-          onUpdateSlotWallHeight={steppedModel.updateSlotWallHeight}
           onUpdateSlotBottomHeight={steppedModel.updateSlotBottomHeight}
-          onUpdateSelectedSlotsWallHeight={steppedModel.updateSelectedSlotsWallHeight}
           onUpdateSelectedSlotsBottomHeight={steppedModel.updateSelectedSlotsBottomHeight}
         />
       );
@@ -125,11 +115,7 @@ export default function Home() {
         setParams={customModel.setParams}
         updateParam={customModel.updateParam}
         onAddSlot={customModel.addSlot}
-        onGenerate={() => {
-          customModel.handleGenerate();
-          setRightView("3d");
-          if (isMobile) setMobileTab("3d");
-        }}
+        onGenerate={customModel.handleGenerate}
         onExportSTL={customModel.handleExportSTL}
         isGenerating={customModel.isGenerating}
         volume={customModel.volume}

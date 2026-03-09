@@ -11,11 +11,9 @@ export interface FreeSlot {
   rotation: number; // 旋转角度 (度)
 }
 
-/** 阶梯底座凹槽：继承 FreeSlot，新增每槽独立的墙高和底部高度 */
+/** 阶梯底座凹槽：继承 FreeSlot，新增每槽独立的生长高度 */
 export interface SteppedSlot extends FreeSlot {
-  /** 墙高度 (mm)，凹槽从顶面向下的深度 */
-  wallHeight: number;
-  /** 底部高度 (mm)，凹槽底部的保底厚度 */
+  /** 生长高度 (mm)，凹槽柱子从底板向上生长的距离 */
   bottomHeight: number;
 }
 
@@ -65,6 +63,8 @@ export interface SteppedLayoutParams {
   cornerRadius: number;
   /** 底部外扩边距 (mm)，全局参数 */
   bottomExpandMargin: number;
+  /** 凹槽深度 (mm)，全局固定，从柱顶向下挖的深度 */
+  holeDepth: number;
   /** 是否启用底板磁吸孔 */
   enableBaseHole: boolean;
   /** 底板磁吸孔规格 */

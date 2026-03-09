@@ -42,9 +42,7 @@ interface SteppedPanelProps {
     isGenerating: boolean;
     volume: number;
     selectedSlotIds: string[];
-    onUpdateSlotWallHeight: (id: string, wallHeight: number) => void;
     onUpdateSlotBottomHeight: (id: string, bottomHeight: number) => void;
-    onUpdateSelectedSlotsWallHeight: (ids: string[], wallHeight: number) => void;
     onUpdateSelectedSlotsBottomHeight: (ids: string[], bottomHeight: number) => void;
 }
 
@@ -59,9 +57,7 @@ export default function SteppedPanel({
     isGenerating,
     volume,
     selectedSlotIds,
-    onUpdateSlotWallHeight,
     onUpdateSlotBottomHeight,
-    onUpdateSelectedSlotsWallHeight,
     onUpdateSelectedSlotsBottomHeight,
 }: SteppedPanelProps) {
     const dimensions = calculateSteppedTrayDimensions(params);
@@ -136,10 +132,10 @@ export default function SteppedPanel({
             {/* 选中凹槽参数 */}
             <div className="iron-panel rounded-sm p-4">
                 <SectionHeader icon={Layers} title="选中凹槽参数" collapsible defaultOpen={true}
-                    summary={selectedSlots.length > 0 ? `${selectedSlots.length} 个凹槽已选中` : "请选择凹槽以编辑参数"}>
+                    summary={selectedSlots.length > 0 ? `${selectedSlots.length} 个凹槽已选中` : "请选择凹槽以编辑生长高度"}>
                     {selectedSlots.length === 0 ? (
                         <p className="text-xs text-muted-foreground/60 text-center py-4">
-                            请在 2D 画布中选择凹槽以编辑墙高和底部高度参数
+                            请在 2D 画布中选择凹槽以编辑生长高度
                         </p>
                     ) : (
                         <div className="space-y-4">
@@ -148,19 +144,6 @@ export default function SteppedPanel({
                                     ? `编辑凹槽: ${firstSelectedSlot!.width}×${firstSelectedSlot!.height}mm`
                                     : `批量编辑 ${selectedSlots.length} 个凹槽`}
                             </div>
-                            <ParamSlider
-                                label={STEPPED_LIMITS.wallHeight.label}
-                                value={firstSelectedSlot!.wallHeight}
-                                config={STEPPED_LIMITS.wallHeight}
-                                onChange={(v) => {
-                                    if (selectedSlots.length === 1) {
-                                        onUpdateSlotWallHeight(firstSelectedSlot!.id, v);
-                                    } else {
-                                        onUpdateSelectedSlotsWallHeight(selectedSlotIds, v);
-                                    }
-                                }}
-                                unit={STEPPED_LIMITS.wallHeight.unit}
-                            />
                             <ParamSlider
                                 label={STEPPED_LIMITS.bottomHeight.label}
                                 value={firstSelectedSlot!.bottomHeight}
@@ -217,6 +200,13 @@ export default function SteppedPanel({
                             config={STEPPED_LIMITS.baseThickness}
                             onChange={(v) => updateParam("baseThickness", v)}
                             unit={PARAM_CONFIG.baseThickness.unit}
+                        />
+                        <ParamSlider
+                            label={STEPPED_LIMITS.holeDepth.label}
+                            value={params.holeDepth}
+                            config={STEPPED_LIMITS.holeDepth}
+                            onChange={(v) => updateParam("holeDepth", v)}
+                            unit={STEPPED_LIMITS.holeDepth.unit}
                         />
                         <ParamSlider
                             label={STEPPED_LIMITS.bottomExpandMargin.label}

@@ -792,6 +792,22 @@ export default function LayoutCanvas({
                   {slot.width === slot.height ? slot.width : `${slot.width}x${slot.height}`}
                 </text>
 
+                {/* Stepped slot: show bottomHeight label when selected */}
+                {'bottomHeight' in slot && isSelected && (
+                  <text
+                    dy={h / 2 + 4 / zoom}
+                    textAnchor="middle"
+                    dominantBaseline="hanging"
+                    fontSize={Math.max(2.5, Math.min(4, 8 / zoom))}
+                    fill="#86efac"
+                    fontWeight="bold"
+                    pointerEvents="none"
+                    style={{ userSelect: 'none' }}
+                  >
+                    {`底部 ${(slot as { bottomHeight: number }).bottomHeight}mm`}
+                  </text>
+                )}
+
                 {/* Rotation Handle - Only show when SELECTED and NOT a circle */}
                 {isSelected && Math.abs(slot.width - slot.height) > 0.01 && (
                   <g

@@ -34,9 +34,7 @@ export interface UseSteppedLayoutReturn {
   updateSlotRotation: (id: string, rotation: number) => void;
   duplicateSlots: (ids: string[]) => void;
   trimBaseplate: () => void;
-  updateSlotWallHeight: (id: string, wallHeight: number) => void;
   updateSlotBottomHeight: (id: string, bottomHeight: number) => void;
-  updateSelectedSlotsWallHeight: (ids: string[], wallHeight: number) => void;
   updateSelectedSlotsBottomHeight: (
     ids: string[],
     bottomHeight: number,
@@ -218,7 +216,6 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
           width,
           height: slotHeight,
           rotation: 0,
-          wallHeight: STEPPED_SLOT_DEFAULTS.wallHeight,
           bottomHeight: STEPPED_SLOT_DEFAULTS.bottomHeight,
         };
         return { ...prev, slots: [...prev.slots, newSlot] };
@@ -299,18 +296,6 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     [pushState],
   );
 
-  const updateSlotWallHeight = useCallback(
-    (id: string, wallHeight: number) => {
-      pushState(paramsRef.current);
-      setParams((prev) => ({
-        ...prev,
-        slots: prev.slots.map((s) => (s.id === id ? { ...s, wallHeight } : s)),
-      }));
-      setIsPreviewStale(true);
-    },
-    [pushState],
-  );
-
   const updateSlotBottomHeight = useCallback(
     (id: string, bottomHeight: number) => {
       pushState(paramsRef.current);
@@ -318,21 +303,6 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
         ...prev,
         slots: prev.slots.map((s) =>
           s.id === id ? { ...s, bottomHeight } : s,
-        ),
-      }));
-      setIsPreviewStale(true);
-    },
-    [pushState],
-  );
-
-  const updateSelectedSlotsWallHeight = useCallback(
-    (ids: string[], wallHeight: number) => {
-      pushState(paramsRef.current);
-      const idSet = new Set(ids);
-      setParams((prev) => ({
-        ...prev,
-        slots: prev.slots.map((s) =>
-          idSet.has(s.id) ? { ...s, wallHeight } : s,
         ),
       }));
       setIsPreviewStale(true);
@@ -469,9 +439,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     updateSlotRotation,
     duplicateSlots,
     trimBaseplate,
-    updateSlotWallHeight,
     updateSlotBottomHeight,
-    updateSelectedSlotsWallHeight,
     updateSelectedSlotsBottomHeight,
     effectiveDimensions,
     saveSnapshot,
