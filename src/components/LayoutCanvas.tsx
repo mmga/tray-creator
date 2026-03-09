@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState, useCallback, useEffect } from "react";
-import type { FreeSlot, CustomLayoutParams } from "@/types/custom-tray";
+import type { FreeSlot, CustomLayoutParams, SteppedLayoutParams } from "@/types/custom-tray";
+import type { OutlineData } from "@/lib/outline-geometry";
 import { getSlotTolerance, MAX_BUILD_SIZE } from "@/lib/config";
 import { getEllipsePolygon, polygonsIntersect } from "@/lib/collision";
 import AlignmentToolbar from "./AlignmentToolbar";
@@ -14,7 +15,7 @@ import { CanvasZoomControls } from "./canvas/CanvasZoomControls";
 import { KeyboardHintsOverlay } from "./canvas/KeyboardHintsOverlay";
 
 interface LayoutCanvasProps {
-  params: CustomLayoutParams;
+  params: CustomLayoutParams | SteppedLayoutParams;
   onUpdateSlot: (id: string, x: number, y: number) => void;
   onRemoveSlot: (id: string) => void;
   onResizeTray?: (width: number, depth: number) => void;
@@ -23,6 +24,9 @@ interface LayoutCanvasProps {
   onDuplicateSlots?: (ids: string[]) => void;
   onUndo?: () => void;
   onSaveSnapshot?: () => void;
+  onSelectionChange?: (ids: string[]) => void;
+  // 轮廓预览（Stepped 模式）
+  outlinePreview?: OutlineData | null;
 }
 
 export default function LayoutCanvas({
@@ -35,6 +39,8 @@ export default function LayoutCanvas({
   onDuplicateSlots,
   onUndo,
   onSaveSnapshot,
+  onSelectionChange,
+  outlinePreview,
 }: LayoutCanvasProps) {
   // Core State
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -85,8 +91,8 @@ export default function LayoutCanvas({
   });
 
   const { trayWidth, trayDepth, slots, spacing } = params;
-  const boundarySpacing = params.boundarySpacingIndependent
-    ? params.boundarySpacing
+  const boundarySpacing = 'boundarySpacingIndependent' in params && params.boundarySpacingIndependent
+    ? (params as CustomLayoutParams).boundarySpacing
     : spacing;
   const selectedIdsRef = useRef(selectedIds);
   const slotsRef = useRef(params.slots);
@@ -98,6 +104,11 @@ export default function LayoutCanvas({
   onUpdateSlotRef.current = onUpdateSlot;
   onUndoRef.current = onUndo;
   onSaveSnapshotRef.current = onSaveSnapshot;
+
+  // Notify parent of selection changes (for stepped mode per-slot editing)
+  useEffect(() => {
+    onSelectionChange?.(Array.from(selectedIds));
+  }, [selectedIds, onSelectionChange]);
 
   // Helper to handle multiple updates
   const handleUpdateSlots = useCallback((updates: { id: string, x: number, y: number }[]) => {
@@ -673,7 +684,7 @@ export default function LayoutCanvas({
             fill="none"
             stroke="#8b7355"
             strokeWidth={0.7 / zoom}
-            rx={Math.max(0, Math.min(params.cornerRadius, effectiveBaseplate.width / 2, effectiveBaseplate.height / 2))}
+            rx={Math.max(0, Math.min('cornerRadius' in params ? params.cornerRadius : 0, effectiveBaseplate.width / 2, effectiveBaseplate.height / 2))}
             strokeOpacity={0.95}
           />
         )}
@@ -718,6 +729,29 @@ export default function LayoutCanvas({
             const isDragging = draggingId === slot.id;
             const isSelected = selectedIds.has(slot.id);
             const color = isSelected ? "#f97316" : "#eab308"; // Orange if selected, else Yellow
+
+            // Heatmap color for bottomHeight label text
+            const bhLabelColor = (() => {
+              if (!('bottomHeight' in slot)) return "#86efac";
+              const bh = (slot as { bottomHeight: number }).bottomHeight;
+              const t = Math.min(1, bh / 50);
+              const stops: [number, number, number][] = [
+                [134, 239, 172], // t=0  green-300 (0mm)
+                [74, 222, 128],  // t=0.2 green-400
+                [250, 204, 21],  // t=0.4 yellow-400
+                [251, 146, 60],  // t=0.6 orange-400
+                [248, 113, 113], // t=0.8 red-400
+                [239, 68, 68],   // t=1.0 red-500
+              ];
+              const idx = t * (stops.length - 1);
+              const lo = Math.floor(idx);
+              const hi = Math.min(lo + 1, stops.length - 1);
+              const f = idx - lo;
+              const r = Math.round(stops[lo][0] + f * (stops[hi][0] - stops[lo][0]));
+              const g = Math.round(stops[lo][1] + f * (stops[hi][1] - stops[lo][1]));
+              const b = Math.round(stops[lo][2] + f * (stops[hi][2] - stops[lo][2]));
+              return `rgb(${r},${g},${b})`;
+            })();
 
             return (
               <g
@@ -769,11 +803,9 @@ export default function LayoutCanvas({
                   strokeWidth={(isColliding || isInvolvedViaOther ? 0.5 : 0.2) / zoom}
                 />
 
-                {/* Size Text (rotated back so it's readable? or rotate with slot?) 
-                  Let's rotate with slot. 
-              */}
+                {/* Size Text */}
                 <text
-                  dy={(Math.min(w, h) * 0.2)} // Adjusted dy
+                  dy={'bottomHeight' in slot ? -Math.min(w, h) * 0.12 : Math.min(w, h) * 0.2}
                   textAnchor="middle"
                   dominantBaseline="middle"
                   fontSize={Math.min(w, h, 24) / 2}
@@ -784,6 +816,22 @@ export default function LayoutCanvas({
                 >
                   {slot.width === slot.height ? slot.width : `${slot.width}x${slot.height}`}
                 </text>
+
+                {/* Stepped slot: always show bottomHeight label inside the circle */}
+                {'bottomHeight' in slot && (
+                  <text
+                    dy={Math.min(w, h) * 0.24}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fontSize={Math.max(2, Math.min(w, h, 18) / 3.5)}
+                    fill={bhLabelColor}
+                    fontWeight="bold"
+                    pointerEvents="none"
+                    style={{ userSelect: 'none' }}
+                  >
+                    {`↑${(slot as { bottomHeight: number }).bottomHeight}mm`}
+                  </text>
+                )}
 
                 {/* Rotation Handle - Only show when SELECTED and NOT a circle */}
                 {isSelected && Math.abs(slot.width - slot.height) > 0.01 && (
@@ -860,6 +908,24 @@ export default function LayoutCanvas({
             : <line key={`guide-${i}`} x1={minX} y1={g.value} x2={minX + viewW} y2={g.value}
               stroke="#38bdf8" strokeWidth={0.3 / zoom} strokeDasharray="2 2" pointerEvents="none" opacity={0.8} />
         ))}
+
+        {/* 底座轮廓预览 */}
+        {outlinePreview && outlinePreview.points.length >= 3 && (() => {
+          // 将用户坐标 (x, y) 转为 SVG 坐标 (x, trayDepth - y)
+          const pathData = outlinePreview.points
+            .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${(trayDepth - p.y).toFixed(2)}`)
+            .join(' ') + ' Z';
+          return (
+            <path
+              d={pathData}
+              fill="rgba(139, 115, 85, 0.12)"
+              stroke="#c9a66b"
+              strokeWidth={0.8 / zoom}
+              strokeOpacity={0.9}
+              pointerEvents="none"
+            />
+          );
+        })()}
       </svg>
 
       {/* Marquee Selection Box */}

@@ -1,26 +1,74 @@
-# 项目进度 — 访问统计功能
+# 自定义阶梯底座 - 开发进度日志
 
-## Session 1 - 调研与初始化 (2026-03-06)
-- 完成现有项目架构调研，确认 Public 端为纯静态导出，需要 EdgeOne 边缘函数 + KV
-- 编写了分析文档 access_statistics_analysis.md
-- 用户确认需要：事件追踪、Referrer 来源、设备分布、Admin 面板（低优先级）
-- 创建了 feature_list.json，共 28 个功能测试用例
-  - high 优先级：18 个（边缘函数、前端上报、事件追踪、来源/设备记录、本地代理、兼容性）
-  - medium 优先级：7 个（Admin 面板可视化）
-  - low 优先级：1 个（数据导出）
-  - 2 个 medium 样式
-- 待开始实现功能
+## 项目概述
+在现有 tray-creator 应用中新增「自定义阶梯底座」模式标签页。
+复用现有自定义模式的 2D 编辑交互，但引入"墙 + 底部平台"分层凹槽结构，
+支持每槽独立设置 wallHeight / bottomHeight，以及全局 bottomExpandMargin。
 
-## Session 2 - 批量实现核心功能 (2026-03-06)
-- 实现了: EdgeOne 边缘函数 stats.js (POST/GET/OPTIONS)
-  - PV/UV 统计、事件追踪、Referrer 来源、设备分布、GET 查询接口（需鉴权）、CORS
-- 实现了: 前端 analytics.ts 模块
-  - fingerprint 生成、reportPageView、reportAction、5秒防刷 debounce、keepalive
-- 实现了: Admin 代理 stats route.ts
-- 集成点: page.tsx (PV)、useTrayModel.ts (generate_3d + export_stl)、
-  useCustomLayout.ts (generate_3d + export_stl)、ParameterPanel.tsx (submit_order)、
-  CustomPanel.tsx (submit_order)
-- 更新了 .env.example 添加 EDGEONE_STATS_URL 和 NEXT_PUBLIC_EDGEONE_STATS_URL
-- 测试 #1-17, #26 标记为通过 (build 编译成功，TypeScript 类型检查通过)
-- 当前进度: 18/28 测试通过
-- 下一步建议: #18-25 Admin 面板 UI 组件，或 #27-28 兼容性验证
+- 需求文档: doc/custom-layered.md
+- 功能清单: feature_list.json (80 项)
+
+## 统计
+- 总功能: 80
+- 已通过: 80
+- functional: 70 项 (high: 46, medium: 20, low: 4)
+- style: 10 项 (high: 2, medium: 4, low: 4)
+
+## Phase 分布
+- Phase 1 (Mode 框架接入): 4 functional + 1 style = 5 项 ✅
+- Phase 2 (类型与配置): 4 项 ✅
+- Phase 3 (状态管理 hook): 9 项 ✅
+- Phase 4 (UI 面板与 2D 编辑): 22 functional + 9 style = 31 项 ✅
+- Phase 5 (几何生成器): 10 项 ✅
+- Phase 6 (Worker/Service): 5 项 ✅
+- Phase 7 (导入导出兼容): 5 项 ✅
+- Phase 8 (价格与尺寸): 2 项 ✅
+- Phase 9 (回归验证): 3 项 ✅
+
+## 初始化
+- 日期: 2026-03-09
+- 创建 feature_list.json (80 个功能测试用例)
+
+## Session 1 - 2026-03-09
+- 实现了: 全部 80 项功能（Phase 1-9 所有阶段）
+- 测试 #1-#80 全部标记为通过
+- 发现/修复的问题: 无重大问题，build 一次通过
+- 当前进度: 80/80 测试通过 (100%)
+- 详细实现:
+  - Phase 1: AppMode 扩展 "stepped"，ModeTabs 3 列布局，page.tsx 分支渲染
+  - Phase 2: SteppedSlot/SteppedLayoutParams 类型，STEPPED_LAYOUT_DEFAULTS/LIMITS/SLOT_DEFAULTS
+  - Phase 3: useSteppedLayout hook（params、addSlot、updateSlot*、duplicateSlots、trimBaseplate、undo/redo、generate、exportSTL）
+  - Phase 4: SteppedPanel 组件（预设按钮、选中凹槽编辑、bottomExpandMargin、磁吸孔、报价/重量）
+  - Phase 5: stepped-tray-model.ts（墙 + 底部平台分层几何体生成、布尔运算减材）
+  - Phase 6: Worker GENERATE_STEPPED + generateStepped() service
+  - Phase 7: param-io（stepped 导入/导出、custom→stepped 迁移、validateSteppedParams）
+  - Phase 8: calculateSteppedPrice（pricing.ts）、edgeone-kv.ts 类型兼容
+  - Phase 9: 回归测试通过（网格/自定义模式正常、模式切换无丢失）
+- 新增文件: stepped-tray-model.ts, useSteppedLayout.ts, SteppedPanel.tsx
+- 修改文件: custom-tray.ts, config.ts, ModeTabs.tsx, page.tsx, LayoutCanvas.tsx, tray.worker.ts, worker-service.ts, param-io.ts, pricing.ts, edgeone-kv.ts
+- Playwright 自动化测试: 15 项 UI 检查全通过，0 控制台错误
+- 下一步建议: 无（所有功能已完成）
+- 创建 claude-progress.txt (本文件)
+- 下一步: 从 Phase 1 的 #1 开始实现
+
+## Session 2 - 用户修改请求
+
+### 修改 1: 关闭自动生成3D模型和自动预览
+- page.tsx: 三种模式 onGenerate 回调均移除 setRightView("3d") 自动切换
+
+### 修改 2: 墙高改为底部高度 + 2D标注
+- config.ts: bottomHeight 范围改为 3-100mm，移除 wallHeight
+- SteppedPanel.tsx: 移除 wallHeight 滑杆
+- LayoutCanvas.tsx: 选中凹槽时在 2D 视图显示绿色 "底部 Xmm" 标签
+
+### 修改 3: 几何重构 - 从底部向上生长的柱状模型
+**核心概念变更**: 原模型从整体块减材 → 新模型各槽独立柱体从底板向上生长
+- 新几何: 底板(baseThickness) + 各槽柱体(高度=baseThickness+bottomHeight) 并集，然后从柱顶向下减去 holeDepth 深的凹槽
+- types/custom-tray.ts: SteppedSlot 移除 wallHeight，SteppedLayoutParams 新增 holeDepth
+- config.ts: STEPPED_SLOT_DEFAULTS 移除 wallHeight，STEPPED_LIMITS 新增 holeDepth {min:2,max:20}，bottomHeight 范围 3-100mm
+- stepped-tray-model.ts: 全量重写，新增 union 并集操作
+- useSteppedLayout.ts: 移除 updateSlotWallHeight / updateSelectedSlotsWallHeight
+- SteppedPanel.tsx: 新增 holeDepth 全局滑杆，更新提示文字
+- param-io.ts: 移除 wallHeight 校验，新增 holeDepth 校验，修复 custom→stepped 迁移
+- 构建: ✅ 零错误通过
+- commit: 5b2fc0e

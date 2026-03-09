@@ -5,17 +5,19 @@ import { reportPageView } from "@/lib/analytics";
 import dynamic from "next/dynamic";
 import { useTrayModel } from "@/hooks/useTrayModel";
 import { useCustomLayout } from "@/hooks/useCustomLayout";
+import { useSteppedLayout } from "@/hooks/useSteppedLayout";
 import { ModeTabs } from "@/components/ModeTabs";
 import type { AppMode } from "@/types/custom-tray";
 import { Boxes, Settings2, PenTool, Eye, ClipboardList, BarChart3 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { isAdmin } from "@/lib/permissions";
 import type { TrayParams } from "@/types/tray";
-import type { CustomLayoutParams } from "@/types/custom-tray";
+import type { CustomLayoutParams, SteppedLayoutParams } from "@/types/custom-tray";
 
 // Lazy load components
 const ParameterPanel = dynamic(() => import("@/components/ParameterPanel"), { ssr: false });
 const CustomPanel = dynamic(() => import("@/components/CustomPanel"), { ssr: false });
+const SteppedPanel = dynamic(() => import("@/components/SteppedPanel"), { ssr: false });
 const LayoutCanvas = dynamic(() => import("@/components/LayoutCanvas"), { ssr: false });
 const OrderListDialog = dynamic(() => import("@/components/OrderListPanel"), { ssr: false });
 const StatsPanel = dynamic(() => import("@/components/StatsPanel"), { ssr: false });
@@ -49,7 +51,6 @@ export default function Home() {
   const [rightView, setRightView] = useState<"2d" | "3d">("2d");
   const [mobileTab, setMobileTab] = useState<"params" | "2d" | "3d">("params");
   const [ordersOpen, setOrdersOpen] = useState(false);
-  const [statsOpen, setStatsOpen] = useState(false);
   const isMobile = useIsMobile();
 
   // ── 访问统计上报 (仅一次) ──
@@ -63,11 +64,17 @@ export default function Home() {
   // Custom Mode State
   const customModel = useCustomLayout();
 
+  // Stepped Mode State
+  const steppedModel = useSteppedLayout();
+
   /** 从订单导入配置 */
   const handleImportOrder = (orderMode: AppMode, params: unknown) => {
     if (orderMode === "grid") {
       gridModel.setParams(params as TrayParams);
       setMode("grid");
+    } else if (orderMode === "stepped") {
+      steppedModel.setParams(params as SteppedLayoutParams);
+      setMode("stepped");
     } else {
       customModel.setParams(params as CustomLayoutParams);
       setMode("custom");
@@ -75,49 +82,61 @@ export default function Home() {
   };
 
   // 参数面板内容（共享于桌面和移动端）
-  const renderParameterPanel = () =>
-    mode === "grid" ? (
-      <ParameterPanel
-        params={gridModel.params}
-        setParams={gridModel.setParams}
-        updateParam={gridModel.updateParam}
-        onGenerate={(options?: { shouldSwitchView?: boolean }) => {
-          gridModel.handleGenerate();
-          if (options?.shouldSwitchView !== false) {
-            setRightView("3d");
-            if (isMobile) setMobileTab("3d");
-          }
-        }}
-        onExportSTL={gridModel.handleExportSTL}
-        isGenerating={gridModel.isGenerating}
-        volume={gridModel.volume}
-      />
-    ) : (
+  const renderParameterPanel = () => {
+    if (mode === "grid") {
+      return (
+        <ParameterPanel
+          params={gridModel.params}
+          setParams={gridModel.setParams}
+          updateParam={gridModel.updateParam}
+          onGenerate={gridModel.handleGenerate}
+          onExportSTL={gridModel.handleExportSTL}
+          isGenerating={gridModel.isGenerating}
+          volume={gridModel.volume}
+        />
+      );
+    }
+    if (mode === "stepped") {
+      return (
+        <SteppedPanel
+          params={steppedModel.params}
+          effectiveDimensions={steppedModel.effectiveDimensions}
+          setParams={steppedModel.setParams}
+          updateParam={steppedModel.updateParam}
+          onAddSlot={steppedModel.addSlot}
+          onGenerate={steppedModel.handleGenerate}
+          onExportSTL={steppedModel.handleExportSTL}
+          isGenerating={steppedModel.isGenerating}
+          volume={steppedModel.volume}
+          selectedSlotIds={selectedSlotIds}
+          onUpdateSlotBottomHeight={steppedModel.updateSlotBottomHeight}
+          onUpdateSelectedSlotsBottomHeight={steppedModel.updateSelectedSlotsBottomHeight}
+        />
+      );
+    }
+    return (
       <CustomPanel
         params={customModel.params}
         effectiveDimensions={customModel.effectiveDimensions}
         setParams={customModel.setParams}
         updateParam={customModel.updateParam}
         onAddSlot={customModel.addSlot}
-        onGenerate={(options?: { shouldSwitchView?: boolean }) => {
-          customModel.handleGenerate();
-          if (options?.shouldSwitchView !== false) {
-            setRightView("3d");
-            if (isMobile) setMobileTab("3d");
-          }
-        }}
+        onGenerate={customModel.handleGenerate}
         onExportSTL={customModel.handleExportSTL}
         isGenerating={customModel.isGenerating}
         volume={customModel.volume}
       />
     );
+  };
 
   // 视口内容（共享于桌面和移动端）
   const renderViewport = () => {
     if (mode === "grid") {
       return <TrayViewer geometry={gridModel.threeGeometry} isStale={gridModel.isPreviewStale} />;
     }
-    // Custom mode: 2D/3D toggle
+
+    // Custom / Stepped: 2D/3D toggle
+    const model = mode === "stepped" ? steppedModel : customModel;
     return (
       <Tabs
         value={rightView}
@@ -134,27 +153,29 @@ export default function Home() {
         <TabsContent value="2d" className="absolute inset-0 m-0 p-0 data-[state=inactive]:hidden">
           <div className="w-full h-full border-t border-[#2e2a24]">
             <LayoutCanvas
-              params={customModel.params}
-              onUpdateSlot={customModel.updateSlotPosition}
-              onRemoveSlot={customModel.removeSlot}
+              params={model.params}
+              onUpdateSlot={model.updateSlotPosition}
+              onRemoveSlot={model.removeSlot}
               onResizeTray={(width, depth) => {
-                customModel.setParams((prev) => ({
+                model.setParams((prev: any) => ({
                   ...prev,
                   trayWidth: width,
                   trayDepth: depth,
                 }));
               }}
-              onUpdateSlotRotation={customModel.updateSlotRotation}
-              onUpdateMultipleSlots={customModel.updateMultipleSlots}
-              onDuplicateSlots={customModel.duplicateSlots}
-              onUndo={customModel.undo}
-              onSaveSnapshot={customModel.saveSnapshot}
+              onUpdateSlotRotation={model.updateSlotRotation}
+              onUpdateMultipleSlots={model.updateMultipleSlots}
+              onDuplicateSlots={model.duplicateSlots}
+              onUndo={model.undo}
+              onSaveSnapshot={model.saveSnapshot}
+              onSelectionChange={mode === "stepped" ? setSelectedSlotIds : undefined}
+              outlinePreview={mode === "stepped" ? steppedModel.outlinePreview : undefined}
             />
           </div>
         </TabsContent>
 
         <TabsContent value="3d" className="absolute inset-0 m-0 data-[state=inactive]:hidden">
-          <TrayViewer geometry={customModel.threeGeometry} isStale={customModel.isPreviewStale} />
+          <TrayViewer geometry={model.threeGeometry} isStale={model.isPreviewStale} />
         </TabsContent>
       </Tabs>
     );
@@ -213,6 +234,7 @@ export default function Home() {
       {/* Mode Switcher */}
       <ModeTabs mode={mode} onModeChange={(m) => {
         setMode(m);
+        setSelectedSlotIds([]);
         // 切换模式时，如果移动端停在2d tab但进了grid模式，回退到params
         if (m === "grid" && mobileTab === "2d") setMobileTab("params");
       }} />
@@ -249,17 +271,18 @@ export default function Home() {
           </div>
 
           {/* 2D 画布 */}
-          {mode === "custom" && (
+          {(mode === "custom" || mode === "stepped") && (
             <div className={`absolute inset-0 bg-[#0a0908] transition-opacity duration-200 ${mobileTab === '2d' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
               <LayoutCanvas
-                params={customModel.params}
-                onUpdateSlot={customModel.updateSlotPosition}
-                onRemoveSlot={customModel.removeSlot}
-                onUpdateSlotRotation={customModel.updateSlotRotation}
-                onUpdateMultipleSlots={customModel.updateMultipleSlots}
-                onDuplicateSlots={customModel.duplicateSlots}
-                onUndo={customModel.undo}
-                onSaveSnapshot={customModel.saveSnapshot}
+                params={mode === "stepped" ? steppedModel.params : customModel.params}
+                onUpdateSlot={mode === "stepped" ? steppedModel.updateSlotPosition : customModel.updateSlotPosition}
+                onRemoveSlot={mode === "stepped" ? steppedModel.removeSlot : customModel.removeSlot}
+                onUpdateSlotRotation={mode === "stepped" ? steppedModel.updateSlotRotation : customModel.updateSlotRotation}
+                onUpdateMultipleSlots={mode === "stepped" ? steppedModel.updateMultipleSlots : customModel.updateMultipleSlots}
+                onDuplicateSlots={mode === "stepped" ? steppedModel.duplicateSlots : customModel.duplicateSlots}
+                onUndo={mode === "stepped" ? steppedModel.undo : customModel.undo}
+                onSaveSnapshot={mode === "stepped" ? steppedModel.saveSnapshot : customModel.saveSnapshot}
+                onSelectionChange={mode === "stepped" ? setSelectedSlotIds : undefined}
               />
             </div>
           )}
@@ -269,6 +292,8 @@ export default function Home() {
             <div className="absolute inset-0 bg-[#0a0908] z-10">
               {mode === "grid" ? (
                 <TrayViewer geometry={gridModel.threeGeometry} />
+              ) : mode === "stepped" ? (
+                <TrayViewer geometry={steppedModel.threeGeometry} />
               ) : (
                 <TrayViewer geometry={customModel.threeGeometry} />
               )}
@@ -285,7 +310,7 @@ export default function Home() {
             <Settings2 className="w-5 h-5" />
             <span className="text-[10px] font-bold tracking-wider uppercase">参数</span>
           </button>
-          {mode === "custom" && (
+          {(mode === "custom" || mode === "stepped") && (
             <button
               onClick={() => setMobileTab("2d")}
               className={`flex-1 flex flex-col items-center gap-0.5 py-2 transition-colors ${mobileTab === '2d' ? 'text-primary' : 'text-muted-foreground'}`}

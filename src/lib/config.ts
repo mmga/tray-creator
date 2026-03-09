@@ -1,5 +1,8 @@
 import type { TrayParams, BasePreset } from "@/types/tray";
-import type { CustomLayoutParams } from "@/types/custom-tray";
+import type {
+  CustomLayoutParams,
+  SteppedLayoutParams,
+} from "@/types/custom-tray";
 
 /**
  * ============================================
@@ -103,6 +106,21 @@ export const CUSTOM_LAYOUT_DEFAULTS: CustomLayoutParams = {
   baseHoleSize: "25",
 };
 
+/** 阶梯底座默认参数 */
+export const STEPPED_LAYOUT_DEFAULTS: SteppedLayoutParams = {
+  trayWidth: 260,
+  trayDepth: 260,
+  slots: [],
+  spacing: 5,
+  holeDepth: 3,
+  smoothingRadius: 60,
+};
+
+/** 阶梯底座新增槽位默认生长高度 */
+export const STEPPED_SLOT_DEFAULTS = {
+  bottomHeight: 5,
+} as const;
+
 // ═══════════════════════════════════════════
 // 5. 参数范围与元数据（网格模式）
 // ═══════════════════════════════════════════
@@ -133,6 +151,19 @@ export const CUSTOM_LIMITS = {
   baseThickness: PARAM_CONFIG.baseThickness,
   holeDepth: PARAM_CONFIG.holeDepth,
   cornerRadius: PARAM_CONFIG.cornerRadius,
+} as const;
+
+// ═══════════════════════════════════════════
+// 6b. 阶梯底座参数范围
+// ═══════════════════════════════════════════
+
+export const STEPPED_LIMITS = {
+  trayWidth: { label: "宽度", min: 50, max: 260, step: 1, unit: "mm" },
+  trayDepth: { label: "深度", min: 50, max: 260, step: 1, unit: "mm" },
+  spacing: { label: "凹槽间距", min: 2, max: 20, step: 1, unit: "mm" },
+  holeDepth: { label: "凹槽深度", min: 0.2, max: 20, step: 0.2, unit: "mm" },
+  bottomHeight: { label: "圆柱高度", min: 3, max: 100, step: 1, unit: "mm" },
+  smoothingRadius: { label: "平滑半径", min: 1, max: 150, step: 1, unit: "mm" },
 } as const;
 
 // ═══════════════════════════════════════════
