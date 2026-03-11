@@ -221,25 +221,32 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
   let baseSolid: Geom3;
 
   if (outlineGeom) {
-    // JSCAD offset(-delta) 在某些 segment 数下产生 CW 绕序 geom2，
-    // 导致 extrudeLinear 生成反向实体(负体积)，使 subtract 变成 union。
-    // 修复方案：先用正确朝向的 3D 扩展柱体 union，再与形态学轮廓 extrude
-    // 做 intersect 来裁剪到目标边界。intersect 产出的实体 BSP 树始终正确。
-    const expandedR = smoothingRadius;
-    const expandedCyls: Geom3[] = slotData.map((d) => {
-      const r = Math.max(d.actualW, d.actualH) / 2 + spacing + expandedR;
-      const shape = circle({
-        radius: r,
-        segments: RENDER_CONFIG.cylinderSegments,
-      });
-      const col = extrudeLinear({ height: baseHeight }, shape);
-      return translate([d.cx, d.cy, 0], col);
-    });
-    const expandedBase3D =
-      expandedCyls.length === 1 ? expandedCyls[0] : union(...expandedCyls);
+    // generateOutlineGeom2 现在内置了绕序验证和自动降级，
+    // 可以直接拉伸，无需 intersect 迂回修复。
+    baseSolid = extrudeLinear({ height: baseHeight }, outlineGeom);
 
-    const mask3D = extrudeLinear({ height: baseHeight }, outlineGeom);
-    baseSolid = intersect(expandedBase3D, mask3D);
+    // 防御性检查：验证拉伸结果体积为正
+    const extrudedVol = measureVolume(baseSolid);
+    if (extrudedVol < 0) {
+      logOrientation(debugCtx, "extrude_negative_fallback", {
+        extrudedVol,
+      });
+      // 极端兜底：用 intersect 修复
+      const expandedCyls: Geom3[] = slotData.map((d) => {
+        const r =
+          Math.max(d.actualW, d.actualH) / 2 + spacing + smoothingRadius;
+        const shape = circle({
+          radius: r,
+          segments: RENDER_CONFIG.cylinderSegments,
+        });
+        const col = extrudeLinear({ height: baseHeight }, shape);
+        return translate([d.cx, d.cy, 0], col);
+      });
+      const expandedBase3D =
+        expandedCyls.length === 1 ? expandedCyls[0] : union(...expandedCyls);
+      const mask3D = extrudeLinear({ height: baseHeight }, outlineGeom);
+      baseSolid = intersect(expandedBase3D, mask3D);
+    }
   } else {
     // 回退：合并独立的外扩柱子
     const fallbackColumns: Geom3[] = slotData.map((d) => {
