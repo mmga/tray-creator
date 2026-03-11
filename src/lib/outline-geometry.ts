@@ -21,6 +21,38 @@ const MORPH_EPSILON_MAX = 0.005;
 const MORPH_TANGENCY_OUTER_TOLERANCE = MORPH_EPSILON_MAX * 2;
 const MORPH_TANGENCY_INNER_TOLERANCE = 0.01;
 
+// 多边形逼近圆弧的最大弦距容差 (mm)
+// 0.02mm 远低于 FDM 打印精度 (±0.2mm) 和视觉辨识阈值
+const ARC_TOLERANCE = 0.02;
+
+/**
+ * 根据最大膨胀半径和弦距容差，计算 JSCAD circle 所需的自适应 segments 数。
+ * 公式：n = ceil(π / acos(1 - tolerance / R))
+ * 保证每段弧的 sagitta ≤ ARC_TOLERANCE。
+ */
+function computeAdaptiveSegments(
+  circles: OutlineCircle[],
+  smoothingRadius: number,
+): number {
+  const MIN_SEGMENTS = 64;
+  const MAX_SEGMENTS = 256;
+  if (circles.length === 0) return MIN_SEGMENTS;
+
+  let maxExpandedR = 0;
+  for (const c of circles) {
+    const r = c.rOuter + smoothingRadius;
+    if (r > maxExpandedR) maxExpandedR = r;
+  }
+
+  if (maxExpandedR <= 0) return MIN_SEGMENTS;
+
+  const ratio = ARC_TOLERANCE / maxExpandedR;
+  if (ratio >= 1) return MIN_SEGMENTS;
+
+  const n = Math.ceil(Math.PI / Math.acos(1 - ratio));
+  return Math.min(MAX_SEGMENTS, Math.max(MIN_SEGMENTS, n));
+}
+
 function computeTangencyEpsilon(
   circles: OutlineCircle[],
   smoothingRadius: number,
@@ -275,6 +307,65 @@ function insetPolygon(
   return cleaned;
 }
 
+// ── 辅助：圆-圆交点计算与 junction 修正 ──
+
+/**
+ * 计算所有重叠圆对的真实交点。
+ */
+function computeCircleIntersections(
+  centers: { cx: number; cy: number }[],
+  radii: number[],
+): [number, number][] {
+  const result: [number, number][] = [];
+  for (let i = 0; i < centers.length; i++) {
+    for (let j = i + 1; j < centers.length; j++) {
+      const c1 = centers[i],
+        c2 = centers[j];
+      const r1 = radii[i],
+        r2 = radii[j];
+      const dx = c2.cx - c1.cx,
+        dy = c2.cy - c1.cy;
+      const d = Math.hypot(dx, dy);
+      if (d >= r1 + r2 || d <= Math.abs(r1 - r2) || d < 1e-10) continue;
+      const a = (r1 * r1 - r2 * r2 + d * d) / (2 * d);
+      const h2 = r1 * r1 - a * a;
+      if (h2 < 0) continue;
+      const h = Math.sqrt(h2);
+      const mx = c1.cx + (a * dx) / d;
+      const my = c1.cy + (a * dy) / d;
+      const px = (-dy / d) * h;
+      const py = (dx / d) * h;
+      result.push([mx + px, my + py]);
+      result.push([mx - px, my - py]);
+    }
+  }
+  return result;
+}
+
+/**
+ * 将 union 多边形中靠近真实圆-圆交点的顶点纠正到精确位置。
+ * 这使后续 insetPolygon 的凹角中心更精确，连接弧与原始圆真正相切。
+ */
+function correctJunctionVertices(
+  polygon: [number, number][],
+  junctionPoints: [number, number][],
+  tolerance: number,
+): [number, number][] {
+  if (junctionPoints.length === 0) return polygon;
+  return polygon.map((pt) => {
+    let bestDist = Infinity;
+    let bestJP: [number, number] | null = null;
+    for (const jp of junctionPoints) {
+      const dist = Math.hypot(pt[0] - jp[0], pt[1] - jp[1]);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestJP = jp;
+      }
+    }
+    return bestJP && bestDist < tolerance ? bestJP : pt;
+  });
+}
+
 // ── 核心：形态学闭运算（JSCAD union + 数学内缩）──
 
 /**
@@ -282,12 +373,14 @@ function insetPolygon(
  *
  * 管线：
  * 1. JSCAD circle + union 创建膨胀后的合并几何（可靠）
- * 2. 纯数学 insetPolygon 替代 JSCAD offset(-delta)（避免系统性 bug）
- * 3. geom2.fromPoints 转回 JSCAD 格式
+ * 2. 修正 union 多边形的 junction 顶点到真实圆-圆交点
+ * 3. 纯数学 insetPolygon 替代 JSCAD offset(-delta)（避免系统性 bug）
+ * 4. circle-snapping 后处理：将圆体顶点投影回原始圆，排除连接弧顶点
+ * 5. geom2.fromPoints 转回 JSCAD 格式
  *
  * @param circles 所有 slot 的外扩圆
  * @param smoothingRadius 平滑半径（膨胀/腐蚀量）
- * @param segments 圆弧细分段数
+ * @param segments 圆弧细分段数（仅用于内缩圆弧；膨胀圆自适应计算）
  * @returns JSCAD Geom2 对象
  */
 export function generateOutlineGeom2(
@@ -301,10 +394,13 @@ export function generateOutlineGeom2(
   const epsilon = computeTangencyEpsilon(circles, clampedSmoothing);
   const totalSmoothing = clampedSmoothing + epsilon;
 
+  // 自适应 segments：根据最大膨胀半径和弦距容差动态计算
+  const adaptiveSegs = computeAdaptiveSegments(circles, totalSmoothing);
+
   // 1. JSCAD 创建膨胀圆 + union（这一步可靠，不涉及 offset）
   const geom2Circles = circles.map((c) => {
     const expandedRadius = c.rOuter + totalSmoothing;
-    const circ = circle({ radius: expandedRadius, segments });
+    const circ = circle({ radius: expandedRadius, segments: adaptiveSegs });
     return translate([c.cx, c.cy, 0], circ) as Geom2;
   });
 
@@ -338,6 +434,22 @@ export function generateOutlineGeom2(
     largest = [...largest].reverse() as [number, number][];
   }
 
+  // 2b. 修正 union 多边形的 junction 顶点到真实圆-圆交点
+  const expandedJunctions = computeCircleIntersections(
+    circles.map((c) => ({ cx: c.cx, cy: c.cy })),
+    circles.map((c) => c.rOuter + totalSmoothing),
+  );
+  if (expandedJunctions.length > 0) {
+    // 容差 = 膨胀圆多边形的大致弦长（覆盖离散化误差）
+    let maxExpandedR = 0;
+    for (const c of circles) {
+      const r = c.rOuter + totalSmoothing;
+      if (r > maxExpandedR) maxExpandedR = r;
+    }
+    const chordLen = 2 * maxExpandedR * Math.sin(Math.PI / adaptiveSegs);
+    largest = correctJunctionVertices(largest, expandedJunctions, chordLen);
+  }
+
   // 3. 纯数学内缩（替代 JSCAD offset(-delta)）
   const inset = insetPolygon(largest, totalSmoothing, segments);
   if (!inset) {
@@ -346,7 +458,7 @@ export function generateOutlineGeom2(
       `[OUTLINE] Inset collapsed (smoothingRadius=${smoothingRadius}). Falling back to no smoothing.`,
     );
     const fallbackCircles = circles.map((c) => {
-      const circ = circle({ radius: c.rOuter, segments });
+      const circ = circle({ radius: c.rOuter, segments: adaptiveSegs });
       return translate([c.cx, c.cy, 0], circ) as Geom2;
     });
     return fallbackCircles.length === 1
@@ -354,7 +466,140 @@ export function generateOutlineGeom2(
       : (union(...fallbackCircles) as Geom2);
   }
 
-  return geom2.fromPoints(inset);
+  // 4. Circle-snapping 后处理：圆体顶点投影回原始圆，排除连接弧顶点
+  const snapped = snapToCircles(
+    inset,
+    circles,
+    expandedJunctions,
+    totalSmoothing,
+  );
+
+  return geom2.fromPoints(snapped);
+}
+
+// ── Circle-Snapping 后处理 ──────────────────
+
+/**
+ * 将内缩后多边形中圆体区段的顶点投影到真实圆上，
+ * 同时排除连接弧（neck）区域的顶点不被错误拉拽。
+ *
+ * 判断方法：若某顶点到某膨胀交点的距离 ≈ smoothingRadius，
+ * 说明它属于连接弧（insetPolygon 在 junction 处生成的凹角圆弧），
+ * 不应 snap 到原始圆。
+ */
+function snapToCircles(
+  polygon: [number, number][],
+  circles: OutlineCircle[],
+  expandedJunctions: [number, number][],
+  totalSmoothing: number,
+): [number, number][] {
+  if (circles.length === 0) return polygon;
+
+  const snapTolerance = 0.5;
+  // 连接弧检测容差：顶点距 junction 的距离与 totalSmoothing 之差的阈值
+  const arcCheckTolerance = 0.5;
+  const n = polygon.length;
+
+  // 1. 为每个顶点标注：属于某圆 (>=0)、连接弧 (-2)、或不匹配 (-1)
+  const labels: number[] = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const pt = polygon[i];
+
+    // 检查是否在连接弧上（靠近某 junction、距离 ≈ totalSmoothing）
+    let onArc = false;
+    for (const jp of expandedJunctions) {
+      const distToJP = Math.hypot(pt[0] - jp[0], pt[1] - jp[1]);
+      if (Math.abs(distToJP - totalSmoothing) < arcCheckTolerance) {
+        onArc = true;
+        break;
+      }
+    }
+    if (onArc) {
+      labels[i] = -2; // 连接弧顶点，不 snap
+      continue;
+    }
+
+    // 检查是否接近某原始圆
+    let bestIdx = -1;
+    let bestAbsDiff = Infinity;
+    for (let ci = 0; ci < circles.length; ci++) {
+      const c = circles[ci];
+      const dist = Math.hypot(pt[0] - c.cx, pt[1] - c.cy);
+      const absDiff = Math.abs(dist - c.rOuter);
+      if (absDiff < bestAbsDiff) {
+        bestAbsDiff = absDiff;
+        bestIdx = ci;
+      }
+    }
+    labels[i] = bestAbsDiff < snapTolerance ? bestIdx : -1;
+  }
+
+  // 2. 找到连续同圆的区段（runs），用真实圆弧重采样
+  const result: [number, number][] = [];
+  let i = 0;
+  while (i < n) {
+    if (labels[i] < 0) {
+      // -1 或 -2：原样保留
+      result.push(polygon[i]);
+      i++;
+      continue;
+    }
+
+    // 找到连续同圆的 run: [i, j)
+    const circleIdx = labels[i];
+    let j = i + 1;
+    while (j < n && labels[j] === circleIdx) j++;
+
+    const c = circles[circleIdx];
+    const runLen = j - i;
+
+    if (runLen < 2) {
+      // 单个点：直接投影
+      const pt = polygon[i];
+      const dx = pt[0] - c.cx;
+      const dy = pt[1] - c.cy;
+      const dist = Math.hypot(dx, dy);
+      if (dist > 1e-10) {
+        const scale = c.rOuter / dist;
+        result.push([c.cx + dx * scale, c.cy + dy * scale]);
+      } else {
+        result.push(pt);
+      }
+    } else {
+      // 连续多点在同一圆上：沿真实圆弧重采样
+      const startPt = polygon[i];
+      const endPt = polygon[j - 1];
+      const startAngle = Math.atan2(startPt[1] - c.cy, startPt[0] - c.cx);
+      const endAngle = Math.atan2(endPt[1] - c.cy, endPt[0] - c.cx);
+
+      let sweep = endAngle - startAngle;
+      const midPt = polygon[i + Math.floor(runLen / 2)];
+      const midAngle = Math.atan2(midPt[1] - c.cy, midPt[0] - c.cx);
+      let midCheck = midAngle - startAngle;
+      while (midCheck > Math.PI) midCheck -= 2 * Math.PI;
+      while (midCheck < -Math.PI) midCheck += 2 * Math.PI;
+
+      if (midCheck >= 0) {
+        while (sweep < 0) sweep += 2 * Math.PI;
+      } else {
+        while (sweep > 0) sweep -= 2 * Math.PI;
+      }
+
+      const arcPts = Math.max(runLen, 2);
+      for (let a = 0; a < arcPts; a++) {
+        const t = a / (arcPts - 1);
+        const angle = startAngle + sweep * t;
+        result.push([
+          c.cx + c.rOuter * Math.cos(angle),
+          c.cy + c.rOuter * Math.sin(angle),
+        ]);
+      }
+    }
+
+    i = j;
+  }
+
+  return result;
 }
 
 // ── 公共接口 ──────────────────────────────
