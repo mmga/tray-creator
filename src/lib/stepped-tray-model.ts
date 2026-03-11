@@ -271,8 +271,9 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
   for (const d of slotData) {
     if (d.columnHeight > baseHeight) {
       const extraHeight = d.columnHeight - baseHeight;
-      const expandedW = d.actualW + spacing;
-      const expandedH = d.actualH + spacing;
+      // 两侧各留 spacing，因此直径 +2*spacing，半径 +spacing
+      const expandedW = d.actualW + spacing * 2;
+      const expandedH = d.actualH + spacing * 2;
       const shape = ellipse({
         radius: [expandedW / 2, expandedH / 2],
         segments: RENDER_CONFIG.cylinderSegments,

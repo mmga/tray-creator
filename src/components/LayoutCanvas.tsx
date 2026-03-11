@@ -797,7 +797,7 @@ export default function LayoutCanvas({
                 <ellipse
                   rx={w / 2}
                   ry={h / 2}
-                  fill={color}
+                  fill={'bottomHeight' in slot ? (isSelected ? "#f97316" : bhLabelColor) : color}
                   fillOpacity={0.8}
                   stroke={isColliding || isInvolvedViaOther ? "#ef4444" : "#fff"}
                   strokeWidth={(isColliding || isInvolvedViaOther ? 0.5 : 0.2) / zoom}
@@ -824,7 +824,7 @@ export default function LayoutCanvas({
                     textAnchor="middle"
                     dominantBaseline="middle"
                     fontSize={Math.max(2, Math.min(w, h, 18) / 3.5)}
-                    fill={bhLabelColor}
+                    fill="#fff"
                     fontWeight="bold"
                     pointerEvents="none"
                     style={{ userSelect: 'none' }}
