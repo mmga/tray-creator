@@ -8,6 +8,7 @@ import { generateCustomSTLFilename } from "@/lib/stl-export";
 import { useUndoHistory } from "@/hooks/useUndoHistory";
 import { trayWorkerService } from "@/lib/worker/worker-service";
 import { useToast } from "@/hooks/useToast";
+import { reportAction } from "@/lib/analytics";
 import type * as THREE from "three";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 
@@ -381,6 +382,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
         return threeGeom;
       });
       setIsPreviewStale(false);
+      reportAction("generate_3d");
     } catch (err) {
       console.error("生成失败:", err);
       toast(
@@ -434,6 +436,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
       jsonLink.click();
       document.body.removeChild(jsonLink);
       URL.revokeObjectURL(jsonUrl);
+      reportAction("export_stl");
     } catch (err) {
       console.error("STL导出失败:", err);
       toast(

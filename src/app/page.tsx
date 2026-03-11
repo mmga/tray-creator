@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { reportPageView } from "@/lib/analytics";
 import dynamic from "next/dynamic";
 import { useTrayModel } from "@/hooks/useTrayModel";
 import { useCustomLayout } from "@/hooks/useCustomLayout";
 import { useSteppedLayout } from "@/hooks/useSteppedLayout";
 import { ModeTabs } from "@/components/ModeTabs";
 import type { AppMode } from "@/types/custom-tray";
-import { Boxes, Settings2, PenTool, Eye, ClipboardList } from "lucide-react";
+import { Boxes, Settings2, PenTool, Eye, ClipboardList, BarChart3 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { isAdmin } from "@/lib/permissions";
 import type { TrayParams } from "@/types/tray";
@@ -19,6 +20,7 @@ const CustomPanel = dynamic(() => import("@/components/CustomPanel"), { ssr: fal
 const SteppedPanel = dynamic(() => import("@/components/SteppedPanel"), { ssr: false });
 const LayoutCanvas = dynamic(() => import("@/components/LayoutCanvas"), { ssr: false });
 const OrderListDialog = dynamic(() => import("@/components/OrderListPanel"), { ssr: false });
+const StatsPanel = dynamic(() => import("@/components/StatsPanel"), { ssr: false });
 const TrayViewer = dynamic(() => import("@/components/TrayViewer"), {
   ssr: false,
   loading: () => (
@@ -49,8 +51,14 @@ export default function Home() {
   const [rightView, setRightView] = useState<"2d" | "3d">("2d");
   const [mobileTab, setMobileTab] = useState<"params" | "2d" | "3d">("params");
   const [ordersOpen, setOrdersOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
   const [selectedSlotIds, setSelectedSlotIds] = useState<string[]>([]);
   const isMobile = useIsMobile();
+
+  // ── 访问统计上报 (仅一次) ──
+  useEffect(() => {
+    reportPageView();
+  }, []);
 
   // Grid Mode State
   const gridModel = useTrayModel();
@@ -199,13 +207,22 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-2 text-white">
             {isAdmin && (
-              <button
-                onClick={() => setOrdersOpen(true)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-mono font-medium bg-[#1c1a16] text-muted-foreground border border-[#2e2a24] tracking-wider hover:bg-[#252220] hover:text-primary transition-colors cursor-pointer"
-              >
-                <ClipboardList className="w-3 h-3" />
-                订单
-              </button>
+              <>
+                <button
+                  onClick={() => setOrdersOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-mono font-medium bg-[#1c1a16] text-muted-foreground border border-[#2e2a24] tracking-wider hover:bg-[#252220] hover:text-primary transition-colors cursor-pointer"
+                >
+                  <ClipboardList className="w-3 h-3" />
+                  订单
+                </button>
+                <button
+                  onClick={() => setStatsOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-mono font-medium bg-[#1c1a16] text-muted-foreground border border-[#2e2a24] tracking-wider hover:bg-[#252220] hover:text-primary transition-colors cursor-pointer"
+                >
+                  <BarChart3 className="w-3 h-3" />
+                  统计
+                </button>
+              </>
             )}
             <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-mono font-medium bg-[#1c1a16] text-muted-foreground border border-[#2e2a24] tracking-wider">
               <span className="w-1.5 h-1.5 rounded-full bg-[#8b1a1a] animate-ember" />
@@ -319,6 +336,12 @@ export default function Home() {
           open={ordersOpen}
           onClose={() => setOrdersOpen(false)}
           onImportOrder={handleImportOrder}
+        />
+      )}
+      {isAdmin && (
+        <StatsPanel
+          open={statsOpen}
+          onClose={() => setStatsOpen(false)}
         />
       )}
     </div>

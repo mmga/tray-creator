@@ -27,6 +27,7 @@ import { isAdmin } from "@/lib/permissions";
 import { exportParams } from "@/lib/param-io";
 import { calculateWeight, calculateCustomPrice } from "@/lib/pricing";
 import { sendConfigToKV, buildPayload, serializePayload } from "@/lib/edgeone-kv";
+import { reportAction } from "@/lib/analytics";
 import { useToast } from "@/hooks/useToast";
 import { ConfirmSendDialog } from "@/components/ConfirmSendDialog";
 
@@ -343,6 +344,7 @@ export default function CustomPanel({
           setIsSending(false);
           setDialogOpen(false);
           if (result.success) {
+            reportAction("submit_order");
             toast("success", `配置已发送 (${result.orderId})`);
           } else {
             toast("error", `发送失败：${result.error}`);

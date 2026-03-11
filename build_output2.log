@@ -1,0 +1,27 @@
+
+> tray-creator@0.1.0 build
+> next build
+
+鈻?Next.js 16.1.6 (Turbopack)
+
+  Creating an optimized production build ...
+鉁?Compiled successfully in 4.3s
+  Running TypeScript ...
+  Collecting page data using 15 workers ...
+  Generating static pages using 15 workers (0/6) ...
+  Generating static pages using 15 workers (1/6) 
+  Generating static pages using 15 workers (2/6) 
+  Generating static pages using 15 workers (4/6) 
+鉁?Generating static pages using 15 workers (6/6) in 474.4ms
+  Finalizing page optimization ...
+
+Route (app)
+鈹?鈼?/
+鈹?鈼?/_not-found
+鈹?茠 /api/orders
+鈹?茠 /api/stats
+
+
+鈼? (Static)   prerendered as static content
+茠  (Dynamic)  server-rendered on demand
+
