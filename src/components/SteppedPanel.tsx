@@ -1,7 +1,7 @@
 "use client";
 
-import type { SteppedLayoutParams, SteppedSlot } from "@/types/custom-tray";
-import { BASE_PRESETS, STEPPED_LIMITS, PARAM_CONFIG, MAX_BUILD_SIZE, STEPPED_LAYOUT_DEFAULTS } from "@/lib/config";
+import type { SteppedLayoutParams } from "@/types/custom-tray";
+import { BASE_PRESETS, STEPPED_LIMITS, MAX_BUILD_SIZE, STEPPED_LAYOUT_DEFAULTS } from "@/lib/config";
 import { calculateSteppedTrayDimensions } from "@/lib/stepped-tray-model";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -19,6 +19,10 @@ import {
     Share2,
     Send,
     Layers,
+    Trash2,
+    ArrowRight,
+    ChevronUp,
+    ChevronDown,
 } from "lucide-react";
 import { BaseHoleConfig } from "@/components/BaseHoleConfig";
 import { ParamIOButtons } from "@/components/ParamIOButtons";
@@ -42,8 +46,13 @@ interface SteppedPanelProps {
     isGenerating: boolean;
     volume: number;
     selectedSlotIds: string[];
-    onUpdateSlotBottomHeight: (id: string, bottomHeight: number) => void;
-    onUpdateSelectedSlotsBottomHeight: (ids: string[], bottomHeight: number) => void;
+    // 分组管理
+    onAddGroup: () => void;
+    onRemoveGroup: (groupId: string) => void;
+    onUpdateGroupHeight: (groupId: string, height: number) => void;
+    onSetActiveGroup: (groupId: string) => void;
+    onMoveSelectedSlotsToGroup: (ids: string[], targetGroupId: string) => void;
+    onReorderGroups: (fromIndex: number, toIndex: number) => void;
 }
 
 export default function SteppedPanel({
@@ -57,8 +66,12 @@ export default function SteppedPanel({
     isGenerating,
     volume,
     selectedSlotIds,
-    onUpdateSlotBottomHeight,
-    onUpdateSelectedSlotsBottomHeight,
+    onAddGroup,
+    onRemoveGroup,
+    onUpdateGroupHeight,
+    onSetActiveGroup,
+    onMoveSelectedSlotsToGroup,
+    onReorderGroups,
 }: SteppedPanelProps) {
     const dimensions = calculateSteppedTrayDimensions(params);
     const effectiveWidth = effectiveDimensions.width;
@@ -69,10 +82,6 @@ export default function SteppedPanel({
     const [dialogOpen, setDialogOpen] = useState(false);
     const [pendingJson, setPendingJson] = useState("");
     const { toast } = useToast();
-
-    // 获取选中的凹槽
-    const selectedSlots = params.slots.filter((s) => selectedSlotIds.includes(s.id));
-    const firstSelectedSlot = selectedSlots.length > 0 ? selectedSlots[0] : null;
 
     // Auto-preview
     useEffect(() => {
@@ -89,11 +98,135 @@ export default function SteppedPanel({
 
     return (
         <div className="flex flex-col gap-4 animate-fade-in">
+
+            {/* 分组管理 */}
+            <div className="iron-panel rounded-sm p-3">
+                <SectionHeader icon={Layers} title="分组管理" collapsible defaultOpen={true}
+                    summary={`${params.groups.length} 组 / ${params.slots.length} 个凹槽`}>
+                    <div className="space-y-1.5 mt-1">
+                        {params.groups
+                            .map((group, groupIndex) => {
+                                const groupSlotCount = params.slots.filter(s => s.groupId === group.id).length;
+                                const isActive = params.activeGroupId === group.id;
+                                return (
+                                    <div
+                                        key={group.id}
+                                        onClick={() => onSetActiveGroup(group.id)}
+                                        className={`rounded cursor-pointer transition-all duration-150 border ${isActive ? "bg-[#1c1a16]" : "border-transparent hover:bg-[#1c1a16]/50"
+                                            }`}
+                                        style={isActive ? { borderColor: group.color + "50" } : {}}
+                                    >
+                                        {/* 分组行顶部 */}
+                                        <div className="flex items-center gap-2 px-2 pt-2 pb-1">
+                                            <div
+                                                className={`w-2 h-2 rounded-full flex-shrink-0 transition-opacity ${isActive ? "" : "opacity-25"}`}
+                                                style={{ background: group.color }}
+                                            />
+                                            <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: group.color }} />
+                                            <span className="text-xs font-medium text-foreground/90 flex-1 truncate">{group.name}</span>
+                                            <span className="text-[10px] text-muted-foreground shrink-0">{groupSlotCount} 个凹槽</span>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); onReorderGroups(groupIndex, groupIndex - 1); }}
+                                                disabled={groupIndex === 0}
+                                                className="w-5 h-5 shrink-0 flex items-center justify-center text-muted-foreground/40 hover:text-foreground disabled:opacity-20 disabled:cursor-not-allowed rounded transition-colors"
+                                                title="上移"
+                                            >
+                                                <ChevronUp className="w-3 h-3" />
+                                            </button>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); onReorderGroups(groupIndex, groupIndex + 1); }}
+                                                disabled={groupIndex === params.groups.length - 1}
+                                                className="w-5 h-5 shrink-0 flex items-center justify-center text-muted-foreground/40 hover:text-foreground disabled:opacity-20 disabled:cursor-not-allowed rounded transition-colors"
+                                                title="下移"
+                                            >
+                                                <ChevronDown className="w-3 h-3" />
+                                            </button>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); onRemoveGroup(group.id); }}
+                                                disabled={params.groups.length <= 1}
+                                                className="w-5 h-5 shrink-0 flex items-center justify-center text-muted-foreground/40 hover:text-red-400 disabled:opacity-20 disabled:cursor-not-allowed rounded transition-colors"
+                                                title="删除组（同时删除组内所有凹槽）"
+                                            >
+                                                <Trash2 className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                        {/* 高度滑杆（仅激活组展开） */}
+                                        {isActive ? (
+                                            <div className="px-2 pb-2">
+                                                <ParamSlider
+                                                    label={STEPPED_LIMITS.bottomHeight.label}
+                                                    value={group.bottomHeight}
+                                                    config={STEPPED_LIMITS.bottomHeight}
+                                                    onChange={(v) => onUpdateGroupHeight(group.id, v)}
+                                                    unit={STEPPED_LIMITS.bottomHeight.unit}
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="px-2 pb-1.5">
+                                                <div className="text-[10px] font-mono" style={{ color: group.color + "cc" }}>
+                                                    ↑ {group.bottomHeight} mm
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={onAddGroup}
+                            className="w-full mt-1 h-8 text-xs border-dashed border-[#3d372e] text-muted-foreground hover:text-foreground hover:border-[#5a5040] transition-all"
+                        >
+                            <Plus className="w-3 h-3 mr-1" />
+                            新建组
+                        </Button>
+                    </div>
+                </SectionHeader>
+            </div>
+
+            {/* 选中凹槽操作：移动到组 */}
+            {selectedSlotIds.length > 0 && (
+                <div className="iron-panel rounded-sm p-3">
+                    <SectionHeader icon={ArrowRight} title="选中凹槽" collapsible defaultOpen={true}
+                        summary={`${selectedSlotIds.length} 个已选中，移动到组`}>
+                        <div className="space-y-2 mt-1">
+                            <div className="text-[10px] text-muted-foreground/70 uppercase tracking-wider">移动到</div>
+                            <div className="flex flex-wrap gap-1.5">
+                                {params.groups.map((group) => (
+                                    <Button
+                                        key={group.id}
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => onMoveSelectedSlotsToGroup(selectedSlotIds, group.id)}
+                                        className="h-7 text-xs gap-1.5 transition-all"
+                                        style={{ borderColor: group.color + "60", color: group.color }}
+                                    >
+                                        <div className="w-2 h-2 rounded-sm flex-shrink-0" style={{ background: group.color }} />
+                                        {group.name}
+                                    </Button>
+                                ))}
+                            </div>
+                        </div>
+                    </SectionHeader>
+                </div>
+            )}
+
             {/* 添加凹槽 */}
             <div className="iron-panel rounded-sm p-3">
                 <SectionHeader icon={BoxSelect} title="添加凹槽" collapsible defaultOpen={true}
                     summary={`已有 ${params.slots.length} 个凹槽`}>
                     <div className="space-y-2">
+                        {(() => {
+                            const activeGroup = params.groups.find(g => g.id === params.activeGroupId);
+                            if (!activeGroup) return null;
+                            return (
+                                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/70">
+                                    <span>新凹槽将加入</span>
+                                    <div className="w-2 h-2 rounded-sm" style={{ background: activeGroup.color }} />
+                                    <span style={{ color: activeGroup.color }}>{activeGroup.name}</span>
+                                </div>
+                            );
+                        })()}
                         <div className="text-[10px] text-muted-foreground/70 font-bold tracking-wider uppercase mb-0.5">圆形</div>
                         <div className="grid grid-cols-3 gap-1.5">
                             {BASE_PRESETS.map((preset, i) => (
@@ -109,42 +242,7 @@ export default function SteppedPanel({
                                 </Button>
                             ))}
                         </div>
-
-
                     </div>
-                </SectionHeader>
-            </div>
-
-            {/* 选中凹槽参数 */}
-            <div className="iron-panel rounded-sm p-4">
-                <SectionHeader icon={Layers} title="选中凹槽参数" collapsible defaultOpen={true}
-                    summary={selectedSlots.length > 0 ? `${selectedSlots.length} 个凹槽已选中` : "请选择凹槽以编辑生长高度"}>
-                    {selectedSlots.length === 0 ? (
-                        <p className="text-xs text-muted-foreground/60 text-center py-4">
-                            请在 2D 画布中选择凹槽以编辑生长高度
-                        </p>
-                    ) : (
-                        <div className="space-y-4">
-                            <div className="text-[10px] text-muted-foreground/70 mb-1">
-                                {selectedSlots.length === 1
-                                    ? `编辑凹槽: ${firstSelectedSlot!.width}×${firstSelectedSlot!.height}mm`
-                                    : `批量编辑 ${selectedSlots.length} 个凹槽`}
-                            </div>
-                            <ParamSlider
-                                label={STEPPED_LIMITS.bottomHeight.label}
-                                value={firstSelectedSlot!.bottomHeight}
-                                config={STEPPED_LIMITS.bottomHeight}
-                                onChange={(v) => {
-                                    if (selectedSlots.length === 1) {
-                                        onUpdateSlotBottomHeight(firstSelectedSlot!.id, v);
-                                    } else {
-                                        onUpdateSelectedSlotsBottomHeight(selectedSlotIds, v);
-                                    }
-                                }}
-                                unit={STEPPED_LIMITS.bottomHeight.unit}
-                            />
-                        </div>
-                    )}
                 </SectionHeader>
             </div>
 
@@ -206,6 +304,24 @@ export default function SteppedPanel({
                                 </div>
                             </div>
                         </div>
+
+                        {/* 分组槽位统计 */}
+                        {params.groups.length > 1 && (
+                            <div className="space-y-1">
+                                {params.groups
+                                    .map((group) => {
+                                        const count = params.slots.filter(s => s.groupId === group.id).length;
+                                        return (
+                                            <div key={group.id} className="flex items-center gap-2 text-[11px]">
+                                                <div className="w-2 h-2 rounded-sm flex-shrink-0" style={{ background: group.color }} />
+                                                <span className="text-muted-foreground">{group.name}</span>
+                                                <span className="font-mono" style={{ color: group.color }}>↑{group.bottomHeight}mm</span>
+                                                <span className="ml-auto text-muted-foreground">{count} 个</span>
+                                            </div>
+                                        );
+                                    })}
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-3 gap-2">
                             {[

@@ -8,8 +8,8 @@ import {
   PARAM_CONFIG,
   CUSTOM_LIMITS,
   STEPPED_LIMITS,
-  STEPPED_SLOT_DEFAULTS,
   STEPPED_LAYOUT_DEFAULTS,
+  GROUP_COLORS,
 } from "@/lib/config";
 
 // ═══════════════════════════════════════════
@@ -80,13 +80,25 @@ export function importParams(
         if (data.mode === "custom" && expectedMode === "stepped") {
           const customParams = data.params as CustomLayoutParams;
           validateCustomParams(customParams);
+          const defaultGroupId = crypto.randomUUID();
           const steppedParams: SteppedLayoutParams = {
             trayWidth: customParams.trayWidth,
             trayDepth: customParams.trayDepth,
             slots: customParams.slots.map((s) => ({
               ...s,
-              bottomHeight: STEPPED_SLOT_DEFAULTS.bottomHeight,
+              shape: "circle" as const,
+              height: s.width,
+              groupId: defaultGroupId,
             })),
+            groups: [
+              {
+                id: defaultGroupId,
+                name: "组 1",
+                color: GROUP_COLORS[0],
+                bottomHeight: 10,
+              },
+            ],
+            activeGroupId: defaultGroupId,
             spacing: customParams.spacing,
             holeDepth: customParams.holeDepth || 3,
             smoothingRadius: STEPPED_LAYOUT_DEFAULTS.smoothingRadius,
@@ -252,8 +264,86 @@ function validateSteppedParams(p: SteppedLayoutParams) {
     throw new Error("缺少或无效的字段: slots");
   }
 
-  // 校验每个 slot
   const slots = obj.slots as Record<string, unknown>[];
+
+  // 检测旧格式（slots 有 bottomHeight 但无 groupId / 没有 groups 数组）
+  const hasLegacyBottomHeight = slots.some(
+    (s) => typeof s.bottomHeight === "number" && !s.groupId,
+  );
+  const hasMissingGroups =
+    !Array.isArray(obj.groups) || (obj.groups as unknown[]).length === 0;
+
+  if (hasLegacyBottomHeight || hasMissingGroups) {
+    // 迁移：按 bottomHeight 分组，相同高度入同一组
+    const heightGroupMap = new Map<
+      number,
+      { id: string; name: string; color: string; bottomHeight: number }
+    >();
+    const migratedSlots = slots.map((slot) => {
+      const bh =
+        typeof slot.bottomHeight === "number"
+          ? (slot.bottomHeight as number)
+          : 10;
+      let group = heightGroupMap.get(bh);
+      if (!group) {
+        const colorIdx = heightGroupMap.size % GROUP_COLORS.length;
+        group = {
+          id: crypto.randomUUID(),
+          name: `组 ${heightGroupMap.size + 1}`,
+          color: GROUP_COLORS[colorIdx],
+          bottomHeight: bh,
+        };
+        heightGroupMap.set(bh, group);
+      }
+      return { ...slot, groupId: group.id };
+    });
+    const sortedGroups = [...heightGroupMap.values()].sort(
+      (a, b) => a.bottomHeight - b.bottomHeight,
+    );
+    if (sortedGroups.length === 0) {
+      sortedGroups.push({
+        id: crypto.randomUUID(),
+        name: "组 1",
+        color: GROUP_COLORS[0],
+        bottomHeight: 10,
+      });
+    }
+    obj.groups = sortedGroups;
+    obj.activeGroupId = sortedGroups[0].id;
+    obj.slots = migratedSlots;
+  }
+
+  // 校验 groups 数组
+  if (!Array.isArray(obj.groups)) {
+    throw new Error("缺少或无效的字段: groups");
+  }
+  const groups = obj.groups as Record<string, unknown>[];
+  for (let i = 0; i < groups.length; i++) {
+    const g = groups[i];
+    if (!g || typeof g !== "object")
+      throw new Error(`groups[${i}]: 无效的分组数据`);
+    if (typeof g.id !== "string" || !g.id) g.id = crypto.randomUUID();
+    if (typeof g.name !== "string") g.name = `组 ${i + 1}`;
+    if (typeof g.color !== "string")
+      g.color = GROUP_COLORS[i % GROUP_COLORS.length];
+    requireNumber(g as Record<string, unknown>, "bottomHeight");
+    clampField(
+      g as Record<string, unknown>,
+      "bottomHeight",
+      STEPPED_LIMITS.bottomHeight,
+    );
+  }
+
+  // activeGroupId 安全备用
+  const groupIds = new Set((obj.groups as { id: string }[]).map((g) => g.id));
+  if (
+    typeof obj.activeGroupId !== "string" ||
+    !groupIds.has(obj.activeGroupId as string)
+  ) {
+    obj.activeGroupId = (obj.groups as { id: string }[])[0]?.id ?? "";
+  }
+
+  // 校验 slots
   for (let i = 0; i < slots.length; i++) {
     const slot = slots[i];
     if (!slot || typeof slot !== "object") {
@@ -268,7 +358,7 @@ function validateSteppedParams(p: SteppedLayoutParams) {
       }
     }
     if (slot.shape !== "circle" && slot.shape !== "ellipse") {
-      throw new Error(`slots[${i}].shape: 必须是 "circle" 或 "ellipse"`);
+      slot.shape = "circle";
     }
     const w = slot.width as number;
     const h = slot.height as number;
@@ -282,18 +372,15 @@ function validateSteppedParams(p: SteppedLayoutParams) {
     if (typeof slot.id !== "string" || !slot.id) {
       slot.id = crypto.randomUUID();
     }
-    // 自动补齐 bottomHeight
+    // groupId 归属校验
     if (
-      typeof slot.bottomHeight !== "number" ||
-      !Number.isFinite(slot.bottomHeight as number) ||
-      (slot.bottomHeight as number) < 0
+      typeof slot.groupId !== "string" ||
+      !groupIds.has(slot.groupId as string)
     ) {
-      slot.bottomHeight = STEPPED_SLOT_DEFAULTS.bottomHeight;
+      slot.groupId = (obj.groups as { id: string }[])[0]?.id ?? "";
     }
-    slot.bottomHeight = Math.max(
-      STEPPED_LIMITS.bottomHeight.min,
-      Math.min(STEPPED_LIMITS.bottomHeight.max, slot.bottomHeight as number),
-    );
+    // 删除旧版 bottomHeight
+    delete slot.bottomHeight;
   }
 
   // 钳位全局参数
@@ -302,12 +389,11 @@ function validateSteppedParams(p: SteppedLayoutParams) {
   clampField(obj, "spacing", STEPPED_LIMITS.spacing);
   clampField(obj, "holeDepth", STEPPED_LIMITS.holeDepth);
 
-  // 自动补齐 smoothingRadius（兼容旧版 bridgeRadius）
+  // smoothingRadius 兼容旧版 bridgeRadius
   if (
     typeof obj.smoothingRadius !== "number" ||
     !Number.isFinite(obj.smoothingRadius as number)
   ) {
-    // 尝试从旧的 bridgeRadius 读取
     if (
       typeof obj.bridgeRadius === "number" &&
       Number.isFinite(obj.bridgeRadius as number)

@@ -2,6 +2,7 @@ import type { TrayParams, BasePreset } from "@/types/tray";
 import type {
   CustomLayoutParams,
   SteppedLayoutParams,
+  SlotGroup,
 } from "@/types/custom-tray";
 
 /**
@@ -49,7 +50,23 @@ export const BASE_HOLE_CONFIG = {
 } as const;
 
 // ═══════════════════════════════════════════
-// 3. 底座 & 椭圆预设
+// 3. 分组颜色调色盘
+// ═══════════════════════════════════════════
+
+/** 阶梯底座分组颜色调色盘（新建组时按顺序轮换） */
+export const GROUP_COLORS = [
+  "#ef4444", // red-500
+  "#3b82f6", // blue-500
+  "#22c55e", // green-500
+  "#f59e0b", // amber-500
+  "#8b5cf6", // violet-500
+  "#06b6d4", // cyan-500
+  "#f97316", // orange-500
+  "#ec4899", // pink-500
+] as const;
+
+// ═══════════════════════════════════════════
+// 4. 底座 & 椭圆预设
 // ═══════════════════════════════════════════
 
 export const BASE_PRESETS: BasePreset[] = [
@@ -72,7 +89,7 @@ export const ELLIPSE_PRESETS = [
 ];
 
 // ═══════════════════════════════════════════
-// 4. 默认参数
+// 5. 默认参数
 // ═══════════════════════════════════════════
 
 /** 默认预设索引（标准步兵 32mm） */
@@ -106,23 +123,29 @@ export const CUSTOM_LAYOUT_DEFAULTS: CustomLayoutParams = {
   baseHoleSize: "25",
 };
 
+const STEPPED_DEFAULT_GROUP_ID = "stepped-default-group";
+
 /** 阶梯底座默认参数 */
 export const STEPPED_LAYOUT_DEFAULTS: SteppedLayoutParams = {
   trayWidth: 260,
   trayDepth: 260,
   slots: [],
+  groups: [
+    {
+      id: STEPPED_DEFAULT_GROUP_ID,
+      name: "组 1",
+      color: GROUP_COLORS[0],
+      bottomHeight: 10,
+    } satisfies SlotGroup,
+  ],
+  activeGroupId: STEPPED_DEFAULT_GROUP_ID,
   spacing: 5,
   holeDepth: 3,
   smoothingRadius: 60,
 };
 
-/** 阶梯底座新增槽位默认生长高度 */
-export const STEPPED_SLOT_DEFAULTS = {
-  bottomHeight: 5,
-} as const;
-
 // ═══════════════════════════════════════════
-// 5. 参数范围与元数据（网格模式）
+// 6. 参数范围与元数据（网格模式）
 // ═══════════════════════════════════════════
 
 /**
@@ -139,7 +162,7 @@ export const PARAM_CONFIG = {
 } as const;
 
 // ═══════════════════════════════════════════
-// 6. 自定义布局参数范围
+// 7. 自定义布局参数范围
 // ═══════════════════════════════════════════
 
 export const CUSTOM_LIMITS = {
@@ -154,7 +177,7 @@ export const CUSTOM_LIMITS = {
 } as const;
 
 // ═══════════════════════════════════════════
-// 6b. 阶梯底座参数范围
+// 7b. 阶梯底座参数范围
 // ═══════════════════════════════════════════
 
 export const STEPPED_LIMITS = {
@@ -167,14 +190,14 @@ export const STEPPED_LIMITS = {
 } as const;
 
 // ═══════════════════════════════════════════
-// 7. 构建限制
+// 8. 构建限制
 // ═══════════════════════════════════════════
 
 /** 最大构建尺寸 (mm)，超过此值会警告 */
 export const MAX_BUILD_SIZE = 260;
 
 // ═══════════════════════════════════════════
-// 8. 3D 渲染配置
+// 9. 3D 渲染配置
 // ═══════════════════════════════════════════
 
 export const RENDER_CONFIG = {

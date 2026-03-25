@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback, useEffect } from "react";
-import type { FreeSlot, CustomLayoutParams, SteppedLayoutParams } from "@/types/custom-tray";
+import type { FreeSlot, CustomLayoutParams, SteppedLayoutParams, GroupOutlinePreview } from "@/types/custom-tray";
 import type { OutlineData } from "@/lib/outline-geometry";
 import { getSlotTolerance, MAX_BUILD_SIZE } from "@/lib/config";
 import { getEllipsePolygon, polygonsIntersect } from "@/lib/collision";
@@ -25,8 +25,8 @@ interface LayoutCanvasProps {
   onUndo?: () => void;
   onSaveSnapshot?: () => void;
   onSelectionChange?: (ids: string[]) => void;
-  // 轮廓预览（Stepped 模式）
-  outlinePreview?: OutlineData | null;
+  // 轮廓预览（Stepped 模式：每组独立轮廓）
+  outlinePreview?: GroupOutlinePreview[] | null;
 }
 
 export default function LayoutCanvas({
@@ -730,28 +730,20 @@ export default function LayoutCanvas({
             const isSelected = selectedIds.has(slot.id);
             const color = isSelected ? "#f97316" : "#eab308"; // Orange if selected, else Yellow
 
-            // Heatmap color for bottomHeight label text
-            const bhLabelColor = (() => {
-              if (!('bottomHeight' in slot)) return "#86efac";
-              const bh = (slot as { bottomHeight: number }).bottomHeight;
-              const t = Math.min(1, bh / 50);
-              const stops: [number, number, number][] = [
-                [134, 239, 172], // t=0  green-300 (0mm)
-                [74, 222, 128],  // t=0.2 green-400
-                [250, 204, 21],  // t=0.4 yellow-400
-                [251, 146, 60],  // t=0.6 orange-400
-                [248, 113, 113], // t=0.8 red-400
-                [239, 68, 68],   // t=1.0 red-500
-              ];
-              const idx = t * (stops.length - 1);
-              const lo = Math.floor(idx);
-              const hi = Math.min(lo + 1, stops.length - 1);
-              const f = idx - lo;
-              const r = Math.round(stops[lo][0] + f * (stops[hi][0] - stops[lo][0]));
-              const g = Math.round(stops[lo][1] + f * (stops[hi][1] - stops[lo][1]));
-              const b = Math.round(stops[lo][2] + f * (stops[hi][2] - stops[lo][2]));
-              return `rgb(${r},${g},${b})`;
-            })();
+            // Heatmap color for bottomHeight label text (legacy, kept for safety)
+            const bhLabelColor = "#86efac";
+
+            // 分组颜色（Stepped 模式通过 groupId 查组色）
+            const steppedGroups = 'groups' in params
+              ? (params as SteppedLayoutParams).groups
+              : undefined;
+            const isSteppedSlot = 'groupId' in slot;
+            const groupColor = isSteppedSlot && steppedGroups
+              ? (steppedGroups.find(g => g.id === (slot as { groupId: string }).groupId)?.color ?? "#86efac")
+              : null;
+            const groupBottomHeight = isSteppedSlot && steppedGroups
+              ? (steppedGroups.find(g => g.id === (slot as { groupId: string }).groupId)?.bottomHeight ?? null)
+              : null;
 
             return (
               <g
@@ -763,20 +755,15 @@ export default function LayoutCanvas({
                 className={`transition-opacity duration-200 ${isSpacePressed ? '' : 'cursor-move'}`}
                 style={{ opacity: isDragging ? 0.9 : 1 }}
               >
-                {/* Note: In SVG group with translation, (0,0) is center of slot. */}
-
-                {/* Margin / Safe Area Indicator (Approximated Circle for simplicity in Ellipse?) 
-                  If Ellipse, let's draw an Ellipse with spacing added?
-                  Actually, simple: ellipse rx=w/2+spacing, ry=h/2+spacing
-              */}
+                {/* Margin / Safe Area Indicator - colored by group for stepped mode */}
                 <ellipse
                   rx={w / 2 + spacing}
                   ry={h / 2 + spacing}
                   fill="none"
-                  stroke={isColliding ? "#ef4444" : isInvolvedViaOther ? "#ef4444" : "#888"}
+                  stroke={isColliding ? "#ef4444" : isInvolvedViaOther ? "#ef4444" : (groupColor ?? "#888")}
                   strokeWidth={0.25 / zoom}
                   strokeDasharray="2 2"
-                  opacity={isColliding ? 1 : isInvolvedViaOther ? 0.7 : 0.6}
+                  opacity={isColliding ? 1 : isInvolvedViaOther ? 0.7 : (groupColor ? 0.5 : 0.6)}
                   pointerEvents="none"
                 />
 
@@ -797,15 +784,19 @@ export default function LayoutCanvas({
                 <ellipse
                   rx={w / 2}
                   ry={h / 2}
-                  fill={'bottomHeight' in slot ? (isSelected ? "#f97316" : bhLabelColor) : color}
-                  fillOpacity={0.8}
-                  stroke={isColliding || isInvolvedViaOther ? "#ef4444" : "#fff"}
-                  strokeWidth={(isColliding || isInvolvedViaOther ? 0.5 : 0.2) / zoom}
+                  fill={isSteppedSlot
+                    ? (isSelected ? "#f97316" : (groupColor ?? bhLabelColor))
+                    : color}
+                  fillOpacity={0.85}
+                  stroke={isColliding || isInvolvedViaOther ? "#ef4444"
+                    : isSteppedSlot ? (groupColor ? groupColor + "cc" : "#fff")
+                      : "#fff"}
+                  strokeWidth={(isColliding || isInvolvedViaOther ? 0.5 : isSteppedSlot ? 0.4 : 0.2) / zoom}
                 />
 
                 {/* Size Text */}
                 <text
-                  dy={'bottomHeight' in slot ? -Math.min(w, h) * 0.12 : Math.min(w, h) * 0.2}
+                  dy={isSteppedSlot ? -Math.min(w, h) * 0.12 : Math.min(w, h) * 0.2}
                   textAnchor="middle"
                   dominantBaseline="middle"
                   fontSize={Math.min(w, h, 24) / 2}
@@ -817,8 +808,8 @@ export default function LayoutCanvas({
                   {slot.width === slot.height ? slot.width : `${slot.width}x${slot.height}`}
                 </text>
 
-                {/* Stepped slot: always show bottomHeight label inside the circle */}
-                {'bottomHeight' in slot && (
+                {/* Stepped slot: show group height label */}
+                {isSteppedSlot && groupBottomHeight !== null && (
                   <text
                     dy={Math.min(w, h) * 0.24}
                     textAnchor="middle"
@@ -829,7 +820,7 @@ export default function LayoutCanvas({
                     pointerEvents="none"
                     style={{ userSelect: 'none' }}
                   >
-                    {`↑${(slot as { bottomHeight: number }).bottomHeight}mm`}
+                    {`↑${groupBottomHeight}mm`}
                   </text>
                 )}
 
@@ -909,23 +900,39 @@ export default function LayoutCanvas({
               stroke="#38bdf8" strokeWidth={0.3 / zoom} strokeDasharray="2 2" pointerEvents="none" opacity={0.8} />
         ))}
 
-        {/* 底座轮廓预览 */}
-        {outlinePreview && outlinePreview.points.length >= 3 && (() => {
-          // 将用户坐标 (x, y) 转为 SVG 坐标 (x, trayDepth - y)
-          const pathData = outlinePreview.points
+        {/* 分组轮廓预览（Stepped 模式：每组独立渲染，使用组颜色） */}
+        {outlinePreview && outlinePreview.map((go) => {
+          if (go.points.length < 3) return null;
+          const pathData = go.points
             .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${(trayDepth - p.y).toFixed(2)}`)
             .join(' ') + ' Z';
+          if (go.isOverall) {
+            // 整体外轮廓：白色虚线，无填充
+            return (
+              <path
+                key={go.groupId}
+                d={pathData}
+                fill="none"
+                stroke="#ffffff"
+                strokeWidth={0.6 / zoom}
+                strokeOpacity={0.35}
+                strokeDasharray={`${2 / zoom} ${2 / zoom}`}
+                pointerEvents="none"
+              />
+            );
+          }
           return (
             <path
+              key={go.groupId}
               d={pathData}
-              fill="rgba(139, 115, 85, 0.12)"
-              stroke="#c9a66b"
+              fill={go.color + "18"}
+              stroke={go.color}
               strokeWidth={0.8 / zoom}
-              strokeOpacity={0.9}
+              strokeOpacity={0.75}
               pointerEvents="none"
             />
           );
-        })()}
+        })}
       </svg>
 
       {/* Marquee Selection Box */}

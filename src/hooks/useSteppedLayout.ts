@@ -5,10 +5,12 @@ import type {
   SteppedLayoutParams,
   SteppedSlot,
   FreeSlot,
+  SlotGroup,
+  GroupOutlinePreview,
 } from "@/types/custom-tray";
 import {
   STEPPED_LAYOUT_DEFAULTS,
-  STEPPED_SLOT_DEFAULTS,
+  GROUP_COLORS,
   getSlotTolerance,
 } from "@/lib/config";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
@@ -17,11 +19,7 @@ import { trayWorkerService } from "@/lib/worker/worker-service";
 import { useToast } from "@/hooks/useToast";
 import type * as THREE from "three";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
-import {
-  generateOutline,
-  type OutlineCircle,
-  type OutlineData,
-} from "@/lib/outline-geometry";
+import { generateOutline, type OutlineCircle } from "@/lib/outline-geometry";
 
 export interface UseSteppedLayoutReturn {
   params: SteppedLayoutParams;
@@ -39,11 +37,13 @@ export interface UseSteppedLayoutReturn {
   updateSlotRotation: (id: string, rotation: number) => void;
   duplicateSlots: (ids: string[]) => void;
   trimBaseplate: () => void;
-  updateSlotBottomHeight: (id: string, bottomHeight: number) => void;
-  updateSelectedSlotsBottomHeight: (
-    ids: string[],
-    bottomHeight: number,
-  ) => void;
+  // 分组管理
+  addGroup: () => void;
+  removeGroup: (groupId: string) => void;
+  updateGroupHeight: (groupId: string, height: number) => void;
+  setActiveGroup: (groupId: string) => void;
+  moveSelectedSlotsToGroup: (ids: string[], targetGroupId: string) => void;
+  reorderGroups: (fromIndex: number, toIndex: number) => void;
   effectiveDimensions: {
     width: number;
     depth: number;
@@ -63,8 +63,8 @@ export interface UseSteppedLayoutReturn {
   isPreviewStale: boolean;
   handleGenerate: () => void;
   handleExportSTL: () => void;
-  // 2D 轮廓预览
-  outlinePreview: OutlineData | null;
+  // 2D 分组轮廓预览
+  outlinePreview: GroupOutlinePreview[] | null;
 }
 
 export function useSteppedLayout(): UseSteppedLayoutReturn {
@@ -189,7 +189,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
           width,
           height: width,
           rotation: 0,
-          bottomHeight: STEPPED_SLOT_DEFAULTS.bottomHeight,
+          groupId: prev.activeGroupId,
         };
         return { ...prev, slots: [...prev.slots, newSlot] };
       });
@@ -269,13 +269,58 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     [pushState],
   );
 
-  const updateSlotBottomHeight = useCallback(
-    (id: string, bottomHeight: number) => {
+  const addGroup = useCallback(() => {
+    setParams((prev) => {
+      pushState(prev);
+      const usedColors = prev.groups.map((g) => g.color);
+      const nextColor =
+        GROUP_COLORS.find((c) => !usedColors.includes(c)) ??
+        GROUP_COLORS[prev.groups.length % GROUP_COLORS.length];
+      const newGroup: SlotGroup = {
+        id: crypto.randomUUID(),
+        name: `组 ${prev.groups.length + 1}`,
+        color: nextColor,
+        bottomHeight:
+          Math.max(...prev.groups.map((g) => g.bottomHeight), 0) + 5,
+      };
+      return {
+        ...prev,
+        groups: [...prev.groups, newGroup],
+        activeGroupId: newGroup.id,
+      };
+    });
+  }, [pushState]);
+
+  const removeGroup = useCallback(
+    (groupId: string) => {
+      setParams((prev) => {
+        if (prev.groups.length <= 1) return prev; // 不能删除最后一个组
+        pushState(prev);
+        const newGroups = prev.groups.filter((g) => g.id !== groupId);
+        const newSlots = prev.slots.filter((s) => s.groupId !== groupId);
+        const newActiveGroupId =
+          prev.activeGroupId === groupId
+            ? (newGroups[0]?.id ?? "")
+            : prev.activeGroupId;
+        return {
+          ...prev,
+          groups: newGroups,
+          slots: newSlots,
+          activeGroupId: newActiveGroupId,
+        };
+      });
+      setIsPreviewStale(true);
+    },
+    [pushState],
+  );
+
+  const updateGroupHeight = useCallback(
+    (groupId: string, height: number) => {
       pushState(paramsRef.current);
       setParams((prev) => ({
         ...prev,
-        slots: prev.slots.map((s) =>
-          s.id === id ? { ...s, bottomHeight } : s,
+        groups: prev.groups.map((g) =>
+          g.id === groupId ? { ...g, bottomHeight: height } : g,
         ),
       }));
       setIsPreviewStale(true);
@@ -283,17 +328,43 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     [pushState],
   );
 
-  const updateSelectedSlotsBottomHeight = useCallback(
-    (ids: string[], bottomHeight: number) => {
+  const setActiveGroup = useCallback((groupId: string) => {
+    setParams((prev) => ({ ...prev, activeGroupId: groupId }));
+  }, []);
+
+  const moveSelectedSlotsToGroup = useCallback(
+    (ids: string[], targetGroupId: string) => {
       pushState(paramsRef.current);
       const idSet = new Set(ids);
       setParams((prev) => ({
         ...prev,
         slots: prev.slots.map((s) =>
-          idSet.has(s.id) ? { ...s, bottomHeight } : s,
+          idSet.has(s.id) ? { ...s, groupId: targetGroupId } : s,
         ),
       }));
       setIsPreviewStale(true);
+    },
+    [pushState],
+  );
+
+  const reorderGroups = useCallback(
+    (fromIndex: number, toIndex: number) => {
+      setParams((prev) => {
+        if (
+          fromIndex < 0 ||
+          fromIndex >= prev.groups.length ||
+          toIndex < 0 ||
+          toIndex >= prev.groups.length ||
+          fromIndex === toIndex
+        ) {
+          return prev;
+        }
+        pushState(prev);
+        const newGroups = [...prev.groups];
+        const [moved] = newGroups.splice(fromIndex, 1);
+        newGroups.splice(toIndex, 0, moved);
+        return { ...prev, groups: newGroups };
+      });
     },
     [pushState],
   );
@@ -401,21 +472,58 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     }
   }, [effectiveDimensions.depth, effectiveDimensions.width, params, toast]);
 
-  // 自动计算轮廓预览（响应 params 变化）
-  const outlinePreviewAuto = useMemo<OutlineData | null>(() => {
-    if (params.slots.length === 0) return null;
+  // 自动计算分组轮廓预览（每组独立，响应 params 变化）
+  const outlinePreviewAuto = useMemo<GroupOutlinePreview[] | null>(() => {
+    if (params.slots.length === 0 || params.groups.length === 0) return null;
 
-    const circles: OutlineCircle[] = params.slots.map((slot) => {
-      const actualW = slot.width + getSlotTolerance(slot.width);
-      const actualH = slot.height + getSlotTolerance(slot.height);
-      return {
+    const result: GroupOutlinePreview[] = [];
+
+    // 各分组独立轮廓
+    for (const group of params.groups) {
+      const groupSlots = params.slots.filter((s) => s.groupId === group.id);
+      if (groupSlots.length === 0) continue;
+
+      const circles: OutlineCircle[] = groupSlots.map((slot) => ({
         cx: slot.x,
         cy: slot.y,
-        rOuter: Math.max(actualW, actualH) / 2 + params.spacing,
-      };
-    });
+        rOuter:
+          (slot.width + getSlotTolerance(slot.width)) / 2 + params.spacing,
+      }));
 
-    return generateOutline(circles, params.smoothingRadius, 64);
+      const outline = generateOutline(circles, params.smoothingRadius, 64);
+      if (outline && outline.points.length >= 3) {
+        result.push({
+          groupId: group.id,
+          color: group.color,
+          points: outline.points,
+        });
+      }
+    }
+
+    // 整体外轮廓（所有凹槽，用虚线白色框渲染）
+    if (params.groups.length > 1) {
+      const allCircles: OutlineCircle[] = params.slots.map((slot) => ({
+        cx: slot.x,
+        cy: slot.y,
+        rOuter:
+          (slot.width + getSlotTolerance(slot.width)) / 2 + params.spacing,
+      }));
+      const overallOutline = generateOutline(
+        allCircles,
+        params.smoothingRadius,
+        64,
+      );
+      if (overallOutline && overallOutline.points.length >= 3) {
+        result.push({
+          groupId: "__overall__",
+          color: "#ffffff",
+          points: overallOutline.points,
+          isOverall: true,
+        });
+      }
+    }
+
+    return result.length > 0 ? result : null;
   }, [params]);
 
   return {
@@ -429,8 +537,12 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     updateSlotRotation,
     duplicateSlots,
     trimBaseplate,
-    updateSlotBottomHeight,
-    updateSelectedSlotsBottomHeight,
+    addGroup,
+    removeGroup,
+    updateGroupHeight,
+    setActiveGroup,
+    moveSelectedSlotsToGroup,
+    reorderGroups,
     effectiveDimensions,
     saveSnapshot,
     undo,

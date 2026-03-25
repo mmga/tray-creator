@@ -111,8 +111,12 @@ export default function Home() {
           isGenerating={steppedModel.isGenerating}
           volume={steppedModel.volume}
           selectedSlotIds={selectedSlotIds}
-          onUpdateSlotBottomHeight={steppedModel.updateSlotBottomHeight}
-          onUpdateSelectedSlotsBottomHeight={steppedModel.updateSelectedSlotsBottomHeight}
+          onAddGroup={steppedModel.addGroup}
+          onRemoveGroup={steppedModel.removeGroup}
+          onUpdateGroupHeight={steppedModel.updateGroupHeight}
+          onSetActiveGroup={steppedModel.setActiveGroup}
+          onMoveSelectedSlotsToGroup={steppedModel.moveSelectedSlotsToGroup}
+          onReorderGroups={steppedModel.reorderGroups}
         />
       );
     }

@@ -1,5 +1,24 @@
 export type AppMode = "grid" | "custom" | "stepped";
 
+/** 阶梯底座分组（一组凹槽统一高度，并形成阶梯结构的一层） */
+export interface SlotGroup {
+  id: string;
+  name: string;
+  color: string;
+  /** 该组所有凹槽柱子从底板向上的高度 (mm)，决定阶梯层的高度边界 */
+  bottomHeight: number;
+}
+
+/** 分组轮廓预览（供 2D 编辑器逐组渲染） */
+export interface GroupOutlinePreview {
+  groupId: string;
+  color: string;
+  /** 采样后的闭合多边形点列（用户坐标系） */
+  points: { x: number; y: number }[];
+  /** 是否为整体外轮廓（所有凹槽的包络，用于显示整体边界） */
+  isOverall?: boolean;
+}
+
 /** 自由放置的凹槽 */
 export interface FreeSlot {
   id: string; // 唯一标识（UUID）
@@ -11,10 +30,10 @@ export interface FreeSlot {
   rotation: number; // 旋转角度 (度)
 }
 
-/** 阶梯底座凹槽：继承 FreeSlot，新增每槽独立的生长高度 */
+/** 阶梯底座凹槽：继承 FreeSlot，通过 groupId 关联到所属分组 */
 export interface SteppedSlot extends FreeSlot {
-  /** 生长高度 (mm)，凹槽柱子从底板向上生长的距离 */
-  bottomHeight: number;
+  /** 所属分组 ID */
+  groupId: string;
 }
 
 /** 自定义布局参数（完全独立） */
@@ -51,6 +70,10 @@ export interface SteppedLayoutParams {
   trayDepth: number;
   /** 阶梯底座凹槽列表 */
   slots: SteppedSlot[];
+  /** 分组列表（决定阶梯层高，每组凹槽共享相同高度） */
+  groups: SlotGroup[];
+  /** 当前激活的分组 ID（新添加凹槽自动进入此组） */
+  activeGroupId: string;
   /** 凹槽间距 (mm)，同时作为柱子外扩量 */
   spacing: number;
   /** 凹槽深度 (mm)，全局固定，从柱顶向下挖的深度 */
