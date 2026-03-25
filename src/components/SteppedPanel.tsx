@@ -1,7 +1,7 @@
 "use client";
 
 import type { SteppedLayoutParams, SteppedSlot } from "@/types/custom-tray";
-import { BASE_PRESETS, ELLIPSE_PRESETS, STEPPED_LIMITS, PARAM_CONFIG, MAX_BUILD_SIZE, STEPPED_LAYOUT_DEFAULTS } from "@/lib/config";
+import { BASE_PRESETS, STEPPED_LIMITS, PARAM_CONFIG, MAX_BUILD_SIZE, STEPPED_LAYOUT_DEFAULTS } from "@/lib/config";
 import { calculateSteppedTrayDimensions } from "@/lib/stepped-tray-model";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -36,7 +36,7 @@ interface SteppedPanelProps {
     effectiveDimensions: { width: number; depth: number };
     updateParam: <K extends keyof SteppedLayoutParams>(key: K, value: SteppedLayoutParams[K]) => void;
     setParams: React.Dispatch<React.SetStateAction<SteppedLayoutParams>>;
-    onAddSlot: (width: number, height?: number) => void;
+    onAddSlot: (width: number) => void;
     onGenerate: () => void;
     onExportSTL: () => void;
     isGenerating: boolean;
@@ -110,21 +110,7 @@ export default function SteppedPanel({
                             ))}
                         </div>
 
-                        <div className="text-[10px] text-muted-foreground/70 font-bold tracking-wider uppercase mb-0.5 mt-1.5">椭圆</div>
-                        <div className="grid grid-cols-2 gap-1.5">
-                            {ELLIPSE_PRESETS.map((preset, i) => (
-                                <Button
-                                    key={i}
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => onAddSlot(preset.width, preset.height)}
-                                    className="h-10 lg:h-7 text-xs lg:text-[11px] border-[#2e2a24] bg-[#1c1a16] hover:bg-[#2e2a24] hover:text-primary transition-all"
-                                >
-                                    <Plus className="w-3 h-3 mr-1" />
-                                    {preset.name.replace('mm', '')}
-                                </Button>
-                            ))}
-                        </div>
+
                     </div>
                 </SectionHeader>
             </div>

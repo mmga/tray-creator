@@ -30,7 +30,7 @@ export interface UseSteppedLayoutReturn {
     key: K,
     value: SteppedLayoutParams[K],
   ) => void;
-  addSlot: (width: number, height?: number) => void;
+  addSlot: (width: number) => void;
   removeSlot: (id: string) => void;
   updateSlotPosition: (id: string, x: number, y: number) => void;
   updateMultipleSlots: (
@@ -166,13 +166,10 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
   );
 
   const addSlot = useCallback(
-    (width: number, height?: number) => {
+    (width: number) => {
       setParams((prev) => {
         pushState(prev);
-        const isCircle = !height || width === height;
-        const slotHeight = height || width;
-        const newSlotHalfW =
-          (width + getSlotTolerance(Math.max(width, slotHeight))) / 2;
+        const newSlotHalfW = (width + getSlotTolerance(width)) / 2;
 
         let nextX = prev.trayWidth / 2;
         let nextY = prev.trayDepth / 2;
@@ -188,9 +185,9 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
           id: crypto.randomUUID(),
           x: nextX,
           y: nextY,
-          shape: isCircle ? "circle" : "ellipse",
+          shape: "circle",
           width,
-          height: slotHeight,
+          height: width,
           rotation: 0,
           bottomHeight: STEPPED_SLOT_DEFAULTS.bottomHeight,
         };
