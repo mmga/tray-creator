@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "mode": "stepped",
+  "params": {
+    "trayWidth": 260,
+    "trayDepth": 260,
+    "slots": [
+      {
+        "id": "c94098ba-dd13-41a4-a960-a44f37c9e7d0",
+        "x": 114.8,
+        "y": 130,
+        "shape": "circle",
+        "width": 25,
+        "height": 25,
+        "rotation": 0,
+        "groupId": "stepped-default-group"
+      },
+      {
+        "id": "242770f0-0a15-4374-bcdf-d257986ae1b3",
+        "x": 160.2,
+        "y": 130,
+        "shape": "circle",
+        "width": 25,
+        "height": 25,
+        "rotation": 0,
+        "groupId": "stepped-default-group"
+      },
+      {
+        "id": "f7e4d9f6-df57-49c7-9074-a0fab5fcca5d",
+        "x": 88.2,
+        "y": 151,
+        "shape": "circle",
+        "width": 32,
+        "height": 32,
+        "rotation": 0,
+        "groupId": "7256767e-b382-4c44-8e4c-fcba1b63c108"
+      },
+      {
+        "id": "b1946fe3-a343-42c5-bd28-4818a4151ea6",
+        "x": 183.8,
+        "y": 152.8,
+        "shape": "circle",
+        "width": 32,
+        "height": 32,
+        "rotation": 0,
+        "groupId": "c364d43f-28c6-4dfc-8871-d696f3de3b49"
+      }
+    ],
+    "groups": [
+      {
+        "id": "stepped-default-group",
+        "name": "组 1",
+        "color": "#ef4444",
+        "bottomHeight": 10
+      },
+      {
+        "id": "689d7130-f3df-45ed-b085-6ea485c3f757",
+        "name": "组 2",
+        "color": "#3b82f6",
+        "bottomHeight": 35
+      },
+      {
+        "id": "7256767e-b382-4c44-8e4c-fcba1b63c108",
+        "name": "组 3",
+        "color": "#22c55e",
+        "bottomHeight": 25
+      },
+      {
+        "id": "0bf1eb78-a606-4a9a-a17e-e021f5c9da7a",
+        "name": "组 4",
+        "color": "#f59e0b",
+        "bottomHeight": 15
+      },
+      {
+        "id": "c364d43f-28c6-4dfc-8871-d696f3de3b49",
+        "name": "组 5",
+        "color": "#8b5cf6",
+        "bottomHeight": 25
+      }
+    ],
+    "activeGroupId": "c364d43f-28c6-4dfc-8871-d696f3de3b49",
+    "spacing": 2,
+    "holeDepth": 3,
+    "smoothingRadius": 49
+  }
+}

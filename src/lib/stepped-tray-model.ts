@@ -82,13 +82,15 @@ function calculateEffectiveBaseplate(params: SteppedLayoutParams) {
 }
 
 /**
- * 根据阶梯底座参数生成托盘 3D 模型（按组独立实体 + 低组让位减除）
+ * 根据阶梯底座参数生成托盘 3D 模型（按组独立实体 + 纳入更高组为平滑连接上下文）
  *
  * 结构说明：
- * - 每个分组独立生成自己的实体（组内凹槽可连通，组间不共享轮廓）
+ * - 每个分组独立生成自己的实体（组间不共享轮廓，同高度组互不干扰）
+ * - 计算某组的平滑轮廓时，额外纳入"所有高度严格更高的组"的凹槽作为上下文
+ *   → 低组实体自然包裹高组圆柱脚印，实现"低层过渡包围高层圆柱"的平滑效果
+ *   → 同高度的不同组互不纳入，保持各自独立
  * - 每组实体高度 = group.bottomHeight，从 z=0 向上生长
- * - 高组实体在「低组顶部以上」的区间，减除低组每个凹槽的让位圆柱
- *   → 保证低组凹槽正上方的竖直空间不被高组连接桥侵占
+ * - 高组在其实体内减除低组凹槽正上方的让位空间（避免高组连接桥侵占低组插槽上方）
  * - 所有组实体 union 后形成最终底座
  * - 每个凹槽从其所在组顶部向下挖 holeDepth 深度
  */
@@ -171,23 +173,34 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
   const groupSolids: Geom3[] = [];
 
   for (const group of groups) {
-    const groupSlotData = slotData.filter((d) => d.groupId === group.id);
-    if (groupSlotData.length === 0) continue;
+    const ownSlotData = slotData.filter((d) => d.groupId === group.id);
+    if (ownSlotData.length === 0) continue;
 
     const columnHeight = Math.max(group.bottomHeight, 3);
-    let groupSolid = buildGroupSolid(groupSlotData, columnHeight);
+
+    // 纳入所有高度严格更高的组的凹槽作为平滑轮廓上下文。
+    // → 本组实体自然包围更高的柱子，形成平滑连接过渡。
+    // → 同高度的不同组不纳入，保持各自独立，互不干扰。
+    const contextSlotData = slotData.filter((d) => {
+      if (d.groupId === group.id) return false;
+      const otherGroup = groups.find((g) => g.id === d.groupId);
+      return otherGroup && Math.max(otherGroup.bottomHeight, 3) > columnHeight;
+    });
+
+    let groupSolid = buildGroupSolid(
+      [...ownSlotData, ...contextSlotData],
+      columnHeight,
+    );
 
     // 减除所有高度严格低于本组的其他组凹槽的让位圆柱
     // 让位区间：从低组顶部(lowerHeight)到本组顶部(columnHeight)
-    // 这样保证低组凹槽正上方不被本组的连接桥占据
+    // 保证低组凹槽正上方不被本组连接桥侵占
     const clearances: Geom3[] = [];
     for (const otherGroup of groups) {
       const otherHeight = Math.max(otherGroup.bottomHeight, 3);
-      if (otherHeight >= columnHeight) continue; // 仅处理高度严格更低的组
+      if (otherHeight >= columnHeight) continue;
 
-      const otherSlots = slotData.filter((d) => d.groupId === otherGroup.id);
-      for (const d of otherSlots) {
-        // 只预留凹槽本身的半径，不含 spacing（仅保证插模型时竖直空间）
+      for (const d of slotData.filter((sd) => sd.groupId === otherGroup.id)) {
         const clearanceR = Math.max(d.actualW, d.actualH) / 2;
         const clearanceH = columnHeight - otherHeight + 0.02;
         const cyl = extrudeLinear(
