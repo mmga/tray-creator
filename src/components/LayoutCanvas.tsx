@@ -808,22 +808,6 @@ export default function LayoutCanvas({
                   {slot.width === slot.height ? slot.width : `${slot.width}x${slot.height}`}
                 </text>
 
-                {/* Stepped slot: show group height label */}
-                {isSteppedSlot && groupBottomHeight !== null && (
-                  <text
-                    dy={Math.min(w, h) * 0.24}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    fontSize={Math.max(2, Math.min(w, h, 18) / 3.5)}
-                    fill="#fff"
-                    fontWeight="bold"
-                    pointerEvents="none"
-                    style={{ userSelect: 'none' }}
-                  >
-                    {`↑${groupBottomHeight}mm`}
-                  </text>
-                )}
-
                 {/* Rotation Handle - Only show when SELECTED and NOT a circle */}
                 {isSelected && Math.abs(slot.width - slot.height) > 0.01 && (
                   <g
@@ -900,35 +884,20 @@ export default function LayoutCanvas({
               stroke="#38bdf8" strokeWidth={0.3 / zoom} strokeDasharray="2 2" pointerEvents="none" opacity={0.8} />
         ))}
 
-        {/* 分组轮廓预览（Stepped 模式：每组独立渲染，使用组颜色） */}
+        {/* 分组轮廓预览（Stepped 模式：按高度升序渲染，高组颜色压住低组，重叠处显示最高组颜色） */}
         {outlinePreview && outlinePreview.map((go) => {
           if (go.points.length < 3) return null;
           const pathData = go.points
             .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${(trayDepth - p.y).toFixed(2)}`)
             .join(' ') + ' Z';
-          if (go.isOverall) {
-            // 整体外轮廓：白色虚线，无填充
-            return (
-              <path
-                key={go.groupId}
-                d={pathData}
-                fill="none"
-                stroke="#ffffff"
-                strokeWidth={0.6 / zoom}
-                strokeOpacity={0.35}
-                strokeDasharray={`${2 / zoom} ${2 / zoom}`}
-                pointerEvents="none"
-              />
-            );
-          }
           return (
             <path
               key={go.groupId}
               d={pathData}
-              fill={go.color + "18"}
+              fill="none"
               stroke={go.color}
-              strokeWidth={0.8 / zoom}
-              strokeOpacity={0.75}
+              strokeWidth={0.9 / zoom}
+              strokeOpacity={0.85}
               pointerEvents="none"
             />
           );

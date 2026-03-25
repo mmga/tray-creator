@@ -472,56 +472,46 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     }
   }, [effectiveDimensions.depth, effectiveDimensions.width, params, toast]);
 
-  // 自动计算分组轮廓预览（每组独立，响应 params 变化）
+  // 自动计算分组轮廓预览（每组纳入更高组作上下文，匹配 3D 建模逻辑）
   const outlinePreviewAuto = useMemo<GroupOutlinePreview[] | null>(() => {
     if (params.slots.length === 0 || params.groups.length === 0) return null;
 
     const result: GroupOutlinePreview[] = [];
 
-    // 各分组独立轮廓
     for (const group of params.groups) {
-      const groupSlots = params.slots.filter((s) => s.groupId === group.id);
-      if (groupSlots.length === 0) continue;
+      const ownSlots = params.slots.filter((s) => s.groupId === group.id);
+      if (ownSlots.length === 0) continue;
 
-      const circles: OutlineCircle[] = groupSlots.map((slot) => ({
-        cx: slot.x,
-        cy: slot.y,
-        rOuter:
-          (slot.width + getSlotTolerance(slot.width)) / 2 + params.spacing,
-      }));
+      // 纳入所有高度严格更高的组的凹槽作为轮廓上下文（与 3D 建模保持一致）
+      // 这样低组的轮廓自然包裹更高组的圆柱脚印，体现平滑过渡效果
+      const higherSlots = params.slots.filter((s) => {
+        if (s.groupId === group.id) return false;
+        const otherGroup = params.groups.find((g) => g.id === s.groupId);
+        return otherGroup && otherGroup.bottomHeight > group.bottomHeight;
+      });
+
+      const circles: OutlineCircle[] = [...ownSlots, ...higherSlots].map(
+        (slot) => ({
+          cx: slot.x,
+          cy: slot.y,
+          rOuter:
+            (slot.width + getSlotTolerance(slot.width)) / 2 + params.spacing,
+        }),
+      );
 
       const outline = generateOutline(circles, params.smoothingRadius, 64);
       if (outline && outline.points.length >= 3) {
         result.push({
           groupId: group.id,
           color: group.color,
+          bottomHeight: group.bottomHeight,
           points: outline.points,
         });
       }
     }
 
-    // 整体外轮廓（所有凹槽，用虚线白色框渲染）
-    if (params.groups.length > 1) {
-      const allCircles: OutlineCircle[] = params.slots.map((slot) => ({
-        cx: slot.x,
-        cy: slot.y,
-        rOuter:
-          (slot.width + getSlotTolerance(slot.width)) / 2 + params.spacing,
-      }));
-      const overallOutline = generateOutline(
-        allCircles,
-        params.smoothingRadius,
-        64,
-      );
-      if (overallOutline && overallOutline.points.length >= 3) {
-        result.push({
-          groupId: "__overall__",
-          color: "#ffffff",
-          points: overallOutline.points,
-          isOverall: true,
-        });
-      }
-    }
+    // 按高度升序排列：低组先渲染，高组后渲染覆盖，重叠处显示最高组颜色
+    result.sort((a, b) => a.bottomHeight - b.bottomHeight);
 
     return result.length > 0 ? result : null;
   }, [params]);

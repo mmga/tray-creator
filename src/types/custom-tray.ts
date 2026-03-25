@@ -13,6 +13,8 @@ export interface SlotGroup {
 export interface GroupOutlinePreview {
   groupId: string;
   color: string;
+  /** 该组的高度（mm），用于 2D 编辑器按高度排序渲染（低组先画，高组后画覆盖） */
+  bottomHeight: number;
   /** 采样后的闭合多边形点列（用户坐标系） */
   points: { x: number; y: number }[];
   /** 是否为整体外轮廓（所有凹槽的包络，用于显示整体边界） */

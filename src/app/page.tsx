@@ -69,6 +69,17 @@ export default function Home() {
   // Stepped Mode State
   const steppedModel = useSteppedLayout();
 
+  // ── Stepped 模式：选中凹槽时自动激活所属组 ──
+  useEffect(() => {
+    if (mode === "stepped" && selectedSlotIds.length > 0) {
+      const firstSlotId = selectedSlotIds[0];
+      const slot = steppedModel.params.slots.find((s) => s.id === firstSlotId);
+      if (slot && "groupId" in slot) {
+        steppedModel.setActiveGroup((slot as { groupId: string }).groupId);
+      }
+    }
+  }, [selectedSlotIds, mode]);
+
   /** 从订单导入配置 */
   const handleImportOrder = (orderMode: AppMode, params: unknown) => {
     if (orderMode === "grid") {
