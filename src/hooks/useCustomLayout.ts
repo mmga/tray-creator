@@ -9,6 +9,7 @@ import { useUndoHistory } from "@/hooks/useUndoHistory";
 import { trayWorkerService } from "@/lib/worker/worker-service";
 import { useToast } from "@/hooks/useToast";
 import { reportAction } from "@/lib/analytics";
+import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
 import type * as THREE from "three";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 
@@ -26,6 +27,7 @@ interface UseCustomLayoutReturn {
     updates: { id: string; x: number; y: number; rotation?: number }[],
   ) => void;
   updateSlotRotation: (id: string, rotation: number) => void;
+  insertSlots: (slots: SymmetryInsertSlot[]) => void;
   duplicateSlots: (ids: string[]) => void;
   trimBaseplate: () => void;
   calculateEffectiveDimensions: () => {
@@ -301,6 +303,28 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     setIsPreviewStale(true);
   }, []);
 
+  const insertSlots = useCallback((slotsToInsert: SymmetryInsertSlot[]) => {
+    if (slotsToInsert.length === 0) return;
+
+    setParams((prev) => {
+      pushState(prev);
+      const newSlots: FreeSlot[] = slotsToInsert.map((slot) => ({
+        id: crypto.randomUUID(),
+        x: slot.x,
+        y: slot.y,
+        shape: slot.shape,
+        width: slot.width,
+        height: slot.height,
+        rotation: slot.rotation,
+      }));
+      return {
+        ...prev,
+        slots: [...prev.slots, ...newSlots],
+      };
+    });
+    setIsPreviewStale(true);
+  }, [pushState]);
+
   /**
    * 复制凹槽
    */
@@ -469,6 +493,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     updateSlotPosition,
     updateMultipleSlots,
     updateSlotRotation,
+    insertSlots,
     duplicateSlots,
     trimBaseplate,
     calculateEffectiveDimensions,

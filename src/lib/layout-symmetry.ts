@@ -5,6 +5,15 @@ const STEP = 0.2;
 
 export type SymmetryAxisSource = "selection" | "tray";
 export type SymmetryMode = "mirror-x" | "mirror-y";
+export type SymmetrySlot = FreeSlot & { groupId?: string };
+export type SymmetryBoundsSlot = Pick<
+  FreeSlot,
+  "x" | "y" | "width" | "height" | "rotation"
+>;
+
+export interface SymmetryInsertSlot extends Omit<FreeSlot, "id"> {
+  groupId?: string;
+}
 
 export interface SlotPositionUpdate {
   id: string;
@@ -73,7 +82,7 @@ export function resolveMirrorAxis(
 }
 
 export function mirrorSlot(
-  slot: FreeSlot,
+  slot: SymmetrySlot,
   axisValue: number,
   mode: SymmetryMode,
 ) {
@@ -94,8 +103,37 @@ export function mirrorSlot(
   };
 }
 
+export function buildMirrorInsertSlots(
+  selected: SymmetrySlot[],
+  trayWidth: number,
+  trayDepth: number,
+  axisSource: SymmetryAxisSource,
+  mode: SymmetryMode,
+): SymmetryInsertSlot[] {
+  const axisValue = resolveMirrorAxis(
+    selected,
+    trayWidth,
+    trayDepth,
+    axisSource,
+    mode,
+  );
+
+  return selected.map((slot) => {
+    const mirrored = mirrorSlot(slot, axisValue, mode);
+    return {
+      x: mirrored.x,
+      y: mirrored.y,
+      shape: mirrored.shape,
+      width: mirrored.width,
+      height: mirrored.height,
+      rotation: mirrored.rotation,
+      ...(mirrored.groupId ? { groupId: mirrored.groupId } : {}),
+    };
+  });
+}
+
 export function buildMirrorMoveUpdates(
-  selected: FreeSlot[],
+  selected: SymmetrySlot[],
   trayWidth: number,
   trayDepth: number,
   axisSource: SymmetryAxisSource,
@@ -118,4 +156,21 @@ export function buildMirrorMoveUpdates(
       rotation: mirrored.rotation,
     };
   });
+}
+
+export function countOutOfBoundsSlots(
+  slots: SymmetryBoundsSlot[],
+  trayWidth: number,
+  trayDepth: number,
+) {
+  return slots.reduce((count, slot) => {
+    const { halfW, halfH } = getSlotBounds(slot);
+    const isOutOfBounds =
+      slot.x - halfW < 0 ||
+      slot.x + halfW > trayWidth ||
+      slot.y - halfH < 0 ||
+      slot.y + halfH > trayDepth;
+
+    return isOutOfBounds ? count + 1 : count;
+  }, 0);
 }

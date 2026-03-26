@@ -6,14 +6,20 @@ import {
   Columns2,
   FlipHorizontal,
   FlipVertical,
+  Copy,
 } from "lucide-react";
-import { FreeSlot } from "@/types/custom-tray";
+import { FreeSlot, type SteppedSlot } from "@/types/custom-tray";
 import { getSlotTolerance } from "@/lib/config";
+import { getEllipsePolygon, polygonsIntersect } from "@/lib/collision";
 import { useToast } from "@/hooks/useToast";
 import {
+  buildMirrorInsertSlots,
   buildMirrorMoveUpdates,
+  countOutOfBoundsSlots,
+  type SymmetryInsertSlot,
   type SymmetryAxisSource,
   type SymmetryMode,
+  type SymmetrySlot,
 } from "@/lib/layout-symmetry";
 
 // ── 常量与工具 ──────────────────────────────
@@ -39,14 +45,15 @@ function getSlotBounds(slot: FreeSlot) {
 
 interface AlignmentToolbarProps {
   selectedIds: Set<string>;
-  slots: FreeSlot[];
+  slots: Array<FreeSlot | SteppedSlot>;
   onUpdateSlots: (updates: Update[]) => void;
+  onInsertSlots?: (slots: SymmetryInsertSlot[]) => void;
   spacing: number;
   trayWidth: number;
   trayDepth: number;
 }
 
-export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, spacing, trayWidth, trayDepth }: AlignmentToolbarProps) {
+export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, onInsertSlots, spacing, trayWidth, trayDepth }: AlignmentToolbarProps) {
   const [axisSource, setAxisSource] = useState<SymmetryAxisSource>("selection");
   const { toast } = useToast();
   const hasSelection = selectedIds.size > 0;
@@ -70,9 +77,9 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, sp
     return { minX, maxX, minY, maxY };
   };
 
-  const getSelected = () => {
+  const getSelected = (): SymmetrySlot[] => {
     const selected = slots.filter(s => selectedIds.has(s.id));
-    return selected;
+    return selected as SymmetrySlot[];
   };
 
   const getSelectionCenter = (selected: FreeSlot[]) => {
@@ -193,25 +200,25 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, sp
     if (updates.length > 0) {
       onUpdateSlots(updates);
 
-      const outOfBoundsCount = updates.reduce((count, update) => {
-        const original = selected.find((slot) => slot.id === update.id);
-        if (!original) return count;
+      const nextSlots = updates
+        .map((update) => {
+          const original = selected.find((slot) => slot.id === update.id);
+          if (!original) return null;
 
-        const nextSlot = {
-          ...original,
-          x: update.x,
-          y: update.y,
-          rotation: update.rotation ?? original.rotation,
-        };
-        const { halfW, halfH } = getSlotBounds(nextSlot);
-        const isOutOfBounds =
-          nextSlot.x - halfW < 0 ||
-          nextSlot.x + halfW > trayWidth ||
-          nextSlot.y - halfH < 0 ||
-          nextSlot.y + halfH > trayDepth;
+          return {
+            ...original,
+            x: update.x,
+            y: update.y,
+            rotation: update.rotation ?? original.rotation,
+          };
+        })
+        .filter((slot): slot is SymmetrySlot => slot !== null);
 
-        return isOutOfBounds ? count + 1 : count;
-      }, 0);
+      const outOfBoundsCount = countOutOfBoundsSlots(
+        nextSlots,
+        trayWidth,
+        trayDepth,
+      );
 
       if (outOfBoundsCount > 0) {
         toast(
@@ -219,6 +226,115 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, sp
           `镜像后有 ${outOfBoundsCount} 个槽位超出托盘边界，请继续调整。`,
         );
       }
+    }
+  };
+
+  const handleMirrorCopy = (mode: SymmetryMode) => {
+    if (!onInsertSlots) return;
+
+    const selected = getSelected();
+    if (selected.length === 0) return;
+
+    const inserts = buildMirrorInsertSlots(
+      selected,
+      trayWidth,
+      trayDepth,
+      axisSource,
+      mode,
+    );
+
+    if (inserts.length === 0) return;
+
+    const buildCollisionPolygon = (slot: Pick<FreeSlot, "x" | "y" | "width" | "height" | "rotation">) => {
+      const margin = spacing / 2 + getSlotTolerance(slot.width) / 2;
+      return getEllipsePolygon(
+        slot.x,
+        slot.y,
+        slot.width,
+        slot.height,
+        slot.rotation,
+        margin,
+        12,
+      );
+    };
+
+    const isSameGeometry = (
+      left: Pick<FreeSlot, "x" | "y" | "width" | "height" | "rotation" | "shape">,
+      right: Pick<FreeSlot, "x" | "y" | "width" | "height" | "rotation" | "shape">,
+    ) => {
+      const within = (a: number, b: number) => Math.abs(a - b) < 0.05;
+      return (
+        left.shape === right.shape &&
+        within(left.x, right.x) &&
+        within(left.y, right.y) &&
+        within(left.width, right.width) &&
+        within(left.height, right.height) &&
+        within(left.rotation, right.rotation)
+      );
+    };
+
+    const hasSpacingCollision = (
+      candidate: SymmetryInsertSlot,
+      others: Array<FreeSlot | SteppedSlot | SymmetryInsertSlot>,
+    ) => {
+      const candidatePolygon = buildCollisionPolygon(candidate);
+      return others.some((other) => {
+        const otherPolygon = buildCollisionPolygon(other);
+        return polygonsIntersect(candidatePolygon, otherPolygon);
+      });
+    };
+
+    const acceptedInserts: SymmetryInsertSlot[] = [];
+    let skippedDuplicateCount = 0;
+    let skippedCollisionCount = 0;
+
+    inserts.forEach((insertSlot) => {
+      const isDuplicate =
+        slots.some((existing) => isSameGeometry(insertSlot, existing)) ||
+        acceptedInserts.some((existing) => isSameGeometry(insertSlot, existing));
+
+      if (isDuplicate) {
+        skippedDuplicateCount += 1;
+        return;
+      }
+
+      if (hasSpacingCollision(insertSlot, [...slots, ...acceptedInserts])) {
+        skippedCollisionCount += 1;
+        return;
+      }
+
+      acceptedInserts.push(insertSlot);
+    });
+
+    if (acceptedInserts.length === 0) {
+      toast("info", "镜像复制没有生成新的有效槽位。");
+      return;
+    }
+
+    onInsertSlots(acceptedInserts);
+
+    if (skippedDuplicateCount > 0 || skippedCollisionCount > 0) {
+      const parts = [];
+      if (skippedDuplicateCount > 0) {
+        parts.push(`${skippedDuplicateCount} 个副本与现有槽位重合`);
+      }
+      if (skippedCollisionCount > 0) {
+        parts.push(`${skippedCollisionCount} 个副本会产生间距冲突`);
+      }
+      toast("info", `镜像复制已自动跳过：${parts.join("，")}。`);
+    }
+
+    const outOfBoundsCount = countOutOfBoundsSlots(
+      acceptedInserts,
+      trayWidth,
+      trayDepth,
+    );
+
+    if (outOfBoundsCount > 0) {
+      toast(
+        "info",
+        `镜像副本中有 ${outOfBoundsCount} 个槽位超出托盘边界，请继续调整。`,
+      );
     }
   };
 
@@ -304,10 +420,20 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, sp
           <span className="hidden lg:inline text-[10px]">左右镜</span>
           <span className={tooltipClass}>围绕当前轴做左右镜像移动</span>
         </button>
+        <button className={btnClass} disabled={!hasSelection || !onInsertSlots} onClick={() => handleMirrorCopy('mirror-x')}>
+          <Copy size={16} />
+          <span className="hidden lg:inline text-[10px]">左右复</span>
+          <span className={tooltipClass}>围绕当前轴复制一组左右镜像槽位</span>
+        </button>
         <button className={btnClass} disabled={!hasSelection} onClick={() => handleMirrorMove('mirror-y')}>
           <FlipVertical size={16} />
           <span className="hidden lg:inline text-[10px]">上下镜</span>
           <span className={tooltipClass}>围绕当前轴做上下镜像移动</span>
+        </button>
+        <button className={btnClass} disabled={!hasSelection || !onInsertSlots} onClick={() => handleMirrorCopy('mirror-y')}>
+          <Copy size={16} />
+          <span className="hidden lg:inline text-[10px]">上下复</span>
+          <span className={tooltipClass}>围绕当前轴复制一组上下镜像槽位</span>
         </button>
       </div>
 

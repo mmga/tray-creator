@@ -184,6 +184,7 @@ export default function Home() {
               }}
               onUpdateSlotRotation={model.updateSlotRotation}
               onUpdateMultipleSlots={model.updateMultipleSlots}
+              onInsertSlots={model.insertSlots}
               onDuplicateSlots={model.duplicateSlots}
               onUndo={model.undo}
               onSaveSnapshot={model.saveSnapshot}
@@ -298,10 +299,12 @@ export default function Home() {
                 onRemoveSlot={mode === "stepped" ? steppedModel.removeSlot : customModel.removeSlot}
                 onUpdateSlotRotation={mode === "stepped" ? steppedModel.updateSlotRotation : customModel.updateSlotRotation}
                 onUpdateMultipleSlots={mode === "stepped" ? steppedModel.updateMultipleSlots : customModel.updateMultipleSlots}
+                onInsertSlots={mode === "stepped" ? steppedModel.insertSlots : customModel.insertSlots}
                 onDuplicateSlots={mode === "stepped" ? steppedModel.duplicateSlots : customModel.duplicateSlots}
                 onUndo={mode === "stepped" ? steppedModel.undo : customModel.undo}
                 onSaveSnapshot={mode === "stepped" ? steppedModel.saveSnapshot : customModel.saveSnapshot}
                 onSelectionChange={mode === "stepped" ? setSelectedSlotIds : undefined}
+                outlinePreview={mode === "stepped" ? steppedModel.outlinePreview : undefined}
               />
             </div>
           )}

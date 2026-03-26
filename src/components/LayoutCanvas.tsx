@@ -1,12 +1,13 @@
 "use client";
 
 import { useRef, useState, useCallback, useEffect } from "react";
-import type { FreeSlot, CustomLayoutParams, SteppedLayoutParams, GroupOutlinePreview } from "@/types/custom-tray";
+import type { FreeSlot, CustomLayoutParams, SteppedLayoutParams, GroupOutlinePreview, SteppedSlot } from "@/types/custom-tray";
 import type { OutlineData } from "@/lib/outline-geometry";
 import { getSlotTolerance, MAX_BUILD_SIZE } from "@/lib/config";
 import { getEllipsePolygon, polygonsIntersect } from "@/lib/collision";
 import AlignmentToolbar from "./AlignmentToolbar";
 import { Trash2, Undo2, Copy, XCircle } from "lucide-react";
+import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
 
 import { useCanvasZoom } from "../hooks/useCanvasZoom";
 import { useCanvasKeyboard } from "../hooks/useCanvasKeyboard";
@@ -23,6 +24,7 @@ interface LayoutCanvasProps {
   onUpdateMultipleSlots?: (
     updates: { id: string; x: number; y: number; rotation?: number }[],
   ) => void;
+  onInsertSlots?: (slots: SymmetryInsertSlot[]) => void;
   onDuplicateSlots?: (ids: string[]) => void;
   onUndo?: () => void;
   onSaveSnapshot?: () => void;
@@ -38,6 +40,7 @@ export default function LayoutCanvas({
   onResizeTray,
   onUpdateSlotRotation,
   onUpdateMultipleSlots,
+  onInsertSlots,
   onDuplicateSlots,
   onUndo,
   onSaveSnapshot,
@@ -637,8 +640,9 @@ export default function LayoutCanvas({
 
       <AlignmentToolbar
         selectedIds={selectedIds}
-        slots={slots}
+        slots={slots as Array<FreeSlot | SteppedSlot>}
         onUpdateSlots={handleUpdateSlots}
+        onInsertSlots={onInsertSlots}
         spacing={spacing}
         trayWidth={trayWidth}
         trayDepth={trayDepth}

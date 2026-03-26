@@ -21,6 +21,7 @@ import type * as THREE from "three";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import { generateOutline } from "@/lib/outline-geometry";
 import { downloadParamFile } from "@/lib/param-io";
+import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
 import {
   analyzeBridgeWarning,
   clusterConnectivityCircles,
@@ -44,6 +45,7 @@ export interface UseSteppedLayoutReturn {
     updates: { id: string; x: number; y: number; rotation?: number }[],
   ) => void;
   updateSlotRotation: (id: string, rotation: number) => void;
+  insertSlots: (slots: SymmetryInsertSlot[]) => void;
   duplicateSlots: (ids: string[]) => void;
   trimBaseplate: () => void;
   // 分组管理
@@ -288,6 +290,33 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
       invalidatePreview();
     },
     [invalidatePreview],
+  );
+
+  const insertSlots = useCallback(
+    (slotsToInsert: SymmetryInsertSlot[]) => {
+      if (slotsToInsert.length === 0) return;
+
+      internalSetParams((prev) => {
+        pushState(prev);
+        const newSlots: SteppedSlot[] = slotsToInsert.map((slot) => ({
+          id: crypto.randomUUID(),
+          x: slot.x,
+          y: slot.y,
+          shape: slot.shape,
+          width: slot.width,
+          height: slot.height,
+          rotation: slot.rotation,
+          groupId: slot.groupId ?? prev.activeGroupId,
+        }));
+
+        return {
+          ...prev,
+          slots: [...prev.slots, ...newSlots],
+        };
+      });
+      invalidatePreview();
+    },
+    [invalidatePreview, pushState],
   );
 
   const duplicateSlots = useCallback(
@@ -660,6 +689,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     updateSlotPosition,
     updateMultipleSlots,
     updateSlotRotation,
+    insertSlots,
     duplicateSlots,
     trimBaseplate,
     addGroup,
