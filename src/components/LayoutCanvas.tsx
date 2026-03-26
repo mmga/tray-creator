@@ -20,6 +20,11 @@ import { CanvasStatusBar } from "./canvas/CanvasStatusBar";
 import { CanvasZoomControls } from "./canvas/CanvasZoomControls";
 import { KeyboardHintsOverlay } from "./canvas/KeyboardHintsOverlay";
 
+const ACTION_PANEL_MIN_WIDTH = 248;
+const ACTION_PANEL_MAX_WIDTH = 420;
+const ACTION_PANEL_DEFAULT_WIDTH = 304;
+const ACTION_PANEL_COLLAPSED_WIDTH = 84;
+
 interface LayoutCanvasProps {
   params: CustomLayoutParams | SteppedLayoutParams;
   onUpdateSlot: (id: string, x: number, y: number) => void;
@@ -58,6 +63,9 @@ export default function LayoutCanvas({
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [isActionPanelCollapsed, setIsActionPanelCollapsed] = useState(false);
+  const [actionPanelWidth, setActionPanelWidth] = useState(ACTION_PANEL_DEFAULT_WIDTH);
+  const [isResizingActionPanel, setIsResizingActionPanel] = useState(false);
 
   // Hoisted state (must be before hooks to avoid reference errors)
   const [isRotating, setIsRotating] = useState(false);
@@ -88,6 +96,7 @@ export default function LayoutCanvas({
     value: number; // SVG coordinate
   }
   const [guideLines, setGuideLines] = useState<GuideLine[]>([]);
+  const resizeActionPanelRef = useRef<{ startX: number; startWidth: number } | null>(null);
 
   // Extracted canvas zoom/pan hook
   const {
@@ -144,6 +153,55 @@ export default function LayoutCanvas({
       setHoveredId(null);
     }
   }, [draggingId, hoveredId, slots]);
+
+  useEffect(() => {
+    if (!isResizingActionPanel) {
+      return;
+    }
+
+    const stopResize = () => {
+      resizeActionPanelRef.current = null;
+      setIsResizingActionPanel(false);
+    };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      const state = resizeActionPanelRef.current;
+      if (!state) {
+        return;
+      }
+
+      const delta = event.clientX - state.startX;
+      const nextWidth = Math.max(
+        ACTION_PANEL_MIN_WIDTH,
+        Math.min(ACTION_PANEL_MAX_WIDTH, state.startWidth - delta),
+      );
+      setActionPanelWidth(nextWidth);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stopResize();
+      }
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", stopResize);
+    window.addEventListener("pointercancel", stopResize);
+    window.addEventListener("blur", stopResize);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", stopResize);
+      window.removeEventListener("pointercancel", stopResize);
+      window.removeEventListener("blur", stopResize);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+  }, [isResizingActionPanel]);
 
   // Helper to handle multiple updates
   const handleUpdateSlots = useCallback((updates: { id: string; x: number; y: number; rotation?: number }[]) => {
@@ -679,422 +737,464 @@ export default function LayoutCanvas({
 
   return (
     <div
-      ref={parentRef}
-      className={`w-full h-full bg-[#1c1a16] rounded-sm overflow-hidden relative select-none flex items-center justify-center ${isSpacePressed ? 'cursor-grab' : ''} ${isPanning ? 'cursor-grabbing' : ''}`}
-      style={{ touchAction: 'none' }}
+      className="flex h-full w-full min-h-0 flex-col overflow-hidden bg-[#120f0c] lg:flex-row"
     >
-      {/* Debug Info Overlay (Bottom Right) inside the canvas container or separate? */}
-
-
-
-      <AlignmentToolbar
-        selectedIds={selectedIds}
-        enableCopyPreview={!draggingId && !isRotating}
-        slots={slots as Array<FreeSlot | SteppedSlot>}
-        onUpdateSlots={handleUpdateSlots}
-        onInsertSlots={onInsertSlots}
-        axisSource={symmetryAxisSource}
-        onAxisSourceChange={setSymmetryAxisSource}
-        spacing={spacing}
-        trayWidth={trayWidth}
-        trayDepth={trayDepth}
-      />
-      {/* ... (Background Grid and SVG setup unchanged) ... */}
+      <div className="shrink-0 border-b border-[#2e2a24] bg-[#100d0a] lg:hidden">
+        <AlignmentToolbar
+          selectedIds={selectedIds}
+          enableCopyPreview={!draggingId && !isRotating}
+          slots={slots as Array<FreeSlot | SteppedSlot>}
+          onUpdateSlots={handleUpdateSlots}
+          onInsertSlots={onInsertSlots}
+          axisSource={symmetryAxisSource}
+          onAxisSourceChange={setSymmetryAxisSource}
+          spacing={spacing}
+          trayWidth={trayWidth}
+          trayDepth={trayDepth}
+          collapsed={isActionPanelCollapsed}
+          onToggleCollapse={() => setIsActionPanelCollapsed((prev) => !prev)}
+        />
+      </div>
 
       <div
-        className="absolute inset-0 opacity-10 pointer-events-none transition-all duration-300"
-        style={{
-          backgroundImage: `linear-gradient(#444 1px, transparent 1px), linear-gradient(90deg, #444 1px, transparent 1px)`,
-          backgroundSize: '20px 20px',
-          backgroundPosition: 'center'
-        }}
-      />
-
-      <svg
-        ref={svgRef}
-        viewBox={viewBox}
-        className={`w-full h-full max-w-full max-h-full ${isSpacePressed ? '' : 'cursor-crosshair'}`}
+        ref={parentRef}
+        className={`relative min-h-0 min-w-0 flex-1 overflow-hidden bg-[#1c1a16] select-none ${isSpacePressed ? 'cursor-grab' : ''} ${isPanning ? 'cursor-grabbing' : ''}`}
         style={{ touchAction: 'none' }}
-        onPointerDown={(e) => handlePointerDown(e)}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerLeave={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-        onWheel={handleWheel}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        preserveAspectRatio="xMidYMid meet"
       >
-        {/* Virtual Canvas (outer) */}
-        <rect
-          x={0}
-          y={0}
-          width={trayWidth}
-          height={trayDepth}
-          fill="none"
-          stroke="#4b5563"
-          strokeWidth={0.5 / zoom}
-          strokeDasharray={`${3 / zoom} ${3 / zoom}`}
-          strokeOpacity={0.9}
+        {/* Debug Info Overlay (Bottom Right) inside the canvas container or separate? */}
+
+        {/* ... (Background Grid and SVG setup unchanged) ... */}
+
+        <div
+          className="absolute inset-0 opacity-10 pointer-events-none transition-all duration-300"
+          style={{
+            backgroundImage: `linear-gradient(#444 1px, transparent 1px), linear-gradient(90deg, #444 1px, transparent 1px)`,
+            backgroundSize: '20px 20px',
+            backgroundPosition: 'center'
+          }}
         />
 
-        {/* Effective Baseplate (inner) */}
-        {!('groups' in params) && effectiveBaseplate.hasSlots && (
+        <svg
+          ref={svgRef}
+          viewBox={viewBox}
+          className={`w-full h-full max-w-full max-h-full ${isSpacePressed ? '' : 'cursor-crosshair'}`}
+          style={{ touchAction: 'none' }}
+          onPointerDown={(e) => handlePointerDown(e)}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerLeave={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          onWheel={handleWheel}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          preserveAspectRatio="xMidYMid meet"
+        >
+          {/* Virtual Canvas (outer) */}
           <rect
-            x={effectiveBaseplate.x}
-            y={effectiveBaseplate.y}
-            width={effectiveBaseplate.width}
-            height={effectiveBaseplate.height}
+            x={0}
+            y={0}
+            width={trayWidth}
+            height={trayDepth}
             fill="none"
-            stroke="#8b7355"
-            strokeWidth={0.7 / zoom}
-            rx={Math.max(0, Math.min('cornerRadius' in params ? params.cornerRadius : 0, effectiveBaseplate.width / 2, effectiveBaseplate.height / 2))}
-            strokeOpacity={0.95}
+            stroke="#4b5563"
+            strokeWidth={0.5 / zoom}
+            strokeDasharray={`${3 / zoom} ${3 / zoom}`}
+            strokeOpacity={0.9}
+          />
+
+          {/* Effective Baseplate (inner) */}
+          {!('groups' in params) && effectiveBaseplate.hasSlots && (
+            <rect
+              x={effectiveBaseplate.x}
+              y={effectiveBaseplate.y}
+              width={effectiveBaseplate.width}
+              height={effectiveBaseplate.height}
+              fill="none"
+              stroke="#8b7355"
+              strokeWidth={0.7 / zoom}
+              rx={Math.max(0, Math.min('cornerRadius' in params ? params.cornerRadius : 0, effectiveBaseplate.width / 2, effectiveBaseplate.height / 2))}
+              strokeOpacity={0.95}
+            />
+          )}
+
+          {symmetryAxes && (
+            <>
+              <line
+                data-symmetry-axis="mirror-x"
+                x1={symmetryAxes.vertical}
+                y1={0}
+                x2={symmetryAxes.vertical}
+                y2={trayDepth}
+                stroke="#f59e0b"
+                strokeWidth={1 / zoom}
+                strokeDasharray={`${6 / zoom} ${4 / zoom}`}
+                strokeOpacity={0.7}
+              />
+              <line
+                data-symmetry-axis="mirror-y"
+                x1={0}
+                y1={trayDepth - symmetryAxes.horizontal}
+                x2={trayWidth}
+                y2={trayDepth - symmetryAxes.horizontal}
+                stroke="#f59e0b"
+                strokeWidth={1 / zoom}
+                strokeDasharray={`${6 / zoom} ${4 / zoom}`}
+                strokeOpacity={0.45}
+              />
+            </>
+          )}
+
+          {/* Slots */}
+          {(() => {
+            // 预计算所有碰撞信息，用于高亮冲突对方和生成摘要
+            const collisionMap = new Map<string, { boundaryReasons: string[]; overlapIds: string[] }>();
+            // 被其他碰撞槽位"牵连"高亮的 ID 集合
+            const involvedIds = new Set<string>();
+
+            for (const slot of slots) {
+              const boundaryReasons: string[] = [];
+              const overlapIds = checkSlotCollision(slot.id, slot.x, slot.y, slot.width, slot.height, slot.rotation);
+              collisionMap.set(slot.id, { boundaryReasons, overlapIds });
+              if (overlapIds.length > 0) {
+                involvedIds.add(slot.id);
+                overlapIds.forEach(id => involvedIds.add(id));
+              }
+            }
+
+            return slots.map((slot) => {
+              // Geometry
+              const w = slot.width + getSlotTolerance(slot.width);
+              const h = slot.height + getSlotTolerance(slot.height);
+
+              // Collision Radius (Approximation)
+              const collisionR = getCollisionRadius(slot);
+
+              // Position
+              const svgY = trayDepth - slot.y;
+
+              // Collision Check (from pre-computed map)
+              const info = collisionMap.get(slot.id)!;
+              const isBoundary = info.boundaryReasons.length > 0;
+              const isOverlap = info.overlapIds.length > 0;
+              const isColliding = isBoundary || isOverlap;
+              // 此槽位是否被别人的碰撞牵连高亮（但自身并非碰撞源）
+              const isInvolvedViaOther = !isColliding && involvedIds.has(slot.id);
+
+              const isHovered = hoveredId === slot.id;
+              const isDragging = draggingId === slot.id;
+              const isSelected = selectedIds.has(slot.id);
+              const color = isSelected ? "#f97316" : "#eab308"; // Orange if selected, else Yellow
+
+              // Heatmap color for bottomHeight label text (legacy, kept for safety)
+              const bhLabelColor = "#86efac";
+
+              // 分组颜色（Stepped 模式通过 groupId 查组色）
+              const steppedGroups = 'groups' in params
+                ? (params as SteppedLayoutParams).groups
+                : undefined;
+              const isSteppedSlot = 'groupId' in slot;
+              const isDimmedByGroupFocus = Boolean(
+                focusedGroupId &&
+                isSteppedSlot &&
+                (slot as { groupId: string }).groupId !== focusedGroupId,
+              );
+              const groupColor = isSteppedSlot && steppedGroups
+                ? (steppedGroups.find(g => g.id === (slot as { groupId: string }).groupId)?.color ?? "#86efac")
+                : null;
+              const groupBottomHeight = isSteppedSlot && steppedGroups
+                ? (steppedGroups.find(g => g.id === (slot as { groupId: string }).groupId)?.bottomHeight ?? null)
+                : null;
+
+              return (
+                <g
+                  key={slot.id}
+                  transform={`translate(${slot.x}, ${svgY}) rotate(${-slot.rotation})`} // Rotation! Note: SVG Y is inverted, so maybe rotation direction needs care. -Rotation fits typical 2D intuition if Y is up.
+                  onPointerDown={(e) => handlePointerDown(e, slot.id)}
+                  onPointerEnter={() => setHoveredId(slot.id)}
+                  onPointerLeave={() => setHoveredId(null)}
+                  className={`transition-opacity duration-200 ${isSpacePressed ? '' : 'cursor-move'}`}
+                  style={{ opacity: (isDragging ? 0.9 : 1) * (isDimmedByGroupFocus ? 0.18 : 1) }}
+                >
+                  {/* Margin / Safe Area Indicator - colored by group for stepped mode */}
+                  <ellipse
+                    rx={w / 2 + spacing}
+                    ry={h / 2 + spacing}
+                    fill="none"
+                    stroke={isColliding ? "#ef4444" : isInvolvedViaOther ? "#ef4444" : (groupColor ?? "#888")}
+                    strokeWidth={0.25 / zoom}
+                    strokeDasharray="2 2"
+                    opacity={isColliding ? 1 : isInvolvedViaOther ? 0.7 : (groupColor ? 0.5 : 0.6)}
+                    pointerEvents="none"
+                  />
+
+                  {/* Highlight Halo - Inside - Show if Hovered/Dragging/Colliding (Selection uses fill color) */}
+                  {(isColliding || isInvolvedViaOther || isHovered || isDragging) && (
+                    <ellipse
+                      rx={Math.max(0, w / 2 - 0.5 / zoom)}
+                      ry={Math.max(0, h / 2 - 0.5 / zoom)}
+                      fill="none"
+                      stroke={isColliding || isInvolvedViaOther ? "#ef4444" : "#fbbf24"}
+                      strokeWidth={0.8 / zoom}
+                      strokeOpacity={0.8}
+                      pointerEvents="none"
+                    />
+                  )}
+
+                  {/* Slot Shape */}
+                  <ellipse
+                    rx={w / 2}
+                    ry={h / 2}
+                    fill={isSteppedSlot
+                      ? (isSelected ? "#f97316" : (groupColor ?? bhLabelColor))
+                      : color}
+                    fillOpacity={0.85}
+                    stroke={isColliding || isInvolvedViaOther ? "#ef4444"
+                      : isSteppedSlot ? (groupColor ? groupColor + "cc" : "#fff")
+                        : "#fff"}
+                    strokeWidth={(isColliding || isInvolvedViaOther ? 0.5 : isSteppedSlot ? 0.4 : 0.2) / zoom}
+                  />
+
+                  {/* Size Text */}
+                  <text
+                    dy={isSteppedSlot ? -Math.min(w, h) * 0.12 : Math.min(w, h) * 0.2}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fontSize={Math.min(w, h, 24) / 2}
+                    fill="#fff"
+                    fontWeight="bold"
+                    pointerEvents="none"
+                    style={{ userSelect: 'none' }}
+                  >
+                    {slot.width === slot.height ? slot.width : `${slot.width}x${slot.height}`}
+                  </text>
+
+                  {/* Rotation Handle - Only show when SELECTED and NOT a circle */}
+                  {isSelected && Math.abs(slot.width - slot.height) > 0.01 && (
+                    <g
+                      transform={`translate(${w / 2 + spacing + 4}, 0)`}
+                      onPointerDown={(e) => handleRotateMouseDown(e, slot)}
+                      className="cursor-pointer"
+                      style={{ cursor: 'grab' }}
+                    >
+                      {/* Transparent bigger hit area */}
+                      <circle
+                        r={6 / zoom}
+                        fill="transparent"
+                      />
+                      {/* Connection Line - Solid */}
+                      <line
+                        x1={-(4 + spacing)}
+                        y1={0}
+                        x2={0}
+                        y2={0}
+                        stroke="#fff"
+                        strokeWidth={0.5 / zoom}
+                        pointerEvents="none"
+                      />
+                      {/* Handle Circle - Smaller & Solid */}
+                      <circle
+                        r={1.5 / zoom}
+                        fill="#fff"
+                        stroke="#2a2a2e"
+                        strokeWidth={0.5 / zoom}
+                        pointerEvents="none"
+                      />
+                    </g>
+                  )}
+                </g>
+              );
+            });
+          })()}
+
+          {/* Collision connector lines — 连接冲突的槽位对，增强可理解性 */}
+          {(() => {
+            const lines: React.ReactNode[] = [];
+            const drawn = new Set<string>();
+            for (const slot of slots) {
+              const overlapIds = checkSlotCollision(slot.id, slot.x, slot.y, slot.width, slot.height, slot.rotation);
+              for (const otherId of overlapIds) {
+                const key = [slot.id, otherId].sort().join("|");
+                if (drawn.has(key)) continue;
+                drawn.add(key);
+                const other = slots.find(s => s.id === otherId);
+                if (!other) continue;
+                const lineOpacity = !focusedGroupId
+                  ? 0.6
+                  : (('groupId' in slot && slot.groupId === focusedGroupId) || ('groupId' in other && other.groupId === focusedGroupId))
+                    ? 0.5
+                    : 0.12;
+                lines.push(
+                  <line
+                    key={`col-${key}`}
+                    x1={slot.x} y1={trayDepth - slot.y}
+                    x2={other.x} y2={trayDepth - other.y}
+                    stroke="#ef4444"
+                    strokeWidth={0.5 / zoom}
+                    strokeDasharray="3 2"
+                    opacity={lineOpacity}
+                    pointerEvents="none"
+                  />
+                );
+              }
+            }
+            return lines;
+          })()}
+
+          {/* Smart Guide Lines */}
+          {guideLines.map((g, i) => (
+            g.axis === 'x'
+              ? <line key={`guide-${i}`} x1={g.value} y1={minY} x2={g.value} y2={minY + viewH}
+                stroke="#38bdf8" strokeWidth={0.3 / zoom} strokeDasharray="2 2" pointerEvents="none" opacity={0.8} />
+              : <line key={`guide-${i}`} x1={minX} y1={g.value} x2={minX + viewW} y2={g.value}
+                stroke="#38bdf8" strokeWidth={0.3 / zoom} strokeDasharray="2 2" pointerEvents="none" opacity={0.8} />
+          ))}
+
+          {/* 分组轮廓预览（Stepped 模式：按高度升序渲染，高组颜色压住低组，重叠处显示最高组颜色） */}
+          {outlinePreview && outlinePreview.map((go) => {
+            if (go.points.length < 3) return null;
+            const isDimmed = Boolean(focusedGroupId && go.groupId !== focusedGroupId);
+            const pathData = go.points
+              .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${(trayDepth - p.y).toFixed(2)}`)
+              .join(' ') + ' Z';
+            return (
+              <path
+                key={go.key}
+                d={pathData}
+                fill="none"
+                stroke={go.color}
+                strokeWidth={0.9 / zoom}
+                strokeOpacity={isDimmed ? 0.16 : 0.85}
+                pointerEvents="none"
+              />
+            );
+          })}
+        </svg>
+
+        {/* Marquee Selection Box */}
+        {selectionBox && (
+          <div
+            style={{
+              position: 'absolute',
+              left: Math.min(selectionBox.start.x, selectionBox.current.x),
+              top: Math.min(selectionBox.start.y, selectionBox.current.y),
+              width: Math.abs(selectionBox.current.x - selectionBox.start.x),
+              height: Math.abs(selectionBox.current.y - selectionBox.start.y),
+              border: '1px solid #38bdf8',
+              backgroundColor: 'rgba(56, 189, 248, 0.1)',
+              pointerEvents: 'none',
+              zIndex: 40
+            }}
           />
         )}
 
-        {symmetryAxes && (
-          <>
-            <line
-              data-symmetry-axis="mirror-x"
-              x1={symmetryAxes.vertical}
-              y1={0}
-              x2={symmetryAxes.vertical}
-              y2={trayDepth}
-              stroke="#f59e0b"
-              strokeWidth={1 / zoom}
-              strokeDasharray={`${6 / zoom} ${4 / zoom}`}
-              strokeOpacity={0.7}
-            />
-            <line
-              data-symmetry-axis="mirror-y"
-              x1={0}
-              y1={trayDepth - symmetryAxes.horizontal}
-              x2={trayWidth}
-              y2={trayDepth - symmetryAxes.horizontal}
-              stroke="#f59e0b"
-              strokeWidth={1 / zoom}
-              strokeDasharray={`${6 / zoom} ${4 / zoom}`}
-              strokeOpacity={0.45}
-            />
-          </>
+        {/* Extracted UI Overlays */}
+        <CanvasZoomControls
+          onResetZoom={resetZoom}
+          onShowHints={() => setShowHints(true)}
+        />
+
+        <CanvasStatusBar
+          trayWidth={trayWidth}
+          trayDepth={trayDepth}
+          zoom={zoom}
+          selectedIds={selectedIds}
+          slots={slots}
+          collisionErrorCount={collisionErrorCount}
+        />
+
+        {isEffectiveOversized && (
+          <div className="absolute top-14 right-3 z-72 px-3 py-1.5 bg-[#3b1515]/90 border border-[#8b1a1a] rounded-sm text-xs text-[#f2b8b8] font-mono backdrop-blur-sm">
+            有效底板超限: {effectiveBaseplate.width.toFixed(0)} × {effectiveBaseplate.height.toFixed(0)} mm
+          </div>
         )}
 
-        {/* Slots */}
-        {(() => {
-          // 预计算所有碰撞信息，用于高亮冲突对方和生成摘要
-          const collisionMap = new Map<string, { boundaryReasons: string[]; overlapIds: string[] }>();
-          // 被其他碰撞槽位"牵连"高亮的 ID 集合
-          const involvedIds = new Set<string>();
-
-          for (const slot of slots) {
-            const boundaryReasons: string[] = [];
-            const overlapIds = checkSlotCollision(slot.id, slot.x, slot.y, slot.width, slot.height, slot.rotation);
-            collisionMap.set(slot.id, { boundaryReasons, overlapIds });
-            if (overlapIds.length > 0) {
-              involvedIds.add(slot.id);
-              overlapIds.forEach(id => involvedIds.add(id));
-            }
-          }
-
-          return slots.map((slot) => {
-            // Geometry
-            const w = slot.width + getSlotTolerance(slot.width);
-            const h = slot.height + getSlotTolerance(slot.height);
-
-            // Collision Radius (Approximation)
-            const collisionR = getCollisionRadius(slot);
-
-            // Position
-            const svgY = trayDepth - slot.y;
-
-            // Collision Check (from pre-computed map)
-            const info = collisionMap.get(slot.id)!;
-            const isBoundary = info.boundaryReasons.length > 0;
-            const isOverlap = info.overlapIds.length > 0;
-            const isColliding = isBoundary || isOverlap;
-            // 此槽位是否被别人的碰撞牵连高亮（但自身并非碰撞源）
-            const isInvolvedViaOther = !isColliding && involvedIds.has(slot.id);
-
-            const isHovered = hoveredId === slot.id;
-            const isDragging = draggingId === slot.id;
-            const isSelected = selectedIds.has(slot.id);
-            const color = isSelected ? "#f97316" : "#eab308"; // Orange if selected, else Yellow
-
-            // Heatmap color for bottomHeight label text (legacy, kept for safety)
-            const bhLabelColor = "#86efac";
-
-            // 分组颜色（Stepped 模式通过 groupId 查组色）
-            const steppedGroups = 'groups' in params
-              ? (params as SteppedLayoutParams).groups
-              : undefined;
-            const isSteppedSlot = 'groupId' in slot;
-            const isDimmedByGroupFocus = Boolean(
-              focusedGroupId &&
-              isSteppedSlot &&
-              (slot as { groupId: string }).groupId !== focusedGroupId,
-            );
-            const groupColor = isSteppedSlot && steppedGroups
-              ? (steppedGroups.find(g => g.id === (slot as { groupId: string }).groupId)?.color ?? "#86efac")
-              : null;
-            const groupBottomHeight = isSteppedSlot && steppedGroups
-              ? (steppedGroups.find(g => g.id === (slot as { groupId: string }).groupId)?.bottomHeight ?? null)
-              : null;
-
-            return (
-              <g
-                key={slot.id}
-                transform={`translate(${slot.x}, ${svgY}) rotate(${-slot.rotation})`} // Rotation! Note: SVG Y is inverted, so maybe rotation direction needs care. -Rotation fits typical 2D intuition if Y is up.
-                onPointerDown={(e) => handlePointerDown(e, slot.id)}
-                onPointerEnter={() => setHoveredId(slot.id)}
-                onPointerLeave={() => setHoveredId(null)}
-                className={`transition-opacity duration-200 ${isSpacePressed ? '' : 'cursor-move'}`}
-                style={{ opacity: (isDragging ? 0.9 : 1) * (isDimmedByGroupFocus ? 0.18 : 1) }}
-              >
-                {/* Margin / Safe Area Indicator - colored by group for stepped mode */}
-                <ellipse
-                  rx={w / 2 + spacing}
-                  ry={h / 2 + spacing}
-                  fill="none"
-                  stroke={isColliding ? "#ef4444" : isInvolvedViaOther ? "#ef4444" : (groupColor ?? "#888")}
-                  strokeWidth={0.25 / zoom}
-                  strokeDasharray="2 2"
-                  opacity={isColliding ? 1 : isInvolvedViaOther ? 0.7 : (groupColor ? 0.5 : 0.6)}
-                  pointerEvents="none"
-                />
-
-                {/* Highlight Halo - Inside - Show if Hovered/Dragging/Colliding (Selection uses fill color) */}
-                {(isColliding || isInvolvedViaOther || isHovered || isDragging) && (
-                  <ellipse
-                    rx={Math.max(0, w / 2 - 0.5 / zoom)}
-                    ry={Math.max(0, h / 2 - 0.5 / zoom)}
-                    fill="none"
-                    stroke={isColliding || isInvolvedViaOther ? "#ef4444" : "#fbbf24"}
-                    strokeWidth={0.8 / zoom}
-                    strokeOpacity={0.8}
-                    pointerEvents="none"
-                  />
-                )}
-
-                {/* Slot Shape */}
-                <ellipse
-                  rx={w / 2}
-                  ry={h / 2}
-                  fill={isSteppedSlot
-                    ? (isSelected ? "#f97316" : (groupColor ?? bhLabelColor))
-                    : color}
-                  fillOpacity={0.85}
-                  stroke={isColliding || isInvolvedViaOther ? "#ef4444"
-                    : isSteppedSlot ? (groupColor ? groupColor + "cc" : "#fff")
-                      : "#fff"}
-                  strokeWidth={(isColliding || isInvolvedViaOther ? 0.5 : isSteppedSlot ? 0.4 : 0.2) / zoom}
-                />
-
-                {/* Size Text */}
-                <text
-                  dy={isSteppedSlot ? -Math.min(w, h) * 0.12 : Math.min(w, h) * 0.2}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fontSize={Math.min(w, h, 24) / 2}
-                  fill="#fff"
-                  fontWeight="bold"
-                  pointerEvents="none"
-                  style={{ userSelect: 'none' }}
-                >
-                  {slot.width === slot.height ? slot.width : `${slot.width}x${slot.height}`}
-                </text>
-
-                {/* Rotation Handle - Only show when SELECTED and NOT a circle */}
-                {isSelected && Math.abs(slot.width - slot.height) > 0.01 && (
-                  <g
-                    transform={`translate(${w / 2 + spacing + 4}, 0)`}
-                    onPointerDown={(e) => handleRotateMouseDown(e, slot)}
-                    className="cursor-pointer"
-                    style={{ cursor: 'grab' }}
-                  >
-                    {/* Transparent bigger hit area */}
-                    <circle
-                      r={6 / zoom}
-                      fill="transparent"
-                    />
-                    {/* Connection Line - Solid */}
-                    <line
-                      x1={-(4 + spacing)}
-                      y1={0}
-                      x2={0}
-                      y2={0}
-                      stroke="#fff"
-                      strokeWidth={0.5 / zoom}
-                      pointerEvents="none"
-                    />
-                    {/* Handle Circle - Smaller & Solid */}
-                    <circle
-                      r={1.5 / zoom}
-                      fill="#fff"
-                      stroke="#2a2a2e"
-                      strokeWidth={0.5 / zoom}
-                      pointerEvents="none"
-                    />
-                  </g>
-                )}
-              </g>
-            );
-          });
-        })()}
-
-        {/* Collision connector lines — 连接冲突的槽位对，增强可理解性 */}
-        {(() => {
-          const lines: React.ReactNode[] = [];
-          const drawn = new Set<string>();
-          for (const slot of slots) {
-            const overlapIds = checkSlotCollision(slot.id, slot.x, slot.y, slot.width, slot.height, slot.rotation);
-            for (const otherId of overlapIds) {
-              const key = [slot.id, otherId].sort().join("|");
-              if (drawn.has(key)) continue;
-              drawn.add(key);
-              const other = slots.find(s => s.id === otherId);
-              if (!other) continue;
-              const lineOpacity = !focusedGroupId
-                ? 0.6
-                : (('groupId' in slot && slot.groupId === focusedGroupId) || ('groupId' in other && other.groupId === focusedGroupId))
-                  ? 0.5
-                  : 0.12;
-              lines.push(
-                <line
-                  key={`col-${key}`}
-                  x1={slot.x} y1={trayDepth - slot.y}
-                  x2={other.x} y2={trayDepth - other.y}
-                  stroke="#ef4444"
-                  strokeWidth={0.5 / zoom}
-                  strokeDasharray="3 2"
-                  opacity={lineOpacity}
-                  pointerEvents="none"
-                />
-              );
-            }
-          }
-          return lines;
-        })()}
-
-        {/* Smart Guide Lines */}
-        {guideLines.map((g, i) => (
-          g.axis === 'x'
-            ? <line key={`guide-${i}`} x1={g.value} y1={minY} x2={g.value} y2={minY + viewH}
-              stroke="#38bdf8" strokeWidth={0.3 / zoom} strokeDasharray="2 2" pointerEvents="none" opacity={0.8} />
-            : <line key={`guide-${i}`} x1={minX} y1={g.value} x2={minX + viewW} y2={g.value}
-              stroke="#38bdf8" strokeWidth={0.3 / zoom} strokeDasharray="2 2" pointerEvents="none" opacity={0.8} />
-        ))}
-
-        {/* 分组轮廓预览（Stepped 模式：按高度升序渲染，高组颜色压住低组，重叠处显示最高组颜色） */}
-        {outlinePreview && outlinePreview.map((go) => {
-          if (go.points.length < 3) return null;
-          const isDimmed = Boolean(focusedGroupId && go.groupId !== focusedGroupId);
-          const pathData = go.points
-            .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${(trayDepth - p.y).toFixed(2)}`)
-            .join(' ') + ' Z';
-          return (
-            <path
-              key={go.key}
-              d={pathData}
-              fill="none"
-              stroke={go.color}
-              strokeWidth={0.9 / zoom}
-              strokeOpacity={isDimmed ? 0.16 : 0.85}
-              pointerEvents="none"
-            />
-          );
-        })}
-      </svg>
-
-      {/* Marquee Selection Box */}
-      {selectionBox && (
-        <div
-          style={{
-            position: 'absolute',
-            left: Math.min(selectionBox.start.x, selectionBox.current.x),
-            top: Math.min(selectionBox.start.y, selectionBox.current.y),
-            width: Math.abs(selectionBox.current.x - selectionBox.start.x),
-            height: Math.abs(selectionBox.current.y - selectionBox.start.y),
-            border: '1px solid #38bdf8',
-            backgroundColor: 'rgba(56, 189, 248, 0.1)',
-            pointerEvents: 'none',
-            zIndex: 40
-          }}
+        <KeyboardHintsOverlay
+          showHints={showHints}
+          onClose={() => setShowHints(false)}
         />
-      )}
 
-      {/* Extracted UI Overlays */}
-      <CanvasZoomControls
-        onResetZoom={resetZoom}
-        onShowHints={() => setShowHints(true)}
-      />
+        {/* 移动端浮动操作栏 - 选中凹槽时显示 */}
+        {effectiveSelectedIds.size > 0 && (
+          <div className="lg:hidden absolute bottom-14 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-neutral-800/95 backdrop-blur-sm border border-neutral-700 rounded-sm shadow-xl px-3 py-1.5 z-40 animate-fade-in">
+            <span className="text-[10px] text-neutral-400 font-mono mr-1">{effectiveSelectedIds.size}选中</span>
 
-      <CanvasStatusBar
-        trayWidth={trayWidth}
-        trayDepth={trayDepth}
-        zoom={zoom}
-        selectedIds={selectedIds}
-        slots={slots}
-        collisionErrorCount={collisionErrorCount}
-      />
+            {onDuplicateSlots && (
+              <button
+                className="p-2 rounded-sm hover:bg-neutral-700/60 text-neutral-300 active:text-white transition-colors"
+                onClick={() => {
+                  onDuplicateSlots(Array.from(effectiveSelectedIds));
+                }}
+              >
+                <Copy size={18} />
+              </button>
+            )}
 
-      {isEffectiveOversized && (
-        <div className="absolute top-14 lg:top-16 right-3 z-72 px-3 py-1.5 bg-[#3b1515]/90 border border-[#8b1a1a] rounded text-xs text-[#f2b8b8] font-mono backdrop-blur-sm">
-          有效底板超限: {effectiveBaseplate.width.toFixed(0)} × {effectiveBaseplate.height.toFixed(0)} mm
-        </div>
-      )}
+            {onUndo && (
+              <button
+                className="p-2 rounded-sm hover:bg-neutral-700/60 text-neutral-300 active:text-white transition-colors"
+                onClick={onUndo}
+              >
+                <Undo2 size={18} />
+              </button>
+            )}
 
-      <KeyboardHintsOverlay
-        showHints={showHints}
-        onClose={() => setShowHints(false)}
-      />
-
-      {/* 移动端浮动操作栏 - 选中凹槽时显示 */}
-      {effectiveSelectedIds.size > 0 && (
-        <div className="lg:hidden absolute bottom-14 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-neutral-800/95 backdrop-blur-sm border border-neutral-700 rounded-full shadow-xl px-3 py-1.5 z-40 animate-fade-in">
-          <span className="text-[10px] text-neutral-400 font-mono mr-1">{effectiveSelectedIds.size}选中</span>
-
-          {onDuplicateSlots && (
             <button
-              className="p-2 rounded-full hover:bg-neutral-700/60 text-neutral-300 active:text-white transition-colors"
+              className="p-2 rounded-sm hover:bg-red-900/60 text-red-400 active:text-red-300 transition-colors"
               onClick={() => {
-                onDuplicateSlots(Array.from(effectiveSelectedIds));
+                effectiveSelectedIds.forEach((id) => onRemoveSlot(id));
+                setSelectedIds(new Set());
               }}
             >
-              <Copy size={18} />
+              <Trash2 size={18} />
             </button>
-          )}
 
-          {onUndo && (
             <button
-              className="p-2 rounded-full hover:bg-neutral-700/60 text-neutral-300 active:text-white transition-colors"
-              onClick={onUndo}
+              className="p-2 rounded-sm hover:bg-neutral-700/60 text-neutral-500 active:text-white transition-colors"
+              onClick={() => {
+                setSelectedIds(new Set());
+              }}
             >
-              <Undo2 size={18} />
+              <XCircle size={16} />
             </button>
-          )}
+          </div>
+        )}
+      </div>
 
-          <button
-            className="p-2 rounded-full hover:bg-red-900/60 text-red-400 active:text-red-300 transition-colors"
-            onClick={() => {
-              effectiveSelectedIds.forEach((id) => onRemoveSlot(id));
-              setSelectedIds(new Set());
-            }}
-          >
-            <Trash2 size={18} />
-          </button>
+      <div
+        className={`hidden w-3 shrink-0 cursor-col-resize items-stretch justify-center bg-[#100d0a] lg:flex ${isActionPanelCollapsed ? 'pointer-events-none opacity-0' : ''}`}
+        onPointerDown={(event) => {
+          event.preventDefault();
+          event.currentTarget.setPointerCapture(event.pointerId);
+          resizeActionPanelRef.current = {
+            startX: event.clientX,
+            startWidth: actionPanelWidth,
+          };
+          setIsResizingActionPanel(true);
+        }}
+      >
+        <div className="my-4 w-px bg-[#2e2a24]" />
+      </div>
 
-          <button
-            className="p-2 rounded-full hover:bg-neutral-700/60 text-neutral-500 active:text-white transition-colors"
-            onClick={() => {
-              setSelectedIds(new Set());
-            }}
-          >
-            <XCircle size={16} />
-          </button>
-        </div>
-      )}
+      <aside
+        className={`hidden shrink-0 border-l border-[#2e2a24] bg-[#100d0a] lg:block ${isResizingActionPanel ? '' : 'transition-[width] duration-150'}`}
+        style={{ width: isActionPanelCollapsed ? ACTION_PANEL_COLLAPSED_WIDTH : actionPanelWidth }}
+      >
+        <AlignmentToolbar
+          selectedIds={selectedIds}
+          enableCopyPreview={!draggingId && !isRotating}
+          slots={slots as Array<FreeSlot | SteppedSlot>}
+          onUpdateSlots={handleUpdateSlots}
+          onInsertSlots={onInsertSlots}
+          axisSource={symmetryAxisSource}
+          onAxisSourceChange={setSymmetryAxisSource}
+          spacing={spacing}
+          trayWidth={trayWidth}
+          trayDepth={trayDepth}
+          collapsed={isActionPanelCollapsed}
+          onToggleCollapse={() => setIsActionPanelCollapsed((prev) => !prev)}
+        />
+      </aside>
     </div>
   );
 }

@@ -101,11 +101,12 @@ interface AlignmentToolbarProps {
   spacing: number;
   trayWidth: number;
   trayDepth: number;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
-export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, onInsertSlots, enableCopyPreview, axisSource, onAxisSourceChange, spacing, trayWidth, trayDepth }: AlignmentToolbarProps) {
+export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, onInsertSlots, enableCopyPreview, axisSource, onAxisSourceChange, spacing, trayWidth, trayDepth, collapsed = false, onToggleCollapse }: AlignmentToolbarProps) {
   const { toast } = useToast();
-  const [collapsed, setCollapsed] = useState(false);
   const [sectionOpen, setSectionOpen] = useState({
     align: true,
     mirror: true,
@@ -384,9 +385,9 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, on
 
   const sectionTitleClass = "text-[11px] font-semibold tracking-[0.18em] text-[#d6c6a5] uppercase";
   const sectionSummaryClass = "text-[10px] text-muted-foreground/70";
-  const actionBtnClass = "flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[#3a352c] bg-[#1a1813] px-3 text-xs text-[#d8d1c5] transition-colors hover:border-[#5d5547] hover:bg-[#252119] hover:text-white disabled:cursor-not-allowed disabled:opacity-35";
-  const axisBtnClass = "h-8 rounded-xl border border-[#3a352c] bg-[#181611] px-3 text-[11px] text-[#c8bda8] transition-colors hover:border-[#5d5547] hover:text-white disabled:cursor-not-allowed disabled:opacity-35";
-  const previewTagClass = "inline-flex items-center rounded-xl border border-[#3a352c] bg-[#181611] px-2.5 py-1 text-[10px] text-[#cbbfa9]";
+  const actionBtnClass = "flex h-9 items-center justify-center gap-1.5 rounded-sm border border-[#3a352c] bg-[#1a1813] px-3 text-xs text-[#d8d1c5] transition-colors hover:border-[#5d5547] hover:bg-[#252119] hover:text-white disabled:cursor-not-allowed disabled:opacity-35";
+  const axisBtnClass = "h-8 rounded-sm border border-[#3a352c] bg-[#181611] px-3 text-[11px] text-[#c8bda8] transition-colors hover:border-[#5d5547] hover:text-white disabled:cursor-not-allowed disabled:opacity-35";
+  const previewTagClass = "inline-flex items-center rounded-sm border border-[#3a352c] bg-[#181611] px-2.5 py-1 text-[10px] text-[#cbbfa9]";
 
   const toggleSection = (key: "align" | "mirror") => {
     setSectionOpen((prev) => ({
@@ -394,17 +395,6 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, on
       [key]: !prev[key],
     }));
   };
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 1023px)");
-    const syncCollapsed = () => {
-      setCollapsed(mediaQuery.matches);
-    };
-
-    syncCollapsed();
-    mediaQuery.addEventListener("change", syncCollapsed);
-    return () => mediaQuery.removeEventListener("change", syncCollapsed);
-  }, []);
 
   useEffect(() => {
     if (!enableCopyPreview || !hasSelection || collapsed) {
@@ -443,160 +433,172 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, on
   };
 
   return (
-    <div className="pointer-events-none absolute right-3 top-3 z-50 flex items-start gap-2 lg:right-4 lg:top-16">
-      {!collapsed && (
-        <div className="pointer-events-auto w-[min(18rem,calc(100vw-4rem))] overflow-hidden rounded-2xl border border-[#40372b] bg-[#120f0c]/94 shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur-md sm:w-72">
-          <div className="border-b border-[#30291f] bg-[linear-gradient(180deg,rgba(97,75,43,0.22),rgba(18,15,12,0.95))] px-4 py-3">
-            <div className="flex items-center justify-between gap-3">
+    <div className="flex h-full min-h-0 flex-col bg-[#120f0c] text-foreground">
+      <div className="border-b border-[#30291f] bg-[linear-gradient(180deg,rgba(97,75,43,0.18),rgba(18,15,12,0.95))] px-3 py-3">
+        <div className={`flex items-start justify-between gap-3 ${collapsed ? "min-h-0" : "min-h-12"}`}>
+          {collapsed ? (
+            <div className="flex flex-1 flex-col items-center gap-3 py-1">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#d8c29a] [writing-mode:vertical-rl]">
+                编辑辅助
+              </div>
+              <div className="border border-[#4b4032] bg-[#1a1611] px-1.5 py-1 text-[10px] font-mono text-[#ccbda4]">
+                {selected.length > 0 ? selected.length : "-"}
+              </div>
+            </div>
+          ) : (
+            <>
               <div>
                 <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#d8c29a]">编辑辅助</div>
                 <div className="mt-1 text-xs text-muted-foreground">
                   {selected.length > 0 ? `当前选中 ${selected.length} 个凹槽` : "先框选或点选凹槽，再使用对齐与镜像"}
                 </div>
               </div>
-              <div className="rounded-full border border-[#4b4032] bg-[#1a1611] px-2.5 py-1 text-[11px] font-mono text-[#ccbda4]">
+              <div className="border border-[#4b4032] bg-[#1a1611] px-2 py-1 text-[11px] font-mono text-[#ccbda4]">
                 {selected.length > 0 ? `${selected.length} selected` : "idle"}
               </div>
-            </div>
-          </div>
+            </>
+          )}
+          {onToggleCollapse && (
+            <button
+              type="button"
+              onClick={onToggleCollapse}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm border border-[#40372b] bg-[#17120f] text-[#d8c29a] transition-colors hover:border-[#6e5a3b] hover:text-white"
+              title={collapsed ? "展开编辑面板" : "收起编辑面板"}
+            >
+              {collapsed ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </button>
+          )}
+        </div>
+      </div>
 
-          <div className="max-h-[calc(100vh-13rem)] space-y-3 overflow-y-auto px-3 py-3">
-            <section className="rounded-2xl border border-[#312a21] bg-[#17130f] p-2.5">
-              <button
-                type="button"
-                className="flex w-full items-center justify-between gap-3 rounded-xl px-1.5 py-1 text-left"
-                onClick={() => toggleSection("align")}
-              >
+      {!collapsed && (
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3">
+          <section className="border border-[#312a21] bg-[#17130f] p-2.5">
+            <button
+              type="button"
+              className="flex w-full items-center justify-between gap-3 px-1.5 py-1 text-left"
+              onClick={() => toggleSection("align")}
+            >
+              <div>
+                <div className={sectionTitleClass}>对齐</div>
+                <div className={sectionSummaryClass}>边缘对齐与等距排布</div>
+              </div>
+              <ChevronDown className={`h-4 w-4 text-[#9f927c] transition-transform ${sectionOpen.align ? "rotate-0" : "-rotate-90"}`} />
+            </button>
+
+            {sectionOpen.align && (
+              <div className="mt-2 space-y-3">
                 <div>
-                  <div className={sectionTitleClass}>对齐</div>
-                  <div className={sectionSummaryClass}>边缘对齐与等距排布</div>
-                </div>
-                <ChevronDown className={`h-4 w-4 text-[#9f927c] transition-transform ${sectionOpen.align ? "rotate-0" : "-rotate-90"}`} />
-              </button>
-
-              {sectionOpen.align && (
-                <div className="mt-2 space-y-3">
-                  <div>
-                    <div className="mb-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">边缘对齐</div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("left")}>
-                        <AlignLeft size={15} /> 左
-                      </button>
-                      <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("center-x")}>
-                        <AlignCenterHorizontal size={15} /> 中
-                      </button>
-                      <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("right")}>
-                        <AlignRight size={15} /> 右
-                      </button>
-                      <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("top")}>
-                        <AlignStartVertical size={15} /> 上
-                      </button>
-                      <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("center-y")}>
-                        <AlignCenterVertical size={15} /> 中
-                      </button>
-                      <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("bottom")}>
-                        <AlignEndVertical size={15} /> 下
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="mb-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">自动排布</div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleArrange("row")}>
-                        <Rows2 size={15} /> 一排
-                      </button>
-                      <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleArrange("column")}>
-                        <Columns2 size={15} /> 一列
-                      </button>
-                    </div>
-                    <div className="mt-2 text-[10px] text-muted-foreground/70">排布间距自动使用当前槽距 {spacing} mm。</div>
+                  <div className="mb-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">边缘对齐</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("left")}>
+                      <AlignLeft size={15} /> 左
+                    </button>
+                    <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("center-x")}>
+                      <AlignCenterHorizontal size={15} /> 中
+                    </button>
+                    <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("right")}>
+                      <AlignRight size={15} /> 右
+                    </button>
+                    <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("top")}>
+                      <AlignStartVertical size={15} /> 上
+                    </button>
+                    <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("center-y")}>
+                      <AlignCenterVertical size={15} /> 中
+                    </button>
+                    <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("bottom")}>
+                      <AlignEndVertical size={15} /> 下
+                    </button>
                   </div>
                 </div>
-              )}
-            </section>
 
-            <section className="rounded-2xl border border-[#312a21] bg-[#17130f] p-2.5">
-              <button
-                type="button"
-                className="flex w-full items-center justify-between gap-3 rounded-xl px-1.5 py-1 text-left"
-                onClick={() => toggleSection("mirror")}
-              >
                 <div>
-                  <div className={sectionTitleClass}>镜像</div>
-                  <div className={sectionSummaryClass}>按选区轴或托盘轴做翻转与复制</div>
-                </div>
-                <ChevronDown className={`h-4 w-4 text-[#9f927c] transition-transform ${sectionOpen.mirror ? "rotate-0" : "-rotate-90"}`} />
-              </button>
-
-              {sectionOpen.mirror && (
-                <div className="mt-2 space-y-3">
-                  <div>
-                    <div className="mb-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">镜像轴</div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        className={`${axisBtnClass} ${axisSource === "selection" ? "border-[#8a6d3f] bg-[#2a2115] text-[#f0d8b8]" : ""}`}
-                        onClick={() => onAxisSourceChange("selection")}
-                        disabled={!hasSelection}
-                      >
-                        选区轴
-                      </button>
-                      <button
-                        className={`${axisBtnClass} ${axisSource === "tray" ? "border-[#8a6d3f] bg-[#2a2115] text-[#f0d8b8]" : ""}`}
-                        onClick={() => onAxisSourceChange("tray")}
-                      >
-                        托盘轴
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="mb-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">镜像移动</div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button className={actionBtnClass} disabled={!hasSelection} onClick={() => handleMirrorMove("mirror-x")}>
-                        <FlipHorizontal size={15} /> 左右镜
-                      </button>
-                      <button className={actionBtnClass} disabled={!hasSelection} onClick={() => handleMirrorMove("mirror-y")}>
-                        <FlipVertical size={15} /> 上下镜
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="mb-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">镜像复制</div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button className={actionBtnClass} disabled={!hasSelection || !onInsertSlots} onClick={() => handleMirrorCopy("mirror-x")}>
-                        <Copy size={15} /> 左右复
-                      </button>
-                      <button className={actionBtnClass} disabled={!hasSelection || !onInsertSlots} onClick={() => handleMirrorCopy("mirror-y")}>
-                        <Copy size={15} /> 上下复
-                      </button>
-                    </div>
-                  </div>
-
+                  <div className="mb-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">自动排布</div>
                   <div className="grid grid-cols-2 gap-2">
-                    <span className={previewTagClass} data-symmetry-preview="mirror-x">
-                      {formatCopyPreview("左右", copyPreviews.mirrorX)}
-                    </span>
-                    <span className={previewTagClass} data-symmetry-preview="mirror-y">
-                      {formatCopyPreview("上下", copyPreviews.mirrorY)}
-                    </span>
+                    <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleArrange("row")}>
+                      <Rows2 size={15} /> 一排
+                    </button>
+                    <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleArrange("column")}>
+                      <Columns2 size={15} /> 一列
+                    </button>
+                  </div>
+                  <div className="mt-2 text-[10px] text-muted-foreground/70">排布间距自动使用当前槽距 {spacing} mm。</div>
+                </div>
+              </div>
+            )}
+          </section>
+
+          <section className="border border-[#312a21] bg-[#17130f] p-2.5">
+            <button
+              type="button"
+              className="flex w-full items-center justify-between gap-3 px-1.5 py-1 text-left"
+              onClick={() => toggleSection("mirror")}
+            >
+              <div>
+                <div className={sectionTitleClass}>镜像</div>
+                <div className={sectionSummaryClass}>按选区轴或托盘轴做翻转与复制</div>
+              </div>
+              <ChevronDown className={`h-4 w-4 text-[#9f927c] transition-transform ${sectionOpen.mirror ? "rotate-0" : "-rotate-90"}`} />
+            </button>
+
+            {sectionOpen.mirror && (
+              <div className="mt-2 space-y-3">
+                <div>
+                  <div className="mb-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">镜像轴</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      className={`${axisBtnClass} ${axisSource === "selection" ? "border-[#8a6d3f] bg-[#2a2115] text-[#f0d8b8]" : ""}`}
+                      onClick={() => onAxisSourceChange("selection")}
+                      disabled={!hasSelection}
+                    >
+                      选区轴
+                    </button>
+                    <button
+                      className={`${axisBtnClass} ${axisSource === "tray" ? "border-[#8a6d3f] bg-[#2a2115] text-[#f0d8b8]" : ""}`}
+                      onClick={() => onAxisSourceChange("tray")}
+                    >
+                      托盘轴
+                    </button>
                   </div>
                 </div>
-              )}
-            </section>
-          </div>
+
+                <div>
+                  <div className="mb-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">镜像移动</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button className={actionBtnClass} disabled={!hasSelection} onClick={() => handleMirrorMove("mirror-x")}>
+                      <FlipHorizontal size={15} /> 左右镜
+                    </button>
+                    <button className={actionBtnClass} disabled={!hasSelection} onClick={() => handleMirrorMove("mirror-y")}>
+                      <FlipVertical size={15} /> 上下镜
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mb-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">镜像复制</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button className={actionBtnClass} disabled={!hasSelection || !onInsertSlots} onClick={() => handleMirrorCopy("mirror-x")}>
+                      <Copy size={15} /> 左右复
+                    </button>
+                    <button className={actionBtnClass} disabled={!hasSelection || !onInsertSlots} onClick={() => handleMirrorCopy("mirror-y")}>
+                      <Copy size={15} /> 上下复
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <span className={previewTagClass} data-symmetry-preview="mirror-x">
+                    {formatCopyPreview("左右", copyPreviews.mirrorX)}
+                  </span>
+                  <span className={previewTagClass} data-symmetry-preview="mirror-y">
+                    {formatCopyPreview("上下", copyPreviews.mirrorY)}
+                  </span>
+                </div>
+              </div>
+            )}
+          </section>
         </div>
       )}
-
-      <button
-        type="button"
-        onClick={() => setCollapsed((prev) => !prev)}
-        className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-2xl border border-[#40372b] bg-[#17120f]/95 text-[#d8c29a] shadow-[0_16px_40px_rgba(0,0,0,0.38)] transition-colors hover:border-[#6e5a3b] hover:text-white lg:h-10 lg:w-10"
-        title={collapsed ? "展开编辑面板" : "收起编辑面板"}
-      >
-        {collapsed ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
-      </button>
     </div>
   );
 }

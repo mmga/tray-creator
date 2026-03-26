@@ -98,13 +98,9 @@ export default function SteppedPanel({
             onPreviewGroupChange(lockedPreviewGroupId);
         };
 
-        window.addEventListener("pointerup", clearPreview);
-        window.addEventListener("pointercancel", clearPreview);
         window.addEventListener("blur", clearPreview);
 
         return () => {
-            window.removeEventListener("pointerup", clearPreview);
-            window.removeEventListener("pointercancel", clearPreview);
             window.removeEventListener("blur", clearPreview);
         };
     }, [lockedPreviewGroupId, onPreviewGroupChange, pressedPreviewGroupId]);
@@ -186,6 +182,7 @@ export default function SteppedPanel({
                                                         toggleLockedPreviewGroup(group.id);
                                                         return;
                                                     }
+                                                    e.currentTarget.setPointerCapture(e.pointerId);
                                                     handlePreviewGroupStart(group.id);
                                                 }}
                                                 onPointerUp={(e) => {
@@ -199,8 +196,17 @@ export default function SteppedPanel({
                                                     e.stopPropagation();
                                                     handlePreviewGroupEnd();
                                                 }}
+                                                onLostPointerCapture={(e) => {
+                                                    e.stopPropagation();
+                                                    if (pressedPreviewGroupId === group.id) {
+                                                        handlePreviewGroupEnd();
+                                                    }
+                                                }}
                                                 onKeyDown={(e) => {
                                                     if (e.key !== "Enter" && e.key !== " ") {
+                                                        return;
+                                                    }
+                                                    if (e.repeat) {
                                                         return;
                                                     }
                                                     e.preventDefault();

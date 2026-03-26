@@ -164,7 +164,7 @@ export default function Home() {
         onValueChange={(v) => setRightView(v as "2d" | "3d")}
         className="flex-1 flex flex-col relative"
       >
-        <div className="absolute top-3 right-5 z-20">
+        <div className="absolute top-3 left-5 z-20">
           <TabsList className="bg-[#1c1a16] border border-[#2e2a24]">
             <TabsTrigger value="2d" className="text-xs">2D 编辑</TabsTrigger>
             <TabsTrigger value="3d" className="text-xs">3D 预览</TabsTrigger>
