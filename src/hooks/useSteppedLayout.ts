@@ -68,7 +68,7 @@ export interface UseSteppedLayoutReturn {
 }
 
 export function useSteppedLayout(): UseSteppedLayoutReturn {
-  const [params, setParams] = useState<SteppedLayoutParams>(
+  const [params, internalSetParams] = useState<SteppedLayoutParams>(
     STEPPED_LAYOUT_DEFAULTS,
   );
   const [threeGeometry, setThreeGeometry] =
@@ -86,6 +86,26 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
   const paramsRef = useRef(params);
   paramsRef.current = params;
   const [isPreviewStale, setIsPreviewStale] = useState(false);
+  const paramsVersionRef = useRef(0);
+
+  const invalidatePreview = useCallback(() => {
+    paramsVersionRef.current += 1;
+    setIsPreviewStale(true);
+    jscadGeomRef.current = null;
+    setVolume(0);
+  }, []);
+
+  const setParams = useCallback<React.Dispatch<React.SetStateAction<SteppedLayoutParams>>>(
+    (value) => {
+      internalSetParams((prev) =>
+        typeof value === "function"
+          ? (value as (prevState: SteppedLayoutParams) => SteppedLayoutParams)(prev)
+          : value,
+      );
+      invalidatePreview();
+    },
+    [invalidatePreview],
+  );
 
   const getSlotBoundingHalfSize = useCallback((slot: FreeSlot) => {
     const rad = (slot.rotation * Math.PI) / 180;
@@ -132,7 +152,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
 
   const effectiveDimensions = useMemo(
     () => calculateEffectiveDimensions(),
-    [params, calculateEffectiveDimensions],
+    [calculateEffectiveDimensions],
   );
 
   const saveSnapshot = useCallback(() => {
@@ -144,7 +164,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     if (prev) {
       setParams(prev);
     }
-  }, [popState]);
+  }, [popState, setParams]);
 
   const updateParam = useCallback(
     <K extends keyof SteppedLayoutParams>(
@@ -160,14 +180,13 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
 
         return { ...prev, [key]: value };
       });
-      setIsPreviewStale(true);
     },
-    [pushState],
+    [pushState, setParams],
   );
 
   const addSlot = useCallback(
     (width: number) => {
-      setParams((prev) => {
+      internalSetParams((prev) => {
         pushState(prev);
         const newSlotHalfW = (width + getSlotTolerance(width)) / 2;
 
@@ -193,34 +212,34 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
         };
         return { ...prev, slots: [...prev.slots, newSlot] };
       });
-      setIsPreviewStale(true);
+      invalidatePreview();
     },
-    [getSlotBoundingHalfSize, pushState],
+    [getSlotBoundingHalfSize, invalidatePreview, pushState],
   );
 
   const removeSlot = useCallback(
     (id: string) => {
       pushState(paramsRef.current);
-      setParams((prev) => ({
+      internalSetParams((prev) => ({
         ...prev,
         slots: prev.slots.filter((s) => s.id !== id),
       }));
-      setIsPreviewStale(true);
+      invalidatePreview();
     },
-    [pushState],
+    [invalidatePreview, pushState],
   );
 
   const updateSlotPosition = useCallback((id: string, x: number, y: number) => {
-    setParams((prev) => ({
+    internalSetParams((prev) => ({
       ...prev,
       slots: prev.slots.map((s) => (s.id === id ? { ...s, x, y } : s)),
     }));
-    setIsPreviewStale(true);
-  }, []);
+    invalidatePreview();
+  }, [invalidatePreview]);
 
   const updateMultipleSlots = useCallback(
     (updates: { id: string; x: number; y: number }[]) => {
-      setParams((prev) => {
+      internalSetParams((prev) => {
         pushState(prev);
         const updatesMap = new Map(updates.map((u) => [u.id, u]));
         return {
@@ -231,22 +250,22 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
           }),
         };
       });
-      setIsPreviewStale(true);
+      invalidatePreview();
     },
-    [pushState],
+    [invalidatePreview, pushState],
   );
 
   const updateSlotRotation = useCallback((id: string, rotation: number) => {
-    setParams((prev) => ({
+    internalSetParams((prev) => ({
       ...prev,
       slots: prev.slots.map((s) => (s.id === id ? { ...s, rotation } : s)),
     }));
-    setIsPreviewStale(true);
-  }, []);
+    invalidatePreview();
+  }, [invalidatePreview]);
 
   const duplicateSlots = useCallback(
     (ids: string[]) => {
-      setParams((prev) => {
+      internalSetParams((prev) => {
         pushState(prev);
         const newSlots = [...prev.slots];
 
@@ -264,13 +283,13 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
 
         return { ...prev, slots: newSlots };
       });
-      setIsPreviewStale(true);
+      invalidatePreview();
     },
-    [pushState],
+    [invalidatePreview, pushState],
   );
 
   const addGroup = useCallback(() => {
-    setParams((prev) => {
+    internalSetParams((prev) => {
       pushState(prev);
       const usedColors = prev.groups.map((g) => g.color);
       const nextColor =
@@ -289,11 +308,12 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
         activeGroupId: newGroup.id,
       };
     });
-  }, [pushState]);
+    invalidatePreview();
+  }, [invalidatePreview, pushState]);
 
   const removeGroup = useCallback(
     (groupId: string) => {
-      setParams((prev) => {
+      internalSetParams((prev) => {
         if (prev.groups.length <= 1) return prev; // 不能删除最后一个组
         pushState(prev);
         const newGroups = prev.groups.filter((g) => g.id !== groupId);
@@ -309,47 +329,47 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
           activeGroupId: newActiveGroupId,
         };
       });
-      setIsPreviewStale(true);
+      invalidatePreview();
     },
-    [pushState],
+    [invalidatePreview, pushState],
   );
 
   const updateGroupHeight = useCallback(
     (groupId: string, height: number) => {
       pushState(paramsRef.current);
-      setParams((prev) => ({
+      internalSetParams((prev) => ({
         ...prev,
         groups: prev.groups.map((g) =>
           g.id === groupId ? { ...g, bottomHeight: height } : g,
         ),
       }));
-      setIsPreviewStale(true);
+      invalidatePreview();
     },
-    [pushState],
+    [invalidatePreview, pushState],
   );
 
   const setActiveGroup = useCallback((groupId: string) => {
-    setParams((prev) => ({ ...prev, activeGroupId: groupId }));
+    internalSetParams((prev) => ({ ...prev, activeGroupId: groupId }));
   }, []);
 
   const moveSelectedSlotsToGroup = useCallback(
     (ids: string[], targetGroupId: string) => {
       pushState(paramsRef.current);
       const idSet = new Set(ids);
-      setParams((prev) => ({
+      internalSetParams((prev) => ({
         ...prev,
         slots: prev.slots.map((s) =>
           idSet.has(s.id) ? { ...s, groupId: targetGroupId } : s,
         ),
       }));
-      setIsPreviewStale(true);
+      invalidatePreview();
     },
-    [pushState],
+    [invalidatePreview, pushState],
   );
 
   const reorderGroups = useCallback(
     (fromIndex: number, toIndex: number) => {
-      setParams((prev) => {
+      internalSetParams((prev) => {
         if (
           fromIndex < 0 ||
           fromIndex >= prev.groups.length ||
@@ -370,7 +390,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
   );
 
   const trimBaseplate = useCallback(() => {
-    setParams((prev) => {
+    internalSetParams((prev) => {
       if (prev.slots.length === 0) return prev;
       pushState(prev);
 
@@ -399,14 +419,18 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
         })),
       };
     });
-    setIsPreviewStale(true);
-  }, [calculateEffectiveDimensions, pushState]);
+    invalidatePreview();
+  }, [calculateEffectiveDimensions, invalidatePreview, pushState]);
 
   const handleGenerate = useCallback(async () => {
     if (!trayWorkerService) return;
+    const requestVersion = paramsVersionRef.current;
     setIsGenerating(true);
     try {
-      const result = await trayWorkerService.generateStepped(params);
+      const result = await trayWorkerService.generateStepped(paramsRef.current);
+      if (requestVersion !== paramsVersionRef.current) {
+        return;
+      }
       jscadGeomRef.current = result.geometry;
       setVolume(result.volume);
       const threeGeom = jscadToThreeGeometry(result.geometry);
@@ -424,19 +448,27 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     } finally {
       setIsGenerating(false);
     }
-  }, [params, toast]);
+  }, [toast]);
 
   const handleExportSTL = useCallback(async () => {
-    if (!jscadGeomRef.current || !trayWorkerService) return;
+    if (isPreviewStale) {
+      toast("error", "参数已变更，请先点击开始锻造生成最新模型");
+      return;
+    }
+    if (!jscadGeomRef.current || !trayWorkerService) {
+      toast("error", "当前没有可导出的模型，请先点击开始锻造");
+      return;
+    }
+    const currentParams = paramsRef.current;
     const exportWidth =
       effectiveDimensions.width > 0
         ? effectiveDimensions.width
-        : params.trayWidth;
+        : currentParams.trayWidth;
     const exportDepth =
       effectiveDimensions.depth > 0
         ? effectiveDimensions.depth
-        : params.trayDepth;
-    const filename = `tray_stepped_${exportWidth}x${exportDepth}_${params.slots.length}slots.stl`;
+        : currentParams.trayDepth;
+    const filename = `tray_stepped_${exportWidth}x${exportDepth}_${currentParams.slots.length}slots.stl`;
     try {
       const result = await trayWorkerService.exportSTL(
         jscadGeomRef.current,
@@ -452,7 +484,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
       URL.revokeObjectURL(url);
       // 同时下载 JSON 参数文件
       const jsonFilename = filename.replace(/\.stl$/i, ".json");
-      const jsonBlob = new Blob([JSON.stringify(params, null, 2)], {
+      const jsonBlob = new Blob([JSON.stringify(paramsRef.current, null, 2)], {
         type: "application/json",
       });
       const jsonUrl = URL.createObjectURL(jsonBlob);
@@ -470,7 +502,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
         `STL 导出失败：${err instanceof Error ? err.message : "未知错误"}`,
       );
     }
-  }, [effectiveDimensions.depth, effectiveDimensions.width, params, toast]);
+  }, [effectiveDimensions.depth, effectiveDimensions.width, isPreviewStale, toast]);
 
   // 自动计算分组轮廓预览（每组纳入更高组作上下文，匹配 3D 建模逻辑）
   const outlinePreviewAuto = useMemo<GroupOutlinePreview[] | null>(() => {

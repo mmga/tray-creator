@@ -114,6 +114,7 @@ export default function Home() {
         <SteppedPanel
           params={steppedModel.params}
           effectiveDimensions={steppedModel.effectiveDimensions}
+          isPreviewStale={steppedModel.isPreviewStale}
           setParams={steppedModel.setParams}
           updateParam={steppedModel.updateParam}
           onAddSlot={steppedModel.addSlot}

@@ -4,9 +4,7 @@ import type { SteppedLayoutParams } from "@/types/custom-tray";
 import { BASE_PRESETS, STEPPED_LIMITS, MAX_BUILD_SIZE, STEPPED_LAYOUT_DEFAULTS } from "@/lib/config";
 import { calculateSteppedTrayDimensions } from "@/lib/stepped-tray-model";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
     Download,
     RotateCcw,
@@ -24,7 +22,6 @@ import {
     ChevronUp,
     ChevronDown,
 } from "lucide-react";
-import { BaseHoleConfig } from "@/components/BaseHoleConfig";
 import { ParamIOButtons } from "@/components/ParamIOButtons";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
@@ -38,6 +35,7 @@ import { ConfirmSendDialog } from "@/components/ConfirmSendDialog";
 interface SteppedPanelProps {
     params: SteppedLayoutParams;
     effectiveDimensions: { width: number; depth: number };
+    isPreviewStale: boolean;
     updateParam: <K extends keyof SteppedLayoutParams>(key: K, value: SteppedLayoutParams[K]) => void;
     setParams: React.Dispatch<React.SetStateAction<SteppedLayoutParams>>;
     onAddSlot: (width: number) => void;
@@ -58,6 +56,7 @@ interface SteppedPanelProps {
 export default function SteppedPanel({
     params,
     effectiveDimensions,
+    isPreviewStale,
     updateParam,
     setParams,
     onAddSlot,
@@ -77,20 +76,10 @@ export default function SteppedPanel({
     const effectiveWidth = effectiveDimensions.width;
     const effectiveDepth = effectiveDimensions.depth;
     const isOversized = effectiveWidth > MAX_BUILD_SIZE || effectiveDepth > MAX_BUILD_SIZE;
-    const [autoPreview, setAutoPreview] = useState(true);
     const [isSending, setIsSending] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [pendingJson, setPendingJson] = useState("");
     const { toast } = useToast();
-
-    // Auto-preview
-    useEffect(() => {
-        if (!autoPreview || isGenerating || isOversized) return;
-        const handler = setTimeout(() => {
-            onGenerate();
-        }, 500);
-        return () => clearTimeout(handler);
-    }, [params, autoPreview, isOversized]);
 
     const handleReset = () => {
         setParams(STEPPED_LAYOUT_DEFAULTS);
@@ -119,10 +108,10 @@ export default function SteppedPanel({
                                         {/* 分组行顶部 */}
                                         <div className="flex items-center gap-2 px-2 pt-2 pb-1">
                                             <div
-                                                className={`w-2 h-2 rounded-full flex-shrink-0 transition-opacity ${isActive ? "" : "opacity-25"}`}
+                                                className={`w-2 h-2 rounded-full shrink-0 transition-opacity ${isActive ? "" : "opacity-25"}`}
                                                 style={{ background: group.color }}
                                             />
-                                            <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ background: group.color }} />
+                                            <div className="w-3 h-3 rounded-sm shrink-0" style={{ background: group.color }} />
                                             <span className="text-xs font-medium text-foreground/90 flex-1 truncate">{group.name}</span>
                                             <span className="text-[10px] text-muted-foreground shrink-0">{groupSlotCount} 个凹槽</span>
                                             <button
@@ -201,7 +190,7 @@ export default function SteppedPanel({
                                         className="h-7 text-xs gap-1.5 transition-all"
                                         style={{ borderColor: group.color + "60", color: group.color }}
                                     >
-                                        <div className="w-2 h-2 rounded-sm flex-shrink-0" style={{ background: group.color }} />
+                                        <div className="w-2 h-2 rounded-sm shrink-0" style={{ background: group.color }} />
                                         {group.name}
                                     </Button>
                                 ))}
@@ -313,7 +302,7 @@ export default function SteppedPanel({
                                         const count = params.slots.filter(s => s.groupId === group.id).length;
                                         return (
                                             <div key={group.id} className="flex items-center gap-2 text-[11px]">
-                                                <div className="w-2 h-2 rounded-sm flex-shrink-0" style={{ background: group.color }} />
+                                                <div className="w-2 h-2 rounded-sm shrink-0" style={{ background: group.color }} />
                                                 <span className="text-muted-foreground">{group.name}</span>
                                                 <span className="font-mono" style={{ color: group.color }}>↑{group.bottomHeight}mm</span>
                                                 <span className="ml-auto text-muted-foreground">{count} 个</span>
@@ -358,20 +347,13 @@ export default function SteppedPanel({
 
             <div className="wh-divider" />
 
-            {/* 自动预览与操作按钮 */}
+            {/* 操作按钮 */}
             <div className="flex flex-col gap-2.5 pb-4">
-                <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
-                    <Label htmlFor="stepped-auto-preview" className="text-sm cursor-pointer text-[#f0d8b8]">
-                        启用自动预览
-                    </Label>
-                    <Switch
-                        id="stepped-auto-preview"
-                        checked={autoPreview}
-                        onCheckedChange={setAutoPreview}
-                        className="data-[state=checked]:bg-[#8cb880]"
-                    />
-                </div>
-
+                {isPreviewStale && (
+                    <div className="rounded border border-[#5a4a2a] bg-[#2a2518]/90 px-3 py-2 text-xs text-[#c8a84e]">
+                        当前预览已过期，请点击“开始锻造”生成最新模型。
+                    </div>
+                )}
                 <Button
                     onClick={onGenerate}
                     disabled={isGenerating || isOversized}
@@ -395,7 +377,7 @@ export default function SteppedPanel({
                 ) : (
                     <>
                         <Button
-                            onClick={() => exportParams("stepped", params as any)}
+                            onClick={() => exportParams("stepped", params)}
                             className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-sm text-[#8cb880] font-semibold tracking-wider cursor-pointer border border-[#4a6741] shadow-lg shadow-[#2a352830]"
                         >
                             <Share2 className="w-4 h-4 mr-2" />
@@ -403,7 +385,7 @@ export default function SteppedPanel({
                         </Button>
                         <Button
                             onClick={() => {
-                                const payload = buildPayload("stepped", params as any);
+                                const payload = buildPayload("stepped", params);
                                 setPendingJson(serializePayload(payload));
                                 setDialogOpen(true);
                             }}
@@ -436,7 +418,7 @@ export default function SteppedPanel({
                 isSending={isSending}
                 onConfirm={async () => {
                     setIsSending(true);
-                    const result = await sendConfigToKV("stepped", params as any);
+                    const result = await sendConfigToKV("stepped", params);
                     setIsSending(false);
                     setDialogOpen(false);
                     if (result.success) {
