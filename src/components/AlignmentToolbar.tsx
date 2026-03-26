@@ -7,6 +7,9 @@ import {
   FlipHorizontal,
   FlipVertical,
   Copy,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { FreeSlot, type SteppedSlot } from "@/types/custom-tray";
 import { getSlotTolerance } from "@/lib/config";
@@ -102,7 +105,11 @@ interface AlignmentToolbarProps {
 
 export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, onInsertSlots, enableCopyPreview, axisSource, onAxisSourceChange, spacing, trayWidth, trayDepth }: AlignmentToolbarProps) {
   const { toast } = useToast();
-  const [showCopyPreview, setShowCopyPreview] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [sectionOpen, setSectionOpen] = useState({
+    align: true,
+    mirror: true,
+  });
   const [copyPreviews, setCopyPreviews] = useState<{
     mirrorX: ReturnType<typeof evaluateMirrorCopy> | null;
     mirrorY: ReturnType<typeof evaluateMirrorCopy> | null;
@@ -375,23 +382,32 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, on
 
   // ── UI ──────────
 
-  const btnClass = "h-8 px-2 lg:px-2.5 hover:bg-neutral-700/50 rounded text-neutral-300 hover:text-white transition-colors cursor-pointer group relative disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-neutral-300 shrink-0 inline-flex items-center gap-1";
-  const tooltipClass = "absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-black text-xs text-white rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity z-50 hidden lg:block";
+  const sectionTitleClass = "text-[11px] font-semibold tracking-[0.18em] text-[#d6c6a5] uppercase";
+  const sectionSummaryClass = "text-[10px] text-muted-foreground/70";
+  const actionBtnClass = "flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[#3a352c] bg-[#1a1813] px-3 text-xs text-[#d8d1c5] transition-colors hover:border-[#5d5547] hover:bg-[#252119] hover:text-white disabled:cursor-not-allowed disabled:opacity-35";
+  const axisBtnClass = "h-8 rounded-xl border border-[#3a352c] bg-[#181611] px-3 text-[11px] text-[#c8bda8] transition-colors hover:border-[#5d5547] hover:text-white disabled:cursor-not-allowed disabled:opacity-35";
+  const previewTagClass = "inline-flex items-center rounded-xl border border-[#3a352c] bg-[#181611] px-2.5 py-1 text-[10px] text-[#cbbfa9]";
 
-  const axisBtnClass = "h-7 px-2 rounded text-[10px] text-neutral-300 transition-colors border border-neutral-700 hover:border-neutral-500 hover:text-white";
-  const previewTagClass = "hidden xl:inline-flex items-center rounded border border-neutral-700 bg-neutral-900/80 px-2 py-1 text-[10px] text-neutral-300";
+  const toggleSection = (key: "align" | "mirror") => {
+    setSectionOpen((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(min-width: 1280px)");
-    const syncVisibility = () => setShowCopyPreview(mediaQuery.matches);
+    const mediaQuery = window.matchMedia("(max-width: 1023px)");
+    const syncCollapsed = () => {
+      setCollapsed(mediaQuery.matches);
+    };
 
-    syncVisibility();
-    mediaQuery.addEventListener("change", syncVisibility);
-    return () => mediaQuery.removeEventListener("change", syncVisibility);
+    syncCollapsed();
+    mediaQuery.addEventListener("change", syncCollapsed);
+    return () => mediaQuery.removeEventListener("change", syncCollapsed);
   }, []);
 
   useEffect(() => {
-    if (!showCopyPreview || !enableCopyPreview || !hasSelection) {
+    if (!enableCopyPreview || !hasSelection || collapsed) {
       startTransition(() => {
         setCopyPreviews({ mirrorX: null, mirrorY: null });
       });
@@ -404,7 +420,7 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, on
         mirrorY: evaluateMirrorCopy("mirror-y"),
       });
     });
-  }, [enableCopyPreview, evaluateMirrorCopy, hasSelection, showCopyPreview]);
+  }, [collapsed, enableCopyPreview, evaluateMirrorCopy, hasSelection]);
 
   const formatCopyPreview = (
     label: string,
@@ -427,109 +443,160 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, on
   };
 
   return (
-    <div className="absolute top-2 lg:top-4 left-1/2 transform -translate-x-1/2 max-w-[calc(100vw-1rem)] flex items-center bg-neutral-800/90 backdrop-blur-sm border border-neutral-700 rounded-lg shadow-xl px-1 lg:px-2 py-1 lg:py-1.5 z-50 overflow-x-auto scrollbar-none">
-      {/* 组内对齐 */}
-      <div className="flex items-center gap-0.5 mr-1 lg:mr-2 pr-1 lg:pr-2 border-r border-neutral-700 shrink-0">
-        <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('left')}>
-          <AlignLeft size={16} />
-          <span className="hidden lg:inline text-[10px]">左</span>
-          <span className={tooltipClass}>左对齐选中项</span>
-        </button>
-        <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('center-x')}>
-          <AlignCenterHorizontal size={16} />
-          <span className="hidden lg:inline text-[10px]">中</span>
-          <span className={tooltipClass}>水平居中选中项</span>
-        </button>
-        <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('right')}>
-          <AlignRight size={16} />
-          <span className="hidden lg:inline text-[10px]">右</span>
-          <span className={tooltipClass}>右对齐选中项</span>
-        </button>
+    <div className="pointer-events-none absolute right-3 top-3 z-50 flex items-start gap-2 lg:right-4 lg:top-16">
+      {!collapsed && (
+        <div className="pointer-events-auto w-[min(18rem,calc(100vw-4rem))] overflow-hidden rounded-2xl border border-[#40372b] bg-[#120f0c]/94 shadow-[0_20px_60px_rgba(0,0,0,0.45)] backdrop-blur-md sm:w-72">
+          <div className="border-b border-[#30291f] bg-[linear-gradient(180deg,rgba(97,75,43,0.22),rgba(18,15,12,0.95))] px-4 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#d8c29a]">编辑辅助</div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {selected.length > 0 ? `当前选中 ${selected.length} 个凹槽` : "先框选或点选凹槽，再使用对齐与镜像"}
+                </div>
+              </div>
+              <div className="rounded-full border border-[#4b4032] bg-[#1a1611] px-2.5 py-1 text-[11px] font-mono text-[#ccbda4]">
+                {selected.length > 0 ? `${selected.length} selected` : "idle"}
+              </div>
+            </div>
+          </div>
 
-        <div className="w-px h-6 bg-neutral-700 mx-0.5 lg:mx-1 shrink-0" />
+          <div className="max-h-[calc(100vh-13rem)] space-y-3 overflow-y-auto px-3 py-3">
+            <section className="rounded-2xl border border-[#312a21] bg-[#17130f] p-2.5">
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-3 rounded-xl px-1.5 py-1 text-left"
+                onClick={() => toggleSection("align")}
+              >
+                <div>
+                  <div className={sectionTitleClass}>对齐</div>
+                  <div className={sectionSummaryClass}>边缘对齐与等距排布</div>
+                </div>
+                <ChevronDown className={`h-4 w-4 text-[#9f927c] transition-transform ${sectionOpen.align ? "rotate-0" : "-rotate-90"}`} />
+              </button>
 
-        <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('top')}>
-          <AlignStartVertical size={16} />
-          <span className="hidden lg:inline text-[10px]">上</span>
-          <span className={tooltipClass}>顶部对齐选中项</span>
-        </button>
-        <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('center-y')}>
-          <AlignCenterVertical size={16} />
-          <span className="hidden lg:inline text-[10px]">中</span>
-          <span className={tooltipClass}>垂直居中选中项</span>
-        </button>
-        <button className={btnClass} disabled={!hasMultiple} onClick={() => handleAlign('bottom')}>
-          <AlignEndVertical size={16} />
-          <span className="hidden lg:inline text-[10px]">下</span>
-          <span className={tooltipClass}>底部对齐选中项</span>
-        </button>
-      </div>
+              {sectionOpen.align && (
+                <div className="mt-2 space-y-3">
+                  <div>
+                    <div className="mb-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">边缘对齐</div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("left")}>
+                        <AlignLeft size={15} /> 左
+                      </button>
+                      <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("center-x")}>
+                        <AlignCenterHorizontal size={15} /> 中
+                      </button>
+                      <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("right")}>
+                        <AlignRight size={15} /> 右
+                      </button>
+                      <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("top")}>
+                        <AlignStartVertical size={15} /> 上
+                      </button>
+                      <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("center-y")}>
+                        <AlignCenterVertical size={15} /> 中
+                      </button>
+                      <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("bottom")}>
+                        <AlignEndVertical size={15} /> 下
+                      </button>
+                    </div>
+                  </div>
 
-      {/* 排成一排/列 */}
-      <div className="flex items-center gap-0.5 mr-1 lg:mr-2 pr-1 lg:pr-2 border-r border-neutral-700 shrink-0">
-        <button className={btnClass} disabled={!hasMultiple} onClick={() => handleArrange('row')}>
-          <Rows2 size={16} />
-          <span className="hidden lg:inline text-[10px]">一排</span>
-          <span className={tooltipClass}>排成一排（间距+{spacing}mm）</span>
-        </button>
-        <button className={btnClass} disabled={!hasMultiple} onClick={() => handleArrange('column')}>
-          <Columns2 size={16} />
-          <span className="hidden lg:inline text-[10px]">一列</span>
-          <span className={tooltipClass}>排成一列（间距+{spacing}mm）</span>
-        </button>
-      </div>
+                  <div>
+                    <div className="mb-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">自动排布</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleArrange("row")}>
+                        <Rows2 size={15} /> 一排
+                      </button>
+                      <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleArrange("column")}>
+                        <Columns2 size={15} /> 一列
+                      </button>
+                    </div>
+                    <div className="mt-2 text-[10px] text-muted-foreground/70">排布间距自动使用当前槽距 {spacing} mm。</div>
+                  </div>
+                </div>
+              )}
+            </section>
 
-      <div className="flex items-center gap-1 mr-1 lg:mr-2 pr-1 lg:pr-2 border-r border-neutral-700 shrink-0">
-        <button
-          className={`${axisBtnClass} ${axisSource === 'selection' ? 'bg-neutral-700 text-white border-neutral-500' : ''}`}
-          onClick={() => onAxisSourceChange('selection')}
-          disabled={!hasSelection}
-        >
-          选区轴
-        </button>
-        <button
-          className={`${axisBtnClass} ${axisSource === 'tray' ? 'bg-neutral-700 text-white border-neutral-500' : ''}`}
-          onClick={() => onAxisSourceChange('tray')}
-        >
-          托盘轴
-        </button>
-      </div>
+            <section className="rounded-2xl border border-[#312a21] bg-[#17130f] p-2.5">
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-3 rounded-xl px-1.5 py-1 text-left"
+                onClick={() => toggleSection("mirror")}
+              >
+                <div>
+                  <div className={sectionTitleClass}>镜像</div>
+                  <div className={sectionSummaryClass}>按选区轴或托盘轴做翻转与复制</div>
+                </div>
+                <ChevronDown className={`h-4 w-4 text-[#9f927c] transition-transform ${sectionOpen.mirror ? "rotate-0" : "-rotate-90"}`} />
+              </button>
 
-      <div className="flex items-center gap-0.5 mr-1 lg:mr-2 pr-1 lg:pr-2 border-r border-neutral-700 shrink-0">
-        <button className={btnClass} disabled={!hasSelection} onClick={() => handleMirrorMove('mirror-x')}>
-          <FlipHorizontal size={16} />
-          <span className="hidden lg:inline text-[10px]">左右镜</span>
-          <span className={tooltipClass}>围绕当前轴做左右镜像移动</span>
-        </button>
-        <button className={btnClass} disabled={!hasSelection || !onInsertSlots} onClick={() => handleMirrorCopy('mirror-x')}>
-          <Copy size={16} />
-          <span className="hidden lg:inline text-[10px]">左右复</span>
-          <span className={tooltipClass}>围绕当前轴复制一组左右镜像槽位</span>
-        </button>
-        <button className={btnClass} disabled={!hasSelection} onClick={() => handleMirrorMove('mirror-y')}>
-          <FlipVertical size={16} />
-          <span className="hidden lg:inline text-[10px]">上下镜</span>
-          <span className={tooltipClass}>围绕当前轴做上下镜像移动</span>
-        </button>
-        <button className={btnClass} disabled={!hasSelection || !onInsertSlots} onClick={() => handleMirrorCopy('mirror-y')}>
-          <Copy size={16} />
-          <span className="hidden lg:inline text-[10px]">上下复</span>
-          <span className={tooltipClass}>围绕当前轴复制一组上下镜像槽位</span>
-        </button>
-      </div>
+              {sectionOpen.mirror && (
+                <div className="mt-2 space-y-3">
+                  <div>
+                    <div className="mb-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">镜像轴</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        className={`${axisBtnClass} ${axisSource === "selection" ? "border-[#8a6d3f] bg-[#2a2115] text-[#f0d8b8]" : ""}`}
+                        onClick={() => onAxisSourceChange("selection")}
+                        disabled={!hasSelection}
+                      >
+                        选区轴
+                      </button>
+                      <button
+                        className={`${axisBtnClass} ${axisSource === "tray" ? "border-[#8a6d3f] bg-[#2a2115] text-[#f0d8b8]" : ""}`}
+                        onClick={() => onAxisSourceChange("tray")}
+                      >
+                        托盘轴
+                      </button>
+                    </div>
+                  </div>
 
-      <div className="hidden xl:flex items-center gap-1 mr-1 lg:mr-2 pr-1 lg:pr-2 border-r border-neutral-700 shrink-0">
-        <span className={previewTagClass} data-symmetry-preview="mirror-x">
-          {formatCopyPreview("左右", copyPreviews.mirrorX)}
-        </span>
-        <span className={previewTagClass} data-symmetry-preview="mirror-y">
-          {formatCopyPreview("上下", copyPreviews.mirrorY)}
-        </span>
-      </div>
+                  <div>
+                    <div className="mb-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">镜像移动</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button className={actionBtnClass} disabled={!hasSelection} onClick={() => handleMirrorMove("mirror-x")}>
+                        <FlipHorizontal size={15} /> 左右镜
+                      </button>
+                      <button className={actionBtnClass} disabled={!hasSelection} onClick={() => handleMirrorMove("mirror-y")}>
+                        <FlipVertical size={15} /> 上下镜
+                      </button>
+                    </div>
+                  </div>
 
-      <div className="ml-1 lg:ml-2 text-[10px] lg:text-xs text-neutral-500 font-mono shrink-0">
-        {selected.length > 0 ? `${selected.length} 选中` : '未选择'}
-      </div>
+                  <div>
+                    <div className="mb-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">镜像复制</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button className={actionBtnClass} disabled={!hasSelection || !onInsertSlots} onClick={() => handleMirrorCopy("mirror-x")}>
+                        <Copy size={15} /> 左右复
+                      </button>
+                      <button className={actionBtnClass} disabled={!hasSelection || !onInsertSlots} onClick={() => handleMirrorCopy("mirror-y")}>
+                        <Copy size={15} /> 上下复
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className={previewTagClass} data-symmetry-preview="mirror-x">
+                      {formatCopyPreview("左右", copyPreviews.mirrorX)}
+                    </span>
+                    <span className={previewTagClass} data-symmetry-preview="mirror-y">
+                      {formatCopyPreview("上下", copyPreviews.mirrorY)}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </section>
+          </div>
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={() => setCollapsed((prev) => !prev)}
+        className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-2xl border border-[#40372b] bg-[#17120f]/95 text-[#d8c29a] shadow-[0_16px_40px_rgba(0,0,0,0.38)] transition-colors hover:border-[#6e5a3b] hover:text-white lg:h-10 lg:w-10"
+        title={collapsed ? "展开编辑面板" : "收起编辑面板"}
+      >
+        {collapsed ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+      </button>
     </div>
   );
 }

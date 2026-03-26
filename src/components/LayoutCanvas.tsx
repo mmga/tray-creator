@@ -36,6 +36,7 @@ interface LayoutCanvasProps {
   onSelectionChange?: (ids: string[]) => void;
   // 轮廓预览（Stepped 模式：每组独立轮廓）
   outlinePreview?: GroupOutlinePreview[] | null;
+  focusedGroupId?: string | null;
 }
 
 export default function LayoutCanvas({
@@ -51,6 +52,7 @@ export default function LayoutCanvas({
   onSaveSnapshot,
   onSelectionChange,
   outlinePreview,
+  focusedGroupId,
 }: LayoutCanvasProps) {
   // Core State
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -828,6 +830,11 @@ export default function LayoutCanvas({
               ? (params as SteppedLayoutParams).groups
               : undefined;
             const isSteppedSlot = 'groupId' in slot;
+            const isDimmedByGroupFocus = Boolean(
+              focusedGroupId &&
+              isSteppedSlot &&
+              (slot as { groupId: string }).groupId !== focusedGroupId,
+            );
             const groupColor = isSteppedSlot && steppedGroups
               ? (steppedGroups.find(g => g.id === (slot as { groupId: string }).groupId)?.color ?? "#86efac")
               : null;
@@ -843,7 +850,7 @@ export default function LayoutCanvas({
                 onPointerEnter={() => setHoveredId(slot.id)}
                 onPointerLeave={() => setHoveredId(null)}
                 className={`transition-opacity duration-200 ${isSpacePressed ? '' : 'cursor-move'}`}
-                style={{ opacity: isDragging ? 0.9 : 1 }}
+                style={{ opacity: (isDragging ? 0.9 : 1) * (isDimmedByGroupFocus ? 0.18 : 1) }}
               >
                 {/* Margin / Safe Area Indicator - colored by group for stepped mode */}
                 <ellipse
@@ -948,6 +955,11 @@ export default function LayoutCanvas({
               drawn.add(key);
               const other = slots.find(s => s.id === otherId);
               if (!other) continue;
+              const lineOpacity = !focusedGroupId
+                ? 0.6
+                : (('groupId' in slot && slot.groupId === focusedGroupId) || ('groupId' in other && other.groupId === focusedGroupId))
+                  ? 0.5
+                  : 0.12;
               lines.push(
                 <line
                   key={`col-${key}`}
@@ -956,7 +968,7 @@ export default function LayoutCanvas({
                   stroke="#ef4444"
                   strokeWidth={0.5 / zoom}
                   strokeDasharray="3 2"
-                  opacity={0.6}
+                  opacity={lineOpacity}
                   pointerEvents="none"
                 />
               );
@@ -977,6 +989,7 @@ export default function LayoutCanvas({
         {/* 分组轮廓预览（Stepped 模式：按高度升序渲染，高组颜色压住低组，重叠处显示最高组颜色） */}
         {outlinePreview && outlinePreview.map((go) => {
           if (go.points.length < 3) return null;
+          const isDimmed = Boolean(focusedGroupId && go.groupId !== focusedGroupId);
           const pathData = go.points
             .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(2)} ${(trayDepth - p.y).toFixed(2)}`)
             .join(' ') + ' Z';
@@ -987,7 +1000,7 @@ export default function LayoutCanvas({
               fill="none"
               stroke={go.color}
               strokeWidth={0.9 / zoom}
-              strokeOpacity={0.85}
+              strokeOpacity={isDimmed ? 0.16 : 0.85}
               pointerEvents="none"
             />
           );

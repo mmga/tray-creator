@@ -53,6 +53,7 @@ export default function Home() {
   const [ordersOpen, setOrdersOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
   const [selectedSlotIds, setSelectedSlotIds] = useState<string[]>([]);
+  const [previewGroupId, setPreviewGroupId] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
   // ── 访问统计上报 (仅一次) ──
@@ -115,7 +116,6 @@ export default function Home() {
           params={steppedModel.params}
           effectiveDimensions={steppedModel.effectiveDimensions}
           isPreviewStale={steppedModel.isPreviewStale}
-          bridgeWarning={steppedModel.bridgeWarning}
           setParams={steppedModel.setParams}
           updateParam={steppedModel.updateParam}
           onAddSlot={steppedModel.addSlot}
@@ -130,6 +130,8 @@ export default function Home() {
           onSetActiveGroup={steppedModel.setActiveGroup}
           onMoveSelectedSlotsToGroup={steppedModel.moveSelectedSlotsToGroup}
           onReorderGroups={steppedModel.reorderGroups}
+          previewGroupId={previewGroupId}
+          onPreviewGroupChange={setPreviewGroupId}
         />
       );
     }
@@ -191,6 +193,7 @@ export default function Home() {
               onSaveSnapshot={model.saveSnapshot}
               onSelectionChange={mode === "stepped" ? setSelectedSlotIds : undefined}
               outlinePreview={mode === "stepped" ? steppedModel.outlinePreview : undefined}
+              focusedGroupId={mode === "stepped" ? previewGroupId : undefined}
             />
           </div>
         </TabsContent>
@@ -256,6 +259,7 @@ export default function Home() {
       <ModeTabs mode={mode} onModeChange={(m) => {
         setMode(m);
         setSelectedSlotIds([]);
+        setPreviewGroupId(null);
         // 切换模式时，如果移动端停在2d tab但进了grid模式，回退到params
         if (m === "grid" && mobileTab === "2d") setMobileTab("params");
       }} />
@@ -307,6 +311,7 @@ export default function Home() {
                 onSaveSnapshot={mode === "stepped" ? steppedModel.saveSnapshot : customModel.saveSnapshot}
                 onSelectionChange={mode === "stepped" ? setSelectedSlotIds : undefined}
                 outlinePreview={mode === "stepped" ? steppedModel.outlinePreview : undefined}
+                focusedGroupId={mode === "stepped" ? previewGroupId : undefined}
               />
             </div>
           )}

@@ -4,7 +4,7 @@ import type { SteppedLayoutParams } from "@/types/custom-tray";
 import { BASE_PRESETS, STEPPED_LIMITS, MAX_BUILD_SIZE, STEPPED_LAYOUT_DEFAULTS } from "@/lib/config";
 import { calculateSteppedTrayDimensions } from "@/lib/stepped-tray-model";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     Download,
     RotateCcw,
@@ -21,6 +21,7 @@ import {
     ArrowRight,
     ChevronUp,
     ChevronDown,
+    Eye,
 } from "lucide-react";
 import { ParamIOButtons } from "@/components/ParamIOButtons";
 import { SectionHeader } from "@/components/ui/SectionHeader";
@@ -31,13 +32,11 @@ import { calculateWeight, calculateSteppedPrice } from "@/lib/pricing";
 import { sendConfigToKV, buildPayload, serializePayload } from "@/lib/edgeone-kv";
 import { useToast } from "@/hooks/useToast";
 import { ConfirmSendDialog } from "@/components/ConfirmSendDialog";
-import type { BridgeWarning } from "@/lib/stepped-connectivity";
 
 interface SteppedPanelProps {
     params: SteppedLayoutParams;
     effectiveDimensions: { width: number; depth: number };
     isPreviewStale: boolean;
-    bridgeWarning: BridgeWarning | null;
     updateParam: <K extends keyof SteppedLayoutParams>(key: K, value: SteppedLayoutParams[K]) => void;
     setParams: React.Dispatch<React.SetStateAction<SteppedLayoutParams>>;
     onAddSlot: (width: number) => void;
@@ -53,13 +52,14 @@ interface SteppedPanelProps {
     onSetActiveGroup: (groupId: string) => void;
     onMoveSelectedSlotsToGroup: (ids: string[], targetGroupId: string) => void;
     onReorderGroups: (fromIndex: number, toIndex: number) => void;
+    previewGroupId: string | null;
+    onPreviewGroupChange: (groupId: string | null) => void;
 }
 
 export default function SteppedPanel({
     params,
     effectiveDimensions,
     isPreviewStale,
-    bridgeWarning,
     updateParam,
     setParams,
     onAddSlot,
@@ -74,6 +74,8 @@ export default function SteppedPanel({
     onSetActiveGroup,
     onMoveSelectedSlotsToGroup,
     onReorderGroups,
+    previewGroupId,
+    onPreviewGroupChange,
 }: SteppedPanelProps) {
     const dimensions = calculateSteppedTrayDimensions(params);
     const effectiveWidth = effectiveDimensions.width;
@@ -82,10 +84,68 @@ export default function SteppedPanel({
     const [isSending, setIsSending] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [pendingJson, setPendingJson] = useState("");
+    const [pressedPreviewGroupId, setPressedPreviewGroupId] = useState<string | null>(null);
+    const [lockedPreviewGroupId, setLockedPreviewGroupId] = useState<string | null>(null);
     const { toast } = useToast();
+
+    useEffect(() => {
+        if (!pressedPreviewGroupId) {
+            return;
+        }
+
+        const clearPreview = () => {
+            setPressedPreviewGroupId(null);
+            onPreviewGroupChange(lockedPreviewGroupId);
+        };
+
+        window.addEventListener("pointerup", clearPreview);
+        window.addEventListener("pointercancel", clearPreview);
+        window.addEventListener("blur", clearPreview);
+
+        return () => {
+            window.removeEventListener("pointerup", clearPreview);
+            window.removeEventListener("pointercancel", clearPreview);
+            window.removeEventListener("blur", clearPreview);
+        };
+    }, [lockedPreviewGroupId, onPreviewGroupChange, pressedPreviewGroupId]);
+
+    useEffect(() => {
+        const validGroupIds = new Set(params.groups.map((group) => group.id));
+
+        if (lockedPreviewGroupId && !validGroupIds.has(lockedPreviewGroupId)) {
+            setLockedPreviewGroupId(null);
+        }
+
+        if (pressedPreviewGroupId && !validGroupIds.has(pressedPreviewGroupId)) {
+            setPressedPreviewGroupId(null);
+        }
+
+        if (previewGroupId && !validGroupIds.has(previewGroupId)) {
+            onPreviewGroupChange(null);
+        }
+    }, [lockedPreviewGroupId, onPreviewGroupChange, params.groups, pressedPreviewGroupId, previewGroupId]);
 
     const handleReset = () => {
         setParams(STEPPED_LAYOUT_DEFAULTS);
+    };
+
+    const handlePreviewGroupStart = (groupId: string) => {
+        setPressedPreviewGroupId(groupId);
+        onPreviewGroupChange(groupId);
+    };
+
+    const handlePreviewGroupEnd = () => {
+        setPressedPreviewGroupId(null);
+        onPreviewGroupChange(lockedPreviewGroupId);
+    };
+
+    const toggleLockedPreviewGroup = (groupId: string) => {
+        const nextGroupId = lockedPreviewGroupId === groupId ? null : groupId;
+        setLockedPreviewGroupId(nextGroupId);
+
+        if (!pressedPreviewGroupId) {
+            onPreviewGroupChange(nextGroupId);
+        }
     };
 
     return (
@@ -100,6 +160,7 @@ export default function SteppedPanel({
                             .map((group, groupIndex) => {
                                 const groupSlotCount = params.slots.filter(s => s.groupId === group.id).length;
                                 const isActive = params.activeGroupId === group.id;
+                                const isPreviewing = previewGroupId === group.id;
                                 return (
                                     <div
                                         key={group.id}
@@ -117,6 +178,41 @@ export default function SteppedPanel({
                                             <div className="w-3 h-3 rounded-sm shrink-0" style={{ background: group.color }} />
                                             <span className="text-xs font-medium text-foreground/90 flex-1 truncate">{group.name}</span>
                                             <span className="text-[10px] text-muted-foreground shrink-0">{groupSlotCount} 个凹槽</span>
+                                            <button
+                                                onClick={(e) => e.stopPropagation()}
+                                                onPointerDown={(e) => {
+                                                    e.stopPropagation();
+                                                    if (e.pointerType === "touch") {
+                                                        toggleLockedPreviewGroup(group.id);
+                                                        return;
+                                                    }
+                                                    handlePreviewGroupStart(group.id);
+                                                }}
+                                                onPointerUp={(e) => {
+                                                    e.stopPropagation();
+                                                    if (e.pointerType === "touch") {
+                                                        return;
+                                                    }
+                                                    handlePreviewGroupEnd();
+                                                }}
+                                                onPointerCancel={(e) => {
+                                                    e.stopPropagation();
+                                                    handlePreviewGroupEnd();
+                                                }}
+                                                onKeyDown={(e) => {
+                                                    if (e.key !== "Enter" && e.key !== " ") {
+                                                        return;
+                                                    }
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    toggleLockedPreviewGroup(group.id);
+                                                }}
+                                                aria-pressed={isPreviewing}
+                                                className={`w-6 h-6 shrink-0 flex items-center justify-center rounded transition-colors ${isPreviewing ? "bg-[#2a2115] text-[#f0d8b8]" : "text-muted-foreground/50 hover:text-foreground hover:bg-[#1c1a16]"}`}
+                                                title="按住仅查看当前组"
+                                            >
+                                                <Eye className="w-3.5 h-3.5" />
+                                            </button>
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); onReorderGroups(groupIndex, groupIndex - 1); }}
                                                 disabled={groupIndex === 0}
@@ -271,11 +367,6 @@ export default function SteppedPanel({
                             onChange={(v) => updateParam("disconnectDistance", v)}
                             unit={STEPPED_LIMITS.disconnectDistance.unit}
                         />
-                        {bridgeWarning && (
-                            <div className="rounded border border-[#7a5a2a] bg-[#2d2416] px-3 py-2 text-xs leading-5 text-[#d8bb74]">
-                                {bridgeWarning.groupName} 当前参数可能会将 {bridgeWarning.separatedClusterCount} 个独立槽群连接为 {bridgeWarning.mergedClusterCount} 个整体底座。你可以调整槽群断连距离、减小平滑半径，或调整槽位位置。
-                            </div>
-                        )}
                     </div>
                 </SectionHeader>
             </div>
