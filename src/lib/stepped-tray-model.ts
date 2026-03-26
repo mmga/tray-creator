@@ -270,7 +270,8 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
     );
   }
 
-  const solid = groupSolids.length === 1 ? groupSolids[0] : union(...groupSolids);
+  const solid =
+    groupSolids.length === 1 ? groupSolids[0] : union(...groupSolids);
 
   // 减去各凹槽孔洞（从各自分组顶部向下挖 holeDepth）
   const holes: Geom3[] = [];

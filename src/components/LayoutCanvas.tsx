@@ -738,7 +738,7 @@ export default function LayoutCanvas({
         />
 
         {/* Effective Baseplate (inner) */}
-        {effectiveBaseplate.hasSlots && (
+        {!('groups' in params) && effectiveBaseplate.hasSlots && (
           <rect
             x={effectiveBaseplate.x}
             y={effectiveBaseplate.y}

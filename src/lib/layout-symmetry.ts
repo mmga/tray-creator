@@ -26,10 +26,6 @@ export function roundToStep(value: number) {
   return Math.round(value / STEP) * STEP;
 }
 
-export function normalizeRotation(rotation: number) {
-  return ((rotation % 360) + 360) % 360;
-}
-
 export function getSlotBounds(slot: FreeSlot) {
   const rad = ((slot.rotation || 0) * Math.PI) / 180;
   const a = (slot.width + getSlotTolerance(slot.width)) / 2;
@@ -86,20 +82,16 @@ export function mirrorSlot(
   axisValue: number,
   mode: SymmetryMode,
 ) {
-  const rotation = slot.rotation ?? 0;
-
   if (mode === "mirror-x") {
     return {
       ...slot,
       x: roundToStep(2 * axisValue - slot.x),
-      rotation: normalizeRotation(180 - rotation),
     };
   }
 
   return {
     ...slot,
     y: roundToStep(2 * axisValue - slot.y),
-    rotation: normalizeRotation(-rotation),
   };
 }
 

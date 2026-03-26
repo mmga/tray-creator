@@ -20,7 +20,9 @@ export function getConnectivityRadius(
   widthTolerance: number,
   heightTolerance: number,
 ): number {
-  return Math.max(width + widthTolerance, height + heightTolerance) / 2 + spacing;
+  return (
+    Math.max(width + widthTolerance, height + heightTolerance) / 2 + spacing
+  );
 }
 
 function getCircleGap(a: ConnectivityCircle, b: ConnectivityCircle): number {
@@ -35,7 +37,8 @@ export function getEffectiveBridgeGap(
     return Math.max(0, disconnectDistance);
   }
 
-  return Math.max(0, smoothingRadius * 2);
+  // 自然桥接仍然保留，但避免仅因大平滑半径就把相距很远的槽群并成一整块。
+  return Math.max(0, smoothingRadius);
 }
 
 export function clusterConnectivityCircles(
@@ -91,7 +94,10 @@ export function analyzeBridgeWarning(
 
   if (effectiveBridgeGap <= 0) return null;
 
-  const mergedClusters = clusterConnectivityCircles(circles, effectiveBridgeGap);
+  const mergedClusters = clusterConnectivityCircles(
+    circles,
+    effectiveBridgeGap,
+  );
 
   if (mergedClusters.length >= separatedClusters.length) {
     return null;
