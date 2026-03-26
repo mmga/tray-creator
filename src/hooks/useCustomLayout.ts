@@ -23,7 +23,7 @@ interface UseCustomLayoutReturn {
   removeSlot: (id: string) => void;
   updateSlotPosition: (id: string, x: number, y: number) => void;
   updateMultipleSlots: (
-    updates: { id: string; x: number; y: number }[],
+    updates: { id: string; x: number; y: number; rotation?: number }[],
   ) => void;
   updateSlotRotation: (id: string, rotation: number) => void;
   duplicateSlots: (ids: string[]) => void;
@@ -266,7 +266,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
    * 更新多个凹槽位置（用于对齐工具等批量操作，自动记录历史）
    */
   const updateMultipleSlots = useCallback(
-    (updates: { id: string; x: number; y: number }[]) => {
+    (updates: { id: string; x: number; y: number; rotation?: number }[]) => {
       setParams((prev) => {
         pushState(prev);
         const updatesMap = new Map(updates.map((u) => [u.id, u]));
@@ -274,7 +274,14 @@ export function useCustomLayout(): UseCustomLayoutReturn {
           ...prev,
           slots: prev.slots.map((s) => {
             const u = updatesMap.get(s.id);
-            return u ? { ...s, x: u.x, y: u.y } : s;
+            return u
+              ? {
+                  ...s,
+                  x: u.x,
+                  y: u.y,
+                  rotation: u.rotation ?? s.rotation,
+                }
+              : s;
           }),
         };
       });

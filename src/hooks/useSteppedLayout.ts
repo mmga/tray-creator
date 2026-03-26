@@ -41,7 +41,7 @@ export interface UseSteppedLayoutReturn {
   removeSlot: (id: string) => void;
   updateSlotPosition: (id: string, x: number, y: number) => void;
   updateMultipleSlots: (
-    updates: { id: string; x: number; y: number }[],
+    updates: { id: string; x: number; y: number; rotation?: number }[],
   ) => void;
   updateSlotRotation: (id: string, rotation: number) => void;
   duplicateSlots: (ids: string[]) => void;
@@ -255,7 +255,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
   );
 
   const updateMultipleSlots = useCallback(
-    (updates: { id: string; x: number; y: number }[]) => {
+    (updates: { id: string; x: number; y: number; rotation?: number }[]) => {
       internalSetParams((prev) => {
         pushState(prev);
         const updatesMap = new Map(updates.map((u) => [u.id, u]));
@@ -263,7 +263,14 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
           ...prev,
           slots: prev.slots.map((s) => {
             const u = updatesMap.get(s.id);
-            return u ? { ...s, x: u.x, y: u.y } : s;
+            return u
+              ? {
+                  ...s,
+                  x: u.x,
+                  y: u.y,
+                  rotation: u.rotation ?? s.rotation,
+                }
+              : s;
           }),
         };
       });
@@ -541,20 +548,21 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
         return otherGroup && otherGroup.bottomHeight > group.bottomHeight;
       });
 
-      const connectivityCircles: ConnectivityCircle[] = [...ownSlots, ...higherSlots].map(
-        (slot) => ({
-          id: slot.id,
-          cx: slot.x,
-          cy: slot.y,
-          rOuter: getConnectivityRadius(
-            slot.width,
-            slot.height,
-            params.spacing,
-            getSlotTolerance(slot.width),
-            getSlotTolerance(slot.height),
-          ),
-        }),
-      );
+      const connectivityCircles: ConnectivityCircle[] = [
+        ...ownSlots,
+        ...higherSlots,
+      ].map((slot) => ({
+        id: slot.id,
+        cx: slot.x,
+        cy: slot.y,
+        rOuter: getConnectivityRadius(
+          slot.width,
+          slot.height,
+          params.spacing,
+          getSlotTolerance(slot.width),
+          getSlotTolerance(slot.height),
+        ),
+      }));
 
       const clusters = clusterConnectivityCircles(
         connectivityCircles,
@@ -562,10 +570,11 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
       );
 
       clusters.forEach((cluster, clusterIndex) => {
-        const clusterKey = cluster
-          .map((circle) => circle.id)
-          .sort()
-          .join("-") || `${group.id}-${clusterIndex}`;
+        const clusterKey =
+          cluster
+            .map((circle) => circle.id)
+            .sort()
+            .join("-") || `${group.id}-${clusterIndex}`;
         const outline = generateOutline(
           cluster.map((circle) => ({
             cx: circle.cx,
@@ -604,22 +613,28 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
 
       const higherSlots = params.slots.filter((slot) => {
         if (slot.groupId === group.id) return false;
-        const otherGroup = params.groups.find((candidate) => candidate.id === slot.groupId);
-        return Boolean(otherGroup && otherGroup.bottomHeight > group.bottomHeight);
+        const otherGroup = params.groups.find(
+          (candidate) => candidate.id === slot.groupId,
+        );
+        return Boolean(
+          otherGroup && otherGroup.bottomHeight > group.bottomHeight,
+        );
       });
 
-      const circles: ConnectivityCircle[] = [...ownSlots, ...higherSlots].map((slot) => ({
-        id: slot.id,
-        cx: slot.x,
-        cy: slot.y,
-        rOuter: getConnectivityRadius(
-          slot.width,
-          slot.height,
-          params.spacing,
-          getSlotTolerance(slot.width),
-          getSlotTolerance(slot.height),
-        ),
-      }));
+      const circles: ConnectivityCircle[] = [...ownSlots, ...higherSlots].map(
+        (slot) => ({
+          id: slot.id,
+          cx: slot.x,
+          cy: slot.y,
+          rOuter: getConnectivityRadius(
+            slot.width,
+            slot.height,
+            params.spacing,
+            getSlotTolerance(slot.width),
+            getSlotTolerance(slot.height),
+          ),
+        }),
+      );
 
       const warning = analyzeBridgeWarning(
         circles,

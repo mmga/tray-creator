@@ -20,7 +20,9 @@ interface LayoutCanvasProps {
   onRemoveSlot: (id: string) => void;
   onResizeTray?: (width: number, depth: number) => void;
   onUpdateSlotRotation?: (id: string, rotation: number) => void;
-  onUpdateMultipleSlots?: (updates: { id: string, x: number, y: number }[]) => void;
+  onUpdateMultipleSlots?: (
+    updates: { id: string; x: number; y: number; rotation?: number }[],
+  ) => void;
   onDuplicateSlots?: (ids: string[]) => void;
   onUndo?: () => void;
   onSaveSnapshot?: () => void;
@@ -111,15 +113,20 @@ export default function LayoutCanvas({
   }, [selectedIds, onSelectionChange]);
 
   // Helper to handle multiple updates
-  const handleUpdateSlots = useCallback((updates: { id: string, x: number, y: number }[]) => {
+  const handleUpdateSlots = useCallback((updates: { id: string; x: number; y: number; rotation?: number }[]) => {
     if (onUpdateMultipleSlots) {
       onUpdateMultipleSlots(updates);
     } else {
       // Fallback
       onSaveSnapshotRef.current?.();
-      updates.forEach(u => onUpdateSlot(u.id, u.x, u.y));
+      updates.forEach((update) => {
+        onUpdateSlot(update.id, update.x, update.y);
+        if (update.rotation !== undefined && onUpdateSlotRotation) {
+          onUpdateSlotRotation(update.id, update.rotation);
+        }
+      });
     }
-  }, [onUpdateSlot, onUpdateMultipleSlots]);
+  }, [onUpdateMultipleSlots, onUpdateSlot, onUpdateSlotRotation]);
 
   // Extracted canvas keyboard event hook
   useCanvasKeyboard({
@@ -633,6 +640,8 @@ export default function LayoutCanvas({
         slots={slots}
         onUpdateSlots={handleUpdateSlots}
         spacing={spacing}
+        trayWidth={trayWidth}
+        trayDepth={trayDepth}
       />
       {/* ... (Background Grid and SVG setup unchanged) ... */}
 

@@ -1,0 +1,121 @@
+import type { FreeSlot } from "@/types/custom-tray";
+import { getSlotTolerance } from "@/lib/config";
+
+const STEP = 0.2;
+
+export type SymmetryAxisSource = "selection" | "tray";
+export type SymmetryMode = "mirror-x" | "mirror-y";
+
+export interface SlotPositionUpdate {
+  id: string;
+  x: number;
+  y: number;
+  rotation?: number;
+}
+
+export function roundToStep(value: number) {
+  return Math.round(value / STEP) * STEP;
+}
+
+export function normalizeRotation(rotation: number) {
+  return ((rotation % 360) + 360) % 360;
+}
+
+export function getSlotBounds(slot: FreeSlot) {
+  const rad = ((slot.rotation || 0) * Math.PI) / 180;
+  const a = (slot.width + getSlotTolerance(slot.width)) / 2;
+  const b = (slot.height + getSlotTolerance(slot.height)) / 2;
+
+  return {
+    halfW: Math.sqrt((a * Math.cos(rad)) ** 2 + (b * Math.sin(rad)) ** 2),
+    halfH: Math.sqrt((a * Math.sin(rad)) ** 2 + (b * Math.cos(rad)) ** 2),
+  };
+}
+
+export function getSelectionBounds(selected: FreeSlot[]) {
+  if (selected.length === 0) return null;
+
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+
+  selected.forEach((slot) => {
+    const { halfW, halfH } = getSlotBounds(slot);
+    minX = Math.min(minX, slot.x - halfW);
+    maxX = Math.max(maxX, slot.x + halfW);
+    minY = Math.min(minY, slot.y - halfH);
+    maxY = Math.max(maxY, slot.y + halfH);
+  });
+
+  return { minX, maxX, minY, maxY };
+}
+
+export function resolveMirrorAxis(
+  selected: FreeSlot[],
+  trayWidth: number,
+  trayDepth: number,
+  axisSource: SymmetryAxisSource,
+  mode: SymmetryMode,
+) {
+  if (axisSource === "tray") {
+    return mode === "mirror-x" ? trayWidth / 2 : trayDepth / 2;
+  }
+
+  const bounds = getSelectionBounds(selected);
+  if (!bounds) {
+    return mode === "mirror-x" ? trayWidth / 2 : trayDepth / 2;
+  }
+
+  return mode === "mirror-x"
+    ? (bounds.minX + bounds.maxX) / 2
+    : (bounds.minY + bounds.maxY) / 2;
+}
+
+export function mirrorSlot(
+  slot: FreeSlot,
+  axisValue: number,
+  mode: SymmetryMode,
+) {
+  const rotation = slot.rotation ?? 0;
+
+  if (mode === "mirror-x") {
+    return {
+      ...slot,
+      x: roundToStep(2 * axisValue - slot.x),
+      rotation: normalizeRotation(180 - rotation),
+    };
+  }
+
+  return {
+    ...slot,
+    y: roundToStep(2 * axisValue - slot.y),
+    rotation: normalizeRotation(-rotation),
+  };
+}
+
+export function buildMirrorMoveUpdates(
+  selected: FreeSlot[],
+  trayWidth: number,
+  trayDepth: number,
+  axisSource: SymmetryAxisSource,
+  mode: SymmetryMode,
+): SlotPositionUpdate[] {
+  const axisValue = resolveMirrorAxis(
+    selected,
+    trayWidth,
+    trayDepth,
+    axisSource,
+    mode,
+  );
+
+  return selected.map((slot) => {
+    const mirrored = mirrorSlot(slot, axisValue, mode);
+    return {
+      id: slot.id,
+      x: mirrored.x,
+      y: mirrored.y,
+      rotation: mirrored.rotation,
+    };
+  });
+}

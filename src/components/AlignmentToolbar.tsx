@@ -1,11 +1,20 @@
+import { useState } from "react";
 import {
   AlignLeft, AlignCenterHorizontal, AlignRight,
   AlignStartVertical, AlignCenterVertical, AlignEndVertical,
   Rows2,
   Columns2,
+  FlipHorizontal,
+  FlipVertical,
 } from "lucide-react";
 import { FreeSlot } from "@/types/custom-tray";
 import { getSlotTolerance } from "@/lib/config";
+import { useToast } from "@/hooks/useToast";
+import {
+  buildMirrorMoveUpdates,
+  type SymmetryAxisSource,
+  type SymmetryMode,
+} from "@/lib/layout-symmetry";
 
 // ── 常量与工具 ──────────────────────────────
 const STEP = 0.2; // 对齐步长 mm
@@ -13,7 +22,7 @@ const roundToStep = (val: number) => Math.round(val / STEP) * STEP;
 
 type AlignType = 'left' | 'center-x' | 'right' | 'top' | 'center-y' | 'bottom';
 type ArrangeType = 'row' | 'column';
-type Update = { id: string; x: number; y: number };
+type Update = { id: string; x: number; y: number; rotation?: number };
 
 /** 计算旋转椭圆的 AABB 半尺寸（含公差） */
 function getSlotBounds(slot: FreeSlot) {
@@ -33,9 +42,14 @@ interface AlignmentToolbarProps {
   slots: FreeSlot[];
   onUpdateSlots: (updates: Update[]) => void;
   spacing: number;
+  trayWidth: number;
+  trayDepth: number;
 }
 
-export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, spacing }: AlignmentToolbarProps) {
+export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, spacing, trayWidth, trayDepth }: AlignmentToolbarProps) {
+  const [axisSource, setAxisSource] = useState<SymmetryAxisSource>("selection");
+  const { toast } = useToast();
+  const hasSelection = selectedIds.size > 0;
   const hasMultiple = selectedIds.size > 1;
 
   /** 获取选中项的总包围盒 */
@@ -164,10 +178,56 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, sp
     if (updates.length > 0) onUpdateSlots(updates);
   };
 
+  const handleMirrorMove = (mode: SymmetryMode) => {
+    const selected = getSelected();
+    if (selected.length === 0) return;
+
+    const updates = buildMirrorMoveUpdates(
+      selected,
+      trayWidth,
+      trayDepth,
+      axisSource,
+      mode,
+    );
+
+    if (updates.length > 0) {
+      onUpdateSlots(updates);
+
+      const outOfBoundsCount = updates.reduce((count, update) => {
+        const original = selected.find((slot) => slot.id === update.id);
+        if (!original) return count;
+
+        const nextSlot = {
+          ...original,
+          x: update.x,
+          y: update.y,
+          rotation: update.rotation ?? original.rotation,
+        };
+        const { halfW, halfH } = getSlotBounds(nextSlot);
+        const isOutOfBounds =
+          nextSlot.x - halfW < 0 ||
+          nextSlot.x + halfW > trayWidth ||
+          nextSlot.y - halfH < 0 ||
+          nextSlot.y + halfH > trayDepth;
+
+        return isOutOfBounds ? count + 1 : count;
+      }, 0);
+
+      if (outOfBoundsCount > 0) {
+        toast(
+          "info",
+          `镜像后有 ${outOfBoundsCount} 个槽位超出托盘边界，请继续调整。`,
+        );
+      }
+    }
+  };
+
   // ── UI ──────────
 
   const btnClass = "h-8 px-2 lg:px-2.5 hover:bg-neutral-700/50 rounded text-neutral-300 hover:text-white transition-colors cursor-pointer group relative disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-neutral-300 shrink-0 inline-flex items-center gap-1";
   const tooltipClass = "absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-black text-xs text-white rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity z-50 hidden lg:block";
+
+  const axisBtnClass = "h-7 px-2 rounded text-[10px] text-neutral-300 transition-colors border border-neutral-700 hover:border-neutral-500 hover:text-white";
 
   return (
     <div className="absolute top-2 lg:top-4 left-1/2 transform -translate-x-1/2 max-w-[calc(100vw-1rem)] flex items-center bg-neutral-800/90 backdrop-blur-sm border border-neutral-700 rounded-lg shadow-xl px-1 lg:px-2 py-1 lg:py-1.5 z-50 overflow-x-auto scrollbar-none">
@@ -219,6 +279,35 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, sp
           <Columns2 size={16} />
           <span className="hidden lg:inline text-[10px]">一列</span>
           <span className={tooltipClass}>排成一列（间距+{spacing}mm）</span>
+        </button>
+      </div>
+
+      <div className="flex items-center gap-1 mr-1 lg:mr-2 pr-1 lg:pr-2 border-r border-neutral-700 shrink-0">
+        <button
+          className={`${axisBtnClass} ${axisSource === 'selection' ? 'bg-neutral-700 text-white border-neutral-500' : ''}`}
+          onClick={() => setAxisSource('selection')}
+          disabled={!hasSelection}
+        >
+          选区轴
+        </button>
+        <button
+          className={`${axisBtnClass} ${axisSource === 'tray' ? 'bg-neutral-700 text-white border-neutral-500' : ''}`}
+          onClick={() => setAxisSource('tray')}
+        >
+          托盘轴
+        </button>
+      </div>
+
+      <div className="flex items-center gap-0.5 mr-1 lg:mr-2 pr-1 lg:pr-2 border-r border-neutral-700 shrink-0">
+        <button className={btnClass} disabled={!hasSelection} onClick={() => handleMirrorMove('mirror-x')}>
+          <FlipHorizontal size={16} />
+          <span className="hidden lg:inline text-[10px]">左右镜</span>
+          <span className={tooltipClass}>围绕当前轴做左右镜像移动</span>
+        </button>
+        <button className={btnClass} disabled={!hasSelection} onClick={() => handleMirrorMove('mirror-y')}>
+          <FlipVertical size={16} />
+          <span className="hidden lg:inline text-[10px]">上下镜</span>
+          <span className={tooltipClass}>围绕当前轴做上下镜像移动</span>
         </button>
       </div>
 
