@@ -127,6 +127,7 @@ export function importParams(
             spacing: customParams.spacing,
             holeDepth: customParams.holeDepth || 3,
             smoothingRadius: STEPPED_LAYOUT_DEFAULTS.smoothingRadius,
+            disconnectDistance: STEPPED_LAYOUT_DEFAULTS.disconnectDistance,
           };
           validateSteppedParams(steppedParams);
           resolve(steppedParams);
@@ -385,6 +386,8 @@ function validateSteppedParams(p: SteppedLayoutParams) {
     if (slot.shape !== "circle" && slot.shape !== "ellipse") {
       slot.shape = "circle";
     }
+    slot.shape = "circle";
+    slot.height = slot.width;
     const w = slot.width as number;
     const h = slot.height as number;
     if (w <= 0 || w > 200) {
@@ -430,4 +433,12 @@ function validateSteppedParams(p: SteppedLayoutParams) {
   }
   delete obj.bridgeRadius;
   clampField(obj, "smoothingRadius", STEPPED_LIMITS.smoothingRadius);
+
+  if (
+    typeof obj.disconnectDistance !== "number" ||
+    !Number.isFinite(obj.disconnectDistance as number)
+  ) {
+    obj.disconnectDistance = STEPPED_LAYOUT_DEFAULTS.disconnectDistance;
+  }
+  clampField(obj, "disconnectDistance", STEPPED_LIMITS.disconnectDistance);
 }

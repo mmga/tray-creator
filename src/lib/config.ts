@@ -142,6 +142,7 @@ export const STEPPED_LAYOUT_DEFAULTS: SteppedLayoutParams = {
   spacing: 5,
   holeDepth: 3,
   smoothingRadius: 60,
+  disconnectDistance: 0,
 };
 
 // ═══════════════════════════════════════════
@@ -187,6 +188,7 @@ export const STEPPED_LIMITS = {
   holeDepth: { label: "凹槽深度", min: 0.2, max: 20, step: 0.2, unit: "mm" },
   bottomHeight: { label: "圆柱高度", min: 3, max: 100, step: 1, unit: "mm" },
   smoothingRadius: { label: "平滑半径", min: 1, max: 150, step: 1, unit: "mm" },
+  disconnectDistance: { label: "槽群断连距离", min: 0, max: 60, step: 1, unit: "mm" },
 } as const;
 
 // ═══════════════════════════════════════════
@@ -225,7 +227,7 @@ export const RENDER_CONFIG = {
 // ═══════════════════════════════════════════
 
 // 使用直径或长轴作为 Key
-const SLOT_COLORS: Record<number, string> = {
+export const SLOT_COLORS: Record<number, string> = {
   25: "#ef4444", // red-500
   28.5: "#f97316", // orange-500
   32: "#eab308", // yellow-500

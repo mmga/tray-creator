@@ -12,6 +12,12 @@ import {
   generateOutlineGeom2,
   type OutlineCircle,
 } from "@/lib/outline-geometry";
+import {
+  clusterConnectivityCircles,
+  getConnectivityRadius,
+  getEffectiveBridgeGap,
+  type ConnectivityCircle,
+} from "@/lib/stepped-connectivity";
 
 const { subtract, union } = booleans;
 const { translate, rotateZ } = transforms;
@@ -95,7 +101,14 @@ function calculateEffectiveBaseplate(params: SteppedLayoutParams) {
  * - 每个凹槽从其所在组顶部向下挖 holeDepth 深度
  */
 export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
-  const { slots, groups, spacing, holeDepth, smoothingRadius } = params;
+  const {
+    slots,
+    groups,
+    spacing,
+    holeDepth,
+    smoothingRadius,
+    disconnectDistance,
+  } = params;
 
   if (slots.length === 0 || groups.length === 0) {
     return extrudeLinear(
@@ -142,32 +155,61 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
     groupSlotData: typeof slotData,
     height: number,
   ): Geom3 {
-    const outlineCircles: OutlineCircle[] = groupSlotData.map((d) => ({
-      cx: d.cx,
-      cy: d.cy,
-      rOuter: Math.max(d.actualW, d.actualH) / 2 + spacing,
-    }));
-    const outlineGeom = generateOutlineGeom2(
-      outlineCircles,
-      smoothingRadius,
-      RENDER_CONFIG.cylinderSegments,
-    );
-    if (outlineGeom) {
-      const extruded = extrudeLinear({ height }, outlineGeom);
-      if (measureVolume(extruded) >= 0) return extruded;
-    }
-    // 降级：独立圆柱 union
-    const cols = groupSlotData.map((d) => {
-      const r = Math.max(d.actualW, d.actualH) / 2 + spacing;
-      return translate(
-        [d.cx, d.cy, 0],
-        extrudeLinear(
-          { height },
-          circle({ radius: r, segments: RENDER_CONFIG.cylinderSegments }),
-        ),
+    const circleMap = new Map<string, ConnectivityCircle>();
+    const slotDataMap = new Map<string, (typeof slotData)[number]>();
+
+    for (const d of groupSlotData) {
+      const rOuter = getConnectivityRadius(
+        d.slot.width,
+        d.slot.height,
+        spacing,
+        getSlotTolerance(d.slot.width),
+        getSlotTolerance(d.slot.height),
       );
+      circleMap.set(d.slot.id, { id: d.slot.id, cx: d.cx, cy: d.cy, rOuter });
+      slotDataMap.set(d.slot.id, d);
+    }
+
+    const clusteredCircles = clusterConnectivityCircles(
+      [...circleMap.values()],
+      getEffectiveBridgeGap(smoothingRadius, disconnectDistance),
+    );
+
+    const solids = clusteredCircles.map((cluster) => {
+      const outlineCircles: OutlineCircle[] = cluster.map((circle) => ({
+        cx: circle.cx,
+        cy: circle.cy,
+        rOuter: circle.rOuter,
+      }));
+
+      const outlineGeom = generateOutlineGeom2(
+        outlineCircles,
+        smoothingRadius,
+        RENDER_CONFIG.cylinderSegments,
+      );
+      if (outlineGeom) {
+        const extruded = extrudeLinear({ height }, outlineGeom);
+        if (measureVolume(extruded) >= 0) return extruded;
+      }
+
+      const cols = cluster
+        .map((circle) => slotDataMap.get(circle.id))
+        .filter((item): item is (typeof slotData)[number] => Boolean(item))
+        .map((d) => {
+          const r = Math.max(d.actualW, d.actualH) / 2 + spacing;
+          return translate(
+            [d.cx, d.cy, 0],
+            extrudeLinear(
+              { height },
+              circle({ radius: r, segments: RENDER_CONFIG.cylinderSegments }),
+            ),
+          );
+        });
+
+      return cols.length === 1 ? cols[0] : union(...cols);
     });
-    return cols.length === 1 ? cols[0] : union(...cols);
+
+    return solids.length === 1 ? solids[0] : union(...solids);
   }
 
   const groupSolids: Geom3[] = [];
@@ -228,7 +270,7 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
     );
   }
 
-  let solid = groupSolids.length === 1 ? groupSolids[0] : union(...groupSolids);
+  const solid = groupSolids.length === 1 ? groupSolids[0] : union(...groupSolids);
 
   // 减去各凹槽孔洞（从各自分组顶部向下挖 holeDepth）
   const holes: Geom3[] = [];

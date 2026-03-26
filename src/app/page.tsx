@@ -115,6 +115,7 @@ export default function Home() {
           params={steppedModel.params}
           effectiveDimensions={steppedModel.effectiveDimensions}
           isPreviewStale={steppedModel.isPreviewStale}
+          bridgeWarning={steppedModel.bridgeWarning}
           setParams={steppedModel.setParams}
           updateParam={steppedModel.updateParam}
           onAddSlot={steppedModel.addSlot}

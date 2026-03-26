@@ -11,6 +11,7 @@ export interface SlotGroup {
 
 /** 分组轮廓预览（供 2D 编辑器逐组渲染） */
 export interface GroupOutlinePreview {
+  key: string;
   groupId: string;
   color: string;
   /** 该组的高度（mm），用于 2D 编辑器按高度排序渲染（低组先画，高组后画覆盖） */
@@ -82,6 +83,8 @@ export interface SteppedLayoutParams {
   holeDepth: number;
   /** 平滑半径 (mm)，控制底座轮廓的圆滑程度 */
   smoothingRadius: number;
+  /** 为 0 时沿用平滑半径的自然桥接行为；大于 0 时按显式边缘距离阈值断开槽群 */
+  disconnectDistance: number;
   /** 调试开关：输出面朝向/体积日志（仅开发调试） */
   debugOrientation?: boolean;
 }

@@ -31,11 +31,13 @@ import { calculateWeight, calculateSteppedPrice } from "@/lib/pricing";
 import { sendConfigToKV, buildPayload, serializePayload } from "@/lib/edgeone-kv";
 import { useToast } from "@/hooks/useToast";
 import { ConfirmSendDialog } from "@/components/ConfirmSendDialog";
+import type { BridgeWarning } from "@/lib/stepped-connectivity";
 
 interface SteppedPanelProps {
     params: SteppedLayoutParams;
     effectiveDimensions: { width: number; depth: number };
     isPreviewStale: boolean;
+    bridgeWarning: BridgeWarning | null;
     updateParam: <K extends keyof SteppedLayoutParams>(key: K, value: SteppedLayoutParams[K]) => void;
     setParams: React.Dispatch<React.SetStateAction<SteppedLayoutParams>>;
     onAddSlot: (width: number) => void;
@@ -57,6 +59,7 @@ export default function SteppedPanel({
     params,
     effectiveDimensions,
     isPreviewStale,
+    bridgeWarning,
     updateParam,
     setParams,
     onAddSlot,
@@ -238,7 +241,7 @@ export default function SteppedPanel({
             {/* 结构参数 */}
             <div className="iron-panel rounded-sm p-4">
                 <SectionHeader icon={Wrench} title="结构参数" collapsible defaultOpen={false}
-                    summary={`槽距${params.spacing}mm / 凹槽深度${params.holeDepth}mm`}>
+                    summary={`槽距${params.spacing}mm / 凹槽深度${params.holeDepth}mm / 断连${params.disconnectDistance}mm`}>
                     <div className="space-y-4">
                         <ParamSlider
                             label={STEPPED_LIMITS.spacing.label}
@@ -261,6 +264,18 @@ export default function SteppedPanel({
                             onChange={(v) => updateParam("smoothingRadius", v)}
                             unit={STEPPED_LIMITS.smoothingRadius.unit}
                         />
+                        <ParamSlider
+                            label={STEPPED_LIMITS.disconnectDistance.label}
+                            value={params.disconnectDistance}
+                            config={STEPPED_LIMITS.disconnectDistance}
+                            onChange={(v) => updateParam("disconnectDistance", v)}
+                            unit={STEPPED_LIMITS.disconnectDistance.unit}
+                        />
+                        {bridgeWarning && (
+                            <div className="rounded border border-[#7a5a2a] bg-[#2d2416] px-3 py-2 text-xs leading-5 text-[#d8bb74]">
+                                {bridgeWarning.groupName} 当前参数可能会将 {bridgeWarning.separatedClusterCount} 个独立槽群连接为 {bridgeWarning.mergedClusterCount} 个整体底座。你可以调整槽群断连距离、减小平滑半径，或调整槽位位置。
+                            </div>
+                        )}
                     </div>
                 </SectionHeader>
             </div>

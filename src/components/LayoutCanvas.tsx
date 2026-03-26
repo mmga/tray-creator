@@ -892,7 +892,7 @@ export default function LayoutCanvas({
             .join(' ') + ' Z';
           return (
             <path
-              key={go.groupId}
+              key={go.key}
               d={pathData}
               fill="none"
               stroke={go.color}
@@ -937,7 +937,7 @@ export default function LayoutCanvas({
       />
 
       {isEffectiveOversized && (
-        <div className="absolute top-14 lg:top-16 right-3 z-[72] px-3 py-1.5 bg-[#3b1515]/90 border border-[#8b1a1a] rounded text-xs text-[#f2b8b8] font-mono backdrop-blur-sm">
+        <div className="absolute top-14 lg:top-16 right-3 z-72 px-3 py-1.5 bg-[#3b1515]/90 border border-[#8b1a1a] rounded text-xs text-[#f2b8b8] font-mono backdrop-blur-sm">
           有效底板超限: {effectiveBaseplate.width.toFixed(0)} × {effectiveBaseplate.height.toFixed(0)} mm
         </div>
       )}

@@ -19,8 +19,16 @@ import { trayWorkerService } from "@/lib/worker/worker-service";
 import { useToast } from "@/hooks/useToast";
 import type * as THREE from "three";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
-import { generateOutline, type OutlineCircle } from "@/lib/outline-geometry";
+import { generateOutline } from "@/lib/outline-geometry";
 import { downloadParamFile } from "@/lib/param-io";
+import {
+  analyzeBridgeWarning,
+  clusterConnectivityCircles,
+  getConnectivityRadius,
+  getEffectiveBridgeGap,
+  type BridgeWarning,
+  type ConnectivityCircle,
+} from "@/lib/stepped-connectivity";
 
 export interface UseSteppedLayoutReturn {
   params: SteppedLayoutParams;
@@ -62,6 +70,7 @@ export interface UseSteppedLayoutReturn {
   volume: number;
   isGenerating: boolean;
   isPreviewStale: boolean;
+  bridgeWarning: BridgeWarning | null;
   handleGenerate: () => void;
   handleExportSTL: () => void;
   // 2D 分组轮廓预览
@@ -96,11 +105,15 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     setVolume(0);
   }, []);
 
-  const setParams = useCallback<React.Dispatch<React.SetStateAction<SteppedLayoutParams>>>(
+  const setParams = useCallback<
+    React.Dispatch<React.SetStateAction<SteppedLayoutParams>>
+  >(
     (value) => {
       internalSetParams((prev) =>
         typeof value === "function"
-          ? (value as (prevState: SteppedLayoutParams) => SteppedLayoutParams)(prev)
+          ? (value as (prevState: SteppedLayoutParams) => SteppedLayoutParams)(
+              prev,
+            )
           : value,
       );
       invalidatePreview();
@@ -230,13 +243,16 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     [invalidatePreview, pushState],
   );
 
-  const updateSlotPosition = useCallback((id: string, x: number, y: number) => {
-    internalSetParams((prev) => ({
-      ...prev,
-      slots: prev.slots.map((s) => (s.id === id ? { ...s, x, y } : s)),
-    }));
-    invalidatePreview();
-  }, [invalidatePreview]);
+  const updateSlotPosition = useCallback(
+    (id: string, x: number, y: number) => {
+      internalSetParams((prev) => ({
+        ...prev,
+        slots: prev.slots.map((s) => (s.id === id ? { ...s, x, y } : s)),
+      }));
+      invalidatePreview();
+    },
+    [invalidatePreview],
+  );
 
   const updateMultipleSlots = useCallback(
     (updates: { id: string; x: number; y: number }[]) => {
@@ -256,13 +272,16 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     [invalidatePreview, pushState],
   );
 
-  const updateSlotRotation = useCallback((id: string, rotation: number) => {
-    internalSetParams((prev) => ({
-      ...prev,
-      slots: prev.slots.map((s) => (s.id === id ? { ...s, rotation } : s)),
-    }));
-    invalidatePreview();
-  }, [invalidatePreview]);
+  const updateSlotRotation = useCallback(
+    (id: string, rotation: number) => {
+      internalSetParams((prev) => ({
+        ...prev,
+        slots: prev.slots.map((s) => (s.id === id ? { ...s, rotation } : s)),
+      }));
+      invalidatePreview();
+    },
+    [invalidatePreview],
+  );
 
   const duplicateSlots = useCallback(
     (ids: string[]) => {
@@ -493,13 +512,22 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
         `STL 导出失败：${err instanceof Error ? err.message : "未知错误"}`,
       );
     }
-  }, [effectiveDimensions.depth, effectiveDimensions.width, isPreviewStale, toast]);
+  }, [
+    effectiveDimensions.depth,
+    effectiveDimensions.width,
+    isPreviewStale,
+    toast,
+  ]);
 
   // 自动计算分组轮廓预览（每组纳入更高组作上下文，匹配 3D 建模逻辑）
   const outlinePreviewAuto = useMemo<GroupOutlinePreview[] | null>(() => {
     if (params.slots.length === 0 || params.groups.length === 0) return null;
 
     const result: GroupOutlinePreview[] = [];
+    const effectiveBridgeGap = getEffectiveBridgeGap(
+      params.smoothingRadius,
+      params.disconnectDistance,
+    );
 
     for (const group of params.groups) {
       const ownSlots = params.slots.filter((s) => s.groupId === group.id);
@@ -513,30 +541,99 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
         return otherGroup && otherGroup.bottomHeight > group.bottomHeight;
       });
 
-      const circles: OutlineCircle[] = [...ownSlots, ...higherSlots].map(
+      const connectivityCircles: ConnectivityCircle[] = [...ownSlots, ...higherSlots].map(
         (slot) => ({
+          id: slot.id,
           cx: slot.x,
           cy: slot.y,
-          rOuter:
-            (slot.width + getSlotTolerance(slot.width)) / 2 + params.spacing,
+          rOuter: getConnectivityRadius(
+            slot.width,
+            slot.height,
+            params.spacing,
+            getSlotTolerance(slot.width),
+            getSlotTolerance(slot.height),
+          ),
         }),
       );
 
-      const outline = generateOutline(circles, params.smoothingRadius, 64);
-      if (outline && outline.points.length >= 3) {
-        result.push({
-          groupId: group.id,
-          color: group.color,
-          bottomHeight: group.bottomHeight,
-          points: outline.points,
-        });
-      }
+      const clusters = clusterConnectivityCircles(
+        connectivityCircles,
+        effectiveBridgeGap,
+      );
+
+      clusters.forEach((cluster, clusterIndex) => {
+        const clusterKey = cluster
+          .map((circle) => circle.id)
+          .sort()
+          .join("-") || `${group.id}-${clusterIndex}`;
+        const outline = generateOutline(
+          cluster.map((circle) => ({
+            cx: circle.cx,
+            cy: circle.cy,
+            rOuter: circle.rOuter,
+          })),
+          params.smoothingRadius,
+          64,
+        );
+        if (outline && outline.points.length >= 3) {
+          result.push({
+            key: `${group.id}-${clusterKey}`,
+            groupId: group.id,
+            color: group.color,
+            bottomHeight: group.bottomHeight,
+            points: outline.points,
+          });
+        }
+      });
     }
 
     // 按高度升序排列：低组先渲染，高组后渲染覆盖，重叠处显示最高组颜色
     result.sort((a, b) => a.bottomHeight - b.bottomHeight);
 
     return result.length > 0 ? result : null;
+  }, [params]);
+
+  const bridgeWarning = useMemo<BridgeWarning | null>(() => {
+    const groupsByHeight = [...params.groups].sort(
+      (a, b) => a.bottomHeight - b.bottomHeight,
+    );
+
+    for (const group of groupsByHeight) {
+      const ownSlots = params.slots.filter((slot) => slot.groupId === group.id);
+      if (ownSlots.length === 0) continue;
+
+      const higherSlots = params.slots.filter((slot) => {
+        if (slot.groupId === group.id) return false;
+        const otherGroup = params.groups.find((candidate) => candidate.id === slot.groupId);
+        return Boolean(otherGroup && otherGroup.bottomHeight > group.bottomHeight);
+      });
+
+      const circles: ConnectivityCircle[] = [...ownSlots, ...higherSlots].map((slot) => ({
+        id: slot.id,
+        cx: slot.x,
+        cy: slot.y,
+        rOuter: getConnectivityRadius(
+          slot.width,
+          slot.height,
+          params.spacing,
+          getSlotTolerance(slot.width),
+          getSlotTolerance(slot.height),
+        ),
+      }));
+
+      const warning = analyzeBridgeWarning(
+        circles,
+        params.smoothingRadius,
+        params.disconnectDistance,
+        { groupId: group.id, groupName: group.name },
+      );
+
+      if (warning) {
+        return warning;
+      }
+    }
+
+    return null;
   }, [params]);
 
   return {
@@ -564,6 +661,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     volume,
     isGenerating,
     isPreviewStale,
+    bridgeWarning,
     handleGenerate,
     handleExportSTL,
     outlinePreview: outlinePreviewAuto,
