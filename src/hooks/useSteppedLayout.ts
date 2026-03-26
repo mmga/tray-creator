@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/useToast";
 import type * as THREE from "three";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import { generateOutline, type OutlineCircle } from "@/lib/outline-geometry";
+import { downloadParamFile } from "@/lib/param-io";
 
 export interface UseSteppedLayoutReturn {
   params: SteppedLayoutParams;
@@ -484,17 +485,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
       URL.revokeObjectURL(url);
       // 同时下载 JSON 参数文件
       const jsonFilename = filename.replace(/\.stl$/i, ".json");
-      const jsonBlob = new Blob([JSON.stringify(paramsRef.current, null, 2)], {
-        type: "application/json",
-      });
-      const jsonUrl = URL.createObjectURL(jsonBlob);
-      const jsonLink = document.createElement("a");
-      jsonLink.href = jsonUrl;
-      jsonLink.download = jsonFilename;
-      document.body.appendChild(jsonLink);
-      jsonLink.click();
-      document.body.removeChild(jsonLink);
-      URL.revokeObjectURL(jsonUrl);
+      downloadParamFile("stepped", currentParams, jsonFilename);
     } catch (err) {
       console.error("STL导出失败:", err);
       toast(

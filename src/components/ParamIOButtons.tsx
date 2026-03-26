@@ -1,16 +1,17 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, Share2 } from "lucide-react";
 import { exportParams, importParams } from "@/lib/param-io";
 import { useToast } from "@/hooks/useToast";
-import type { AppMode } from "@/types/custom-tray";
+import type { AppMode, CustomLayoutParams, SteppedLayoutParams } from "@/types/custom-tray";
+import type { TrayParams } from "@/types/tray";
 import { isAdmin } from "@/lib/permissions";
 
 interface ParamIOButtonsProps {
     mode: AppMode;
-    params: Record<string, unknown>;
+    params: TrayParams | CustomLayoutParams | SteppedLayoutParams;
     onImport: (params: unknown) => void;
 }
 
@@ -19,7 +20,7 @@ export function ParamIOButtons({ mode, params, onImport }: ParamIOButtonsProps) 
     const { toast } = useToast();
 
     const handleExport = () => {
-        exportParams(mode, params as any);
+        exportParams(mode, params);
     };
 
     const handleImportClick = () => {

@@ -309,7 +309,7 @@ export default function ParameterPanel({
         </Button>
         <ParamIOButtons
           mode="grid"
-          params={params as unknown as Record<string, unknown>}
+          params={params}
           onImport={(p) => setParams(p as TrayParams)}
         />
       </div>

@@ -328,7 +328,7 @@ export default function CustomPanel({
         </Button>
         <ParamIOButtons
           mode="custom"
-          params={params as unknown as Record<string, unknown>}
+          params={params}
           onImport={(p) => setParams(p as CustomLayoutParams)}
         />
       </div>

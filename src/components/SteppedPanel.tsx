@@ -406,7 +406,7 @@ export default function SteppedPanel({
                 </Button>
                 <ParamIOButtons
                     mode="stepped"
-                    params={params as unknown as Record<string, unknown>}
+                    params={params}
                     onImport={(p) => setParams(p as SteppedLayoutParams)}
                 />
             </div>

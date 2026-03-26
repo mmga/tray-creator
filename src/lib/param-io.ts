@@ -16,43 +16,68 @@ import {
 // 参数导入导出工具
 // ═══════════════════════════════════════════
 
+export type ExportableParams =
+  | TrayParams
+  | CustomLayoutParams
+  | SteppedLayoutParams;
+
 interface ParamFile {
   version: number;
   mode: AppMode;
-  params: TrayParams | CustomLayoutParams | SteppedLayoutParams;
+  params: ExportableParams;
 }
 
 const CURRENT_VERSION = 1;
 
 // ── 导出 ──────────────────────────────────
 
-/** 将参数序列化为 JSON 并触发浏览器下载 */
-export function exportParams(
+function precisionReplacer(_key: string, value: unknown) {
+  if (typeof value === "number") {
+    return Math.round(value * 1000) / 1000;
+  }
+  return value;
+}
+
+export function buildParamFile(
   mode: AppMode,
-  params: TrayParams | CustomLayoutParams | SteppedLayoutParams,
+  params: ExportableParams,
+): ParamFile {
+  return { version: CURRENT_VERSION, mode, params };
+}
+
+export function serializeParamFile(
+  mode: AppMode,
+  params: ExportableParams,
+): string {
+  return JSON.stringify(buildParamFile(mode, params), precisionReplacer, 2);
+}
+
+export function createParamBlob(mode: AppMode, params: ExportableParams): Blob {
+  return new Blob([serializeParamFile(mode, params)], {
+    type: "application/json",
+  });
+}
+
+export function downloadParamFile(
+  mode: AppMode,
+  params: ExportableParams,
+  filename: string = `tray-${mode}-config.json`,
 ) {
-  const data: ParamFile = { version: CURRENT_VERSION, mode, params };
-  // 使用 replacer 函数将导出的数字截断至最多 3 位小数，避免浮点数精度溢出（如 27.400000000000006 => 27.4）
-  const json = JSON.stringify(
-    data,
-    (key, value) => {
-      if (typeof value === "number") {
-        return Math.round(value * 1000) / 1000;
-      }
-      return value;
-    },
-    2,
-  );
-  const blob = new Blob([json], { type: "application/json" });
+  const blob = createParamBlob(mode, params);
   const url = URL.createObjectURL(blob);
 
   const a = document.createElement("a");
   a.href = url;
-  a.download = `tray-${mode}-config.json`;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+/** 将参数序列化为 JSON 并触发浏览器下载 */
+export function exportParams(mode: AppMode, params: ExportableParams) {
+  downloadParamFile(mode, params);
 }
 
 // ── 导入 ──────────────────────────────────
