@@ -172,6 +172,7 @@ export default function Home() {
         <TabsContent value="2d" className="absolute inset-0 m-0 p-0 data-[state=inactive]:hidden">
           <div className="w-full h-full border-t border-[#2e2a24]">
             <LayoutCanvas
+              key={mode}
               params={model.params}
               onUpdateSlot={model.updateSlotPosition}
               onRemoveSlot={model.removeSlot}
@@ -294,6 +295,7 @@ export default function Home() {
           {(mode === "custom" || mode === "stepped") && (
             <div className={`absolute inset-0 bg-[#0a0908] transition-opacity duration-200 ${mobileTab === '2d' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
               <LayoutCanvas
+                key={mode}
                 params={mode === "stepped" ? steppedModel.params : customModel.params}
                 onUpdateSlot={mode === "stepped" ? steppedModel.updateSlotPosition : customModel.updateSlotPosition}
                 onRemoveSlot={mode === "stepped" ? steppedModel.removeSlot : customModel.removeSlot}

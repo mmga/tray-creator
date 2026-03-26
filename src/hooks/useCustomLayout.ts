@@ -303,27 +303,30 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     setIsPreviewStale(true);
   }, []);
 
-  const insertSlots = useCallback((slotsToInsert: SymmetryInsertSlot[]) => {
-    if (slotsToInsert.length === 0) return;
+  const insertSlots = useCallback(
+    (slotsToInsert: SymmetryInsertSlot[]) => {
+      if (slotsToInsert.length === 0) return;
 
-    setParams((prev) => {
-      pushState(prev);
-      const newSlots: FreeSlot[] = slotsToInsert.map((slot) => ({
-        id: crypto.randomUUID(),
-        x: slot.x,
-        y: slot.y,
-        shape: slot.shape,
-        width: slot.width,
-        height: slot.height,
-        rotation: slot.rotation,
-      }));
-      return {
-        ...prev,
-        slots: [...prev.slots, ...newSlots],
-      };
-    });
-    setIsPreviewStale(true);
-  }, [pushState]);
+      setParams((prev) => {
+        pushState(prev);
+        const newSlots: FreeSlot[] = slotsToInsert.map((slot) => ({
+          id: crypto.randomUUID(),
+          x: slot.x,
+          y: slot.y,
+          shape: slot.shape,
+          width: slot.width,
+          height: slot.height,
+          rotation: slot.rotation,
+        }));
+        return {
+          ...prev,
+          slots: [...prev.slots, ...newSlots],
+        };
+      });
+      setIsPreviewStale(true);
+    },
+    [pushState],
+  );
 
   /**
    * 复制凹槽

@@ -1,13 +1,18 @@
 "use client";
 
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState, useCallback, useEffect, useMemo } from "react";
 import type { FreeSlot, CustomLayoutParams, SteppedLayoutParams, GroupOutlinePreview, SteppedSlot } from "@/types/custom-tray";
 import type { OutlineData } from "@/lib/outline-geometry";
 import { getSlotTolerance, MAX_BUILD_SIZE } from "@/lib/config";
 import { getEllipsePolygon, polygonsIntersect } from "@/lib/collision";
 import AlignmentToolbar from "./AlignmentToolbar";
 import { Trash2, Undo2, Copy, XCircle } from "lucide-react";
-import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
+import {
+  resolveMirrorAxis,
+  type SymmetryAxisSource,
+  type SymmetryInsertSlot,
+  type SymmetrySlot,
+} from "@/lib/layout-symmetry";
 
 import { useCanvasZoom } from "../hooks/useCanvasZoom";
 import { useCanvasKeyboard } from "../hooks/useCanvasKeyboard";
@@ -55,6 +60,8 @@ export default function LayoutCanvas({
   // Hoisted state (must be before hooks to avoid reference errors)
   const [isRotating, setIsRotating] = useState(false);
   const [showHints, setShowHints] = useState(false);
+  const [symmetryAxisSource, setSymmetryAxisSource] =
+    useState<SymmetryAxisSource>("selection");
 
   // Refs for DOM and logic
   const svgRef = useRef<SVGSVGElement>(null);
@@ -96,6 +103,11 @@ export default function LayoutCanvas({
   });
 
   const { trayWidth, trayDepth, slots, spacing } = params;
+  const effectiveSelectedIds = useMemo<Set<string>>(
+    () => new Set(slots.filter((slot) => selectedIds.has(slot.id)).map((slot) => slot.id)),
+    [selectedIds, slots],
+  );
+  const selectedSymmetrySlots = slots.filter((slot) => effectiveSelectedIds.has(slot.id)) as SymmetrySlot[];
   const boundarySpacing = 'boundarySpacingIndependent' in params && params.boundarySpacingIndependent
     ? (params as CustomLayoutParams).boundarySpacing
     : spacing;
@@ -104,7 +116,7 @@ export default function LayoutCanvas({
   const onUpdateSlotRef = useRef(onUpdateSlot);
   const onUndoRef = useRef(onUndo);
   const onSaveSnapshotRef = useRef(onSaveSnapshot);
-  selectedIdsRef.current = selectedIds;
+  selectedIdsRef.current = effectiveSelectedIds;
   slotsRef.current = params.slots;
   onUpdateSlotRef.current = onUpdateSlot;
   onUndoRef.current = onUndo;
@@ -112,8 +124,24 @@ export default function LayoutCanvas({
 
   // Notify parent of selection changes (for stepped mode per-slot editing)
   useEffect(() => {
-    onSelectionChange?.(Array.from(selectedIds));
-  }, [selectedIds, onSelectionChange]);
+    onSelectionChange?.(Array.from(effectiveSelectedIds));
+  }, [effectiveSelectedIds, onSelectionChange]);
+
+  useEffect(() => {
+    const validIds = new Set(slots.map((slot) => slot.id));
+    setSelectedIds((prev) => {
+      const next = new Set(Array.from(prev).filter((id) => validIds.has(id)));
+      return next.size === prev.size ? prev : next;
+    });
+
+    if (draggingId && !validIds.has(draggingId)) {
+      setDraggingId(null);
+    }
+
+    if (hoveredId && !validIds.has(hoveredId)) {
+      setHoveredId(null);
+    }
+  }, [draggingId, hoveredId, slots]);
 
   // Helper to handle multiple updates
   const handleUpdateSlots = useCallback((updates: { id: string; x: number; y: number; rotation?: number }[]) => {
@@ -628,6 +656,25 @@ export default function LayoutCanvas({
     effectiveBaseplate.width > MAX_BUILD_SIZE ||
     effectiveBaseplate.height > MAX_BUILD_SIZE;
 
+  const symmetryAxes = selectedSymmetrySlots.length > 0
+    ? {
+      vertical: resolveMirrorAxis(
+        selectedSymmetrySlots,
+        trayWidth,
+        trayDepth,
+        symmetryAxisSource,
+        "mirror-x",
+      ),
+      horizontal: resolveMirrorAxis(
+        selectedSymmetrySlots,
+        trayWidth,
+        trayDepth,
+        symmetryAxisSource,
+        "mirror-y",
+      ),
+    }
+    : null;
+
   return (
     <div
       ref={parentRef}
@@ -640,9 +687,12 @@ export default function LayoutCanvas({
 
       <AlignmentToolbar
         selectedIds={selectedIds}
+        enableCopyPreview={!draggingId && !isRotating}
         slots={slots as Array<FreeSlot | SteppedSlot>}
         onUpdateSlots={handleUpdateSlots}
         onInsertSlots={onInsertSlots}
+        axisSource={symmetryAxisSource}
+        onAxisSourceChange={setSymmetryAxisSource}
         spacing={spacing}
         trayWidth={trayWidth}
         trayDepth={trayDepth}
@@ -700,6 +750,33 @@ export default function LayoutCanvas({
             rx={Math.max(0, Math.min('cornerRadius' in params ? params.cornerRadius : 0, effectiveBaseplate.width / 2, effectiveBaseplate.height / 2))}
             strokeOpacity={0.95}
           />
+        )}
+
+        {symmetryAxes && (
+          <>
+            <line
+              data-symmetry-axis="mirror-x"
+              x1={symmetryAxes.vertical}
+              y1={0}
+              x2={symmetryAxes.vertical}
+              y2={trayDepth}
+              stroke="#f59e0b"
+              strokeWidth={1 / zoom}
+              strokeDasharray={`${6 / zoom} ${4 / zoom}`}
+              strokeOpacity={0.7}
+            />
+            <line
+              data-symmetry-axis="mirror-y"
+              x1={0}
+              y1={trayDepth - symmetryAxes.horizontal}
+              x2={trayWidth}
+              y2={trayDepth - symmetryAxes.horizontal}
+              stroke="#f59e0b"
+              strokeWidth={1 / zoom}
+              strokeDasharray={`${6 / zoom} ${4 / zoom}`}
+              strokeOpacity={0.45}
+            />
+          </>
         )}
 
         {/* Slots */}
@@ -961,15 +1038,15 @@ export default function LayoutCanvas({
       />
 
       {/* 移动端浮动操作栏 - 选中凹槽时显示 */}
-      {selectedIds.size > 0 && (
+      {effectiveSelectedIds.size > 0 && (
         <div className="lg:hidden absolute bottom-14 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-neutral-800/95 backdrop-blur-sm border border-neutral-700 rounded-full shadow-xl px-3 py-1.5 z-40 animate-fade-in">
-          <span className="text-[10px] text-neutral-400 font-mono mr-1">{selectedIds.size}选中</span>
+          <span className="text-[10px] text-neutral-400 font-mono mr-1">{effectiveSelectedIds.size}选中</span>
 
           {onDuplicateSlots && (
             <button
               className="p-2 rounded-full hover:bg-neutral-700/60 text-neutral-300 active:text-white transition-colors"
               onClick={() => {
-                onDuplicateSlots(Array.from(selectedIds));
+                onDuplicateSlots(Array.from(effectiveSelectedIds));
               }}
             >
               <Copy size={18} />
@@ -988,7 +1065,7 @@ export default function LayoutCanvas({
           <button
             className="p-2 rounded-full hover:bg-red-900/60 text-red-400 active:text-red-300 transition-colors"
             onClick={() => {
-              selectedIds.forEach((id) => onRemoveSlot(id));
+              effectiveSelectedIds.forEach((id) => onRemoveSlot(id));
               setSelectedIds(new Set());
             }}
           >

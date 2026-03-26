@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlignLeft, AlignCenterHorizontal, AlignRight,
   AlignStartVertical, AlignCenterVertical, AlignEndVertical,
@@ -29,6 +29,50 @@ const roundToStep = (val: number) => Math.round(val / STEP) * STEP;
 type AlignType = 'left' | 'center-x' | 'right' | 'top' | 'center-y' | 'bottom';
 type ArrangeType = 'row' | 'column';
 type Update = { id: string; x: number; y: number; rotation?: number };
+const GEOMETRY_EPSILON = 0.05;
+
+function buildCollisionPolygon(
+  slot: Pick<FreeSlot, "x" | "y" | "width" | "height" | "rotation">,
+  spacing: number,
+) {
+  const margin = spacing / 2 + getSlotTolerance(slot.width) / 2;
+  return getEllipsePolygon(
+    slot.x,
+    slot.y,
+    slot.width,
+    slot.height,
+    slot.rotation,
+    margin,
+    12,
+  );
+}
+
+function isSameGeometry(
+  left: Pick<FreeSlot, "x" | "y" | "width" | "height" | "rotation" | "shape">,
+  right: Pick<FreeSlot, "x" | "y" | "width" | "height" | "rotation" | "shape">,
+) {
+  const within = (a: number, b: number) => Math.abs(a - b) < GEOMETRY_EPSILON;
+  return (
+    left.shape === right.shape &&
+    within(left.x, right.x) &&
+    within(left.y, right.y) &&
+    within(left.width, right.width) &&
+    within(left.height, right.height) &&
+    within(left.rotation, right.rotation)
+  );
+}
+
+function hasSpacingCollision(
+  candidate: SymmetryInsertSlot,
+  others: Array<FreeSlot | SteppedSlot | SymmetryInsertSlot>,
+  spacing: number,
+) {
+  const candidatePolygon = buildCollisionPolygon(candidate, spacing);
+  return others.some((other) => {
+    const otherPolygon = buildCollisionPolygon(other, spacing);
+    return polygonsIntersect(candidatePolygon, otherPolygon);
+  });
+}
 
 /** 计算旋转椭圆的 AABB 半尺寸（含公差） */
 function getSlotBounds(slot: FreeSlot) {
@@ -48,16 +92,31 @@ interface AlignmentToolbarProps {
   slots: Array<FreeSlot | SteppedSlot>;
   onUpdateSlots: (updates: Update[]) => void;
   onInsertSlots?: (slots: SymmetryInsertSlot[]) => void;
+  enableCopyPreview: boolean;
+  axisSource: SymmetryAxisSource;
+  onAxisSourceChange: (source: SymmetryAxisSource) => void;
   spacing: number;
   trayWidth: number;
   trayDepth: number;
 }
 
-export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, onInsertSlots, spacing, trayWidth, trayDepth }: AlignmentToolbarProps) {
-  const [axisSource, setAxisSource] = useState<SymmetryAxisSource>("selection");
+export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, onInsertSlots, enableCopyPreview, axisSource, onAxisSourceChange, spacing, trayWidth, trayDepth }: AlignmentToolbarProps) {
   const { toast } = useToast();
-  const hasSelection = selectedIds.size > 0;
-  const hasMultiple = selectedIds.size > 1;
+  const [showCopyPreview, setShowCopyPreview] = useState(false);
+  const [copyPreviews, setCopyPreviews] = useState<{
+    mirrorX: ReturnType<typeof evaluateMirrorCopy> | null;
+    mirrorY: ReturnType<typeof evaluateMirrorCopy> | null;
+  }>({ mirrorX: null, mirrorY: null });
+  const selected = useMemo(
+    () => slots.filter((slot) => selectedIds.has(slot.id)) as SymmetrySlot[],
+    [selectedIds, slots],
+  );
+  const unselected = useMemo(
+    () => slots.filter((slot) => !selectedIds.has(slot.id)),
+    [selectedIds, slots],
+  );
+  const hasSelection = selected.length > 0;
+  const hasMultiple = selected.length > 1;
 
   /** 获取选中项的总包围盒 */
   const getSelectionBounds = (selected: FreeSlot[]) => {
@@ -77,11 +136,6 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, on
     return { minX, maxX, minY, maxY };
   };
 
-  const getSelected = (): SymmetrySlot[] => {
-    const selected = slots.filter(s => selectedIds.has(s.id));
-    return selected as SymmetrySlot[];
-  };
-
   const getSelectionCenter = (selected: FreeSlot[]) => {
     const bounds = getSelectionBounds(selected);
     if (!bounds) return null;
@@ -94,7 +148,6 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, on
   // ── 选中项之间的相对对齐 ──────────
 
   const handleAlign = (type: AlignType) => {
-    const selected = getSelected();
     if (selected.length < 2) return;
 
     // 仅在需要时计算完整包围盒
@@ -147,7 +200,6 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, on
   };
 
   const handleArrange = (type: ArrangeType) => {
-    const selected = getSelected();
     if (selected.length < 2) return;
 
     const center = getSelectionCenter(selected);
@@ -186,7 +238,6 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, on
   };
 
   const handleMirrorMove = (mode: SymmetryMode) => {
-    const selected = getSelected();
     if (selected.length === 0) return;
 
     const updates = buildMirrorMoveUpdates(
@@ -219,6 +270,9 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, on
         trayWidth,
         trayDepth,
       );
+      const collisionCount = nextSlots.reduce((count, nextSlot) => {
+        return count + (hasSpacingCollision(nextSlot, unselected, spacing) ? 1 : 0);
+      }, 0);
 
       if (outOfBoundsCount > 0) {
         toast(
@@ -226,85 +280,72 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, on
           `镜像后有 ${outOfBoundsCount} 个槽位超出托盘边界，请继续调整。`,
         );
       }
+
+      if (collisionCount > 0) {
+        toast(
+          "info",
+          `镜像后有 ${collisionCount} 个槽位会与现有布局产生间距冲突。`,
+        );
+      }
     }
   };
 
+  const evaluateMirrorCopy = useCallback(
+    (mode: SymmetryMode) => {
+      const inserts = buildMirrorInsertSlots(
+        selected,
+        trayWidth,
+        trayDepth,
+        axisSource,
+        mode,
+      );
+
+      const acceptedInserts: SymmetryInsertSlot[] = [];
+      let skippedDuplicateCount = 0;
+      let skippedCollisionCount = 0;
+
+      inserts.forEach((insertSlot) => {
+        const isDuplicate =
+          slots.some((existing) => isSameGeometry(insertSlot, existing)) ||
+          acceptedInserts.some((existing) => isSameGeometry(insertSlot, existing));
+
+        if (isDuplicate) {
+          skippedDuplicateCount += 1;
+          return;
+        }
+
+        if (hasSpacingCollision(insertSlot, [...slots, ...acceptedInserts], spacing)) {
+          skippedCollisionCount += 1;
+          return;
+        }
+
+        acceptedInserts.push(insertSlot);
+      });
+
+      return {
+        acceptedInserts,
+        skippedDuplicateCount,
+        skippedCollisionCount,
+        outOfBoundsCount: countOutOfBoundsSlots(
+          acceptedInserts,
+          trayWidth,
+          trayDepth,
+        ),
+      };
+    },
+    [axisSource, selected, slots, spacing, trayDepth, trayWidth],
+  );
+
   const handleMirrorCopy = (mode: SymmetryMode) => {
     if (!onInsertSlots) return;
-
-    const selected = getSelected();
     if (selected.length === 0) return;
 
-    const inserts = buildMirrorInsertSlots(
-      selected,
-      trayWidth,
-      trayDepth,
-      axisSource,
-      mode,
-    );
-
-    if (inserts.length === 0) return;
-
-    const buildCollisionPolygon = (slot: Pick<FreeSlot, "x" | "y" | "width" | "height" | "rotation">) => {
-      const margin = spacing / 2 + getSlotTolerance(slot.width) / 2;
-      return getEllipsePolygon(
-        slot.x,
-        slot.y,
-        slot.width,
-        slot.height,
-        slot.rotation,
-        margin,
-        12,
-      );
-    };
-
-    const isSameGeometry = (
-      left: Pick<FreeSlot, "x" | "y" | "width" | "height" | "rotation" | "shape">,
-      right: Pick<FreeSlot, "x" | "y" | "width" | "height" | "rotation" | "shape">,
-    ) => {
-      const within = (a: number, b: number) => Math.abs(a - b) < 0.05;
-      return (
-        left.shape === right.shape &&
-        within(left.x, right.x) &&
-        within(left.y, right.y) &&
-        within(left.width, right.width) &&
-        within(left.height, right.height) &&
-        within(left.rotation, right.rotation)
-      );
-    };
-
-    const hasSpacingCollision = (
-      candidate: SymmetryInsertSlot,
-      others: Array<FreeSlot | SteppedSlot | SymmetryInsertSlot>,
-    ) => {
-      const candidatePolygon = buildCollisionPolygon(candidate);
-      return others.some((other) => {
-        const otherPolygon = buildCollisionPolygon(other);
-        return polygonsIntersect(candidatePolygon, otherPolygon);
-      });
-    };
-
-    const acceptedInserts: SymmetryInsertSlot[] = [];
-    let skippedDuplicateCount = 0;
-    let skippedCollisionCount = 0;
-
-    inserts.forEach((insertSlot) => {
-      const isDuplicate =
-        slots.some((existing) => isSameGeometry(insertSlot, existing)) ||
-        acceptedInserts.some((existing) => isSameGeometry(insertSlot, existing));
-
-      if (isDuplicate) {
-        skippedDuplicateCount += 1;
-        return;
-      }
-
-      if (hasSpacingCollision(insertSlot, [...slots, ...acceptedInserts])) {
-        skippedCollisionCount += 1;
-        return;
-      }
-
-      acceptedInserts.push(insertSlot);
-    });
+    const {
+      acceptedInserts,
+      skippedDuplicateCount,
+      skippedCollisionCount,
+      outOfBoundsCount,
+    } = evaluateMirrorCopy(mode);
 
     if (acceptedInserts.length === 0) {
       toast("info", "镜像复制没有生成新的有效槽位。");
@@ -324,12 +365,6 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, on
       toast("info", `镜像复制已自动跳过：${parts.join("，")}。`);
     }
 
-    const outOfBoundsCount = countOutOfBoundsSlots(
-      acceptedInserts,
-      trayWidth,
-      trayDepth,
-    );
-
     if (outOfBoundsCount > 0) {
       toast(
         "info",
@@ -344,6 +379,52 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, on
   const tooltipClass = "absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-black text-xs text-white rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity z-50 hidden lg:block";
 
   const axisBtnClass = "h-7 px-2 rounded text-[10px] text-neutral-300 transition-colors border border-neutral-700 hover:border-neutral-500 hover:text-white";
+  const previewTagClass = "hidden xl:inline-flex items-center rounded border border-neutral-700 bg-neutral-900/80 px-2 py-1 text-[10px] text-neutral-300";
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 1280px)");
+    const syncVisibility = () => setShowCopyPreview(mediaQuery.matches);
+
+    syncVisibility();
+    mediaQuery.addEventListener("change", syncVisibility);
+    return () => mediaQuery.removeEventListener("change", syncVisibility);
+  }, []);
+
+  useEffect(() => {
+    if (!showCopyPreview || !enableCopyPreview || !hasSelection) {
+      startTransition(() => {
+        setCopyPreviews({ mirrorX: null, mirrorY: null });
+      });
+      return;
+    }
+
+    startTransition(() => {
+      setCopyPreviews({
+        mirrorX: evaluateMirrorCopy("mirror-x"),
+        mirrorY: evaluateMirrorCopy("mirror-y"),
+      });
+    });
+  }, [enableCopyPreview, evaluateMirrorCopy, hasSelection, showCopyPreview]);
+
+  const formatCopyPreview = (
+    label: string,
+    preview: ReturnType<typeof evaluateMirrorCopy> | null,
+  ) => {
+    if (!preview) return `${label}预检`;
+
+    const parts: string[] = [];
+    if (preview.skippedDuplicateCount > 0) {
+      parts.push(`重合${preview.skippedDuplicateCount}`);
+    }
+    if (preview.skippedCollisionCount > 0) {
+      parts.push(`冲突${preview.skippedCollisionCount}`);
+    }
+    if (preview.outOfBoundsCount > 0) {
+      parts.push(`越界${preview.outOfBoundsCount}`);
+    }
+
+    return parts.length > 0 ? `${label}${parts.join("/")}` : `${label}安全`;
+  };
 
   return (
     <div className="absolute top-2 lg:top-4 left-1/2 transform -translate-x-1/2 max-w-[calc(100vw-1rem)] flex items-center bg-neutral-800/90 backdrop-blur-sm border border-neutral-700 rounded-lg shadow-xl px-1 lg:px-2 py-1 lg:py-1.5 z-50 overflow-x-auto scrollbar-none">
@@ -401,14 +482,14 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, on
       <div className="flex items-center gap-1 mr-1 lg:mr-2 pr-1 lg:pr-2 border-r border-neutral-700 shrink-0">
         <button
           className={`${axisBtnClass} ${axisSource === 'selection' ? 'bg-neutral-700 text-white border-neutral-500' : ''}`}
-          onClick={() => setAxisSource('selection')}
+          onClick={() => onAxisSourceChange('selection')}
           disabled={!hasSelection}
         >
           选区轴
         </button>
         <button
           className={`${axisBtnClass} ${axisSource === 'tray' ? 'bg-neutral-700 text-white border-neutral-500' : ''}`}
-          onClick={() => setAxisSource('tray')}
+          onClick={() => onAxisSourceChange('tray')}
         >
           托盘轴
         </button>
@@ -437,8 +518,17 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, on
         </button>
       </div>
 
+      <div className="hidden xl:flex items-center gap-1 mr-1 lg:mr-2 pr-1 lg:pr-2 border-r border-neutral-700 shrink-0">
+        <span className={previewTagClass} data-symmetry-preview="mirror-x">
+          {formatCopyPreview("左右", copyPreviews.mirrorX)}
+        </span>
+        <span className={previewTagClass} data-symmetry-preview="mirror-y">
+          {formatCopyPreview("上下", copyPreviews.mirrorY)}
+        </span>
+      </div>
+
       <div className="ml-1 lg:ml-2 text-[10px] lg:text-xs text-neutral-500 font-mono shrink-0">
-        {selectedIds.size > 0 ? `${selectedIds.size} 选中` : '未选择'}
+        {selected.length > 0 ? `${selected.length} 选中` : '未选择'}
       </div>
     </div>
   );
