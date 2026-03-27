@@ -312,11 +312,6 @@
     animation: forge-pulse 3s ease-in-out infinite;
   }
 
-  /* 适配刘海屏底部安全区 */
-  .safe-area-bottom {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-
   /* dvh 不支持时回退到 -webkit-fill-available */
   @supports not (height: 100dvh) {
     .h-dvh {
