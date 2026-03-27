@@ -19,7 +19,6 @@ interface AlignmentToolbarProps {
   trayDepth: number;
   activeTabId: string | null;
   onActiveTabChange: (tabId: string | null) => void;
-  variant?: "desktop" | "mobile";
 }
 
 type Update = { id: string; x: number; y: number; rotation?: number };
@@ -37,7 +36,6 @@ export default function AlignmentToolbar({
   trayDepth,
   activeTabId,
   onActiveTabChange,
-  variant = "desktop",
 }: AlignmentToolbarProps) {
   const selected = useMemo(
     () => selectedSlots ?? (slots.filter((slot) => selectedIds.has(slot.id)) as SymmetrySlot[]),
@@ -82,7 +80,6 @@ export default function AlignmentToolbar({
       activeTabId={activeTabId}
       onTabChange={onActiveTabChange}
       selectionCount={selected.length}
-      variant={variant}
     />
   );
 }

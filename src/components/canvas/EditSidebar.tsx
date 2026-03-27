@@ -16,11 +16,6 @@ interface EditSidebarProps {
   activeTabId: string | null;
   onTabChange: (tabId: string | null) => void;
   selectionCount: number;
-  variant: "desktop" | "mobile";
-}
-
-function getSelectionLabel(selectionCount: number) {
-  return selectionCount > 0 ? `已选 ${selectionCount} 个` : "未选择凹槽";
 }
 
 export default function EditSidebar({
@@ -28,59 +23,8 @@ export default function EditSidebar({
   activeTabId,
   onTabChange,
   selectionCount,
-  variant,
 }: EditSidebarProps) {
   const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? null;
-
-  if (variant === "mobile") {
-    return (
-      <div className="border-b border-[#2e2a24] bg-[#100d0a] text-foreground">
-        <div className="flex items-center gap-2 overflow-x-auto px-2 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = tab.id === activeTabId;
-
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                aria-pressed={isActive}
-                onClick={() => onTabChange(isActive ? null : tab.id)}
-                className={`inline-flex shrink-0 items-center gap-2 rounded-sm border px-3 py-2 text-xs transition-colors ${isActive
-                  ? "border-[#8e6f3a] bg-[#241b11] text-[#f3dfb6]"
-                  : "border-[#3a3025] bg-[#15110d] text-[#ccbda4] hover:border-[#5a4b36] hover:text-white"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                <span className="font-semibold tracking-[0.16em] uppercase">{tab.label}</span>
-              </button>
-            );
-          })}
-
-          <div className="ml-auto shrink-0 rounded-sm border border-[#3a3025] bg-[#17120f] px-2.5 py-2 text-[10px] font-mono text-[#ccbda4]">
-            {selectionCount > 0 ? `${selectionCount} sel` : "idle"}
-          </div>
-        </div>
-
-        {activeTab && (
-          <div className="border-t border-[#2e2a24] px-3 py-3">
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <div>
-                <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#d8c29a]">
-                  {activeTab.label}
-                </div>
-                <div className="mt-1 text-xs text-muted-foreground">{activeTab.summary}</div>
-              </div>
-              <div className="rounded-sm border border-[#40372b] bg-[#17120f] px-2 py-1 text-[11px] font-mono text-[#ccbda4]">
-                {getSelectionLabel(selectionCount)}
-              </div>
-            </div>
-            {activeTab.content}
-          </div>
-        )}
-      </div>
-    );
-  }
 
   return (
     <div className="flex h-full min-h-0 bg-[#120f0c] text-foreground">
