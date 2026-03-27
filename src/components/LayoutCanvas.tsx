@@ -34,7 +34,7 @@ interface LayoutCanvasProps {
     updates: { id: string; x: number; y: number; rotation?: number }[],
   ) => void;
   onInsertSlots?: (slots: SymmetryInsertSlot[]) => void;
-  onDuplicateSlots?: (ids: string[]) => void;
+  onDuplicateSlots?: (ids: string[]) => string[] | void;
   onUndo?: () => void;
   onSaveSnapshot?: () => void;
   onSelectionChange?: (ids: string[]) => void;
@@ -1118,7 +1118,8 @@ export default function LayoutCanvas({
               <button
                 className="p-2 rounded-sm hover:bg-neutral-700/60 text-neutral-300 active:text-white transition-colors"
                 onClick={() => {
-                  onDuplicateSlots(Array.from(effectiveSelectedIds));
+                  const newIds = onDuplicateSlots(Array.from(effectiveSelectedIds));
+                  if (newIds) setSelectedIds(new Set(newIds));
                 }}
               >
                 <Copy size={18} />

@@ -46,7 +46,7 @@ export interface UseSteppedLayoutReturn {
   ) => void;
   updateSlotRotation: (id: string, rotation: number) => void;
   insertSlots: (slots: SymmetryInsertSlot[]) => void;
-  duplicateSlots: (ids: string[]) => void;
+  duplicateSlots: (ids: string[]) => string[];
   trimBaseplate: () => void;
   // 分组管理
   addGroup: () => void;
@@ -320,17 +320,21 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
   );
 
   const duplicateSlots = useCallback(
-    (ids: string[]) => {
+    (ids: string[]): string[] => {
+      const newIds: string[] = [];
+      ids.forEach((id) => {
+        newIds.push(crypto.randomUUID());
+      });
       internalSetParams((prev) => {
         pushState(prev);
         const newSlots = [...prev.slots];
 
-        ids.forEach((id) => {
+        ids.forEach((id, i) => {
           const slotToCopy = prev.slots.find((s) => s.id === id);
           if (slotToCopy) {
             newSlots.push({
               ...slotToCopy,
-              id: crypto.randomUUID(),
+              id: newIds[i],
               x: slotToCopy.x + 10,
               y: slotToCopy.y - 10,
             });
@@ -340,6 +344,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
         return { ...prev, slots: newSlots };
       });
       invalidatePreview();
+      return newIds;
     },
     [invalidatePreview, pushState],
   );

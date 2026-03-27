@@ -27,7 +27,7 @@ interface UseCustomLayoutReturn {
   ) => void;
   updateSlotRotation: (id: string, rotation: number) => void;
   insertSlots: (slots: SymmetryInsertSlot[]) => void;
-  duplicateSlots: (ids: string[]) => void;
+  duplicateSlots: (ids: string[]) => string[];
   trimBaseplate: () => void;
   calculateEffectiveDimensions: () => {
     width: number;
@@ -331,20 +331,21 @@ export function useCustomLayout(): UseCustomLayoutReturn {
    * 复制凹槽
    */
   const duplicateSlots = useCallback(
-    (ids: string[]) => {
+    (ids: string[]): string[] => {
+      const newIds: string[] = [];
+      ids.forEach((id) => {
+        newIds.push(crypto.randomUUID());
+      });
       setParams((prev) => {
         pushState(prev);
         const newSlots = [...prev.slots];
-        const newlyAddedIds: string[] = [];
 
-        ids.forEach((id) => {
+        ids.forEach((id, i) => {
           const slotToCopy = prev.slots.find((s) => s.id === id);
           if (slotToCopy) {
-            const newId = crypto.randomUUID();
-            newlyAddedIds.push(newId);
             newSlots.push({
               ...slotToCopy,
-              id: newId,
+              id: newIds[i],
               x: slotToCopy.x + 10, // Offset slightly to make it visible
               y: slotToCopy.y - 10,
             });
@@ -354,6 +355,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
         return { ...prev, slots: newSlots };
       });
       setIsPreviewStale(true);
+      return newIds;
     },
     [pushState],
   );

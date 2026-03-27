@@ -8,7 +8,7 @@ interface UseCanvasKeyboardOptions {
   slotsRef: React.RefObject<FreeSlot[]>;
   onUpdateSlot: (id: string, x: number, y: number) => void;
   onRemoveSlot: (id: string) => void;
-  onDuplicateSlots?: (ids: string[]) => void;
+  onDuplicateSlots?: (ids: string[]) => string[] | void;
   onUndo?: () => void;
   setSelectedIds: React.Dispatch<React.SetStateAction<Set<string>>>;
   setIsRotating: React.Dispatch<React.SetStateAction<boolean>>;
@@ -101,7 +101,8 @@ export function useCanvasKeyboard({
       // Ctrl+V: 粘贴
       if ((e.ctrlKey || e.metaKey) && e.key === "v") {
         if (clipboardRef.current.length > 0 && onDuplicateSlotsRef.current) {
-          onDuplicateSlotsRef.current(clipboardRef.current);
+          const newIds = onDuplicateSlotsRef.current(clipboardRef.current);
+          if (newIds) setSelectedIds(new Set(newIds));
         }
         return;
       }
