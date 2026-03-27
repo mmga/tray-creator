@@ -126,7 +126,7 @@ export default function Home() {
   // 视口内容（共享于桌面和移动端）
   const renderViewport = () => {
     if (mode === "grid") {
-      return <TrayViewer geometry={gridModel.threeGeometry} isStale={gridModel.isPreviewStale} />;
+      return <TrayViewer geometry={gridModel.threeGeometry} isStale={gridModel.isPreviewStale} onRegenerate={gridModel.handleGenerate} />;
     }
 
     // Custom / Stepped: 2D/3D toggle
@@ -134,7 +134,12 @@ export default function Home() {
     return (
       <Tabs
         value={rightView}
-        onValueChange={(v) => setRightView(v as "2d" | "3d")}
+        onValueChange={(v) => {
+          setRightView(v as "2d" | "3d");
+          if (v === "3d" && model.isPreviewStale) {
+            model.handleGenerate();
+          }
+        }}
         className="flex-1 flex flex-col relative"
       >
         <div className="absolute top-3 left-5 z-20">
@@ -172,7 +177,7 @@ export default function Home() {
         </TabsContent>
 
         <TabsContent value="3d" className="absolute inset-0 m-0 data-[state=inactive]:hidden">
-          <TrayViewer geometry={model.threeGeometry} isStale={model.isPreviewStale} />
+          <TrayViewer geometry={model.threeGeometry} isStale={model.isPreviewStale} isGenerating={model.isGenerating} onRegenerate={model.handleGenerate} />
         </TabsContent>
       </Tabs>
     );

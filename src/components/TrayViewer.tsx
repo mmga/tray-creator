@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useCallback, useMemo } from "react";
+import { useRef, useEffect, useCallback, useMemo, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
@@ -9,6 +9,8 @@ import { RENDER_CONFIG } from "@/lib/config";
 interface TrayViewerProps {
   geometry: THREE.BufferGeometry | null;
   isStale?: boolean;
+  isGenerating?: boolean;
+  onRegenerate?: () => void;
 }
 
 function TrayMesh({ geometry }: { geometry: THREE.BufferGeometry }) {
@@ -112,13 +114,47 @@ function ContextLostHandler() {
   return null;
 }
 
-export default function TrayViewer({ geometry, isStale }: TrayViewerProps) {
+export default function TrayViewer({ geometry, isStale, isGenerating, onRegenerate }: TrayViewerProps) {
+  const [loadingStartTime, setLoadingStartTime] = useState<number | null>(null);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+
+  useEffect(() => {
+    if (isGenerating) {
+      setLoadingStartTime(Date.now());
+      setLoadingProgress(0);
+    } else {
+      setLoadingStartTime(null);
+      setLoadingProgress(0);
+    }
+  }, [isGenerating]);
+
+  useEffect(() => {
+    if (loadingStartTime === null) return;
+    const raf = setInterval(() => {
+      const elapsed = Date.now() - loadingStartTime;
+      // Slow progress that never completes (real completion handled by geometry update)
+      setLoadingProgress(Math.min(elapsed / 15000, 0.85));
+    }, 100);
+    return () => clearInterval(raf);
+  }, [loadingStartTime]);
+
   return (
-    <div className="relative w-full h-full min-h-[400px] overflow-hidden forged-viewport" style={{ backgroundColor: '#3d3b38' }}>
-      {/* Stale preview indicator */}
-      {isStale && geometry && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 px-3 py-1.5 bg-[#2a2518]/90 border border-[#5a4a2a] rounded text-xs text-[#c8a84e] font-mono tracking-wider backdrop-blur-sm">
-          ⚠ 参数已变更，预览可能与当前配置不一致
+    <div
+      className="relative w-full h-full min-h-[400px] overflow-hidden forged-viewport cursor-pointer"
+      style={{ backgroundColor: '#3d3b38' }}
+      onClick={() => {
+        if (isStale && onRegenerate) {
+          onRegenerate();
+        }
+      }}
+    >
+      {/* Loading bar */}
+      {isGenerating && (
+        <div className="absolute top-0 left-0 right-0 z-30 h-0.5 bg-[#2a2518]">
+          <div
+            className="h-full bg-[#c8a84e] transition-[width] duration-200 ease-out"
+            style={{ width: `${loadingProgress * 100}%` }}
+          />
         </div>
       )}
       {/* Corner rivets */}
