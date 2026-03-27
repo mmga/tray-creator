@@ -1,21 +1,8 @@
 "use client";
 
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-
-/** 检测是否为移动端（<1024px） */
-function useIsMobile() {
-    const [isMobile, setIsMobile] = useState(false);
-    useEffect(() => {
-        const mql = window.matchMedia("(max-width: 1023px)");
-        setIsMobile(mql.matches);
-        const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-        mql.addEventListener("change", handler);
-        return () => mql.removeEventListener("change", handler);
-    }, []);
-    return isMobile;
-}
 
 interface SectionHeaderProps {
     icon: LucideIcon;
@@ -39,21 +26,12 @@ export function SectionHeader({
     summary,
     children,
 }: SectionHeaderProps) {
-    const isMobile = useIsMobile();
-    // 移动端 + 可折叠时，默认状态由 defaultOpen 决定；桌面端始终展开
     const [isOpen, setIsOpen] = useState(() => {
         if (!collapsible) return true;
         return defaultOpen;
     });
 
-    // 桌面端切换时，强制展开折叠区
-    useEffect(() => {
-        if (!isMobile && collapsible) {
-            setIsOpen(true);
-        }
-    }, [isMobile, collapsible]);
-
-    const canCollapse = collapsible && isMobile;
+    const canCollapse = collapsible;
 
     return (
         <div>
