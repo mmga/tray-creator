@@ -4,42 +4,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 项目概述
 
-这是一个基于 Next.js 的战锤微缩模型移动托盘（Movement Tray）参数化 3D 建模 Web 应用。用户通过调整参数实时预览 3D 模型，并可导出为 STL 文件用于 3D 打印。
+这是一个基于 Next.js 的战锤微缩模型移动托盘（Movement Tray）参数化 3D 建模 Web 应用。用户通过调整参数实时预览 3D 模型，并可导出为 STL 文件用于 3D 打印。项目以静态导出方式部署。
 
 ## 常用命令
 
-### 开发模式
+包管理器：**pnpm**
+
 ```bash
-# 公共模式（静态导出，端口 3000）
-pnpm dev:public
-
-# 管理员模式（带 API Routes，端口 3001）
-pnpm dev:admin
-
-# 默认开发模式
+# 开发模式
 pnpm dev
-```
 
-### 构建与部署
-```bash
-# 公共模式构建（静态导出）
-pnpm build:public
-
-# 管理员模式构建（保留服务端能力）
-pnpm build:admin
-
-# 默认构建
+# 生产构建（静态导出到 out/）
 pnpm build
 
 # 启动生产服务器
 pnpm start
-```
 
-### 代码质量
-```bash
-# 运行 ESLint
+# ESLint
 pnpm lint
 ```
+
+> 项目无测试框架配置（无 Jest/Vitest）。代码质量依赖 ESLint + TypeScript strict mode。
 
 ## 核心架构
 
@@ -97,25 +82,12 @@ pnpm lint
 - **outline-geometry.ts**: 阶梯模式的轮廓生成（形态学闭运算）
 - **collision.ts**: 2D 编辑器的碰撞检测
 - **config.ts**: 集中管理所有参数默认值、范围、公差、预设
+- **param-io.ts**: 参数 JSON 导入/导出（含校验与钳位）
 - **pricing.ts**: 报价计算逻辑
 
-### 双模式部署
+### 部署
 
-项目支持两种部署模式，通过环境变量 `NEXT_PUBLIC_ADMIN_MODE` 控制：
-
-- **公共模式** (`NEXT_PUBLIC_ADMIN_MODE=false`)
-  - 静态导出 (`output: "export"`)
-  - 无 API Routes
-  - 构建目录：`.next`
-  - 输出目录：`out_public`
-
-- **管理员模式** (`NEXT_PUBLIC_ADMIN_MODE=true`)
-  - 保留服务端能力（API Routes、SSR）
-  - 构建目录：`.next-admin`
-  - 输出目录：`out_admin`
-  - API 端点：`/api/orders`（订单管理）、`/api/stats`（统计）
-
-权限检查：`isAdmin()` (src/lib/permissions.ts)
+项目使用静态导出 (`output: "export"`)，构建产物输出到 `out/` 目录。
 
 ### 状态管理
 
@@ -142,9 +114,11 @@ pnpm lint
 - `PARAM_CONFIG` / `CUSTOM_LIMITS` / `STEPPED_LIMITS`: 参数范围与元数据
 - `RENDER_CONFIG`: 3D 渲染配置（细分段数、颜色、摄像机）
 
+路径别名：`@/*` → `./src/*`
+
 ## 技术栈
 
-- **框架**: Next.js 16 (App Router)
+- **框架**: Next.js 16 (App Router, 静态导出)
 - **UI**: shadcn/ui + Tailwind CSS v4
 - **3D 建模**: @jscad/modeling v2.x
 - **3D 渲染**: Three.js + @react-three/fiber + @react-three/drei
@@ -157,8 +131,7 @@ pnpm lint
 src/
 ├── app/                    # Next.js App Router
 │   ├── page.tsx           # 主应用页面
-│   ├── layout.tsx         # 根布局
-│   └── api/               # API Routes (仅管理员模式)
+│   └── layout.tsx         # 根布局
 ├── components/            # React 组件
 │   ├── ui/               # shadcn/ui 基础组件
 │   ├── canvas/           # 2D 编辑器相关组件
@@ -176,6 +149,7 @@ src/
 │   ├── model-utils.ts        # 共享建模工具
 │   ├── outline-geometry.ts   # 轮廓生成算法
 │   ├── config.ts             # 配置管理
+│   ├── param-io.ts           # 参数导入/导出
 │   ├── worker/               # Web Worker
 │   └── ...
 └── types/                 # TypeScript 类型定义
@@ -196,14 +170,11 @@ src/
 2. **实时预览**: 参数变化后自动触发重新建模和渲染
 3. **2D 编辑器**: Custom 和 Stepped 模式支持拖拽、旋转、缩放槽位，带碰撞检测和对齐辅助线
 
-### 环境变量
-
-- `NEXT_PUBLIC_ADMIN_MODE`: 控制管理员功能可见性（"true" / "false"）
-- 管理员模式需配置 `.env.admin.local`（参考 `.env.example`）
-
 ## 相关文档
 
 - `doc/requirements.md`: 详细需求文档
 - `doc/ui-design.md`: UI 设计规范
 - `doc/layout-customizer.md`: 自定义布局功能说明
+- `doc/stepped-tray.md`: 阶梯托盘功能说明
 - `doc/mobile-ux-optimizations.md`: 移动端优化说明
+- `doc/layout-symmetry-plan.md`: 对称功能设计

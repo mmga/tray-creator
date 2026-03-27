@@ -4,11 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:admin": "env-cmd -f .env.admin.local next dev -p 3001",
-    "dev:public": "cross-env NEXT_PUBLIC_ADMIN_MODE=false next dev -p 3000",
     "build": "next build",
-    "build:admin": "env-cmd -f .env.admin.local next build",
-    "build:public": "cross-env NEXT_PUBLIC_ADMIN_MODE=false next build",
     "start": "next start",
     "lint": "eslint"
   },
@@ -33,8 +29,6 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/three": "^0.182.0",
-    "cross-env": "^10.1.0",
-    "env-cmd": "^10.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "postcss": "^8",

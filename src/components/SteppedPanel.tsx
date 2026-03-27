@@ -15,7 +15,6 @@ import {
     Ruler,
     BoxSelect,
     Share2,
-    Send,
     Layers,
     Trash2,
     ArrowRight,
@@ -26,12 +25,8 @@ import {
 import { ParamIOButtons } from "@/components/ParamIOButtons";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
-import { isAdmin } from "@/lib/permissions";
 import { exportParams } from "@/lib/param-io";
 import { calculateWeight, calculateSteppedPrice } from "@/lib/pricing";
-import { sendConfigToKV, buildPayload, serializePayload } from "@/lib/edgeone-kv";
-import { useToast } from "@/hooks/useToast";
-import { ConfirmSendDialog } from "@/components/ConfirmSendDialog";
 
 interface SteppedPanelProps {
     params: SteppedLayoutParams;
@@ -81,12 +76,8 @@ export default function SteppedPanel({
     const effectiveWidth = effectiveDimensions.width;
     const effectiveDepth = effectiveDimensions.depth;
     const isOversized = effectiveWidth > MAX_BUILD_SIZE || effectiveDepth > MAX_BUILD_SIZE;
-    const [isSending, setIsSending] = useState(false);
-    const [dialogOpen, setDialogOpen] = useState(false);
-    const [pendingJson, setPendingJson] = useState("");
     const [pressedPreviewGroupId, setPressedPreviewGroupId] = useState<string | null>(null);
     const [lockedPreviewGroupId, setLockedPreviewGroupId] = useState<string | null>(null);
-    const { toast } = useToast();
 
     useEffect(() => {
         if (!pressedPreviewGroupId) {
@@ -478,36 +469,20 @@ export default function SteppedPanel({
                     )}
                     {isGenerating ? "锻造中..." : isOversized ? "尺寸超限" : "开始锻造"}
                 </Button>
-                {isAdmin ? (
-                    <Button
-                        onClick={onExportSTL}
-                        className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-sm text-[#8cb880] font-semibold tracking-wider cursor-pointer border border-[#4a6741] shadow-lg shadow-[#2a352830]"
-                    >
-                        <Download className="w-4 h-4 mr-2" />
-                        导出 STL
-                    </Button>
-                ) : (
-                    <>
-                        <Button
-                            onClick={() => exportParams("stepped", params)}
-                            className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-sm text-[#8cb880] font-semibold tracking-wider cursor-pointer border border-[#4a6741] shadow-lg shadow-[#2a352830]"
-                        >
-                            <Share2 className="w-4 h-4 mr-2" />
-                            导出参数
-                        </Button>
-                        <Button
-                            onClick={() => {
-                                const payload = buildPayload("stepped", params);
-                                setPendingJson(serializePayload(payload));
-                                setDialogOpen(true);
-                            }}
-                            className="w-full h-10 bg-[#1e2a3a] hover:bg-[#283848] text-sm text-[#7eb8d8] font-semibold tracking-wider cursor-pointer transition-all duration-200 border border-[#3a5a7a] shadow-lg shadow-[#1e2a3a30]"
-                        >
-                            <Send className="w-4 h-4 mr-2" />
-                            发送配置
-                        </Button>
-                    </>
-                )}
+                <Button
+                    onClick={onExportSTL}
+                    className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-sm text-[#8cb880] font-semibold tracking-wider cursor-pointer border border-[#4a6741] shadow-lg shadow-[#2a352830]"
+                >
+                    <Download className="w-4 h-4 mr-2" />
+                    导出 STL
+                </Button>
+                <Button
+                    onClick={() => exportParams("stepped", params)}
+                    className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-sm text-[#8cb880] font-semibold tracking-wider cursor-pointer border border-[#4a6741] shadow-lg shadow-[#2a352830]"
+                >
+                    <Share2 className="w-4 h-4 mr-2" />
+                    导出参数
+                </Button>
                 <Button
                     variant="outline"
                     onClick={handleReset}
@@ -522,24 +497,6 @@ export default function SteppedPanel({
                     onImport={(p) => setParams(p as SteppedLayoutParams)}
                 />
             </div>
-
-            <ConfirmSendDialog
-                open={dialogOpen}
-                onClose={() => setDialogOpen(false)}
-                jsonData={pendingJson}
-                isSending={isSending}
-                onConfirm={async () => {
-                    setIsSending(true);
-                    const result = await sendConfigToKV("stepped", params);
-                    setIsSending(false);
-                    setDialogOpen(false);
-                    if (result.success) {
-                        toast("success", `配置已发送 (${result.orderId})`);
-                    } else {
-                        toast("error", `发送失败：${result.error}`);
-                    }
-                }}
-            />
         </div>
     );
 }

@@ -7,7 +7,6 @@ import { exportParams, importParams } from "@/lib/param-io";
 import { useToast } from "@/hooks/useToast";
 import type { AppMode, CustomLayoutParams, SteppedLayoutParams } from "@/types/custom-tray";
 import type { TrayParams } from "@/types/tray";
-import { isAdmin } from "@/lib/permissions";
 
 interface ParamIOButtonsProps {
     mode: AppMode;
@@ -57,16 +56,14 @@ export function ParamIOButtons({ mode, params, onImport }: ParamIOButtonsProps) 
 
             {/* 顶排按钮 (导出/导入) */}
             <div className="flex gap-2">
-                {isAdmin && (
-                    <Button
-                        variant="outline"
-                        onClick={handleExport}
-                        className={outlineBtnClasses}
-                    >
-                        <Share2 className="w-4 h-4 mr-2" />
-                        导出参数
-                    </Button>
-                )}
+                <Button
+                    variant="outline"
+                    onClick={handleExport}
+                    className={outlineBtnClasses}
+                >
+                    <Share2 className="w-4 h-4 mr-2" />
+                    导出参数
+                </Button>
                 <Button
                     variant="outline"
                     onClick={handleImportClick}

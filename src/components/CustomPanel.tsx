@@ -17,19 +17,13 @@ import {
   Ruler,
   BoxSelect,
   Share2,
-  Send,
 } from "lucide-react";
 import { BaseHoleConfig } from "@/components/BaseHoleConfig";
 import { ParamIOButtons } from "@/components/ParamIOButtons";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
-import { isAdmin } from "@/lib/permissions";
 import { exportParams } from "@/lib/param-io";
 import { calculateWeight, calculateCustomPrice } from "@/lib/pricing";
-import { sendConfigToKV, buildPayload, serializePayload } from "@/lib/edgeone-kv";
-import { reportAction } from "@/lib/analytics";
-import { useToast } from "@/hooks/useToast";
-import { ConfirmSendDialog } from "@/components/ConfirmSendDialog";
 
 // ── Props ──────────────────────────────
 
@@ -61,10 +55,6 @@ export default function CustomPanel({
   const effectiveDepth = effectiveDimensions.depth;
   const isOversized = effectiveWidth > MAX_BUILD_SIZE || effectiveDepth > MAX_BUILD_SIZE;
   const [autoPreview, setAutoPreview] = useState(false);
-  const [isSending, setIsSending] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [pendingJson, setPendingJson] = useState("");
-  const { toast } = useToast();
 
   // Auto-preview debouncing logic
   useEffect(() => {
@@ -288,36 +278,20 @@ export default function CustomPanel({
           )}
           {isGenerating ? "锻造中..." : isOversized ? "尺寸超限" : "开始锻造"}
         </Button>
-        {isAdmin ? (
-          <Button
-            onClick={onExportSTL}
-            className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-sm text-[#8cb880] font-semibold tracking-wider cursor-pointer border border-[#4a6741] shadow-lg shadow-[#2a352830]"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            导出 STL
-          </Button>
-        ) : (
-          <>
-            <Button
-              onClick={() => exportParams("custom", params as any)}
-              className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-sm text-[#8cb880] font-semibold tracking-wider cursor-pointer border border-[#4a6741] shadow-lg shadow-[#2a352830]"
-            >
-              <Share2 className="w-4 h-4 mr-2" />
-              导出参数
-            </Button>
-            <Button
-              onClick={() => {
-                const payload = buildPayload("custom", params);
-                setPendingJson(serializePayload(payload));
-                setDialogOpen(true);
-              }}
-              className="w-full h-10 bg-[#1e2a3a] hover:bg-[#283848] text-sm text-[#7eb8d8] font-semibold tracking-wider cursor-pointer transition-all duration-200 border border-[#3a5a7a] shadow-lg shadow-[#1e2a3a30]"
-            >
-              <Send className="w-4 h-4 mr-2" />
-              发送配置
-            </Button>
-          </>
-        )}
+        <Button
+          onClick={onExportSTL}
+          className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-sm text-[#8cb880] font-semibold tracking-wider cursor-pointer border border-[#4a6741] shadow-lg shadow-[#2a352830]"
+        >
+          <Download className="w-4 h-4 mr-2" />
+          导出 STL
+        </Button>
+        <Button
+          onClick={() => exportParams("custom", params as any)}
+          className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-sm text-[#8cb880] font-semibold tracking-wider cursor-pointer border border-[#4a6741] shadow-lg shadow-[#2a352830]"
+        >
+          <Share2 className="w-4 h-4 mr-2" />
+          导出参数
+        </Button>
         <Button
           variant="outline"
           onClick={handleReset}
@@ -332,25 +306,6 @@ export default function CustomPanel({
           onImport={(p) => setParams(p as CustomLayoutParams)}
         />
       </div>
-
-      <ConfirmSendDialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        jsonData={pendingJson}
-        isSending={isSending}
-        onConfirm={async () => {
-          setIsSending(true);
-          const result = await sendConfigToKV("custom", params);
-          setIsSending(false);
-          setDialogOpen(false);
-          if (result.success) {
-            reportAction("submit_order");
-            toast("success", `配置已发送 (${result.orderId})`);
-          } else {
-            toast("error", `发送失败：${result.error}`);
-          }
-        }}
-      />
     </div>
   );
 }

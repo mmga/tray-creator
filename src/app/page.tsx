@@ -1,26 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { reportPageView } from "@/lib/analytics";
 import dynamic from "next/dynamic";
 import { useTrayModel } from "@/hooks/useTrayModel";
 import { useCustomLayout } from "@/hooks/useCustomLayout";
 import { useSteppedLayout } from "@/hooks/useSteppedLayout";
 import { ModeTabs } from "@/components/ModeTabs";
 import type { AppMode } from "@/types/custom-tray";
-import { Boxes, Settings2, PenTool, Eye, ClipboardList, BarChart3 } from "lucide-react";
+import { Boxes, Settings2, PenTool, Eye } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { isAdmin } from "@/lib/permissions";
-import type { TrayParams } from "@/types/tray";
-import type { CustomLayoutParams, SteppedLayoutParams } from "@/types/custom-tray";
 
 // Lazy load components
 const ParameterPanel = dynamic(() => import("@/components/ParameterPanel"), { ssr: false });
 const CustomPanel = dynamic(() => import("@/components/CustomPanel"), { ssr: false });
 const SteppedPanel = dynamic(() => import("@/components/SteppedPanel"), { ssr: false });
 const LayoutCanvas = dynamic(() => import("@/components/LayoutCanvas"), { ssr: false });
-const OrderListDialog = dynamic(() => import("@/components/OrderListPanel"), { ssr: false });
-const StatsPanel = dynamic(() => import("@/components/StatsPanel"), { ssr: false });
 const TrayViewer = dynamic(() => import("@/components/TrayViewer"), {
   ssr: false,
   loading: () => (
@@ -50,16 +44,9 @@ export default function Home() {
   const [mode, setMode] = useState<AppMode>("grid");
   const [rightView, setRightView] = useState<"2d" | "3d">("2d");
   const [mobileTab, setMobileTab] = useState<"params" | "2d" | "3d">("params");
-  const [ordersOpen, setOrdersOpen] = useState(false);
-  const [statsOpen, setStatsOpen] = useState(false);
   const [selectedSlotIds, setSelectedSlotIds] = useState<string[]>([]);
   const [previewGroupId, setPreviewGroupId] = useState<string | null>(null);
   const isMobile = useIsMobile();
-
-  // ── 访问统计上报 (仅一次) ──
-  useEffect(() => {
-    reportPageView();
-  }, []);
 
   // Grid Mode State
   const gridModel = useTrayModel();
@@ -80,20 +67,6 @@ export default function Home() {
       }
     }
   }, [selectedSlotIds, mode]);
-
-  /** 从订单导入配置 */
-  const handleImportOrder = (orderMode: AppMode, params: unknown) => {
-    if (orderMode === "grid") {
-      gridModel.setParams(params as TrayParams);
-      setMode("grid");
-    } else if (orderMode === "stepped") {
-      steppedModel.setParams(params as SteppedLayoutParams);
-      setMode("stepped");
-    } else {
-      customModel.setParams(params as CustomLayoutParams);
-      setMode("custom");
-    }
-  };
 
   // 参数面板内容（共享于桌面和移动端）
   const renderParameterPanel = () => {
@@ -228,24 +201,6 @@ export default function Home() {
             </div>
           </div>
           <div className="flex items-center gap-2 text-white">
-            {isAdmin && (
-              <>
-                <button
-                  onClick={() => setOrdersOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-mono font-medium bg-[#1c1a16] text-muted-foreground border border-[#2e2a24] tracking-wider hover:bg-[#252220] hover:text-primary transition-colors cursor-pointer"
-                >
-                  <ClipboardList className="w-3 h-3" />
-                  订单
-                </button>
-                <button
-                  onClick={() => setStatsOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-mono font-medium bg-[#1c1a16] text-muted-foreground border border-[#2e2a24] tracking-wider hover:bg-[#252220] hover:text-primary transition-colors cursor-pointer"
-                >
-                  <BarChart3 className="w-3 h-3" />
-                  统计
-                </button>
-              </>
-            )}
             <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-mono font-medium bg-[#1c1a16] text-muted-foreground border border-[#2e2a24] tracking-wider">
               <span className="w-1.5 h-1.5 rounded-full bg-[#8b1a1a] animate-ember" />
               FORGE v0.2
@@ -357,20 +312,6 @@ export default function Home() {
           </button>
         </nav>
       </div>
-
-      {isAdmin && (
-        <OrderListDialog
-          open={ordersOpen}
-          onClose={() => setOrdersOpen(false)}
-          onImportOrder={handleImportOrder}
-        />
-      )}
-      {isAdmin && (
-        <StatsPanel
-          open={statsOpen}
-          onClose={() => setStatsOpen(false)}
-        />
-      )}
     </div>
   );
 }
