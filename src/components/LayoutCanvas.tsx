@@ -18,13 +18,16 @@ import { useCanvasKeyboard } from "../hooks/useCanvasKeyboard";
 import { CanvasStatusBar } from "./canvas/CanvasStatusBar";
 import { CanvasZoomControls } from "./canvas/CanvasZoomControls";
 import { KeyboardHintsOverlay } from "./canvas/KeyboardHintsOverlay";
+import { EDIT_SIDEBAR_RAIL_WIDTH } from "./canvas/EditSidebar";
 
-const ACTION_PANEL_MIN_WIDTH = 248;
-const ACTION_PANEL_MAX_WIDTH = 420;
-const ACTION_PANEL_DEFAULT_WIDTH = 304;
-const ACTION_PANEL_COLLAPSED_WIDTH = 84;
+const ACTION_PANEL_RESIZER_WIDTH = 3;
+const ACTION_PANEL_MIN_WIDTH = 248 - EDIT_SIDEBAR_RAIL_WIDTH - ACTION_PANEL_RESIZER_WIDTH;
+const ACTION_PANEL_MAX_WIDTH = 420 - EDIT_SIDEBAR_RAIL_WIDTH - ACTION_PANEL_RESIZER_WIDTH;
+const ACTION_PANEL_DEFAULT_WIDTH = 304 - EDIT_SIDEBAR_RAIL_WIDTH - ACTION_PANEL_RESIZER_WIDTH;
+const ACTION_PANEL_TAB_RAIL_WIDTH = EDIT_SIDEBAR_RAIL_WIDTH;
 
 interface LayoutCanvasProps {
+  isActive?: boolean;
   params: CustomLayoutParams | SteppedLayoutParams;
   onUpdateSlot: (id: string, x: number, y: number) => void;
   onRemoveSlot: (id: string) => void;
@@ -44,6 +47,7 @@ interface LayoutCanvasProps {
 }
 
 export default function LayoutCanvas({
+  isActive = true,
   params,
   onUpdateSlot,
   onRemoveSlot,
@@ -62,7 +66,7 @@ export default function LayoutCanvas({
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const [isActionPanelCollapsed, setIsActionPanelCollapsed] = useState(false);
+  const [activeActionTab, setActiveActionTab] = useState<string | null>(null);
   const [actionPanelWidth, setActionPanelWidth] = useState(ACTION_PANEL_DEFAULT_WIDTH);
   const [isResizingActionPanel, setIsResizingActionPanel] = useState(false);
 
@@ -111,11 +115,16 @@ export default function LayoutCanvas({
   });
 
   const { trayWidth, trayDepth, slots, spacing } = params;
+  const isActionPanelExpanded = activeActionTab !== null;
   const effectiveSelectedIds = useMemo<Set<string>>(
     () => new Set(slots.filter((slot) => selectedIds.has(slot.id)).map((slot) => slot.id)),
     [selectedIds, slots],
   );
   const selectedSymmetrySlots = slots.filter((slot) => effectiveSelectedIds.has(slot.id)) as SymmetrySlot[];
+  const unselectedSymmetrySlots = useMemo(
+    () => slots.filter((slot) => !effectiveSelectedIds.has(slot.id)) as Array<FreeSlot | SteppedSlot>,
+    [effectiveSelectedIds, slots],
+  );
   const boundarySpacing = 'boundarySpacingIndependent' in params && params.boundarySpacingIndependent
     ? (params as CustomLayoutParams).boundarySpacing
     : spacing;
@@ -132,8 +141,13 @@ export default function LayoutCanvas({
 
   // Notify parent of selection changes (for stepped mode per-slot editing)
   useEffect(() => {
+    const shouldSyncWhileInactive = selectedIds.size !== effectiveSelectedIds.size;
+    if (!isActive && !shouldSyncWhileInactive) {
+      return;
+    }
+
     onSelectionChange?.(Array.from(effectiveSelectedIds));
-  }, [effectiveSelectedIds, onSelectionChange]);
+  }, [effectiveSelectedIds, isActive, onSelectionChange, selectedIds]);
 
   useEffect(() => {
     const validIds = new Set(slots.map((slot) => slot.id));
@@ -218,6 +232,7 @@ export default function LayoutCanvas({
 
   // Extracted canvas keyboard event hook
   useCanvasKeyboard({
+    enabled: isActive,
     selectedIdsRef,
     slotsRef,
     onUpdateSlot,
@@ -230,6 +245,19 @@ export default function LayoutCanvas({
     setIsPanning,
     setShowHints,
   });
+
+  useEffect(() => {
+    if (!isActive) {
+      setHoveredId(null);
+      setDraggingId(null);
+      setGuideLines([]);
+      setSelectionBox(null);
+      setIsRotating(false);
+      setIsPanning(false);
+      setIsSpacePressed(false);
+      setIsResizingActionPanel(false);
+    }
+  }, [isActive, setIsPanning, setIsSpacePressed]);
 
   /**
    * 碰撞检测 (Approximation for Ellipses)
@@ -739,15 +767,18 @@ export default function LayoutCanvas({
       <div className="shrink-0 border-b border-[#2e2a24] bg-[#100d0a] lg:hidden">
         <AlignmentToolbar
           selectedIds={selectedIds}
-          enableCopyPreview={!draggingId && !isRotating}
+          selectedSlots={selectedSymmetrySlots}
+          unselectedSlots={unselectedSymmetrySlots}
+          enableCopyPreview={isActive && !draggingId && !isRotating}
           slots={slots as Array<FreeSlot | SteppedSlot>}
           onUpdateSlots={handleUpdateSlots}
           onInsertSlots={onInsertSlots}
           spacing={spacing}
           trayWidth={trayWidth}
           trayDepth={trayDepth}
-          collapsed={isActionPanelCollapsed}
-          onToggleCollapse={() => setIsActionPanelCollapsed((prev) => !prev)}
+          activeTabId={isActive ? activeActionTab : null}
+          onActiveTabChange={setActiveActionTab}
+          variant="mobile"
         />
       </div>
 
@@ -1158,7 +1189,7 @@ export default function LayoutCanvas({
       </div>
 
       <div
-        className={`hidden w-3 shrink-0 cursor-col-resize items-stretch justify-center bg-[#100d0a] lg:flex ${isActionPanelCollapsed ? 'pointer-events-none opacity-0' : ''}`}
+        className={`hidden shrink-0 cursor-col-resize items-stretch justify-center bg-[#100d0a] transition-[width,opacity] duration-150 lg:flex ${isActionPanelExpanded ? 'w-0.75 opacity-100' : 'pointer-events-none w-0 opacity-0'}`}
         onPointerDown={(event) => {
           event.preventDefault();
           event.currentTarget.setPointerCapture(event.pointerId);
@@ -1174,19 +1205,22 @@ export default function LayoutCanvas({
 
       <aside
         className={`hidden shrink-0 border-l border-[#2e2a24] bg-[#100d0a] lg:block ${isResizingActionPanel ? '' : 'transition-[width] duration-150'}`}
-        style={{ width: isActionPanelCollapsed ? ACTION_PANEL_COLLAPSED_WIDTH : actionPanelWidth }}
+        style={{ width: isActionPanelExpanded ? ACTION_PANEL_TAB_RAIL_WIDTH + actionPanelWidth : ACTION_PANEL_TAB_RAIL_WIDTH }}
       >
         <AlignmentToolbar
           selectedIds={selectedIds}
-          enableCopyPreview={!draggingId && !isRotating}
+          selectedSlots={selectedSymmetrySlots}
+          unselectedSlots={unselectedSymmetrySlots}
+          enableCopyPreview={isActive && !draggingId && !isRotating}
           slots={slots as Array<FreeSlot | SteppedSlot>}
           onUpdateSlots={handleUpdateSlots}
           onInsertSlots={onInsertSlots}
           spacing={spacing}
           trayWidth={trayWidth}
           trayDepth={trayDepth}
-          collapsed={isActionPanelCollapsed}
-          onToggleCollapse={() => setIsActionPanelCollapsed((prev) => !prev)}
+          activeTabId={isActive ? activeActionTab : null}
+          onActiveTabChange={setActiveActionTab}
+          variant="desktop"
         />
       </aside>
     </div>

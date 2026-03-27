@@ -8,7 +8,7 @@ import { useSteppedLayout } from "@/hooks/useSteppedLayout";
 import { ModeTabs } from "@/components/ModeTabs";
 import type { AppMode } from "@/types/custom-tray";
 import { Boxes, Settings2, PenTool, Eye } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Lazy load components
 const ParameterPanel = dynamic(() => import("@/components/ParameterPanel"), { ssr: false });
@@ -66,7 +66,7 @@ export default function Home() {
         steppedModel.setActiveGroup((slot as { groupId: string }).groupId);
       }
     }
-  }, [selectedSlotIds, mode]);
+  }, [selectedSlotIds, mode, steppedModel.params.slots]);
 
   // 参数面板内容（共享于桌面和移动端）
   const renderParameterPanel = () => {
@@ -149,10 +149,11 @@ export default function Home() {
           </TabsList>
         </div>
 
-        <TabsContent value="2d" className="absolute inset-0 m-0 p-0 data-[state=inactive]:hidden">
+        <div className={`absolute inset-0 m-0 p-0 transition-opacity duration-150 ${rightView === "2d" ? "opacity-100" : "pointer-events-none opacity-0"}`}>
           <div className="w-full h-full border-t border-[#2e2a24]">
             <LayoutCanvas
               key={mode}
+              isActive={!isMobile && rightView === "2d"}
               params={model.params}
               onUpdateSlot={model.updateSlotPosition}
               onRemoveSlot={model.removeSlot}
@@ -174,11 +175,13 @@ export default function Home() {
               focusedGroupId={mode === "stepped" ? previewGroupId : undefined}
             />
           </div>
-        </TabsContent>
+        </div>
 
-        <TabsContent value="3d" className="absolute inset-0 m-0 data-[state=inactive]:hidden">
-          <TrayViewer geometry={model.threeGeometry} isStale={model.isPreviewStale} isGenerating={model.isGenerating} onRegenerate={model.handleGenerate} />
-        </TabsContent>
+        <div className={`absolute inset-0 m-0 transition-opacity duration-150 ${rightView === "3d" ? "opacity-100" : "pointer-events-none opacity-0"}`}>
+          {rightView === "3d" && (
+            <TrayViewer geometry={model.threeGeometry} isStale={model.isPreviewStale} isGenerating={model.isGenerating} onRegenerate={model.handleGenerate} />
+          )}
+        </div>
       </Tabs>
     );
   };
@@ -260,6 +263,7 @@ export default function Home() {
             <div className={`absolute inset-0 bg-[#0a0908] transition-opacity duration-200 ${mobileTab === '2d' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
               <LayoutCanvas
                 key={mode}
+                isActive={isMobile && mobileTab === '2d'}
                 params={mode === "stepped" ? steppedModel.params : customModel.params}
                 onUpdateSlot={mode === "stepped" ? steppedModel.updateSlotPosition : customModel.updateSlotPosition}
                 onRemoveSlot={mode === "stepped" ? steppedModel.removeSlot : customModel.removeSlot}
@@ -280,11 +284,11 @@ export default function Home() {
           {mobileTab === '3d' && (
             <div className="absolute inset-0 bg-[#0a0908] z-10">
               {mode === "grid" ? (
-                <TrayViewer geometry={gridModel.threeGeometry} />
+                <TrayViewer geometry={gridModel.threeGeometry} isStale={gridModel.isPreviewStale} isGenerating={gridModel.isGenerating} onRegenerate={gridModel.handleGenerate} />
               ) : mode === "stepped" ? (
-                <TrayViewer geometry={steppedModel.threeGeometry} />
+                <TrayViewer geometry={steppedModel.threeGeometry} isStale={steppedModel.isPreviewStale} isGenerating={steppedModel.isGenerating} onRegenerate={steppedModel.handleGenerate} />
               ) : (
-                <TrayViewer geometry={customModel.threeGeometry} />
+                <TrayViewer geometry={customModel.threeGeometry} isStale={customModel.isPreviewStale} isGenerating={customModel.isGenerating} onRegenerate={customModel.handleGenerate} />
               )}
             </div>
           )}
@@ -309,7 +313,15 @@ export default function Home() {
             </button>
           )}
           <button
-            onClick={() => setMobileTab("3d")}
+            onClick={() => {
+              setMobileTab("3d");
+              if (mode === "custom" && customModel.isPreviewStale) {
+                customModel.handleGenerate();
+              }
+              if (mode === "stepped" && steppedModel.isPreviewStale) {
+                steppedModel.handleGenerate();
+              }
+            }}
             className={`flex-1 flex flex-col items-center gap-0.5 py-2 transition-colors ${mobileTab === '3d' ? 'text-primary' : 'text-muted-foreground'}`}
           >
             <Eye className="w-5 h-5" />

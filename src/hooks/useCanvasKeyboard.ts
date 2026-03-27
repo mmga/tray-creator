@@ -4,6 +4,7 @@ import { useEffect, useRef, useCallback } from "react";
 import type { FreeSlot } from "@/types/custom-tray";
 
 interface UseCanvasKeyboardOptions {
+  enabled?: boolean;
   selectedIdsRef: React.RefObject<Set<string>>;
   slotsRef: React.RefObject<FreeSlot[]>;
   onUpdateSlot: (id: string, x: number, y: number) => void;
@@ -24,6 +25,7 @@ interface UseCanvasKeyboardOptions {
  * Space 平移、Esc 取消、? 快捷键提示
  */
 export function useCanvasKeyboard({
+  enabled = true,
   selectedIdsRef,
   slotsRef,
   onUpdateSlot,
@@ -152,11 +154,15 @@ export function useCanvasKeyboard({
   );
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [handleKeyDown, handleKeyUp]);
+  }, [enabled, handleKeyDown, handleKeyUp]);
 }

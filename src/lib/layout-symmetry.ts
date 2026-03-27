@@ -26,7 +26,12 @@ export function roundToStep(value: number) {
   return Math.round(value / STEP) * STEP;
 }
 
-export function getSlotBounds(slot: FreeSlot) {
+function normalizeRotation(value: number) {
+  const normalized = ((value + 180) % 360 + 360) % 360 - 180;
+  return normalized === -180 ? 180 : normalized;
+}
+
+export function getSlotBounds(slot: SymmetryBoundsSlot) {
   const rad = ((slot.rotation || 0) * Math.PI) / 180;
   const a = (slot.width + getSlotTolerance(slot.width)) / 2;
   const b = (slot.height + getSlotTolerance(slot.height)) / 2;
@@ -37,7 +42,7 @@ export function getSlotBounds(slot: FreeSlot) {
   };
 }
 
-export function getSelectionBounds(selected: FreeSlot[]) {
+export function getSelectionBounds(selected: SymmetryBoundsSlot[]) {
   if (selected.length === 0) return null;
 
   let minX = Infinity;
@@ -86,12 +91,14 @@ export function mirrorSlot(
     return {
       ...slot,
       x: roundToStep(2 * axisValue - slot.x),
+      rotation: normalizeRotation(180 - slot.rotation),
     };
   }
 
   return {
     ...slot,
     y: roundToStep(2 * axisValue - slot.y),
+    rotation: normalizeRotation(-slot.rotation),
   };
 }
 
