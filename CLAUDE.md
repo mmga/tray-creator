@@ -166,7 +166,7 @@ src/
 
 ### UI/UX
 
-1. **响应式设计**: 桌面端三栏布局，移动端底部标签切换
+1. **响应式设计**: 桌面优先布局（左侧参数面板 + 右侧视口），窄屏下保留轻量退化样式
 2. **实时预览**: 参数变化后自动触发重新建模和渲染
 3. **2D 编辑器**: Custom 和 Stepped 模式支持拖拽、旋转、缩放槽位，带碰撞检测和对齐辅助线
 
@@ -176,5 +176,5 @@ src/
 - `doc/ui-design.md`: UI 设计规范
 - `doc/layout-customizer.md`: 自定义布局功能说明
 - `doc/stepped-tray.md`: 阶梯托盘功能说明
-- `doc/mobile-ux-optimizations.md`: 移动端优化说明
+- `doc/mobile-ux-optimizations.md`: ~~移动端优化说明~~（已归档，移动端专用布局已移除）
 - `doc/layout-symmetry-plan.md`: 对称功能设计
