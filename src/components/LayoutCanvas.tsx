@@ -6,7 +6,6 @@ import type { OutlineData } from "@/lib/outline-geometry";
 import { getSlotTolerance, MAX_BUILD_SIZE } from "@/lib/config";
 import { getEllipsePolygon, polygonsIntersect } from "@/lib/collision";
 import AlignmentToolbar from "./AlignmentToolbar";
-import { Trash2, Undo2, Copy, XCircle } from "lucide-react";
 import {
   resolveMirrorAxis,
   type SymmetryInsertSlot,
@@ -764,24 +763,6 @@ export default function LayoutCanvas({
     <div
       className="flex h-full w-full min-h-0 flex-col overflow-hidden bg-[#120f0c] lg:flex-row"
     >
-      <div className="shrink-0 border-b border-[#2e2a24] bg-[#100d0a] lg:hidden">
-        <AlignmentToolbar
-          selectedIds={selectedIds}
-          selectedSlots={selectedSymmetrySlots}
-          unselectedSlots={unselectedSymmetrySlots}
-          enableCopyPreview={isActive && !draggingId && !isRotating}
-          slots={slots as Array<FreeSlot | SteppedSlot>}
-          onUpdateSlots={handleUpdateSlots}
-          onInsertSlots={onInsertSlots}
-          spacing={spacing}
-          trayWidth={trayWidth}
-          trayDepth={trayDepth}
-          activeTabId={isActive ? activeActionTab : null}
-          onActiveTabChange={setActiveActionTab}
-          variant="mobile"
-        />
-      </div>
-
       <div
         ref={parentRef}
         className={`relative min-h-0 min-w-0 flex-1 overflow-hidden bg-[#1c1a16] select-none ${isSpacePressed ? 'cursor-grab' : ''} ${isPanning ? 'cursor-grabbing' : ''}`}
@@ -1140,56 +1121,10 @@ export default function LayoutCanvas({
           onClose={() => setShowHints(false)}
         />
 
-        {/* 移动端浮动操作栏 - 选中凹槽时显示 */}
-        {effectiveSelectedIds.size > 0 && (
-          <div className="lg:hidden absolute bottom-14 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-neutral-800/95 backdrop-blur-sm border border-neutral-700 rounded-sm shadow-xl px-3 py-1.5 z-40 animate-fade-in">
-            <span className="text-[10px] text-neutral-400 font-mono mr-1">{effectiveSelectedIds.size}选中</span>
-
-            {onDuplicateSlots && (
-              <button
-                className="p-2 rounded-sm hover:bg-neutral-700/60 text-neutral-300 active:text-white transition-colors"
-                onClick={() => {
-                  const newIds = onDuplicateSlots(Array.from(effectiveSelectedIds));
-                  if (newIds) setSelectedIds(new Set(newIds));
-                }}
-              >
-                <Copy size={18} />
-              </button>
-            )}
-
-            {onUndo && (
-              <button
-                className="p-2 rounded-sm hover:bg-neutral-700/60 text-neutral-300 active:text-white transition-colors"
-                onClick={onUndo}
-              >
-                <Undo2 size={18} />
-              </button>
-            )}
-
-            <button
-              className="p-2 rounded-sm hover:bg-red-900/60 text-red-400 active:text-red-300 transition-colors"
-              onClick={() => {
-                effectiveSelectedIds.forEach((id) => onRemoveSlot(id));
-                setSelectedIds(new Set());
-              }}
-            >
-              <Trash2 size={18} />
-            </button>
-
-            <button
-              className="p-2 rounded-sm hover:bg-neutral-700/60 text-neutral-500 active:text-white transition-colors"
-              onClick={() => {
-                setSelectedIds(new Set());
-              }}
-            >
-              <XCircle size={16} />
-            </button>
-          </div>
-        )}
       </div>
 
       <div
-        className={`hidden shrink-0 cursor-col-resize items-stretch justify-center bg-[#100d0a] transition-[width,opacity] duration-150 lg:flex ${isActionPanelExpanded ? 'w-0.75 opacity-100' : 'pointer-events-none w-0 opacity-0'}`}
+        className={`shrink-0 cursor-col-resize items-stretch justify-center bg-[#100d0a] transition-[width,opacity] duration-150 flex ${isActionPanelExpanded ? 'w-0.75 opacity-100' : 'pointer-events-none w-0 opacity-0'}`}
         onPointerDown={(event) => {
           event.preventDefault();
           event.currentTarget.setPointerCapture(event.pointerId);
@@ -1204,7 +1139,7 @@ export default function LayoutCanvas({
       </div>
 
       <aside
-        className={`hidden shrink-0 border-l border-[#2e2a24] bg-[#100d0a] lg:block ${isResizingActionPanel ? '' : 'transition-[width] duration-150'}`}
+        className={`shrink-0 border-l border-[#2e2a24] bg-[#100d0a] block ${isResizingActionPanel ? '' : 'transition-[width] duration-150'}`}
         style={{ width: isActionPanelExpanded ? ACTION_PANEL_TAB_RAIL_WIDTH + actionPanelWidth : ACTION_PANEL_TAB_RAIL_WIDTH }}
       >
         <AlignmentToolbar
@@ -1220,7 +1155,6 @@ export default function LayoutCanvas({
           trayDepth={trayDepth}
           activeTabId={isActive ? activeActionTab : null}
           onActiveTabChange={setActiveActionTab}
-          variant="desktop"
         />
       </aside>
     </div>
