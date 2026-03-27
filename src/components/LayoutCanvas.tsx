@@ -9,7 +9,6 @@ import AlignmentToolbar from "./AlignmentToolbar";
 import { Trash2, Undo2, Copy, XCircle } from "lucide-react";
 import {
   resolveMirrorAxis,
-  type SymmetryAxisSource,
   type SymmetryInsertSlot,
   type SymmetrySlot,
 } from "@/lib/layout-symmetry";
@@ -70,8 +69,6 @@ export default function LayoutCanvas({
   // Hoisted state (must be before hooks to avoid reference errors)
   const [isRotating, setIsRotating] = useState(false);
   const [showHints, setShowHints] = useState(false);
-  const [symmetryAxisSource, setSymmetryAxisSource] =
-    useState<SymmetryAxisSource>("selection");
 
   // Refs for DOM and logic
   const svgRef = useRef<SVGSVGElement>(null);
@@ -722,14 +719,14 @@ export default function LayoutCanvas({
         selectedSymmetrySlots,
         trayWidth,
         trayDepth,
-        symmetryAxisSource,
+        "tray",
         "mirror-x",
       ),
       horizontal: resolveMirrorAxis(
         selectedSymmetrySlots,
         trayWidth,
         trayDepth,
-        symmetryAxisSource,
+        "tray",
         "mirror-y",
       ),
     }
@@ -746,8 +743,6 @@ export default function LayoutCanvas({
           slots={slots as Array<FreeSlot | SteppedSlot>}
           onUpdateSlots={handleUpdateSlots}
           onInsertSlots={onInsertSlots}
-          axisSource={symmetryAxisSource}
-          onAxisSourceChange={setSymmetryAxisSource}
           spacing={spacing}
           trayWidth={trayWidth}
           trayDepth={trayDepth}
@@ -1186,8 +1181,6 @@ export default function LayoutCanvas({
           slots={slots as Array<FreeSlot | SteppedSlot>}
           onUpdateSlots={handleUpdateSlots}
           onInsertSlots={onInsertSlots}
-          axisSource={symmetryAxisSource}
-          onAxisSourceChange={setSymmetryAxisSource}
           spacing={spacing}
           trayWidth={trayWidth}
           trayDepth={trayDepth}

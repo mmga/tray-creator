@@ -20,7 +20,6 @@ import {
   buildMirrorMoveUpdates,
   countOutOfBoundsSlots,
   type SymmetryInsertSlot,
-  type SymmetryAxisSource,
   type SymmetryMode,
   type SymmetrySlot,
 } from "@/lib/layout-symmetry";
@@ -96,8 +95,6 @@ interface AlignmentToolbarProps {
   onUpdateSlots: (updates: Update[]) => void;
   onInsertSlots?: (slots: SymmetryInsertSlot[]) => void;
   enableCopyPreview: boolean;
-  axisSource: SymmetryAxisSource;
-  onAxisSourceChange: (source: SymmetryAxisSource) => void;
   spacing: number;
   trayWidth: number;
   trayDepth: number;
@@ -105,7 +102,7 @@ interface AlignmentToolbarProps {
   onToggleCollapse?: () => void;
 }
 
-export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, onInsertSlots, enableCopyPreview, axisSource, onAxisSourceChange, spacing, trayWidth, trayDepth, collapsed = false, onToggleCollapse }: AlignmentToolbarProps) {
+export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, onInsertSlots, enableCopyPreview, spacing, trayWidth, trayDepth, collapsed = false, onToggleCollapse }: AlignmentToolbarProps) {
   const { toast } = useToast();
   const [sectionOpen, setSectionOpen] = useState({
     align: true,
@@ -252,7 +249,7 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, on
       selected,
       trayWidth,
       trayDepth,
-      axisSource,
+      "tray",
       mode,
     );
 
@@ -304,7 +301,7 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, on
         selected,
         trayWidth,
         trayDepth,
-        axisSource,
+        "tray",
         mode,
       );
 
@@ -341,7 +338,7 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, on
         ),
       };
     },
-    [axisSource, selected, slots, spacing, trayDepth, trayWidth],
+    [selected, slots, spacing, trayDepth, trayWidth],
   );
 
   const handleMirrorCopy = (mode: SymmetryMode) => {
@@ -386,8 +383,8 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, on
   const sectionTitleClass = "text-[11px] font-semibold tracking-[0.18em] text-[#d6c6a5] uppercase";
   const sectionSummaryClass = "text-[10px] text-muted-foreground/70";
   const actionBtnClass = "flex h-9 items-center justify-center gap-1.5 rounded-sm border border-[#3a352c] bg-[#1a1813] px-3 text-xs text-[#d8d1c5] transition-colors hover:border-[#5d5547] hover:bg-[#252119] hover:text-white disabled:cursor-not-allowed disabled:opacity-35";
-  const axisBtnClass = "h-8 rounded-sm border border-[#3a352c] bg-[#181611] px-3 text-[11px] text-[#c8bda8] transition-colors hover:border-[#5d5547] hover:text-white disabled:cursor-not-allowed disabled:opacity-35";
-  const previewTagClass = "inline-flex items-center rounded-sm border border-[#3a352c] bg-[#181611] px-2.5 py-1 text-[10px] text-[#cbbfa9]";
+  const previewTagSafeClass = "inline-flex items-center rounded-sm border border-[#2a3a25] bg-[#152012] px-2.5 py-1 text-[10px] text-[#6dba62]";
+  const previewTagWarnClass = "inline-flex items-center rounded-sm border border-[#3a3520] bg-[#201e12] px-2.5 py-1 text-[10px] text-[#cba84e]";
 
   const toggleSection = (key: "align" | "mirror") => {
     setSectionOpen((prev) => ({
@@ -416,7 +413,7 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, on
     label: string,
     preview: ReturnType<typeof evaluateMirrorCopy> | null,
   ) => {
-    if (!preview) return `${label}预检`;
+    if (!preview) return { text: `${label}预检`, hasIssue: false };
 
     const parts: string[] = [];
     if (preview.skippedDuplicateCount > 0) {
@@ -429,7 +426,11 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, on
       parts.push(`越界${preview.outOfBoundsCount}`);
     }
 
-    return parts.length > 0 ? `${label}${parts.join("/")}` : `${label}安全`;
+    const hasIssue = parts.length > 0;
+    return {
+      text: hasIssue ? `${label}${parts.join("/")}` : `${label}安全`,
+      hasIssue,
+    };
   };
 
   return (
@@ -536,32 +537,13 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, on
             >
               <div>
                 <div className={sectionTitleClass}>镜像</div>
-                <div className={sectionSummaryClass}>按选区轴或托盘轴做翻转与复制</div>
+                <div className={sectionSummaryClass}>按托盘中心轴做翻转与复制</div>
               </div>
               <ChevronDown className={`h-4 w-4 text-[#9f927c] transition-transform ${sectionOpen.mirror ? "rotate-0" : "-rotate-90"}`} />
             </button>
 
             {sectionOpen.mirror && (
               <div className="mt-2 space-y-3">
-                <div>
-                  <div className="mb-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">镜像轴</div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      className={`${axisBtnClass} ${axisSource === "selection" ? "border-[#8a6d3f] bg-[#2a2115] text-[#f0d8b8]" : ""}`}
-                      onClick={() => onAxisSourceChange("selection")}
-                      disabled={!hasSelection}
-                    >
-                      选区轴
-                    </button>
-                    <button
-                      className={`${axisBtnClass} ${axisSource === "tray" ? "border-[#8a6d3f] bg-[#2a2115] text-[#f0d8b8]" : ""}`}
-                      onClick={() => onAxisSourceChange("tray")}
-                    >
-                      托盘轴
-                    </button>
-                  </div>
-                </div>
-
                 <div>
                   <div className="mb-2 text-[10px] uppercase tracking-[0.16em] text-muted-foreground/70">镜像移动</div>
                   <div className="grid grid-cols-2 gap-2">
@@ -587,12 +569,20 @@ export default function AlignmentToolbar({ selectedIds, slots, onUpdateSlots, on
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
-                  <span className={previewTagClass} data-symmetry-preview="mirror-x">
-                    {formatCopyPreview("左右", copyPreviews.mirrorX)}
-                  </span>
-                  <span className={previewTagClass} data-symmetry-preview="mirror-y">
-                    {formatCopyPreview("上下", copyPreviews.mirrorY)}
-                  </span>
+                  {(() => {
+                    const px = formatCopyPreview("左右", copyPreviews.mirrorX);
+                    const py = formatCopyPreview("上下", copyPreviews.mirrorY);
+                    return (
+                      <>
+                        <span className={!copyPreviews.mirrorX ? previewTagWarnClass : px.hasIssue ? previewTagWarnClass : previewTagSafeClass} data-symmetry-preview="mirror-x">
+                          {px.text}
+                        </span>
+                        <span className={!copyPreviews.mirrorY ? previewTagWarnClass : py.hasIssue ? previewTagWarnClass : previewTagSafeClass} data-symmetry-preview="mirror-y">
+                          {py.text}
+                        </span>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             )}

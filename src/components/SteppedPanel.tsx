@@ -14,7 +14,6 @@ import {
     Wrench,
     Ruler,
     BoxSelect,
-    Share2,
     Layers,
     Trash2,
     ArrowRight,
@@ -25,7 +24,6 @@ import {
 import { ParamIOButtons } from "@/components/ParamIOButtons";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
-import { exportParams } from "@/lib/param-io";
 import { calculateWeight, calculateSteppedPrice } from "@/lib/pricing";
 
 interface SteppedPanelProps {
@@ -475,13 +473,6 @@ export default function SteppedPanel({
                 >
                     <Download className="w-4 h-4 mr-2" />
                     导出 STL
-                </Button>
-                <Button
-                    onClick={() => exportParams("stepped", params)}
-                    className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-sm text-[#8cb880] font-semibold tracking-wider cursor-pointer border border-[#4a6741] shadow-lg shadow-[#2a352830]"
-                >
-                    <Share2 className="w-4 h-4 mr-2" />
-                    导出参数
                 </Button>
                 <Button
                     variant="outline"
