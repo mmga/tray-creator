@@ -1,14 +1,23 @@
 import { booleans, primitives, transforms } from "@jscad/modeling";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { TrayParams } from "@/types/tray";
-import { RENDER_CONFIG } from "@/lib/config";
+import { RENDER_CONFIG, getSlotTolerance } from "@/lib/config";
+import { createBaseBody, subtractBaseHoles, type SlotCenter } from "@/lib/model-utils";
 
-const { subtract, union } = booleans;
-const { roundedCuboid, cylinder } = primitives;
+const { subtract } = booleans;
+const { cylinder } = primitives;
 const { translate } = transforms;
 
 /**
  * 根据参数生成托盘 3D 模型（JSCAD geom3）
+ *
+ * 结构说明：
+ * - 底板 + 墙壁一体，通过 2D 圆角矩形线性拉伸生成
+ *   → 圆角只出现在竖直方向的 4 条边上
+ * - 凹槽从顶部向下挖，深度 = holeDepth，到达底板顶面
+ * - 总高度 = baseThickness + holeDepth
+ * - 间距统一：边-凹槽 = 凹槽-凹槽 = spacing
+ * - 凹槽实际直径 = holeDiameter + HOLE_TOLERANCE
  */
 export function createTrayModel(params: TrayParams): Geom3 {
   const {
@@ -16,82 +25,53 @@ export function createTrayModel(params: TrayParams): Geom3 {
     columns,
     holeDiameter,
     spacing,
-    wallWidth,
-    wallHeight,
     baseThickness,
     holeDepth,
     cornerRadius,
   } = params;
 
-  const holeRadius = holeDiameter / 2;
+  // 实际凹槽直径（加公差）
+  const actualHoleDiameter = holeDiameter + getSlotTolerance(holeDiameter);
+  const holeRadius = actualHoleDiameter / 2;
 
-  // 计算内部区域尺寸（所有凹槽+间距占据的区域）
-  const innerWidth = columns * holeDiameter + (columns - 1) * spacing;
-  const innerDepth = rows * holeDiameter + (rows - 1) * spacing;
+  // 计算总尺寸：(N+1) 段间距 + N 个凹槽
+  const totalWidth = (columns + 1) * spacing + columns * actualHoleDiameter;
+  const totalDepth = (rows + 1) * spacing + rows * actualHoleDiameter;
+  const totalHeight = baseThickness + holeDepth;
 
-  // 总体尺寸 = 内部区域 + 两侧边框
-  const totalWidth = innerWidth + 2 * wallWidth;
-  const totalDepth = innerDepth + 2 * wallWidth;
-  const totalHeight = baseThickness + wallHeight;
+  // 1. 创建底板实体
+  const body = createBaseBody(totalWidth, totalDepth, totalHeight, cornerRadius);
 
-  // 确保圆角不超过最小半尺寸
-  const effectiveRadius = Math.min(
-    cornerRadius,
-    totalWidth / 2 - 0.01,
-    totalDepth / 2 - 0.01,
-    totalHeight / 2 - 0.01
-  );
-
-  // 1. 外壳：圆角长方体
-  const outerShell = roundedCuboid({
-    size: [totalWidth, totalDepth, totalHeight],
-    roundRadius: Math.max(effectiveRadius, 0.01),
-    segments: RENDER_CONFIG.cylinderSegments,
-  });
-
-  // 2. 内腔：掏空上方以形成边框围墙
-  //    内腔从底板顶部开始到顶部，且比外壳小 wallWidth
-  const cavityWidth = innerWidth;
-  const cavityDepth = innerDepth;
-  const cavityHeight = wallHeight + 0.01; // 略微超过，确保布尔运算干净
-
-  const innerCavity = translate(
-    [0, 0, baseThickness / 2 + 0.005],
-    roundedCuboid({
-      size: [cavityWidth, cavityDepth, cavityHeight],
-      roundRadius: Math.max(Math.min(effectiveRadius - wallWidth, cavityWidth / 2 - 0.01, cavityDepth / 2 - 0.01), 0.01),
-      segments: RENDER_CONFIG.cylinderSegments,
-    })
-  );
-
-  // 3. 凹槽阵列
-  const holes: Geom3[] = [];
-  const effectiveHoleDepth = Math.min(holeDepth, baseThickness);
-
+  // 2. 计算凹槽中心坐标
+  const centers: SlotCenter[] = [];
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < columns; col++) {
-      // 凹槽中心坐标（相对于托盘中心）
-      const cx =
-        -innerWidth / 2 + holeRadius + col * (holeDiameter + spacing);
-      const cy =
-        -innerDepth / 2 + holeRadius + row * (holeDiameter + spacing);
-      // 凹槽从底板底部向上挖
-      const cz = -totalHeight / 2 + effectiveHoleDepth / 2 - 0.005;
-
-      const hole = translate(
-        [cx, cy, cz],
-        cylinder({
-          radius: holeRadius,
-          height: effectiveHoleDepth + 0.01,
-          segments: RENDER_CONFIG.cylinderSegments,
-        })
-      );
-      holes.push(hole);
+      centers.push({
+        cx: -totalWidth / 2 + spacing + holeRadius + col * (actualHoleDiameter + spacing),
+        cy: -totalDepth / 2 + spacing + holeRadius + row * (actualHoleDiameter + spacing),
+      });
     }
   }
 
-  // 4. 布尔运算：外壳 - 内腔 - 凹槽
-  const tray = subtract(outerShell, innerCavity, ...holes);
+  // 3. 凹槽阵列（从顶部向下挖）
+  const holes: Geom3[] = centers.map(({ cx, cy }) =>
+    translate(
+      [cx, cy, baseThickness + holeDepth / 2],
+      cylinder({
+        radius: holeRadius,
+        height: holeDepth + 0.02, // 略微超过以确保布尔运算干净
+        segments: RENDER_CONFIG.cylinderSegments,
+      }),
+    ),
+  );
+
+  // 4. 布尔减法：实体 - 凹槽
+  let tray = subtract(body, ...holes);
+
+  // 5. 底板磁吸孔
+  if (params.enableBaseHole) {
+    tray = subtractBaseHoles(tray, centers, baseThickness, params.baseHoleSize);
+  }
 
   return tray;
 }
@@ -100,12 +80,11 @@ export function createTrayModel(params: TrayParams): Geom3 {
  * 根据参数计算托盘的理论外观尺寸 (mm)
  */
 export function calculateTrayDimensions(params: TrayParams) {
-  const { rows, columns, holeDiameter, spacing, wallWidth, wallHeight, baseThickness } = params;
-  const innerWidth = columns * holeDiameter + (columns - 1) * spacing;
-  const innerDepth = rows * holeDiameter + (rows - 1) * spacing;
+  const { rows, columns, holeDiameter, spacing, baseThickness, holeDepth } = params;
+  const actualHoleDiameter = holeDiameter + getSlotTolerance(holeDiameter);
   return {
-    width: innerWidth + 2 * wallWidth,
-    depth: innerDepth + 2 * wallWidth,
-    height: baseThickness + wallHeight,
+    width: (columns + 1) * spacing + columns * actualHoleDiameter,
+    depth: (rows + 1) * spacing + rows * actualHoleDiameter,
+    height: baseThickness + holeDepth,
   };
 }

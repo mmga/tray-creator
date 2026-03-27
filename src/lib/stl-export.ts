@@ -4,7 +4,7 @@ import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 /**
  * 将 JSCAD 几何体导出为 STL 并触发浏览器下载
  */
-export function exportToSTL(geometry: Geom3, filename: string): void {
+function exportToSTL(geometry: Geom3, filename: string): void {
   const rawData = stlSerializer.serialize({ binary: true }, geometry);
   const blob = new Blob(rawData as BlobPart[], {
     type: "application/octet-stream",
@@ -29,4 +29,15 @@ export function generateSTLFilename(
   holeDiameter: number
 ): string {
   return `tray_${columns}x${rows}_${holeDiameter}mm.stl`;
+}
+
+/**
+ * 根据自定义托盘参数生成 STL 文件名
+ */
+export function generateCustomSTLFilename(
+  width: number,
+  depth: number,
+  slotCount: number
+): string {
+  return `tray_custom_${width}x${depth}_${slotCount}slots.stl`;
 }

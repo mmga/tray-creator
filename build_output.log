@@ -1,0 +1,22 @@
+
+> tray-creator@0.1.0 build
+> next build
+
+鈻?Next.js 16.1.6 (Turbopack)
+
+  Creating an optimized production build ...
+鉁?Compiled successfully in 4.5s
+  Running TypeScript ...
+Failed to compile.
+
+./src/app/page.tsx:111:28
+Type error: Cannot find name 'selectedSlotIds'.
+
+  109 |           isGenerating={steppedModel.isGenerating}
+  110 |           volume={steppedModel.volume}
+> 111 |           selectedSlotIds={selectedSlotIds}
+      |                            ^
+  112 |           onUpdateSlotBottomHeight={steppedModel.updateSlotBottomHeight}
+  113 |           onUpdateSelectedSlotsBottomHeight={steppedModel.updateSelectedSlotsBottomHeight}
+  114 |         />
+Next.js build worker exited with code: 1 and signal: null

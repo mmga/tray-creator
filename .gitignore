@@ -5,7 +5,10 @@ node_modules/
 
 # Next.js
 .next/
+.next-admin/
 out/
+out_public/
+out_admin/
 
 # Production build
 build/
@@ -41,3 +44,5 @@ Thumbs.db
 
 # Testing
 coverage/
+
+tmp/

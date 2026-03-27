@@ -1,13 +1,11 @@
 "use client";
-
 import type { TrayParams } from "@/types/tray";
-import { BASE_PRESETS, PARAM_LIMITS, DEFAULT_PRESET_INDEX } from "@/lib/config";
+import { BASE_PRESETS, DEFAULT_PRESET_INDEX, BASE_HOLE_CONFIG, PARAM_CONFIG, MAX_BUILD_SIZE } from "@/lib/config";
 import { calculateTrayDimensions } from "@/lib/tray-model";
-import { Slider } from "@/components/ui/slider";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { useEffect, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -15,64 +13,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Download, RotateCcw, Play, Loader2 } from "lucide-react";
+import { Download, RotateCcw, Play, Loader2, Layout, Wrench, Ruler, Share2, Send } from "lucide-react";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/config";
+import { BaseHoleConfig } from "@/components/BaseHoleConfig";
+import { ParamIOButtons } from "@/components/ParamIOButtons";
+import { SectionHeader } from "@/components/ui/SectionHeader";
+import { ParamSlider } from "@/components/ui/ParamSlider";
+import { isAdmin } from "@/lib/permissions";
+import { exportParams } from "@/lib/param-io";
+import { calculateGridPrice, calculateWeight } from "@/lib/pricing";
+import { sendConfigToKV, buildPayload, serializePayload } from "@/lib/edgeone-kv";
+import { reportAction } from "@/lib/analytics";
+import { useToast } from "@/hooks/useToast";
+import { ConfirmSendDialog } from "@/components/ConfirmSendDialog";
 
 interface ParameterPanelProps {
   params: TrayParams;
   updateParam: <K extends keyof TrayParams>(key: K, value: TrayParams[K]) => void;
   setParams: React.Dispatch<React.SetStateAction<TrayParams>>;
-  onGenerate: () => void;
+  onGenerate: (options?: { shouldSwitchView?: boolean }) => void;
   onExportSTL: () => void;
   isGenerating: boolean;
-}
-
-function ParamSlider({
-  label,
-  value,
-  config,
-  onChange,
-  unit = "mm",
-}: {
-  label: string;
-  value: number;
-  config: { min: number; max: number; step: number };
-  onChange: (v: number) => void;
-  unit?: string;
-}) {
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <Label className="text-sm text-zinc-300">{label}</Label>
-        <div className="flex items-center gap-1">
-          <Input
-            type="number"
-            value={value}
-            min={config.min}
-            max={config.max}
-            step={config.step}
-            onChange={(e) => {
-              const v = parseFloat(e.target.value);
-              if (!isNaN(v) && v >= config.min && v <= config.max) {
-                onChange(v);
-              }
-            }}
-            className="w-20 h-7 text-right text-sm bg-zinc-800 border-zinc-700 text-zinc-200"
-          />
-          <span className="text-xs text-zinc-500 w-6">{unit}</span>
-        </div>
-      </div>
-      <Slider
-        value={[value]}
-        min={config.min}
-        max={config.max}
-        step={config.step}
-        onValueChange={([v]) => onChange(v)}
-        className="py-1"
-      />
-    </div>
-  );
+  volume: number;
 }
 
 export default function ParameterPanel({
@@ -82,14 +44,32 @@ export default function ParameterPanel({
   onGenerate,
   onExportSTL,
   isGenerating,
+  volume,
 }: ParameterPanelProps) {
   const dimensions = calculateTrayDimensions(params);
+  const isOversized = dimensions.width > MAX_BUILD_SIZE || dimensions.depth > MAX_BUILD_SIZE;
+  const [autoPreview, setAutoPreview] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [pendingJson, setPendingJson] = useState("");
+  const { toast } = useToast();
+
+  // Auto-preview debouncing logic
+  useEffect(() => {
+    if (!autoPreview || isGenerating || isOversized) return;
+
+    const handler = setTimeout(() => {
+      onGenerate({ shouldSwitchView: false });
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(handler);
+  }, [params, autoPreview, isOversized]); // Notice we exclude onGenerate to prevent cycles, though React Hook rules technically want it. Assuming onGenerate is stable.
 
   const handlePresetChange = (value: string) => {
     const index = parseInt(value);
     const preset = BASE_PRESETS[index];
     if (preset) {
-      updateParam("holeDiameter", preset.diameter + preset.tolerance);
+      updateParam("holeDiameter", preset.diameter);
     }
   };
 
@@ -97,182 +77,261 @@ export default function ParameterPanel({
     setParams(DEFAULT_TRAY_PARAMS);
   };
 
+
+
   return (
-    <div className="flex flex-col gap-4 h-full overflow-y-auto p-1 custom-scrollbar">
-      {/* 预设选择 */}
-      <Card className="bg-zinc-900/80 border-zinc-800 backdrop-blur-sm">
-        <CardHeader className="pb-3 pt-4 px-4">
-          <CardTitle className="text-sm font-semibold text-zinc-200 tracking-wide uppercase">
-            底座预设
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-4 pb-4">
-          <Select
-            defaultValue={String(DEFAULT_PRESET_INDEX)}
-            onValueChange={handlePresetChange}
-          >
-            <SelectTrigger className="bg-zinc-800 border-zinc-700 text-zinc-200">
-              <SelectValue placeholder="选择底座尺寸" />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-800 border-zinc-700">
-              {BASE_PRESETS.map((preset, i) => (
-                <SelectItem
-                  key={i}
-                  value={String(i)}
-                  className="text-zinc-200 focus:bg-zinc-700 focus:text-zinc-100"
-                >
-                  {preset.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </CardContent>
-      </Card>
-
-      {/* 布局参数 */}
-      <Card className="bg-zinc-900/80 border-zinc-800 backdrop-blur-sm">
-        <CardHeader className="pb-3 pt-4 px-4">
-          <CardTitle className="text-sm font-semibold text-zinc-200 tracking-wide uppercase">
-            布局
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-4 pb-4 space-y-4">
-          <ParamSlider
-            label="列数"
-            value={params.columns}
-            config={PARAM_LIMITS.columns}
-            onChange={(v) => updateParam("columns", v)}
-            unit="个"
-          />
-          <ParamSlider
-            label="行数"
-            value={params.rows}
-            config={PARAM_LIMITS.rows}
-            onChange={(v) => updateParam("rows", v)}
-            unit="个"
-          />
-          <ParamSlider
-            label="凹槽直径"
-            value={params.holeDiameter}
-            config={PARAM_LIMITS.holeDiameter}
-            onChange={(v) => updateParam("holeDiameter", v)}
-          />
-          <ParamSlider
-            label="边缘间距"
-            value={params.spacing}
-            config={PARAM_LIMITS.spacing}
-            onChange={(v) => updateParam("spacing", v)}
-          />
-        </CardContent>
-      </Card>
-
-      {/* 边框参数 */}
-      <Card className="bg-zinc-900/80 border-zinc-800 backdrop-blur-sm">
-        <CardHeader className="pb-3 pt-4 px-4">
-          <CardTitle className="text-sm font-semibold text-zinc-200 tracking-wide uppercase">
-            边框
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-4 pb-4 space-y-4">
-          <ParamSlider
-            label="边框宽度"
-            value={params.wallWidth}
-            config={PARAM_LIMITS.wallWidth}
-            onChange={(v) => updateParam("wallWidth", v)}
-          />
-          <ParamSlider
-            label="边框高度"
-            value={params.wallHeight}
-            config={PARAM_LIMITS.wallHeight}
-            onChange={(v) => updateParam("wallHeight", v)}
-          />
-          <ParamSlider
-            label="底板厚度"
-            value={params.baseThickness}
-            config={PARAM_LIMITS.baseThickness}
-            onChange={(v) => updateParam("baseThickness", v)}
-          />
-          <ParamSlider
-            label="凹槽深度"
-            value={params.holeDepth}
-            config={PARAM_LIMITS.holeDepth}
-            onChange={(v) => updateParam("holeDepth", v)}
-          />
-          <ParamSlider
-            label="圆角半径"
-            value={params.cornerRadius}
-            config={PARAM_LIMITS.cornerRadius}
-            onChange={(v) => updateParam("cornerRadius", v)}
-          />
-        </CardContent>
-      </Card>
-
-      {/* 尺寸信息 */}
-      <Card className="bg-zinc-900/80 border-zinc-800 backdrop-blur-sm">
-        <CardHeader className="pb-3 pt-4 px-4">
-          <CardTitle className="text-sm font-semibold text-zinc-200 tracking-wide uppercase">
-            模型尺寸
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-4 pb-4">
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="bg-zinc-800/60 rounded-lg p-2">
-              <p className="text-xs text-zinc-500">宽度</p>
-              <p className="text-sm font-mono text-zinc-200">
-                {dimensions.width.toFixed(1)}
-              </p>
-              <p className="text-xs text-zinc-600">mm</p>
+    <div className="flex flex-col gap-4 animate-fade-in">
+      {/* 布局参数 — 移动端默认展开 */}
+      <div className="iron-panel rounded-sm p-4">
+        <SectionHeader icon={Layout} title="布局" collapsible defaultOpen={true}
+          summary={`${params.columns}×${params.rows} / ⌀${params.holeDiameter}mm`}>
+          <div className="space-y-4">
+            {/* 底座预设 */}
+            <div className="space-y-1.5">
+              <Label className="text-sm text-muted-foreground">底座尺寸</Label>
+              <Select
+                defaultValue={String(DEFAULT_PRESET_INDEX)}
+                onValueChange={handlePresetChange}
+              >
+                <SelectTrigger className="bg-[#1c1a16] border-[#2e2a24] text-foreground hover:border-primary/40 cursor-pointer transition-all duration-200">
+                  <SelectValue placeholder="选择底座尺寸" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#16140f] border-[#2e2a24]">
+                  {BASE_PRESETS.map((preset, i) => (
+                    <SelectItem
+                      key={i}
+                      value={String(i)}
+                      className="text-foreground/90 cursor-pointer focus:bg-primary/10 focus:text-primary"
+                    >
+                      {preset.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <div className="bg-zinc-800/60 rounded-lg p-2">
-              <p className="text-xs text-zinc-500">深度</p>
-              <p className="text-sm font-mono text-zinc-200">
-                {dimensions.depth.toFixed(1)}
-              </p>
-              <p className="text-xs text-zinc-600">mm</p>
-            </div>
-            <div className="bg-zinc-800/60 rounded-lg p-2">
-              <p className="text-xs text-zinc-500">高度</p>
-              <p className="text-sm font-mono text-zinc-200">
-                {dimensions.height.toFixed(1)}
-              </p>
-              <p className="text-xs text-zinc-600">mm</p>
-            </div>
+
+            <ParamSlider
+              label={PARAM_CONFIG.columns.label}
+              value={params.columns}
+              config={PARAM_CONFIG.columns}
+              onChange={(v) => updateParam("columns", v)}
+              unit={PARAM_CONFIG.columns.unit}
+            />
+            <ParamSlider
+              label={PARAM_CONFIG.rows.label}
+              value={params.rows}
+              config={PARAM_CONFIG.rows}
+              onChange={(v) => updateParam("rows", v)}
+              unit={PARAM_CONFIG.rows.unit}
+            />
+            <ParamSlider
+              label={PARAM_CONFIG.spacing.label}
+              value={params.spacing}
+              config={PARAM_CONFIG.spacing}
+              onChange={(v) => updateParam("spacing", v)}
+              unit={PARAM_CONFIG.spacing.unit}
+            />
           </div>
-        </CardContent>
-      </Card>
+        </SectionHeader>
+      </div>
 
-      <Separator className="bg-zinc-800" />
+      {/* 结构参数 — 移动端默认折叠 */}
+      <div className="iron-panel rounded-sm p-4">
+        <SectionHeader icon={Wrench} title="结构参数" collapsible defaultOpen={false}
+          summary={`底厚${params.baseThickness}mm / 孔深${params.holeDepth}mm / 圆角${params.cornerRadius}mm`}>
+          <div className="space-y-4">
 
-      {/* 操作按钮 */}
-      <div className="flex flex-col gap-2 pb-4">
+            <ParamSlider
+              label={PARAM_CONFIG.baseThickness.label}
+              value={params.baseThickness}
+              config={params.enableBaseHole
+                ? { ...PARAM_CONFIG.baseThickness, min: BASE_HOLE_CONFIG.minBaseThickness }
+                : PARAM_CONFIG.baseThickness}
+              onChange={(v) => updateParam("baseThickness", v)}
+              unit={PARAM_CONFIG.baseThickness.unit}
+            />
+            <ParamSlider
+              label={PARAM_CONFIG.holeDepth.label}
+              value={params.holeDepth}
+              config={PARAM_CONFIG.holeDepth}
+              onChange={(v) => updateParam("holeDepth", v)}
+              unit={PARAM_CONFIG.holeDepth.unit}
+            />
+            <ParamSlider
+              label={PARAM_CONFIG.cornerRadius.label}
+              value={params.cornerRadius}
+              config={PARAM_CONFIG.cornerRadius}
+              onChange={(v) => updateParam("cornerRadius", v)}
+              unit={PARAM_CONFIG.cornerRadius.unit}
+            />
+          </div>
+        </SectionHeader>
+      </div>
+
+      {/* 底板孔位 — 移动端默认折叠 */}
+      <BaseHoleConfig
+        enableBaseHole={params.enableBaseHole}
+        baseHoleSize={params.baseHoleSize}
+        baseThickness={params.baseThickness}
+        updateParam={updateParam}
+        collapsible
+        defaultOpen={false}
+      />
+
+      {/* 模型尺寸 — 移动端默认折叠 */}
+      <div className={`iron-panel rounded-sm p-4 transition-all duration-300 ${isOversized ? 'border-[#8b1a1a] animate-forge-pulse' : ''}`}>
+        <SectionHeader icon={Ruler} title="模型尺寸" collapsible defaultOpen={false}
+          summary={`${params.rows * params.columns}个 / ${dimensions.width.toFixed(0)}×${dimensions.depth.toFixed(0)}mm`}>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
+                <span className="text-[10px] text-muted-foreground block">凹槽数量</span>
+                <span className="text-lg font-mono font-bold text-primary">{params.rows * params.columns}</span>
+              </div>
+              <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
+                <span className="text-[10px] text-muted-foreground block">预估报价 & 耗材参考</span>
+                <div className="flex flex-col items-center mt-0.5">
+                  <span className="text-sm font-mono font-bold text-[#eab308]">
+                    ¥{calculateGridPrice(params).toFixed(2)}
+                  </span>
+                  {volume > 0 ? (
+                    <span className="text-[9px] text-muted-foreground">
+                      PLA估重: {calculateWeight(volume).toFixed(1)}g
+                    </span>
+                  ) : (
+                    <span className="text-[9px] text-muted-foreground">
+                      {isGenerating ? "图纸生成中..." : "待锻造"}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: "宽度", value: dimensions.width, warn: dimensions.width > MAX_BUILD_SIZE },
+                { label: "深度", value: dimensions.depth, warn: dimensions.depth > MAX_BUILD_SIZE },
+                { label: "高度", value: dimensions.height, warn: false },
+              ].map(({ label, value, warn }) => (
+                <div
+                  key={label}
+                  className={`relative text-center p-2.5 transition-colors duration-200 ${warn
+                    ? 'bg-[#8b1a1a15] border border-[#8b1a1a50]'
+                    : 'bg-[#1c1a16] border border-[#2e2a24]'
+                    }`}
+                >
+                  <p className="text-[11px] text-muted-foreground/60 mb-0.5">{label}</p>
+                  <p className={`text-sm font-mono font-semibold tabular-nums ${warn ? 'text-[#c04040]' : 'text-foreground'}`}>
+                    {value.toFixed(1)}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground/40 font-mono">mm</p>
+                </div>
+              ))}
+            </div>
+            {isOversized && (
+              <div className="flex items-center justify-center gap-1.5 text-xs text-[#c04040] animate-fade-in">
+                <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm-.75 3.75a.75.75 0 011.5 0v4a.75.75 0 01-1.5 0v-4zM8 12a1 1 0 100-2 1 1 0 000 2z" />
+                </svg>
+                <span>超过锻造极限 ({MAX_BUILD_SIZE}×{MAX_BUILD_SIZE}mm)</span>
+              </div>
+            )}
+          </div>
+        </SectionHeader>
+      </div>
+
+      {/* Gold trim divider */}
+      <div className="wh-divider" />
+
+      {/* 自动预览与操作按钮 */}
+      <div className="flex flex-col gap-2.5 pb-4">
+        <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
+          <Label htmlFor="auto-preview" className="text-sm cursor-pointer text-[#f0d8b8]">
+            启用自动预览
+          </Label>
+          <Switch
+            id="auto-preview"
+            checked={autoPreview}
+            onCheckedChange={setAutoPreview}
+            className="data-[state=checked]:bg-[#8cb880]"
+          />
+        </div>
+
         <Button
-          onClick={onGenerate}
-          disabled={isGenerating}
-          className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium transition-all duration-200 shadow-lg shadow-blue-900/30 disabled:opacity-50"
+          onClick={() => onGenerate({ shouldSwitchView: true })}
+          disabled={isGenerating || isOversized}
+          className="w-full h-11 blood-red text-sm text-[#f0d8b8] font-bold tracking-wider cursor-pointer transition-all duration-200 border border-[#a02020] shadow-lg shadow-[#8b1a1a30] hover:shadow-xl hover:shadow-[#8b1a1a50] hover:brightness-125 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isGenerating ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
           ) : (
             <Play className="w-4 h-4 mr-2" />
           )}
-          {isGenerating ? "生成中..." : "生成模型"}
+          {isGenerating ? "锻造中..." : isOversized ? "尺寸超限" : "开始锻造"}
         </Button>
-        <Button
-          onClick={onExportSTL}
-          className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium transition-all duration-200 shadow-lg shadow-emerald-900/30"
-        >
-          <Download className="w-4 h-4 mr-2" />
-          导出 STL
-        </Button>
+        {isAdmin ? (
+          <Button
+            onClick={onExportSTL}
+            className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-sm text-[#8cb880] font-semibold tracking-wider cursor-pointer transition-all duration-200 border border-[#4a6741] shadow-lg shadow-[#2a352830]"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            导出 STL
+          </Button>
+        ) : (
+          <>
+            <Button
+              onClick={() => exportParams("grid", params as any)}
+              className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-sm text-[#8cb880] font-semibold tracking-wider cursor-pointer transition-all duration-200 border border-[#4a6741] shadow-lg shadow-[#2a352830]"
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              导出参数
+            </Button>
+            <Button
+              onClick={() => {
+                const payload = buildPayload("grid", params);
+                setPendingJson(serializePayload(payload));
+                setDialogOpen(true);
+              }}
+              className="w-full h-10 bg-[#1e2a3a] hover:bg-[#283848] text-sm text-[#7eb8d8] font-semibold tracking-wider cursor-pointer transition-all duration-200 border border-[#3a5a7a] shadow-lg shadow-[#1e2a3a30]"
+            >
+              <Send className="w-4 h-4 mr-2" />
+              发送配置
+            </Button>
+          </>
+        )}
         <Button
           variant="outline"
           onClick={handleReset}
-          className="w-full border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+          className="w-full h-11 lg:h-9 text-sm border-[#2e2a24] text-muted-foreground tracking-wider cursor-pointer hover:bg-[#1c1a16] hover:text-foreground/80 hover:border-[#3d372e] transition-all duration-200"
         >
           <RotateCcw className="w-4 h-4 mr-2" />
           重置参数
         </Button>
+        <ParamIOButtons
+          mode="grid"
+          params={params}
+          onImport={(p) => setParams(p as TrayParams)}
+        />
       </div>
+
+      <ConfirmSendDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        jsonData={pendingJson}
+        isSending={isSending}
+        onConfirm={async () => {
+          setIsSending(true);
+          const result = await sendConfigToKV("grid", params);
+          setIsSending(false);
+          setDialogOpen(false);
+          if (result.success) {
+            reportAction("submit_order");
+            toast("success", `配置已发送 (${result.orderId})`);
+          } else {
+            toast("error", `发送失败：${result.error}`);
+          }
+        }}
+      />
     </div>
   );
 }
