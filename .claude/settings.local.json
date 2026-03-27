@@ -20,7 +20,11 @@
       "Bash(rm /Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/lib/permissions.ts /Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/lib/analytics.ts /Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/lib/edgeone-kv.ts /Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/OrderListPanel.tsx /Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/StatsPanel.tsx /Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/ConfirmSendDialog.tsx)",
       "Bash(rm -r /Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/app/api)",
       "Bash(pnpm lint:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Skill(claude-hud:setup)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git rm:*)"
     ]
   }
 }
