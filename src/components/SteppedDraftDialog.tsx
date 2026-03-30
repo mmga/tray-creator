@@ -91,8 +91,8 @@ function DraftItemRow({
     return (
         <div
             className={`rounded border transition-colors ${isCurrent
-                    ? "border-[#5a4a2a] bg-[#1e1a10]"
-                    : "border-[#2e2a24] bg-[#16140e] hover:border-[#3d372e]"
+                ? "border-[#5a4a2a] bg-[#1e1a10]"
+                : "border-[#2e2a24] bg-[#16140e] hover:border-[#3d372e]"
                 }`}
         >
             {/* 标题行 */}
@@ -306,9 +306,8 @@ export function SteppedDraftDialog({
                             <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
                                 已保存草稿
                             </div>
-                            <div className={`text-[10px] font-mono ${
-                                isAtLimit ? "text-red-400" : isNearLimit ? "text-[#c8a84e]" : "text-muted-foreground/50"
-                            }`}>
+                            <div className={`text-[10px] font-mono ${isAtLimit ? "text-red-400" : isNearLimit ? "text-[#c8a84e]" : "text-muted-foreground/50"
+                                }`}>
                                 {drafts.length} / {MAX_DRAFTS_PER_MODE}
                             </div>
                         </div>

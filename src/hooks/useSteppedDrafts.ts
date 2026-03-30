@@ -107,7 +107,8 @@ export function useSteppedDrafts({
 
   const saveAsNewDraft = useCallback(
     (title?: string) => {
-      const cleanTitle = (title ?? draftNameInput).trim() || defaultDraftTitle();
+      const cleanTitle =
+        (title ?? draftNameInput).trim() || defaultDraftTitle();
       try {
         const record = createDraft(cleanTitle, params);
         setCurrentDraftId(record.item.id);
@@ -115,7 +116,10 @@ export function useSteppedDrafts({
         toast("success", `草稿「${cleanTitle}」已保存`);
         setIsDialogOpen(false);
       } catch (e) {
-        toast("error", `保存失败：${e instanceof Error ? e.message : String(e)}`);
+        toast(
+          "error",
+          `保存失败：${e instanceof Error ? e.message : String(e)}`,
+        );
       }
     },
     [draftNameInput, params, toast],
