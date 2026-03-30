@@ -37,6 +37,9 @@ const DRAFT_INDEX_KEY = "tray-creator:drafts:index:v1";
 const draftRecordKey = (id: string): string =>
   `tray-creator:drafts:stepped:${id}:v1`;
 
+/** 单模式最大草稿数，超出时拒绝创建新草稿 */
+export const MAX_DRAFTS_PER_MODE = 30;
+
 // ═══════════════════════════════════════════
 // localStorage 安全包装
 // ═══════════════════════════════════════════
@@ -134,6 +137,14 @@ export function createDraft(
   title: string,
   params: SteppedLayoutParams,
 ): DraftRecord {
+  // 数量上限检查
+  const existing = readIndex().filter((i) => i.mode === "stepped");
+  if (existing.length >= MAX_DRAFTS_PER_MODE) {
+    throw new Error(
+      `草稿数量已达上限（${MAX_DRAFTS_PER_MODE} 个），请先删除不需要的草稿`,
+    );
+  }
+
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
   const cleanTitle = title.trim() || defaultDraftTitle();
@@ -153,11 +164,17 @@ export function createDraft(
     paramFile: { version: 1, mode: "stepped", params },
   };
 
+  // 事务性写入：先写记录，再写索引；任一失败则回滚
   safeSetItem(draftRecordKey(id), JSON.stringify(record));
-
-  const index = readIndex();
-  index.push(item);
-  writeIndex(index);
+  try {
+    const index = readIndex();
+    index.push(item);
+    writeIndex(index);
+  } catch (e) {
+    // 索引写失败 → 回滚已写入的记录
+    safeRemoveItem(draftRecordKey(id));
+    throw e;
+  }
 
   return record;
 }
@@ -187,12 +204,18 @@ export function updateDraft(
     paramFile: { version: 1, mode: "stepped", params },
   };
 
+  // 事务性写入：先写记录，再写索引；任一失败则回滚至旧记录
   safeSetItem(draftRecordKey(id), JSON.stringify(updatedRecord));
-
-  const index = readIndex().map((item) =>
-    item.id === id ? updatedItem : item,
-  );
-  writeIndex(index);
+  try {
+    const index = readIndex().map((item) =>
+      item.id === id ? updatedItem : item,
+    );
+    writeIndex(index);
+  } catch (e) {
+    // 索引写失败 → 回滚记录为旧版本
+    safeSetItem(draftRecordKey(id), JSON.stringify(existing));
+    throw e;
+  }
 
   return updatedRecord;
 }

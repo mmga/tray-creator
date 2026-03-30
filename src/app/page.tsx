@@ -64,7 +64,7 @@ export default function Home() {
     }
   }, [steppedDrafts.isDialogOpen]);
 
-  // 損作后刷新列表
+  // 操作后刷新列表
   const refreshDraftList = useCallback(() => {
     setDraftList(steppedDrafts.getDraftList());
   }, [steppedDrafts]);
