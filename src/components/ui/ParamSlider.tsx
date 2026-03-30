@@ -20,6 +20,8 @@ export function ParamSlider({
     onChange,
     unit = "mm",
 }: ParamSliderProps) {
+    // 防御 undefined：确保 input/slider 始终为受控状态
+    const safeValue = value ?? config.min;
     return (
         <div className="space-y-2 group">
             <div className="flex items-center justify-between">
@@ -29,7 +31,7 @@ export function ParamSlider({
                 <div className="flex items-center gap-1.5">
                     <Input
                         type="number"
-                        value={value}
+                        value={safeValue}
                         min={config.min}
                         max={config.max}
                         step={config.step}
@@ -45,7 +47,7 @@ export function ParamSlider({
                 </div>
             </div>
             <Slider
-                value={[value]}
+                value={[safeValue]}
                 min={config.min}
                 max={config.max}
                 step={config.step}

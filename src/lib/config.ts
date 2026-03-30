@@ -36,7 +36,7 @@ export function getSlotTolerance(diameter: number): number {
 export const BASE_HOLE_CONFIG = {
   /** 规格预设 */
   presets: {
-    "19.5": { diameter: 19.5, depth: 1.0 },
+    "19.5": { diameter: 19.5, depth: 1.2 },
     "25": { diameter: 25, depth: 1.2 },
   },
   /** 建模公差 (mm)，仅用于建模，不显示在 UI */
@@ -101,6 +101,8 @@ export const DEFAULT_TRAY_PARAMS: TrayParams = {
   columns: 2,
   holeDiameter: BASE_PRESETS[DEFAULT_PRESET_INDEX].diameter,
   spacing: 5,
+  boundarySpacing: 5,
+  boundarySpacingIndependent: false,
   baseThickness: 3,
   holeDepth: 3,
   cornerRadius: 4,
@@ -156,7 +158,8 @@ export const STEPPED_LAYOUT_DEFAULTS: SteppedLayoutParams = {
 export const PARAM_CONFIG = {
   columns: { label: "列数", min: 1, max: 6, step: 1, unit: "个" },
   rows: { label: "行数", min: 1, max: 6, step: 1, unit: "个" },
-  spacing: { label: "间距", min: 0, max: 10, step: 1, unit: "mm" },
+  spacing: { label: "凹槽间距", min: 0, max: 10, step: 1, unit: "mm" },
+  boundarySpacing: { label: "边界间距", min: 0, max: 20, step: 1, unit: "mm" },
   baseThickness: { label: "底板厚度", min: 2, max: 4, step: 0.2, unit: "mm" },
   holeDepth: { label: "凹槽深度", min: 2, max: 4, step: 0.2, unit: "mm" },
   cornerRadius: { label: "圆角半径", min: 0, max: 10, step: 1, unit: "mm" },

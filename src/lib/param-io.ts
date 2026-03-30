@@ -10,6 +10,7 @@ import {
   STEPPED_LIMITS,
   STEPPED_LAYOUT_DEFAULTS,
   GROUP_COLORS,
+  DEFAULT_TRAY_PARAMS,
 } from "@/lib/config";
 
 // ═══════════════════════════════════════════
@@ -218,6 +219,13 @@ function validateGridParams(p: TrayParams) {
   clampField(obj, "baseThickness", PARAM_CONFIG.baseThickness);
   clampField(obj, "holeDepth", PARAM_CONFIG.holeDepth);
   clampField(obj, "cornerRadius", PARAM_CONFIG.cornerRadius);
+
+  // 边界间距字段（可选，旧版文件可能不含，使用默认值兜底）
+  if (typeof obj.boundarySpacing !== "number")
+    obj.boundarySpacing = DEFAULT_TRAY_PARAMS.boundarySpacing;
+  if (typeof obj.boundarySpacingIndependent !== "boolean")
+    obj.boundarySpacingIndependent = false;
+  clampField(obj, "boundarySpacing", PARAM_CONFIG.boundarySpacing);
 }
 
 function validateCustomParams(p: CustomLayoutParams) {

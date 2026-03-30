@@ -2,7 +2,11 @@ import { booleans, primitives, transforms } from "@jscad/modeling";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { TrayParams } from "@/types/tray";
 import { RENDER_CONFIG, getSlotTolerance } from "@/lib/config";
-import { createBaseBody, subtractBaseHoles, type SlotCenter } from "@/lib/model-utils";
+import {
+  createBaseBody,
+  subtractBaseHoles,
+  type SlotCenter,
+} from "@/lib/model-utils";
 
 const { subtract } = booleans;
 const { cylinder } = primitives;
@@ -25,6 +29,8 @@ export function createTrayModel(params: TrayParams): Geom3 {
     columns,
     holeDiameter,
     spacing,
+    boundarySpacing,
+    boundarySpacingIndependent,
     baseThickness,
     holeDepth,
     cornerRadius,
@@ -34,21 +40,38 @@ export function createTrayModel(params: TrayParams): Geom3 {
   const actualHoleDiameter = holeDiameter + getSlotTolerance(holeDiameter);
   const holeRadius = actualHoleDiameter / 2;
 
-  // 计算总尺寸：(N+1) 段间距 + N 个凹槽
-  const totalWidth = (columns + 1) * spacing + columns * actualHoleDiameter;
-  const totalDepth = (rows + 1) * spacing + rows * actualHoleDiameter;
+  // 边界间距：独立模式使用 boundarySpacing，否则跟随 spacing
+  const bsp = boundarySpacingIndependent ? boundarySpacing : spacing;
+
+  // 计算总尺寸：2 * 边界间距 + (N-1) 段凹槽间距 + N 个凹槽
+  const totalWidth =
+    2 * bsp + (columns - 1) * spacing + columns * actualHoleDiameter;
+  const totalDepth = 2 * bsp + (rows - 1) * spacing + rows * actualHoleDiameter;
   const totalHeight = baseThickness + holeDepth;
 
   // 1. 创建底板实体
-  const body = createBaseBody(totalWidth, totalDepth, totalHeight, cornerRadius);
+  const body = createBaseBody(
+    totalWidth,
+    totalDepth,
+    totalHeight,
+    cornerRadius,
+  );
 
   // 2. 计算凹槽中心坐标
   const centers: SlotCenter[] = [];
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < columns; col++) {
       centers.push({
-        cx: -totalWidth / 2 + spacing + holeRadius + col * (actualHoleDiameter + spacing),
-        cy: -totalDepth / 2 + spacing + holeRadius + row * (actualHoleDiameter + spacing),
+        cx:
+          -totalWidth / 2 +
+          bsp +
+          holeRadius +
+          col * (actualHoleDiameter + spacing),
+        cy:
+          -totalDepth / 2 +
+          bsp +
+          holeRadius +
+          row * (actualHoleDiameter + spacing),
       });
     }
   }
@@ -80,11 +103,21 @@ export function createTrayModel(params: TrayParams): Geom3 {
  * 根据参数计算托盘的理论外观尺寸 (mm)
  */
 export function calculateTrayDimensions(params: TrayParams) {
-  const { rows, columns, holeDiameter, spacing, baseThickness, holeDepth } = params;
+  const {
+    rows,
+    columns,
+    holeDiameter,
+    spacing,
+    boundarySpacing,
+    boundarySpacingIndependent,
+    baseThickness,
+    holeDepth,
+  } = params;
   const actualHoleDiameter = holeDiameter + getSlotTolerance(holeDiameter);
+  const bsp = boundarySpacingIndependent ? boundarySpacing : spacing;
   return {
-    width: (columns + 1) * spacing + columns * actualHoleDiameter,
-    depth: (rows + 1) * spacing + rows * actualHoleDiameter,
+    width: 2 * bsp + (columns - 1) * spacing + columns * actualHoleDiameter,
+    depth: 2 * bsp + (rows - 1) * spacing + rows * actualHoleDiameter,
     height: baseThickness + holeDepth,
   };
 }

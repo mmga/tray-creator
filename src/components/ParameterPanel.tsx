@@ -75,7 +75,7 @@ export default function ParameterPanel({
       {/* 布局参数 — 移动端默认展开 */}
       <div className="iron-panel rounded-sm p-4">
         <SectionHeader icon={Layout} title="布局" collapsible defaultOpen={true}
-          summary={`${params.columns}×${params.rows} / ⌀${params.holeDiameter}mm`}>
+          summary={`${params.columns}×${params.rows} / ⌀${params.holeDiameter}mm / 槽距${params.spacing}mm / 边距${params.boundarySpacingIndependent ? params.boundarySpacing : params.spacing}mm`}>
           <div className="space-y-4">
             {/* 底座预设 */}
             <div className="space-y-1.5">
@@ -122,6 +122,26 @@ export default function ParameterPanel({
               onChange={(v) => updateParam("spacing", v)}
               unit={PARAM_CONFIG.spacing.unit}
             />
+            <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
+              <Label htmlFor="grid-boundary-spacing-independent" className="text-sm cursor-pointer text-[#f0d8b8]">
+                边界间距独立调整
+              </Label>
+              <Switch
+                id="grid-boundary-spacing-independent"
+                checked={params.boundarySpacingIndependent}
+                onCheckedChange={(checked) => updateParam("boundarySpacingIndependent", checked)}
+                className="data-[state=checked]:bg-[#8cb880]"
+              />
+            </div>
+            {params.boundarySpacingIndependent && (
+              <ParamSlider
+                label={PARAM_CONFIG.boundarySpacing.label}
+                value={params.boundarySpacing}
+                config={PARAM_CONFIG.boundarySpacing}
+                onChange={(v) => updateParam("boundarySpacing", v)}
+                unit={PARAM_CONFIG.boundarySpacing.unit}
+              />
+            )}
           </div>
         </SectionHeader>
       </div>

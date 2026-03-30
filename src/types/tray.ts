@@ -16,6 +16,10 @@ export interface TrayParams {
   holeDepth: number;
   /** 圆角半径 (mm)，仅影响底板四角竖直方向的边 */
   cornerRadius: number;
+  /** 边界间距 (mm)，凹槽到底板边缘的距离；仅在 boundarySpacingIndependent=true 时生效 */
+  boundarySpacing: number;
+  /** 是否独立调整边界间距（false 时边界间距跟随 spacing） */
+  boundarySpacingIndependent: boolean;
   /** 是否启用底板磁吸孔 */
   enableBaseHole: boolean;
   /** 底板磁吸孔规格: '19.5' (19.5x1mm) | '25' (25x1.2mm) */
