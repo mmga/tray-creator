@@ -25,6 +25,7 @@ import { ParamIOButtons } from "@/components/ParamIOButtons";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
 import { calculateWeight, calculateSteppedPrice } from "@/lib/pricing";
+import { BookMarked, Save } from "lucide-react";
 
 interface SteppedPanelProps {
     params: SteppedLayoutParams;
@@ -47,6 +48,10 @@ interface SteppedPanelProps {
     onReorderGroups: (fromIndex: number, toIndex: number) => void;
     previewGroupId: string | null;
     onPreviewGroupChange: (groupId: string | null) => void;
+    // 草稿管理
+    onOpenDraftDialog: () => void;
+    onSaveDraft: () => void;
+    currentDraftId: string | null;
 }
 
 export default function SteppedPanel({
@@ -69,6 +74,9 @@ export default function SteppedPanel({
     onReorderGroups,
     previewGroupId,
     onPreviewGroupChange,
+    onOpenDraftDialog,
+    onSaveDraft,
+    currentDraftId,
 }: SteppedPanelProps) {
     const dimensions = calculateSteppedTrayDimensions(params);
     const effectiveWidth = effectiveDimensions.width;
@@ -487,6 +495,26 @@ export default function SteppedPanel({
                     params={params}
                     onImport={(p) => setParams(p as SteppedLayoutParams)}
                 />
+
+                {/* 草稿保存 */}
+                <div className="flex gap-2">
+                    <Button
+                        variant="outline"
+                        onClick={onSaveDraft}
+                        className="flex-1 h-9 text-sm tracking-wider border-[#5a4a2a] text-[#c8a84e] cursor-pointer hover:bg-[#2a2518] hover:text-[#e0c870] hover:border-[#7a6a3a] transition-all duration-200"
+                    >
+                        <Save className="w-4 h-4 mr-2" />
+                        {currentDraftId ? "更新草稿" : "保存草稿"}
+                    </Button>
+                    <Button
+                        variant="outline"
+                        onClick={onOpenDraftDialog}
+                        className="flex-1 h-9 text-sm tracking-wider border-[#2e2a24] text-muted-foreground cursor-pointer hover:bg-[#1c1a16] hover:text-foreground/80 hover:border-[#3d372e] transition-all duration-200"
+                    >
+                        <BookMarked className="w-4 h-4 mr-2" />
+                        草稿列表
+                    </Button>
+                </div>
             </div>
         </div>
     );

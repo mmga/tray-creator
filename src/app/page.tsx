@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useTrayModel } from "@/hooks/useTrayModel";
 import { useCustomLayout } from "@/hooks/useCustomLayout";
 import { useSteppedLayout } from "@/hooks/useSteppedLayout";
+import { useSteppedDrafts } from "@/hooks/useSteppedDrafts";
 import { ModeTabs } from "@/components/ModeTabs";
+import { SteppedDraftDialog } from "@/components/SteppedDraftDialog";
 import type { AppMode } from "@/types/custom-tray";
 import { Boxes } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -41,6 +43,31 @@ export default function Home() {
 
   // Stepped Mode State
   const steppedModel = useSteppedLayout();
+
+  // Stepped 草稿管理
+  const handleAfterDraftLoad = useCallback(() => {
+    setSelectedSlotIds([]);
+    setPreviewGroupId(null);
+  }, []);
+
+  const steppedDrafts = useSteppedDrafts({
+    params: steppedModel.params,
+    setParams: steppedModel.setParams,
+    onAfterLoad: handleAfterDraftLoad,
+  });
+
+  // 草稿列表（弹窗打开时刷新）
+  const [draftList, setDraftList] = useState(() => steppedDrafts.getDraftList());
+  useEffect(() => {
+    if (steppedDrafts.isDialogOpen) {
+      setDraftList(steppedDrafts.getDraftList());
+    }
+  }, [steppedDrafts.isDialogOpen]);
+
+  // 損作后刷新列表
+  const refreshDraftList = useCallback(() => {
+    setDraftList(steppedDrafts.getDraftList());
+  }, [steppedDrafts]);
 
   // ── Stepped 模式：选中凹槽时自动激活所属组 ──
   useEffect(() => {
@@ -90,6 +117,9 @@ export default function Home() {
           onReorderGroups={steppedModel.reorderGroups}
           previewGroupId={previewGroupId}
           onPreviewGroupChange={setPreviewGroupId}
+          onOpenDraftDialog={steppedDrafts.openDialog}
+          onSaveDraft={steppedDrafts.saveCurrentDraft}
+          currentDraftId={steppedDrafts.currentDraftId}
         />
       );
     }
@@ -173,6 +203,40 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-dvh bg-background text-foreground overflow-hidden">
+      {/* 阶梯草稿弹窗 */}
+      <SteppedDraftDialog
+        open={steppedDrafts.isDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) steppedDrafts.closeDialog();
+          else steppedDrafts.openDialog();
+        }}
+        drafts={draftList}
+        currentDraftId={steppedDrafts.currentDraftId}
+        draftNameInput={steppedDrafts.draftNameInput}
+        onDraftNameInputChange={steppedDrafts.setDraftNameInput}
+        onSaveAsNew={() => {
+          steppedDrafts.saveAsNewDraft();
+          refreshDraftList();
+        }}
+        onSaveCurrent={() => {
+          steppedDrafts.saveCurrentDraft();
+          refreshDraftList();
+        }}
+        onLoad={(id) => {
+          steppedDrafts.loadDraft(id);
+          refreshDraftList();
+        }}
+        onRename={(id, title) => {
+          steppedDrafts.renameDraftItem(id, title);
+          refreshDraftList();
+        }}
+        onDelete={(id) => {
+          steppedDrafts.deleteDraftItem(id);
+          refreshDraftList();
+        }}
+        onExport={(id) => steppedDrafts.exportDraftItem(id)}
+      />
+
       {/* Header */}
       <header className="relative shrink-0">
         <div className="flex items-center justify-between px-3 lg:px-6 py-2 lg:py-3 bg-[#0e0d0b] border-b-2 border-[#2e2a24]">
