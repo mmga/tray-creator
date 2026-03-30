@@ -82,6 +82,77 @@ export function exportParams(mode: AppMode, params: ExportableParams) {
 
 // ── 导入 ──────────────────────────────────
 
+/**
+ * 纯数据层：接收已解析的 JSON 对象，校验并返回合法参数。
+ * 供文件导入和本地草稿加载共用，避免两套校验逻辑。
+ */
+export function parseParamFileObject(
+  data: unknown,
+  expectedMode: AppMode,
+): TrayParams | CustomLayoutParams | SteppedLayoutParams {
+  if (!data || typeof data !== "object") {
+    throw new Error("文件内容无效");
+  }
+  const paramFile = data as ParamFile;
+  if (paramFile.version !== CURRENT_VERSION) {
+    throw new Error(`不支持的版本号: ${paramFile.version}`);
+  }
+
+  // 支持 custom → stepped 自动迁移
+  if (paramFile.mode === "custom" && expectedMode === "stepped") {
+    const customParams = paramFile.params as CustomLayoutParams;
+    validateCustomParams(customParams);
+    const defaultGroupId = crypto.randomUUID();
+    const steppedParams: SteppedLayoutParams = {
+      trayWidth: customParams.trayWidth,
+      trayDepth: customParams.trayDepth,
+      slots: customParams.slots.map((s) => ({
+        ...s,
+        shape: "circle" as const,
+        height: s.width,
+        groupId: defaultGroupId,
+      })),
+      groups: [
+        {
+          id: defaultGroupId,
+          name: "组 1",
+          color: GROUP_COLORS[0],
+          bottomHeight: 10,
+        },
+      ],
+      activeGroupId: defaultGroupId,
+      spacing: customParams.spacing,
+      holeDepth: customParams.holeDepth || 3,
+      smoothingRadius: STEPPED_LAYOUT_DEFAULTS.smoothingRadius,
+      disconnectDistance: STEPPED_LAYOUT_DEFAULTS.disconnectDistance,
+    };
+    validateSteppedParams(steppedParams);
+    return steppedParams;
+  }
+
+  if (paramFile.mode !== expectedMode) {
+    const modeNames: Record<string, string> = {
+      grid: "网格",
+      custom: "自定义",
+      stepped: "自定义阶梯底座",
+    };
+    throw new Error(
+      `模式不匹配：文件为「${modeNames[paramFile.mode] || paramFile.mode}」模式，当前为「${modeNames[expectedMode] || expectedMode}」模式`,
+    );
+  }
+
+  // 校验并钳位参数
+  if (expectedMode === "grid") {
+    validateGridParams(paramFile.params as TrayParams);
+  } else if (expectedMode === "stepped") {
+    validateSteppedParams(paramFile.params as SteppedLayoutParams);
+  } else {
+    validateCustomParams(paramFile.params as CustomLayoutParams);
+  }
+
+  return paramFile.params;
+}
+
 /** 读取 JSON 文件并校验，返回解析后的参数 */
 export function importParams(
   file: File,
@@ -92,69 +163,8 @@ export function importParams(
     reader.onload = () => {
       try {
         const text = reader.result as string;
-        const data = JSON.parse(text) as ParamFile;
-
-        if (!data || typeof data !== "object") {
-          throw new Error("文件内容无效");
-        }
-        if (data.version !== CURRENT_VERSION) {
-          throw new Error(`不支持的版本号: ${data.version}`);
-        }
-
-        // 支持 custom → stepped 自动迁移
-        if (data.mode === "custom" && expectedMode === "stepped") {
-          const customParams = data.params as CustomLayoutParams;
-          validateCustomParams(customParams);
-          const defaultGroupId = crypto.randomUUID();
-          const steppedParams: SteppedLayoutParams = {
-            trayWidth: customParams.trayWidth,
-            trayDepth: customParams.trayDepth,
-            slots: customParams.slots.map((s) => ({
-              ...s,
-              shape: "circle" as const,
-              height: s.width,
-              groupId: defaultGroupId,
-            })),
-            groups: [
-              {
-                id: defaultGroupId,
-                name: "组 1",
-                color: GROUP_COLORS[0],
-                bottomHeight: 10,
-              },
-            ],
-            activeGroupId: defaultGroupId,
-            spacing: customParams.spacing,
-            holeDepth: customParams.holeDepth || 3,
-            smoothingRadius: STEPPED_LAYOUT_DEFAULTS.smoothingRadius,
-            disconnectDistance: STEPPED_LAYOUT_DEFAULTS.disconnectDistance,
-          };
-          validateSteppedParams(steppedParams);
-          resolve(steppedParams);
-          return;
-        }
-
-        if (data.mode !== expectedMode) {
-          const modeNames: Record<string, string> = {
-            grid: "网格",
-            custom: "自定义",
-            stepped: "自定义阶梯底座",
-          };
-          throw new Error(
-            `模式不匹配：文件为「${modeNames[data.mode] || data.mode}」模式，当前为「${modeNames[expectedMode] || expectedMode}」模式`,
-          );
-        }
-
-        // 校验并钳位参数
-        if (expectedMode === "grid") {
-          validateGridParams(data.params as TrayParams);
-        } else if (expectedMode === "stepped") {
-          validateSteppedParams(data.params as SteppedLayoutParams);
-        } else {
-          validateCustomParams(data.params as CustomLayoutParams);
-        }
-
-        resolve(data.params);
+        const data = JSON.parse(text);
+        resolve(parseParamFileObject(data, expectedMode));
       } catch (e) {
         reject(e instanceof Error ? e : new Error(String(e)));
       }
