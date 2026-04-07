@@ -4,6 +4,7 @@ import { useRef, useState, useCallback, useEffect, useMemo } from "react";
 import type { FreeSlot, CustomLayoutParams, SteppedLayoutParams, GroupOutlinePreview, SteppedSlot } from "@/types/custom-tray";
 import { getSlotTolerance, MAX_BUILD_SIZE } from "@/lib/config";
 import { getEllipsePolygon, polygonsIntersect } from "@/lib/collision";
+import { measurePerf } from "@/lib/perf";
 import AlignmentToolbar from "./AlignmentToolbar";
 import {
   resolveMirrorAxis,
@@ -345,107 +346,109 @@ export default function LayoutCanvas({
   };
 
   const collisionState = useMemo(() => {
-    const collisionMap = new Map<string, CollisionInfo>();
-    const involvedIds = new Set<string>();
-    const connectorPairs: Array<{ key: string; firstId: string; secondId: string }> = [];
-    const slotById = new Map(slots.map((slot) => [slot.id, slot]));
+    return measurePerf("canvas.collision", () => {
+      const collisionMap = new Map<string, CollisionInfo>();
+      const involvedIds = new Set<string>();
+      const connectorPairs: Array<{ key: string; firstId: string; secondId: string }> = [];
+      const slotById = new Map(slots.map((slot) => [slot.id, slot]));
 
-    if (slots.length === 0) {
+      if (slots.length === 0) {
+        return {
+          collisionErrorCount: 0,
+          collisionMap,
+          connectorPairs,
+          involvedIds,
+          slotById,
+        };
+      }
+
+      const expandedBounds = slots
+        .map((slot) => {
+          const margin = spacing / 2 + getSlotTolerance(slot.width) / 2;
+          const { halfW, halfH } = getEllipseBoundingBox(
+            slot.width,
+            slot.height,
+            slot.rotation,
+          );
+
+          return {
+            slot,
+            margin,
+            minX: slot.x - halfW - margin,
+            maxX: slot.x + halfW + margin,
+            minY: slot.y - halfH - margin,
+            maxY: slot.y + halfH + margin,
+          };
+        })
+        .sort((a, b) => a.minX - b.minX);
+      const expandedPolygons = new Map<string, ReturnType<typeof getEllipsePolygon>>();
+      const getExpandedPolygon = (slot: typeof slots[number], margin: number) => {
+        const cached = expandedPolygons.get(slot.id);
+        if (cached) {
+          return cached;
+        }
+
+        const polygon = getEllipsePolygon(
+          slot.x,
+          slot.y,
+          slot.width,
+          slot.height,
+          slot.rotation,
+          margin,
+          12,
+        );
+        expandedPolygons.set(slot.id, polygon);
+        return polygon;
+      };
+
+      slots.forEach((slot) => {
+        collisionMap.set(slot.id, {
+          boundaryReasons: [],
+          overlapIds: [],
+        });
+      });
+
+      let collisionErrorCount = 0;
+      for (let i = 0; i < expandedBounds.length; i++) {
+        const current = expandedBounds[i];
+
+        for (let j = i + 1; j < expandedBounds.length; j++) {
+          const other = expandedBounds[j];
+          if (other.minX > current.maxX) {
+            break;
+          }
+
+          if (current.maxY < other.minY || other.maxY < current.minY) {
+            continue;
+          }
+
+          const currentPoly = getExpandedPolygon(current.slot, current.margin);
+          const otherPoly = getExpandedPolygon(other.slot, other.margin);
+          if (!polygonsIntersect(currentPoly, otherPoly)) {
+            continue;
+          }
+
+          collisionMap.get(current.slot.id)?.overlapIds.push(other.slot.id);
+          collisionMap.get(other.slot.id)?.overlapIds.push(current.slot.id);
+          involvedIds.add(current.slot.id);
+          involvedIds.add(other.slot.id);
+          collisionErrorCount += 1;
+          connectorPairs.push({
+            key: [current.slot.id, other.slot.id].sort().join("|"),
+            firstId: current.slot.id,
+            secondId: other.slot.id,
+          });
+        }
+      }
+
       return {
-        collisionErrorCount: 0,
+        collisionErrorCount,
         collisionMap,
         connectorPairs,
         involvedIds,
         slotById,
       };
-    }
-
-    const expandedBounds = slots
-      .map((slot) => {
-        const margin = spacing / 2 + getSlotTolerance(slot.width) / 2;
-        const { halfW, halfH } = getEllipseBoundingBox(
-          slot.width,
-          slot.height,
-          slot.rotation,
-        );
-
-        return {
-          slot,
-          margin,
-          minX: slot.x - halfW - margin,
-          maxX: slot.x + halfW + margin,
-          minY: slot.y - halfH - margin,
-          maxY: slot.y + halfH + margin,
-        };
-      })
-      .sort((a, b) => a.minX - b.minX);
-    const expandedPolygons = new Map<string, ReturnType<typeof getEllipsePolygon>>();
-    const getExpandedPolygon = (slot: typeof slots[number], margin: number) => {
-      const cached = expandedPolygons.get(slot.id);
-      if (cached) {
-        return cached;
-      }
-
-      const polygon = getEllipsePolygon(
-        slot.x,
-        slot.y,
-        slot.width,
-        slot.height,
-        slot.rotation,
-        margin,
-        12,
-      );
-      expandedPolygons.set(slot.id, polygon);
-      return polygon;
-    };
-
-    slots.forEach((slot) => {
-      collisionMap.set(slot.id, {
-        boundaryReasons: [],
-        overlapIds: [],
-      });
     });
-
-    let collisionErrorCount = 0;
-    for (let i = 0; i < expandedBounds.length; i++) {
-      const current = expandedBounds[i];
-
-      for (let j = i + 1; j < expandedBounds.length; j++) {
-        const other = expandedBounds[j];
-        if (other.minX > current.maxX) {
-          break;
-        }
-
-        if (current.maxY < other.minY || other.maxY < current.minY) {
-          continue;
-        }
-
-        const currentPoly = getExpandedPolygon(current.slot, current.margin);
-        const otherPoly = getExpandedPolygon(other.slot, other.margin);
-        if (!polygonsIntersect(currentPoly, otherPoly)) {
-          continue;
-        }
-
-        collisionMap.get(current.slot.id)?.overlapIds.push(other.slot.id);
-        collisionMap.get(other.slot.id)?.overlapIds.push(current.slot.id);
-        involvedIds.add(current.slot.id);
-        involvedIds.add(other.slot.id);
-        collisionErrorCount += 1;
-        connectorPairs.push({
-          key: [current.slot.id, other.slot.id].sort().join("|"),
-          firstId: current.slot.id,
-          secondId: other.slot.id,
-        });
-      }
-    }
-
-    return {
-      collisionErrorCount,
-      collisionMap,
-      connectorPairs,
-      involvedIds,
-      slotById,
-    };
   }, [slots, spacing]);
 
   // ... (keep existing helpers)
@@ -486,171 +489,173 @@ export default function LayoutCanvas({
   // ... (Rotation Logic added previously)
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    e.preventDefault();
+    measurePerf("canvas.pointermove", () => {
+      e.preventDefault();
 
-    // 多指防护：仅处理主指针的移动事件
-    if (e.pointerType === 'touch' && primaryPointerIdRef.current !== null && e.pointerId !== primaryPointerIdRef.current) {
-      return;
-    }
+      // 多指防护：仅处理主指针的移动事件
+      if (e.pointerType === 'touch' && primaryPointerIdRef.current !== null && e.pointerId !== primaryPointerIdRef.current) {
+        return;
+      }
 
-    // Pan
-    if (isPanning) {
-      const dx = e.clientX - panStartRef.current.x;
-      const dy = e.clientY - panStartRef.current.y;
-      if (svgRef.current) {
-        const screenCTM = svgRef.current.getScreenCTM();
-        if (screenCTM) {
-          const scale = screenCTM.a;
-          setPan(prev => ({
-            x: prev.x + dx / scale,
-            y: prev.y + dy / scale
-          }));
+      // Pan
+      if (isPanning) {
+        const dx = e.clientX - panStartRef.current.x;
+        const dy = e.clientY - panStartRef.current.y;
+        if (svgRef.current) {
+          const screenCTM = svgRef.current.getScreenCTM();
+          if (screenCTM) {
+            const scale = screenCTM.a;
+            setPan(prev => ({
+              x: prev.x + dx / scale,
+              y: prev.y + dy / scale
+            }));
+          }
         }
+        panStartRef.current = { x: e.clientX, y: e.clientY };
+        return;
       }
-      panStartRef.current = { x: e.clientX, y: e.clientY };
-      return;
-    }
 
-    // Marquee Selection
-    if (selectionBox) {
-      // Just update current point
-      const rect = parentRef.current?.getBoundingClientRect();
-      if (rect) {
-        setSelectionBox(prev => prev ? { ...prev, current: { x: e.clientX - rect.left, y: e.clientY - rect.top } } : null);
+      // Marquee Selection
+      if (selectionBox) {
+        // Just update current point
+        const rect = parentRef.current?.getBoundingClientRect();
+        if (rect) {
+          setSelectionBox(prev => prev ? { ...prev, current: { x: e.clientX - rect.left, y: e.clientY - rect.top } } : null);
+        }
+        return;
       }
-      return;
-    }
 
-    // Rotate (Single Item)
-    if (isRotating && draggingId && svgRef.current && rotateStartRef.current) {
-      const slot = slots.find(s => s.id === draggingId);
-      if (!slot) return;
+      // Rotate (Single Item)
+      if (isRotating && draggingId && svgRef.current && rotateStartRef.current) {
+        const slot = slots.find(s => s.id === draggingId);
+        if (!slot) return;
 
-      const pt = svgRef.current.createSVGPoint();
-      pt.x = e.clientX;
-      pt.y = e.clientY;
-      const svgP = pt.matrixTransform(svgRef.current.getScreenCTM()?.inverse());
+        const pt = svgRef.current.createSVGPoint();
+        pt.x = e.clientX;
+        pt.y = e.clientY;
+        const svgP = pt.matrixTransform(svgRef.current.getScreenCTM()?.inverse());
 
-      const slotCx = slot.x;
-      const slotCy = trayDepth - slot.y;
+        const slotCx = slot.x;
+        const slotCy = trayDepth - slot.y;
 
-      const currentAngle = Math.atan2(svgP.y - slotCy, svgP.x - slotCx);
-      const deltaAngle = currentAngle - rotateStartRef.current.angle;
-      const deltaDeg = deltaAngle * (180 / Math.PI);
+        const currentAngle = Math.atan2(svgP.y - slotCy, svgP.x - slotCx);
+        const deltaAngle = currentAngle - rotateStartRef.current.angle;
+        const deltaDeg = deltaAngle * (180 / Math.PI);
 
-      let newRotation = rotateStartRef.current.startRotation - deltaDeg;
-      if (e.shiftKey) {
-        newRotation = Math.round(newRotation / 15) * 15;
+        let newRotation = rotateStartRef.current.startRotation - deltaDeg;
+        if (e.shiftKey) {
+          newRotation = Math.round(newRotation / 15) * 15;
+        }
+        // 限定为 1 度为步长，不使用小数
+        newRotation = Math.round((newRotation % 360 + 360) % 360);
+
+        scheduleLiveUpdates([{
+          id: draggingId,
+          x: slot.x,
+          y: slot.y,
+          rotation: newRotation,
+        }]);
+        return;
       }
-      // 限定为 1 度为步长，不使用小数
-      newRotation = Math.round((newRotation % 360 + 360) % 360);
 
-      scheduleLiveUpdates([{
-        id: draggingId,
-        x: slot.x,
-        y: slot.y,
-        rotation: newRotation,
-      }]);
-      return;
-    }
+      // Drag (Multi-item support)
+      if (draggingId && !isRotating && svgRef.current && dragStartRef.current) {
+        const pt = svgRef.current.createSVGPoint();
+        pt.x = e.clientX;
+        pt.y = e.clientY;
+        const svgP = pt.matrixTransform(svgRef.current.getScreenCTM()?.inverse());
 
-    // Drag (Multi-item support)
-    if (draggingId && !isRotating && svgRef.current && dragStartRef.current) {
-      const pt = svgRef.current.createSVGPoint();
-      pt.x = e.clientX;
-      pt.y = e.clientY;
-      const svgP = pt.matrixTransform(svgRef.current.getScreenCTM()?.inverse());
+        // Calculate new position for the PRIMARY dragged slot
+        // We use the same offset logic for snapping
+        const dragOrigins = dragStartRef.current.slotOrigins;
+        const dragSlotOrigin = dragOrigins.get(draggingId);
+        if (!dragSlotOrigin) return;
 
-      // Calculate new position for the PRIMARY dragged slot
-      // We use the same offset logic for snapping
-      const dragOrigins = dragStartRef.current.slotOrigins;
-      const dragSlotOrigin = dragOrigins.get(draggingId);
-      if (!dragSlotOrigin) return;
+        // Current Mouse - Start Mouse = Delta for all
+        // But we need snapping for the Primary.
+        // Let's first calculate "Proposed Position" of Primary based on simple delta
+        const totalDx = svgP.x - dragStartRef.current.mouseStart.x;
+        // Note: SVG Y increases downwards. Slot Y increases upwards.
+        // DeltaY in SVG = +10 => Slot Y should vary by -10.
+        const totalPhysDx = totalDx;
+        const totalPhysDy = -(svgP.y - dragStartRef.current.mouseStart.y);
 
-      // Current Mouse - Start Mouse = Delta for all
-      // But we need snapping for the Primary.
-      // Let's first calculate "Proposed Position" of Primary based on simple delta
-      const totalDx = svgP.x - dragStartRef.current.mouseStart.x;
-      // Note: SVG Y increases downwards. Slot Y increases upwards.
-      // DeltaY in SVG = +10 => Slot Y should vary by -10.
-      const totalPhysDx = totalDx;
-      const totalPhysDy = -(svgP.y - dragStartRef.current.mouseStart.y);
+        // Proposed Primary Phys Position
+        // Apply smooth snap
+        const snapStep = 0.2; // 0.2mm smooth snap
+        const roundToStep = (val: number) => Math.round(val / snapStep) * snapStep;
 
-      // Proposed Primary Phys Position
-      // Apply smooth snap
-      const snapStep = 0.2; // 0.2mm smooth snap
-      const roundToStep = (val: number) => Math.round(val / snapStep) * snapStep;
+        const proposedX = roundToStep(dragSlotOrigin.x + totalPhysDx);
+        const proposedY = roundToStep(dragSlotOrigin.y + totalPhysDy);
 
-      const proposedX = roundToStep(dragSlotOrigin.x + totalPhysDx);
-      const proposedY = roundToStep(dragSlotOrigin.y + totalPhysDy);
+        // Apply Snapping to Proposed Position
+        const dragSlot = slots.find(s => s.id === draggingId);
+        const dragBB = dragSlot ? getEllipseBoundingBox(dragSlot.width, dragSlot.height, dragSlot.rotation) : { halfW: 0, halfH: 0 };
+        const dragRx = dragBB.halfW;
+        const dragRy = dragBB.halfH;
 
-      // Apply Snapping to Proposed Position
-      const dragSlot = slots.find(s => s.id === draggingId);
-      const dragBB = dragSlot ? getEllipseBoundingBox(dragSlot.width, dragSlot.height, dragSlot.rotation) : { halfW: 0, halfH: 0 };
-      const dragRx = dragBB.halfW;
-      const dragRy = dragBB.halfH;
+        const SNAP_THRESHOLD = 1.5;
+        const guides: GuideLine[] = [];
 
-      const SNAP_THRESHOLD = 1.5;
-      const guides: GuideLine[] = [];
+        let finalX = proposedX;
+        let finalY = proposedY;
 
-      let finalX = proposedX;
-      let finalY = proposedY;
+        // Snap Logic (Same as before, but checking proposedX/Y)
+        for (const other of slots) {
+          if (dragOrigins.has(other.id)) continue; // Don't snap to moved items
 
-      // Snap Logic (Same as before, but checking proposedX/Y)
-      for (const other of slots) {
-        if (dragOrigins.has(other.id)) continue; // Don't snap to moved items
+          const otherBB = getEllipseBoundingBox(other.width, other.height, other.rotation);
+          const otherRx = otherBB.halfW;
+          const otherRy = otherBB.halfH;
 
-        const otherBB = getEllipseBoundingBox(other.width, other.height, other.rotation);
-        const otherRx = otherBB.halfW;
-        const otherRy = otherBB.halfH;
+          // X Snaps
+          const xSnaps = [
+            { target: other.x, guide: other.x },
+            { target: other.x - otherRx + dragRx, guide: other.x - otherRx },
+            { target: other.x + otherRx - dragRx, guide: other.x + otherRx },
+          ];
+          for (const snap of xSnaps) {
+            if (Math.abs(finalX - snap.target) < SNAP_THRESHOLD) {
+              finalX = snap.target;
+              guides.push({ axis: 'x', value: snap.guide });
+              break;
+            }
+          }
 
-        // X Snaps
-        const xSnaps = [
-          { target: other.x, guide: other.x },
-          { target: other.x - otherRx + dragRx, guide: other.x - otherRx },
-          { target: other.x + otherRx - dragRx, guide: other.x + otherRx },
-        ];
-        for (const snap of xSnaps) {
-          if (Math.abs(finalX - snap.target) < SNAP_THRESHOLD) {
-            finalX = snap.target;
-            guides.push({ axis: 'x', value: snap.guide });
-            break;
+          // Y Snaps
+          const ySnaps = [
+            { target: other.y, guide: other.y },
+            { target: other.y - otherRy + dragRy, guide: other.y - otherRy },
+            { target: other.y + otherRy - dragRy, guide: other.y + otherRy },
+          ];
+          for (const snap of ySnaps) {
+            if (Math.abs(finalY - snap.target) < SNAP_THRESHOLD) {
+              finalY = snap.target;
+              guides.push({ axis: 'y', value: trayDepth - snap.guide });
+              break;
+            }
           }
         }
 
-        // Y Snaps
-        const ySnaps = [
-          { target: other.y, guide: other.y },
-          { target: other.y - otherRy + dragRy, guide: other.y - otherRy },
-          { target: other.y + otherRy - dragRy, guide: other.y + otherRy },
-        ];
-        for (const snap of ySnaps) {
-          if (Math.abs(finalY - snap.target) < SNAP_THRESHOLD) {
-            finalY = snap.target;
-            guides.push({ axis: 'y', value: trayDepth - snap.guide });
-            break;
-          }
-        }
-      }
+        setGuideLines(guides);
 
-      setGuideLines(guides);
+        // Calculate FINAL delta based on snapped position
+        const finalDeltaX = finalX - dragSlotOrigin.x;
+        const finalDeltaY = finalY - dragSlotOrigin.y;
 
-      // Calculate FINAL delta based on snapped position
-      const finalDeltaX = finalX - dragSlotOrigin.x;
-      const finalDeltaY = finalY - dragSlotOrigin.y;
-
-      // Apply to ALL selected slots
-      const liveUpdates: SlotUpdate[] = [];
-      dragOrigins.forEach((origin, id) => {
-        liveUpdates.push({
-          id,
-          x: origin.x + finalDeltaX,
-          y: origin.y + finalDeltaY,
+        // Apply to ALL selected slots
+        const liveUpdates: SlotUpdate[] = [];
+        dragOrigins.forEach((origin, id) => {
+          liveUpdates.push({
+            id,
+            x: origin.x + finalDeltaX,
+            y: origin.y + finalDeltaY,
+          });
         });
-      });
 
-      scheduleLiveUpdates(liveUpdates);
-    }
+        scheduleLiveUpdates(liveUpdates);
+      }
+    });
   }, [draggingId, isPanning, isRotating, panStartRef, scheduleLiveUpdates, selectionBox, setPan, trayDepth, slots]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent, slotId?: string) => {
