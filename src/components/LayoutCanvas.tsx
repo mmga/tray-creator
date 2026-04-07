@@ -357,20 +357,44 @@ export default function LayoutCanvas({
       };
     }
 
-    const expandedPolygons = new Map(
-      slots.map((slot) => [
-        slot.id,
-        getEllipsePolygon(
-          slot.x,
-          slot.y,
+    const expandedBounds = slots
+      .map((slot) => {
+        const margin = spacing / 2 + getSlotTolerance(slot.width) / 2;
+        const { halfW, halfH } = getEllipseBoundingBox(
           slot.width,
           slot.height,
           slot.rotation,
-          spacing / 2 + getSlotTolerance(slot.width) / 2,
-          12,
-        ),
-      ]),
-    );
+        );
+
+        return {
+          slot,
+          margin,
+          minX: slot.x - halfW - margin,
+          maxX: slot.x + halfW + margin,
+          minY: slot.y - halfH - margin,
+          maxY: slot.y + halfH + margin,
+        };
+      })
+      .sort((a, b) => a.minX - b.minX);
+    const expandedPolygons = new Map<string, ReturnType<typeof getEllipsePolygon>>();
+    const getExpandedPolygon = (slot: typeof slots[number], margin: number) => {
+      const cached = expandedPolygons.get(slot.id);
+      if (cached) {
+        return cached;
+      }
+
+      const polygon = getEllipsePolygon(
+        slot.x,
+        slot.y,
+        slot.width,
+        slot.height,
+        slot.rotation,
+        margin,
+        12,
+      );
+      expandedPolygons.set(slot.id, polygon);
+      return polygon;
+    };
 
     slots.forEach((slot) => {
       collisionMap.set(slot.id, {
@@ -380,29 +404,34 @@ export default function LayoutCanvas({
     });
 
     let collisionErrorCount = 0;
-    for (let i = 0; i < slots.length; i++) {
-      const current = slots[i];
-      const currentPoly = expandedPolygons.get(current.id);
-      if (!currentPoly) {
-        continue;
-      }
+    for (let i = 0; i < expandedBounds.length; i++) {
+      const current = expandedBounds[i];
 
-      for (let j = i + 1; j < slots.length; j++) {
-        const other = slots[j];
-        const otherPoly = expandedPolygons.get(other.id);
-        if (!otherPoly || !polygonsIntersect(currentPoly, otherPoly)) {
+      for (let j = i + 1; j < expandedBounds.length; j++) {
+        const other = expandedBounds[j];
+        if (other.minX > current.maxX) {
+          break;
+        }
+
+        if (current.maxY < other.minY || other.maxY < current.minY) {
           continue;
         }
 
-        collisionMap.get(current.id)?.overlapIds.push(other.id);
-        collisionMap.get(other.id)?.overlapIds.push(current.id);
-        involvedIds.add(current.id);
-        involvedIds.add(other.id);
+        const currentPoly = getExpandedPolygon(current.slot, current.margin);
+        const otherPoly = getExpandedPolygon(other.slot, other.margin);
+        if (!polygonsIntersect(currentPoly, otherPoly)) {
+          continue;
+        }
+
+        collisionMap.get(current.slot.id)?.overlapIds.push(other.slot.id);
+        collisionMap.get(other.slot.id)?.overlapIds.push(current.slot.id);
+        involvedIds.add(current.slot.id);
+        involvedIds.add(other.slot.id);
         collisionErrorCount += 1;
         connectorPairs.push({
-          key: [current.id, other.id].sort().join("|"),
-          firstId: current.id,
-          secondId: other.id,
+          key: [current.slot.id, other.slot.id].sort().join("|"),
+          firstId: current.slot.id,
+          secondId: other.slot.id,
         });
       }
     }
