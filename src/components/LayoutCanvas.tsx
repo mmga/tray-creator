@@ -2,7 +2,6 @@
 
 import { useRef, useState, useCallback, useEffect, useMemo } from "react";
 import type { FreeSlot, CustomLayoutParams, SteppedLayoutParams, GroupOutlinePreview, SteppedSlot } from "@/types/custom-tray";
-import type { OutlineData } from "@/lib/outline-geometry";
 import { getSlotTolerance, MAX_BUILD_SIZE } from "@/lib/config";
 import { getEllipsePolygon, polygonsIntersect } from "@/lib/collision";
 import AlignmentToolbar from "./AlignmentToolbar";
@@ -50,7 +49,6 @@ export default function LayoutCanvas({
   params,
   onUpdateSlot,
   onRemoveSlot,
-  onResizeTray,
   onUpdateSlotRotation,
   onUpdateMultipleSlots,
   onInsertSlots,
@@ -95,17 +93,21 @@ export default function LayoutCanvas({
     axis: 'x' | 'y';
     value: number; // SVG coordinate
   }
+  interface CollisionInfo {
+    boundaryReasons: string[];
+    overlapIds: string[];
+  }
   const [guideLines, setGuideLines] = useState<GuideLine[]>([]);
   const resizeActionPanelRef = useRef<{ startX: number; startWidth: number } | null>(null);
 
   // Extracted canvas zoom/pan hook
   const {
-    zoom, pan, setPan, viewBox, viewW, viewH, minX, minY,
+    zoom, setPan, viewBox, viewW, viewH, minX, minY,
     isSpacePressed, setIsSpacePressed,
     isPanning, setIsPanning,
     panStartRef, handleWheel,
     handleTouchStart, handleTouchMove, handleTouchEnd,
-    adjustZoom, resetZoom,
+    resetZoom,
   } = useCanvasZoom({
     baseW: params.trayWidth + 40, // trayWidth + (PADDING_MM * 2)
     baseH: params.trayDepth + 40,
@@ -127,16 +129,28 @@ export default function LayoutCanvas({
   const boundarySpacing = 'boundarySpacingIndependent' in params && params.boundarySpacingIndependent
     ? (params as CustomLayoutParams).boundarySpacing
     : spacing;
+  const steppedGroupMetaById = useMemo(() => {
+    if (!('groups' in params)) {
+      return null;
+    }
+
+    return new Map(
+      (params as SteppedLayoutParams).groups.map((group) => [group.id, group]),
+    );
+  }, [params]);
   const selectedIdsRef = useRef(selectedIds);
   const slotsRef = useRef(params.slots);
   const onUpdateSlotRef = useRef(onUpdateSlot);
   const onUndoRef = useRef(onUndo);
   const onSaveSnapshotRef = useRef(onSaveSnapshot);
-  selectedIdsRef.current = effectiveSelectedIds;
-  slotsRef.current = params.slots;
-  onUpdateSlotRef.current = onUpdateSlot;
-  onUndoRef.current = onUndo;
-  onSaveSnapshotRef.current = onSaveSnapshot;
+
+  useEffect(() => {
+    selectedIdsRef.current = effectiveSelectedIds;
+    slotsRef.current = params.slots;
+    onUpdateSlotRef.current = onUpdateSlot;
+    onUndoRef.current = onUndo;
+    onSaveSnapshotRef.current = onSaveSnapshot;
+  }, [effectiveSelectedIds, onSaveSnapshot, onUndo, onUpdateSlot, params.slots]);
 
   // Notify parent of selection changes (for stepped mode per-slot editing)
   useEffect(() => {
@@ -258,15 +272,6 @@ export default function LayoutCanvas({
     }
   }, [isActive, setIsPanning, setIsSpacePressed]);
 
-  /**
-   * 碰撞检测 (Approximation for Ellipses)
-   * Slot-Slot: Use average radius (Circle approximation).
-   * Boundary: Use precise Axis-Aligned Bounding Box (AABB) of rotated ellipse.
-   */
-  const getCollisionRadius = (slot: FreeSlot) => {
-    return (Math.max(slot.width, slot.height) + getSlotTolerance(Math.max(slot.width, slot.height))) / 2;
-  };
-
   const getEllipseBoundingBox = (w: number, h: number, rotation: number) => {
     const rad = (rotation * Math.PI) / 180;
     const a = (w + getSlotTolerance(w)) / 2;
@@ -276,41 +281,80 @@ export default function LayoutCanvas({
     return { halfW, halfH };
   };
 
-  const checkBoundaryCollision = (): string[] => [];
+  const collisionState = useMemo(() => {
+    const collisionMap = new Map<string, CollisionInfo>();
+    const involvedIds = new Set<string>();
+    const connectorPairs: Array<{ key: string; firstId: string; secondId: string }> = [];
+    const slotById = new Map(slots.map((slot) => [slot.id, slot]));
 
-  /** 返回与指定槽位发生碰撞的其他槽位 ID 列表 */
-  const checkSlotCollision = (id: string, x: number, y: number, currentW: number, currentH: number, currentRot: number): string[] => {
-    // Optimization: First do a broad phase check using bounding circles
-    // (We keep the old logic as a fast cull, but with margin)
-    // Actually, let's just use SAT for accuracy as requested by user.
+    if (slots.length === 0) {
+      return {
+        collisionErrorCount: 0,
+        collisionMap,
+        connectorPairs,
+        involvedIds,
+        slotById,
+      };
+    }
 
-    // We need to check if (Slot A + Spacing/2) intersects (Slot B + Spacing/2).
-    // Or simpler: (Slot A) intersects (Slot B expanded by Spacing).
-    // Let's go with: Check if slot `id` (at x,y,w,h,rot) intersects any `other` (at other.x...) 
-    // AND the distance is < spacing.
+    const expandedPolygons = new Map(
+      slots.map((slot) => [
+        slot.id,
+        getEllipsePolygon(
+          slot.x,
+          slot.y,
+          slot.width,
+          slot.height,
+          slot.rotation,
+          spacing / 2 + getSlotTolerance(slot.width) / 2,
+          12,
+        ),
+      ]),
+    );
 
-    // The requirement is "maintain spacing". 
-    // So distinct shapes A and B must be > spacing apart.
-    // Equivalent to: Shape A expanded by spacing/2 intersects Shape B expanded by spacing/2.
+    slots.forEach((slot) => {
+      collisionMap.set(slot.id, {
+        boundaryReasons: [],
+        overlapIds: [],
+      });
+    });
 
-    // Let's generate polygon for NEW position of current slot (expanded by spacing/2)
-    const margin = spacing / 2 + getSlotTolerance(currentW) / 2;
-    const poly1 = getEllipsePolygon(x, y, currentW, currentH, currentRot, margin, 12); // 12 steps is good balance
+    let collisionErrorCount = 0;
+    for (let i = 0; i < slots.length; i++) {
+      const current = slots[i];
+      const currentPoly = expandedPolygons.get(current.id);
+      if (!currentPoly) {
+        continue;
+      }
 
-    const collidingIds: string[] = [];
-    for (const other of slots) {
-      if (other.id === id) continue;
+      for (let j = i + 1; j < slots.length; j++) {
+        const other = slots[j];
+        const otherPoly = expandedPolygons.get(other.id);
+        if (!otherPoly || !polygonsIntersect(currentPoly, otherPoly)) {
+          continue;
+        }
 
-      // Expand other slot by spacing/2
-      const margin2 = spacing / 2 + getSlotTolerance(other.width) / 2;
-      const poly2 = getEllipsePolygon(other.x, other.y, other.width, other.height, other.rotation, margin2, 12);
-
-      if (polygonsIntersect(poly1, poly2)) {
-        collidingIds.push(other.id);
+        collisionMap.get(current.id)?.overlapIds.push(other.id);
+        collisionMap.get(other.id)?.overlapIds.push(current.id);
+        involvedIds.add(current.id);
+        involvedIds.add(other.id);
+        collisionErrorCount += 1;
+        connectorPairs.push({
+          key: [current.id, other.id].sort().join("|"),
+          firstId: current.id,
+          secondId: other.id,
+        });
       }
     }
-    return collidingIds;
-  };
+
+    return {
+      collisionErrorCount,
+      collisionMap,
+      connectorPairs,
+      involvedIds,
+      slotById,
+    };
+  }, [slots, spacing]);
 
   // ... (keep existing helpers)
 
@@ -399,7 +443,7 @@ export default function LayoutCanvas({
 
       const currentAngle = Math.atan2(svgP.y - slotCy, svgP.x - slotCx);
       const deltaAngle = currentAngle - rotateStartRef.current.angle;
-      let deltaDeg = deltaAngle * (180 / Math.PI);
+      const deltaDeg = deltaAngle * (180 / Math.PI);
 
       let newRotation = rotateStartRef.current.startRotation - deltaDeg;
       if (e.shiftKey) {
@@ -430,7 +474,6 @@ export default function LayoutCanvas({
       // But we need snapping for the Primary.
       // Let's first calculate "Proposed Position" of Primary based on simple delta
       const totalDx = svgP.x - dragStartRef.current.mouseStart.x;
-      const totalDy = svgRef.current.getScreenCTM() ? (svgP.y - dragStartRef.current.mouseStart.y) : 0;
       // Note: SVG Y increases downwards. Slot Y increases upwards.
       // DeltaY in SVG = +10 => Slot Y should vary by -10.
       const totalPhysDx = totalDx;
@@ -441,8 +484,8 @@ export default function LayoutCanvas({
       const snapStep = 0.2; // 0.2mm smooth snap
       const roundToStep = (val: number) => Math.round(val / snapStep) * snapStep;
 
-      let proposedX = roundToStep(dragSlotOrigin.x + totalPhysDx);
-      let proposedY = roundToStep(dragSlotOrigin.y + totalPhysDy);
+      const proposedX = roundToStep(dragSlotOrigin.x + totalPhysDx);
+      const proposedY = roundToStep(dragSlotOrigin.y + totalPhysDy);
 
       // Apply Snapping to Proposed Position
       const dragSlot = slots.find(s => s.id === draggingId);
@@ -507,7 +550,7 @@ export default function LayoutCanvas({
         }
       });
     }
-  }, [draggingId, isPanning, isRotating, selectedIds, selectionBox, onUpdateSlot, onUpdateSlotRotation, trayDepth, slots]);
+  }, [draggingId, isPanning, isRotating, onUpdateSlot, onUpdateSlotRotation, panStartRef, selectedIds, selectionBox, setPan, trayDepth, slots]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent, slotId?: string) => {
     e.preventDefault();
@@ -612,7 +655,7 @@ export default function LayoutCanvas({
         }
       }
     }
-  }, [selectedIds, isSpacePressed, slots, trayDepth]);
+  }, [isSpacePressed, panStartRef, selectedIds, setIsPanning, slots, trayDepth]);
 
   const handlePointerUp = useCallback(() => {
     // 释放主指针追踪
@@ -678,21 +721,7 @@ export default function LayoutCanvas({
     rotateStartRef.current = null;
     dragStartRef.current = null;
     setGuideLines([]);
-  }, [selectionBox, selectedIds, slots, trayDepth]);
-
-  const collisionErrorCount = (() => {
-    let count = 0;
-    for (const slot of slots) {
-      const overlapIds = checkSlotCollision(slot.id, slot.x, slot.y, slot.width, slot.height, slot.rotation);
-      for (const otherId of overlapIds) {
-        // 只报告一个方向避免重复
-        if (slot.id < otherId) {
-          count += 1;
-        }
-      }
-    }
-    return count;
-  })();
+  }, [selectionBox, selectedIds, setIsPanning, slots, trayDepth]);
 
   const effectiveBaseplate = (() => {
     if (slots.length === 0) {
@@ -853,40 +882,24 @@ export default function LayoutCanvas({
           )}
 
           {/* Slots */}
-          {(() => {
-            // 预计算所有碰撞信息，用于高亮冲突对方和生成摘要
-            const collisionMap = new Map<string, { boundaryReasons: string[]; overlapIds: string[] }>();
-            // 被其他碰撞槽位"牵连"高亮的 ID 集合
-            const involvedIds = new Set<string>();
-
-            for (const slot of slots) {
-              const boundaryReasons: string[] = [];
-              const overlapIds = checkSlotCollision(slot.id, slot.x, slot.y, slot.width, slot.height, slot.rotation);
-              collisionMap.set(slot.id, { boundaryReasons, overlapIds });
-              if (overlapIds.length > 0) {
-                involvedIds.add(slot.id);
-                overlapIds.forEach(id => involvedIds.add(id));
-              }
-            }
-
-            return slots.map((slot) => {
+          {slots.map((slot) => {
               // Geometry
               const w = slot.width + getSlotTolerance(slot.width);
               const h = slot.height + getSlotTolerance(slot.height);
-
-              // Collision Radius (Approximation)
-              const collisionR = getCollisionRadius(slot);
 
               // Position
               const svgY = trayDepth - slot.y;
 
               // Collision Check (from pre-computed map)
-              const info = collisionMap.get(slot.id)!;
+              const info = collisionState.collisionMap.get(slot.id) ?? {
+                boundaryReasons: [],
+                overlapIds: [],
+              };
               const isBoundary = info.boundaryReasons.length > 0;
               const isOverlap = info.overlapIds.length > 0;
               const isColliding = isBoundary || isOverlap;
               // 此槽位是否被别人的碰撞牵连高亮（但自身并非碰撞源）
-              const isInvolvedViaOther = !isColliding && involvedIds.has(slot.id);
+              const isInvolvedViaOther = !isColliding && collisionState.involvedIds.has(slot.id);
 
               const isHovered = hoveredId === slot.id;
               const isDragging = draggingId === slot.id;
@@ -897,20 +910,17 @@ export default function LayoutCanvas({
               const bhLabelColor = "#86efac";
 
               // 分组颜色（Stepped 模式通过 groupId 查组色）
-              const steppedGroups = 'groups' in params
-                ? (params as SteppedLayoutParams).groups
-                : undefined;
               const isSteppedSlot = 'groupId' in slot;
               const isDimmedByGroupFocus = Boolean(
                 focusedGroupId &&
                 isSteppedSlot &&
                 (slot as { groupId: string }).groupId !== focusedGroupId,
               );
-              const groupColor = isSteppedSlot && steppedGroups
-                ? (steppedGroups.find(g => g.id === (slot as { groupId: string }).groupId)?.color ?? "#86efac")
+              const groupMeta = isSteppedSlot && steppedGroupMetaById
+                ? steppedGroupMetaById.get((slot as { groupId: string }).groupId)
                 : null;
-              const groupBottomHeight = isSteppedSlot && steppedGroups
-                ? (steppedGroups.find(g => g.id === (slot as { groupId: string }).groupId)?.bottomHeight ?? null)
+              const groupColor = isSteppedSlot
+                ? (groupMeta?.color ?? "#86efac")
                 : null;
 
               return (
@@ -1011,42 +1021,35 @@ export default function LayoutCanvas({
                   )}
                 </g>
               );
-            });
-          })()}
+          })}
 
           {/* Collision connector lines — 连接冲突的槽位对，增强可理解性 */}
-          {(() => {
-            const lines: React.ReactNode[] = [];
-            const drawn = new Set<string>();
-            for (const slot of slots) {
-              const overlapIds = checkSlotCollision(slot.id, slot.x, slot.y, slot.width, slot.height, slot.rotation);
-              for (const otherId of overlapIds) {
-                const key = [slot.id, otherId].sort().join("|");
-                if (drawn.has(key)) continue;
-                drawn.add(key);
-                const other = slots.find(s => s.id === otherId);
-                if (!other) continue;
-                const lineOpacity = !focusedGroupId
-                  ? 0.6
-                  : (('groupId' in slot && slot.groupId === focusedGroupId) || ('groupId' in other && other.groupId === focusedGroupId))
-                    ? 0.5
-                    : 0.12;
-                lines.push(
-                  <line
-                    key={`col-${key}`}
-                    x1={slot.x} y1={trayDepth - slot.y}
-                    x2={other.x} y2={trayDepth - other.y}
-                    stroke="#ef4444"
-                    strokeWidth={0.5 / zoom}
-                    strokeDasharray="3 2"
-                    opacity={lineOpacity}
-                    pointerEvents="none"
-                  />
-                );
-              }
+          {collisionState.connectorPairs.map((pair) => {
+            const slot = collisionState.slotById.get(pair.firstId);
+            const other = collisionState.slotById.get(pair.secondId);
+            if (!slot || !other) {
+              return null;
             }
-            return lines;
-          })()}
+
+            const lineOpacity = !focusedGroupId
+              ? 0.6
+              : (('groupId' in slot && slot.groupId === focusedGroupId) || ('groupId' in other && other.groupId === focusedGroupId))
+                ? 0.5
+                : 0.12;
+
+            return (
+              <line
+                key={`col-${pair.key}`}
+                x1={slot.x} y1={trayDepth - slot.y}
+                x2={other.x} y2={trayDepth - other.y}
+                stroke="#ef4444"
+                strokeWidth={0.5 / zoom}
+                strokeDasharray="3 2"
+                opacity={lineOpacity}
+                pointerEvents="none"
+              />
+            );
+          })}
 
           {/* Smart Guide Lines */}
           {guideLines.map((g, i) => (
@@ -1107,7 +1110,7 @@ export default function LayoutCanvas({
           zoom={zoom}
           selectedIds={selectedIds}
           slots={slots}
-          collisionErrorCount={collisionErrorCount}
+          collisionErrorCount={collisionState.collisionErrorCount}
         />
 
         {isEffectiveOversized && (
