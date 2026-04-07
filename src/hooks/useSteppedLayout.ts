@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useMemo } from "react";
+import { useState, useCallback, useRef, useMemo, useDeferredValue } from "react";
 import type {
   SteppedLayoutParams,
   SteppedSlot,
@@ -99,6 +99,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
   paramsRef.current = params;
   const [isPreviewStale, setIsPreviewStale] = useState(false);
   const paramsVersionRef = useRef(0);
+  const deferredOutlineParams = useDeferredValue(params);
 
   const invalidatePreview = useCallback(() => {
     paramsVersionRef.current += 1;
@@ -584,29 +585,66 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
 
   // 自动计算分组轮廓预览（每组纳入更高组作上下文，匹配 3D 建模逻辑）
   const outlinePreviewAuto = useMemo<GroupOutlinePreview[] | null>(() => {
-    if (params.slots.length === 0 || params.groups.length === 0) return null;
+    if (
+      deferredOutlineParams.slots.length === 0 ||
+      deferredOutlineParams.groups.length === 0
+    ) {
+      return null;
+    }
 
     const result: GroupOutlinePreview[] = [];
     const effectiveBridgeGap = getEffectiveBridgeGap(
-      params.smoothingRadius,
-      params.disconnectDistance,
+      deferredOutlineParams.smoothingRadius,
+      deferredOutlineParams.disconnectDistance,
     );
+    const slotsByGroupId = new Map<string, SteppedSlot[]>();
+    deferredOutlineParams.slots.forEach((slot) => {
+      const groupedSlots = slotsByGroupId.get(slot.groupId);
+      if (groupedSlots) {
+        groupedSlots.push(slot);
+      } else {
+        slotsByGroupId.set(slot.groupId, [slot]);
+      }
+    });
 
-    for (const group of params.groups) {
-      const ownSlots = params.slots.filter((s) => s.groupId === group.id);
+    const higherSlotsByGroupId = new Map<string, SteppedSlot[]>();
+    const groupsByHeight = [...deferredOutlineParams.groups].sort(
+      (a, b) => b.bottomHeight - a.bottomHeight,
+    );
+    let higherSlots: SteppedSlot[] = [];
+    for (let index = 0; index < groupsByHeight.length; ) {
+      const currentHeight = groupsByHeight[index].bottomHeight;
+      const sameHeightGroups: typeof groupsByHeight = [];
+
+      while (
+        index < groupsByHeight.length &&
+        groupsByHeight[index].bottomHeight === currentHeight
+      ) {
+        sameHeightGroups.push(groupsByHeight[index]);
+        index += 1;
+      }
+
+      sameHeightGroups.forEach((group) => {
+        higherSlotsByGroupId.set(group.id, higherSlots);
+      });
+
+      const sameHeightSlots = sameHeightGroups.flatMap(
+        (group) => slotsByGroupId.get(group.id) ?? [],
+      );
+      higherSlots = [...higherSlots, ...sameHeightSlots];
+    }
+
+    for (const group of deferredOutlineParams.groups) {
+      const ownSlots = slotsByGroupId.get(group.id) ?? [];
       if (ownSlots.length === 0) continue;
 
       // 纳入所有高度严格更高的组的凹槽作为轮廓上下文（与 3D 建模保持一致）
       // 这样低组的轮廓自然包裹更高组的圆柱脚印，体现平滑过渡效果
-      const higherSlots = params.slots.filter((s) => {
-        if (s.groupId === group.id) return false;
-        const otherGroup = params.groups.find((g) => g.id === s.groupId);
-        return otherGroup && otherGroup.bottomHeight > group.bottomHeight;
-      });
+      const higherSlotsForGroup = higherSlotsByGroupId.get(group.id) ?? [];
 
       const connectivityCircles: ConnectivityCircle[] = [
         ...ownSlots,
-        ...higherSlots,
+        ...higherSlotsForGroup,
       ].map((slot) => ({
         id: slot.id,
         cx: slot.x,
@@ -614,7 +652,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
         rOuter: getConnectivityRadius(
           slot.width,
           slot.height,
-          params.spacing,
+          deferredOutlineParams.spacing,
           getSlotTolerance(slot.width),
           getSlotTolerance(slot.height),
         ),
@@ -637,7 +675,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
             cy: circle.cy,
             rOuter: circle.rOuter,
           })),
-          params.smoothingRadius,
+          deferredOutlineParams.smoothingRadius,
           64,
         );
         if (outline && outline.points.length >= 3) {
@@ -656,7 +694,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     result.sort((a, b) => a.bottomHeight - b.bottomHeight);
 
     return result.length > 0 ? result : null;
-  }, [params]);
+  }, [deferredOutlineParams]);
 
   return {
     params,
