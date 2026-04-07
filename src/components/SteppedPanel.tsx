@@ -2,9 +2,8 @@
 
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 import { BASE_PRESETS, STEPPED_LIMITS, MAX_BUILD_SIZE, STEPPED_LAYOUT_DEFAULTS } from "@/lib/config";
-import { calculateSteppedTrayDimensions } from "@/lib/stepped-tray-model";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
     Download,
     RotateCcw,
@@ -78,12 +77,28 @@ export default function SteppedPanel({
     onSaveDraft,
     currentDraftId,
 }: SteppedPanelProps) {
-    const dimensions = calculateSteppedTrayDimensions(params);
+    const maxGroupHeight = useMemo(
+        () => (params.groups.length > 0
+            ? Math.max(...params.groups.map((group) => Math.max(group.bottomHeight, 3)))
+            : 0),
+        [params.groups],
+    );
     const effectiveWidth = effectiveDimensions.width;
     const effectiveDepth = effectiveDimensions.depth;
     const isOversized = effectiveWidth > MAX_BUILD_SIZE || effectiveDepth > MAX_BUILD_SIZE;
     const [pressedPreviewGroupId, setPressedPreviewGroupId] = useState<string | null>(null);
     const [lockedPreviewGroupId, setLockedPreviewGroupId] = useState<string | null>(null);
+    const groupSlotCounts = useMemo(() => {
+        const counts = new Map<string, number>();
+        params.slots.forEach((slot) => {
+            counts.set(slot.groupId, (counts.get(slot.groupId) ?? 0) + 1);
+        });
+        return counts;
+    }, [params.slots]);
+    const activeGroup = useMemo(
+        () => params.groups.find((group) => group.id === params.activeGroupId) ?? null,
+        [params.activeGroupId, params.groups],
+    );
 
     useEffect(() => {
         if (!pressedPreviewGroupId) {
@@ -151,7 +166,7 @@ export default function SteppedPanel({
                     <div className="space-y-1.5 mt-1">
                         {params.groups
                             .map((group, groupIndex) => {
-                                const groupSlotCount = params.slots.filter(s => s.groupId === group.id).length;
+                                const groupSlotCount = groupSlotCounts.get(group.id) ?? 0;
                                 const isActive = params.activeGroupId === group.id;
                                 const isPreviewing = previewGroupId === group.id;
                                 return (
@@ -307,17 +322,13 @@ export default function SteppedPanel({
                 <SectionHeader icon={BoxSelect} title="添加凹槽" collapsible defaultOpen={true}
                     summary={`已有 ${params.slots.length} 个凹槽`}>
                     <div className="space-y-2">
-                        {(() => {
-                            const activeGroup = params.groups.find(g => g.id === params.activeGroupId);
-                            if (!activeGroup) return null;
-                            return (
-                                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/70">
-                                    <span>新凹槽将加入</span>
-                                    <div className="w-2 h-2 rounded-sm" style={{ background: activeGroup.color }} />
-                                    <span style={{ color: activeGroup.color }}>{activeGroup.name}</span>
-                                </div>
-                            );
-                        })()}
+                        {activeGroup && (
+                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/70">
+                                <span>新凹槽将加入</span>
+                                <div className="w-2 h-2 rounded-sm" style={{ background: activeGroup.color }} />
+                                <span style={{ color: activeGroup.color }}>{activeGroup.name}</span>
+                            </div>
+                        )}
                         <div className="text-[10px] text-muted-foreground/70 font-bold tracking-wider uppercase mb-0.5">圆形</div>
                         <div className="grid grid-cols-3 gap-1.5">
                             {BASE_PRESETS.map((preset, i) => (
@@ -408,7 +419,7 @@ export default function SteppedPanel({
                             <div className="space-y-1">
                                 {params.groups
                                     .map((group) => {
-                                        const count = params.slots.filter(s => s.groupId === group.id).length;
+                                        const count = groupSlotCounts.get(group.id) ?? 0;
                                         return (
                                             <div key={group.id} className="flex items-center gap-2 text-[11px]">
                                                 <div className="w-2 h-2 rounded-sm shrink-0" style={{ background: group.color }} />
@@ -425,7 +436,7 @@ export default function SteppedPanel({
                             {[
                                 { label: "宽度", value: effectiveWidth, warn: effectiveWidth > MAX_BUILD_SIZE },
                                 { label: "深度", value: effectiveDepth, warn: effectiveDepth > MAX_BUILD_SIZE },
-                                { label: "高度", value: dimensions.height, warn: false },
+                                { label: "高度", value: maxGroupHeight, warn: false },
                             ].map(({ label, value, warn }) => (
                                 <div
                                     key={label}
