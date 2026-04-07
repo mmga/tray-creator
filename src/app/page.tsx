@@ -187,6 +187,15 @@ export default function Home() {
               onUndo={model.undo}
               onSaveSnapshot={model.saveSnapshot}
               onSelectionChange={mode === "stepped" ? setSelectedSlotIds : undefined}
+              onEditInteractionChange={mode === "stepped"
+                ? (isInteracting) => {
+                  if (isInteracting) {
+                    steppedModel.pauseOutlinePreview();
+                  } else {
+                    steppedModel.resumeOutlinePreview();
+                  }
+                }
+                : undefined}
               outlinePreview={mode === "stepped" ? steppedModel.outlinePreview : undefined}
               focusedGroupId={mode === "stepped" ? previewGroupId : undefined}
             />

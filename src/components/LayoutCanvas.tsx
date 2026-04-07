@@ -40,6 +40,7 @@ interface LayoutCanvasProps {
   onUndo?: () => void;
   onSaveSnapshot?: () => void;
   onSelectionChange?: (ids: string[]) => void;
+  onEditInteractionChange?: (isInteracting: boolean) => void;
   // 轮廓预览（Stepped 模式：每组独立轮廓）
   outlinePreview?: GroupOutlinePreview[] | null;
   focusedGroupId?: string | null;
@@ -58,6 +59,7 @@ export default function LayoutCanvas({
   onUndo,
   onSaveSnapshot,
   onSelectionChange,
+  onEditInteractionChange,
   outlinePreview,
   focusedGroupId,
 }: LayoutCanvasProps) {
@@ -321,6 +323,7 @@ export default function LayoutCanvas({
   useEffect(() => {
     if (!isActive) {
       flushScheduledLiveUpdates();
+      onEditInteractionChange?.(false);
       setHoveredId(null);
       setDraggingId(null);
       setGuideLines([]);
@@ -330,7 +333,7 @@ export default function LayoutCanvas({
       setIsSpacePressed(false);
       setIsResizingActionPanel(false);
     }
-  }, [flushScheduledLiveUpdates, isActive, setIsPanning, setIsSpacePressed]);
+  }, [flushScheduledLiveUpdates, isActive, onEditInteractionChange, setIsPanning, setIsSpacePressed]);
 
   const getEllipseBoundingBox = (w: number, h: number, rotation: number) => {
     const rad = (rotation * Math.PI) / 180;
@@ -469,6 +472,7 @@ export default function LayoutCanvas({
     const angle = Math.atan2(svgP.y - slotCy, svgP.x - slotCx);
 
     onSaveSnapshotRef.current?.(); // 保存快照供撤销
+    onEditInteractionChange?.(true);
     setIsRotating(true);
     setDraggingId(slot.id); // Set draggingId to keep slot active/highlighted
     rotateStartRef.current = {
@@ -695,6 +699,7 @@ export default function LayoutCanvas({
 
       // Start Drag
       onSaveSnapshotRef.current?.(); // 保存快照供撤销
+      onEditInteractionChange?.(true);
       setDraggingId(slotId);
 
       // Init Drag Data
@@ -756,6 +761,7 @@ export default function LayoutCanvas({
 
   const handlePointerUp = useCallback(() => {
     flushScheduledLiveUpdates();
+    onEditInteractionChange?.(false);
 
     // 释放主指针追踪
     primaryPointerIdRef.current = null;
@@ -820,7 +826,7 @@ export default function LayoutCanvas({
     rotateStartRef.current = null;
     dragStartRef.current = null;
     setGuideLines([]);
-  }, [flushScheduledLiveUpdates, selectionBox, selectedIds, setIsPanning, slots, trayDepth]);
+  }, [flushScheduledLiveUpdates, onEditInteractionChange, selectionBox, selectedIds, setIsPanning, slots, trayDepth]);
 
   const effectiveBaseplate = (() => {
     if (slots.length === 0) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useMemo, useDeferredValue } from "react";
+import { useState, useCallback, useRef, useMemo, useDeferredValue, useEffect } from "react";
 import type {
   SteppedLayoutParams,
   SteppedSlot,
@@ -73,6 +73,8 @@ export interface UseSteppedLayoutReturn {
   volume: number;
   isGenerating: boolean;
   isPreviewStale: boolean;
+  pauseOutlinePreview: () => void;
+  resumeOutlinePreview: () => void;
   handleGenerate: () => void;
   handleExportSTL: () => void;
   // 2D 分组轮廓预览
@@ -99,7 +101,10 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
   paramsRef.current = params;
   const [isPreviewStale, setIsPreviewStale] = useState(false);
   const paramsVersionRef = useRef(0);
-  const deferredOutlineParams = useDeferredValue(params);
+  const [isOutlinePreviewPaused, setIsOutlinePreviewPaused] = useState(false);
+  const [outlinePreviewParams, setOutlinePreviewParams] =
+    useState<SteppedLayoutParams>(STEPPED_LAYOUT_DEFAULTS);
+  const deferredOutlineParams = useDeferredValue(outlinePreviewParams);
 
   const invalidatePreview = useCallback(() => {
     paramsVersionRef.current += 1;
@@ -258,6 +263,22 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     },
     [invalidatePreview],
   );
+
+  useEffect(() => {
+    if (isOutlinePreviewPaused) {
+      return;
+    }
+
+    setOutlinePreviewParams(params);
+  }, [isOutlinePreviewPaused, params]);
+
+  const pauseOutlinePreview = useCallback(() => {
+    setIsOutlinePreviewPaused(true);
+  }, []);
+
+  const resumeOutlinePreview = useCallback(() => {
+    setIsOutlinePreviewPaused(false);
+  }, []);
 
   const applyMultipleSlotUpdates = useCallback(
     (
@@ -723,6 +744,8 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     volume,
     isGenerating,
     isPreviewStale,
+    pauseOutlinePreview,
+    resumeOutlinePreview,
     handleGenerate,
     handleExportSTL,
     outlinePreview: outlinePreviewAuto,
