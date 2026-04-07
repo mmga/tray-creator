@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useCallback, useRef, useMemo, useDeferredValue, useEffect } from "react";
+import { startTransition, useState, useCallback, useRef, useMemo, useDeferredValue, useEffect } from "react";
 import type {
   SteppedLayoutParams,
-  SteppedSlot,
   FreeSlot,
   SlotGroup,
   GroupOutlinePreview,
@@ -14,21 +13,15 @@ import {
   getSlotTolerance,
 } from "@/lib/config";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
-import { measurePerf } from "@/lib/perf";
+import { recordPerfSample } from "@/lib/perf";
 import { useUndoHistory } from "@/hooks/useUndoHistory";
 import { trayWorkerService } from "@/lib/worker/worker-service";
 import { useToast } from "@/hooks/useToast";
 import type * as THREE from "three";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
-import { generateOutline } from "@/lib/outline-geometry";
 import { downloadParamFile } from "@/lib/param-io";
 import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
-import {
-  clusterConnectivityCircles,
-  getConnectivityRadius,
-  getEffectiveBridgeGap,
-  type ConnectivityCircle,
-} from "@/lib/stepped-connectivity";
+import { buildSteppedOutlinePreview } from "@/lib/stepped-outline-preview";
 
 export interface UseSteppedLayoutReturn {
   params: SteppedLayoutParams;
@@ -106,6 +99,9 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
   const [outlinePreviewParams, setOutlinePreviewParams] =
     useState<SteppedLayoutParams>(STEPPED_LAYOUT_DEFAULTS);
   const deferredOutlineParams = useDeferredValue(outlinePreviewParams);
+  const [outlinePreview, setOutlinePreview] =
+    useState<GroupOutlinePreview[] | null>(null);
+  const outlinePreviewRequestSeqRef = useRef(0);
 
   const invalidatePreview = useCallback(() => {
     paramsVersionRef.current += 1;
@@ -605,119 +601,77 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     toast,
   ]);
 
-  // 自动计算分组轮廓预览（每组纳入更高组作上下文，匹配 3D 建模逻辑）
-  const outlinePreviewAuto = useMemo<GroupOutlinePreview[] | null>(() => {
-    return measurePerf("stepped.outline", () => {
-      if (
-        deferredOutlineParams.slots.length === 0 ||
-        deferredOutlineParams.groups.length === 0
-      ) {
-        return null;
-      }
+  useEffect(() => {
+    const requestSeq = outlinePreviewRequestSeqRef.current + 1;
+    outlinePreviewRequestSeqRef.current = requestSeq;
 
-      const result: GroupOutlinePreview[] = [];
-      const effectiveBridgeGap = getEffectiveBridgeGap(
-        deferredOutlineParams.smoothingRadius,
-        deferredOutlineParams.disconnectDistance,
-      );
-      const slotsByGroupId = new Map<string, SteppedSlot[]>();
-      deferredOutlineParams.slots.forEach((slot) => {
-        const groupedSlots = slotsByGroupId.get(slot.groupId);
-        if (groupedSlots) {
-          groupedSlots.push(slot);
-        } else {
-          slotsByGroupId.set(slot.groupId, [slot]);
-        }
+    if (
+      deferredOutlineParams.slots.length === 0 ||
+      deferredOutlineParams.groups.length === 0
+    ) {
+      startTransition(() => {
+        setOutlinePreview(null);
       });
+      return;
+    }
 
-      const higherSlotsByGroupId = new Map<string, SteppedSlot[]>();
-      const groupsByHeight = [...deferredOutlineParams.groups].sort(
-        (a, b) => b.bottomHeight - a.bottomHeight,
-      );
-      let higherSlots: SteppedSlot[] = [];
-      for (let index = 0; index < groupsByHeight.length; ) {
-        const currentHeight = groupsByHeight[index].bottomHeight;
-        const sameHeightGroups: typeof groupsByHeight = [];
+    let isCancelled = false;
 
-        while (
-          index < groupsByHeight.length &&
-          groupsByHeight[index].bottomHeight === currentHeight
-        ) {
-          sameHeightGroups.push(groupsByHeight[index]);
-          index += 1;
+    const applyOutlinePreview = (nextPreview: GroupOutlinePreview[] | null) => {
+      if (
+        isCancelled ||
+        outlinePreviewRequestSeqRef.current !== requestSeq
+      ) {
+        return;
+      }
+
+      startTransition(() => {
+        setOutlinePreview(nextPreview);
+      });
+    };
+
+    const runOutlinePreview = async () => {
+      try {
+        if (trayWorkerService) {
+          const result =
+            await trayWorkerService.generateSteppedOutlinePreview(
+              deferredOutlineParams,
+            );
+          if (result.durationMs >= 0) {
+            recordPerfSample("stepped.outline", result.durationMs);
+          }
+          applyOutlinePreview(result.outlinePreview);
+          return;
         }
 
-        sameHeightGroups.forEach((group) => {
-          higherSlotsByGroupId.set(group.id, higherSlots);
-        });
-
-        const sameHeightSlots = sameHeightGroups.flatMap(
-          (group) => slotsByGroupId.get(group.id) ?? [],
-        );
-        higherSlots = [...higherSlots, ...sameHeightSlots];
-      }
-
-      for (const group of deferredOutlineParams.groups) {
-        const ownSlots = slotsByGroupId.get(group.id) ?? [];
-        if (ownSlots.length === 0) continue;
-
-        // 纳入所有高度严格更高的组的凹槽作为轮廓上下文（与 3D 建模保持一致）
-        // 这样低组的轮廓自然包裹更高组的圆柱脚印，体现平滑过渡效果
-        const higherSlotsForGroup = higherSlotsByGroupId.get(group.id) ?? [];
-
-        const connectivityCircles: ConnectivityCircle[] = [
-          ...ownSlots,
-          ...higherSlotsForGroup,
-        ].map((slot) => ({
-          id: slot.id,
-          cx: slot.x,
-          cy: slot.y,
-          rOuter: getConnectivityRadius(
-            slot.width,
-            slot.height,
-            deferredOutlineParams.spacing,
-            getSlotTolerance(slot.width),
-            getSlotTolerance(slot.height),
-          ),
-        }));
-
-        const clusters = clusterConnectivityCircles(
-          connectivityCircles,
-          effectiveBridgeGap,
-        );
-
-        clusters.forEach((cluster, clusterIndex) => {
-          const clusterKey =
-            cluster
-              .map((circle) => circle.id)
-              .sort()
-              .join("-") || `${group.id}-${clusterIndex}`;
-          const outline = generateOutline(
-            cluster.map((circle) => ({
-              cx: circle.cx,
-              cy: circle.cy,
-              rOuter: circle.rOuter,
-            })),
-            deferredOutlineParams.smoothingRadius,
-            64,
+        const startedAt =
+          typeof performance !== "undefined" ? performance.now() : 0;
+        const nextPreview =
+          buildSteppedOutlinePreview(deferredOutlineParams);
+        if (typeof performance !== "undefined") {
+          recordPerfSample(
+            "stepped.outline",
+            performance.now() - startedAt,
           );
-          if (outline && outline.points.length >= 3) {
-            result.push({
-              key: `${group.id}-${clusterKey}`,
-              groupId: group.id,
-              color: group.color,
-              bottomHeight: group.bottomHeight,
-              points: outline.points,
-            });
-          }
-        });
+        }
+        applyOutlinePreview(nextPreview);
+      } catch (err) {
+        if (
+          isCancelled ||
+          outlinePreviewRequestSeqRef.current !== requestSeq
+        ) {
+          return;
+        }
+
+        console.error("轮廓预览生成失败:", err);
       }
+    };
 
-      // 按高度升序排列：低组先渲染，高组后渲染覆盖，重叠处显示最高组颜色
-      result.sort((a, b) => a.bottomHeight - b.bottomHeight);
+    void runOutlinePreview();
 
-      return result.length > 0 ? result : null;
-    });
+    return () => {
+      isCancelled = true;
+    };
   }, [deferredOutlineParams]);
 
   return {
@@ -751,6 +705,6 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     resumeOutlinePreview,
     handleGenerate,
     handleExportSTL,
-    outlinePreview: outlinePreviewAuto,
+    outlinePreview,
   };
 }
