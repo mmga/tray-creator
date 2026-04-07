@@ -3,7 +3,7 @@
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 import { BASE_PRESETS, STEPPED_LIMITS, MAX_BUILD_SIZE, STEPPED_LAYOUT_DEFAULTS } from "@/lib/config";
 import { Button } from "@/components/ui/button";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
     Download,
     RotateCcw,
@@ -25,6 +25,13 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
 import { calculateWeight, calculateSteppedPrice } from "@/lib/pricing";
 import { BookMarked, Save } from "lucide-react";
+import { useToast } from "@/hooks/useToast";
+import { isPerfEnabled, resetPerfMetrics } from "@/lib/perf";
+import {
+    buildSteppedPerfFixture,
+    STEPPED_PERF_FIXTURE_SIZES,
+    type SteppedPerfFixtureSize,
+} from "@/lib/stepped-perf-fixtures";
 
 interface SteppedPanelProps {
     params: SteppedLayoutParams;
@@ -77,6 +84,7 @@ export default function SteppedPanel({
     onSaveDraft,
     currentDraftId,
 }: SteppedPanelProps) {
+    const { toast } = useToast();
     const maxGroupHeight = useMemo(
         () => (params.groups.length > 0
             ? Math.max(...params.groups.map((group) => Math.max(group.bottomHeight, 3)))
@@ -99,6 +107,7 @@ export default function SteppedPanel({
         () => params.groups.find((group) => group.id === params.activeGroupId) ?? null,
         [params.activeGroupId, params.groups],
     );
+    const perfEnabled = useMemo(() => isPerfEnabled(), []);
 
     useEffect(() => {
         if (!pressedPreviewGroupId) {
@@ -155,6 +164,20 @@ export default function SteppedPanel({
             onPreviewGroupChange(nextGroupId);
         }
     };
+
+    const handleLoadPerfFixture = useCallback((size: SteppedPerfFixtureSize) => {
+        setPressedPreviewGroupId(null);
+        setLockedPreviewGroupId(null);
+        onPreviewGroupChange(null);
+        resetPerfMetrics();
+        setParams(buildSteppedPerfFixture(size));
+        toast("success", `已载入 ${size} 槽位性能样本，采样已清零`);
+    }, [onPreviewGroupChange, setParams, toast]);
+
+    const handleResetPerfSamples = useCallback(() => {
+        resetPerfMetrics();
+        toast("success", "性能采样已清零");
+    }, [toast]);
 
     return (
         <div className="flex flex-col gap-4 animate-fade-in">
@@ -506,6 +529,44 @@ export default function SteppedPanel({
                     params={params}
                     onImport={(p) => setParams(p as SteppedLayoutParams)}
                 />
+
+                {perfEnabled && (
+                    <div className="iron-panel rounded-sm p-3">
+                        <SectionHeader
+                            icon={Ruler}
+                            title="性能测量"
+                            collapsible
+                            defaultOpen={true}
+                            summary="20 / 50 / 100 槽位压力样本"
+                        >
+                            <div className="space-y-2 mt-1">
+                                <div className="text-[11px] leading-relaxed text-muted-foreground/75">
+                                    加载样本后在 2D 视图里拖拽中心区域 3 到 5 秒，观察右下角的 MOVE / COLL / OUTL。
+                                </div>
+                                <div className="grid grid-cols-3 gap-1.5">
+                                    {STEPPED_PERF_FIXTURE_SIZES.map((size) => (
+                                        <Button
+                                            key={size}
+                                            variant="outline"
+                                            onClick={() => handleLoadPerfFixture(size)}
+                                            className="h-8 text-xs border-[#5a4a2a] text-[#c8a84e] hover:bg-[#2a2518] hover:text-[#e0c870] hover:border-[#7a6a3a]"
+                                        >
+                                            {size} 槽位
+                                        </Button>
+                                    ))}
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    onClick={handleResetPerfSamples}
+                                    className="w-full h-8 text-xs border-[#2e2a24] text-muted-foreground hover:bg-[#1c1a16] hover:text-foreground/80 hover:border-[#3d372e]"
+                                >
+                                    <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+                                    清空采样
+                                </Button>
+                            </div>
+                        </SectionHeader>
+                    </div>
+                )}
 
                 {/* 草稿保存 */}
                 <div className="flex gap-2">
