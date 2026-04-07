@@ -24,6 +24,8 @@ const ACTION_PANEL_MAX_WIDTH = 420 - EDIT_SIDEBAR_RAIL_WIDTH - ACTION_PANEL_RESI
 const ACTION_PANEL_DEFAULT_WIDTH = 304 - EDIT_SIDEBAR_RAIL_WIDTH - ACTION_PANEL_RESIZER_WIDTH;
 const ACTION_PANEL_TAB_RAIL_WIDTH = EDIT_SIDEBAR_RAIL_WIDTH;
 
+type SlotUpdate = { id: string; x: number; y: number; rotation?: number };
+
 interface LayoutCanvasProps {
   isActive?: boolean;
   params: CustomLayoutParams | SteppedLayoutParams;
@@ -31,9 +33,8 @@ interface LayoutCanvasProps {
   onRemoveSlot: (id: string) => void;
   onResizeTray?: (width: number, depth: number) => void;
   onUpdateSlotRotation?: (id: string, rotation: number) => void;
-  onUpdateMultipleSlots?: (
-    updates: { id: string; x: number; y: number; rotation?: number }[],
-  ) => void;
+  onUpdateMultipleSlots?: (updates: SlotUpdate[]) => void;
+  onLiveUpdateMultipleSlots?: (updates: SlotUpdate[]) => void;
   onInsertSlots?: (slots: SymmetryInsertSlot[]) => void;
   onDuplicateSlots?: (ids: string[]) => string[] | void;
   onUndo?: () => void;
@@ -51,6 +52,7 @@ export default function LayoutCanvas({
   onRemoveSlot,
   onUpdateSlotRotation,
   onUpdateMultipleSlots,
+  onLiveUpdateMultipleSlots,
   onInsertSlots,
   onDuplicateSlots,
   onUndo,
@@ -84,6 +86,8 @@ export default function LayoutCanvas({
     mouseStart: { x: number, y: number }; // SVG coords
     slotOrigins: Map<string, { x: number, y: number }>;
   } | null>(null);
+  const liveUpdateFrameRef = useRef<number | null>(null);
+  const pendingLiveUpdatesRef = useRef<SlotUpdate[] | null>(null);
 
   // Marquee Selection State (Client Coords)
   const [selectionBox, setSelectionBox] = useState<{ start: { x: number, y: number }, current: { x: number, y: number } } | null>(null);
@@ -228,7 +232,7 @@ export default function LayoutCanvas({
   }, [isResizingActionPanel]);
 
   // Helper to handle multiple updates
-  const handleUpdateSlots = useCallback((updates: { id: string; x: number; y: number; rotation?: number }[]) => {
+  const handleUpdateSlots = useCallback((updates: SlotUpdate[]) => {
     if (onUpdateMultipleSlots) {
       onUpdateMultipleSlots(updates);
     } else {
@@ -242,6 +246,53 @@ export default function LayoutCanvas({
       });
     }
   }, [onUpdateMultipleSlots, onUpdateSlot, onUpdateSlotRotation]);
+
+  const applyLiveUpdates = useCallback((updates: SlotUpdate[]) => {
+    if (onLiveUpdateMultipleSlots) {
+      onLiveUpdateMultipleSlots(updates);
+      return;
+    }
+
+    updates.forEach((update) => {
+      onUpdateSlot(update.id, update.x, update.y);
+      if (update.rotation !== undefined && onUpdateSlotRotation) {
+        onUpdateSlotRotation(update.id, update.rotation);
+      }
+    });
+  }, [onLiveUpdateMultipleSlots, onUpdateSlot, onUpdateSlotRotation]);
+
+  const flushScheduledLiveUpdates = useCallback(() => {
+    if (liveUpdateFrameRef.current !== null) {
+      window.cancelAnimationFrame(liveUpdateFrameRef.current);
+      liveUpdateFrameRef.current = null;
+    }
+
+    const pendingUpdates = pendingLiveUpdatesRef.current;
+    pendingLiveUpdatesRef.current = null;
+    if (!pendingUpdates || pendingUpdates.length === 0) {
+      return;
+    }
+
+    applyLiveUpdates(pendingUpdates);
+  }, [applyLiveUpdates]);
+
+  const scheduleLiveUpdates = useCallback((updates: SlotUpdate[]) => {
+    pendingLiveUpdatesRef.current = updates;
+    if (liveUpdateFrameRef.current !== null) {
+      return;
+    }
+
+    liveUpdateFrameRef.current = window.requestAnimationFrame(() => {
+      liveUpdateFrameRef.current = null;
+      const pendingUpdates = pendingLiveUpdatesRef.current;
+      pendingLiveUpdatesRef.current = null;
+      if (!pendingUpdates || pendingUpdates.length === 0) {
+        return;
+      }
+
+      applyLiveUpdates(pendingUpdates);
+    });
+  }, [applyLiveUpdates]);
 
   // Extracted canvas keyboard event hook
   useCanvasKeyboard({
@@ -260,7 +311,16 @@ export default function LayoutCanvas({
   });
 
   useEffect(() => {
+    return () => {
+      if (liveUpdateFrameRef.current !== null) {
+        window.cancelAnimationFrame(liveUpdateFrameRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (!isActive) {
+      flushScheduledLiveUpdates();
       setHoveredId(null);
       setDraggingId(null);
       setGuideLines([]);
@@ -270,7 +330,7 @@ export default function LayoutCanvas({
       setIsSpacePressed(false);
       setIsResizingActionPanel(false);
     }
-  }, [isActive, setIsPanning, setIsSpacePressed]);
+  }, [flushScheduledLiveUpdates, isActive, setIsPanning, setIsSpacePressed]);
 
   const getEllipseBoundingBox = (w: number, h: number, rotation: number) => {
     const rad = (rotation * Math.PI) / 180;
@@ -452,9 +512,12 @@ export default function LayoutCanvas({
       // 限定为 1 度为步长，不使用小数
       newRotation = Math.round((newRotation % 360 + 360) % 360);
 
-      if (onUpdateSlotRotation) {
-        onUpdateSlotRotation(draggingId, newRotation);
-      }
+      scheduleLiveUpdates([{
+        id: draggingId,
+        x: slot.x,
+        y: slot.y,
+        rotation: newRotation,
+      }]);
       return;
     }
 
@@ -467,7 +530,8 @@ export default function LayoutCanvas({
 
       // Calculate new position for the PRIMARY dragged slot
       // We use the same offset logic for snapping
-      const dragSlotOrigin = dragStartRef.current.slotOrigins.get(draggingId);
+      const dragOrigins = dragStartRef.current.slotOrigins;
+      const dragSlotOrigin = dragOrigins.get(draggingId);
       if (!dragSlotOrigin) return;
 
       // Current Mouse - Start Mouse = Delta for all
@@ -501,7 +565,7 @@ export default function LayoutCanvas({
 
       // Snap Logic (Same as before, but checking proposedX/Y)
       for (const other of slots) {
-        if (selectedIds.has(other.id)) continue; // Don't snap to moved items
+        if (dragOrigins.has(other.id)) continue; // Don't snap to moved items
 
         const otherBB = getEllipseBoundingBox(other.width, other.height, other.rotation);
         const otherRx = otherBB.halfW;
@@ -543,14 +607,18 @@ export default function LayoutCanvas({
       const finalDeltaY = finalY - dragSlotOrigin.y;
 
       // Apply to ALL selected slots
-      selectedIds.forEach(id => {
-        const origin = dragStartRef.current?.slotOrigins.get(id);
-        if (origin) {
-          onUpdateSlot(id, origin.x + finalDeltaX, origin.y + finalDeltaY);
-        }
+      const liveUpdates: SlotUpdate[] = [];
+      dragOrigins.forEach((origin, id) => {
+        liveUpdates.push({
+          id,
+          x: origin.x + finalDeltaX,
+          y: origin.y + finalDeltaY,
+        });
       });
+
+      scheduleLiveUpdates(liveUpdates);
     }
-  }, [draggingId, isPanning, isRotating, onUpdateSlot, onUpdateSlotRotation, panStartRef, selectedIds, selectionBox, setPan, trayDepth, slots]);
+  }, [draggingId, isPanning, isRotating, panStartRef, scheduleLiveUpdates, selectionBox, setPan, trayDepth, slots]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent, slotId?: string) => {
     e.preventDefault();
@@ -658,6 +726,8 @@ export default function LayoutCanvas({
   }, [isSpacePressed, panStartRef, selectedIds, setIsPanning, slots, trayDepth]);
 
   const handlePointerUp = useCallback(() => {
+    flushScheduledLiveUpdates();
+
     // 释放主指针追踪
     primaryPointerIdRef.current = null;
 
@@ -721,7 +791,7 @@ export default function LayoutCanvas({
     rotateStartRef.current = null;
     dragStartRef.current = null;
     setGuideLines([]);
-  }, [selectionBox, selectedIds, setIsPanning, slots, trayDepth]);
+  }, [flushScheduledLiveUpdates, selectionBox, selectedIds, setIsPanning, slots, trayDepth]);
 
   const effectiveBaseplate = (() => {
     if (slots.length === 0) {

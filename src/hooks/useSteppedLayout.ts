@@ -42,6 +42,9 @@ export interface UseSteppedLayoutReturn {
   updateMultipleSlots: (
     updates: { id: string; x: number; y: number; rotation?: number }[],
   ) => void;
+  updateMultipleSlotsLive: (
+    updates: { id: string; x: number; y: number; rotation?: number }[],
+  ) => void;
   updateSlotRotation: (id: string, rotation: number) => void;
   insertSlots: (slots: SymmetryInsertSlot[]) => void;
   duplicateSlots: (ids: string[]) => string[];
@@ -255,10 +258,16 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     [invalidatePreview],
   );
 
-  const updateMultipleSlots = useCallback(
-    (updates: { id: string; x: number; y: number; rotation?: number }[]) => {
+  const applyMultipleSlotUpdates = useCallback(
+    (
+      updates: { id: string; x: number; y: number; rotation?: number }[],
+      saveHistory: boolean,
+    ) => {
       internalSetParams((prev) => {
-        pushState(prev);
+        if (saveHistory) {
+          pushState(prev);
+        }
+
         const updatesMap = new Map(updates.map((u) => [u.id, u]));
         return {
           ...prev,
@@ -278,6 +287,20 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
       invalidatePreview();
     },
     [invalidatePreview, pushState],
+  );
+
+  const updateMultipleSlots = useCallback(
+    (updates: { id: string; x: number; y: number; rotation?: number }[]) => {
+      applyMultipleSlotUpdates(updates, true);
+    },
+    [applyMultipleSlotUpdates],
+  );
+
+  const updateMultipleSlotsLive = useCallback(
+    (updates: { id: string; x: number; y: number; rotation?: number }[]) => {
+      applyMultipleSlotUpdates(updates, false);
+    },
+    [applyMultipleSlotUpdates],
   );
 
   const updateSlotRotation = useCallback(
@@ -643,6 +666,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     removeSlot,
     updateSlotPosition,
     updateMultipleSlots,
+    updateMultipleSlotsLive,
     updateSlotRotation,
     insertSlots,
     duplicateSlots,

@@ -25,6 +25,9 @@ interface UseCustomLayoutReturn {
   updateMultipleSlots: (
     updates: { id: string; x: number; y: number; rotation?: number }[],
   ) => void;
+  updateMultipleSlotsLive: (
+    updates: { id: string; x: number; y: number; rotation?: number }[],
+  ) => void;
   updateSlotRotation: (id: string, rotation: number) => void;
   insertSlots: (slots: SymmetryInsertSlot[]) => void;
   duplicateSlots: (ids: string[]) => string[];
@@ -101,46 +104,48 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     return { halfW, halfH };
   }, []);
 
-  const calculateEffectiveDimensions = useCallback(() => {
-    const current = paramsRef.current;
-    const boundarySpacing = resolveBoundarySpacing(current);
-    if (current.slots.length === 0) {
+  const calculateEffectiveDimensions = useCallback(
+    (current: CustomLayoutParams = paramsRef.current) => {
+      const boundarySpacing = resolveBoundarySpacing(current);
+      if (current.slots.length === 0) {
+        return {
+          width: 0,
+          depth: 0,
+          minX: 0,
+          maxX: 0,
+          minY: 0,
+          maxY: 0,
+        };
+      }
+
+      let minX = Infinity;
+      let maxX = -Infinity;
+      let minY = Infinity;
+      let maxY = -Infinity;
+
+      current.slots.forEach((slot) => {
+        const { halfW, halfH } = getSlotBoundingHalfSize(slot);
+        minX = Math.min(minX, slot.x - halfW);
+        maxX = Math.max(maxX, slot.x + halfW);
+        minY = Math.min(minY, slot.y - halfH);
+        maxY = Math.max(maxY, slot.y + halfH);
+      });
+
       return {
-        width: 0,
-        depth: 0,
-        minX: 0,
-        maxX: 0,
-        minY: 0,
-        maxY: 0,
+        width: Math.ceil(maxX - minX + boundarySpacing * 2),
+        depth: Math.ceil(maxY - minY + boundarySpacing * 2),
+        minX,
+        maxX,
+        minY,
+        maxY,
       };
-    }
-
-    let minX = Infinity;
-    let maxX = -Infinity;
-    let minY = Infinity;
-    let maxY = -Infinity;
-
-    current.slots.forEach((slot) => {
-      const { halfW, halfH } = getSlotBoundingHalfSize(slot);
-      minX = Math.min(minX, slot.x - halfW);
-      maxX = Math.max(maxX, slot.x + halfW);
-      minY = Math.min(minY, slot.y - halfH);
-      maxY = Math.max(maxY, slot.y + halfH);
-    });
-
-    return {
-      width: Math.ceil(maxX - minX + boundarySpacing * 2),
-      depth: Math.ceil(maxY - minY + boundarySpacing * 2),
-      minX,
-      maxX,
-      minY,
-      maxY,
-    };
-  }, [getSlotBoundingHalfSize, resolveBoundarySpacing]);
+    },
+    [getSlotBoundingHalfSize, resolveBoundarySpacing],
+  );
 
   const effectiveDimensions = useMemo(
-    () => calculateEffectiveDimensions(),
-    [params, calculateEffectiveDimensions],
+    () => calculateEffectiveDimensions(params),
+    [calculateEffectiveDimensions, params],
   );
 
   /** 手动保存快照（供拖拽开始时调用） */
@@ -263,13 +268,16 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     setIsPreviewStale(true);
   }, []);
 
-  /**
-   * 更新多个凹槽位置（用于对齐工具等批量操作，自动记录历史）
-   */
-  const updateMultipleSlots = useCallback(
-    (updates: { id: string; x: number; y: number; rotation?: number }[]) => {
+  const applyMultipleSlotUpdates = useCallback(
+    (
+      updates: { id: string; x: number; y: number; rotation?: number }[],
+      saveHistory: boolean,
+    ) => {
       setParams((prev) => {
-        pushState(prev);
+        if (saveHistory) {
+          pushState(prev);
+        }
+
         const updatesMap = new Map(updates.map((u) => [u.id, u]));
         return {
           ...prev,
@@ -289,6 +297,23 @@ export function useCustomLayout(): UseCustomLayoutReturn {
       setIsPreviewStale(true);
     },
     [pushState],
+  );
+
+  /**
+   * 更新多个凹槽位置（用于对齐工具等批量操作，自动记录历史）
+   */
+  const updateMultipleSlots = useCallback(
+    (updates: { id: string; x: number; y: number; rotation?: number }[]) => {
+      applyMultipleSlotUpdates(updates, true);
+    },
+    [applyMultipleSlotUpdates],
+  );
+
+  const updateMultipleSlotsLive = useCallback(
+    (updates: { id: string; x: number; y: number; rotation?: number }[]) => {
+      applyMultipleSlotUpdates(updates, false);
+    },
+    [applyMultipleSlotUpdates],
   );
 
   /**
@@ -333,7 +358,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
   const duplicateSlots = useCallback(
     (ids: string[]): string[] => {
       const newIds: string[] = [];
-      ids.forEach((id) => {
+      ids.forEach(() => {
         newIds.push(crypto.randomUUID());
       });
       setParams((prev) => {
@@ -372,7 +397,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
       pushState(prev);
 
       const current = paramsRef.current;
-      const dims = calculateEffectiveDimensions();
+      const dims = calculateEffectiveDimensions(current);
       if (dims.width <= 0 || dims.depth <= 0) return prev;
 
       const newTrayWidth = dims.width;
@@ -480,9 +505,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
   }, [
     effectiveDimensions.depth,
     effectiveDimensions.width,
-    params.slots.length,
-    params.trayDepth,
-    params.trayWidth,
+    params,
     toast,
   ]);
 
@@ -494,6 +517,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     removeSlot,
     updateSlotPosition,
     updateMultipleSlots,
+    updateMultipleSlotsLive,
     updateSlotRotation,
     insertSlots,
     duplicateSlots,

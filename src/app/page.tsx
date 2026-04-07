@@ -181,6 +181,7 @@ export default function Home() {
               }}
               onUpdateSlotRotation={model.updateSlotRotation}
               onUpdateMultipleSlots={model.updateMultipleSlots}
+              onLiveUpdateMultipleSlots={model.updateMultipleSlotsLive}
               onInsertSlots={model.insertSlots}
               onDuplicateSlots={model.duplicateSlots}
               onUndo={model.undo}
