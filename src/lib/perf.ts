@@ -14,24 +14,76 @@ export interface PerfMetricSnapshot {
   updatedAt: number;
 }
 
+export interface PerfMetricsSnapshot {
+  enabled: boolean;
+  metrics: PerfMetricSnapshot[];
+}
+
 interface PerfStore {
   enabled: boolean;
   initialized: boolean;
   metrics: Map<PerfMetricName, PerfMetricSnapshot>;
   listeners: Set<() => void>;
+  pendingNotifyFrame: number | null;
+  snapshot: PerfMetricsSnapshot;
 }
 
 const PERF_STORAGE_KEY = "tray-creator:perf";
+const PERF_METRIC_ORDER: PerfMetricName[] = [
+  "canvas.pointermove",
+  "canvas.collision",
+  "stepped.outline",
+];
 
 const store: PerfStore = {
   enabled: false,
   initialized: false,
   metrics: new Map(),
   listeners: new Set(),
+  pendingNotifyFrame: null,
+  snapshot: {
+    enabled: false,
+    metrics: [],
+  },
 };
 
-function notifyPerfListeners() {
+function updatePerfSnapshot() {
+  store.snapshot = {
+    enabled: store.enabled,
+    metrics: store.enabled
+      ? PERF_METRIC_ORDER.flatMap((name) => {
+          const metric = store.metrics.get(name);
+          return metric ? [metric] : [];
+        })
+      : [],
+  };
+}
+
+function emitPerfListeners() {
   store.listeners.forEach((listener) => listener());
+}
+
+function schedulePerfListeners() {
+  if (store.listeners.size === 0) {
+    return;
+  }
+
+  if (
+    typeof window === "undefined" ||
+    typeof window.requestAnimationFrame !== "function"
+  ) {
+    emitPerfListeners();
+    return;
+  }
+
+  if (store.pendingNotifyFrame !== null) {
+    return;
+  }
+
+  store.pendingNotifyFrame = window.requestAnimationFrame(() => {
+    store.pendingNotifyFrame = null;
+    emitPerfListeners();
+  });
 }
 
 function resolvePerfEnabled() {
@@ -58,6 +110,7 @@ export function isPerfEnabled() {
   if (!store.initialized) {
     store.enabled = resolvePerfEnabled();
     store.initialized = true;
+    updatePerfSnapshot();
   }
 
   return store.enabled;
@@ -93,7 +146,8 @@ export function recordPerfSample(name: PerfMetricName, duration: number) {
   };
 
   store.metrics.set(name, next);
-  notifyPerfListeners();
+  updatePerfSnapshot();
+  schedulePerfListeners();
 }
 
 export function subscribePerfMetrics(listener: () => void) {
@@ -104,14 +158,12 @@ export function subscribePerfMetrics(listener: () => void) {
 }
 
 export function getPerfMetricsSnapshot() {
-  const enabled = isPerfEnabled();
-  return {
-    enabled,
-    metrics: enabled ? Array.from(store.metrics.values()) : [],
-  };
+  isPerfEnabled();
+  return store.snapshot;
 }
 
 export function resetPerfMetrics() {
   store.metrics.clear();
-  notifyPerfListeners();
+  updatePerfSnapshot();
+  schedulePerfListeners();
 }
