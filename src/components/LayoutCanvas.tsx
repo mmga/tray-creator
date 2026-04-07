@@ -595,10 +595,30 @@ export default function LayoutCanvas({
         const dragRy = dragBB.halfH;
 
         const SNAP_THRESHOLD = 1.5;
+        const trayCenterX = trayWidth / 2;
+        const trayCenterY = trayDepth / 2;
         const guides: GuideLine[] = [];
 
         let finalX = proposedX;
         let finalY = proposedY;
+        let bestXSnap: { target: number; guide: number; distance: number } | null = null;
+        let bestYSnap: { target: number; guide: number; distance: number } | null = null;
+
+        const considerXSnap = (target: number, guide: number) => {
+          const distance = Math.abs(proposedX - target);
+          if (distance >= SNAP_THRESHOLD) return;
+          if (!bestXSnap || distance < bestXSnap.distance) {
+            bestXSnap = { target, guide, distance };
+          }
+        };
+
+        const considerYSnap = (target: number, guide: number) => {
+          const distance = Math.abs(proposedY - target);
+          if (distance >= SNAP_THRESHOLD) return;
+          if (!bestYSnap || distance < bestYSnap.distance) {
+            bestYSnap = { target, guide, distance };
+          }
+        };
 
         // Snap Logic (Same as before, but checking proposedX/Y)
         for (const other of slots) {
@@ -608,33 +628,26 @@ export default function LayoutCanvas({
           const otherRx = otherBB.halfW;
           const otherRy = otherBB.halfH;
 
-          // X Snaps
-          const xSnaps = [
-            { target: other.x, guide: other.x },
-            { target: other.x - otherRx + dragRx, guide: other.x - otherRx },
-            { target: other.x + otherRx - dragRx, guide: other.x + otherRx },
-          ];
-          for (const snap of xSnaps) {
-            if (Math.abs(finalX - snap.target) < SNAP_THRESHOLD) {
-              finalX = snap.target;
-              guides.push({ axis: 'x', value: snap.guide });
-              break;
-            }
-          }
+          considerXSnap(other.x, other.x);
+          considerXSnap(other.x - otherRx + dragRx, other.x - otherRx);
+          considerXSnap(other.x + otherRx - dragRx, other.x + otherRx);
 
-          // Y Snaps
-          const ySnaps = [
-            { target: other.y, guide: other.y },
-            { target: other.y - otherRy + dragRy, guide: other.y - otherRy },
-            { target: other.y + otherRy - dragRy, guide: other.y + otherRy },
-          ];
-          for (const snap of ySnaps) {
-            if (Math.abs(finalY - snap.target) < SNAP_THRESHOLD) {
-              finalY = snap.target;
-              guides.push({ axis: 'y', value: trayDepth - snap.guide });
-              break;
-            }
-          }
+          considerYSnap(other.y, other.y);
+          considerYSnap(other.y - otherRy + dragRy, other.y - otherRy);
+          considerYSnap(other.y + otherRy - dragRy, other.y + otherRy);
+        }
+
+        considerXSnap(trayCenterX, trayCenterX);
+        considerYSnap(trayCenterY, trayCenterY);
+
+        if (bestXSnap) {
+          finalX = bestXSnap.target;
+          guides.push({ axis: 'x', value: bestXSnap.guide });
+        }
+
+        if (bestYSnap) {
+          finalY = bestYSnap.target;
+          guides.push({ axis: 'y', value: trayDepth - bestYSnap.guide });
         }
 
         setGuideLines(guides);
@@ -897,6 +910,14 @@ export default function LayoutCanvas({
       ),
     }
     : null;
+  const trayOutlineStroke = "#4b5563";
+  const trayOutlineStrokeWidth = 0.5 / zoom;
+  const trayOutlineStrokeDash = `${3 / zoom} ${3 / zoom}`;
+  const trayOutlineStrokeOpacity = 0.9;
+  const axisGuideStroke = "#38bdf8";
+  const axisGuideStrokeWidth = 0.3 / zoom;
+  const axisGuideStrokeDash = `${2 / zoom} ${2 / zoom}`;
+  const axisGuideStrokeOpacity = 0.8;
 
   return (
     <div
@@ -943,10 +964,10 @@ export default function LayoutCanvas({
             width={trayWidth}
             height={trayDepth}
             fill="none"
-            stroke="#4b5563"
-            strokeWidth={0.5 / zoom}
-            strokeDasharray={`${3 / zoom} ${3 / zoom}`}
-            strokeOpacity={0.9}
+            stroke={trayOutlineStroke}
+            strokeWidth={trayOutlineStrokeWidth}
+            strokeDasharray={trayOutlineStrokeDash}
+            strokeOpacity={trayOutlineStrokeOpacity}
           />
 
           {/* Effective Baseplate (inner) */}
@@ -972,10 +993,10 @@ export default function LayoutCanvas({
                 y1={0}
                 x2={symmetryAxes.vertical}
                 y2={trayDepth}
-                stroke="#f59e0b"
-                strokeWidth={1 / zoom}
-                strokeDasharray={`${6 / zoom} ${4 / zoom}`}
-                strokeOpacity={0.7}
+                stroke={axisGuideStroke}
+                strokeWidth={axisGuideStrokeWidth}
+                strokeDasharray={axisGuideStrokeDash}
+                strokeOpacity={axisGuideStrokeOpacity}
               />
               <line
                 data-symmetry-axis="mirror-y"
@@ -983,10 +1004,10 @@ export default function LayoutCanvas({
                 y1={trayDepth - symmetryAxes.horizontal}
                 x2={trayWidth}
                 y2={trayDepth - symmetryAxes.horizontal}
-                stroke="#f59e0b"
-                strokeWidth={1 / zoom}
-                strokeDasharray={`${6 / zoom} ${4 / zoom}`}
-                strokeOpacity={0.45}
+                stroke={axisGuideStroke}
+                strokeWidth={axisGuideStrokeWidth}
+                strokeDasharray={axisGuideStrokeDash}
+                strokeOpacity={axisGuideStrokeOpacity}
               />
             </>
           )}
@@ -1165,9 +1186,9 @@ export default function LayoutCanvas({
           {guideLines.map((g, i) => (
             g.axis === 'x'
               ? <line key={`guide-${i}`} x1={g.value} y1={minY} x2={g.value} y2={minY + viewH}
-                stroke="#38bdf8" strokeWidth={0.3 / zoom} strokeDasharray="2 2" pointerEvents="none" opacity={0.8} />
+                stroke={axisGuideStroke} strokeWidth={axisGuideStrokeWidth} strokeDasharray={axisGuideStrokeDash} pointerEvents="none" opacity={axisGuideStrokeOpacity} />
               : <line key={`guide-${i}`} x1={minX} y1={g.value} x2={minX + viewW} y2={g.value}
-                stroke="#38bdf8" strokeWidth={0.3 / zoom} strokeDasharray="2 2" pointerEvents="none" opacity={0.8} />
+                stroke={axisGuideStroke} strokeWidth={axisGuideStrokeWidth} strokeDasharray={axisGuideStrokeDash} pointerEvents="none" opacity={axisGuideStrokeOpacity} />
           ))}
 
           {/* 分组轮廓预览（Stepped 模式：按高度升序渲染，高组颜色压住低组，重叠处显示最高组颜色） */}
