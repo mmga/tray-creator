@@ -23,11 +23,9 @@ import { generateOutline } from "@/lib/outline-geometry";
 import { downloadParamFile } from "@/lib/param-io";
 import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
 import {
-  analyzeBridgeWarning,
   clusterConnectivityCircles,
   getConnectivityRadius,
   getEffectiveBridgeGap,
-  type BridgeWarning,
   type ConnectivityCircle,
 } from "@/lib/stepped-connectivity";
 
@@ -72,7 +70,6 @@ export interface UseSteppedLayoutReturn {
   volume: number;
   isGenerating: boolean;
   isPreviewStale: boolean;
-  bridgeWarning: BridgeWarning | null;
   handleGenerate: () => void;
   handleExportSTL: () => void;
   // 2D 分组轮廓预览
@@ -136,8 +133,8 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     return { halfW, halfH };
   }, []);
 
-  const calculateEffectiveDimensions = useCallback(() => {
-    const current = paramsRef.current;
+  const calculateEffectiveDimensions = useCallback(
+    (current: SteppedLayoutParams = paramsRef.current) => {
     const boundarySpacing = current.spacing;
     if (current.slots.length === 0) {
       return { width: 0, depth: 0, minX: 0, maxX: 0, minY: 0, maxY: 0 };
@@ -164,11 +161,13 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
       minY,
       maxY,
     };
-  }, [getSlotBoundingHalfSize]);
+    },
+    [getSlotBoundingHalfSize],
+  );
 
   const effectiveDimensions = useMemo(
-    () => calculateEffectiveDimensions(),
-    [calculateEffectiveDimensions],
+    () => calculateEffectiveDimensions(params),
+    [calculateEffectiveDimensions, params],
   );
 
   const saveSnapshot = useCallback(() => {
@@ -322,7 +321,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
   const duplicateSlots = useCallback(
     (ids: string[]): string[] => {
       const newIds: string[] = [];
-      ids.forEach((id) => {
+      ids.forEach(() => {
         newIds.push(crypto.randomUUID());
       });
       internalSetParams((prev) => {
@@ -455,7 +454,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
       if (prev.slots.length === 0) return prev;
       pushState(prev);
 
-      const dims = calculateEffectiveDimensions();
+      const dims = calculateEffectiveDimensions(prev);
       if (dims.width <= 0 || dims.depth <= 0) return prev;
 
       const newTrayWidth = dims.width;
@@ -636,55 +635,6 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     return result.length > 0 ? result : null;
   }, [params]);
 
-  const bridgeWarning = useMemo<BridgeWarning | null>(() => {
-    const groupsByHeight = [...params.groups].sort(
-      (a, b) => a.bottomHeight - b.bottomHeight,
-    );
-
-    for (const group of groupsByHeight) {
-      const ownSlots = params.slots.filter((slot) => slot.groupId === group.id);
-      if (ownSlots.length === 0) continue;
-
-      const higherSlots = params.slots.filter((slot) => {
-        if (slot.groupId === group.id) return false;
-        const otherGroup = params.groups.find(
-          (candidate) => candidate.id === slot.groupId,
-        );
-        return Boolean(
-          otherGroup && otherGroup.bottomHeight > group.bottomHeight,
-        );
-      });
-
-      const circles: ConnectivityCircle[] = [...ownSlots, ...higherSlots].map(
-        (slot) => ({
-          id: slot.id,
-          cx: slot.x,
-          cy: slot.y,
-          rOuter: getConnectivityRadius(
-            slot.width,
-            slot.height,
-            params.spacing,
-            getSlotTolerance(slot.width),
-            getSlotTolerance(slot.height),
-          ),
-        }),
-      );
-
-      const warning = analyzeBridgeWarning(
-        circles,
-        params.smoothingRadius,
-        params.disconnectDistance,
-        { groupId: group.id, groupName: group.name },
-      );
-
-      if (warning) {
-        return warning;
-      }
-    }
-
-    return null;
-  }, [params]);
-
   return {
     params,
     setParams,
@@ -711,7 +661,6 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     volume,
     isGenerating,
     isPreviewStale,
-    bridgeWarning,
     handleGenerate,
     handleExportSTL,
     outlinePreview: outlinePreviewAuto,
