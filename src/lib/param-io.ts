@@ -228,6 +228,22 @@ function validateGridParams(p: TrayParams) {
   clampField(obj, "holeDepth", PARAM_CONFIG.holeDepth);
   clampField(obj, "cornerRadius", PARAM_CONFIG.cornerRadius);
 
+  if (typeof obj.spacingIndependent !== "boolean") {
+    obj.spacingIndependent = false;
+  }
+  if (typeof obj.spacingX !== "number") {
+    obj.spacingX = obj.spacing;
+  }
+  if (typeof obj.spacingY !== "number") {
+    obj.spacingY = obj.spacing;
+  }
+  clampField(obj, "spacingX", PARAM_CONFIG.spacingX);
+  clampField(obj, "spacingY", PARAM_CONFIG.spacingY);
+  if (!obj.spacingIndependent) {
+    obj.spacingX = obj.spacing;
+    obj.spacingY = obj.spacing;
+  }
+
   // 边界间距字段（可选，旧版文件可能不含，使用默认值兜底）
   if (typeof obj.boundarySpacing !== "number")
     obj.boundarySpacing = DEFAULT_TRAY_PARAMS.boundarySpacing;

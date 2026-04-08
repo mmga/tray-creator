@@ -20,17 +20,33 @@ const { translate } = transforms;
  *   → 圆角只出现在竖直方向的 4 条边上
  * - 凹槽从顶部向下挖，深度 = holeDepth，到达底板顶面
  * - 总高度 = baseThickness + holeDepth
- * - 间距统一：边-凹槽 = 凹槽-凹槽 = spacing
+ * - 间距支持统一 / X-Y 独立：边-凹槽与凹槽-凹槽分别按轴计算
  * - 凹槽实际直径 = holeDiameter + HOLE_TOLERANCE
  */
+export function getGridSpacingAxes(params: TrayParams) {
+  return {
+    spacingX: params.spacingIndependent ? params.spacingX : params.spacing,
+    spacingY: params.spacingIndependent ? params.spacingY : params.spacing,
+  };
+}
+
+export function getGridBoundarySpacingAxes(params: TrayParams) {
+  const { spacingX, spacingY } = getGridSpacingAxes(params);
+  return {
+    boundarySpacingX: params.boundarySpacingIndependent
+      ? params.boundarySpacing
+      : spacingX,
+    boundarySpacingY: params.boundarySpacingIndependent
+      ? params.boundarySpacing
+      : spacingY,
+  };
+}
+
 export function createTrayModel(params: TrayParams): Geom3 {
   const {
     rows,
     columns,
     holeDiameter,
-    spacing,
-    boundarySpacing,
-    boundarySpacingIndependent,
     baseThickness,
     holeDepth,
     cornerRadius,
@@ -39,14 +55,17 @@ export function createTrayModel(params: TrayParams): Geom3 {
   // 实际凹槽直径（加公差）
   const actualHoleDiameter = holeDiameter + getSlotTolerance(holeDiameter);
   const holeRadius = actualHoleDiameter / 2;
-
-  // 边界间距：独立模式使用 boundarySpacing，否则跟随 spacing
-  const bsp = boundarySpacingIndependent ? boundarySpacing : spacing;
+  const { spacingX, spacingY } = getGridSpacingAxes(params);
+  const { boundarySpacingX, boundarySpacingY } =
+    getGridBoundarySpacingAxes(params);
 
   // 计算总尺寸：2 * 边界间距 + (N-1) 段凹槽间距 + N 个凹槽
   const totalWidth =
-    2 * bsp + (columns - 1) * spacing + columns * actualHoleDiameter;
-  const totalDepth = 2 * bsp + (rows - 1) * spacing + rows * actualHoleDiameter;
+    2 * boundarySpacingX +
+    (columns - 1) * spacingX +
+    columns * actualHoleDiameter;
+  const totalDepth =
+    2 * boundarySpacingY + (rows - 1) * spacingY + rows * actualHoleDiameter;
   const totalHeight = baseThickness + holeDepth;
 
   // 1. 创建底板实体
@@ -64,14 +83,14 @@ export function createTrayModel(params: TrayParams): Geom3 {
       centers.push({
         cx:
           -totalWidth / 2 +
-          bsp +
+          boundarySpacingX +
           holeRadius +
-          col * (actualHoleDiameter + spacing),
+          col * (actualHoleDiameter + spacingX),
         cy:
           -totalDepth / 2 +
-          bsp +
+          boundarySpacingY +
           holeRadius +
-          row * (actualHoleDiameter + spacing),
+          row * (actualHoleDiameter + spacingY),
       });
     }
   }
@@ -107,17 +126,22 @@ export function calculateTrayDimensions(params: TrayParams) {
     rows,
     columns,
     holeDiameter,
-    spacing,
-    boundarySpacing,
-    boundarySpacingIndependent,
     baseThickness,
     holeDepth,
   } = params;
   const actualHoleDiameter = holeDiameter + getSlotTolerance(holeDiameter);
-  const bsp = boundarySpacingIndependent ? boundarySpacing : spacing;
+  const { spacingX, spacingY } = getGridSpacingAxes(params);
+  const { boundarySpacingX, boundarySpacingY } =
+    getGridBoundarySpacingAxes(params);
   return {
-    width: 2 * bsp + (columns - 1) * spacing + columns * actualHoleDiameter,
-    depth: 2 * bsp + (rows - 1) * spacing + rows * actualHoleDiameter,
+    width:
+      2 * boundarySpacingX +
+      (columns - 1) * spacingX +
+      columns * actualHoleDiameter,
+    depth:
+      2 * boundarySpacingY +
+      (rows - 1) * spacingY +
+      rows * actualHoleDiameter,
     height: baseThickness + holeDepth,
   };
 }

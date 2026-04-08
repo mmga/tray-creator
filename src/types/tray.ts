@@ -8,8 +8,14 @@ export interface TrayParams {
   columns: number;
   /** 凹槽直径 (mm)，不含公差 */
   holeDiameter: number;
-  /** 间距 (mm)，边-凹槽、凹槽-凹槽之间的统一间距 */
+  /** 间距 (mm)，X/Y 未独立时作为统一间距；也是兼容旧文件的共享值 */
   spacing: number;
+  /** 是否分别设置 X / Y 轴凹槽间距 */
+  spacingIndependent: boolean;
+  /** X 轴凹槽间距 (mm)，仅在 spacingIndependent=true 时生效 */
+  spacingX: number;
+  /** Y 轴凹槽间距 (mm)，仅在 spacingIndependent=true 时生效 */
+  spacingY: number;
   /** 底板厚度 (mm) */
   baseThickness: number;
   /** 凹槽深度 (mm)，即边框/墙壁高度 */
@@ -18,7 +24,7 @@ export interface TrayParams {
   cornerRadius: number;
   /** 边界间距 (mm)，凹槽到底板边缘的距离；仅在 boundarySpacingIndependent=true 时生效 */
   boundarySpacing: number;
-  /** 是否独立调整边界间距（false 时边界间距跟随 spacing） */
+  /** 是否独立调整边界间距（false 时 X/Y 两轴分别跟随对应的 spacing） */
   boundarySpacingIndependent: boolean;
   /** 是否启用底板磁吸孔 */
   enableBaseHole: boolean;

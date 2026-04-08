@@ -39,7 +39,43 @@ export function useTrayModel(): UseTrayModelReturn {
 
   const updateParam = useCallback(
     <K extends keyof TrayParams>(key: K, value: TrayParams[K]) => {
-      setParams((prev) => ({ ...prev, [key]: value }));
+      setParams((prev) => {
+        if (key === "spacingIndependent") {
+          const nextIndependent = value as TrayParams["spacingIndependent"];
+          if (nextIndependent) {
+            return {
+              ...prev,
+              spacingIndependent: true,
+              spacingX: prev.spacingX ?? prev.spacing,
+              spacingY: prev.spacingY ?? prev.spacing,
+            };
+          }
+
+          const unifiedSpacing = prev.spacingX ?? prev.spacing;
+          return {
+            ...prev,
+            spacingIndependent: false,
+            spacing: unifiedSpacing,
+            spacingX: unifiedSpacing,
+            spacingY: unifiedSpacing,
+          };
+        }
+
+        if (key === "spacing") {
+          const nextSpacing = value as TrayParams["spacing"];
+          if (!prev.spacingIndependent) {
+            return {
+              ...prev,
+              spacing: nextSpacing,
+              spacingX: nextSpacing,
+              spacingY: nextSpacing,
+            };
+          }
+          return { ...prev, spacing: nextSpacing };
+        }
+
+        return { ...prev, [key]: value };
+      });
       setIsPreviewStale(true);
     },
     [],

@@ -1,7 +1,11 @@
 "use client";
 import type { TrayParams } from "@/types/tray";
 import { BASE_PRESETS, DEFAULT_PRESET_INDEX, BASE_HOLE_CONFIG, PARAM_CONFIG, MAX_BUILD_SIZE } from "@/lib/config";
-import { calculateTrayDimensions } from "@/lib/tray-model";
+import {
+  calculateTrayDimensions,
+  getGridBoundarySpacingAxes,
+  getGridSpacingAxes,
+} from "@/lib/tray-model";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -42,6 +46,17 @@ export default function ParameterPanel({
   volume,
 }: ParameterPanelProps) {
   const dimensions = calculateTrayDimensions(params);
+  const { spacingX, spacingY } = getGridSpacingAxes(params);
+  const { boundarySpacingX, boundarySpacingY } =
+    getGridBoundarySpacingAxes(params);
+  const spacingSummary = params.spacingIndependent
+    ? `槽距 X${spacingX}mm / Y${spacingY}mm`
+    : `槽距${params.spacing}mm`;
+  const boundarySummary = params.boundarySpacingIndependent
+    ? `边距${params.boundarySpacing}mm`
+    : params.spacingIndependent
+      ? `边距 X${boundarySpacingX}mm / Y${boundarySpacingY}mm`
+      : `边距${boundarySpacingX}mm`;
   const isOversized = dimensions.width > MAX_BUILD_SIZE || dimensions.depth > MAX_BUILD_SIZE;
   const [autoPreview, setAutoPreview] = useState(false);
 
@@ -75,7 +90,7 @@ export default function ParameterPanel({
       {/* 布局参数 — 移动端默认展开 */}
       <div className="iron-panel rounded-sm p-4">
         <SectionHeader icon={Layout} title="布局" collapsible defaultOpen={true}
-          summary={`${params.columns}×${params.rows} / ⌀${params.holeDiameter}mm / 槽距${params.spacing}mm / 边距${params.boundarySpacingIndependent ? params.boundarySpacing : params.spacing}mm`}>
+          summary={`${params.columns}×${params.rows} / ⌀${params.holeDiameter}mm / ${spacingSummary} / ${boundarySummary}`}>
           <div className="space-y-4">
             {/* 底座预设 */}
             <div className="space-y-1.5">
@@ -115,13 +130,43 @@ export default function ParameterPanel({
               onChange={(v) => updateParam("rows", v)}
               unit={PARAM_CONFIG.rows.unit}
             />
-            <ParamSlider
-              label={PARAM_CONFIG.spacing.label}
-              value={params.spacing}
-              config={PARAM_CONFIG.spacing}
-              onChange={(v) => updateParam("spacing", v)}
-              unit={PARAM_CONFIG.spacing.unit}
-            />
+            <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
+              <Label htmlFor="grid-spacing-independent" className="text-sm cursor-pointer text-[#f0d8b8]">
+                X / Y 间距独立调整
+              </Label>
+              <Switch
+                id="grid-spacing-independent"
+                checked={params.spacingIndependent}
+                onCheckedChange={(checked) => updateParam("spacingIndependent", checked)}
+                className="data-[state=checked]:bg-[#8cb880]"
+              />
+            </div>
+            {params.spacingIndependent ? (
+              <>
+                <ParamSlider
+                  label={PARAM_CONFIG.spacingX.label}
+                  value={params.spacingX}
+                  config={PARAM_CONFIG.spacingX}
+                  onChange={(v) => updateParam("spacingX", v)}
+                  unit={PARAM_CONFIG.spacingX.unit}
+                />
+                <ParamSlider
+                  label={PARAM_CONFIG.spacingY.label}
+                  value={params.spacingY}
+                  config={PARAM_CONFIG.spacingY}
+                  onChange={(v) => updateParam("spacingY", v)}
+                  unit={PARAM_CONFIG.spacingY.unit}
+                />
+              </>
+            ) : (
+              <ParamSlider
+                label={PARAM_CONFIG.spacing.label}
+                value={params.spacing}
+                config={PARAM_CONFIG.spacing}
+                onChange={(v) => updateParam("spacing", v)}
+                unit={PARAM_CONFIG.spacing.unit}
+              />
+            )}
             <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
               <Label htmlFor="grid-boundary-spacing-independent" className="text-sm cursor-pointer text-[#f0d8b8]">
                 边界间距独立调整
