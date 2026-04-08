@@ -1,7 +1,14 @@
 "use client";
 
 import { useRef, useState, useCallback, useEffect, useMemo } from "react";
-import type { FreeSlot, CustomLayoutParams, SteppedLayoutParams, GroupOutlinePreview, SteppedSlot } from "@/types/custom-tray";
+import type {
+  FreeSlot,
+  CustomLayoutParams,
+  SteppedLayoutParams,
+  GroupOutlinePreview,
+  SimpleSteppedRowBand,
+  SteppedSlot,
+} from "@/types/custom-tray";
 import { getSlotTolerance, MAX_BUILD_SIZE } from "@/lib/config";
 import { getEllipsePolygon, polygonsIntersect } from "@/lib/collision";
 import { measurePerf } from "@/lib/perf";
@@ -45,6 +52,8 @@ interface LayoutCanvasProps {
   // 轮廓预览（Stepped 模式：每组独立轮廓）
   outlinePreview?: GroupOutlinePreview[] | null;
   focusedGroupId?: string | null;
+  rowBands?: SimpleSteppedRowBand[] | null;
+  slotMoveScopeResolver?: (draggingId: string, selectedIds: string[]) => string[];
 }
 
 export default function LayoutCanvas({
@@ -63,6 +72,8 @@ export default function LayoutCanvas({
   onEditInteractionChange,
   outlinePreview,
   focusedGroupId,
+  rowBands,
+  slotMoveScopeResolver,
 }: LayoutCanvasProps) {
   // Core State
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -717,11 +728,6 @@ export default function LayoutCanvas({
         // If already selected, keep selection (to allow multi-drag)
       }
 
-      // Start Drag
-      onSaveSnapshotRef.current?.(); // 保存快照供撤销
-      onEditInteractionChange?.(true);
-      setDraggingId(slotId);
-
       // Init Drag Data
       if (svgRef.current) {
         const pt = svgRef.current.createSVGPoint();
@@ -747,10 +753,22 @@ export default function LayoutCanvas({
 
         // Store origins for all currently selected items
         const setIds = isCtrl && selectedIds.has(slotId) ? newSelection : (newSelection.has(slotId) ? newSelection : new Set([slotId]));
-        // If I deselected it, setIds doesn't have it.
-        // If I selected it (single or add), setIds has it.
+        const scopedDragIds = slotMoveScopeResolver
+          ? slotMoveScopeResolver(slotId, Array.from(setIds))
+          : Array.from(setIds);
 
-        setIds.forEach(id => {
+        if (scopedDragIds.length === 0) {
+          setDraggingId(null);
+          dragStartRef.current = null;
+          onEditInteractionChange?.(false);
+          return;
+        }
+
+        onSaveSnapshotRef.current?.(); // 保存快照供撤销
+        onEditInteractionChange?.(true);
+        setDraggingId(slotId);
+
+        scopedDragIds.forEach(id => {
           const s = slots.find(sl => sl.id === id);
           if (s) origins.set(id, { x: s.x, y: s.y });
         });
@@ -777,7 +795,7 @@ export default function LayoutCanvas({
         }
       }
     }
-  }, [isSpacePressed, panStartRef, selectedIds, setIsPanning, slots, trayDepth]);
+  }, [isSpacePressed, onEditInteractionChange, panStartRef, selectedIds, setIsPanning, slotMoveScopeResolver, slots, trayDepth]);
 
   const handlePointerUp = useCallback(() => {
     flushScheduledLiveUpdates();
@@ -986,6 +1004,22 @@ export default function LayoutCanvas({
               strokeOpacity={0.95}
             />
           )}
+
+          {rowBands && rowBands.map((band) => (
+            <rect
+              key={band.id}
+              x={band.x}
+              y={trayDepth - band.y - band.depth}
+              width={band.width}
+              height={band.depth}
+              fill={band.isActive ? "#a1620730" : "#78716c18"}
+              stroke={band.isActive ? "#fbbf24" : "#78716c"}
+              strokeWidth={(band.isActive ? 0.8 : 0.5) / zoom}
+              strokeDasharray={band.isActive ? undefined : "3 2"}
+              strokeOpacity={band.isActive ? 0.95 : 0.55}
+              pointerEvents="none"
+            />
+          ))}
 
           {symmetryAxes && (
             <>
