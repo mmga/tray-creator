@@ -5,12 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Upload, Share2 } from "lucide-react";
 import { exportParams, importParams } from "@/lib/param-io";
 import { useToast } from "@/hooks/useToast";
-import type { AppMode, CustomLayoutParams, SteppedLayoutParams } from "@/types/custom-tray";
+import type {
+    AppMode,
+    CustomLayoutParams,
+    SimpleSteppedLayoutParams,
+    SteppedLayoutParams,
+} from "@/types/custom-tray";
 import type { TrayParams } from "@/types/tray";
 
 interface ParamIOButtonsProps {
     mode: AppMode;
-    params: TrayParams | CustomLayoutParams | SteppedLayoutParams;
+    params: TrayParams | CustomLayoutParams | SimpleSteppedLayoutParams | SteppedLayoutParams;
     onImport: (params: unknown) => void;
 }
 

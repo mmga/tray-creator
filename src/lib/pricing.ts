@@ -1,6 +1,7 @@
 import type { TrayParams } from "@/types/tray";
 import type {
   CustomLayoutParams,
+  SimpleSteppedLayoutParams,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 
@@ -73,6 +74,15 @@ export function calculateCustomPrice(
 
 export function calculateSteppedPrice(
   params: SteppedLayoutParams,
+  volume: number,
+): number {
+  if (volume <= 0) return 0;
+  const weight = calculateWeight(volume);
+  return weight * 0.4;
+}
+
+export function calculateSimpleSteppedPrice(
+  params: SimpleSteppedLayoutParams,
   volume: number,
 ): number {
   if (volume <= 0) return 0;
