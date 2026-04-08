@@ -1,4 +1,4 @@
-export type AppMode = "grid" | "custom" | "stepped";
+export type AppMode = "grid" | "custom" | "simple-stepped" | "stepped";
 
 /** 阶梯底座分组（一组凹槽统一高度，并形成阶梯结构的一层） */
 export interface SlotGroup {
@@ -37,6 +37,41 @@ export interface FreeSlot {
 export interface SteppedSlot extends FreeSlot {
   /** 所属分组 ID */
   groupId: string;
+}
+
+/** 简易阶梯模式凹槽：x 为“行本地坐标” */
+export interface SimpleSteppedSlot {
+  id: string;
+  /** 所属行 ID */
+  rowId: string;
+  /** 第一版仅支持圆形 */
+  shape: "circle";
+  /** 凹槽直径（mm） */
+  diameter: number;
+  /** 相对所属行局部坐标系的 X 偏移（mm） */
+  x: number;
+}
+
+/** 简易阶梯模式中的一行 */
+export interface SimpleSteppedRow {
+  id: string;
+  name: string;
+  /** 行内凹槽顺序，主要用于编辑态 */
+  slotIds: string[];
+}
+
+/** 简易阶梯模式 2D 画布行带 */
+export interface SimpleSteppedRowBand {
+  id: string;
+  name: string;
+  /** 行带左下角 X（用户坐标系） */
+  x: number;
+  /** 行带左下角 Y（用户坐标系） */
+  y: number;
+  width: number;
+  depth: number;
+  topHeight: number;
+  isActive?: boolean;
 }
 
 /** 自定义布局参数（完全独立） */
@@ -87,4 +122,26 @@ export interface SteppedLayoutParams {
   disconnectDistance: number;
   /** 调试开关：输出面朝向/体积日志（仅开发调试） */
   debugOrientation?: boolean;
+}
+
+/** 简易阶梯模式参数 */
+export interface SimpleSteppedLayoutParams {
+  /** 派生后的整体长度（mm）。无有效行时保留为画布兜底尺寸。 */
+  trayWidth: number;
+  /** 派生后的整体深度（mm）。无有效行时保留为画布兜底尺寸。 */
+  trayDepth: number;
+  /** 行列表 */
+  rows: SimpleSteppedRow[];
+  /** 槽位列表 */
+  slots: SimpleSteppedSlot[];
+  /** 统一阶梯步进高度（mm） */
+  stepHeight: number;
+  /** 行与行之间的间距（mm） */
+  rowGap: number;
+  /** 同行凹槽最小边缘间距（mm） */
+  spacing: number;
+  /** 行矩形边界安全边距（mm） */
+  outerMargin: number;
+  /** 凹槽深度（mm） */
+  holeDepth: number;
 }

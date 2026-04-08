@@ -1,6 +1,7 @@
 import type { TrayParams, BasePreset } from "@/types/tray";
 import type {
   CustomLayoutParams,
+  SimpleSteppedLayoutParams,
   SteppedLayoutParams,
   SlotGroup,
 } from "@/types/custom-tray";
@@ -147,6 +148,22 @@ export const STEPPED_LAYOUT_DEFAULTS: SteppedLayoutParams = {
   disconnectDistance: 0,
 };
 
+/** 简易阶梯模式空布局时的画布兜底尺寸 */
+const SIMPLE_STEPPED_EMPTY_SIZE = 120;
+
+/** 简易阶梯模式默认参数 */
+export const SIMPLE_STEPPED_LAYOUT_DEFAULTS: SimpleSteppedLayoutParams = {
+  trayWidth: SIMPLE_STEPPED_EMPTY_SIZE,
+  trayDepth: SIMPLE_STEPPED_EMPTY_SIZE,
+  rows: [],
+  slots: [],
+  stepHeight: 5,
+  rowGap: 0,
+  spacing: 5,
+  outerMargin: 3,
+  holeDepth: 3,
+};
+
 // ═══════════════════════════════════════════
 // 6. 参数范围与元数据（网格模式）
 // ═══════════════════════════════════════════
@@ -198,6 +215,21 @@ export const STEPPED_LIMITS = {
     step: 1,
     unit: "mm",
   },
+} as const;
+
+// ═══════════════════════════════════════════
+// 7c. 简易阶梯模式参数范围
+// ═══════════════════════════════════════════
+
+export const SIMPLE_STEPPED_LIMITS = {
+  trayWidth: { label: "长度", min: 0, max: 260, step: 1, unit: "mm" },
+  trayDepth: { label: "深度", min: 0, max: 260, step: 1, unit: "mm" },
+  stepHeight: { label: "阶梯步进", min: 1, max: 40, step: 0.5, unit: "mm" },
+  rowGap: { label: "行间距", min: 0, max: 40, step: 0.5, unit: "mm" },
+  spacing: { label: "凹槽间距", min: 0, max: 20, step: 0.5, unit: "mm" },
+  outerMargin: { label: "边界间距", min: 0, max: 20, step: 0.5, unit: "mm" },
+  holeDepth: { label: "凹槽深度", min: 0.2, max: 20, step: 0.2, unit: "mm" },
+  diameter: { label: "凹槽直径", min: 1, max: 200, step: 0.1, unit: "mm" },
 } as const;
 
 // ═══════════════════════════════════════════

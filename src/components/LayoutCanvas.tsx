@@ -640,14 +640,16 @@ export default function LayoutCanvas({
         considerXSnap(trayCenterX, trayCenterX);
         considerYSnap(trayCenterY, trayCenterY);
 
-        if (bestXSnap) {
-          finalX = bestXSnap.target;
-          guides.push({ axis: 'x', value: bestXSnap.guide });
+        const resolvedXSnap = bestXSnap as { target: number; guide: number; distance: number } | null;
+        if (resolvedXSnap) {
+          finalX = resolvedXSnap.target;
+          guides.push({ axis: 'x', value: resolvedXSnap.guide });
         }
 
-        if (bestYSnap) {
-          finalY = bestYSnap.target;
-          guides.push({ axis: 'y', value: trayDepth - bestYSnap.guide });
+        const resolvedYSnap = bestYSnap as { target: number; guide: number; distance: number } | null;
+        if (resolvedYSnap) {
+          finalY = resolvedYSnap.target;
+          guides.push({ axis: 'y', value: trayDepth - resolvedYSnap.guide });
         }
 
         setGuideLines(guides);

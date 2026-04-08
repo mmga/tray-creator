@@ -6,6 +6,7 @@ import type {
   FreeSlot,
   SlotGroup,
   GroupOutlinePreview,
+  SteppedSlot,
 } from "@/types/custom-tray";
 import {
   STEPPED_LAYOUT_DEFAULTS,

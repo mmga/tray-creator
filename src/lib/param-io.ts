@@ -1,17 +1,21 @@
 import type { TrayParams } from "@/types/tray";
 import type {
   CustomLayoutParams,
+  SimpleSteppedLayoutParams,
   SteppedLayoutParams,
   AppMode,
 } from "@/types/custom-tray";
 import {
   PARAM_CONFIG,
   CUSTOM_LIMITS,
+  SIMPLE_STEPPED_LAYOUT_DEFAULTS,
+  SIMPLE_STEPPED_LIMITS,
   STEPPED_LIMITS,
   STEPPED_LAYOUT_DEFAULTS,
   GROUP_COLORS,
   DEFAULT_TRAY_PARAMS,
 } from "@/lib/config";
+import { calculateSimpleSteppedDimensions } from "@/lib/simple-stepped-layout";
 
 // ═══════════════════════════════════════════
 // 参数导入导出工具
@@ -20,6 +24,7 @@ import {
 export type ExportableParams =
   | TrayParams
   | CustomLayoutParams
+  | SimpleSteppedLayoutParams
   | SteppedLayoutParams;
 
 interface ParamFile {
@@ -90,7 +95,7 @@ export function exportParams(mode: AppMode, params: ExportableParams) {
 export function parseParamFileObject(
   data: unknown,
   expectedMode: AppMode,
-): TrayParams | CustomLayoutParams | SteppedLayoutParams {
+): TrayParams | CustomLayoutParams | SimpleSteppedLayoutParams | SteppedLayoutParams {
   if (!data || typeof data !== "object") {
     throw new Error("文件内容无效");
   }
@@ -135,6 +140,7 @@ export function parseParamFileObject(
     const modeNames: Record<string, string> = {
       grid: "网格",
       custom: "自定义",
+      "simple-stepped": "简易阶梯",
       stepped: "自定义阶梯底座",
     };
     throw new Error(
@@ -145,6 +151,8 @@ export function parseParamFileObject(
   // 校验并钳位参数
   if (expectedMode === "grid") {
     validateGridParams(paramFile.params as TrayParams);
+  } else if (expectedMode === "simple-stepped") {
+    validateSimpleSteppedParams(paramFile.params as SimpleSteppedLayoutParams);
   } else if (expectedMode === "stepped") {
     validateSteppedParams(paramFile.params as SteppedLayoutParams);
   } else {
@@ -158,7 +166,7 @@ export function parseParamFileObject(
 export function importParams(
   file: File,
   expectedMode: AppMode,
-): Promise<TrayParams | CustomLayoutParams | SteppedLayoutParams> {
+): Promise<TrayParams | CustomLayoutParams | SimpleSteppedLayoutParams | SteppedLayoutParams> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -298,6 +306,112 @@ function validateCustomParams(p: CustomLayoutParams) {
   if (!obj.boundarySpacingIndependent) {
     obj.boundarySpacing = obj.spacing;
   }
+}
+
+function validateSimpleSteppedParams(p: SimpleSteppedLayoutParams) {
+  const obj = p as unknown as Record<string, unknown>;
+  for (const f of ["stepHeight", "rowGap", "spacing", "outerMargin", "holeDepth"]) {
+    requireNumber(obj, f);
+  }
+
+  if (!Array.isArray(obj.rows)) {
+    obj.rows = [];
+  }
+  if (!Array.isArray(obj.slots)) {
+    obj.slots = [];
+  }
+
+  const rows = obj.rows as Record<string, unknown>[];
+  const slots = obj.slots as Record<string, unknown>[];
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || typeof row !== "object") {
+      throw new Error(`rows[${i}]: 无效的行数据`);
+    }
+    if (typeof row.id !== "string" || !row.id) {
+      row.id = crypto.randomUUID();
+    }
+    if (typeof row.name !== "string" || !row.name.trim()) {
+      row.name = `行 ${i + 1}`;
+    }
+    if (!Array.isArray(row.slotIds)) {
+      row.slotIds = [];
+    }
+  }
+
+  const rowIds = new Set(rows.map((row) => row.id as string));
+  if (rows.length === 0 && slots.length > 0) {
+    const defaultRowId = crypto.randomUUID();
+    rows.push({
+      id: defaultRowId,
+      name: "行 1",
+      slotIds: [],
+    });
+    rowIds.add(defaultRowId);
+  }
+
+  for (let i = 0; i < slots.length; i++) {
+    const slot = slots[i];
+    if (!slot || typeof slot !== "object") {
+      throw new Error(`slots[${i}]: 无效的凹槽数据`);
+    }
+    if (typeof slot.id !== "string" || !slot.id) {
+      slot.id = crypto.randomUUID();
+    }
+    if (slot.shape !== "circle") {
+      slot.shape = "circle";
+    }
+    if (typeof slot.rowId !== "string" || !slot.rowId || !rowIds.has(slot.rowId)) {
+      slot.rowId = rows[0]?.id ?? "";
+    }
+    if (
+      typeof slot.diameter !== "number" ||
+      !Number.isFinite(slot.diameter) ||
+      slot.diameter <= 0 ||
+      slot.diameter > SIMPLE_STEPPED_LIMITS.diameter.max
+    ) {
+      throw new Error(`slots[${i}].diameter: 超出合理范围 (0, ${SIMPLE_STEPPED_LIMITS.diameter.max}]`);
+    }
+    if (typeof slot.x !== "number" || !Number.isFinite(slot.x)) {
+      throw new Error(`slots[${i}].x: 缺少或无效（需要有限数字）`);
+    }
+  }
+
+  clampField(obj, "stepHeight", SIMPLE_STEPPED_LIMITS.stepHeight);
+  clampField(obj, "rowGap", SIMPLE_STEPPED_LIMITS.rowGap);
+  clampField(obj, "spacing", SIMPLE_STEPPED_LIMITS.spacing);
+  clampField(obj, "outerMargin", SIMPLE_STEPPED_LIMITS.outerMargin);
+  clampField(obj, "holeDepth", SIMPLE_STEPPED_LIMITS.holeDepth);
+
+  const slotIdsByRowId = new Map<string, string[]>();
+  rows.forEach((row) => {
+    slotIdsByRowId.set(row.id as string, []);
+  });
+  slots.forEach((slot) => {
+    const rowId = slot.rowId as string;
+    const list = slotIdsByRowId.get(rowId);
+    if (list) {
+      list.push(slot.id as string);
+    }
+  });
+  rows.forEach((row) => {
+    row.slotIds = slotIdsByRowId.get(row.id as string) ?? [];
+  });
+
+  const normalized = obj as unknown as SimpleSteppedLayoutParams;
+  const fallbackWidth = typeof normalized.trayWidth === "number" && Number.isFinite(normalized.trayWidth)
+    ? normalized.trayWidth
+    : SIMPLE_STEPPED_LAYOUT_DEFAULTS.trayWidth;
+  const fallbackDepth = typeof normalized.trayDepth === "number" && Number.isFinite(normalized.trayDepth)
+    ? normalized.trayDepth
+    : SIMPLE_STEPPED_LAYOUT_DEFAULTS.trayDepth;
+  normalized.trayWidth = fallbackWidth;
+  normalized.trayDepth = fallbackDepth;
+
+  const dims = calculateSimpleSteppedDimensions(normalized);
+  normalized.trayWidth = dims.width;
+  normalized.trayDepth = dims.depth;
 }
 
 function validateSteppedParams(p: SteppedLayoutParams) {
