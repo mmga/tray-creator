@@ -1,5 +1,6 @@
 import { createTrayModel } from "../tray-model";
 import { createCustomTrayModel } from "../custom-tray-model";
+import { createSimpleSteppedTrayModel } from "../simple-stepped-tray-model";
 import { createSteppedTrayModel } from "../stepped-tray-model";
 import { buildSteppedOutlinePreview } from "../stepped-outline-preview";
 import stlSerializer from "@jscad/stl-serializer";
@@ -8,6 +9,7 @@ import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type {
   CustomLayoutParams,
   GroupOutlinePreview,
+  SimpleSteppedLayoutParams,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import type { TrayParams } from "@/types/tray";
@@ -24,6 +26,11 @@ export type WorkerRequest =
       type: "GENERATE_STEPPED";
       requestId: string;
       params: SteppedLayoutParams;
+    }
+  | {
+      type: "GENERATE_SIMPLE_STEPPED";
+      requestId: string;
+      params: SimpleSteppedLayoutParams;
     }
   | {
       type: "GENERATE_STEPPED_OUTLINE_PREVIEW";
@@ -100,6 +107,15 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
           volume,
         });
       }
+      self.postMessage({
+        type: "GENERATION_SUCCESS",
+        requestId,
+        geometry,
+        volumeInfo: volume,
+      });
+    } else if (req.type === "GENERATE_SIMPLE_STEPPED") {
+      const geometry = createSimpleSteppedTrayModel(req.params);
+      const volume = measureVolume(geometry);
       self.postMessage({
         type: "GENERATION_SUCCESS",
         requestId,

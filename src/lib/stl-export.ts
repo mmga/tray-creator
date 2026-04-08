@@ -41,3 +41,15 @@ export function generateCustomSTLFilename(
 ): string {
   return `tray_custom_${width}x${depth}_${slotCount}slots.stl`;
 }
+
+/**
+ * 根据简易阶梯模式参数生成 STL 文件名
+ */
+export function generateSimpleSteppedSTLFilename(
+  width: number,
+  depth: number,
+  rowCount: number,
+  slotCount: number,
+): string {
+  return `tray_simple_stepped_${width}x${depth}_${rowCount}rows_${slotCount}slots.stl`;
+}
