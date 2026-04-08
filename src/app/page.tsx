@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useTrayModel } from "@/hooks/useTrayModel";
 import { useCustomLayout } from "@/hooks/useCustomLayout";
+import { useSimpleSteppedLayout } from "@/hooks/useSimpleSteppedLayout";
 import { useSteppedLayout } from "@/hooks/useSteppedLayout";
 import { useSteppedDrafts } from "@/hooks/useSteppedDrafts";
 import { ModeTabs } from "@/components/ModeTabs";
@@ -15,6 +16,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 // Lazy load components
 const ParameterPanel = dynamic(() => import("@/components/ParameterPanel"), { ssr: false });
 const CustomPanel = dynamic(() => import("@/components/CustomPanel"), { ssr: false });
+const SimpleSteppedPanel = dynamic(() => import("@/components/SimpleSteppedPanel"), { ssr: false });
 const SteppedPanel = dynamic(() => import("@/components/SteppedPanel"), { ssr: false });
 const LayoutCanvas = dynamic(() => import("@/components/LayoutCanvas"), { ssr: false });
 const TrayViewer = dynamic(() => import("@/components/TrayViewer"), {
@@ -40,6 +42,9 @@ export default function Home() {
 
   // Custom Mode State
   const customModel = useCustomLayout();
+
+  // Simple Stepped Mode State
+  const simpleSteppedModel = useSimpleSteppedLayout();
 
   // Stepped Mode State
   const steppedModel = useSteppedLayout();
@@ -80,6 +85,27 @@ export default function Home() {
     }
   }, [selectedSlotIds, mode, steppedModel.params.slots]);
 
+  const simpleSteppedMoveScopeResolver = useCallback(
+    (draggingId: string, selectedIds: string[]) => {
+      const draggingSlot = simpleSteppedModel.params.slots.find((slot) => slot.id === draggingId);
+      if (!draggingSlot) {
+        return [];
+      }
+
+      const sameRowSelected = selectedIds.filter((id) => {
+        const slot = simpleSteppedModel.params.slots.find((candidate) => candidate.id === id);
+        return slot?.rowId === draggingSlot.rowId;
+      });
+
+      if (sameRowSelected.length > 0) {
+        return sameRowSelected;
+      }
+
+      return [draggingId];
+    },
+    [simpleSteppedModel.params.slots],
+  );
+
   // 参数面板内容（共享于桌面和移动端）
   const renderParameterPanel = () => {
     if (mode === "grid") {
@@ -92,6 +118,31 @@ export default function Home() {
           onExportSTL={gridModel.handleExportSTL}
           isGenerating={gridModel.isGenerating}
           volume={gridModel.volume}
+        />
+      );
+    }
+    if (mode === "simple-stepped") {
+      return (
+        <SimpleSteppedPanel
+          params={simpleSteppedModel.params}
+          derivedLayout={simpleSteppedModel.derivedLayout}
+          activeRowId={simpleSteppedModel.activeRowId}
+          effectiveDimensions={simpleSteppedModel.effectiveDimensions}
+          setParams={simpleSteppedModel.setParams}
+          updateParam={simpleSteppedModel.updateParam}
+          onSetActiveRow={simpleSteppedModel.setActiveRow}
+          onAddRow={simpleSteppedModel.addRow}
+          onRemoveRow={simpleSteppedModel.removeRow}
+          onRenameRow={simpleSteppedModel.renameRow}
+          onClearRow={simpleSteppedModel.clearRow}
+          onReorderRows={simpleSteppedModel.reorderRows}
+          onAddSlotToRow={simpleSteppedModel.addSlotToRow}
+          onRemoveSlot={simpleSteppedModel.removeSlot}
+          onGenerate={simpleSteppedModel.handleGenerate}
+          onExportSTL={simpleSteppedModel.handleExportSTL}
+          isGenerating={simpleSteppedModel.isGenerating}
+          isPreviewStale={simpleSteppedModel.isPreviewStale}
+          volume={simpleSteppedModel.volume}
         />
       );
     }
@@ -145,7 +196,18 @@ export default function Home() {
     }
 
     // Custom / Stepped: 2D/3D toggle
-    const model = mode === "stepped" ? steppedModel : customModel;
+    const model =
+      mode === "stepped"
+        ? steppedModel
+        : mode === "simple-stepped"
+          ? simpleSteppedModel
+          : customModel;
+    const canvasParams =
+      mode === "simple-stepped"
+        ? simpleSteppedModel.canvasParams
+        : mode === "stepped"
+          ? steppedModel.params
+          : customModel.params;
     return (
       <Tabs
         value={rightView}
@@ -169,23 +231,33 @@ export default function Home() {
             <LayoutCanvas
               key={mode}
               isActive={rightView === "2d"}
-              params={model.params}
-              onUpdateSlot={model.updateSlotPosition}
-              onRemoveSlot={model.removeSlot}
-              onResizeTray={(width, depth) => {
-                model.setParams((prev: any) => ({
-                  ...prev,
-                  trayWidth: width,
-                  trayDepth: depth,
-                }));
-              }}
-              onUpdateSlotRotation={model.updateSlotRotation}
-              onUpdateMultipleSlots={model.updateMultipleSlots}
-              onLiveUpdateMultipleSlots={model.updateMultipleSlotsLive}
-              onInsertSlots={model.insertSlots}
-              onDuplicateSlots={model.duplicateSlots}
-              onUndo={model.undo}
-              onSaveSnapshot={model.saveSnapshot}
+              params={canvasParams}
+              onUpdateSlot={mode === "simple-stepped" ? simpleSteppedModel.updateSlotPosition : model.updateSlotPosition}
+              onRemoveSlot={mode === "simple-stepped" ? simpleSteppedModel.removeSlot : model.removeSlot}
+              onResizeTray={mode === "simple-stepped"
+                ? undefined
+                : mode === "stepped"
+                  ? (width, depth) => {
+                  steppedModel.setParams((prev: any) => ({
+                    ...prev,
+                    trayWidth: width,
+                    trayDepth: depth,
+                  }));
+                }
+                  : (width, depth) => {
+                  customModel.setParams((prev: any) => ({
+                    ...prev,
+                    trayWidth: width,
+                    trayDepth: depth,
+                  }));
+                }}
+              onUpdateSlotRotation={mode === "simple-stepped" ? simpleSteppedModel.updateSlotRotation : model.updateSlotRotation}
+              onUpdateMultipleSlots={mode === "simple-stepped" ? simpleSteppedModel.updateMultipleSlots : model.updateMultipleSlots}
+              onLiveUpdateMultipleSlots={mode === "simple-stepped" ? simpleSteppedModel.updateMultipleSlotsLive : model.updateMultipleSlotsLive}
+              onInsertSlots={mode === "simple-stepped" ? undefined : mode === "stepped" ? steppedModel.insertSlots : customModel.insertSlots}
+              onDuplicateSlots={mode === "simple-stepped" ? simpleSteppedModel.duplicateSlots : model.duplicateSlots}
+              onUndo={mode === "simple-stepped" ? simpleSteppedModel.undo : model.undo}
+              onSaveSnapshot={mode === "simple-stepped" ? simpleSteppedModel.saveSnapshot : model.saveSnapshot}
               onSelectionChange={mode === "stepped" ? setSelectedSlotIds : undefined}
               onEditInteractionChange={mode === "stepped"
                 ? (isInteracting) => {
@@ -198,6 +270,8 @@ export default function Home() {
                 : undefined}
               outlinePreview={mode === "stepped" ? steppedModel.outlinePreview : undefined}
               focusedGroupId={mode === "stepped" ? previewGroupId : undefined}
+              rowBands={mode === "simple-stepped" ? simpleSteppedModel.derivedLayout.rowBands : undefined}
+              slotMoveScopeResolver={mode === "simple-stepped" ? simpleSteppedMoveScopeResolver : undefined}
             />
           </div>
         </div>
