@@ -1,9 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import type {
-  SimpleSteppedLayoutParams,
-} from "@/types/custom-tray";
+import type { SimpleSteppedLayoutParams } from "@/types/custom-tray";
 import type { SimpleSteppedDerivedLayout } from "@/lib/simple-stepped-layout";
 import {
   BASE_PRESETS,
@@ -20,7 +18,6 @@ import {
   ArrowDown,
   ArrowUp,
   Download,
-  Layers3,
   Loader2,
   Play,
   Plus,
@@ -52,7 +49,6 @@ interface SimpleSteppedPanelProps {
   onClearRow: (rowId: string) => void;
   onReorderRows: (fromIndex: number, toIndex: number) => void;
   onAddSlotToRow: (rowId: string, diameter: number) => void;
-  onRemoveSlot: (slotId: string) => void;
   onGenerate: () => void;
   onExportSTL: () => void;
   isGenerating: boolean;
@@ -74,7 +70,6 @@ export default function SimpleSteppedPanel({
   onClearRow,
   onReorderRows,
   onAddSlotToRow,
-  onRemoveSlot,
   onGenerate,
   onExportSTL,
   isGenerating,
@@ -88,17 +83,6 @@ export default function SimpleSteppedPanel({
   const activeRow = useMemo(
     () => params.rows.find((row) => row.id === activeRowId) ?? null,
     [activeRowId, params.rows],
-  );
-  const activeRowDerived = activeRow ? rowDerivedById.get(activeRow.id) ?? null : null;
-  const activeRowSlots = useMemo(
-    () =>
-      activeRow
-        ? params.slots
-            .filter((slot) => slot.rowId === activeRow.id)
-            .slice()
-            .sort((a, b) => a.x - b.x)
-        : [],
-    [activeRow, params.slots],
   );
   const isOversized =
     effectiveDimensions.width > MAX_BUILD_SIZE ||
@@ -129,6 +113,7 @@ export default function SimpleSteppedPanel({
                 const derived = rowDerivedById.get(row.id) ?? null;
                 const isActive = activeRowId === row.id;
                 const rowSlotCount = params.slots.filter((slot) => slot.rowId === row.id).length;
+
                 return (
                   <div
                     key={row.id}
@@ -139,18 +124,27 @@ export default function SimpleSteppedPanel({
                         : "border-transparent hover:bg-[#1c1a16]/50"
                     }`}
                   >
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-5 w-5 items-center justify-center rounded-sm border border-[#3d372e] bg-[#120f0c] text-[10px] font-mono text-primary/80">
+                    <div className="flex items-start gap-2">
+                      <div className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-sm border border-[#3d372e] bg-[#120f0c] text-[10px] font-mono text-primary/80">
                         {index + 1}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-xs font-medium text-foreground/90">
-                          {row.name}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground/70">
+                        {isActive ? (
+                          <Input
+                            value={row.name}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => onRenameRow(row.id, e.target.value)}
+                            className="h-8 bg-[#120f0c] border-[#2e2a24]"
+                          />
+                        ) : (
+                          <div className="truncate pt-0.5 text-xs font-medium text-foreground/90">
+                            {row.name}
+                          </div>
+                        )}
+                        <div className="mt-1 text-[10px] text-muted-foreground/70">
                           {rowSlotCount} 槽位
                           {derived
-                            ? ` / ${derived.length.toFixed(1)} × ${derived.depth.toFixed(1)} mm`
+                            ? ` / 高度 ${derived.topHeight.toFixed(1)}mm / ${derived.length.toFixed(1)} × ${derived.depth.toFixed(1)} mm`
                             : " / 空行"}
                         </div>
                       </div>
@@ -161,7 +155,7 @@ export default function SimpleSteppedPanel({
                           onReorderRows(index, index - 1);
                         }}
                         disabled={index === 0}
-                        className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-20"
+                        className="mt-0.5 flex h-5 w-5 items-center justify-center rounded text-muted-foreground/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-20"
                         title="上移"
                       >
                         <ArrowUp className="h-3 w-3" />
@@ -173,7 +167,7 @@ export default function SimpleSteppedPanel({
                           onReorderRows(index, index + 1);
                         }}
                         disabled={index === params.rows.length - 1}
-                        className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-20"
+                        className="mt-0.5 flex h-5 w-5 items-center justify-center rounded text-muted-foreground/50 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-20"
                         title="下移"
                       >
                         <ArrowDown className="h-3 w-3" />
@@ -184,12 +178,49 @@ export default function SimpleSteppedPanel({
                           e.stopPropagation();
                           onRemoveRow(row.id);
                         }}
-                        className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground/50 hover:text-red-400"
+                        className="mt-0.5 flex h-5 w-5 items-center justify-center rounded text-muted-foreground/50 hover:text-red-400"
                         title="删除行"
                       >
                         <Trash2 className="h-3 w-3" />
                       </button>
                     </div>
+
+                    {isActive && (
+                      <>
+                        <div className="mt-2 grid grid-cols-3 gap-2">
+                          <div className="bg-[#120f0c] border border-[#2e2a24] p-2 text-center">
+                            <div className="text-[10px] text-muted-foreground/60">层级</div>
+                            <div className="text-sm font-mono font-semibold text-primary">
+                              {derived ? derived.index + 1 : "-"}
+                            </div>
+                          </div>
+                          <div className="bg-[#120f0c] border border-[#2e2a24] p-2 text-center">
+                            <div className="text-[10px] text-muted-foreground/60">最长边</div>
+                            <div className="text-sm font-mono font-semibold text-foreground">
+                              {derived ? `${derived.length.toFixed(1)}mm` : "0mm"}
+                            </div>
+                          </div>
+                          <div className="bg-[#120f0c] border border-[#2e2a24] p-2 text-center">
+                            <div className="text-[10px] text-muted-foreground/60">行深度</div>
+                            <div className="text-sm font-mono font-semibold text-foreground">
+                              {derived ? `${derived.depth.toFixed(1)}mm` : "0mm"}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="mt-2 flex gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onClearRow(row.id);
+                            }}
+                            className="flex-1 h-8 text-xs border-[#2e2a24] text-muted-foreground hover:bg-[#1c1a16] hover:text-foreground"
+                          >
+                            清空本行
+                          </Button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 );
               })
@@ -209,116 +240,6 @@ export default function SimpleSteppedPanel({
 
       <div className="iron-panel rounded-sm p-3">
         <SectionHeader
-          icon={Layers3}
-          title="当前行"
-          collapsible
-          defaultOpen={true}
-          summary={activeRow ? activeRow.name : "未选中行"}
-        >
-          {activeRow ? (
-            <div className="space-y-3 mt-1">
-              <div className="space-y-1.5">
-                <label className="text-[11px] uppercase tracking-wider text-muted-foreground/70">
-                  行名称
-                </label>
-                <Input
-                  value={activeRow.name}
-                  onChange={(e) => onRenameRow(activeRow.id, e.target.value)}
-                  className="h-8 bg-[#1c1a16] border-[#2e2a24]"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="bg-[#1c1a16] border border-[#2e2a24] p-2 text-center">
-                  <div className="text-[10px] text-muted-foreground/60">阶梯层级</div>
-                  <div className="text-sm font-mono font-semibold text-primary">
-                    {activeRowDerived ? activeRowDerived.index + 1 : "-"}
-                  </div>
-                </div>
-                <div className="bg-[#1c1a16] border border-[#2e2a24] p-2 text-center">
-                  <div className="text-[10px] text-muted-foreground/60">顶部高度</div>
-                  <div className="text-sm font-mono font-semibold text-primary">
-                    {activeRowDerived ? `${activeRowDerived.topHeight.toFixed(1)}mm` : "待定"}
-                  </div>
-                </div>
-                <div className="bg-[#1c1a16] border border-[#2e2a24] p-2 text-center">
-                  <div className="text-[10px] text-muted-foreground/60">长度</div>
-                  <div className="text-sm font-mono font-semibold text-foreground">
-                    {activeRowDerived ? `${activeRowDerived.length.toFixed(1)}mm` : "0mm"}
-                  </div>
-                </div>
-                <div className="bg-[#1c1a16] border border-[#2e2a24] p-2 text-center">
-                  <div className="text-[10px] text-muted-foreground/60">深度</div>
-                  <div className="text-sm font-mono font-semibold text-foreground">
-                    {activeRowDerived ? `${activeRowDerived.depth.toFixed(1)}mm` : "0mm"}
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="text-[11px] uppercase tracking-wider text-muted-foreground/70">
-                  行内凹槽
-                </div>
-                {activeRowSlots.length === 0 ? (
-                  <div className="rounded border border-dashed border-[#3d372e] px-3 py-3 text-xs text-muted-foreground/70">
-                    当前行还没有凹槽。
-                  </div>
-                ) : (
-                  <div className="space-y-1.5">
-                    {activeRowSlots.map((slot, index) => (
-                      <div
-                        key={slot.id}
-                        className="flex items-center gap-2 rounded border border-[#2e2a24] bg-[#1c1a16] px-2 py-1.5"
-                      >
-                        <div className="text-[10px] font-mono text-muted-foreground/60">
-                          #{index + 1}
-                        </div>
-                        <div className="flex-1 text-xs text-foreground/90">
-                          {slot.diameter} mm
-                        </div>
-                        <div className="text-[10px] font-mono text-muted-foreground/60">
-                          x={slot.x.toFixed(1)}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => onRemoveSlot(slot.id)}
-                          className="flex h-5 w-5 items-center justify-center rounded text-muted-foreground/50 hover:text-red-400"
-                          title="删除凹槽"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => onClearRow(activeRow.id)}
-                  className="flex-1 h-8 text-xs border-[#2e2a24] text-muted-foreground hover:bg-[#1c1a16] hover:text-foreground"
-                >
-                  清空本行
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => onRemoveRow(activeRow.id)}
-                  className="flex-1 h-8 text-xs border-[#4f2626] text-[#d38a8a] hover:bg-[#2a1515] hover:text-[#f0b0b0]"
-                >
-                  删除本行
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="rounded border border-dashed border-[#3d372e] px-3 py-4 text-center text-xs text-muted-foreground/70 mt-1">
-              先选中一行，再编辑行名称和行内凹槽。
-            </div>
-          )}
-        </SectionHeader>
-      </div>
-
-      <div className="iron-panel rounded-sm p-3">
-        <SectionHeader
           icon={Plus}
           title="添加凹槽"
           collapsible
@@ -326,6 +247,9 @@ export default function SimpleSteppedPanel({
           summary={activeRow ? `添加到 ${activeRow.name}` : "未选中行"}
         >
           <div className="space-y-2 mt-1">
+            <div className="rounded border border-dashed border-[#3d372e] px-3 py-2 text-[10px] text-muted-foreground/70">
+              画布里现在支持同行上下拖动混排，也可以直接拖动虚线底板边框来放大打印边界。
+            </div>
             <div className="text-[10px] text-muted-foreground/70">
               {activeRow ? `新凹槽将加入 ${activeRow.name}` : "请先选择一行"}
             </div>
@@ -354,9 +278,16 @@ export default function SimpleSteppedPanel({
           title="结构参数"
           collapsible
           defaultOpen={false}
-          summary={`步进${params.stepHeight}mm / 行距${params.rowGap}mm / 槽距${params.spacing}mm`}
+          summary={`首排${params.firstRowHeight}mm / 步进${params.stepHeight}mm / 行距${params.rowGap}mm`}
         >
           <div className="space-y-4">
+            <ParamSlider
+              label={SIMPLE_STEPPED_LIMITS.firstRowHeight.label}
+              value={params.firstRowHeight}
+              config={SIMPLE_STEPPED_LIMITS.firstRowHeight}
+              onChange={(v) => updateParam("firstRowHeight", v)}
+              unit={SIMPLE_STEPPED_LIMITS.firstRowHeight.unit}
+            />
             <ParamSlider
               label={SIMPLE_STEPPED_LIMITS.stepHeight.label}
               value={params.stepHeight}
@@ -453,6 +384,22 @@ export default function SimpleSteppedPanel({
                 </div>
               ))}
             </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
+                <span className="text-[10px] text-muted-foreground block">最小底板</span>
+                <span className="text-sm font-mono font-semibold text-foreground">
+                  {derivedLayout.minimumTrayWidth.toFixed(1)} × {derivedLayout.minimumTrayDepth.toFixed(1)} mm
+                </span>
+              </div>
+              <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
+                <span className="text-[10px] text-muted-foreground block">当前打印边框</span>
+                <span className="text-sm font-mono font-semibold text-primary">
+                  {derivedLayout.trayWidth.toFixed(1)} × {derivedLayout.trayDepth.toFixed(1)} mm
+                </span>
+              </div>
+            </div>
+
             {isOversized && (
               <div className="flex items-center justify-center gap-1.5 text-xs text-[#c04040] animate-fade-in">
                 <span>超过锻造极限</span>

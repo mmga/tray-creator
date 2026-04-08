@@ -12,6 +12,7 @@ import type {
 export interface SimpleSteppedSlotUpdate {
   id: string;
   x: number;
+  y: number;
 }
 
 export interface SimpleSteppedDerivedSlot {
@@ -21,6 +22,7 @@ export interface SimpleSteppedDerivedSlot {
   diameter: number;
   effectiveDiameter: number;
   localX: number;
+  localY: number;
   globalX: number;
   globalY: number;
   width: number;
@@ -50,6 +52,8 @@ export interface SimpleSteppedDerivedRow {
 export interface SimpleSteppedDerivedLayout {
   trayWidth: number;
   trayDepth: number;
+  minimumTrayWidth: number;
+  minimumTrayDepth: number;
   trayHeight: number;
   highestTopHeight: number;
   slotCount: number;
@@ -57,30 +61,44 @@ export interface SimpleSteppedDerivedLayout {
   rowBands: SimpleSteppedRowBand[];
 }
 
+interface SimpleSteppedRowSeed {
+  id: string;
+  name: string;
+  slotIds: string[];
+  rawSlots: Array<{
+    slot: SimpleSteppedSlot;
+    effectiveDiameter: number;
+    half: number;
+    left: number;
+    right: number;
+  }>;
+  holeMinX: number;
+  holeMaxX: number;
+  holeCenterX: number;
+  length: number;
+  depth: number;
+  maxDiameter: number;
+}
+
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
-function getFallbackCanvasWidth(params: SimpleSteppedLayoutParams) {
+function getStoredTrayWidth(params: SimpleSteppedLayoutParams) {
   return isFiniteNumber(params.trayWidth) && params.trayWidth > 0
     ? params.trayWidth
     : SIMPLE_STEPPED_LAYOUT_DEFAULTS.trayWidth;
 }
 
-function getFallbackCanvasDepth(params: SimpleSteppedLayoutParams) {
+function getStoredTrayDepth(params: SimpleSteppedLayoutParams) {
   return isFiniteNumber(params.trayDepth) && params.trayDepth > 0
     ? params.trayDepth
     : SIMPLE_STEPPED_LAYOUT_DEFAULTS.trayDepth;
 }
 
-export function getSimpleSteppedEffectiveDiameter(slot: Pick<SimpleSteppedSlot, "diameter">) {
-  return slot.diameter + getSlotTolerance(slot.diameter);
-}
-
-export function deriveSimpleSteppedLayout(
+function buildActiveRowSeeds(
   params: SimpleSteppedLayoutParams,
-  activeRowId?: string | null,
-): SimpleSteppedDerivedLayout {
+): SimpleSteppedRowSeed[] {
   const slotsByRowId = new Map<string, SimpleSteppedSlot[]>();
   params.slots.forEach((slot) => {
     const existing = slotsByRowId.get(slot.rowId);
@@ -91,7 +109,7 @@ export function deriveSimpleSteppedLayout(
     }
   });
 
-  const activeRowSeeds = params.rows
+  return params.rows
     .map((row) => {
       const rowSlots = slotsByRowId.get(row.id) ?? [];
       if (rowSlots.length === 0) {
@@ -131,12 +149,52 @@ export function deriveSimpleSteppedLayout(
         maxDiameter,
       };
     })
-    .filter((row): row is NonNullable<typeof row> => Boolean(row));
+    .filter((row): row is SimpleSteppedRowSeed => Boolean(row));
+}
+
+export function getSimpleSteppedEffectiveDiameter(
+  slot: Pick<SimpleSteppedSlot, "diameter">,
+) {
+  return slot.diameter + getSlotTolerance(slot.diameter);
+}
+
+export function getSimpleSteppedMaxLocalYOffset(
+  rowMaxDiameter: number,
+  effectiveDiameter: number,
+) {
+  return Math.max(0, (rowMaxDiameter - effectiveDiameter) / 2);
+}
+
+export function calculateSimpleSteppedMinimumTraySize(
+  params: SimpleSteppedLayoutParams,
+) {
+  const activeRowSeeds = buildActiveRowSeeds(params);
+  if (activeRowSeeds.length === 0) {
+    return { width: 0, depth: 0 };
+  }
+
+  return {
+    width: Math.max(...activeRowSeeds.map((row) => row.length)),
+    depth:
+      activeRowSeeds.reduce((sum, row) => sum + row.depth, 0) +
+      Math.max(activeRowSeeds.length - 1, 0) * params.rowGap,
+  };
+}
+
+export function deriveSimpleSteppedLayout(
+  params: SimpleSteppedLayoutParams,
+  activeRowId?: string | null,
+): SimpleSteppedDerivedLayout {
+  const activeRowSeeds = buildActiveRowSeeds(params);
+  const storedTrayWidth = getStoredTrayWidth(params);
+  const storedTrayDepth = getStoredTrayDepth(params);
 
   if (activeRowSeeds.length === 0) {
     return {
-      trayWidth: getFallbackCanvasWidth(params),
-      trayDepth: getFallbackCanvasDepth(params),
+      trayWidth: storedTrayWidth,
+      trayDepth: storedTrayDepth,
+      minimumTrayWidth: 0,
+      minimumTrayDepth: 0,
       trayHeight: 0,
       highestTopHeight: 0,
       slotCount: 0,
@@ -145,16 +203,18 @@ export function deriveSimpleSteppedLayout(
     };
   }
 
-  const trayWidth = Math.max(...activeRowSeeds.map((row) => row.length));
-  const trayDepth =
+  const minimumTrayWidth = Math.max(...activeRowSeeds.map((row) => row.length));
+  const minimumTrayDepth =
     activeRowSeeds.reduce((sum, row) => sum + row.depth, 0) +
     Math.max(activeRowSeeds.length - 1, 0) * params.rowGap;
+  const trayWidth = Math.max(storedTrayWidth, minimumTrayWidth);
+  const trayDepth = Math.max(storedTrayDepth, minimumTrayDepth);
 
   let cursorY = 0;
   const activeRows: SimpleSteppedDerivedRow[] = activeRowSeeds.map((row, index) => {
     const startY = cursorY;
     const centerY = startY + row.depth / 2;
-    const topHeight = (index + 1) * params.stepHeight;
+    const topHeight = params.firstRowHeight + index * params.stepHeight;
     const extraHeight = index * params.stepHeight;
 
     const derivedSlots: SimpleSteppedDerivedSlot[] = row.rawSlots.map((item) => ({
@@ -164,8 +224,9 @@ export function deriveSimpleSteppedLayout(
       diameter: item.slot.diameter,
       effectiveDiameter: item.effectiveDiameter,
       localX: item.slot.x,
+      localY: item.slot.y,
       globalX: trayWidth / 2 + (item.slot.x - row.holeCenterX),
-      globalY: centerY,
+      globalY: centerY + item.slot.y,
       width: item.effectiveDiameter,
       height: item.effectiveDiameter,
       rotation: 0,
@@ -207,7 +268,11 @@ export function deriveSimpleSteppedLayout(
   return {
     trayWidth,
     trayDepth,
-    trayHeight: activeRows.length * params.stepHeight,
+    minimumTrayWidth,
+    minimumTrayDepth,
+    trayHeight:
+      params.firstRowHeight +
+      Math.max(activeRows.length - 1, 0) * params.stepHeight,
     highestTopHeight: activeRows[activeRows.length - 1]?.topHeight ?? 0,
     slotCount: params.slots.length,
     activeRows,
@@ -215,7 +280,9 @@ export function deriveSimpleSteppedLayout(
   };
 }
 
-export function calculateSimpleSteppedDimensions(params: SimpleSteppedLayoutParams) {
+export function calculateSimpleSteppedDimensions(
+  params: SimpleSteppedLayoutParams,
+) {
   const derived = deriveSimpleSteppedLayout(params);
   return {
     width: derived.trayWidth,
@@ -237,11 +304,22 @@ export function clampSimpleSteppedSlotUpdates(
   maxBuildSize: number = MAX_BUILD_SIZE,
 ) {
   const slotMap = new Map(params.slots.map((slot) => [slot.id, slot]));
+  const derived = deriveSimpleSteppedLayout(params);
+  const rowById = new Map(derived.activeRows.map((row) => [row.id, row]));
   const deduped = new Map<string, SimpleSteppedSlotUpdate>();
 
   updates.forEach((update) => {
     const slot = slotMap.get(update.id);
-    if (!slot || !isFiniteNumber(update.x)) {
+    if (
+      !slot ||
+      !isFiniteNumber(update.x) ||
+      !isFiniteNumber(update.y)
+    ) {
+      return;
+    }
+
+    const row = rowById.get(slot.rowId);
+    if (!row) {
       return;
     }
 
@@ -250,10 +328,15 @@ export function clampSimpleSteppedSlotUpdates(
       0,
       maxBuildSize / 2 - params.outerMargin - effectiveDiameter / 2,
     );
+    const maxLocalYOffset = getSimpleSteppedMaxLocalYOffset(
+      row.maxDiameter,
+      effectiveDiameter,
+    );
 
     deduped.set(update.id, {
       id: update.id,
       x: Math.max(-maxAbsX, Math.min(maxAbsX, update.x)),
+      y: Math.max(-maxLocalYOffset, Math.min(maxLocalYOffset, update.y)),
     });
   });
 

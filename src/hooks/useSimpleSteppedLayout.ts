@@ -14,6 +14,7 @@ import {
   SIMPLE_STEPPED_LAYOUT_DEFAULTS,
 } from "@/lib/config";
 import {
+  calculateSimpleSteppedMinimumTraySize,
   calculateSimpleSteppedDimensions,
   clampSimpleSteppedSlotUpdates,
   deriveSimpleSteppedLayout,
@@ -61,6 +62,7 @@ export interface UseSimpleSteppedLayoutReturn {
   saveSnapshot: () => void;
   undo: () => void;
   canUndo: boolean;
+  resizeTray: (width: number, depth: number) => void;
   threeGeometry: THREE.BufferGeometry | null;
   volume: number;
   isGenerating: boolean;
@@ -77,11 +79,6 @@ function rebuildRowSlotIds(
     ...row,
     slotIds: slots.filter((slot) => slot.rowId === row.id).map((slot) => slot.id),
   }));
-}
-
-function hasActiveRows(next: SimpleSteppedLayoutParams) {
-  const slotRowIds = new Set(next.slots.map((slot) => slot.rowId));
-  return next.rows.some((row) => slotRowIds.has(row.id));
 }
 
 export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
@@ -115,19 +112,31 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
 
   const normalizeParams = useCallback((next: SimpleSteppedLayoutParams) => {
     const rebuiltRows = rebuildRowSlotIds(next.rows, next.slots);
-    const withRowIds = { ...next, rows: rebuiltRows };
-    const withFallbackCanvas = hasActiveRows(withRowIds)
-      ? withRowIds
-      : {
-          ...withRowIds,
-          trayWidth: SIMPLE_STEPPED_LAYOUT_DEFAULTS.trayWidth,
-          trayDepth: SIMPLE_STEPPED_LAYOUT_DEFAULTS.trayDepth,
-        };
-    const dims = calculateSimpleSteppedDimensions(withFallbackCanvas);
+    const normalizedSlots = next.slots.map((slot) => ({
+      ...slot,
+      y: Number.isFinite(slot.y) ? slot.y : 0,
+    }));
+    const withRowIds = { ...next, rows: rebuiltRows, slots: normalizedSlots };
+    const minimumDims = calculateSimpleSteppedMinimumTraySize(withRowIds);
+    const fallbackWidth =
+      Number.isFinite(withRowIds.trayWidth) && withRowIds.trayWidth > 0
+        ? withRowIds.trayWidth
+        : SIMPLE_STEPPED_LAYOUT_DEFAULTS.trayWidth;
+    const fallbackDepth =
+      Number.isFinite(withRowIds.trayDepth) && withRowIds.trayDepth > 0
+        ? withRowIds.trayDepth
+        : SIMPLE_STEPPED_LAYOUT_DEFAULTS.trayDepth;
+
     return {
-      ...withFallbackCanvas,
-      trayWidth: dims.width,
-      trayDepth: dims.depth,
+      ...withRowIds,
+      trayWidth:
+        minimumDims.width > 0
+          ? Math.max(fallbackWidth, minimumDims.width)
+          : fallbackWidth,
+      trayDepth:
+        minimumDims.depth > 0
+          ? Math.max(fallbackDepth, minimumDims.depth)
+          : fallbackDepth,
     };
   }, []);
 
@@ -187,13 +196,19 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
       spacing: params.spacing,
       boundarySpacing: params.outerMargin,
       boundarySpacingIndependent: true,
-      baseThickness: params.stepHeight,
+      baseThickness: params.firstRowHeight,
       holeDepth: params.holeDepth,
       cornerRadius: 0,
       enableBaseHole: false,
       baseHoleSize: "25",
     };
-  }, [derivedLayout, params.holeDepth, params.outerMargin, params.spacing, params.stepHeight]);
+  }, [
+    derivedLayout,
+    params.firstRowHeight,
+    params.holeDepth,
+    params.outerMargin,
+    params.spacing,
+  ]);
 
   const saveSnapshot = useCallback(() => {
     pushState(paramsRef.current);
@@ -334,6 +349,7 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
           shape: "circle",
           diameter,
           x,
+          y: 0,
         };
 
         return normalizeParams({
@@ -383,6 +399,7 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
           return {
             id: update.id,
             x: update.x - derived.trayWidth / 2 + row.holeCenterX,
+            y: update.y - row.centerY,
           };
         })
         .filter((update): update is SimpleSteppedSlotUpdate => Boolean(update));
@@ -401,13 +418,17 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
           prev,
           mapCanvasUpdatesToLocal(prev, updates),
         );
-        const updatesMap = new Map(localUpdates.map((update) => [update.id, update.x]));
+        const updatesMap = new Map(localUpdates.map((update) => [update.id, update]));
 
         return normalizeParams({
           ...prev,
           slots: prev.slots.map((slot) =>
             updatesMap.has(slot.id)
-              ? { ...slot, x: updatesMap.get(slot.id) ?? slot.x }
+              ? {
+                  ...slot,
+                  x: updatesMap.get(slot.id)?.x ?? slot.x,
+                  y: updatesMap.get(slot.id)?.y ?? slot.y,
+                }
               : slot,
           ),
         });
@@ -419,7 +440,6 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
 
   const updateSlotPosition = useCallback(
     (id: string, x: number, y: number) => {
-      void y;
       applyMultipleCanvasSlotUpdates([{ id, x, y }], false);
     },
     [applyMultipleCanvasSlotUpdates],
@@ -552,6 +572,20 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
     }
   }, [isPreviewStale, toast]);
 
+  const resizeTray = useCallback(
+    (width: number, depth: number) => {
+      internalSetParams((prev) =>
+        normalizeParams({
+          ...prev,
+          trayWidth: width,
+          trayDepth: depth,
+        }),
+      );
+      invalidatePreview();
+    },
+    [invalidatePreview, normalizeParams],
+  );
+
   return {
     params,
     setParams,
@@ -576,6 +610,7 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
     saveSnapshot,
     undo,
     canUndo: canUndoFn(),
+    resizeTray,
     threeGeometry,
     volume,
     isGenerating,

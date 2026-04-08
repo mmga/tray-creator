@@ -61,6 +61,7 @@ export default function LayoutCanvas({
   params,
   onUpdateSlot,
   onRemoveSlot,
+  onResizeTray,
   onUpdateSlotRotation,
   onUpdateMultipleSlots,
   onLiveUpdateMultipleSlots,
@@ -91,6 +92,11 @@ export default function LayoutCanvas({
   const svgRef = useRef<SVGSVGElement>(null);
   const parentRef = useRef<HTMLDivElement>(null); // To get client rect for marquee
   const rotateStartRef = useRef<{ angle: number; startRotation: number } | null>(null);
+  const trayResizeRef = useRef<{
+    mode: "right" | "bottom" | "corner";
+    minWidth: number;
+    minDepth: number;
+  } | null>(null);
 
   // 主触摸指针 ID（防止多指时第二根手指触发拖拽/框选）
   const primaryPointerIdRef = useRef<number | null>(null);
@@ -102,6 +108,7 @@ export default function LayoutCanvas({
   } | null>(null);
   const liveUpdateFrameRef = useRef<number | null>(null);
   const pendingLiveUpdatesRef = useRef<SlotUpdate[] | null>(null);
+  const [isResizingTray, setIsResizingTray] = useState(false);
 
   // Marquee Selection State (Client Coords)
   const [selectionBox, setSelectionBox] = useState<{ start: { x: number, y: number }, current: { x: number, y: number } } | null>(null);
@@ -342,6 +349,8 @@ export default function LayoutCanvas({
       setSelectionBox(null);
       setIsRotating(false);
       setIsPanning(false);
+      trayResizeRef.current = null;
+      setIsResizingTray(false);
       setIsSpacePressed(false);
       setIsResizingActionPanel(false);
     }
@@ -526,6 +535,30 @@ export default function LayoutCanvas({
         return;
       }
 
+      if (rowBands && trayResizeRef.current && svgRef.current && onResizeTray) {
+        const pt = svgRef.current.createSVGPoint();
+        pt.x = e.clientX;
+        pt.y = e.clientY;
+        const svgP = pt.matrixTransform(svgRef.current.getScreenCTM()?.inverse());
+        const nextWidth = Math.max(
+          trayResizeRef.current.minWidth,
+          Math.min(MAX_BUILD_SIZE, svgP.x),
+        );
+        const nextDepth = Math.max(
+          trayResizeRef.current.minDepth,
+          Math.min(MAX_BUILD_SIZE, svgP.y),
+        );
+
+        if (trayResizeRef.current.mode === "right") {
+          onResizeTray(nextWidth, trayDepth);
+        } else if (trayResizeRef.current.mode === "bottom") {
+          onResizeTray(trayWidth, nextDepth);
+        } else {
+          onResizeTray(nextWidth, nextDepth);
+        }
+        return;
+      }
+
       // Marquee Selection
       if (selectionBox) {
         // Just update current point
@@ -682,7 +715,7 @@ export default function LayoutCanvas({
         scheduleLiveUpdates(liveUpdates);
       }
     });
-  }, [draggingId, isPanning, isRotating, panStartRef, scheduleLiveUpdates, selectionBox, setPan, trayDepth, slots]);
+  }, [draggingId, isPanning, isRotating, onResizeTray, panStartRef, rowBands, scheduleLiveUpdates, selectionBox, setPan, trayDepth, trayWidth, slots]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent, slotId?: string) => {
     e.preventDefault();
@@ -859,6 +892,8 @@ export default function LayoutCanvas({
 
     setDraggingId(null);
     setIsPanning(false);
+    trayResizeRef.current = null;
+    setIsResizingTray(false);
     setSelectionBox(null);
     setIsRotating(false);
     rotateStartRef.current = null;
@@ -908,9 +943,10 @@ export default function LayoutCanvas({
     };
   })();
 
+  const isSimpleSteppedCanvas = Boolean(rowBands);
   const isEffectiveOversized =
-    effectiveBaseplate.width > MAX_BUILD_SIZE ||
-    effectiveBaseplate.height > MAX_BUILD_SIZE;
+    (isSimpleSteppedCanvas ? trayWidth : effectiveBaseplate.width) > MAX_BUILD_SIZE ||
+    (isSimpleSteppedCanvas ? trayDepth : effectiveBaseplate.height) > MAX_BUILD_SIZE;
 
   const symmetryAxes = selectedSymmetrySlots.length > 0
     ? {
@@ -930,6 +966,24 @@ export default function LayoutCanvas({
       ),
     }
     : null;
+  const minimumTrayBounds = useMemo(() => {
+    if (!rowBands || rowBands.length === 0) {
+      return {
+        width: effectiveBaseplate.width,
+        depth: effectiveBaseplate.height,
+      };
+    }
+
+    const minX = Math.min(...rowBands.map((band) => band.x));
+    const maxX = Math.max(...rowBands.map((band) => band.x + band.width));
+    const minY = Math.min(...rowBands.map((band) => band.y));
+    const maxY = Math.max(...rowBands.map((band) => band.y + band.depth));
+
+    return {
+      width: Math.max(0, maxX - minX),
+      depth: Math.max(0, maxY - minY),
+    };
+  }, [effectiveBaseplate.height, effectiveBaseplate.width, rowBands]);
   const trayOutlineStroke = "#4b5563";
   const trayOutlineStrokeWidth = 0.5 / zoom;
   const trayOutlineStrokeDash = `${3 / zoom} ${3 / zoom}`;
@@ -938,6 +992,32 @@ export default function LayoutCanvas({
   const axisGuideStrokeWidth = 0.3 / zoom;
   const axisGuideStrokeDash = `${2 / zoom} ${2 / zoom}`;
   const axisGuideStrokeOpacity = 0.8;
+  const trayResizeHandleSize = 10 / zoom;
+  const trayResizeHitSize = 14 / zoom;
+
+  const startTrayResize = useCallback(
+    (
+      event: React.PointerEvent,
+      mode: "right" | "bottom" | "corner",
+    ) => {
+      if (!onResizeTray || !rowBands) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      (event.target as Element)?.setPointerCapture?.(event.pointerId);
+      onSaveSnapshotRef.current?.();
+      onEditInteractionChange?.(true);
+      trayResizeRef.current = {
+        mode,
+        minWidth: Math.max(1, minimumTrayBounds.width),
+        minDepth: Math.max(1, minimumTrayBounds.depth),
+      };
+      setIsResizingTray(true);
+    },
+    [minimumTrayBounds.depth, minimumTrayBounds.width, onEditInteractionChange, onResizeTray, rowBands],
+  );
 
   return (
     <div
@@ -991,7 +1071,7 @@ export default function LayoutCanvas({
           />
 
           {/* Effective Baseplate (inner) */}
-          {!('groups' in params) && effectiveBaseplate.hasSlots && (
+          {!('groups' in params) && !isSimpleSteppedCanvas && effectiveBaseplate.hasSlots && (
             <rect
               x={effectiveBaseplate.x}
               y={effectiveBaseplate.y}
@@ -1003,6 +1083,67 @@ export default function LayoutCanvas({
               rx={Math.max(0, Math.min('cornerRadius' in params ? params.cornerRadius : 0, effectiveBaseplate.width / 2, effectiveBaseplate.height / 2))}
               strokeOpacity={0.95}
             />
+          )}
+
+          {onResizeTray && isSimpleSteppedCanvas && (
+            <>
+              <rect
+                x={trayWidth - trayResizeHitSize / 2}
+                y={0}
+                width={trayResizeHitSize}
+                height={trayDepth}
+                fill="transparent"
+                style={{ cursor: "ew-resize" }}
+                onPointerDown={(event) => startTrayResize(event, "right")}
+              />
+              <rect
+                x={0}
+                y={trayDepth - trayResizeHitSize / 2}
+                width={trayWidth}
+                height={trayResizeHitSize}
+                fill="transparent"
+                style={{ cursor: "ns-resize" }}
+                onPointerDown={(event) => startTrayResize(event, "bottom")}
+              />
+              <rect
+                x={trayWidth - trayResizeHitSize}
+                y={trayDepth - trayResizeHitSize}
+                width={trayResizeHitSize}
+                height={trayResizeHitSize}
+                fill="transparent"
+                style={{ cursor: "nwse-resize" }}
+                onPointerDown={(event) => startTrayResize(event, "corner")}
+              />
+              <line
+                x1={trayWidth}
+                y1={0}
+                x2={trayWidth}
+                y2={trayDepth}
+                stroke={isResizingTray ? "#fbbf24" : "#8b7355"}
+                strokeWidth={0.5 / zoom}
+                strokeOpacity={0.7}
+                pointerEvents="none"
+              />
+              <line
+                x1={0}
+                y1={trayDepth}
+                x2={trayWidth}
+                y2={trayDepth}
+                stroke={isResizingTray ? "#fbbf24" : "#8b7355"}
+                strokeWidth={0.5 / zoom}
+                strokeOpacity={0.7}
+                pointerEvents="none"
+              />
+              <rect
+                x={trayWidth - trayResizeHandleSize}
+                y={trayDepth - trayResizeHandleSize}
+                width={trayResizeHandleSize}
+                height={trayResizeHandleSize}
+                fill={isResizingTray ? "#fbbf24" : "#8b7355"}
+                fillOpacity={0.8}
+                pointerEvents="none"
+              />
+            </>
           )}
 
           {rowBands && rowBands.map((band) => (
@@ -1282,7 +1423,7 @@ export default function LayoutCanvas({
 
         {isEffectiveOversized && (
           <div className="absolute top-14 right-3 z-72 px-3 py-1.5 bg-[#3b1515]/90 border border-[#8b1a1a] rounded-sm text-xs text-[#f2b8b8] font-mono backdrop-blur-sm">
-            有效底板超限: {effectiveBaseplate.width.toFixed(0)} × {effectiveBaseplate.height.toFixed(0)} mm
+            {isSimpleSteppedCanvas ? "打印边框超限" : "有效底板超限"}: {(isSimpleSteppedCanvas ? trayWidth : effectiveBaseplate.width).toFixed(0)} × {(isSimpleSteppedCanvas ? trayDepth : effectiveBaseplate.height).toFixed(0)} mm
           </div>
         )}
 

@@ -50,6 +50,8 @@ export interface SimpleSteppedSlot {
   diameter: number;
   /** 相对所属行局部坐标系的 X 偏移（mm） */
   x: number;
+  /** 相对所属行中心线的 Y 偏移（mm） */
+  y: number;
 }
 
 /** 简易阶梯模式中的一行 */
@@ -126,14 +128,16 @@ export interface SteppedLayoutParams {
 
 /** 简易阶梯模式参数 */
 export interface SimpleSteppedLayoutParams {
-  /** 派生后的整体长度（mm）。无有效行时保留为画布兜底尺寸。 */
+  /** 当前底板长度（mm），至少不小于内容推导出的最小长度。 */
   trayWidth: number;
-  /** 派生后的整体深度（mm）。无有效行时保留为画布兜底尺寸。 */
+  /** 当前底板深度（mm），至少不小于内容推导出的最小深度。 */
   trayDepth: number;
   /** 行列表 */
   rows: SimpleSteppedRow[];
   /** 槽位列表 */
   slots: SimpleSteppedSlot[];
+  /** 第一排基础高度（mm） */
+  firstRowHeight: number;
   /** 统一阶梯步进高度（mm） */
   stepHeight: number;
   /** 行与行之间的间距（mm） */

@@ -28,7 +28,7 @@ function createEmptyGeom() {
  * 简易阶梯模式 3D 模型
  *
  * 结构：
- * - 整体矩形底板，基础高度 = stepHeight
+ * - 整体矩形底板，基础高度 = firstRowHeight
  * - 第 N 行在自己的矩形带上额外抬高 (N - 1) * stepHeight
  * - 所有凹槽从所属行顶部向下挖 holeDepth
  */
@@ -42,7 +42,7 @@ export function createSimpleSteppedTrayModel(
     return createEmptyGeom();
   }
 
-  const baseHeight = params.stepHeight;
+  const baseHeight = params.firstRowHeight;
   let solid = cuboid({
     size: [derived.trayWidth, derived.trayDepth, baseHeight],
     center: [0, 0, baseHeight / 2],

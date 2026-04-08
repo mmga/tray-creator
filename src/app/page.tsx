@@ -137,7 +137,6 @@ export default function Home() {
           onClearRow={simpleSteppedModel.clearRow}
           onReorderRows={simpleSteppedModel.reorderRows}
           onAddSlotToRow={simpleSteppedModel.addSlotToRow}
-          onRemoveSlot={simpleSteppedModel.removeSlot}
           onGenerate={simpleSteppedModel.handleGenerate}
           onExportSTL={simpleSteppedModel.handleExportSTL}
           isGenerating={simpleSteppedModel.isGenerating}
@@ -235,7 +234,7 @@ export default function Home() {
               onUpdateSlot={mode === "simple-stepped" ? simpleSteppedModel.updateSlotPosition : model.updateSlotPosition}
               onRemoveSlot={mode === "simple-stepped" ? simpleSteppedModel.removeSlot : model.removeSlot}
               onResizeTray={mode === "simple-stepped"
-                ? undefined
+                ? simpleSteppedModel.resizeTray
                 : mode === "stepped"
                   ? (width, depth) => {
                   steppedModel.setParams((prev: any) => ({

@@ -326,7 +326,10 @@ function validateCustomParams(p: CustomLayoutParams) {
 
 function validateSimpleSteppedParams(p: SimpleSteppedLayoutParams) {
   const obj = p as unknown as Record<string, unknown>;
-  for (const f of ["stepHeight", "rowGap", "spacing", "outerMargin", "holeDepth"]) {
+  if (typeof obj.firstRowHeight !== "number" || !Number.isFinite(obj.firstRowHeight)) {
+    obj.firstRowHeight = SIMPLE_STEPPED_LAYOUT_DEFAULTS.firstRowHeight;
+  }
+  for (const f of ["firstRowHeight", "stepHeight", "rowGap", "spacing", "outerMargin", "holeDepth"]) {
     requireNumber(obj, f);
   }
 
@@ -392,8 +395,12 @@ function validateSimpleSteppedParams(p: SimpleSteppedLayoutParams) {
     if (typeof slot.x !== "number" || !Number.isFinite(slot.x)) {
       throw new Error(`slots[${i}].x: 缺少或无效（需要有限数字）`);
     }
+    if (typeof slot.y !== "number" || !Number.isFinite(slot.y)) {
+      slot.y = 0;
+    }
   }
 
+  clampField(obj, "firstRowHeight", SIMPLE_STEPPED_LIMITS.firstRowHeight);
   clampField(obj, "stepHeight", SIMPLE_STEPPED_LIMITS.stepHeight);
   clampField(obj, "rowGap", SIMPLE_STEPPED_LIMITS.rowGap);
   clampField(obj, "spacing", SIMPLE_STEPPED_LIMITS.spacing);
@@ -426,8 +433,8 @@ function validateSimpleSteppedParams(p: SimpleSteppedLayoutParams) {
   normalized.trayDepth = fallbackDepth;
 
   const dims = calculateSimpleSteppedDimensions(normalized);
-  normalized.trayWidth = dims.width;
-  normalized.trayDepth = dims.depth;
+  normalized.trayWidth = Math.max(fallbackWidth, dims.width);
+  normalized.trayDepth = Math.max(fallbackDepth, dims.depth);
 }
 
 function validateSteppedParams(p: SteppedLayoutParams) {
