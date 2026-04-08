@@ -11,6 +11,7 @@ import type {
   SimpleSteppedSlot,
 } from "@/types/custom-tray";
 import {
+  MAX_BUILD_SIZE,
   SIMPLE_STEPPED_LAYOUT_DEFAULTS,
 } from "@/lib/config";
 import {
@@ -63,6 +64,7 @@ export interface UseSimpleSteppedLayoutReturn {
   undo: () => void;
   canUndo: boolean;
   resizeTray: (width: number, depth: number) => void;
+  trimTray: () => void;
   threeGeometry: THREE.BufferGeometry | null;
   volume: number;
   isGenerating: boolean;
@@ -79,6 +81,26 @@ function rebuildRowSlotIds(
     ...row,
     slotIds: slots.filter((slot) => slot.rowId === row.id).map((slot) => slot.id),
   }));
+}
+
+function normalizeSimpleSteppedTraySize(
+  requestedSize: number,
+  minimumSize: number,
+  fallbackSize: number,
+) {
+  const safeRequestedSize =
+    Number.isFinite(requestedSize) && requestedSize > 0
+      ? requestedSize
+      : fallbackSize;
+
+  if (minimumSize > MAX_BUILD_SIZE) {
+    return Math.max(safeRequestedSize, minimumSize);
+  }
+
+  return Math.min(
+    Math.max(safeRequestedSize, minimumSize),
+    MAX_BUILD_SIZE,
+  );
 }
 
 export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
@@ -116,7 +138,13 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
       ...slot,
       y: Number.isFinite(slot.y) ? slot.y : 0,
     }));
-    const withRowIds = { ...next, rows: rebuiltRows, slots: normalizedSlots };
+    const withRowIds = {
+      ...next,
+      rows: rebuiltRows,
+      slots: normalizedSlots,
+      outerMarginIndependent: Boolean(next.outerMarginIndependent),
+      outerMargin: next.outerMarginIndependent ? next.outerMargin : next.spacing,
+    };
     const minimumDims = calculateSimpleSteppedMinimumTraySize(withRowIds);
     const fallbackWidth =
       Number.isFinite(withRowIds.trayWidth) && withRowIds.trayWidth > 0
@@ -129,14 +157,16 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
 
     return {
       ...withRowIds,
-      trayWidth:
-        minimumDims.width > 0
-          ? Math.max(fallbackWidth, minimumDims.width)
-          : fallbackWidth,
-      trayDepth:
-        minimumDims.depth > 0
-          ? Math.max(fallbackDepth, minimumDims.depth)
-          : fallbackDepth,
+      trayWidth: normalizeSimpleSteppedTraySize(
+        withRowIds.trayWidth,
+        minimumDims.width,
+        fallbackWidth,
+      ),
+      trayDepth: normalizeSimpleSteppedTraySize(
+        withRowIds.trayDepth,
+        minimumDims.depth,
+        fallbackDepth,
+      ),
     };
   }, []);
 
@@ -194,18 +224,22 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
       trayDepth: derivedLayout.trayDepth,
       slots,
       spacing: params.spacing,
-      boundarySpacing: params.outerMargin,
-      boundarySpacingIndependent: true,
+      boundarySpacing: params.outerMarginIndependent
+        ? params.outerMargin
+        : params.spacing,
+      boundarySpacingIndependent: params.outerMarginIndependent,
       baseThickness: params.firstRowHeight,
       holeDepth: params.holeDepth,
-      cornerRadius: 0,
+      cornerRadius: params.cornerRadius,
       enableBaseHole: false,
       baseHoleSize: "25",
     };
   }, [
     derivedLayout,
+    params.cornerRadius,
     params.firstRowHeight,
     params.holeDepth,
+    params.outerMarginIndependent,
     params.outerMargin,
     params.spacing,
   ]);
@@ -228,7 +262,38 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
       value: SimpleSteppedLayoutParams[K],
     ) => {
       pushState(paramsRef.current);
-      internalSetParams((prev) => normalizeParams({ ...prev, [key]: value }));
+      internalSetParams((prev) => {
+        if (key === "spacing") {
+          const nextSpacing = value as SimpleSteppedLayoutParams["spacing"];
+          if (!prev.outerMarginIndependent) {
+            return normalizeParams({
+              ...prev,
+              spacing: nextSpacing,
+              outerMargin: nextSpacing,
+            });
+          }
+          return normalizeParams({ ...prev, spacing: nextSpacing });
+        }
+
+        if (key === "outerMarginIndependent") {
+          const independent =
+            value as SimpleSteppedLayoutParams["outerMarginIndependent"];
+          if (!independent) {
+            return normalizeParams({
+              ...prev,
+              outerMarginIndependent: false,
+              outerMargin: prev.spacing,
+            });
+          }
+          return normalizeParams({
+            ...prev,
+            outerMarginIndependent: true,
+            outerMargin: prev.outerMargin ?? prev.spacing,
+          });
+        }
+
+        return normalizeParams({ ...prev, [key]: value });
+      });
       invalidatePreview();
     },
     [invalidatePreview, normalizeParams, pushState],
@@ -586,6 +651,33 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
     [invalidatePreview, normalizeParams],
   );
 
+  const trimTray = useCallback(() => {
+    let didTrim = false;
+    internalSetParams((prev) => {
+      const minimumDims = calculateSimpleSteppedMinimumTraySize(prev);
+      if (minimumDims.width <= 0 || minimumDims.depth <= 0) {
+        return prev;
+      }
+      if (
+        Math.abs(prev.trayWidth - minimumDims.width) < 0.001 &&
+        Math.abs(prev.trayDepth - minimumDims.depth) < 0.001
+      ) {
+        return prev;
+      }
+
+      pushState(prev);
+      didTrim = true;
+      return normalizeParams({
+        ...prev,
+        trayWidth: minimumDims.width,
+        trayDepth: minimumDims.depth,
+      });
+    });
+    if (didTrim) {
+      invalidatePreview();
+    }
+  }, [invalidatePreview, normalizeParams, pushState]);
+
   return {
     params,
     setParams,
@@ -611,6 +703,7 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
     undo,
     canUndo: canUndoFn(),
     resizeTray,
+    trimTray,
     threeGeometry,
     volume,
     isGenerating,

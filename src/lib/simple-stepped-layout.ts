@@ -96,9 +96,14 @@ function getStoredTrayDepth(params: SimpleSteppedLayoutParams) {
     : SIMPLE_STEPPED_LAYOUT_DEFAULTS.trayDepth;
 }
 
+function getEffectiveOuterMargin(params: SimpleSteppedLayoutParams) {
+  return params.outerMarginIndependent ? params.outerMargin : params.spacing;
+}
+
 function buildActiveRowSeeds(
   params: SimpleSteppedLayoutParams,
 ): SimpleSteppedRowSeed[] {
+  const outerMargin = getEffectiveOuterMargin(params);
   const slotsByRowId = new Map<string, SimpleSteppedSlot[]>();
   params.slots.forEach((slot) => {
     const existing = slotsByRowId.get(slot.rowId);
@@ -144,8 +149,8 @@ function buildActiveRowSeeds(
         holeMinX,
         holeMaxX,
         holeCenterX,
-        length: rowHoleSpan + params.outerMargin * 2,
-        depth: maxDiameter + params.outerMargin * 2,
+        length: rowHoleSpan + outerMargin * 2,
+        depth: maxDiameter + outerMargin * 2,
         maxDiameter,
       };
     })
@@ -240,7 +245,7 @@ export function deriveSimpleSteppedLayout(
       index,
       slotIds: row.slotIds,
       slotCount: row.rawSlots.length,
-      length: row.length,
+      length: minimumTrayWidth,
       depth: row.depth,
       maxDiameter: row.maxDiameter,
       holeMinX: row.holeMinX,
@@ -303,6 +308,7 @@ export function clampSimpleSteppedSlotUpdates(
   updates: SimpleSteppedSlotUpdate[],
   maxBuildSize: number = MAX_BUILD_SIZE,
 ) {
+  const outerMargin = getEffectiveOuterMargin(params);
   const slotMap = new Map(params.slots.map((slot) => [slot.id, slot]));
   const derived = deriveSimpleSteppedLayout(params);
   const rowById = new Map(derived.activeRows.map((row) => [row.id, row]));
@@ -326,7 +332,7 @@ export function clampSimpleSteppedSlotUpdates(
     const effectiveDiameter = getSimpleSteppedEffectiveDiameter(slot);
     const maxAbsX = Math.max(
       0,
-      maxBuildSize / 2 - params.outerMargin - effectiveDiameter / 2,
+      maxBuildSize / 2 - outerMargin - effectiveDiameter / 2,
     );
     const maxLocalYOffset = getSimpleSteppedMaxLocalYOffset(
       row.maxDiameter,

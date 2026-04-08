@@ -144,8 +144,12 @@ export interface SimpleSteppedLayoutParams {
   rowGap: number;
   /** 同行凹槽最小边缘间距（mm） */
   spacing: number;
+  /** 是否独立调整边界间距（false 时跟随 spacing） */
+  outerMarginIndependent: boolean;
   /** 行矩形边界安全边距（mm） */
   outerMargin: number;
   /** 凹槽深度（mm） */
   holeDepth: number;
+  /** 底板外边缘圆角（mm） */
+  cornerRadius: number;
 }

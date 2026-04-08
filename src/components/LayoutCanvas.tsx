@@ -124,6 +124,12 @@ export default function LayoutCanvas({
   }
   const [guideLines, setGuideLines] = useState<GuideLine[]>([]);
   const resizeActionPanelRef = useRef<{ startX: number; startWidth: number } | null>(null);
+  const virtualCanvasWidth = rowBands
+    ? Math.max(params.trayWidth, MAX_BUILD_SIZE)
+    : params.trayWidth;
+  const virtualCanvasDepth = rowBands
+    ? Math.max(params.trayDepth, MAX_BUILD_SIZE)
+    : params.trayDepth;
 
   // Extracted canvas zoom/pan hook
   const {
@@ -134,8 +140,8 @@ export default function LayoutCanvas({
     handleTouchStart, handleTouchMove, handleTouchEnd,
     resetZoom,
   } = useCanvasZoom({
-    baseW: params.trayWidth + 40, // trayWidth + (PADDING_MM * 2)
-    baseH: params.trayDepth + 40,
+    baseW: virtualCanvasWidth + 40, // trayWidth + (PADDING_MM * 2)
+    baseH: virtualCanvasDepth + 40,
     trayWidth: params.trayWidth,
     trayDepth: params.trayDepth,
   });
@@ -992,6 +998,14 @@ export default function LayoutCanvas({
   const axisGuideStrokeWidth = 0.3 / zoom;
   const axisGuideStrokeDash = `${2 / zoom} ${2 / zoom}`;
   const axisGuideStrokeOpacity = 0.8;
+  const simpleSteppedOutlineStroke = isResizingTray ? "#fbbf24" : "#8b7355";
+  const simpleSteppedOutlineRadius =
+    isSimpleSteppedCanvas && "cornerRadius" in params
+      ? Math.max(
+          0,
+          Math.min(params.cornerRadius, trayWidth / 2, trayDepth / 2),
+        )
+      : 0;
   const trayResizeHandleSize = 10 / zoom;
   const trayResizeHitSize = 14 / zoom;
 
@@ -1058,17 +1072,34 @@ export default function LayoutCanvas({
           preserveAspectRatio="xMidYMid meet"
         >
           {/* Virtual Canvas (outer) */}
-          <rect
-            x={0}
-            y={0}
-            width={trayWidth}
-            height={trayDepth}
-            fill="none"
-            stroke={trayOutlineStroke}
-            strokeWidth={trayOutlineStrokeWidth}
-            strokeDasharray={trayOutlineStrokeDash}
-            strokeOpacity={trayOutlineStrokeOpacity}
-          />
+          {!isSimpleSteppedCanvas && (
+            <rect
+              x={0}
+              y={0}
+              width={trayWidth}
+              height={trayDepth}
+              fill="none"
+              stroke={trayOutlineStroke}
+              strokeWidth={trayOutlineStrokeWidth}
+              strokeDasharray={trayOutlineStrokeDash}
+              strokeOpacity={trayOutlineStrokeOpacity}
+            />
+          )}
+
+          {isSimpleSteppedCanvas && (
+            <rect
+              x={0}
+              y={0}
+              width={MAX_BUILD_SIZE}
+              height={MAX_BUILD_SIZE}
+              fill="none"
+              stroke={axisGuideStroke}
+              strokeWidth={Math.max(trayOutlineStrokeWidth, axisGuideStrokeWidth)}
+              strokeDasharray={axisGuideStrokeDash}
+              strokeOpacity={0.95}
+              pointerEvents="none"
+            />
+          )}
 
           {/* Effective Baseplate (inner) */}
           {!('groups' in params) && !isSimpleSteppedCanvas && effectiveBaseplate.hasSlots && (
@@ -1082,6 +1113,21 @@ export default function LayoutCanvas({
               strokeWidth={0.7 / zoom}
               rx={Math.max(0, Math.min('cornerRadius' in params ? params.cornerRadius : 0, effectiveBaseplate.width / 2, effectiveBaseplate.height / 2))}
               strokeOpacity={0.95}
+            />
+          )}
+
+          {isSimpleSteppedCanvas && (
+            <rect
+              x={0}
+              y={0}
+              width={trayWidth}
+              height={trayDepth}
+              fill="none"
+              stroke={simpleSteppedOutlineStroke}
+              strokeWidth={0.7 / zoom}
+              rx={simpleSteppedOutlineRadius}
+              strokeOpacity={0.95}
+              pointerEvents="none"
             />
           )}
 
@@ -1114,32 +1160,12 @@ export default function LayoutCanvas({
                 style={{ cursor: "nwse-resize" }}
                 onPointerDown={(event) => startTrayResize(event, "corner")}
               />
-              <line
-                x1={trayWidth}
-                y1={0}
-                x2={trayWidth}
-                y2={trayDepth}
-                stroke={isResizingTray ? "#fbbf24" : "#8b7355"}
-                strokeWidth={0.5 / zoom}
-                strokeOpacity={0.7}
-                pointerEvents="none"
-              />
-              <line
-                x1={0}
-                y1={trayDepth}
-                x2={trayWidth}
-                y2={trayDepth}
-                stroke={isResizingTray ? "#fbbf24" : "#8b7355"}
-                strokeWidth={0.5 / zoom}
-                strokeOpacity={0.7}
-                pointerEvents="none"
-              />
               <rect
                 x={trayWidth - trayResizeHandleSize}
                 y={trayDepth - trayResizeHandleSize}
                 width={trayResizeHandleSize}
                 height={trayResizeHandleSize}
-                fill={isResizingTray ? "#fbbf24" : "#8b7355"}
+                fill={simpleSteppedOutlineStroke}
                 fillOpacity={0.8}
                 pointerEvents="none"
               />

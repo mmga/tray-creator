@@ -12,6 +12,7 @@ import {
   deriveSimpleSteppedLayout,
   getSimpleSteppedEffectiveDiameter,
 } from "@/lib/simple-stepped-layout";
+import { createBaseBody } from "@/lib/model-utils";
 import type { SimpleSteppedLayoutParams } from "@/types/custom-tray";
 
 const { subtract, union } = booleans;
@@ -43,16 +44,19 @@ export function createSimpleSteppedTrayModel(
   }
 
   const baseHeight = params.firstRowHeight;
-  let solid = cuboid({
-    size: [derived.trayWidth, derived.trayDepth, baseHeight],
-    center: [0, 0, baseHeight / 2],
-  });
+  let solid = createBaseBody(
+    derived.trayWidth,
+    derived.trayDepth,
+    baseHeight,
+    params.cornerRadius,
+  );
 
   rows.forEach((row) => {
     if (row.extraHeight <= 0) {
       return;
     }
 
+    // 只有整体底板使用外圆角；阶梯层保持矩形，避免短行拉伸后 3D 仍出现视觉缩窄。
     const rowSolid = cuboid({
       size: [row.length, row.depth, row.extraHeight],
       center: [0, row.centerY - derived.trayDepth / 2, baseHeight + row.extraHeight / 2],

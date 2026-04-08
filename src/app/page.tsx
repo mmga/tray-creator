@@ -139,6 +139,7 @@ export default function Home() {
           onAddSlotToRow={simpleSteppedModel.addSlotToRow}
           onGenerate={simpleSteppedModel.handleGenerate}
           onExportSTL={simpleSteppedModel.handleExportSTL}
+          onTrimTray={simpleSteppedModel.trimTray}
           isGenerating={simpleSteppedModel.isGenerating}
           isPreviewStale={simpleSteppedModel.isPreviewStale}
           volume={simpleSteppedModel.volume}

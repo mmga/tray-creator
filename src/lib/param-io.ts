@@ -329,7 +329,16 @@ function validateSimpleSteppedParams(p: SimpleSteppedLayoutParams) {
   if (typeof obj.firstRowHeight !== "number" || !Number.isFinite(obj.firstRowHeight)) {
     obj.firstRowHeight = SIMPLE_STEPPED_LAYOUT_DEFAULTS.firstRowHeight;
   }
-  for (const f of ["firstRowHeight", "stepHeight", "rowGap", "spacing", "outerMargin", "holeDepth"]) {
+  if (typeof obj.cornerRadius !== "number" || !Number.isFinite(obj.cornerRadius)) {
+    obj.cornerRadius = SIMPLE_STEPPED_LAYOUT_DEFAULTS.cornerRadius;
+  }
+  if (typeof obj.outerMarginIndependent !== "boolean") {
+    obj.outerMarginIndependent =
+      typeof obj.outerMargin === "number" &&
+      typeof obj.spacing === "number" &&
+      Math.abs((obj.outerMargin as number) - (obj.spacing as number)) > 0.001;
+  }
+  for (const f of ["firstRowHeight", "stepHeight", "rowGap", "spacing", "outerMargin", "holeDepth", "cornerRadius"]) {
     requireNumber(obj, f);
   }
 
@@ -406,6 +415,10 @@ function validateSimpleSteppedParams(p: SimpleSteppedLayoutParams) {
   clampField(obj, "spacing", SIMPLE_STEPPED_LIMITS.spacing);
   clampField(obj, "outerMargin", SIMPLE_STEPPED_LIMITS.outerMargin);
   clampField(obj, "holeDepth", SIMPLE_STEPPED_LIMITS.holeDepth);
+  clampField(obj, "cornerRadius", SIMPLE_STEPPED_LIMITS.cornerRadius);
+  if (!obj.outerMarginIndependent) {
+    obj.outerMargin = obj.spacing;
+  }
 
   const slotIdsByRowId = new Map<string, string[]>();
   rows.forEach((row) => {

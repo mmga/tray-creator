@@ -11,9 +11,11 @@ import {
 } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ParamIOButtons } from "@/components/ParamIOButtons";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
+import { Switch } from "@/components/ui/switch";
 import {
   ArrowDown,
   ArrowUp,
@@ -51,6 +53,7 @@ interface SimpleSteppedPanelProps {
   onAddSlotToRow: (rowId: string, diameter: number) => void;
   onGenerate: () => void;
   onExportSTL: () => void;
+  onTrimTray: () => void;
   isGenerating: boolean;
   isPreviewStale: boolean;
   volume: number;
@@ -72,6 +75,7 @@ export default function SimpleSteppedPanel({
   onAddSlotToRow,
   onGenerate,
   onExportSTL,
+  onTrimTray,
   isGenerating,
   isPreviewStale,
   volume,
@@ -87,6 +91,11 @@ export default function SimpleSteppedPanel({
   const isOversized =
     effectiveDimensions.width > MAX_BUILD_SIZE ||
     effectiveDimensions.depth > MAX_BUILD_SIZE;
+  const canTrim =
+    derivedLayout.activeRows.length > 0 &&
+    (derivedLayout.trayWidth - derivedLayout.minimumTrayWidth > 0.001 ||
+      derivedLayout.trayDepth - derivedLayout.minimumTrayDepth > 0.001);
+  const spacingSummary = `槽距${params.spacing}mm / 边距${params.outerMarginIndependent ? params.outerMargin : params.spacing}mm`;
 
   const handleReset = () => {
     setParams(SIMPLE_STEPPED_LAYOUT_DEFAULTS);
@@ -278,7 +287,7 @@ export default function SimpleSteppedPanel({
           title="结构参数"
           collapsible
           defaultOpen={false}
-          summary={`首排${params.firstRowHeight}mm / 步进${params.stepHeight}mm / 行距${params.rowGap}mm`}
+          summary={`首排${params.firstRowHeight}mm / 步进${params.stepHeight}mm / 圆角${params.cornerRadius}mm / ${spacingSummary}`}
         >
           <div className="space-y-4">
             <ParamSlider
@@ -309,19 +318,39 @@ export default function SimpleSteppedPanel({
               onChange={(v) => updateParam("spacing", v)}
               unit={SIMPLE_STEPPED_LIMITS.spacing.unit}
             />
-            <ParamSlider
-              label={SIMPLE_STEPPED_LIMITS.outerMargin.label}
-              value={params.outerMargin}
-              config={SIMPLE_STEPPED_LIMITS.outerMargin}
-              onChange={(v) => updateParam("outerMargin", v)}
-              unit={SIMPLE_STEPPED_LIMITS.outerMargin.unit}
-            />
+            <div className="flex items-center justify-between rounded border border-[#2e2a24] bg-[#1c1a16] p-3">
+              <Label htmlFor="simple-stepped-outer-margin-independent" className="text-sm cursor-pointer text-[#f0d8b8]">
+                边界间距独立调整
+              </Label>
+              <Switch
+                id="simple-stepped-outer-margin-independent"
+                checked={params.outerMarginIndependent}
+                onCheckedChange={(checked) => updateParam("outerMarginIndependent", checked)}
+                className="data-[state=checked]:bg-[#8cb880]"
+              />
+            </div>
+            {params.outerMarginIndependent && (
+              <ParamSlider
+                label={SIMPLE_STEPPED_LIMITS.outerMargin.label}
+                value={params.outerMargin}
+                config={SIMPLE_STEPPED_LIMITS.outerMargin}
+                onChange={(v) => updateParam("outerMargin", v)}
+                unit={SIMPLE_STEPPED_LIMITS.outerMargin.unit}
+              />
+            )}
             <ParamSlider
               label={SIMPLE_STEPPED_LIMITS.holeDepth.label}
               value={params.holeDepth}
               config={SIMPLE_STEPPED_LIMITS.holeDepth}
               onChange={(v) => updateParam("holeDepth", v)}
               unit={SIMPLE_STEPPED_LIMITS.holeDepth.unit}
+            />
+            <ParamSlider
+              label={SIMPLE_STEPPED_LIMITS.cornerRadius.label}
+              value={params.cornerRadius}
+              config={SIMPLE_STEPPED_LIMITS.cornerRadius}
+              onChange={(v) => updateParam("cornerRadius", v)}
+              unit={SIMPLE_STEPPED_LIMITS.cornerRadius.unit}
             />
           </div>
         </SectionHeader>
@@ -399,6 +428,15 @@ export default function SimpleSteppedPanel({
                 </span>
               </div>
             </div>
+
+            <Button
+              variant="outline"
+              disabled={!canTrim}
+              onClick={onTrimTray}
+              className="w-full h-9 text-xs border-[#4a6741] text-[#8cb880] hover:bg-[#1c1a16] hover:text-[#a6d39d] disabled:opacity-40"
+            >
+              Trim 到凹槽占用区域
+            </Button>
 
             {isOversized && (
               <div className="flex items-center justify-center gap-1.5 text-xs text-[#c04040] animate-fade-in">
