@@ -1,5 +1,9 @@
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
-import type { CustomLayoutParams } from "@/types/custom-tray";
+import type {
+  CustomLayoutParams,
+  GroupOutlinePreview,
+  SteppedLayoutParams,
+} from "@/types/custom-tray";
 import type { TrayParams } from "@/types/tray";
 
 export interface STLExportResult {
@@ -31,5 +35,22 @@ export interface GridWorkerPort extends STLExportWorkerPort {
 export interface CustomWorkerPort extends STLExportWorkerPort {
   generateCustom: (
     params: CustomLayoutParams,
+  ) => Promise<{ geometry: Geom3; volume: number }>;
+}
+
+export interface SteppedOutlinePreviewPort {
+  generateSteppedOutlinePreview: (
+    params: SteppedLayoutParams,
+  ) => Promise<{
+    outlinePreview: GroupOutlinePreview[] | null;
+    durationMs: number;
+  }>;
+}
+
+export interface SteppedWorkerPort
+  extends STLExportWorkerPort,
+    SteppedOutlinePreviewPort {
+  generateStepped: (
+    params: SteppedLayoutParams,
   ) => Promise<{ geometry: Geom3; volume: number }>;
 }
