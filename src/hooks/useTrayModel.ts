@@ -2,9 +2,16 @@
 
 import { useState, useCallback, useRef } from "react";
 import type { TrayParams } from "@/types/tray";
-import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
-import { generateSTLFilename } from "@/lib/stl-export";
-import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
+import { browserDownloadPort } from "@/lib/download-port";
+import {
+  exportGridModelFiles,
+  generateGridPreview,
+} from "@/lib/grid-model-service";
+import {
+  replaceGridParams as replaceGridParamsState,
+  resetGridParams as resetGridParamsState,
+  updateGridParam,
+} from "@/lib/grid-model-state";
 import { trayWorkerService } from "@/lib/worker/worker-service";
 import { useToast } from "@/hooks/useToast";
 import type * as THREE from "three";
@@ -27,25 +34,14 @@ interface UseTrayModelReturn {
 }
 
 export function useTrayModel(): UseTrayModelReturn {
-  const [params, setParams] = useState<TrayParams>(DEFAULT_TRAY_PARAMS);
+  const [params, setParams] = useState<TrayParams>(() => resetGridParamsState());
   const [threeGeometry, setThreeGeometry] =
     useState<THREE.BufferGeometry | null>(null);
   const [volume, setVolume] = useState<number>(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const jscadGeomRef = useRef<Geom3 | null>(null);
   const { toast } = useToast();
-  // 追踪参数是否在上次生成后发生了变更
   const [isPreviewStale, setIsPreviewStale] = useState(false);
-
-  const normalizeParams = useCallback((next: TrayParams): TrayParams => {
-    if (!next.boundarySpacingIndependent) {
-      return {
-        ...next,
-        boundarySpacing: next.spacing,
-      };
-    }
-    return next;
-  }, []);
 
   const invalidatePreview = useCallback(() => {
     jscadGeomRef.current = null;
@@ -54,37 +50,35 @@ export function useTrayModel(): UseTrayModelReturn {
 
   const replaceParams = useCallback(
     (next: TrayParams) => {
-      setParams(normalizeParams(next));
+      setParams(replaceGridParamsState(next));
       invalidatePreview();
     },
-    [invalidatePreview, normalizeParams],
+    [invalidatePreview],
   );
 
   const resetParams = useCallback(() => {
-    setParams(normalizeParams(DEFAULT_TRAY_PARAMS));
+    setParams(resetGridParamsState());
     invalidatePreview();
-  }, [invalidatePreview, normalizeParams]);
+  }, [invalidatePreview]);
 
   const updateParam = useCallback(
     <K extends keyof TrayParams>(key: K, value: TrayParams[K]) => {
-      setParams((prev) => normalizeParams({ ...prev, [key]: value }));
+      setParams((prev) => updateGridParam(prev, key, value));
       invalidatePreview();
     },
-    [invalidatePreview, normalizeParams],
+    [invalidatePreview],
   );
 
-  // 异步触发生成
   const handleGenerate = useCallback(async () => {
     if (!trayWorkerService) return;
     setIsGenerating(true);
     try {
-      const result = await trayWorkerService.generateGrid(params);
+      const result = await generateGridPreview(params, trayWorkerService);
       jscadGeomRef.current = result.geometry;
       setVolume(result.volume);
-      const threeGeom = jscadToThreeGeometry(result.geometry);
       setThreeGeometry((prev) => {
         prev?.dispose();
-        return threeGeom;
+        return result.threeGeometry;
       });
       setIsPreviewStale(false);
     } catch (err) {
@@ -98,7 +92,6 @@ export function useTrayModel(): UseTrayModelReturn {
     }
   }, [params, toast]);
 
-  // 导出 STL
   const handleExportSTL = useCallback(async () => {
     if (isPreviewStale) {
       toast("error", "参数已变更，请先点击开始锻造生成最新模型");
@@ -108,37 +101,13 @@ export function useTrayModel(): UseTrayModelReturn {
       toast("error", "当前没有可导出的模型，请先点击开始锻造");
       return;
     }
-    const filename = generateSTLFilename(
-      params.rows,
-      params.columns,
-      params.holeDiameter,
-    );
     try {
-      const result = await trayWorkerService.exportSTL(
+      await exportGridModelFiles(
+        params,
         jscadGeomRef.current,
-        filename,
+        trayWorkerService,
+        browserDownloadPort,
       );
-      // Trigger download
-      const url = URL.createObjectURL(result.blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      const jsonFilename = filename.replace(/\.stl$/i, ".json");
-      const jsonBlob = new Blob([JSON.stringify(params, null, 2)], {
-        type: "application/json",
-      });
-      const jsonUrl = URL.createObjectURL(jsonBlob);
-      const jsonLink = document.createElement("a");
-      jsonLink.href = jsonUrl;
-      jsonLink.download = jsonFilename;
-      document.body.appendChild(jsonLink);
-      jsonLink.click();
-      document.body.removeChild(jsonLink);
-      URL.revokeObjectURL(jsonUrl);
     } catch (err) {
       console.error("STL导出失败:", err);
       toast(
