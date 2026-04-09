@@ -345,7 +345,7 @@ function validateSteppedParams(p: SteppedLayoutParams) {
     throw new Error("缺少或无效的字段: slots");
   }
 
-  const slots = obj.slots as Record<string, unknown>[];
+  let slots = obj.slots as Record<string, unknown>[];
 
   // 检测旧格式（slots 有 bottomHeight 但无 groupId / 没有 groups 数组）
   const hasLegacyBottomHeight = slots.some(
@@ -402,6 +402,7 @@ function validateSteppedParams(p: SteppedLayoutParams) {
     obj.groups = sortedGroups;
     obj.activeGroupId = sortedGroups[0].id;
     obj.slots = migratedSlots;
+    slots = obj.slots as Record<string, unknown>[];
   }
 
   // 校验 groups 数组
