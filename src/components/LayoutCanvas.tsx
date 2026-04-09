@@ -27,6 +27,16 @@ const ACTION_PANEL_TAB_RAIL_WIDTH = EDIT_SIDEBAR_RAIL_WIDTH;
 
 type SlotUpdate = { id: string; x: number; y: number; rotation?: number };
 
+function normalizeTextAngle(angle: number) {
+  const normalized = ((angle + 180) % 360 + 360) % 360 - 180;
+  return normalized === -180 ? 180 : normalized;
+}
+
+function getReadableTextCompensation(slotRotation: number) {
+  const renderedAngle = normalizeTextAngle(-slotRotation);
+  return renderedAngle > 90 || renderedAngle < -90 ? 180 : 0;
+}
+
 interface LayoutCanvasProps {
   isActive?: boolean;
   params: CustomLayoutParams | SteppedLayoutParams;
@@ -1063,6 +1073,7 @@ export default function LayoutCanvas({
               const groupColor = isSteppedSlot
                 ? (groupMeta?.color ?? "#86efac")
                 : null;
+              const textRotation = getReadableTextCompensation(slot.rotation);
 
               return (
                 <g
@@ -1122,6 +1133,7 @@ export default function LayoutCanvas({
                     fill="#fff"
                     fontWeight="bold"
                     pointerEvents="none"
+                    transform={textRotation !== 0 ? `rotate(${textRotation})` : undefined}
                     style={{ userSelect: 'none' }}
                   >
                     {slot.width === slot.height ? slot.width : `${slot.width}x${slot.height}`}
