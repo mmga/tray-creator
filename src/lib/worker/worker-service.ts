@@ -156,7 +156,7 @@ class TrayWorkerService {
           reject(new Error(`Unexpected worker response: ${data.type}`));
           return;
         }
-        resolve(data);
+        resolve({ blob: data.blob, filename: data.filename });
       });
       this.pendingRejects.set(requestId, reject);
       this.worker?.postMessage({

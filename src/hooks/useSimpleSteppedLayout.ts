@@ -10,10 +10,8 @@ import type {
   SimpleSteppedRow,
   SimpleSteppedSlot,
 } from "@/types/custom-tray";
-import {
-  MAX_BUILD_SIZE,
-  SIMPLE_STEPPED_LAYOUT_DEFAULTS,
-} from "@/lib/config";
+import { MAX_BUILD_SIZE } from "@/lib/config";
+import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import {
   calculateSimpleSteppedMinimumTraySize,
   calculateSimpleSteppedDimensions,
@@ -447,8 +445,12 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
       updates: CanvasSlotUpdate[],
     ): SimpleSteppedSlotUpdate[] => {
       const derived = deriveSimpleSteppedLayout(current);
-      const rowById = new Map(derived.activeRows.map((row) => [row.id, row]));
-      const slotById = new Map(current.slots.map((slot) => [slot.id, slot]));
+      const rowById = new Map(
+        derived.activeRows.map((row) => [row.id, row] as const),
+      );
+      const slotById = new Map(
+        current.slots.map((slot) => [slot.id, slot] as const),
+      );
 
       return updates
         .map((update) => {
@@ -483,7 +485,9 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
           prev,
           mapCanvasUpdatesToLocal(prev, updates),
         );
-        const updatesMap = new Map(localUpdates.map((update) => [update.id, update]));
+        const updatesMap = new Map(
+          localUpdates.map((update) => [update.id, update] as const),
+        );
 
         return normalizeParams({
           ...prev,

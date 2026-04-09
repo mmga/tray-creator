@@ -61,29 +61,23 @@ export default function Home() {
     onAfterLoad: handleAfterDraftLoad,
   });
 
-  // 草稿列表（弹窗打开时刷新）
   const [draftList, setDraftList] = useState(() => steppedDrafts.getDraftList());
-  useEffect(() => {
-    if (steppedDrafts.isDialogOpen) {
-      setDraftList(steppedDrafts.getDraftList());
-    }
-  }, [steppedDrafts.isDialogOpen]);
-
-  // 操作后刷新列表
   const refreshDraftList = useCallback(() => {
     setDraftList(steppedDrafts.getDraftList());
   }, [steppedDrafts]);
+  const steppedSlots = steppedModel.params.slots;
+  const setSteppedActiveGroup = steppedModel.setActiveGroup;
 
   // ── Stepped 模式：选中凹槽时自动激活所属组 ──
   useEffect(() => {
     if (mode === "stepped" && selectedSlotIds.length > 0) {
       const firstSlotId = selectedSlotIds[0];
-      const slot = steppedModel.params.slots.find((s) => s.id === firstSlotId);
+      const slot = steppedSlots.find((s) => s.id === firstSlotId);
       if (slot && "groupId" in slot) {
-        steppedModel.setActiveGroup((slot as { groupId: string }).groupId);
+        setSteppedActiveGroup(slot.groupId);
       }
     }
-  }, [selectedSlotIds, mode, steppedModel.params.slots]);
+  }, [selectedSlotIds, mode, setSteppedActiveGroup, steppedSlots]);
 
   const simpleSteppedMoveScopeResolver = useCallback(
     (draggingId: string, selectedIds: string[]) => {
@@ -112,8 +106,9 @@ export default function Home() {
       return (
         <ParameterPanel
           params={gridModel.params}
-          setParams={gridModel.setParams}
           updateParam={gridModel.updateParam}
+          replaceParams={gridModel.replaceParams}
+          resetParams={gridModel.resetParams}
           onGenerate={gridModel.handleGenerate}
           onExportSTL={gridModel.handleExportSTL}
           isGenerating={gridModel.isGenerating}
@@ -163,11 +158,16 @@ export default function Home() {
           onAddGroup={steppedModel.addGroup}
           onRemoveGroup={steppedModel.removeGroup}
           onUpdateGroupHeight={steppedModel.updateGroupHeight}
+          onUpdateGroupSmoothingOverride={steppedModel.updateGroupSmoothingOverride}
+          onUpdateGroupSmoothingRadius={steppedModel.updateGroupSmoothingRadius}
+          onUpdateGroupDisconnectOverride={steppedModel.updateGroupDisconnectOverride}
+          onUpdateGroupDisconnectDistance={steppedModel.updateGroupDisconnectDistance}
           onSetActiveGroup={steppedModel.setActiveGroup}
           onMoveSelectedSlotsToGroup={steppedModel.moveSelectedSlotsToGroup}
           onReorderGroups={steppedModel.reorderGroups}
           previewGroupId={previewGroupId}
           onPreviewGroupChange={setPreviewGroupId}
+          bridgeWarning={steppedModel.bridgeWarning}
           onOpenDraftDialog={steppedDrafts.openDialog}
           onSaveDraft={steppedDrafts.saveCurrentDraft}
           currentDraftId={steppedDrafts.currentDraftId}
@@ -234,23 +234,7 @@ export default function Home() {
               params={canvasParams}
               onUpdateSlot={mode === "simple-stepped" ? simpleSteppedModel.updateSlotPosition : model.updateSlotPosition}
               onRemoveSlot={mode === "simple-stepped" ? simpleSteppedModel.removeSlot : model.removeSlot}
-              onResizeTray={mode === "simple-stepped"
-                ? simpleSteppedModel.resizeTray
-                : mode === "stepped"
-                  ? (width, depth) => {
-                  steppedModel.setParams((prev: any) => ({
-                    ...prev,
-                    trayWidth: width,
-                    trayDepth: depth,
-                  }));
-                }
-                  : (width, depth) => {
-                  customModel.setParams((prev: any) => ({
-                    ...prev,
-                    trayWidth: width,
-                    trayDepth: depth,
-                  }));
-                }}
+              onResizeTray={mode === "simple-stepped" ? simpleSteppedModel.resizeTray : undefined}
               onUpdateSlotRotation={mode === "simple-stepped" ? simpleSteppedModel.updateSlotRotation : model.updateSlotRotation}
               onUpdateMultipleSlots={mode === "simple-stepped" ? simpleSteppedModel.updateMultipleSlots : model.updateMultipleSlots}
               onLiveUpdateMultipleSlots={mode === "simple-stepped" ? simpleSteppedModel.updateMultipleSlotsLive : model.updateMultipleSlotsLive}
@@ -291,8 +275,12 @@ export default function Home() {
       <SteppedDraftDialog
         open={steppedDrafts.isDialogOpen}
         onOpenChange={(open) => {
-          if (!open) steppedDrafts.closeDialog();
-          else steppedDrafts.openDialog();
+          if (!open) {
+            steppedDrafts.closeDialog();
+            return;
+          }
+          refreshDraftList();
+          steppedDrafts.openDialog();
         }}
         drafts={draftList}
         currentDraftId={steppedDrafts.currentDraftId}

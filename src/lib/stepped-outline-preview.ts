@@ -4,6 +4,7 @@ import type {
   SteppedSlot,
 } from "@/types/custom-tray";
 import { getSlotTolerance } from "@/lib/config";
+import { getEffectiveGroupStructureParams } from "@/lib/stepped-group-params";
 import { generateOutline } from "@/lib/outline-geometry";
 import {
   clusterConnectivityCircles,
@@ -20,10 +21,6 @@ export function buildSteppedOutlinePreview(
   }
 
   const result: GroupOutlinePreview[] = [];
-  const effectiveBridgeGap = getEffectiveBridgeGap(
-    params.smoothingRadius,
-    params.disconnectDistance,
-  );
   const slotsByGroupId = new Map<string, SteppedSlot[]>();
 
   params.slots.forEach((slot) => {
@@ -68,6 +65,7 @@ export function buildSteppedOutlinePreview(
     if (ownSlots.length === 0) {
       continue;
     }
+    const effectiveParams = getEffectiveGroupStructureParams(group, params);
 
     const higherSlotsForGroup = higherSlotsByGroupId.get(group.id) ?? [];
     const connectivityCircles: ConnectivityCircle[] = [
@@ -88,7 +86,10 @@ export function buildSteppedOutlinePreview(
 
     const clusters = clusterConnectivityCircles(
       connectivityCircles,
-      effectiveBridgeGap,
+      getEffectiveBridgeGap(
+        effectiveParams.smoothingRadius,
+        effectiveParams.disconnectDistance,
+      ),
     );
 
     clusters.forEach((cluster, clusterIndex) => {
@@ -101,7 +102,7 @@ export function buildSteppedOutlinePreview(
           cy: circle.cy,
           rOuter: circle.rOuter,
         })),
-        params.smoothingRadius,
+        effectiveParams.smoothingRadius,
         64,
       );
 

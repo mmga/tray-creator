@@ -1,8 +1,5 @@
-import {
-  MAX_BUILD_SIZE,
-  SIMPLE_STEPPED_LAYOUT_DEFAULTS,
-  getSlotTolerance,
-} from "@/lib/config";
+import { MAX_BUILD_SIZE, getSlotTolerance } from "@/lib/config";
+import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import type {
   SimpleSteppedLayoutParams,
   SimpleSteppedRowBand,
@@ -309,9 +306,11 @@ export function clampSimpleSteppedSlotUpdates(
   maxBuildSize: number = MAX_BUILD_SIZE,
 ) {
   const outerMargin = getEffectiveOuterMargin(params);
-  const slotMap = new Map(params.slots.map((slot) => [slot.id, slot]));
+  const slotMap = new Map(params.slots.map((slot) => [slot.id, slot] as const));
   const derived = deriveSimpleSteppedLayout(params);
-  const rowById = new Map(derived.activeRows.map((row) => [row.id, row]));
+  const rowById = new Map(
+    derived.activeRows.map((row) => [row.id, row] as const),
+  );
   const deduped = new Map<string, SimpleSteppedSlotUpdate>();
 
   updates.forEach((update) => {

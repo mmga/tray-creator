@@ -1,25 +1,26 @@
 import type { TrayParams } from "@/types/tray";
 import type {
+  AppMode,
   CustomLayoutParams,
   SimpleSteppedLayoutParams,
   SteppedLayoutParams,
-  AppMode,
 } from "@/types/custom-tray";
 import {
+  DEFAULT_TRAY_PARAMS,
   PARAM_CONFIG,
-  CUSTOM_LIMITS,
+} from "@/lib/grid-config";
+import { CUSTOM_LIMITS } from "@/lib/custom-config";
+import {
+  GROUP_COLORS,
+  STEPPED_LAYOUT_DEFAULTS,
+  STEPPED_LIMITS,
+} from "@/lib/stepped-config";
+import {
   SIMPLE_STEPPED_LAYOUT_DEFAULTS,
   SIMPLE_STEPPED_LIMITS,
-  STEPPED_LIMITS,
-  STEPPED_LAYOUT_DEFAULTS,
-  GROUP_COLORS,
-  DEFAULT_TRAY_PARAMS,
-} from "@/lib/config";
+} from "@/lib/simple-stepped-config";
+import { createGroupStructureOverrides } from "@/lib/stepped-group-params";
 import { calculateSimpleSteppedDimensions } from "@/lib/simple-stepped-layout";
-
-// ═══════════════════════════════════════════
-// 参数导入导出工具
-// ═══════════════════════════════════════════
 
 export type ExportableParams =
   | TrayParams
@@ -35,7 +36,31 @@ interface ParamFile {
 
 const CURRENT_VERSION = 1;
 
-// ── 导出 ──────────────────────────────────
+function getRawSteppedSmoothingRadius(obj: Record<string, unknown>): number {
+  if (
+    typeof obj.smoothingRadius === "number" &&
+    Number.isFinite(obj.smoothingRadius)
+  ) {
+    return obj.smoothingRadius;
+  }
+  if (
+    typeof obj.bridgeRadius === "number" &&
+    Number.isFinite(obj.bridgeRadius)
+  ) {
+    return obj.bridgeRadius;
+  }
+  return STEPPED_LAYOUT_DEFAULTS.smoothingRadius;
+}
+
+function getRawSteppedDisconnectDistance(obj: Record<string, unknown>): number {
+  if (
+    typeof obj.disconnectDistance === "number" &&
+    Number.isFinite(obj.disconnectDistance)
+  ) {
+    return obj.disconnectDistance;
+  }
+  return STEPPED_LAYOUT_DEFAULTS.disconnectDistance;
+}
 
 function precisionReplacer(_key: string, value: unknown) {
   if (typeof value === "number") {
@@ -72,39 +97,36 @@ export function downloadParamFile(
   const blob = createParamBlob(mode, params);
   const url = URL.createObjectURL(blob);
 
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
   URL.revokeObjectURL(url);
 }
 
-/** 将参数序列化为 JSON 并触发浏览器下载 */
 export function exportParams(mode: AppMode, params: ExportableParams) {
   downloadParamFile(mode, params);
 }
 
-// ── 导入 ──────────────────────────────────
-
-/**
- * 纯数据层：接收已解析的 JSON 对象，校验并返回合法参数。
- * 供文件导入和本地草稿加载共用，避免两套校验逻辑。
- */
 export function parseParamFileObject(
   data: unknown,
   expectedMode: AppMode,
-): TrayParams | CustomLayoutParams | SimpleSteppedLayoutParams | SteppedLayoutParams {
+):
+  | TrayParams
+  | CustomLayoutParams
+  | SimpleSteppedLayoutParams
+  | SteppedLayoutParams {
   if (!data || typeof data !== "object") {
     throw new Error("文件内容无效");
   }
+
   const paramFile = data as ParamFile;
   if (paramFile.version !== CURRENT_VERSION) {
     throw new Error(`不支持的版本号: ${paramFile.version}`);
   }
 
-  // 支持 custom → stepped 自动迁移
   if (paramFile.mode === "custom" && expectedMode === "stepped") {
     const customParams = paramFile.params as CustomLayoutParams;
     validateCustomParams(customParams);
@@ -112,10 +134,10 @@ export function parseParamFileObject(
     const steppedParams: SteppedLayoutParams = {
       trayWidth: customParams.trayWidth,
       trayDepth: customParams.trayDepth,
-      slots: customParams.slots.map((s) => ({
-        ...s,
+      slots: customParams.slots.map((slot) => ({
+        ...slot,
         shape: "circle" as const,
-        height: s.width,
+        height: slot.width,
         groupId: defaultGroupId,
       })),
       groups: [
@@ -124,6 +146,10 @@ export function parseParamFileObject(
           name: "组 1",
           color: GROUP_COLORS[0],
           bottomHeight: 10,
+          ...createGroupStructureOverrides({
+            smoothingRadius: STEPPED_LAYOUT_DEFAULTS.smoothingRadius,
+            disconnectDistance: STEPPED_LAYOUT_DEFAULTS.disconnectDistance,
+          }),
         },
       ],
       activeGroupId: defaultGroupId,
@@ -148,11 +174,12 @@ export function parseParamFileObject(
     );
   }
 
-  // 校验并钳位参数
   if (expectedMode === "grid") {
     validateGridParams(paramFile.params as TrayParams);
   } else if (expectedMode === "simple-stepped") {
-    validateSimpleSteppedParams(paramFile.params as SimpleSteppedLayoutParams);
+    validateSimpleSteppedParams(
+      paramFile.params as SimpleSteppedLayoutParams,
+    );
   } else if (expectedMode === "stepped") {
     validateSteppedParams(paramFile.params as SteppedLayoutParams);
   } else {
@@ -162,11 +189,12 @@ export function parseParamFileObject(
   return paramFile.params;
 }
 
-/** 读取 JSON 文件并校验，返回解析后的参数 */
 export function importParams(
   file: File,
   expectedMode: AppMode,
-): Promise<TrayParams | CustomLayoutParams | SimpleSteppedLayoutParams | SteppedLayoutParams> {
+): Promise<
+  TrayParams | CustomLayoutParams | SimpleSteppedLayoutParams | SteppedLayoutParams
+> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -174,8 +202,8 @@ export function importParams(
         const text = reader.result as string;
         const data = JSON.parse(text);
         resolve(parseParamFileObject(data, expectedMode));
-      } catch (e) {
-        reject(e instanceof Error ? e : new Error(String(e)));
+      } catch (error) {
+        reject(error instanceof Error ? error : new Error(String(error)));
       }
     };
     reader.onerror = () => reject(new Error("文件读取失败"));
@@ -183,27 +211,24 @@ export function importParams(
   });
 }
 
-// ── 校验 & 钳位 ──────────────────────────────
-
 function requireNumber(obj: Record<string, unknown>, key: string) {
   if (typeof obj[key] !== "number") {
     throw new Error(`缺少或无效的字段: ${key}`);
   }
 }
 
-/** 将值钳位到 [min, max] 范围 */
 function clampField(
   obj: Record<string, unknown>,
   key: string,
   config: { min: number; max: number },
 ) {
-  const v = obj[key] as number;
-  obj[key] = Math.max(config.min, Math.min(config.max, v));
+  const value = obj[key] as number;
+  obj[key] = Math.max(config.min, Math.min(config.max, value));
 }
 
-function validateGridParams(p: TrayParams) {
-  const obj = p as unknown as Record<string, unknown>;
-  const numFields = [
+function validateGridParams(params: TrayParams) {
+  const obj = params as unknown as Record<string, unknown>;
+  for (const field of [
     "rows",
     "columns",
     "holeDiameter",
@@ -211,16 +236,15 @@ function validateGridParams(p: TrayParams) {
     "baseThickness",
     "holeDepth",
     "cornerRadius",
-  ];
-  for (const f of numFields) requireNumber(obj, f);
-
-  // holeDiameter 范围校验（不在 PARAM_CONFIG 中，单独处理）
-  const hd = obj.holeDiameter as number;
-  if (hd <= 0 || hd > 200) {
-    throw new Error(`holeDiameter: 超出合理范围 (0, 200]`);
+  ]) {
+    requireNumber(obj, field);
   }
 
-  // 钳位到允许范围
+  const holeDiameter = obj.holeDiameter as number;
+  if (holeDiameter <= 0 || holeDiameter > 200) {
+    throw new Error("holeDiameter: 超出合理范围 (0, 200]");
+  }
+
   clampField(obj, "columns", PARAM_CONFIG.columns);
   clampField(obj, "rows", PARAM_CONFIG.rows);
   clampField(obj, "spacing", PARAM_CONFIG.spacing);
@@ -244,25 +268,31 @@ function validateGridParams(p: TrayParams) {
     obj.spacingY = obj.spacing;
   }
 
-  // 边界间距字段（可选，旧版文件可能不含，使用默认值兜底）
-  if (typeof obj.boundarySpacing !== "number")
+  if (typeof obj.boundarySpacing !== "number") {
     obj.boundarySpacing = DEFAULT_TRAY_PARAMS.boundarySpacing;
-  if (typeof obj.boundarySpacingIndependent !== "boolean")
+  }
+  if (typeof obj.boundarySpacingIndependent !== "boolean") {
     obj.boundarySpacingIndependent = false;
+  }
   clampField(obj, "boundarySpacing", PARAM_CONFIG.boundarySpacing);
+  if (!obj.boundarySpacingIndependent) {
+    obj.boundarySpacing = obj.spacing;
+  }
 }
 
-function validateCustomParams(p: CustomLayoutParams) {
-  const obj = p as unknown as Record<string, unknown>;
-  const numFields = [
+function validateCustomParams(params: CustomLayoutParams) {
+  const obj = params as unknown as Record<string, unknown>;
+  for (const field of [
     "trayWidth",
     "trayDepth",
     "spacing",
     "baseThickness",
     "holeDepth",
     "cornerRadius",
-  ];
-  for (const f of numFields) requireNumber(obj, f);
+  ]) {
+    requireNumber(obj, field);
+  }
+
   if (typeof obj.boundarySpacing !== "number") {
     obj.boundarySpacing = obj.spacing;
   }
@@ -273,44 +303,41 @@ function validateCustomParams(p: CustomLayoutParams) {
     throw new Error("缺少或无效的字段: slots");
   }
 
-  // 校验每个 slot 的结构与值
   const slots = obj.slots as Record<string, unknown>[];
-  for (let i = 0; i < slots.length; i++) {
-    const slot = slots[i];
+  for (let index = 0; index < slots.length; index += 1) {
+    const slot = slots[index];
     if (!slot || typeof slot !== "object") {
-      throw new Error(`slots[${i}]: 无效的凹槽数据`);
+      throw new Error(`slots[${index}]: 无效的凹槽数据`);
     }
-    // 必填字段校验
+
     for (const key of ["x", "y", "width", "height", "rotation"] as const) {
       if (
         typeof slot[key] !== "number" ||
         !Number.isFinite(slot[key] as number)
       ) {
-        throw new Error(`slots[${i}].${key}: 缺少或无效（需要有限数字）`);
+        throw new Error(`slots[${index}].${key}: 缺少或无效（需要有限数字）`);
       }
     }
-    // shape 校验
+
     if (slot.shape !== "circle" && slot.shape !== "ellipse") {
-      throw new Error(`slots[${i}].shape: 必须是 "circle" 或 "ellipse"`);
+      throw new Error(`slots[${index}].shape: 必须是 "circle" 或 "ellipse"`);
     }
-    // 值范围校验
-    const w = slot.width as number;
-    const h = slot.height as number;
-    if (w <= 0 || w > 200) {
-      throw new Error(`slots[${i}].width: 超出合理范围 (0, 200]`);
+
+    const width = slot.width as number;
+    const height = slot.height as number;
+    if (width <= 0 || width > 200) {
+      throw new Error(`slots[${index}].width: 超出合理范围 (0, 200]`);
     }
-    if (h <= 0 || h > 200) {
-      throw new Error(`slots[${i}].height: 超出合理范围 (0, 200]`);
+    if (height <= 0 || height > 200) {
+      throw new Error(`slots[${index}].height: 超出合理范围 (0, 200]`);
     }
-    // 旋转钳位到 [0, 360)
+
     slot.rotation = (((slot.rotation as number) % 360) + 360) % 360;
-    // 确保有 id
     if (typeof slot.id !== "string" || !slot.id) {
       slot.id = crypto.randomUUID();
     }
   }
 
-  // 钳位到允许范围
   clampField(obj, "trayWidth", CUSTOM_LIMITS.trayWidth);
   clampField(obj, "trayDepth", CUSTOM_LIMITS.trayDepth);
   clampField(obj, "spacing", CUSTOM_LIMITS.spacing);
@@ -324,12 +351,19 @@ function validateCustomParams(p: CustomLayoutParams) {
   }
 }
 
-function validateSimpleSteppedParams(p: SimpleSteppedLayoutParams) {
-  const obj = p as unknown as Record<string, unknown>;
-  if (typeof obj.firstRowHeight !== "number" || !Number.isFinite(obj.firstRowHeight)) {
+function validateSimpleSteppedParams(params: SimpleSteppedLayoutParams) {
+  const obj = params as unknown as Record<string, unknown>;
+
+  if (
+    typeof obj.firstRowHeight !== "number" ||
+    !Number.isFinite(obj.firstRowHeight)
+  ) {
     obj.firstRowHeight = SIMPLE_STEPPED_LAYOUT_DEFAULTS.firstRowHeight;
   }
-  if (typeof obj.cornerRadius !== "number" || !Number.isFinite(obj.cornerRadius)) {
+  if (
+    typeof obj.cornerRadius !== "number" ||
+    !Number.isFinite(obj.cornerRadius)
+  ) {
     obj.cornerRadius = SIMPLE_STEPPED_LAYOUT_DEFAULTS.cornerRadius;
   }
   if (typeof obj.outerMarginIndependent !== "boolean") {
@@ -338,8 +372,17 @@ function validateSimpleSteppedParams(p: SimpleSteppedLayoutParams) {
       typeof obj.spacing === "number" &&
       Math.abs((obj.outerMargin as number) - (obj.spacing as number)) > 0.001;
   }
-  for (const f of ["firstRowHeight", "stepHeight", "rowGap", "spacing", "outerMargin", "holeDepth", "cornerRadius"]) {
-    requireNumber(obj, f);
+
+  for (const field of [
+    "firstRowHeight",
+    "stepHeight",
+    "rowGap",
+    "spacing",
+    "outerMargin",
+    "holeDepth",
+    "cornerRadius",
+  ]) {
+    requireNumber(obj, field);
   }
 
   if (!Array.isArray(obj.rows)) {
@@ -352,16 +395,16 @@ function validateSimpleSteppedParams(p: SimpleSteppedLayoutParams) {
   const rows = obj.rows as Record<string, unknown>[];
   const slots = obj.slots as Record<string, unknown>[];
 
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
+  for (let index = 0; index < rows.length; index += 1) {
+    const row = rows[index];
     if (!row || typeof row !== "object") {
-      throw new Error(`rows[${i}]: 无效的行数据`);
+      throw new Error(`rows[${index}]: 无效的行数据`);
     }
     if (typeof row.id !== "string" || !row.id) {
       row.id = crypto.randomUUID();
     }
     if (typeof row.name !== "string" || !row.name.trim()) {
-      row.name = `行 ${i + 1}`;
+      row.name = `行 ${index + 1}`;
     }
     if (!Array.isArray(row.slotIds)) {
       row.slotIds = [];
@@ -379,10 +422,10 @@ function validateSimpleSteppedParams(p: SimpleSteppedLayoutParams) {
     rowIds.add(defaultRowId);
   }
 
-  for (let i = 0; i < slots.length; i++) {
-    const slot = slots[i];
+  for (let index = 0; index < slots.length; index += 1) {
+    const slot = slots[index];
     if (!slot || typeof slot !== "object") {
-      throw new Error(`slots[${i}]: 无效的凹槽数据`);
+      throw new Error(`slots[${index}]: 无效的凹槽数据`);
     }
     if (typeof slot.id !== "string" || !slot.id) {
       slot.id = crypto.randomUUID();
@@ -390,7 +433,11 @@ function validateSimpleSteppedParams(p: SimpleSteppedLayoutParams) {
     if (slot.shape !== "circle") {
       slot.shape = "circle";
     }
-    if (typeof slot.rowId !== "string" || !slot.rowId || !rowIds.has(slot.rowId)) {
+    if (
+      typeof slot.rowId !== "string" ||
+      !slot.rowId ||
+      !rowIds.has(slot.rowId)
+    ) {
       slot.rowId = rows[0]?.id ?? "";
     }
     if (
@@ -399,10 +446,12 @@ function validateSimpleSteppedParams(p: SimpleSteppedLayoutParams) {
       slot.diameter <= 0 ||
       slot.diameter > SIMPLE_STEPPED_LIMITS.diameter.max
     ) {
-      throw new Error(`slots[${i}].diameter: 超出合理范围 (0, ${SIMPLE_STEPPED_LIMITS.diameter.max}]`);
+      throw new Error(
+        `slots[${index}].diameter: 超出合理范围 (0, ${SIMPLE_STEPPED_LIMITS.diameter.max}]`,
+      );
     }
     if (typeof slot.x !== "number" || !Number.isFinite(slot.x)) {
-      throw new Error(`slots[${i}].x: 缺少或无效（需要有限数字）`);
+      throw new Error(`slots[${index}].x: 缺少或无效（需要有限数字）`);
     }
     if (typeof slot.y !== "number" || !Number.isFinite(slot.y)) {
       slot.y = 0;
@@ -436,63 +485,70 @@ function validateSimpleSteppedParams(p: SimpleSteppedLayoutParams) {
   });
 
   const normalized = obj as unknown as SimpleSteppedLayoutParams;
-  const fallbackWidth = typeof normalized.trayWidth === "number" && Number.isFinite(normalized.trayWidth)
-    ? normalized.trayWidth
-    : SIMPLE_STEPPED_LAYOUT_DEFAULTS.trayWidth;
-  const fallbackDepth = typeof normalized.trayDepth === "number" && Number.isFinite(normalized.trayDepth)
-    ? normalized.trayDepth
-    : SIMPLE_STEPPED_LAYOUT_DEFAULTS.trayDepth;
+  const fallbackWidth =
+    typeof normalized.trayWidth === "number" && Number.isFinite(normalized.trayWidth)
+      ? normalized.trayWidth
+      : SIMPLE_STEPPED_LAYOUT_DEFAULTS.trayWidth;
+  const fallbackDepth =
+    typeof normalized.trayDepth === "number" && Number.isFinite(normalized.trayDepth)
+      ? normalized.trayDepth
+      : SIMPLE_STEPPED_LAYOUT_DEFAULTS.trayDepth;
   normalized.trayWidth = fallbackWidth;
   normalized.trayDepth = fallbackDepth;
 
-  const dims = calculateSimpleSteppedDimensions(normalized);
-  normalized.trayWidth = Math.max(fallbackWidth, dims.width);
-  normalized.trayDepth = Math.max(fallbackDepth, dims.depth);
+  const dimensions = calculateSimpleSteppedDimensions(normalized);
+  normalized.trayWidth = Math.max(fallbackWidth, dimensions.width);
+  normalized.trayDepth = Math.max(fallbackDepth, dimensions.depth);
 }
 
-function validateSteppedParams(p: SteppedLayoutParams) {
-  const obj = p as unknown as Record<string, unknown>;
-  for (const f of ["trayWidth", "trayDepth", "spacing", "holeDepth"])
-    requireNumber(obj, f);
+function validateSteppedParams(params: SteppedLayoutParams) {
+  const obj = params as unknown as Record<string, unknown>;
+  for (const field of ["trayWidth", "trayDepth", "spacing", "holeDepth"]) {
+    requireNumber(obj, field);
+  }
   if (!Array.isArray(obj.slots)) {
     throw new Error("缺少或无效的字段: slots");
   }
 
-  const slots = obj.slots as Record<string, unknown>[];
-
-  // 检测旧格式（slots 有 bottomHeight 但无 groupId / 没有 groups 数组）
+  let slots = obj.slots as Record<string, unknown>[];
   const hasLegacyBottomHeight = slots.some(
-    (s) => typeof s.bottomHeight === "number" && !s.groupId,
+    (slot) => typeof slot.bottomHeight === "number" && !slot.groupId,
   );
   const hasMissingGroups =
     !Array.isArray(obj.groups) || (obj.groups as unknown[]).length === 0;
+  const rawSmoothingRadius = getRawSteppedSmoothingRadius(obj);
+  const rawDisconnectDistance = getRawSteppedDisconnectDistance(obj);
 
   if (hasLegacyBottomHeight || hasMissingGroups) {
-    // 迁移：按 bottomHeight 分组，相同高度入同一组
     const heightGroupMap = new Map<
       number,
       { id: string; name: string; color: string; bottomHeight: number }
     >();
     const migratedSlots = slots.map((slot) => {
-      const bh =
+      const bottomHeight =
         typeof slot.bottomHeight === "number"
           ? (slot.bottomHeight as number)
           : 10;
-      let group = heightGroupMap.get(bh);
+      let group = heightGroupMap.get(bottomHeight);
       if (!group) {
-        const colorIdx = heightGroupMap.size % GROUP_COLORS.length;
+        const colorIndex = heightGroupMap.size % GROUP_COLORS.length;
         group = {
           id: crypto.randomUUID(),
           name: `组 ${heightGroupMap.size + 1}`,
-          color: GROUP_COLORS[colorIdx],
-          bottomHeight: bh,
+          color: GROUP_COLORS[colorIndex],
+          bottomHeight,
+          ...createGroupStructureOverrides({
+            smoothingRadius: rawSmoothingRadius,
+            disconnectDistance: rawDisconnectDistance,
+          }),
         };
-        heightGroupMap.set(bh, group);
+        heightGroupMap.set(bottomHeight, group);
       }
       return { ...slot, groupId: group.id };
     });
+
     const sortedGroups = [...heightGroupMap.values()].sort(
-      (a, b) => a.bottomHeight - b.bottomHeight,
+      (left, right) => left.bottomHeight - right.bottomHeight,
     );
     if (sortedGroups.length === 0) {
       sortedGroups.push({
@@ -500,36 +556,71 @@ function validateSteppedParams(p: SteppedLayoutParams) {
         name: "组 1",
         color: GROUP_COLORS[0],
         bottomHeight: 10,
+        ...createGroupStructureOverrides({
+          smoothingRadius: rawSmoothingRadius,
+          disconnectDistance: rawDisconnectDistance,
+        }),
       });
     }
+
     obj.groups = sortedGroups;
     obj.activeGroupId = sortedGroups[0].id;
     obj.slots = migratedSlots;
+    slots = obj.slots as Record<string, unknown>[];
   }
 
-  // 校验 groups 数组
   if (!Array.isArray(obj.groups)) {
     throw new Error("缺少或无效的字段: groups");
   }
+
   const groups = obj.groups as Record<string, unknown>[];
-  for (let i = 0; i < groups.length; i++) {
-    const g = groups[i];
-    if (!g || typeof g !== "object")
-      throw new Error(`groups[${i}]: 无效的分组数据`);
-    if (typeof g.id !== "string" || !g.id) g.id = crypto.randomUUID();
-    if (typeof g.name !== "string") g.name = `组 ${i + 1}`;
-    if (typeof g.color !== "string")
-      g.color = GROUP_COLORS[i % GROUP_COLORS.length];
-    requireNumber(g as Record<string, unknown>, "bottomHeight");
+  for (let index = 0; index < groups.length; index += 1) {
+    const group = groups[index];
+    if (!group || typeof group !== "object") {
+      throw new Error(`groups[${index}]: 无效的分组数据`);
+    }
+    if (typeof group.id !== "string" || !group.id) {
+      group.id = crypto.randomUUID();
+    }
+    if (typeof group.name !== "string") {
+      group.name = `组 ${index + 1}`;
+    }
+    if (typeof group.color !== "string") {
+      group.color = GROUP_COLORS[index % GROUP_COLORS.length];
+    }
+    requireNumber(group as Record<string, unknown>, "bottomHeight");
+    if (typeof group.useGroupSmoothingRadius !== "boolean") {
+      group.useGroupSmoothingRadius = false;
+    }
+    if (
+      typeof group.groupSmoothingRadius !== "number" ||
+      !Number.isFinite(group.groupSmoothingRadius)
+    ) {
+      group.groupSmoothingRadius = rawSmoothingRadius;
+    }
+    if (typeof group.useGroupDisconnectDistance !== "boolean") {
+      group.useGroupDisconnectDistance = false;
+    }
+    if (
+      typeof group.groupDisconnectDistance !== "number" ||
+      !Number.isFinite(group.groupDisconnectDistance)
+    ) {
+      group.groupDisconnectDistance = rawDisconnectDistance;
+    }
+    clampField(group as Record<string, unknown>, "bottomHeight", STEPPED_LIMITS.bottomHeight);
     clampField(
-      g as Record<string, unknown>,
-      "bottomHeight",
-      STEPPED_LIMITS.bottomHeight,
+      group as Record<string, unknown>,
+      "groupSmoothingRadius",
+      STEPPED_LIMITS.smoothingRadius,
+    );
+    clampField(
+      group as Record<string, unknown>,
+      "groupDisconnectDistance",
+      STEPPED_LIMITS.disconnectDistance,
     );
   }
 
-  // activeGroupId 安全备用
-  const groupIds = new Set((obj.groups as { id: string }[]).map((g) => g.id));
+  const groupIds = new Set((obj.groups as { id: string }[]).map((group) => group.id));
   if (
     typeof obj.activeGroupId !== "string" ||
     !groupIds.has(obj.activeGroupId as string)
@@ -537,76 +628,66 @@ function validateSteppedParams(p: SteppedLayoutParams) {
     obj.activeGroupId = (obj.groups as { id: string }[])[0]?.id ?? "";
   }
 
-  // 校验 slots
-  for (let i = 0; i < slots.length; i++) {
-    const slot = slots[i];
+  for (let index = 0; index < slots.length; index += 1) {
+    const slot = slots[index];
     if (!slot || typeof slot !== "object") {
-      throw new Error(`slots[${i}]: 无效的凹槽数据`);
+      throw new Error(`slots[${index}]: 无效的凹槽数据`);
     }
+
     for (const key of ["x", "y", "width", "height", "rotation"] as const) {
       if (
         typeof slot[key] !== "number" ||
         !Number.isFinite(slot[key] as number)
       ) {
-        throw new Error(`slots[${i}].${key}: 缺少或无效（需要有限数字）`);
+        throw new Error(`slots[${index}].${key}: 缺少或无效（需要有限数字）`);
       }
     }
+
     if (slot.shape !== "circle" && slot.shape !== "ellipse") {
       slot.shape = "circle";
     }
     slot.shape = "circle";
     slot.height = slot.width;
-    const w = slot.width as number;
-    const h = slot.height as number;
-    if (w <= 0 || w > 200) {
-      throw new Error(`slots[${i}].width: 超出合理范围 (0, 200]`);
+    const width = slot.width as number;
+    const height = slot.height as number;
+    if (width <= 0 || width > 200) {
+      throw new Error(`slots[${index}].width: 超出合理范围 (0, 200]`);
     }
-    if (h <= 0 || h > 200) {
-      throw new Error(`slots[${i}].height: 超出合理范围 (0, 200]`);
+    if (height <= 0 || height > 200) {
+      throw new Error(`slots[${index}].height: 超出合理范围 (0, 200]`);
     }
     slot.rotation = (((slot.rotation as number) % 360) + 360) % 360;
     if (typeof slot.id !== "string" || !slot.id) {
       slot.id = crypto.randomUUID();
     }
-    // groupId 归属校验
     if (
       typeof slot.groupId !== "string" ||
       !groupIds.has(slot.groupId as string)
     ) {
       slot.groupId = (obj.groups as { id: string }[])[0]?.id ?? "";
     }
-    // 删除旧版 bottomHeight
     delete slot.bottomHeight;
   }
 
-  // 钳位全局参数
   clampField(obj, "trayWidth", STEPPED_LIMITS.trayWidth);
   clampField(obj, "trayDepth", STEPPED_LIMITS.trayDepth);
   clampField(obj, "spacing", STEPPED_LIMITS.spacing);
   clampField(obj, "holeDepth", STEPPED_LIMITS.holeDepth);
 
-  // smoothingRadius 兼容旧版 bridgeRadius
   if (
     typeof obj.smoothingRadius !== "number" ||
-    !Number.isFinite(obj.smoothingRadius as number)
+    !Number.isFinite(obj.smoothingRadius)
   ) {
-    if (
-      typeof obj.bridgeRadius === "number" &&
-      Number.isFinite(obj.bridgeRadius as number)
-    ) {
-      obj.smoothingRadius = obj.bridgeRadius;
-    } else {
-      obj.smoothingRadius = STEPPED_LAYOUT_DEFAULTS.smoothingRadius;
-    }
+    obj.smoothingRadius = rawSmoothingRadius;
   }
   delete obj.bridgeRadius;
   clampField(obj, "smoothingRadius", STEPPED_LIMITS.smoothingRadius);
 
   if (
     typeof obj.disconnectDistance !== "number" ||
-    !Number.isFinite(obj.disconnectDistance as number)
+    !Number.isFinite(obj.disconnectDistance)
   ) {
-    obj.disconnectDistance = STEPPED_LAYOUT_DEFAULTS.disconnectDistance;
+    obj.disconnectDistance = rawDisconnectDistance;
   }
   clampField(obj, "disconnectDistance", STEPPED_LIMITS.disconnectDistance);
 }

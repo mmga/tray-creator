@@ -1,6 +1,7 @@
 "use client";
 
-import { GROUP_COLORS } from "@/lib/config";
+import { GROUP_COLORS } from "@/lib/stepped-config";
+import { createGroupStructureOverrides } from "@/lib/stepped-group-params";
 import type {
   SlotGroup,
   SteppedLayoutParams,
@@ -75,12 +76,16 @@ function roundToTenth(value: number) {
   return Math.round(value * 10) / 10;
 }
 
-function buildPerfGroups(heights: number[]): SlotGroup[] {
+function buildPerfGroups(
+  heights: number[],
+  defaults: Pick<SteppedLayoutParams, "smoothingRadius" | "disconnectDistance">,
+): SlotGroup[] {
   return heights.map((bottomHeight, index) => ({
     id: `perf-group-${index + 1}`,
     name: `压力组 ${index + 1}`,
     color: GROUP_COLORS[index % GROUP_COLORS.length],
     bottomHeight,
+    ...createGroupStructureOverrides(defaults),
   }));
 }
 
@@ -88,7 +93,10 @@ export function buildSteppedPerfFixture(
   slotCount: SteppedPerfFixtureSize,
 ): SteppedLayoutParams {
   const config = PERF_FIXTURE_CONFIG[slotCount];
-  const groups = buildPerfGroups(config.heights);
+  const groups = buildPerfGroups(config.heights, {
+    smoothingRadius: config.smoothingRadius,
+    disconnectDistance: config.disconnectDistance,
+  });
   const rows = Math.ceil(slotCount / config.columns);
   const xStep =
     config.columns > 1

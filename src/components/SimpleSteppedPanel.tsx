@@ -3,12 +3,11 @@
 import { useMemo } from "react";
 import type { SimpleSteppedLayoutParams } from "@/types/custom-tray";
 import type { SimpleSteppedDerivedLayout } from "@/lib/simple-stepped-layout";
+import { BASE_PRESETS, MAX_BUILD_SIZE } from "@/lib/config";
 import {
-  BASE_PRESETS,
-  MAX_BUILD_SIZE,
   SIMPLE_STEPPED_LAYOUT_DEFAULTS,
   SIMPLE_STEPPED_LIMITS,
-} from "@/lib/config";
+} from "@/lib/simple-stepped-config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,7 +80,7 @@ export default function SimpleSteppedPanel({
   volume,
 }: SimpleSteppedPanelProps) {
   const rowDerivedById = useMemo(
-    () => new Map(derivedLayout.activeRows.map((row) => [row.id, row])),
+    () => new Map(derivedLayout.activeRows.map((row) => [row.id, row] as const)),
     [derivedLayout.activeRows],
   );
   const activeRow = useMemo(

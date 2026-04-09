@@ -3,8 +3,18 @@ declare module "@jscad/stl-serializer" {
     binary?: boolean;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function serialize(options: SerializeOptions, ...geometries: any[]): ArrayBuffer[];
+  function serialize(
+    options: SerializeOptions,
+    ...geometries: unknown[]
+  ): ArrayBuffer[];
+  export { serialize };
 
-  export default { serialize };
+  const serializer: {
+    serialize: (
+      options: SerializeOptions,
+      ...geometries: unknown[]
+    ) => ArrayBuffer[];
+  };
+
+  export default serializer;
 }

@@ -12,18 +12,32 @@ import {
 import { Circle } from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 
-interface BaseHoleConfigProps {
+interface BaseHoleConfigFields {
   enableBaseHole: boolean;
   baseHoleSize: "19.5" | "25";
   baseThickness: number;
-  updateParam: (key: any, value: any) => void;
+}
+
+interface BaseHoleConfigProps<TParams extends BaseHoleConfigFields>
+  extends BaseHoleConfigFields {
+  updateParam: <K extends keyof TParams>(
+    key: K,
+    value: TParams[K],
+  ) => void;
   /** 是否可折叠（移动端） */
   collapsible?: boolean;
   /** 默认是否展开 */
   defaultOpen?: boolean;
 }
 
-export function BaseHoleConfig({ enableBaseHole, baseHoleSize, baseThickness, updateParam, collapsible = false, defaultOpen = true }: BaseHoleConfigProps) {
+export function BaseHoleConfig<TParams extends BaseHoleConfigFields>({
+  enableBaseHole,
+  baseHoleSize,
+  baseThickness,
+  updateParam,
+  collapsible = false,
+  defaultOpen = true,
+}: BaseHoleConfigProps<TParams>) {
   return (
     <div className="iron-panel rounded-sm p-4">
       <SectionHeader icon={Circle} title="底板孔位" collapsible={collapsible} defaultOpen={defaultOpen}

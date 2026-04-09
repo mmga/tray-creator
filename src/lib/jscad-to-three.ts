@@ -80,7 +80,7 @@ export function jscadToThreeGeometry(jscadGeom: Geom3): THREE.BufferGeometry {
     const tris = THREE.ShapeUtils.triangulateShape(contour2D, []);
 
     for (const tri of tris) {
-      let a = vertices[tri[0]];
+      const a = vertices[tri[0]];
       let b = vertices[tri[1]];
       let c = vertices[tri[2]];
 

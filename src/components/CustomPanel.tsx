@@ -1,29 +1,25 @@
 "use client";
 
 import type { CustomLayoutParams } from "@/types/custom-tray";
-import { BASE_PRESETS, ELLIPSE_PRESETS, CUSTOM_LIMITS, PARAM_CONFIG, MAX_BUILD_SIZE } from "@/lib/config";
+import { BASE_PRESETS, MAX_BUILD_SIZE, SHARED_LAYOUT_LIMITS } from "@/lib/config";
+import { CUSTOM_LAYOUT_DEFAULTS, CUSTOM_LIMITS, ELLIPSE_PRESETS } from "@/lib/custom-config";
 import { calculateCustomTrayDimensions } from "@/lib/custom-tray-model";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
-  Download,
-  RotateCcw,
-  Play,
-  Loader2,
   Plus,
   Wrench,
   Ruler,
   BoxSelect,
-  Share2,
 } from "lucide-react";
 import { BaseHoleConfig } from "@/components/BaseHoleConfig";
-import { ParamIOButtons } from "@/components/ParamIOButtons";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
-import { exportParams } from "@/lib/param-io";
 import { calculateWeight, calculateCustomPrice } from "@/lib/pricing";
+import { useAutoPreview } from "@/hooks/useAutoPreview";
+import { PanelActionSection } from "@/components/PanelActionSection";
 
 // ── Props ──────────────────────────────
 
@@ -56,17 +52,12 @@ export default function CustomPanel({
   const isOversized = effectiveWidth > MAX_BUILD_SIZE || effectiveDepth > MAX_BUILD_SIZE;
   const [autoPreview, setAutoPreview] = useState(false);
 
-  // Auto-preview debouncing logic
-  useEffect(() => {
-    if (!autoPreview || isGenerating || isOversized) return;
-
-    // Check if right view is 3d, optional but we assume the user might be looking at either.
-    const handler = setTimeout(() => {
-      onGenerate({ shouldSwitchView: false });
-    }, 500); // 500ms debounce
-
-    return () => clearTimeout(handler);
-  }, [params, autoPreview, isOversized]);
+  useAutoPreview(params, {
+    enabled: autoPreview,
+    isGenerating,
+    isBlocked: isOversized,
+    onGenerate: () => onGenerate({ shouldSwitchView: false }),
+  });
 
   const handleReset = () => {
     // Reset to defaults but keep current logic if needed
@@ -75,7 +66,6 @@ export default function CustomPanel({
     // However, CustomPanelProps passes setParams which expects full object.
     // We'll trust the parent or import default.
     // Let's import default to be safe.
-    const { CUSTOM_LAYOUT_DEFAULTS } = require("@/lib/config");
     setParams(CUSTOM_LAYOUT_DEFAULTS);
   };
 
@@ -154,32 +144,32 @@ export default function CustomPanel({
               />
             )}
             <ParamSlider
-              label={PARAM_CONFIG.baseThickness.label}
+              label={SHARED_LAYOUT_LIMITS.baseThickness.label}
               value={params.baseThickness}
               config={CUSTOM_LIMITS.baseThickness}
               onChange={(v) => updateParam("baseThickness", v)}
-              unit={PARAM_CONFIG.baseThickness.unit}
+              unit={SHARED_LAYOUT_LIMITS.baseThickness.unit}
             />
             <ParamSlider
-              label={PARAM_CONFIG.holeDepth.label}
+              label={SHARED_LAYOUT_LIMITS.holeDepth.label}
               value={params.holeDepth}
               config={CUSTOM_LIMITS.holeDepth}
               onChange={(v) => updateParam("holeDepth", v)}
-              unit={PARAM_CONFIG.holeDepth.unit}
+              unit={SHARED_LAYOUT_LIMITS.holeDepth.unit}
             />
             <ParamSlider
-              label={PARAM_CONFIG.cornerRadius.label}
+              label={SHARED_LAYOUT_LIMITS.cornerRadius.label}
               value={params.cornerRadius}
               config={CUSTOM_LIMITS.cornerRadius}
               onChange={(v) => updateParam("cornerRadius", v)}
-              unit={PARAM_CONFIG.cornerRadius.unit}
+              unit={SHARED_LAYOUT_LIMITS.cornerRadius.unit}
             />
           </div>
         </SectionHeader>
       </div>
 
       {/* 底板孔位 — 移动端默认折叠 */}
-      <BaseHoleConfig
+      <BaseHoleConfig<CustomLayoutParams>
         enableBaseHole={params.enableBaseHole}
         baseHoleSize={params.baseHoleSize}
         baseThickness={params.baseThickness}
@@ -252,60 +242,19 @@ export default function CustomPanel({
 
       <div className="wh-divider" />
 
-      {/* 自动预览与操作按钮 — 始终展开 */}
-      <div className="flex flex-col gap-2.5 pb-4">
-        <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
-          <Label htmlFor="custom-auto-preview" className="text-sm cursor-pointer text-[#f0d8b8]">
-            启用自动预览
-          </Label>
-          <Switch
-            id="custom-auto-preview"
-            checked={autoPreview}
-            onCheckedChange={setAutoPreview}
-            className="data-[state=checked]:bg-[#8cb880]"
-          />
-        </div>
-
-        <Button
-          onClick={() => onGenerate({ shouldSwitchView: true })}
-          disabled={isGenerating || isOversized}
-          className="w-full h-11 blood-red text-sm text-[#f0d8b8] font-bold tracking-wider cursor-pointer border border-[#a02020] shadow-lg shadow-[#8b1a1a30] hover:shadow-xl hover:shadow-[#8b1a1a50] hover:brightness-125 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isGenerating ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <Play className="w-4 h-4 mr-2" />
-          )}
-          {isGenerating ? "锻造中..." : isOversized ? "尺寸超限" : "开始锻造"}
-        </Button>
-        <Button
-          onClick={onExportSTL}
-          className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-sm text-[#8cb880] font-semibold tracking-wider cursor-pointer border border-[#4a6741] shadow-lg shadow-[#2a352830]"
-        >
-          <Download className="w-4 h-4 mr-2" />
-          导出 STL
-        </Button>
-        <Button
-          onClick={() => exportParams("custom", params as any)}
-          className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-sm text-[#8cb880] font-semibold tracking-wider cursor-pointer border border-[#4a6741] shadow-lg shadow-[#2a352830]"
-        >
-          <Share2 className="w-4 h-4 mr-2" />
-          导出参数
-        </Button>
-        <Button
-          variant="outline"
-          onClick={handleReset}
-          className="w-full h-11 lg:h-9 text-sm border-[#2e2a24] text-muted-foreground tracking-wider cursor-pointer hover:bg-[#1c1a16] hover:text-foreground/80 hover:border-[#3d372e]"
-        >
-          <RotateCcw className="w-4 h-4 mr-2" />
-          重置参数
-        </Button>
-        <ParamIOButtons
-          mode="custom"
-          params={params}
-          onImport={(p) => setParams(p as CustomLayoutParams)}
-        />
-      </div>
+      <PanelActionSection
+        autoPreviewId="custom-auto-preview"
+        autoPreview={autoPreview}
+        onAutoPreviewChange={setAutoPreview}
+        onGenerate={() => onGenerate({ shouldSwitchView: true })}
+        onExportSTL={onExportSTL}
+        onReset={handleReset}
+        isGenerating={isGenerating}
+        isOversized={isOversized}
+        mode="custom"
+        params={params}
+        onImport={(p) => setParams(p as CustomLayoutParams)}
+      />
     </div>
   );
 }

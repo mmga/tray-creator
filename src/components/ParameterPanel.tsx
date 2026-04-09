@@ -1,15 +1,15 @@
 "use client";
 import type { TrayParams } from "@/types/tray";
-import { BASE_PRESETS, DEFAULT_PRESET_INDEX, BASE_HOLE_CONFIG, PARAM_CONFIG, MAX_BUILD_SIZE } from "@/lib/config";
+import { BASE_HOLE_CONFIG, BASE_PRESETS, MAX_BUILD_SIZE } from "@/lib/config";
+import { PARAM_CONFIG } from "@/lib/grid-config";
 import {
   calculateTrayDimensions,
   getGridBoundarySpacingAxes,
   getGridSpacingAxes,
 } from "@/lib/tray-model";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Select,
   SelectContent,
@@ -17,19 +17,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, RotateCcw, Play, Loader2, Layout, Wrench, Ruler, Share2 } from "lucide-react";
-import { DEFAULT_TRAY_PARAMS } from "@/lib/config";
+import { Layout, Wrench, Ruler } from "lucide-react";
 import { BaseHoleConfig } from "@/components/BaseHoleConfig";
-import { ParamIOButtons } from "@/components/ParamIOButtons";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
-import { exportParams } from "@/lib/param-io";
 import { calculateGridPrice, calculateWeight } from "@/lib/pricing";
+import { useAutoPreview } from "@/hooks/useAutoPreview";
+import { PanelActionSection } from "@/components/PanelActionSection";
 
 interface ParameterPanelProps {
   params: TrayParams;
   updateParam: <K extends keyof TrayParams>(key: K, value: TrayParams[K]) => void;
-  setParams: React.Dispatch<React.SetStateAction<TrayParams>>;
+  replaceParams: (next: TrayParams) => void;
+  resetParams: () => void;
   onGenerate: (options?: { shouldSwitchView?: boolean }) => void;
   onExportSTL: () => void;
   isGenerating: boolean;
@@ -39,7 +39,8 @@ interface ParameterPanelProps {
 export default function ParameterPanel({
   params,
   updateParam,
-  setParams,
+  replaceParams,
+  resetParams,
   onGenerate,
   onExportSTL,
   isGenerating,
@@ -59,20 +60,21 @@ export default function ParameterPanel({
       : `边距${boundarySpacingX}mm`;
   const isOversized = dimensions.width > MAX_BUILD_SIZE || dimensions.depth > MAX_BUILD_SIZE;
   const [autoPreview, setAutoPreview] = useState(false);
+  const selectedPresetIndex = BASE_PRESETS.findIndex(
+    (preset) => preset.diameter === params.holeDiameter,
+  );
+  const selectedPresetValue =
+    selectedPresetIndex >= 0 ? String(selectedPresetIndex) : undefined;
 
-  // Auto-preview debouncing logic
-  useEffect(() => {
-    if (!autoPreview || isGenerating || isOversized) return;
-
-    const handler = setTimeout(() => {
-      onGenerate({ shouldSwitchView: false });
-    }, 500); // 500ms debounce
-
-    return () => clearTimeout(handler);
-  }, [params, autoPreview, isOversized]); // Notice we exclude onGenerate to prevent cycles, though React Hook rules technically want it. Assuming onGenerate is stable.
+  useAutoPreview(params, {
+    enabled: autoPreview,
+    isGenerating,
+    isBlocked: isOversized,
+    onGenerate: () => onGenerate({ shouldSwitchView: false }),
+  });
 
   const handlePresetChange = (value: string) => {
-    const index = parseInt(value);
+    const index = Number.parseInt(value, 10);
     const preset = BASE_PRESETS[index];
     if (preset) {
       updateParam("holeDiameter", preset.diameter);
@@ -80,7 +82,7 @@ export default function ParameterPanel({
   };
 
   const handleReset = () => {
-    setParams(DEFAULT_TRAY_PARAMS);
+    resetParams();
   };
 
 
@@ -96,7 +98,7 @@ export default function ParameterPanel({
             <div className="space-y-1.5">
               <Label className="text-sm text-muted-foreground">底座尺寸</Label>
               <Select
-                defaultValue={String(DEFAULT_PRESET_INDEX)}
+                value={selectedPresetValue}
                 onValueChange={handlePresetChange}
               >
                 <SelectTrigger className="bg-[#1c1a16] border-[#2e2a24] text-foreground hover:border-primary/40 cursor-pointer transition-all duration-200">
@@ -225,7 +227,7 @@ export default function ParameterPanel({
       </div>
 
       {/* 底板孔位 — 移动端默认折叠 */}
-      <BaseHoleConfig
+      <BaseHoleConfig<TrayParams>
         enableBaseHole={params.enableBaseHole}
         baseHoleSize={params.baseHoleSize}
         baseThickness={params.baseThickness}
@@ -299,60 +301,19 @@ export default function ParameterPanel({
       {/* Gold trim divider */}
       <div className="wh-divider" />
 
-      {/* 自动预览与操作按钮 */}
-      <div className="flex flex-col gap-2.5 pb-4">
-        <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
-          <Label htmlFor="auto-preview" className="text-sm cursor-pointer text-[#f0d8b8]">
-            启用自动预览
-          </Label>
-          <Switch
-            id="auto-preview"
-            checked={autoPreview}
-            onCheckedChange={setAutoPreview}
-            className="data-[state=checked]:bg-[#8cb880]"
-          />
-        </div>
-
-        <Button
-          onClick={() => onGenerate({ shouldSwitchView: true })}
-          disabled={isGenerating || isOversized}
-          className="w-full h-11 blood-red text-sm text-[#f0d8b8] font-bold tracking-wider cursor-pointer transition-all duration-200 border border-[#a02020] shadow-lg shadow-[#8b1a1a30] hover:shadow-xl hover:shadow-[#8b1a1a50] hover:brightness-125 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isGenerating ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <Play className="w-4 h-4 mr-2" />
-          )}
-          {isGenerating ? "锻造中..." : isOversized ? "尺寸超限" : "开始锻造"}
-        </Button>
-        <Button
-          onClick={onExportSTL}
-          className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-sm text-[#8cb880] font-semibold tracking-wider cursor-pointer transition-all duration-200 border border-[#4a6741] shadow-lg shadow-[#2a352830]"
-        >
-          <Download className="w-4 h-4 mr-2" />
-          导出 STL
-        </Button>
-        <Button
-          onClick={() => exportParams("grid", params as any)}
-          className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-sm text-[#8cb880] font-semibold tracking-wider cursor-pointer transition-all duration-200 border border-[#4a6741] shadow-lg shadow-[#2a352830]"
-        >
-          <Share2 className="w-4 h-4 mr-2" />
-          导出参数
-        </Button>
-        <Button
-          variant="outline"
-          onClick={handleReset}
-          className="w-full h-11 lg:h-9 text-sm border-[#2e2a24] text-muted-foreground tracking-wider cursor-pointer hover:bg-[#1c1a16] hover:text-foreground/80 hover:border-[#3d372e] transition-all duration-200"
-        >
-          <RotateCcw className="w-4 h-4 mr-2" />
-          重置参数
-        </Button>
-        <ParamIOButtons
-          mode="grid"
-          params={params}
-          onImport={(p) => setParams(p as TrayParams)}
-        />
-      </div>
+      <PanelActionSection
+        autoPreviewId="auto-preview"
+        autoPreview={autoPreview}
+        onAutoPreviewChange={setAutoPreview}
+        onGenerate={() => onGenerate({ shouldSwitchView: true })}
+        onExportSTL={onExportSTL}
+        onReset={handleReset}
+        isGenerating={isGenerating}
+        isOversized={isOversized}
+        mode="grid"
+        params={params}
+        onImport={(p) => replaceParams(p as TrayParams)}
+      />
 
     </div>
   );
