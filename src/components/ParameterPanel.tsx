@@ -2,7 +2,6 @@
 import type { TrayParams } from "@/types/tray";
 import { BASE_HOLE_CONFIG, BASE_PRESETS, MAX_BUILD_SIZE } from "@/lib/config";
 import {
-  DEFAULT_PRESET_INDEX,
   PARAM_CONFIG,
 } from "@/lib/grid-config";
 import { calculateTrayDimensions } from "@/lib/tray-model";
@@ -49,6 +48,11 @@ export default function ParameterPanel({
   const dimensions = calculateTrayDimensions(params);
   const isOversized = dimensions.width > MAX_BUILD_SIZE || dimensions.depth > MAX_BUILD_SIZE;
   const [autoPreview, setAutoPreview] = useState(false);
+  const selectedPresetIndex = BASE_PRESETS.findIndex(
+    (preset) => preset.diameter === params.holeDiameter,
+  );
+  const selectedPresetValue =
+    selectedPresetIndex >= 0 ? String(selectedPresetIndex) : undefined;
 
   // Auto-preview debouncing logic
   useEffect(() => {
@@ -62,7 +66,7 @@ export default function ParameterPanel({
   }, [params, autoPreview, isGenerating, isOversized, onGenerate]);
 
   const handlePresetChange = (value: string) => {
-    const index = parseInt(value);
+    const index = Number.parseInt(value, 10);
     const preset = BASE_PRESETS[index];
     if (preset) {
       updateParam("holeDiameter", preset.diameter);
@@ -86,7 +90,7 @@ export default function ParameterPanel({
             <div className="space-y-1.5">
               <Label className="text-sm text-muted-foreground">底座尺寸</Label>
               <Select
-                defaultValue={String(DEFAULT_PRESET_INDEX)}
+                value={selectedPresetValue}
                 onValueChange={handlePresetChange}
               >
                 <SelectTrigger className="bg-[#1c1a16] border-[#2e2a24] text-foreground hover:border-primary/40 cursor-pointer transition-all duration-200">
