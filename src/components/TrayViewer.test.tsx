@@ -1,0 +1,182 @@
+import * as React from "react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as THREE from "three";
+import TrayViewer from "@/components/TrayViewer";
+
+const {
+  useThreeState,
+  orbitControlsPropsSpy,
+  canvasCreatedGlSpy,
+  glDomElement,
+} = vi.hoisted(() => {
+  const target = { copy: vi.fn() };
+  const controls = { target, update: vi.fn() };
+  const glDom = {
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  };
+  const gl = {
+    domElement: glDom,
+    setClearColor: vi.fn(),
+    toneMapping: null,
+    toneMappingExposure: 0,
+  };
+  const camera = {
+    fov: 45,
+    position: { set: vi.fn() },
+  };
+
+  return {
+    useThreeState: { camera, controls, gl },
+    orbitControlsPropsSpy: vi.fn(),
+    canvasCreatedGlSpy: gl,
+    glDomElement: glDom,
+  };
+});
+
+vi.mock("@react-three/fiber", async () => {
+  const ReactModule = await import("react");
+
+  return {
+    Canvas({
+      children,
+      onCreated,
+    }: {
+      children: React.ReactNode;
+      onCreated?: (state: { gl: typeof canvasCreatedGlSpy }) => void;
+    }) {
+      ReactModule.useEffect(() => {
+        onCreated?.({ gl: canvasCreatedGlSpy });
+      }, [onCreated]);
+
+      return <div data-testid="mock-canvas">{children}</div>;
+    },
+    useThree() {
+      return useThreeState;
+    },
+  };
+});
+
+vi.mock("@react-three/drei", () => ({
+  OrbitControls(props: unknown) {
+    orbitControlsPropsSpy(props);
+    return <div data-testid="orbit-controls" />;
+  },
+}));
+
+function createGeometry() {
+  const geometry = new THREE.BoxGeometry(10, 20, 30);
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
+describe("TrayViewer", { timeout: 15000 }, () => {
+  beforeEach(() => {
+    useThreeState.camera.position.set.mockReset();
+    useThreeState.controls.target.copy.mockReset();
+    useThreeState.controls.update.mockReset();
+    canvasCreatedGlSpy.setClearColor.mockReset();
+    glDomElement.addEventListener.mockReset();
+    glDomElement.removeEventListener.mockReset();
+    orbitControlsPropsSpy.mockReset();
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("requests regeneration only when the current 3D view is stale", () => {
+    const onRegenerate = vi.fn();
+    const { rerender } = render(
+      <TrayViewer
+        geometry={null}
+        isStale={true}
+        isGenerating={false}
+        onRegenerate={onRegenerate}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("FORGE VIEW"));
+    expect(onRegenerate).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <TrayViewer
+        geometry={null}
+        isStale={false}
+        isGenerating={false}
+        onRegenerate={onRegenerate}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("FORGE VIEW"));
+    expect(onRegenerate).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows and resets the loading bar based on generate state", () => {
+    vi.useFakeTimers();
+    const requestAnimationFrameSpy = vi
+      .spyOn(window, "requestAnimationFrame")
+      .mockImplementation((callback: FrameRequestCallback) => {
+        callback(0);
+        return 1;
+      });
+    const cancelAnimationFrameSpy = vi
+      .spyOn(window, "cancelAnimationFrame")
+      .mockImplementation(() => undefined);
+
+    const { container, rerender } = render(
+      <TrayViewer geometry={null} isGenerating={true} />,
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(1500);
+    });
+    const progressBar = container.querySelector(
+      'div[style*="width:"]',
+    ) as HTMLDivElement | null;
+    expect(progressBar).not.toBeNull();
+    expect(Number.parseFloat(progressBar!.style.width)).toBeGreaterThan(0);
+
+    rerender(<TrayViewer geometry={null} isGenerating={false} />);
+    expect(container.querySelector('div[style*="width:"]')).toBeNull();
+
+    requestAnimationFrameSpy.mockRestore();
+    cancelAnimationFrameSpy.mockRestore();
+    vi.useRealTimers();
+  });
+
+  it("fits the camera and wires context listeners when geometry is available", () => {
+    render(
+      <TrayViewer
+        geometry={createGeometry()}
+        isStale={false}
+        isGenerating={false}
+      />,
+    );
+
+    expect(screen.getByTestId("mock-canvas")).toBeInTheDocument();
+    expect(screen.getByTestId("orbit-controls")).toBeInTheDocument();
+    expect(useThreeState.camera.position.set).toHaveBeenCalledTimes(1);
+    expect(useThreeState.controls.target.copy).toHaveBeenCalledTimes(1);
+    expect(useThreeState.controls.update).toHaveBeenCalledTimes(1);
+    expect(canvasCreatedGlSpy.setClearColor).toHaveBeenCalledTimes(1);
+    expect(glDomElement.addEventListener).toHaveBeenCalledWith(
+      "webglcontextlost",
+      expect.any(Function),
+    );
+    expect(glDomElement.addEventListener).toHaveBeenCalledWith(
+      "webglcontextrestored",
+      expect.any(Function),
+    );
+    expect(orbitControlsPropsSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        makeDefault: true,
+        enableDamping: true,
+        minDistance: 10,
+        maxDistance: 300,
+      }),
+    );
+  });
+});
