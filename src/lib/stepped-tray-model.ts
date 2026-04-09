@@ -18,6 +18,7 @@ import {
   getEffectiveBridgeGap,
   type ConnectivityCircle,
 } from "@/lib/stepped-connectivity";
+import { getEffectiveGroupStructureParams } from "@/lib/stepped-group-params";
 
 const { subtract, union } = booleans;
 const { translate, rotateZ } = transforms;
@@ -101,14 +102,7 @@ function calculateEffectiveBaseplate(params: SteppedLayoutParams) {
  * - 每个凹槽从其所在组顶部向下挖 holeDepth 深度
  */
 export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
-  const {
-    slots,
-    groups,
-    spacing,
-    holeDepth,
-    smoothingRadius,
-    disconnectDistance,
-  } = params;
+  const { slots, groups, spacing, holeDepth } = params;
 
   if (slots.length === 0 || groups.length === 0) {
     return extrudeLinear(
@@ -154,6 +148,10 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
   function buildGroupSolid(
     groupSlotData: typeof slotData,
     height: number,
+    structureParams: Pick<
+      SteppedLayoutParams,
+      "smoothingRadius" | "disconnectDistance"
+    >,
   ): Geom3 {
     const circleMap = new Map<string, ConnectivityCircle>();
     const slotDataMap = new Map<string, (typeof slotData)[number]>();
@@ -172,7 +170,10 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
 
     const clusteredCircles = clusterConnectivityCircles(
       [...circleMap.values()],
-      getEffectiveBridgeGap(smoothingRadius, disconnectDistance),
+      getEffectiveBridgeGap(
+        structureParams.smoothingRadius,
+        structureParams.disconnectDistance,
+      ),
     );
 
     const solids = clusteredCircles.map((cluster) => {
@@ -184,7 +185,7 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
 
       const outlineGeom = generateOutlineGeom2(
         outlineCircles,
-        smoothingRadius,
+        structureParams.smoothingRadius,
         RENDER_CONFIG.cylinderSegments,
       );
       if (outlineGeom) {
@@ -219,6 +220,7 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
     if (ownSlotData.length === 0) continue;
 
     const columnHeight = Math.max(group.bottomHeight, 3);
+    const effectiveParams = getEffectiveGroupStructureParams(group, params);
 
     // 纳入所有高度严格更高的组的凹槽作为平滑轮廓上下文。
     // → 本组实体自然包围更高的柱子，形成平滑连接过渡。
@@ -232,6 +234,7 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
     let groupSolid = buildGroupSolid(
       [...ownSlotData, ...contextSlotData],
       columnHeight,
+      effectiveParams,
     );
 
     // 减除所有高度严格低于本组的其他组凹槽的让位圆柱

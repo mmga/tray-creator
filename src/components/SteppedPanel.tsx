@@ -1,10 +1,12 @@
 "use client";
 
 import type { SteppedLayoutParams } from "@/types/custom-tray";
+import type { BridgeWarning } from "@/lib/stepped-connectivity";
 import { BASE_PRESETS, STEPPED_LIMITS, MAX_BUILD_SIZE, STEPPED_LAYOUT_DEFAULTS } from "@/lib/config";
 import { calculateSteppedTrayDimensions } from "@/lib/stepped-tray-model";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Switch } from "@/components/ui/switch";
 import {
     Download,
     RotateCcw,
@@ -20,6 +22,7 @@ import {
     ChevronUp,
     ChevronDown,
     Eye,
+    AlertTriangle,
 } from "lucide-react";
 import { ParamIOButtons } from "@/components/ParamIOButtons";
 import { SectionHeader } from "@/components/ui/SectionHeader";
@@ -43,11 +46,16 @@ interface SteppedPanelProps {
     onAddGroup: () => void;
     onRemoveGroup: (groupId: string) => void;
     onUpdateGroupHeight: (groupId: string, height: number) => void;
+    onUpdateGroupSmoothingOverride: (groupId: string, enabled: boolean) => void;
+    onUpdateGroupSmoothingRadius: (groupId: string, radius: number) => void;
+    onUpdateGroupDisconnectOverride: (groupId: string, enabled: boolean) => void;
+    onUpdateGroupDisconnectDistance: (groupId: string, distance: number) => void;
     onSetActiveGroup: (groupId: string) => void;
     onMoveSelectedSlotsToGroup: (ids: string[], targetGroupId: string) => void;
     onReorderGroups: (fromIndex: number, toIndex: number) => void;
     previewGroupId: string | null;
     onPreviewGroupChange: (groupId: string | null) => void;
+    bridgeWarning: BridgeWarning | null;
     // 草稿管理
     onOpenDraftDialog: () => void;
     onSaveDraft: () => void;
@@ -69,11 +77,16 @@ export default function SteppedPanel({
     onAddGroup,
     onRemoveGroup,
     onUpdateGroupHeight,
+    onUpdateGroupSmoothingOverride,
+    onUpdateGroupSmoothingRadius,
+    onUpdateGroupDisconnectOverride,
+    onUpdateGroupDisconnectDistance,
     onSetActiveGroup,
     onMoveSelectedSlotsToGroup,
     onReorderGroups,
     previewGroupId,
     onPreviewGroupChange,
+    bridgeWarning,
     onOpenDraftDialog,
     onSaveDraft,
     currentDraftId,
@@ -84,15 +97,27 @@ export default function SteppedPanel({
     const isOversized = effectiveWidth > MAX_BUILD_SIZE || effectiveDepth > MAX_BUILD_SIZE;
     const [pressedPreviewGroupId, setPressedPreviewGroupId] = useState<string | null>(null);
     const [lockedPreviewGroupId, setLockedPreviewGroupId] = useState<string | null>(null);
+    const validGroupIds = useMemo(
+        () => new Set(params.groups.map((group) => group.id)),
+        [params.groups],
+    );
+    const activePressedPreviewGroupId =
+        pressedPreviewGroupId && validGroupIds.has(pressedPreviewGroupId)
+            ? pressedPreviewGroupId
+            : null;
+    const activeLockedPreviewGroupId =
+        lockedPreviewGroupId && validGroupIds.has(lockedPreviewGroupId)
+            ? lockedPreviewGroupId
+            : null;
 
     useEffect(() => {
-        if (!pressedPreviewGroupId) {
+        if (!activePressedPreviewGroupId) {
             return;
         }
 
         const clearPreview = () => {
             setPressedPreviewGroupId(null);
-            onPreviewGroupChange(lockedPreviewGroupId);
+            onPreviewGroupChange(activeLockedPreviewGroupId);
         };
 
         window.addEventListener("blur", clearPreview);
@@ -100,23 +125,13 @@ export default function SteppedPanel({
         return () => {
             window.removeEventListener("blur", clearPreview);
         };
-    }, [lockedPreviewGroupId, onPreviewGroupChange, pressedPreviewGroupId]);
+    }, [activeLockedPreviewGroupId, activePressedPreviewGroupId, onPreviewGroupChange]);
 
     useEffect(() => {
-        const validGroupIds = new Set(params.groups.map((group) => group.id));
-
-        if (lockedPreviewGroupId && !validGroupIds.has(lockedPreviewGroupId)) {
-            setLockedPreviewGroupId(null);
-        }
-
-        if (pressedPreviewGroupId && !validGroupIds.has(pressedPreviewGroupId)) {
-            setPressedPreviewGroupId(null);
-        }
-
         if (previewGroupId && !validGroupIds.has(previewGroupId)) {
             onPreviewGroupChange(null);
         }
-    }, [lockedPreviewGroupId, onPreviewGroupChange, params.groups, pressedPreviewGroupId, previewGroupId]);
+    }, [onPreviewGroupChange, previewGroupId, validGroupIds]);
 
     const handleReset = () => {
         setParams(STEPPED_LAYOUT_DEFAULTS);
@@ -129,14 +144,14 @@ export default function SteppedPanel({
 
     const handlePreviewGroupEnd = () => {
         setPressedPreviewGroupId(null);
-        onPreviewGroupChange(lockedPreviewGroupId);
+        onPreviewGroupChange(activeLockedPreviewGroupId);
     };
 
     const toggleLockedPreviewGroup = (groupId: string) => {
-        const nextGroupId = lockedPreviewGroupId === groupId ? null : groupId;
+        const nextGroupId = activeLockedPreviewGroupId === groupId ? null : groupId;
         setLockedPreviewGroupId(nextGroupId);
 
-        if (!pressedPreviewGroupId) {
+        if (!activePressedPreviewGroupId) {
             onPreviewGroupChange(nextGroupId);
         }
     };
@@ -195,7 +210,7 @@ export default function SteppedPanel({
                                                 }}
                                                 onLostPointerCapture={(e) => {
                                                     e.stopPropagation();
-                                                    if (pressedPreviewGroupId === group.id) {
+                                                    if (activePressedPreviewGroupId === group.id) {
                                                         handlePreviewGroupEnd();
                                                     }
                                                 }}
@@ -243,7 +258,7 @@ export default function SteppedPanel({
                                         </div>
                                         {/* 高度滑杆（仅激活组展开） */}
                                         {isActive ? (
-                                            <div className="px-2 pb-2">
+                                            <div className="px-2 pb-2 space-y-3">
                                                 <ParamSlider
                                                     label={STEPPED_LIMITS.bottomHeight.label}
                                                     value={group.bottomHeight}
@@ -251,6 +266,62 @@ export default function SteppedPanel({
                                                     onChange={(v) => onUpdateGroupHeight(group.id, v)}
                                                     unit={STEPPED_LIMITS.bottomHeight.unit}
                                                 />
+                                                <div className="rounded border border-[#2e2a24] bg-[#171511] px-2.5 py-2 space-y-2">
+                                                    <div className="flex items-center justify-between gap-3">
+                                                        <div>
+                                                            <div className="text-[11px] font-medium text-foreground/90">平滑半径</div>
+                                                            <div className="text-[10px] text-muted-foreground">
+                                                                {group.useGroupSmoothingRadius
+                                                                    ? `独立设置: ${group.groupSmoothingRadius} mm`
+                                                                    : `跟随全局: ${params.smoothingRadius} mm`}
+                                                            </div>
+                                                        </div>
+                                                        <Switch
+                                                            size="sm"
+                                                            checked={group.useGroupSmoothingRadius}
+                                                            onCheckedChange={(checked) => onUpdateGroupSmoothingOverride(group.id, checked)}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            aria-label={`${group.name} 平滑半径独立设置`}
+                                                        />
+                                                    </div>
+                                                    {group.useGroupSmoothingRadius ? (
+                                                        <ParamSlider
+                                                            label={STEPPED_LIMITS.smoothingRadius.label}
+                                                            value={group.groupSmoothingRadius}
+                                                            config={STEPPED_LIMITS.smoothingRadius}
+                                                            onChange={(v) => onUpdateGroupSmoothingRadius(group.id, v)}
+                                                            unit={STEPPED_LIMITS.smoothingRadius.unit}
+                                                        />
+                                                    ) : null}
+                                                </div>
+                                                <div className="rounded border border-[#2e2a24] bg-[#171511] px-2.5 py-2 space-y-2">
+                                                    <div className="flex items-center justify-between gap-3">
+                                                        <div>
+                                                            <div className="text-[11px] font-medium text-foreground/90">槽群断连距离</div>
+                                                            <div className="text-[10px] text-muted-foreground">
+                                                                {group.useGroupDisconnectDistance
+                                                                    ? `独立设置: ${group.groupDisconnectDistance} mm`
+                                                                    : `跟随全局: ${params.disconnectDistance} mm`}
+                                                            </div>
+                                                        </div>
+                                                        <Switch
+                                                            size="sm"
+                                                            checked={group.useGroupDisconnectDistance}
+                                                            onCheckedChange={(checked) => onUpdateGroupDisconnectOverride(group.id, checked)}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            aria-label={`${group.name} 槽群断连距离独立设置`}
+                                                        />
+                                                    </div>
+                                                    {group.useGroupDisconnectDistance ? (
+                                                        <ParamSlider
+                                                            label={STEPPED_LIMITS.disconnectDistance.label}
+                                                            value={group.groupDisconnectDistance}
+                                                            config={STEPPED_LIMITS.disconnectDistance}
+                                                            onChange={(v) => onUpdateGroupDisconnectDistance(group.id, v)}
+                                                            unit={STEPPED_LIMITS.disconnectDistance.unit}
+                                                        />
+                                                    ) : null}
+                                                </div>
                                             </div>
                                         ) : (
                                             <div className="px-2 pb-1.5">
@@ -370,6 +441,21 @@ export default function SteppedPanel({
                             onChange={(v) => updateParam("disconnectDistance", v)}
                             unit={STEPPED_LIMITS.disconnectDistance.unit}
                         />
+                        {bridgeWarning ? (
+                            <div className="rounded border border-[#7c5a1c] bg-[#2a2115]/70 px-3 py-2 text-[11px] text-[#f0d8b8]">
+                                <div className="flex items-start gap-2">
+                                    <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0 text-[#eab308]" />
+                                    <div className="space-y-1">
+                                        <div>
+                                            {bridgeWarning.groupName} 当前参数可能会将 {bridgeWarning.separatedClusterCount} 个槽群连接为 {bridgeWarning.mergedClusterCount} 个整体。
+                                        </div>
+                                        <div className="text-[#d9c3a3]/80">
+                                            可以尝试增大“槽群断连距离”、减小“平滑半径”，或调整槽位位置。
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : null}
                     </div>
                 </SectionHeader>
             </div>

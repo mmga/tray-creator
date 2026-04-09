@@ -7,6 +7,14 @@ export interface SlotGroup {
   color: string;
   /** 该组所有凹槽柱子从底板向上的高度 (mm)，决定阶梯层的高度边界 */
   bottomHeight: number;
+  /** 是否使用该组自己的平滑半径；关闭时跟随全局参数 */
+  useGroupSmoothingRadius: boolean;
+  /** 该组缓存的平滑半径值；仅在开启独立设置时生效 */
+  groupSmoothingRadius: number;
+  /** 是否使用该组自己的断链距离；关闭时跟随全局参数 */
+  useGroupDisconnectDistance: boolean;
+  /** 该组缓存的断链距离值；仅在开启独立设置时生效 */
+  groupDisconnectDistance: number;
 }
 
 /** 分组轮廓预览（供 2D 编辑器逐组渲染） */

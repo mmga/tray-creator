@@ -4,6 +4,7 @@ import type {
   SteppedLayoutParams,
   SlotGroup,
 } from "@/types/custom-tray";
+import { createGroupStructureOverrides } from "@/lib/stepped-group-params";
 
 /**
  * ============================================
@@ -126,6 +127,8 @@ export const CUSTOM_LAYOUT_DEFAULTS: CustomLayoutParams = {
 };
 
 const STEPPED_DEFAULT_GROUP_ID = "stepped-default-group";
+const STEPPED_DEFAULT_SMOOTHING_RADIUS = 60;
+const STEPPED_DEFAULT_DISCONNECT_DISTANCE = 0;
 
 /** 阶梯底座默认参数 */
 export const STEPPED_LAYOUT_DEFAULTS: SteppedLayoutParams = {
@@ -138,13 +141,17 @@ export const STEPPED_LAYOUT_DEFAULTS: SteppedLayoutParams = {
       name: "组 1",
       color: GROUP_COLORS[0],
       bottomHeight: 10,
+      ...createGroupStructureOverrides({
+        smoothingRadius: STEPPED_DEFAULT_SMOOTHING_RADIUS,
+        disconnectDistance: STEPPED_DEFAULT_DISCONNECT_DISTANCE,
+      }),
     } satisfies SlotGroup,
   ],
   activeGroupId: STEPPED_DEFAULT_GROUP_ID,
   spacing: 5,
   holeDepth: 3,
-  smoothingRadius: 60,
-  disconnectDistance: 0,
+  smoothingRadius: STEPPED_DEFAULT_SMOOTHING_RADIUS,
+  disconnectDistance: STEPPED_DEFAULT_DISCONNECT_DISTANCE,
 };
 
 // ═══════════════════════════════════════════

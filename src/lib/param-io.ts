@@ -12,6 +12,7 @@ import {
   GROUP_COLORS,
   DEFAULT_TRAY_PARAMS,
 } from "@/lib/config";
+import { createGroupStructureOverrides } from "@/lib/stepped-group-params";
 
 // ═══════════════════════════════════════════
 // 参数导入导出工具
@@ -29,6 +30,36 @@ interface ParamFile {
 }
 
 const CURRENT_VERSION = 1;
+
+function getRawSteppedSmoothingRadius(
+  obj: Record<string, unknown>,
+): number {
+  if (
+    typeof obj.smoothingRadius === "number" &&
+    Number.isFinite(obj.smoothingRadius)
+  ) {
+    return obj.smoothingRadius;
+  }
+  if (
+    typeof obj.bridgeRadius === "number" &&
+    Number.isFinite(obj.bridgeRadius)
+  ) {
+    return obj.bridgeRadius;
+  }
+  return STEPPED_LAYOUT_DEFAULTS.smoothingRadius;
+}
+
+function getRawSteppedDisconnectDistance(
+  obj: Record<string, unknown>,
+): number {
+  if (
+    typeof obj.disconnectDistance === "number" &&
+    Number.isFinite(obj.disconnectDistance)
+  ) {
+    return obj.disconnectDistance;
+  }
+  return STEPPED_LAYOUT_DEFAULTS.disconnectDistance;
+}
 
 // ── 导出 ──────────────────────────────────
 
@@ -119,6 +150,10 @@ export function parseParamFileObject(
           name: "组 1",
           color: GROUP_COLORS[0],
           bottomHeight: 10,
+          ...createGroupStructureOverrides({
+            smoothingRadius: STEPPED_LAYOUT_DEFAULTS.smoothingRadius,
+            disconnectDistance: STEPPED_LAYOUT_DEFAULTS.disconnectDistance,
+          }),
         },
       ],
       activeGroupId: defaultGroupId,
@@ -316,6 +351,8 @@ function validateSteppedParams(p: SteppedLayoutParams) {
   );
   const hasMissingGroups =
     !Array.isArray(obj.groups) || (obj.groups as unknown[]).length === 0;
+  const rawSmoothingRadius = getRawSteppedSmoothingRadius(obj);
+  const rawDisconnectDistance = getRawSteppedDisconnectDistance(obj);
 
   if (hasLegacyBottomHeight || hasMissingGroups) {
     // 迁移：按 bottomHeight 分组，相同高度入同一组
@@ -336,6 +373,10 @@ function validateSteppedParams(p: SteppedLayoutParams) {
           name: `组 ${heightGroupMap.size + 1}`,
           color: GROUP_COLORS[colorIdx],
           bottomHeight: bh,
+          ...createGroupStructureOverrides({
+            smoothingRadius: rawSmoothingRadius,
+            disconnectDistance: rawDisconnectDistance,
+          }),
         };
         heightGroupMap.set(bh, group);
       }
@@ -350,6 +391,10 @@ function validateSteppedParams(p: SteppedLayoutParams) {
         name: "组 1",
         color: GROUP_COLORS[0],
         bottomHeight: 10,
+        ...createGroupStructureOverrides({
+          smoothingRadius: rawSmoothingRadius,
+          disconnectDistance: rawDisconnectDistance,
+        }),
       });
     }
     obj.groups = sortedGroups;
@@ -371,10 +416,38 @@ function validateSteppedParams(p: SteppedLayoutParams) {
     if (typeof g.color !== "string")
       g.color = GROUP_COLORS[i % GROUP_COLORS.length];
     requireNumber(g as Record<string, unknown>, "bottomHeight");
+    if (typeof g.useGroupSmoothingRadius !== "boolean") {
+      g.useGroupSmoothingRadius = false;
+    }
+    if (
+      typeof g.groupSmoothingRadius !== "number" ||
+      !Number.isFinite(g.groupSmoothingRadius)
+    ) {
+      g.groupSmoothingRadius = rawSmoothingRadius;
+    }
+    if (typeof g.useGroupDisconnectDistance !== "boolean") {
+      g.useGroupDisconnectDistance = false;
+    }
+    if (
+      typeof g.groupDisconnectDistance !== "number" ||
+      !Number.isFinite(g.groupDisconnectDistance)
+    ) {
+      g.groupDisconnectDistance = rawDisconnectDistance;
+    }
     clampField(
       g as Record<string, unknown>,
       "bottomHeight",
       STEPPED_LIMITS.bottomHeight,
+    );
+    clampField(
+      g as Record<string, unknown>,
+      "groupSmoothingRadius",
+      STEPPED_LIMITS.smoothingRadius,
+    );
+    clampField(
+      g as Record<string, unknown>,
+      "groupDisconnectDistance",
+      STEPPED_LIMITS.disconnectDistance,
     );
   }
 
@@ -440,14 +513,7 @@ function validateSteppedParams(p: SteppedLayoutParams) {
     typeof obj.smoothingRadius !== "number" ||
     !Number.isFinite(obj.smoothingRadius as number)
   ) {
-    if (
-      typeof obj.bridgeRadius === "number" &&
-      Number.isFinite(obj.bridgeRadius as number)
-    ) {
-      obj.smoothingRadius = obj.bridgeRadius;
-    } else {
-      obj.smoothingRadius = STEPPED_LAYOUT_DEFAULTS.smoothingRadius;
-    }
+    obj.smoothingRadius = rawSmoothingRadius;
   }
   delete obj.bridgeRadius;
   clampField(obj, "smoothingRadius", STEPPED_LIMITS.smoothingRadius);
@@ -456,7 +522,7 @@ function validateSteppedParams(p: SteppedLayoutParams) {
     typeof obj.disconnectDistance !== "number" ||
     !Number.isFinite(obj.disconnectDistance as number)
   ) {
-    obj.disconnectDistance = STEPPED_LAYOUT_DEFAULTS.disconnectDistance;
+    obj.disconnectDistance = rawDisconnectDistance;
   }
   clampField(obj, "disconnectDistance", STEPPED_LIMITS.disconnectDistance);
 }

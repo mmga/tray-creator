@@ -30,6 +30,10 @@ import {
   type BridgeWarning,
   type ConnectivityCircle,
 } from "@/lib/stepped-connectivity";
+import {
+  createGroupStructureOverrides,
+  getEffectiveGroupStructureParams,
+} from "@/lib/stepped-group-params";
 
 export interface UseSteppedLayoutReturn {
   params: SteppedLayoutParams;
@@ -52,6 +56,10 @@ export interface UseSteppedLayoutReturn {
   addGroup: () => void;
   removeGroup: (groupId: string) => void;
   updateGroupHeight: (groupId: string, height: number) => void;
+  updateGroupSmoothingOverride: (groupId: string, enabled: boolean) => void;
+  updateGroupSmoothingRadius: (groupId: string, radius: number) => void;
+  updateGroupDisconnectOverride: (groupId: string, enabled: boolean) => void;
+  updateGroupDisconnectDistance: (groupId: string, distance: number) => void;
   setActiveGroup: (groupId: string) => void;
   moveSelectedSlotsToGroup: (ids: string[], targetGroupId: string) => void;
   reorderGroups: (fromIndex: number, toIndex: number) => void;
@@ -322,7 +330,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
   const duplicateSlots = useCallback(
     (ids: string[]): string[] => {
       const newIds: string[] = [];
-      ids.forEach((id) => {
+      ids.forEach(() => {
         newIds.push(crypto.randomUUID());
       });
       internalSetParams((prev) => {
@@ -362,6 +370,10 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
         color: nextColor,
         bottomHeight:
           Math.max(...prev.groups.map((g) => g.bottomHeight), 0) + 5,
+        ...createGroupStructureOverrides({
+          smoothingRadius: prev.smoothingRadius,
+          disconnectDistance: prev.disconnectDistance,
+        }),
       };
       return {
         ...prev,
@@ -402,6 +414,62 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
         ...prev,
         groups: prev.groups.map((g) =>
           g.id === groupId ? { ...g, bottomHeight: height } : g,
+        ),
+      }));
+      invalidatePreview();
+    },
+    [invalidatePreview, pushState],
+  );
+
+  const updateGroupSmoothingOverride = useCallback(
+    (groupId: string, enabled: boolean) => {
+      pushState(paramsRef.current);
+      internalSetParams((prev) => ({
+        ...prev,
+        groups: prev.groups.map((g) =>
+          g.id === groupId ? { ...g, useGroupSmoothingRadius: enabled } : g,
+        ),
+      }));
+      invalidatePreview();
+    },
+    [invalidatePreview, pushState],
+  );
+
+  const updateGroupSmoothingRadius = useCallback(
+    (groupId: string, radius: number) => {
+      pushState(paramsRef.current);
+      internalSetParams((prev) => ({
+        ...prev,
+        groups: prev.groups.map((g) =>
+          g.id === groupId ? { ...g, groupSmoothingRadius: radius } : g,
+        ),
+      }));
+      invalidatePreview();
+    },
+    [invalidatePreview, pushState],
+  );
+
+  const updateGroupDisconnectOverride = useCallback(
+    (groupId: string, enabled: boolean) => {
+      pushState(paramsRef.current);
+      internalSetParams((prev) => ({
+        ...prev,
+        groups: prev.groups.map((g) =>
+          g.id === groupId ? { ...g, useGroupDisconnectDistance: enabled } : g,
+        ),
+      }));
+      invalidatePreview();
+    },
+    [invalidatePreview, pushState],
+  );
+
+  const updateGroupDisconnectDistance = useCallback(
+    (groupId: string, distance: number) => {
+      pushState(paramsRef.current);
+      internalSetParams((prev) => ({
+        ...prev,
+        groups: prev.groups.map((g) =>
+          g.id === groupId ? { ...g, groupDisconnectDistance: distance } : g,
         ),
       }));
       invalidatePreview();
@@ -565,14 +633,15 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     if (params.slots.length === 0 || params.groups.length === 0) return null;
 
     const result: GroupOutlinePreview[] = [];
-    const effectiveBridgeGap = getEffectiveBridgeGap(
-      params.smoothingRadius,
-      params.disconnectDistance,
-    );
 
     for (const group of params.groups) {
       const ownSlots = params.slots.filter((s) => s.groupId === group.id);
       if (ownSlots.length === 0) continue;
+      const effectiveParams = getEffectiveGroupStructureParams(group, params);
+      const effectiveBridgeGap = getEffectiveBridgeGap(
+        effectiveParams.smoothingRadius,
+        effectiveParams.disconnectDistance,
+      );
 
       // 纳入所有高度严格更高的组的凹槽作为轮廓上下文（与 3D 建模保持一致）
       // 这样低组的轮廓自然包裹更高组的圆柱脚印，体现平滑过渡效果
@@ -615,7 +684,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
             cy: circle.cy,
             rOuter: circle.rOuter,
           })),
-          params.smoothingRadius,
+          effectiveParams.smoothingRadius,
           64,
         );
         if (outline && outline.points.length >= 3) {
@@ -644,6 +713,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     for (const group of groupsByHeight) {
       const ownSlots = params.slots.filter((slot) => slot.groupId === group.id);
       if (ownSlots.length === 0) continue;
+      const effectiveParams = getEffectiveGroupStructureParams(group, params);
 
       const higherSlots = params.slots.filter((slot) => {
         if (slot.groupId === group.id) return false;
@@ -672,8 +742,8 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
 
       const warning = analyzeBridgeWarning(
         circles,
-        params.smoothingRadius,
-        params.disconnectDistance,
+        effectiveParams.smoothingRadius,
+        effectiveParams.disconnectDistance,
         { groupId: group.id, groupName: group.name },
       );
 
@@ -700,6 +770,10 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     addGroup,
     removeGroup,
     updateGroupHeight,
+    updateGroupSmoothingOverride,
+    updateGroupSmoothingRadius,
+    updateGroupDisconnectOverride,
+    updateGroupDisconnectDistance,
     setActiveGroup,
     moveSelectedSlotsToGroup,
     reorderGroups,
