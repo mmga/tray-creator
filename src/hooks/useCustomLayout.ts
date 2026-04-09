@@ -236,15 +236,12 @@ export function useCustomLayout(): UseCustomLayoutReturn {
 
   const duplicateSlots = useCallback(
     (ids: string[]): string[] => {
-      let nextIds: string[] = [];
-      internalSetParams((prev) => {
-        pushState(prev);
-        const result = duplicateCustomSlots(prev, randomIdFactory, ids);
-        nextIds = result.newIds;
-        return result.params;
-      });
+      const current = paramsRef.current;
+      pushState(current);
+      const result = duplicateCustomSlots(current, randomIdFactory, ids);
+      internalSetParams(result.params);
       invalidatePreview();
-      return nextIds;
+      return result.newIds;
     },
     [invalidatePreview, pushState],
   );
