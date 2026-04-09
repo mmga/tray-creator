@@ -70,8 +70,8 @@ export const CanvasSlotLayer = memo(function CanvasSlotLayer({
         const isSteppedSlot = "groupId" in slot;
         const isDimmedByGroupFocus = Boolean(
           focusedGroupId &&
-            isSteppedSlot &&
-            slot.groupId !== focusedGroupId,
+          isSteppedSlot &&
+          slot.groupId !== focusedGroupId,
         );
         const groupMeta =
           isSteppedSlot && steppedGroupMetaById
@@ -87,9 +87,8 @@ export const CanvasSlotLayer = memo(function CanvasSlotLayer({
             onPointerDown={(event) => onSlotPointerDown(event, slot.id)}
             onPointerEnter={() => onSlotPointerEnter(slot.id)}
             onPointerLeave={() => onSlotPointerLeave(slot.id)}
-            className={`transition-opacity duration-200 ${
-              isSpacePressed ? "" : "cursor-move"
-            }`}
+            className={`transition-opacity duration-200 ${isSpacePressed ? "" : "cursor-move"
+              }`}
             style={{
               opacity: (isDragging ? 0.9 : 1) * (isDimmedByGroupFocus ? 0.18 : 1),
             }}

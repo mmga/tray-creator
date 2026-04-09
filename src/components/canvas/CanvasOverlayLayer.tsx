@@ -127,7 +127,7 @@ export const CanvasOverlayLayer = memo(function CanvasOverlayLayer({
         const lineOpacity = !focusedGroupId
           ? 0.6
           : ("groupId" in slot && slot.groupId === focusedGroupId) ||
-              ("groupId" in other && other.groupId === focusedGroupId)
+            ("groupId" in other && other.groupId === focusedGroupId)
             ? 0.5
             : 0.12;
 

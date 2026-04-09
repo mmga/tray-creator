@@ -162,7 +162,7 @@ export default function LayoutCanvas({
     }
 
     return new Map(
-        (params as SteppedLayoutParams).groups.map((group) => [group.id, group]),
+      (params as SteppedLayoutParams).groups.map((group) => [group.id, group]),
     );
   }, [params]);
   const selectedIdsRef = useRef<Set<string>>(effectiveSelectedIds);
