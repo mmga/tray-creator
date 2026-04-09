@@ -2,8 +2,11 @@ import type { TrayParams } from "@/types/tray";
 import type {
   CustomLayoutParams,
   SimpleSteppedLayoutParams,
+  SlotGroup,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
+import { calculateSteppedEffectiveDimensions } from "@/lib/stepped-layout-math";
+import { getEffectiveGroupStructureParams } from "@/lib/stepped-group-params";
 
 /**
  * ============================================
@@ -28,6 +31,129 @@ const PRICING_CONFIG = {
   plaDensity: 1.24, // PLA密度 (g/cm³)
   infillRatio: 0.6, // 3D打印有效填充率 (托盘薄件占比高，实心度约60%-70%)
 };
+
+const STEPPED_PRICING_CONFIG = {
+  baseFee: 1,
+  materialRatePerGram: 0.1,
+  printRatePerHour: 6.5,
+  footprintDivisor: 7000,
+  fillRatioMin: 0.58,
+  fillRatioMax: 0.72,
+  fillRatioHeightLevelStep: 0.02,
+  fillRatioDiameterTypeStep: 0.03,
+  fillRatioLargeSlotStep: 0.02,
+  fillRatioHugeSlotStep: 0.05,
+  estimatedPrintBaseHours: 0.45,
+  estimatedWeightPerHour: 65,
+  estimatedPrintHeightLevelStep: 0.15,
+  estimatedPrintDisconnectHours: 0.1,
+  estimatedPrintHugeSlotHours: 0.05,
+  complexityHeightLevelFee: 2,
+  complexityDiameterTypeFee: 2,
+  complexityLargeSlotFee: 0.5,
+  complexityHugeSlotFee: 5.7,
+  complexityWideSmoothingFee: 3,
+  complexityDisconnectFee: 1.5,
+  wideSmoothingThreshold: 12,
+} as const;
+
+export interface SteppedPricingBreakdown {
+  price: number;
+  rawPrice: number;
+  baseFee: number;
+  materialFee: number;
+  printFee: number;
+  footprintFee: number;
+  complexityFee: number;
+  estimatedWeight: number;
+  estimatedPrintHours: number;
+  fillRatio: number;
+  effectiveWidth: number;
+  effectiveDepth: number;
+  footprintAreaMm2: number;
+  heightLevelCount: number;
+  diameterTypeCount: number;
+  slotCount40to59: number;
+  slotCount60Plus: number;
+  hasWideSmoothing: boolean;
+  hasDisconnectDistance: boolean;
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function getUsedSteppedGroups(params: SteppedLayoutParams): SlotGroup[] {
+  const usedGroupIds = new Set(params.slots.map((slot) => slot.groupId));
+  return params.groups.filter((group) => usedGroupIds.has(group.id));
+}
+
+function getSteppedStructureFlags(
+  params: SteppedLayoutParams,
+  groups: SlotGroup[],
+) {
+  return groups.reduce(
+    (acc, group) => {
+      const effective = getEffectiveGroupStructureParams(group, params);
+      return {
+        hasWideSmoothing:
+          acc.hasWideSmoothing ||
+          effective.smoothingRadius >=
+            STEPPED_PRICING_CONFIG.wideSmoothingThreshold,
+        hasDisconnectDistance:
+          acc.hasDisconnectDistance || effective.disconnectDistance > 0,
+      };
+    },
+    { hasWideSmoothing: false, hasDisconnectDistance: false },
+  );
+}
+
+function getSteppedPricingCounts(params: SteppedLayoutParams) {
+  const widthSet = new Set<number>();
+  let slotCount40to59 = 0;
+  let slotCount60Plus = 0;
+
+  params.slots.forEach((slot) => {
+    widthSet.add(slot.width);
+    if (slot.width >= 60) {
+      slotCount60Plus += 1;
+    } else if (slot.width >= 40) {
+      slotCount40to59 += 1;
+    }
+  });
+
+  return {
+    diameterTypeCount: widthSet.size,
+    slotCount40to59,
+    slotCount60Plus,
+  };
+}
+
+function calculateSteppedFillRatio(
+  heightLevelCount: number,
+  diameterTypeCount: number,
+  slotCount40to59: number,
+  slotCount60Plus: number,
+  slotCount: number,
+) {
+  if (slotCount <= 0) {
+    return STEPPED_PRICING_CONFIG.fillRatioMin;
+  }
+
+  return clamp(
+    STEPPED_PRICING_CONFIG.fillRatioMin +
+      STEPPED_PRICING_CONFIG.fillRatioHeightLevelStep *
+        Math.max(0, heightLevelCount - 3) +
+      STEPPED_PRICING_CONFIG.fillRatioDiameterTypeStep *
+        Math.max(0, diameterTypeCount - 1) +
+      STEPPED_PRICING_CONFIG.fillRatioLargeSlotStep *
+        (slotCount40to59 / slotCount) +
+      STEPPED_PRICING_CONFIG.fillRatioHugeSlotStep *
+        (slotCount60Plus / slotCount),
+    STEPPED_PRICING_CONFIG.fillRatioMin,
+    STEPPED_PRICING_CONFIG.fillRatioMax,
+  );
+}
 
 /**
  * 计算模型预估耗材重量 (克)
@@ -65,13 +191,115 @@ export function calculateCustomPrice(
   return weight * 0.4;
 }
 
+export function getSteppedPricingBreakdown(
+  params: SteppedLayoutParams,
+  volume: number,
+): SteppedPricingBreakdown {
+  const hasPrintableGeometry = volume > 0 && params.slots.length > 0;
+  const effectiveDimensions = calculateSteppedEffectiveDimensions(params);
+  const usedGroups = getUsedSteppedGroups(params);
+  const heightLevels = new Set(usedGroups.map((group) => group.bottomHeight));
+  const heightLevelCount = heightLevels.size;
+  const { diameterTypeCount, slotCount40to59, slotCount60Plus } =
+    getSteppedPricingCounts(params);
+  const { hasWideSmoothing, hasDisconnectDistance } = getSteppedStructureFlags(
+    params,
+    usedGroups,
+  );
+  const fillRatio = calculateSteppedFillRatio(
+    heightLevelCount,
+    diameterTypeCount,
+    slotCount40to59,
+    slotCount60Plus,
+    params.slots.length,
+  );
+
+  if (!hasPrintableGeometry) {
+    return {
+      price: 0,
+      rawPrice: 0,
+      baseFee: 0,
+      materialFee: 0,
+      printFee: 0,
+      footprintFee: 0,
+      complexityFee: 0,
+      estimatedWeight: 0,
+      estimatedPrintHours: 0,
+      fillRatio,
+      effectiveWidth: effectiveDimensions.width,
+      effectiveDepth: effectiveDimensions.depth,
+      footprintAreaMm2: effectiveDimensions.width * effectiveDimensions.depth,
+      heightLevelCount,
+      diameterTypeCount,
+      slotCount40to59,
+      slotCount60Plus,
+      hasWideSmoothing,
+      hasDisconnectDistance,
+    };
+  }
+
+  const estimatedWeight = (volume / 1000) * PRICING_CONFIG.plaDensity * fillRatio;
+  const estimatedPrintHours =
+    STEPPED_PRICING_CONFIG.estimatedPrintBaseHours +
+    estimatedWeight / STEPPED_PRICING_CONFIG.estimatedWeightPerHour +
+    STEPPED_PRICING_CONFIG.estimatedPrintHeightLevelStep *
+      Math.max(0, heightLevelCount - 3) +
+    (hasDisconnectDistance
+      ? STEPPED_PRICING_CONFIG.estimatedPrintDisconnectHours
+      : 0) +
+    STEPPED_PRICING_CONFIG.estimatedPrintHugeSlotHours * slotCount60Plus;
+  const complexityFee =
+    STEPPED_PRICING_CONFIG.complexityHeightLevelFee *
+      Math.max(0, heightLevelCount - 3) +
+    STEPPED_PRICING_CONFIG.complexityDiameterTypeFee *
+      Math.max(0, diameterTypeCount - 1) +
+    STEPPED_PRICING_CONFIG.complexityLargeSlotFee * slotCount40to59 +
+    STEPPED_PRICING_CONFIG.complexityHugeSlotFee * slotCount60Plus +
+    (hasWideSmoothing
+      ? STEPPED_PRICING_CONFIG.complexityWideSmoothingFee
+      : 0) +
+    (hasDisconnectDistance
+      ? STEPPED_PRICING_CONFIG.complexityDisconnectFee
+      : 0);
+  const footprintAreaMm2 = effectiveDimensions.width * effectiveDimensions.depth;
+  const materialFee =
+    estimatedWeight * STEPPED_PRICING_CONFIG.materialRatePerGram;
+  const printFee =
+    estimatedPrintHours * STEPPED_PRICING_CONFIG.printRatePerHour;
+  const footprintFee =
+    footprintAreaMm2 / STEPPED_PRICING_CONFIG.footprintDivisor;
+  const baseFee = STEPPED_PRICING_CONFIG.baseFee;
+  const rawPrice =
+    baseFee + materialFee + printFee + footprintFee + complexityFee;
+
+  return {
+    price: Math.round(rawPrice),
+    rawPrice,
+    baseFee,
+    materialFee,
+    printFee,
+    footprintFee,
+    complexityFee,
+    estimatedWeight,
+    estimatedPrintHours,
+    fillRatio,
+    effectiveWidth: effectiveDimensions.width,
+    effectiveDepth: effectiveDimensions.depth,
+    footprintAreaMm2,
+    heightLevelCount,
+    diameterTypeCount,
+    slotCount40to59,
+    slotCount60Plus,
+    hasWideSmoothing,
+    hasDisconnectDistance,
+  };
+}
+
 export function calculateSteppedPrice(
   params: SteppedLayoutParams,
   volume: number,
 ): number {
-  if (volume <= 0) return 0;
-  const weight = calculateWeight(volume);
-  return weight * 0.4;
+  return getSteppedPricingBreakdown(params, volume).price;
 }
 
 export function calculateSimpleSteppedPrice(

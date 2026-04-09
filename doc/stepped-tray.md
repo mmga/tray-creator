@@ -147,7 +147,8 @@
 
 ### 价格计算
 
-- `src/lib/pricing.ts` — `calculateSteppedPrice(params, volume)` — 基于体积的重量定价
+- `src/lib/pricing.ts` — `calculateSteppedPrice(params, volume)` — 已按体积估重、打印机时、有效占地和设计复杂度综合定价
+- 公式细节与样本校准见 `doc/stepped-pricing-formula.md`
 
 ---
 

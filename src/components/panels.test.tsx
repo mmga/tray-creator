@@ -600,4 +600,97 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     expect(setParams).toHaveBeenNthCalledWith(1, STEPPED_LAYOUT_DEFAULTS);
     expect(setParams).toHaveBeenNthCalledWith(2, { importedMode: "stepped" });
   });
+
+  it("shows the stepped pricing formula tooltip on hover", () => {
+    render(
+      <SteppedPanel
+        params={createSteppedParams({
+          slots: [
+            {
+              id: "slot-1",
+              x: 80,
+              y: 120,
+              shape: "circle",
+              width: 40,
+              height: 40,
+              rotation: 0,
+              groupId: "group-1",
+            },
+            {
+              id: "slot-2",
+              x: 132,
+              y: 120,
+              shape: "circle",
+              width: 60,
+              height: 60,
+              rotation: 0,
+              groupId: "group-2",
+            },
+          ],
+          groups: [
+            {
+              id: "group-1",
+              name: "组 1",
+              color: "#ef4444",
+              bottomHeight: 12,
+              useGroupSmoothingRadius: false,
+              groupSmoothingRadius: 15,
+              useGroupDisconnectDistance: false,
+              groupDisconnectDistance: 0,
+            },
+            {
+              id: "group-2",
+              name: "组 2",
+              color: "#3b82f6",
+              bottomHeight: 28,
+              useGroupSmoothingRadius: false,
+              groupSmoothingRadius: 15,
+              useGroupDisconnectDistance: false,
+              groupDisconnectDistance: 0,
+            },
+          ],
+          activeGroupId: "group-1",
+          smoothingRadius: 15,
+        })}
+        effectiveDimensions={{ width: 122, depth: 70 }}
+        isPreviewStale={false}
+        updateParam={vi.fn()}
+        setParams={vi.fn()}
+        onAddSlot={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={32000}
+        selectedSlotIds={[]}
+        onAddGroup={vi.fn()}
+        onRemoveGroup={vi.fn()}
+        onUpdateGroupHeight={vi.fn()}
+        onUpdateGroupSmoothingOverride={vi.fn()}
+        onUpdateGroupSmoothingRadius={vi.fn()}
+        onUpdateGroupDisconnectOverride={vi.fn()}
+        onUpdateGroupDisconnectDistance={vi.fn()}
+        onSetActiveGroup={vi.fn()}
+        onMoveSelectedSlotsToGroup={vi.fn()}
+        onReorderGroups={vi.fn()}
+        previewGroupId={null}
+        onPreviewGroupChange={vi.fn()}
+        bridgeWarning={null}
+        onOpenDraftDialog={vi.fn()}
+        onSaveDraft={vi.fn()}
+        currentDraftId={null}
+      />,
+    );
+
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+
+    fireEvent.mouseEnter(
+      screen.getByRole("button", { name: "查看阶梯底座报价公式" }),
+    );
+
+    expect(screen.getByRole("tooltip")).toHaveTextContent("阶梯底座报价公式");
+    expect(screen.getByRole("tooltip")).toHaveTextContent(
+      "价格 = round(1 + 0.10 × 估重 + 6.5 × 机时 + 占地 / 7000 + 复杂度)",
+    );
+    expect(screen.getByRole("tooltip")).toHaveTextContent("最终报价");
+  });
 });
