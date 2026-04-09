@@ -37,21 +37,20 @@ const STEPPED_PRICING_CONFIG = {
   materialRatePerGram: 0.1,
   printRatePerHour: 6.5,
   footprintDivisor: 7000,
-  fillRatioMin: 0.58,
-  fillRatioMax: 0.72,
-  fillRatioHeightLevelStep: 0.02,
-  fillRatioDiameterTypeStep: 0.03,
-  fillRatioLargeSlotStep: 0.02,
-  fillRatioHugeSlotStep: 0.05,
-  estimatedPrintBaseHours: 0.45,
-  estimatedWeightPerHour: 65,
-  estimatedPrintHeightLevelStep: 0.15,
-  estimatedPrintDisconnectHours: 0.1,
-  estimatedPrintHugeSlotHours: 0.05,
+  materialDensityMin: 0.28,
+  materialDensityMax: 0.38,
+  materialDensityBase: 0.34,
+  materialDensityLargeSlotBonus: 0.004,
+  materialDensityHugeSlotPenalty: 0.008,
+  estimatedPrintBaseHours: 0.25,
+  estimatedWeightPerHour: 50,
+  estimatedPrintHeightLevelStep: 0.041,
+  estimatedPrintHeightLevelStart: 4,
+  estimatedPrintHugeSlotDiscountHours: 0.03,
   complexityHeightLevelFee: 2,
   complexityDiameterTypeFee: 2,
   complexityLargeSlotFee: 0.5,
-  complexityHugeSlotFee: 5.7,
+  complexityHugeSlotFee: 5.65,
   complexityWideSmoothingFee: 3,
   complexityDisconnectFee: 1.5,
   wideSmoothingThreshold: 12,
@@ -67,7 +66,7 @@ export interface SteppedPricingBreakdown {
   complexityFee: number;
   estimatedWeight: number;
   estimatedPrintHours: number;
-  fillRatio: number;
+  materialDensityGPerCm3: number;
   effectiveWidth: number;
   effectiveDepth: number;
   footprintAreaMm2: number;
@@ -129,29 +128,18 @@ function getSteppedPricingCounts(params: SteppedLayoutParams) {
   };
 }
 
-function calculateSteppedFillRatio(
-  heightLevelCount: number,
-  diameterTypeCount: number,
+function calculateSteppedMaterialDensity(
   slotCount40to59: number,
   slotCount60Plus: number,
-  slotCount: number,
 ) {
-  if (slotCount <= 0) {
-    return STEPPED_PRICING_CONFIG.fillRatioMin;
-  }
-
   return clamp(
-    STEPPED_PRICING_CONFIG.fillRatioMin +
-      STEPPED_PRICING_CONFIG.fillRatioHeightLevelStep *
-        Math.max(0, heightLevelCount - 3) +
-      STEPPED_PRICING_CONFIG.fillRatioDiameterTypeStep *
-        Math.max(0, diameterTypeCount - 1) +
-      STEPPED_PRICING_CONFIG.fillRatioLargeSlotStep *
-        (slotCount40to59 / slotCount) +
-      STEPPED_PRICING_CONFIG.fillRatioHugeSlotStep *
-        (slotCount60Plus / slotCount),
-    STEPPED_PRICING_CONFIG.fillRatioMin,
-    STEPPED_PRICING_CONFIG.fillRatioMax,
+    STEPPED_PRICING_CONFIG.materialDensityBase +
+      STEPPED_PRICING_CONFIG.materialDensityLargeSlotBonus *
+        slotCount40to59 -
+      STEPPED_PRICING_CONFIG.materialDensityHugeSlotPenalty *
+        slotCount60Plus,
+    STEPPED_PRICING_CONFIG.materialDensityMin,
+    STEPPED_PRICING_CONFIG.materialDensityMax,
   );
 }
 
@@ -206,12 +194,9 @@ export function getSteppedPricingBreakdown(
     params,
     usedGroups,
   );
-  const fillRatio = calculateSteppedFillRatio(
-    heightLevelCount,
-    diameterTypeCount,
+  const materialDensityGPerCm3 = calculateSteppedMaterialDensity(
     slotCount40to59,
     slotCount60Plus,
-    params.slots.length,
   );
 
   if (!hasPrintableGeometry) {
@@ -225,7 +210,7 @@ export function getSteppedPricingBreakdown(
       complexityFee: 0,
       estimatedWeight: 0,
       estimatedPrintHours: 0,
-      fillRatio,
+      materialDensityGPerCm3,
       effectiveWidth: effectiveDimensions.width,
       effectiveDepth: effectiveDimensions.depth,
       footprintAreaMm2: effectiveDimensions.width * effectiveDimensions.depth,
@@ -238,16 +223,16 @@ export function getSteppedPricingBreakdown(
     };
   }
 
-  const estimatedWeight = (volume / 1000) * PRICING_CONFIG.plaDensity * fillRatio;
+  const estimatedWeight = (volume / 1000) * materialDensityGPerCm3;
   const estimatedPrintHours =
     STEPPED_PRICING_CONFIG.estimatedPrintBaseHours +
     estimatedWeight / STEPPED_PRICING_CONFIG.estimatedWeightPerHour +
     STEPPED_PRICING_CONFIG.estimatedPrintHeightLevelStep *
-      Math.max(0, heightLevelCount - 3) +
-    (hasDisconnectDistance
-      ? STEPPED_PRICING_CONFIG.estimatedPrintDisconnectHours
-      : 0) +
-    STEPPED_PRICING_CONFIG.estimatedPrintHugeSlotHours * slotCount60Plus;
+      Math.max(
+        0,
+        heightLevelCount - STEPPED_PRICING_CONFIG.estimatedPrintHeightLevelStart,
+      ) -
+    STEPPED_PRICING_CONFIG.estimatedPrintHugeSlotDiscountHours * slotCount60Plus;
   const complexityFee =
     STEPPED_PRICING_CONFIG.complexityHeightLevelFee *
       Math.max(0, heightLevelCount - 3) +
@@ -282,7 +267,7 @@ export function getSteppedPricingBreakdown(
     complexityFee,
     estimatedWeight,
     estimatedPrintHours,
-    fillRatio,
+    materialDensityGPerCm3,
     effectiveWidth: effectiveDimensions.width,
     effectiveDepth: effectiveDimensions.depth,
     footprintAreaMm2,

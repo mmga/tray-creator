@@ -88,6 +88,9 @@ function SteppedPricingFormulaTooltip({
                     <div className="mt-1 font-mono text-[10px] leading-relaxed text-[#ddd3c2]">
                         价格 = round(1 + 0.10 × 估重 + 6.5 × 机时 + 占地 / 7000 + 复杂度)
                     </div>
+                    <div className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
+                        估重 = 真实体积(cm³) × 有效打印密度(g/cm³)
+                    </div>
                     {hasGeneratedVolume ? (
                         <>
                             <div className="mt-2 text-[10px] text-muted-foreground">
@@ -117,6 +120,10 @@ function SteppedPricingFormulaTooltip({
                                 <span className="text-right font-mono text-foreground">
                                     {breakdown.complexityFee.toFixed(1)}
                                 </span>
+                                <span>打印密度</span>
+                                <span className="text-right font-mono text-foreground">
+                                    {breakdown.materialDensityGPerCm3.toFixed(3)} g/cm³
+                                </span>
                                 <span>最终报价</span>
                                 <span className="text-right font-mono font-semibold text-[#eab308]">
                                     ¥{breakdown.price.toFixed(0)}
@@ -130,7 +137,7 @@ function SteppedPricingFormulaTooltip({
                     )}
                     <div className="mt-2 border-t border-[#3d372e] pt-2 text-[10px] leading-relaxed text-muted-foreground">
                         复杂度 = 2 × 超出 3 档高度 + 2 × 超出 1 种直径 + 0.5 × 40-59mm 槽数
-                        + 5.7 × 60mm+ 槽数 + 3 × 大平滑 + 1.5 × 断连
+                        + 5.65 × 60mm+ 槽数 + 3 × 大平滑 + 1.5 × 断连
                     </div>
                 </div>
             ) : null}

@@ -2,7 +2,7 @@
 
 ## 1. 目标
 
-当前 `src/lib/pricing.ts` 对 stepped 模式仍然使用 `weight * 0.4` 的简化口径。这个公式最大的问题是只看体积估重，不看以下几个对实际成交价影响很大的因素：
+当前 `src/lib/pricing.ts` 对 stepped 模式已经改为基于模型真实体积的综合报价。之前的问题是只看体积估重，不看以下几个对实际成交价影响很大的因素：
 
 - 打印机占用时长
 - 床面占地面积
@@ -28,8 +28,8 @@
 下列变量都可以从 stepped 参数和切片结果中得到：
 
 - `volumeMm3`：模型几何体积，单位 `mm^3`
-- `weightG`：耗材重量，优先取切片器实际值；没有切片器结果时再用体积估算
-- `printHours`：打印时长，优先取切片器实际值；没有切片器结果时再用经验公式估算
+- `weightG`：由模型真实体积估算出的耗材重量
+- `printHours`：由模型真实体积与布局特征估算出的打印时长
 - `effectiveWidth` / `effectiveDepth`：由槽位外接边界 + `spacing * 2` 计算出的实际占地
 - `footprintAreaMm2 = effectiveWidth * effectiveDepth`
 - `heightLevelCount`：实际参与打印的 `bottomHeight` 档位数量
@@ -41,70 +41,47 @@
 
 注意：报价要使用实际占地，不要直接信任 JSON 文件名。文件名可能是历史导出名，参数已经被后续编辑过。
 
-## 4. 体积到耗材重量
+## 4. 真实体积到耗材重量
 
-### 4.1 优先级
-
-```text
-weightG = slicerWeightG ?? estimatedWeightG
-```
-
-如果切片器已经给出真实耗材重量，直接使用切片器数据。
-
-### 4.2 无切片器时的估重公式
+stepped 模式不使用切片器体积，也不直接信任切片器耗材重量。运行时使用 worker 返回的真实几何体积 `measureVolume(geometry)` 作为唯一体积输入。
 
 ```text
-estimatedWeightG = (volumeMm3 / 1000) * 1.24 * fillRatio
-```
-
-- `1.24` 为 PLA 密度，单位 `g/cm^3`
-- `fillRatio` 不再固定写死为 `0.60`
-
-建议使用下式作为 stepped 模式的 `fillRatio`：
-
-```text
-fillRatio =
+materialDensityGPerCm3 =
   clamp(
-    0.58
-    + 0.02 * max(0, heightLevelCount - 3)
-    + 0.03 * max(0, diameterTypeCount - 1)
-    + 0.02 * (slotCount40to59 / slotCount)
-    + 0.05 * (slotCount60Plus / slotCount),
-    0.58,
-    0.72
+    0.34
+    + 0.004 * slotCount40to59
+    - 0.008 * slotCount60Plus,
+    0.28,
+    0.38
   )
+
+estimatedWeightG = (volumeMm3 / 1000) * materialDensityGPerCm3
 ```
 
 说明：
 
-- 基础值从 `0.60` 下调到 `0.58`，避免普通 stepped 托盘在轻量布局上估重偏高
-- 多高度层级越多，通常意味着周边包裹和柱体过渡更多，实际用料比固定填充率更高
-- 大底座越多，外围轮廓更厚、更平滑，耗材占比也会更高
-
-如果 `slotCount = 0`，则 `estimatedWeightG = 0`。
+- 这里的 `materialDensityGPerCm3` 是“有效打印密度”，不是实心 PLA 密度
+- 因为 stepped 模式的真实体积是实心几何体积，而实际打印是壳层 + 填充，所以换算后的有效密度会远低于 `1.24 g/cm³`
+- `40-59mm` 槽位会略微抬高单位体积用料
+- `60mm+` 大底座会降低单位体积对应的实际耗材重量，因为它们通常带来更大的内部空腔比例
 
 ## 5. 打印时长
 
-### 5.1 优先级
-
-```text
-printHours = slicerHours ?? estimatedHours
-```
-
-### 5.2 无切片器时的经验公式
+### 5.1 经验公式
 
 ```text
 estimatedHours =
-  0.45
-  + weightG / 65
-  + 0.15 * max(0, heightLevelCount - 3)
-  + 0.10 * I(disconnectDistance > 0)
-  + 0.05 * slotCount60Plus
+  0.25
+  + weightG / 50
+  + 0.041 * max(0, heightLevelCount - 4)
+  - 0.03 * slotCount60Plus
 ```
 
-其中 `I(...)` 为指示函数，条件成立取 `1`，否则取 `0`。
+说明：
 
-这个公式的定位不是替代切片器，而是在没有切片结果时给价格公式提供一个稳定、可解释的机时输入。
+- `weightG / 50` 提供主要机时估算
+- 当高度档位超过 4 档后，打印管理成本继续上升，因此额外加时
+- `60mm+` 大槽位虽然单件大，但会降低部分单位重量的走刀碎片化，因此做小幅扣减
 
 ## 6. 报价公式
 
@@ -115,7 +92,7 @@ complexityFee =
   2.0 * max(0, heightLevelCount - 3)
   + 2.0 * max(0, diameterTypeCount - 1)
   + 0.5 * slotCount40to59
-  + 5.7 * slotCount60Plus
+  + 5.65 * slotCount60Plus
   + 3.0 * I(smoothingRadius >= 12)
   + 1.5 * I(disconnectDistance > 0)
 ```
@@ -160,7 +137,7 @@ price = round(priceRaw)
 - 关键特征：4 档高度、2 种直径、3 个 40mm 槽、`disconnectDistance = 10`
 
 ```text
-complexityFee = 2*1 + 2*1 + 0.5*3 + 5.7*0 + 0 + 1.5 = 7.0
+complexityFee = 2*1 + 2*1 + 0.5*3 + 5.65*0 + 0 + 1.5 = 7.0
 priceRaw = 1 + 0.10*112 + 6.5*2.483 + 236*109/7000 + 7.0
          ≈ 39.02
 price    = 39
@@ -175,7 +152,7 @@ price    = 39
 - 关键特征：5 档高度、单一直径、`smoothingRadius = 15`
 
 ```text
-complexityFee = 2*2 + 2*0 + 0.5*0 + 5.7*0 + 3 + 0 = 7.0
+complexityFee = 2*2 + 2*0 + 0.5*0 + 5.65*0 + 3 + 0 = 7.0
 priceRaw = 1 + 0.10*108 + 6.5*2.45 + 188*107/7000 + 7.0
          ≈ 37.60
 price    = 38
@@ -192,19 +169,19 @@ price    = 38
 - 关键特征：6 档高度、2 种直径、3 个 60mm 槽、`smoothingRadius = 15`
 
 ```text
-complexityFee = 2*3 + 2*1 + 0.5*0 + 5.7*3 + 3 + 0 = 28.1
-priceRaw = 1 + 0.10*192 + 6.5*4 + 222*173/7000 + 28.1
-         ≈ 79.79
+complexityFee = 2*3 + 2*1 + 0.5*0 + 5.65*3 + 3 + 0 = 27.95
+priceRaw = 1 + 0.10*192 + 6.5*4 + 222*173/7000 + 27.95
+         ≈ 79.64
 price    = 80
 ```
 
 ## 8. 建议的实现顺序
 
-后续如果要把这份方案落到代码里，建议顺序如下：
+后续如果还要继续细化这份方案，建议顺序如下：
 
 1. stepped 模式先改，grid/custom 先不动
 2. UI 同时展示 `估重 / 机时 / 占地 / 复杂度` 的分项，避免用户只看到单个总价
-3. 如果有切片器结果，优先用切片器重量和时长覆盖经验估算
+3. 保持以真实几何体积 `measureVolume` 为单一体积输入，不要混入切片器体积口径
 4. 报价先保留整数元，不要提前做更复杂的心理价位处理
 
 ## 9. 暂不纳入本版公式的因素

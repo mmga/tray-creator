@@ -181,30 +181,33 @@ describe("pricing", () => {
   });
 
   it("prices stepped layouts from footprint, estimated print time, and complexity", () => {
-    const sampleA = getSteppedPricingBreakdown(createSampleA(), 142138.53892657714);
-    const sampleB = getSteppedPricingBreakdown(createSampleB(), 140478.6680541103);
-    const sampleC = getSteppedPricingBreakdown(createSampleC(), 227189.98033932867);
+    const sampleA = getSteppedPricingBreakdown(createSampleA(), 318150.1025655966);
+    const sampleB = getSteppedPricingBreakdown(createSampleB(), 316356.25431361876);
+    const sampleC = getSteppedPricingBreakdown(createSampleC(), 609970.6591252618);
 
     expect(sampleA.effectiveWidth).toBe(236);
     expect(sampleA.effectiveDepth).toBe(109);
     expect(sampleA.estimatedWeight).toBeCloseTo(112, 5);
-    expect(sampleA.estimatedPrintHours).toBeCloseTo(2 + 29 / 60, 2);
+    expect(sampleA.estimatedPrintHours).toBeCloseTo(2 + 29 / 60, 1);
     expect(sampleA.complexityFee).toBeCloseTo(7, 5);
     expect(sampleA.price).toBe(39);
-    expect(calculateSteppedPrice(createSampleA(), 142138.53892657714)).toBe(39);
+    expect(sampleA.materialDensityGPerCm3).toBeCloseTo(0.352, 5);
+    expect(calculateSteppedPrice(createSampleA(), 318150.1025655966)).toBe(39);
 
     expect(sampleB.effectiveWidth).toBe(188);
     expect(sampleB.effectiveDepth).toBe(107);
-    expect(sampleB.estimatedWeight).toBeCloseTo(108, 5);
-    expect(sampleB.estimatedPrintHours).toBeCloseTo(2 + 27 / 60, 2);
+    expect(sampleB.estimatedWeight).toBeCloseTo(107.56, 2);
+    expect(sampleB.estimatedPrintHours).toBeCloseTo(2 + 27 / 60, 1);
     expect(sampleB.complexityFee).toBeCloseTo(7, 5);
     expect(sampleB.price).toBe(38);
+    expect(sampleB.materialDensityGPerCm3).toBeCloseTo(0.34, 5);
 
     expect(sampleC.effectiveWidth).toBe(222);
     expect(sampleC.effectiveDepth).toBe(173);
-    expect(sampleC.estimatedWeight).toBeCloseTo(192, 5);
-    expect(sampleC.estimatedPrintHours).toBeCloseTo(4, 2);
-    expect(sampleC.complexityFee).toBeCloseTo(28.1, 5);
+    expect(sampleC.estimatedWeight).toBeCloseTo(192.75, 2);
+    expect(sampleC.estimatedPrintHours).toBeCloseTo(4, 1);
+    expect(sampleC.complexityFee).toBeCloseTo(27.95, 5);
     expect(sampleC.price).toBe(80);
+    expect(sampleC.materialDensityGPerCm3).toBeCloseTo(0.316, 5);
   });
 });

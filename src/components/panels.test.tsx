@@ -691,6 +691,9 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     expect(screen.getByRole("tooltip")).toHaveTextContent(
       "价格 = round(1 + 0.10 × 估重 + 6.5 × 机时 + 占地 / 7000 + 复杂度)",
     );
+    expect(screen.getByRole("tooltip")).toHaveTextContent(
+      "估重 = 真实体积(cm³) × 有效打印密度(g/cm³)",
+    );
     expect(screen.getByRole("tooltip")).toHaveTextContent("最终报价");
   });
 });
