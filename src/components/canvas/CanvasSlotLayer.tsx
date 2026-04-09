@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { getSlotTolerance } from "@/lib/config";
 import { getSlotLabelRotation } from "@/lib/canvas-slot-geometry";
 import type { CanvasCollisionState } from "@/lib/canvas-collision-model";
@@ -26,7 +27,7 @@ interface CanvasSlotLayerProps {
   ) => void;
 }
 
-export function CanvasSlotLayer({
+export const CanvasSlotLayer = memo(function CanvasSlotLayer({
   slots,
   trayDepth,
   spacing,
@@ -219,4 +220,4 @@ export function CanvasSlotLayer({
       })}
     </>
   );
-}
+});

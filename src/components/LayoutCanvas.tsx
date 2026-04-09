@@ -47,7 +47,6 @@ interface LayoutCanvasProps {
   params: CustomLayoutParams | SteppedLayoutParams;
   onUpdateSlot: (id: string, x: number, y: number) => void;
   onRemoveSlot: (id: string) => void;
-  onResizeTray?: (width: number, depth: number) => void;
   onUpdateSlotRotation?: (id: string, rotation: number) => void;
   onUpdateMultipleSlots?: (updates: CanvasSlotUpdate[]) => void;
   onLiveUpdateMultipleSlots?: (updates: CanvasSlotUpdate[]) => void;

@@ -1,5 +1,7 @@
 "use client";
 
+import { memo } from "react";
+
 import type { CanvasCollisionState } from "@/lib/canvas-collision-model";
 import type { CanvasEffectiveBaseplate } from "@/lib/canvas-slot-geometry";
 import type { CanvasGuideLine } from "@/lib/canvas-types";
@@ -27,7 +29,7 @@ interface CanvasOverlayLayerProps {
   outlinePreview?: GroupOutlinePreview[] | null;
 }
 
-export function CanvasOverlayLayer({
+export const CanvasOverlayLayer = memo(function CanvasOverlayLayer({
   trayWidth,
   trayDepth,
   zoom,
@@ -207,4 +209,4 @@ export function CanvasOverlayLayer({
       })}
     </>
   );
-}
+});

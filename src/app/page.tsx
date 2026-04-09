@@ -172,21 +172,6 @@ export default function Home() {
               params={model.params}
               onUpdateSlot={model.updateSlotPosition}
               onRemoveSlot={model.removeSlot}
-              onResizeTray={(width, depth) => {
-                if (mode === "stepped") {
-                  steppedModel.setParams((prev) => ({
-                    ...prev,
-                    trayWidth: width,
-                    trayDepth: depth,
-                  }));
-                  return;
-                }
-                customModel.setParams((prev) => ({
-                  ...prev,
-                  trayWidth: width,
-                  trayDepth: depth,
-                }));
-              }}
               onUpdateSlotRotation={model.updateSlotRotation}
               onUpdateMultipleSlots={model.updateMultipleSlots}
               onLiveUpdateMultipleSlots={model.updateMultipleSlotsLive}

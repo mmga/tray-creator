@@ -1,7 +1,7 @@
 import { getSlotTolerance } from "@/lib/config";
+import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
 import {
   calculateSteppedEffectiveDimensions,
-  getSteppedSlotBoundingHalfSize,
   type SteppedLayoutExtents,
 } from "@/lib/stepped-layout-math";
 import type { IdFactory } from "@/lib/model-ports";
@@ -45,7 +45,11 @@ export function addSteppedSlot(
 
   if (params.slots.length > 0) {
     const lastSlot = params.slots[params.slots.length - 1];
-    const lastHalf = getSteppedSlotBoundingHalfSize(lastSlot);
+    const lastHalf = getEllipseBoundingBox(
+      lastSlot.width,
+      lastSlot.height,
+      lastSlot.rotation,
+    );
     nextX = lastSlot.x + lastHalf.halfW + params.spacing + newSlotHalfW;
     nextY = lastSlot.y;
   }

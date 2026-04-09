@@ -1,32 +1,14 @@
-import { getSlotTolerance } from "@/lib/config";
-import type { FreeSlot, SteppedLayoutParams } from "@/types/custom-tray";
+import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
+import type { LayoutExtents } from "@/lib/custom-layout-math";
+import type { SteppedLayoutParams } from "@/types/custom-tray";
 
-export interface SteppedLayoutExtents {
-  width: number;
-  depth: number;
-  minX: number;
-  maxX: number;
-  minY: number;
-  maxY: number;
-}
-
-export function getSteppedSlotBoundingHalfSize(slot: FreeSlot) {
-  const rad = (slot.rotation * Math.PI) / 180;
-  const a = (slot.width + getSlotTolerance(slot.width)) / 2;
-  const b = (slot.height + getSlotTolerance(slot.height)) / 2;
-  const halfW = Math.sqrt(
-    Math.pow(a * Math.cos(rad), 2) + Math.pow(b * Math.sin(rad), 2),
-  );
-  const halfH = Math.sqrt(
-    Math.pow(a * Math.sin(rad), 2) + Math.pow(b * Math.cos(rad), 2),
-  );
-
-  return { halfW, halfH };
-}
+// SteppedLayoutExtents has the same shape as LayoutExtents — re-export to
+// avoid duplicating the interface definition.
+export type { LayoutExtents as SteppedLayoutExtents } from "@/lib/custom-layout-math";
 
 export function calculateSteppedEffectiveDimensions(
   params: SteppedLayoutParams,
-): SteppedLayoutExtents {
+): LayoutExtents {
   const boundarySpacing = params.spacing;
   if (params.slots.length === 0) {
     return {
@@ -45,7 +27,11 @@ export function calculateSteppedEffectiveDimensions(
   let maxY = -Infinity;
 
   params.slots.forEach((slot) => {
-    const { halfW, halfH } = getSteppedSlotBoundingHalfSize(slot);
+    const { halfW, halfH } = getEllipseBoundingBox(
+      slot.width,
+      slot.height,
+      slot.rotation,
+    );
     minX = Math.min(minX, slot.x - halfW);
     maxX = Math.max(maxX, slot.x + halfW);
     minY = Math.min(minY, slot.y - halfH);

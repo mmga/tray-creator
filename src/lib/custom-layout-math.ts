@@ -1,5 +1,5 @@
-import { getSlotTolerance } from "@/lib/config";
-import type { CustomLayoutParams, FreeSlot } from "@/types/custom-tray";
+import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
+import type { CustomLayoutParams } from "@/types/custom-tray";
 
 export interface LayoutExtents {
   width: number;
@@ -18,20 +18,6 @@ export function resolveCustomBoundarySpacing(
   }
 
   return params.spacing;
-}
-
-export function getCustomSlotBoundingHalfSize(slot: FreeSlot) {
-  const rad = (slot.rotation * Math.PI) / 180;
-  const a = (slot.width + getSlotTolerance(slot.width)) / 2;
-  const b = (slot.height + getSlotTolerance(slot.height)) / 2;
-  const halfW = Math.sqrt(
-    Math.pow(a * Math.cos(rad), 2) + Math.pow(b * Math.sin(rad), 2),
-  );
-  const halfH = Math.sqrt(
-    Math.pow(a * Math.sin(rad), 2) + Math.pow(b * Math.cos(rad), 2),
-  );
-
-  return { halfW, halfH };
 }
 
 export function calculateCustomEffectiveDimensions(
@@ -55,7 +41,11 @@ export function calculateCustomEffectiveDimensions(
   let maxY = -Infinity;
 
   params.slots.forEach((slot) => {
-    const { halfW, halfH } = getCustomSlotBoundingHalfSize(slot);
+    const { halfW, halfH } = getEllipseBoundingBox(
+      slot.width,
+      slot.height,
+      slot.rotation,
+    );
     minX = Math.min(minX, slot.x - halfW);
     maxX = Math.max(maxX, slot.x + halfW);
     minY = Math.min(minY, slot.y - halfH);
