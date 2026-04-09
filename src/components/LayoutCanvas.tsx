@@ -27,14 +27,16 @@ const ACTION_PANEL_TAB_RAIL_WIDTH = EDIT_SIDEBAR_RAIL_WIDTH;
 
 type SlotUpdate = { id: string; x: number; y: number; rotation?: number };
 
-function normalizeTextAngle(angle: number) {
+function normalizeDisplayAngle(angle: number) {
   const normalized = ((angle + 180) % 360 + 360) % 360 - 180;
   return normalized === -180 ? 180 : normalized;
 }
 
-function getReadableTextCompensation(slotRotation: number) {
-  const renderedAngle = normalizeTextAngle(-slotRotation);
-  return renderedAngle > 90 || renderedAngle < -90 ? 180 : 0;
+function getSlotLabelRotation(slotRotation: number) {
+  const geometryAngle = normalizeDisplayAngle(-slotRotation);
+  return geometryAngle > 90 || geometryAngle < -90
+    ? normalizeDisplayAngle(geometryAngle + 180)
+    : geometryAngle;
 }
 
 interface LayoutCanvasProps {
@@ -1073,105 +1075,107 @@ export default function LayoutCanvas({
               const groupColor = isSteppedSlot
                 ? (groupMeta?.color ?? "#86efac")
                 : null;
-              const textRotation = getReadableTextCompensation(slot.rotation);
+              const labelRotation = getSlotLabelRotation(slot.rotation);
 
               return (
                 <g
                   key={slot.id}
-                  transform={`translate(${slot.x}, ${svgY}) rotate(${-slot.rotation})`} // Rotation! Note: SVG Y is inverted, so maybe rotation direction needs care. -Rotation fits typical 2D intuition if Y is up.
+                  transform={`translate(${slot.x}, ${svgY})`}
                   onPointerDown={(e) => handlePointerDown(e, slot.id)}
                   onPointerEnter={() => setHoveredId(slot.id)}
                   onPointerLeave={() => setHoveredId(null)}
                   className={`transition-opacity duration-200 ${isSpacePressed ? '' : 'cursor-move'}`}
                   style={{ opacity: (isDragging ? 0.9 : 1) * (isDimmedByGroupFocus ? 0.18 : 1) }}
                 >
-                  {/* Margin / Safe Area Indicator - colored by group for stepped mode */}
-                  <ellipse
-                    rx={w / 2 + spacing}
-                    ry={h / 2 + spacing}
-                    fill="none"
-                    stroke={isColliding ? "#ef4444" : isInvolvedViaOther ? "#ef4444" : (groupColor ?? "#888")}
-                    strokeWidth={0.25 / zoom}
-                    strokeDasharray="2 2"
-                    opacity={isColliding ? 1 : isInvolvedViaOther ? 0.7 : (groupColor ? 0.5 : 0.6)}
-                    pointerEvents="none"
-                  />
-
-                  {/* Highlight Halo - Inside - Show if Hovered/Dragging/Colliding (Selection uses fill color) */}
-                  {(isColliding || isInvolvedViaOther || isHovered || isDragging) && (
+                  <g transform={`rotate(${-slot.rotation})`}>
+                    {/* Margin / Safe Area Indicator - colored by group for stepped mode */}
                     <ellipse
-                      rx={Math.max(0, w / 2 - 0.5 / zoom)}
-                      ry={Math.max(0, h / 2 - 0.5 / zoom)}
+                      rx={w / 2 + spacing}
+                      ry={h / 2 + spacing}
                       fill="none"
-                      stroke={isColliding || isInvolvedViaOther ? "#ef4444" : "#fbbf24"}
-                      strokeWidth={0.8 / zoom}
-                      strokeOpacity={0.8}
+                      stroke={isColliding ? "#ef4444" : isInvolvedViaOther ? "#ef4444" : (groupColor ?? "#888")}
+                      strokeWidth={0.25 / zoom}
+                      strokeDasharray="2 2"
+                      opacity={isColliding ? 1 : isInvolvedViaOther ? 0.7 : (groupColor ? 0.5 : 0.6)}
                       pointerEvents="none"
                     />
-                  )}
 
-                  {/* Slot Shape */}
-                  <ellipse
-                    rx={w / 2}
-                    ry={h / 2}
-                    fill={isSteppedSlot
-                      ? (isSelected ? "#f97316" : (groupColor ?? bhLabelColor))
-                      : color}
-                    fillOpacity={0.85}
-                    stroke={isColliding || isInvolvedViaOther ? "#ef4444"
-                      : isSteppedSlot ? (groupColor ? groupColor + "cc" : "#fff")
-                        : "#fff"}
-                    strokeWidth={(isColliding || isInvolvedViaOther ? 0.5 : isSteppedSlot ? 0.4 : 0.2) / zoom}
-                  />
+                    {/* Highlight Halo - Inside - Show if Hovered/Dragging/Colliding (Selection uses fill color) */}
+                    {(isColliding || isInvolvedViaOther || isHovered || isDragging) && (
+                      <ellipse
+                        rx={Math.max(0, w / 2 - 0.5 / zoom)}
+                        ry={Math.max(0, h / 2 - 0.5 / zoom)}
+                        fill="none"
+                        stroke={isColliding || isInvolvedViaOther ? "#ef4444" : "#fbbf24"}
+                        strokeWidth={0.8 / zoom}
+                        strokeOpacity={0.8}
+                        pointerEvents="none"
+                      />
+                    )}
 
-                  {/* Size Text */}
-                  <text
-                    dy={isSteppedSlot ? -Math.min(w, h) * 0.12 : Math.min(w, h) * 0.2}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    fontSize={Math.min(w, h, 24) / 2}
-                    fill="#fff"
-                    fontWeight="bold"
-                    pointerEvents="none"
-                    transform={textRotation !== 0 ? `rotate(${textRotation})` : undefined}
-                    style={{ userSelect: 'none' }}
-                  >
-                    {slot.width === slot.height ? slot.width : `${slot.width}x${slot.height}`}
-                  </text>
+                    {/* Slot Shape */}
+                    <ellipse
+                      rx={w / 2}
+                      ry={h / 2}
+                      fill={isSteppedSlot
+                        ? (isSelected ? "#f97316" : (groupColor ?? bhLabelColor))
+                        : color}
+                      fillOpacity={0.85}
+                      stroke={isColliding || isInvolvedViaOther ? "#ef4444"
+                        : isSteppedSlot ? (groupColor ? groupColor + "cc" : "#fff")
+                          : "#fff"}
+                      strokeWidth={(isColliding || isInvolvedViaOther ? 0.5 : isSteppedSlot ? 0.4 : 0.2) / zoom}
+                    />
 
-                  {/* Rotation Handle - Only show when SELECTED and NOT a circle */}
-                  {isSelected && Math.abs(slot.width - slot.height) > 0.01 && (
-                    <g
-                      transform={`translate(${w / 2 + spacing + 4}, 0)`}
-                      onPointerDown={(e) => handleRotateMouseDown(e, slot)}
-                      className="cursor-pointer"
-                      style={{ cursor: 'grab' }}
+                    {/* Rotation Handle - Only show when SELECTED and NOT a circle */}
+                    {isSelected && Math.abs(slot.width - slot.height) > 0.01 && (
+                      <g
+                        transform={`translate(${w / 2 + spacing + 4}, 0)`}
+                        onPointerDown={(e) => handleRotateMouseDown(e, slot)}
+                        className="cursor-pointer"
+                        style={{ cursor: 'grab' }}
+                      >
+                        {/* Transparent bigger hit area */}
+                        <circle
+                          r={6 / zoom}
+                          fill="transparent"
+                        />
+                        {/* Connection Line - Solid */}
+                        <line
+                          x1={-(4 + spacing)}
+                          y1={0}
+                          x2={0}
+                          y2={0}
+                          stroke="#fff"
+                          strokeWidth={0.5 / zoom}
+                          pointerEvents="none"
+                        />
+                        {/* Handle Circle - Smaller & Solid */}
+                        <circle
+                          r={1.5 / zoom}
+                          fill="#fff"
+                          stroke="#2a2a2e"
+                          strokeWidth={0.5 / zoom}
+                          pointerEvents="none"
+                        />
+                      </g>
+                    )}
+                  </g>
+
+                  <g transform={labelRotation !== 0 ? `rotate(${labelRotation})` : undefined}>
+                    <text
+                      dy={isSteppedSlot ? -Math.min(w, h) * 0.12 : Math.min(w, h) * 0.2}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fontSize={Math.min(w, h, 24) / 2}
+                      fill="#fff"
+                      fontWeight="bold"
+                      pointerEvents="none"
+                      style={{ userSelect: 'none' }}
                     >
-                      {/* Transparent bigger hit area */}
-                      <circle
-                        r={6 / zoom}
-                        fill="transparent"
-                      />
-                      {/* Connection Line - Solid */}
-                      <line
-                        x1={-(4 + spacing)}
-                        y1={0}
-                        x2={0}
-                        y2={0}
-                        stroke="#fff"
-                        strokeWidth={0.5 / zoom}
-                        pointerEvents="none"
-                      />
-                      {/* Handle Circle - Smaller & Solid */}
-                      <circle
-                        r={1.5 / zoom}
-                        fill="#fff"
-                        stroke="#2a2a2e"
-                        strokeWidth={0.5 / zoom}
-                        pointerEvents="none"
-                      />
-                    </g>
-                  )}
+                      {slot.width === slot.height ? slot.width : `${slot.width}x${slot.height}`}
+                    </text>
+                  </g>
                 </g>
               );
           })}
