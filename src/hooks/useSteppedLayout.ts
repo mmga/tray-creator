@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useCallback, useRef, useMemo } from "react";
+import { startTransition, useState, useCallback, useRef, useMemo, useDeferredValue, useEffect } from "react";
 import type {
   SteppedLayoutParams,
-  SteppedSlot,
   FreeSlot,
+  SteppedSlot,
   SlotGroup,
   GroupOutlinePreview,
 } from "@/types/custom-tray";
@@ -14,19 +14,17 @@ import {
   getSlotTolerance,
 } from "@/lib/config";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
+import { recordPerfSample } from "@/lib/perf";
 import { useUndoHistory } from "@/hooks/useUndoHistory";
 import { trayWorkerService } from "@/lib/worker/worker-service";
 import { useToast } from "@/hooks/useToast";
 import type * as THREE from "three";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
-import { generateOutline } from "@/lib/outline-geometry";
 import { downloadParamFile } from "@/lib/param-io";
 import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
 import {
   analyzeBridgeWarning,
-  clusterConnectivityCircles,
   getConnectivityRadius,
-  getEffectiveBridgeGap,
   type BridgeWarning,
   type ConnectivityCircle,
 } from "@/lib/stepped-connectivity";
@@ -34,6 +32,7 @@ import {
   createGroupStructureOverrides,
   getEffectiveGroupStructureParams,
 } from "@/lib/stepped-group-params";
+import { buildSteppedOutlinePreview } from "@/lib/stepped-outline-preview";
 
 export interface UseSteppedLayoutReturn {
   params: SteppedLayoutParams;
@@ -46,6 +45,9 @@ export interface UseSteppedLayoutReturn {
   removeSlot: (id: string) => void;
   updateSlotPosition: (id: string, x: number, y: number) => void;
   updateMultipleSlots: (
+    updates: { id: string; x: number; y: number; rotation?: number }[],
+  ) => void;
+  updateMultipleSlotsLive: (
     updates: { id: string; x: number; y: number; rotation?: number }[],
   ) => void;
   updateSlotRotation: (id: string, rotation: number) => void;
@@ -81,6 +83,8 @@ export interface UseSteppedLayoutReturn {
   isGenerating: boolean;
   isPreviewStale: boolean;
   bridgeWarning: BridgeWarning | null;
+  pauseOutlinePreview: () => void;
+  resumeOutlinePreview: () => void;
   handleGenerate: () => void;
   handleExportSTL: () => void;
   // 2D 分组轮廓预览
@@ -107,6 +111,13 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
   paramsRef.current = params;
   const [isPreviewStale, setIsPreviewStale] = useState(false);
   const paramsVersionRef = useRef(0);
+  const [isOutlinePreviewPaused, setIsOutlinePreviewPaused] = useState(false);
+  const [outlinePreviewParams, setOutlinePreviewParams] =
+    useState<SteppedLayoutParams>(STEPPED_LAYOUT_DEFAULTS);
+  const deferredOutlineParams = useDeferredValue(outlinePreviewParams);
+  const [outlinePreview, setOutlinePreview] =
+    useState<GroupOutlinePreview[] | null>(null);
+  const outlinePreviewRequestSeqRef = useRef(0);
 
   const invalidatePreview = useCallback(() => {
     paramsVersionRef.current += 1;
@@ -144,8 +155,8 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     return { halfW, halfH };
   }, []);
 
-  const calculateEffectiveDimensions = useCallback(() => {
-    const current = paramsRef.current;
+  const calculateEffectiveDimensions = useCallback(
+    (current: SteppedLayoutParams = paramsRef.current) => {
     const boundarySpacing = current.spacing;
     if (current.slots.length === 0) {
       return { width: 0, depth: 0, minX: 0, maxX: 0, minY: 0, maxY: 0 };
@@ -172,11 +183,13 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
       minY,
       maxY,
     };
-  }, [getSlotBoundingHalfSize]);
+    },
+    [getSlotBoundingHalfSize],
+  );
 
   const effectiveDimensions = useMemo(
-    () => calculateEffectiveDimensions(),
-    [calculateEffectiveDimensions],
+    () => calculateEffectiveDimensions(params),
+    [calculateEffectiveDimensions, params],
   );
 
   const saveSnapshot = useCallback(() => {
@@ -264,10 +277,32 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     [invalidatePreview],
   );
 
-  const updateMultipleSlots = useCallback(
-    (updates: { id: string; x: number; y: number; rotation?: number }[]) => {
+  useEffect(() => {
+    if (isOutlinePreviewPaused) {
+      return;
+    }
+
+    setOutlinePreviewParams(params);
+  }, [isOutlinePreviewPaused, params]);
+
+  const pauseOutlinePreview = useCallback(() => {
+    setIsOutlinePreviewPaused(true);
+  }, []);
+
+  const resumeOutlinePreview = useCallback(() => {
+    setIsOutlinePreviewPaused(false);
+  }, []);
+
+  const applyMultipleSlotUpdates = useCallback(
+    (
+      updates: { id: string; x: number; y: number; rotation?: number }[],
+      saveHistory: boolean,
+    ) => {
       internalSetParams((prev) => {
-        pushState(prev);
+        if (saveHistory) {
+          pushState(prev);
+        }
+
         const updatesMap = new Map(updates.map((u) => [u.id, u]));
         return {
           ...prev,
@@ -287,6 +322,20 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
       invalidatePreview();
     },
     [invalidatePreview, pushState],
+  );
+
+  const updateMultipleSlots = useCallback(
+    (updates: { id: string; x: number; y: number; rotation?: number }[]) => {
+      applyMultipleSlotUpdates(updates, true);
+    },
+    [applyMultipleSlotUpdates],
+  );
+
+  const updateMultipleSlotsLive = useCallback(
+    (updates: { id: string; x: number; y: number; rotation?: number }[]) => {
+      applyMultipleSlotUpdates(updates, false);
+    },
+    [applyMultipleSlotUpdates],
   );
 
   const updateSlotRotation = useCallback(
@@ -523,7 +572,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
       if (prev.slots.length === 0) return prev;
       pushState(prev);
 
-      const dims = calculateEffectiveDimensions();
+      const dims = calculateEffectiveDimensions(prev);
       if (dims.width <= 0 || dims.depth <= 0) return prev;
 
       const newTrayWidth = dims.width;
@@ -628,32 +677,129 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     toast,
   ]);
 
-  // 自动计算分组轮廓预览（每组纳入更高组作上下文，匹配 3D 建模逻辑）
-  const outlinePreviewAuto = useMemo<GroupOutlinePreview[] | null>(() => {
-    if (params.slots.length === 0 || params.groups.length === 0) return null;
+  useEffect(() => {
+    const requestSeq = outlinePreviewRequestSeqRef.current + 1;
+    outlinePreviewRequestSeqRef.current = requestSeq;
+    if (
+      deferredOutlineParams.slots.length === 0 ||
+      deferredOutlineParams.groups.length === 0
+    ) {
+      startTransition(() => {
+        setOutlinePreview(null);
+      });
+      return;
+    }
 
-    const result: GroupOutlinePreview[] = [];
+    let isCancelled = false;
+    const applyOutlinePreview = (nextPreview: GroupOutlinePreview[] | null) => {
+      if (
+        isCancelled ||
+        outlinePreviewRequestSeqRef.current !== requestSeq
+      ) {
+        return;
+      }
 
-    for (const group of params.groups) {
-      const ownSlots = params.slots.filter((s) => s.groupId === group.id);
-      if (ownSlots.length === 0) continue;
-      const effectiveParams = getEffectiveGroupStructureParams(group, params);
-      const effectiveBridgeGap = getEffectiveBridgeGap(
-        effectiveParams.smoothingRadius,
-        effectiveParams.disconnectDistance,
-      );
+      startTransition(() => {
+        setOutlinePreview(nextPreview);
+      });
+    };
 
-      // 纳入所有高度严格更高的组的凹槽作为轮廓上下文（与 3D 建模保持一致）
-      // 这样低组的轮廓自然包裹更高组的圆柱脚印，体现平滑过渡效果
-      const higherSlots = params.slots.filter((s) => {
-        if (s.groupId === group.id) return false;
-        const otherGroup = params.groups.find((g) => g.id === s.groupId);
-        return otherGroup && otherGroup.bottomHeight > group.bottomHeight;
+    const runOutlinePreview = async () => {
+      try {
+        if (trayWorkerService) {
+          const result =
+            await trayWorkerService.generateSteppedOutlinePreview(
+              deferredOutlineParams,
+            );
+          if (result.durationMs >= 0) {
+            recordPerfSample("stepped.outline", result.durationMs);
+          }
+          applyOutlinePreview(result.outlinePreview);
+          return;
+        }
+
+        const startedAt =
+          typeof performance !== "undefined" ? performance.now() : 0;
+        const nextPreview =
+          buildSteppedOutlinePreview(deferredOutlineParams);
+        if (typeof performance !== "undefined") {
+          recordPerfSample(
+            "stepped.outline",
+            performance.now() - startedAt,
+          );
+        }
+        applyOutlinePreview(nextPreview);
+      } catch (err) {
+        if (
+          isCancelled ||
+          outlinePreviewRequestSeqRef.current !== requestSeq
+        ) {
+          return;
+        }
+
+        console.error("轮廓预览生成失败:", err);
+      }
+    };
+
+    void runOutlinePreview();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [deferredOutlineParams]);
+
+  const bridgeWarning = useMemo<BridgeWarning | null>(() => {
+    const slotsByGroupId = new Map<string, SteppedSlot[]>();
+
+    params.slots.forEach((slot) => {
+      const groupedSlots = slotsByGroupId.get(slot.groupId);
+      if (groupedSlots) {
+        groupedSlots.push(slot);
+      } else {
+        slotsByGroupId.set(slot.groupId, [slot]);
+      }
+    });
+
+    const higherSlotsByGroupId = new Map<string, SteppedSlot[]>();
+    const groupsByHeightDesc = [...params.groups].sort(
+      (a, b) => b.bottomHeight - a.bottomHeight,
+    );
+    let higherSlots: SteppedSlot[] = [];
+
+    for (let index = 0; index < groupsByHeightDesc.length; ) {
+      const currentHeight = groupsByHeightDesc[index].bottomHeight;
+      const sameHeightGroups: typeof groupsByHeightDesc = [];
+
+      while (
+        index < groupsByHeightDesc.length &&
+        groupsByHeightDesc[index].bottomHeight === currentHeight
+      ) {
+        sameHeightGroups.push(groupsByHeightDesc[index]);
+        index += 1;
+      }
+
+      sameHeightGroups.forEach((group) => {
+        higherSlotsByGroupId.set(group.id, higherSlots);
       });
 
-      const connectivityCircles: ConnectivityCircle[] = [
+      const sameHeightSlots = sameHeightGroups.flatMap(
+        (group) => slotsByGroupId.get(group.id) ?? [],
+      );
+      higherSlots = [...higherSlots, ...sameHeightSlots];
+    }
+
+    const groupsByHeightAsc = [...params.groups].sort(
+      (a, b) => a.bottomHeight - b.bottomHeight,
+    );
+
+    for (const group of groupsByHeightAsc) {
+      const ownSlots = slotsByGroupId.get(group.id) ?? [];
+      if (ownSlots.length === 0) continue;
+
+      const effectiveParams = getEffectiveGroupStructureParams(group, params);
+      const circles: ConnectivityCircle[] = [
         ...ownSlots,
-        ...higherSlots,
+        ...(higherSlotsByGroupId.get(group.id) ?? []),
       ].map((slot) => ({
         id: slot.id,
         cx: slot.x,
@@ -666,79 +812,6 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
           getSlotTolerance(slot.height),
         ),
       }));
-
-      const clusters = clusterConnectivityCircles(
-        connectivityCircles,
-        effectiveBridgeGap,
-      );
-
-      clusters.forEach((cluster, clusterIndex) => {
-        const clusterKey =
-          cluster
-            .map((circle) => circle.id)
-            .sort()
-            .join("-") || `${group.id}-${clusterIndex}`;
-        const outline = generateOutline(
-          cluster.map((circle) => ({
-            cx: circle.cx,
-            cy: circle.cy,
-            rOuter: circle.rOuter,
-          })),
-          effectiveParams.smoothingRadius,
-          64,
-        );
-        if (outline && outline.points.length >= 3) {
-          result.push({
-            key: `${group.id}-${clusterKey}`,
-            groupId: group.id,
-            color: group.color,
-            bottomHeight: group.bottomHeight,
-            points: outline.points,
-          });
-        }
-      });
-    }
-
-    // 按高度升序排列：低组先渲染，高组后渲染覆盖，重叠处显示最高组颜色
-    result.sort((a, b) => a.bottomHeight - b.bottomHeight);
-
-    return result.length > 0 ? result : null;
-  }, [params]);
-
-  const bridgeWarning = useMemo<BridgeWarning | null>(() => {
-    const groupsByHeight = [...params.groups].sort(
-      (a, b) => a.bottomHeight - b.bottomHeight,
-    );
-
-    for (const group of groupsByHeight) {
-      const ownSlots = params.slots.filter((slot) => slot.groupId === group.id);
-      if (ownSlots.length === 0) continue;
-      const effectiveParams = getEffectiveGroupStructureParams(group, params);
-
-      const higherSlots = params.slots.filter((slot) => {
-        if (slot.groupId === group.id) return false;
-        const otherGroup = params.groups.find(
-          (candidate) => candidate.id === slot.groupId,
-        );
-        return Boolean(
-          otherGroup && otherGroup.bottomHeight > group.bottomHeight,
-        );
-      });
-
-      const circles: ConnectivityCircle[] = [...ownSlots, ...higherSlots].map(
-        (slot) => ({
-          id: slot.id,
-          cx: slot.x,
-          cy: slot.y,
-          rOuter: getConnectivityRadius(
-            slot.width,
-            slot.height,
-            params.spacing,
-            getSlotTolerance(slot.width),
-            getSlotTolerance(slot.height),
-          ),
-        }),
-      );
 
       const warning = analyzeBridgeWarning(
         circles,
@@ -763,6 +836,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     removeSlot,
     updateSlotPosition,
     updateMultipleSlots,
+    updateMultipleSlotsLive,
     updateSlotRotation,
     insertSlots,
     duplicateSlots,
@@ -786,8 +860,10 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     isGenerating,
     isPreviewStale,
     bridgeWarning,
+    pauseOutlinePreview,
+    resumeOutlinePreview,
     handleGenerate,
     handleExportSTL,
-    outlinePreview: outlinePreviewAuto,
+    outlinePreview,
   };
 }

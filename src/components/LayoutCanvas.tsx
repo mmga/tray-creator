@@ -2,9 +2,9 @@
 
 import { useRef, useState, useCallback, useEffect, useMemo } from "react";
 import type { FreeSlot, CustomLayoutParams, SteppedLayoutParams, GroupOutlinePreview, SteppedSlot } from "@/types/custom-tray";
-import type { OutlineData } from "@/lib/outline-geometry";
 import { getSlotTolerance, MAX_BUILD_SIZE } from "@/lib/config";
 import { getEllipsePolygon, polygonsIntersect } from "@/lib/collision";
+import { measurePerf } from "@/lib/perf";
 import AlignmentToolbar from "./AlignmentToolbar";
 import {
   resolveMirrorAxis,
@@ -25,6 +25,8 @@ const ACTION_PANEL_MAX_WIDTH = 420 - EDIT_SIDEBAR_RAIL_WIDTH - ACTION_PANEL_RESI
 const ACTION_PANEL_DEFAULT_WIDTH = 304 - EDIT_SIDEBAR_RAIL_WIDTH - ACTION_PANEL_RESIZER_WIDTH;
 const ACTION_PANEL_TAB_RAIL_WIDTH = EDIT_SIDEBAR_RAIL_WIDTH;
 
+type SlotUpdate = { id: string; x: number; y: number; rotation?: number };
+
 interface LayoutCanvasProps {
   isActive?: boolean;
   params: CustomLayoutParams | SteppedLayoutParams;
@@ -32,14 +34,14 @@ interface LayoutCanvasProps {
   onRemoveSlot: (id: string) => void;
   onResizeTray?: (width: number, depth: number) => void;
   onUpdateSlotRotation?: (id: string, rotation: number) => void;
-  onUpdateMultipleSlots?: (
-    updates: { id: string; x: number; y: number; rotation?: number }[],
-  ) => void;
+  onUpdateMultipleSlots?: (updates: SlotUpdate[]) => void;
+  onLiveUpdateMultipleSlots?: (updates: SlotUpdate[]) => void;
   onInsertSlots?: (slots: SymmetryInsertSlot[]) => void;
   onDuplicateSlots?: (ids: string[]) => string[] | void;
   onUndo?: () => void;
   onSaveSnapshot?: () => void;
   onSelectionChange?: (ids: string[]) => void;
+  onEditInteractionChange?: (isInteracting: boolean) => void;
   // 轮廓预览（Stepped 模式：每组独立轮廓）
   outlinePreview?: GroupOutlinePreview[] | null;
   focusedGroupId?: string | null;
@@ -50,14 +52,15 @@ export default function LayoutCanvas({
   params,
   onUpdateSlot,
   onRemoveSlot,
-  onResizeTray,
   onUpdateSlotRotation,
   onUpdateMultipleSlots,
+  onLiveUpdateMultipleSlots,
   onInsertSlots,
   onDuplicateSlots,
   onUndo,
   onSaveSnapshot,
   onSelectionChange,
+  onEditInteractionChange,
   outlinePreview,
   focusedGroupId,
 }: LayoutCanvasProps) {
@@ -86,6 +89,8 @@ export default function LayoutCanvas({
     mouseStart: { x: number, y: number }; // SVG coords
     slotOrigins: Map<string, { x: number, y: number }>;
   } | null>(null);
+  const liveUpdateFrameRef = useRef<number | null>(null);
+  const pendingLiveUpdatesRef = useRef<SlotUpdate[] | null>(null);
 
   // Marquee Selection State (Client Coords)
   const [selectionBox, setSelectionBox] = useState<{ start: { x: number, y: number }, current: { x: number, y: number } } | null>(null);
@@ -95,17 +100,21 @@ export default function LayoutCanvas({
     axis: 'x' | 'y';
     value: number; // SVG coordinate
   }
+  interface CollisionInfo {
+    boundaryReasons: string[];
+    overlapIds: string[];
+  }
   const [guideLines, setGuideLines] = useState<GuideLine[]>([]);
   const resizeActionPanelRef = useRef<{ startX: number; startWidth: number } | null>(null);
 
   // Extracted canvas zoom/pan hook
   const {
-    zoom, pan, setPan, viewBox, viewW, viewH, minX, minY,
+    zoom, setPan, viewBox, viewW, viewH, minX, minY,
     isSpacePressed, setIsSpacePressed,
     isPanning, setIsPanning,
     panStartRef, handleWheel,
     handleTouchStart, handleTouchMove, handleTouchEnd,
-    adjustZoom, resetZoom,
+    resetZoom,
   } = useCanvasZoom({
     baseW: params.trayWidth + 40, // trayWidth + (PADDING_MM * 2)
     baseH: params.trayDepth + 40,
@@ -127,16 +136,28 @@ export default function LayoutCanvas({
   const boundarySpacing = 'boundarySpacingIndependent' in params && params.boundarySpacingIndependent
     ? (params as CustomLayoutParams).boundarySpacing
     : spacing;
+  const steppedGroupMetaById = useMemo(() => {
+    if (!('groups' in params)) {
+      return null;
+    }
+
+    return new Map(
+      (params as SteppedLayoutParams).groups.map((group) => [group.id, group]),
+    );
+  }, [params]);
   const selectedIdsRef = useRef(selectedIds);
   const slotsRef = useRef(params.slots);
   const onUpdateSlotRef = useRef(onUpdateSlot);
   const onUndoRef = useRef(onUndo);
   const onSaveSnapshotRef = useRef(onSaveSnapshot);
-  selectedIdsRef.current = effectiveSelectedIds;
-  slotsRef.current = params.slots;
-  onUpdateSlotRef.current = onUpdateSlot;
-  onUndoRef.current = onUndo;
-  onSaveSnapshotRef.current = onSaveSnapshot;
+
+  useEffect(() => {
+    selectedIdsRef.current = effectiveSelectedIds;
+    slotsRef.current = params.slots;
+    onUpdateSlotRef.current = onUpdateSlot;
+    onUndoRef.current = onUndo;
+    onSaveSnapshotRef.current = onSaveSnapshot;
+  }, [effectiveSelectedIds, onSaveSnapshot, onUndo, onUpdateSlot, params.slots]);
 
   // Notify parent of selection changes (for stepped mode per-slot editing)
   useEffect(() => {
@@ -214,7 +235,7 @@ export default function LayoutCanvas({
   }, [isResizingActionPanel]);
 
   // Helper to handle multiple updates
-  const handleUpdateSlots = useCallback((updates: { id: string; x: number; y: number; rotation?: number }[]) => {
+  const handleUpdateSlots = useCallback((updates: SlotUpdate[]) => {
     if (onUpdateMultipleSlots) {
       onUpdateMultipleSlots(updates);
     } else {
@@ -228,6 +249,53 @@ export default function LayoutCanvas({
       });
     }
   }, [onUpdateMultipleSlots, onUpdateSlot, onUpdateSlotRotation]);
+
+  const applyLiveUpdates = useCallback((updates: SlotUpdate[]) => {
+    if (onLiveUpdateMultipleSlots) {
+      onLiveUpdateMultipleSlots(updates);
+      return;
+    }
+
+    updates.forEach((update) => {
+      onUpdateSlot(update.id, update.x, update.y);
+      if (update.rotation !== undefined && onUpdateSlotRotation) {
+        onUpdateSlotRotation(update.id, update.rotation);
+      }
+    });
+  }, [onLiveUpdateMultipleSlots, onUpdateSlot, onUpdateSlotRotation]);
+
+  const flushScheduledLiveUpdates = useCallback(() => {
+    if (liveUpdateFrameRef.current !== null) {
+      window.cancelAnimationFrame(liveUpdateFrameRef.current);
+      liveUpdateFrameRef.current = null;
+    }
+
+    const pendingUpdates = pendingLiveUpdatesRef.current;
+    pendingLiveUpdatesRef.current = null;
+    if (!pendingUpdates || pendingUpdates.length === 0) {
+      return;
+    }
+
+    applyLiveUpdates(pendingUpdates);
+  }, [applyLiveUpdates]);
+
+  const scheduleLiveUpdates = useCallback((updates: SlotUpdate[]) => {
+    pendingLiveUpdatesRef.current = updates;
+    if (liveUpdateFrameRef.current !== null) {
+      return;
+    }
+
+    liveUpdateFrameRef.current = window.requestAnimationFrame(() => {
+      liveUpdateFrameRef.current = null;
+      const pendingUpdates = pendingLiveUpdatesRef.current;
+      pendingLiveUpdatesRef.current = null;
+      if (!pendingUpdates || pendingUpdates.length === 0) {
+        return;
+      }
+
+      applyLiveUpdates(pendingUpdates);
+    });
+  }, [applyLiveUpdates]);
 
   // Extracted canvas keyboard event hook
   useCanvasKeyboard({
@@ -246,7 +314,17 @@ export default function LayoutCanvas({
   });
 
   useEffect(() => {
+    return () => {
+      if (liveUpdateFrameRef.current !== null) {
+        window.cancelAnimationFrame(liveUpdateFrameRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (!isActive) {
+      flushScheduledLiveUpdates();
+      onEditInteractionChange?.(false);
       setHoveredId(null);
       setDraggingId(null);
       setGuideLines([]);
@@ -256,16 +334,7 @@ export default function LayoutCanvas({
       setIsSpacePressed(false);
       setIsResizingActionPanel(false);
     }
-  }, [isActive, setIsPanning, setIsSpacePressed]);
-
-  /**
-   * 碰撞检测 (Approximation for Ellipses)
-   * Slot-Slot: Use average radius (Circle approximation).
-   * Boundary: Use precise Axis-Aligned Bounding Box (AABB) of rotated ellipse.
-   */
-  const getCollisionRadius = (slot: FreeSlot) => {
-    return (Math.max(slot.width, slot.height) + getSlotTolerance(Math.max(slot.width, slot.height))) / 2;
-  };
+  }, [flushScheduledLiveUpdates, isActive, onEditInteractionChange, setIsPanning, setIsSpacePressed]);
 
   const getEllipseBoundingBox = (w: number, h: number, rotation: number) => {
     const rad = (rotation * Math.PI) / 180;
@@ -276,41 +345,111 @@ export default function LayoutCanvas({
     return { halfW, halfH };
   };
 
-  const checkBoundaryCollision = (): string[] => [];
+  const collisionState = useMemo(() => {
+    return measurePerf("canvas.collision", () => {
+      const collisionMap = new Map<string, CollisionInfo>();
+      const involvedIds = new Set<string>();
+      const connectorPairs: Array<{ key: string; firstId: string; secondId: string }> = [];
+      const slotById = new Map(slots.map((slot) => [slot.id, slot]));
 
-  /** 返回与指定槽位发生碰撞的其他槽位 ID 列表 */
-  const checkSlotCollision = (id: string, x: number, y: number, currentW: number, currentH: number, currentRot: number): string[] => {
-    // Optimization: First do a broad phase check using bounding circles
-    // (We keep the old logic as a fast cull, but with margin)
-    // Actually, let's just use SAT for accuracy as requested by user.
-
-    // We need to check if (Slot A + Spacing/2) intersects (Slot B + Spacing/2).
-    // Or simpler: (Slot A) intersects (Slot B expanded by Spacing).
-    // Let's go with: Check if slot `id` (at x,y,w,h,rot) intersects any `other` (at other.x...) 
-    // AND the distance is < spacing.
-
-    // The requirement is "maintain spacing". 
-    // So distinct shapes A and B must be > spacing apart.
-    // Equivalent to: Shape A expanded by spacing/2 intersects Shape B expanded by spacing/2.
-
-    // Let's generate polygon for NEW position of current slot (expanded by spacing/2)
-    const margin = spacing / 2 + getSlotTolerance(currentW) / 2;
-    const poly1 = getEllipsePolygon(x, y, currentW, currentH, currentRot, margin, 12); // 12 steps is good balance
-
-    const collidingIds: string[] = [];
-    for (const other of slots) {
-      if (other.id === id) continue;
-
-      // Expand other slot by spacing/2
-      const margin2 = spacing / 2 + getSlotTolerance(other.width) / 2;
-      const poly2 = getEllipsePolygon(other.x, other.y, other.width, other.height, other.rotation, margin2, 12);
-
-      if (polygonsIntersect(poly1, poly2)) {
-        collidingIds.push(other.id);
+      if (slots.length === 0) {
+        return {
+          collisionErrorCount: 0,
+          collisionMap,
+          connectorPairs,
+          involvedIds,
+          slotById,
+        };
       }
-    }
-    return collidingIds;
-  };
+
+      const expandedBounds = slots
+        .map((slot) => {
+          const margin = spacing / 2 + getSlotTolerance(slot.width) / 2;
+          const { halfW, halfH } = getEllipseBoundingBox(
+            slot.width,
+            slot.height,
+            slot.rotation,
+          );
+
+          return {
+            slot,
+            margin,
+            minX: slot.x - halfW - margin,
+            maxX: slot.x + halfW + margin,
+            minY: slot.y - halfH - margin,
+            maxY: slot.y + halfH + margin,
+          };
+        })
+        .sort((a, b) => a.minX - b.minX);
+      const expandedPolygons = new Map<string, ReturnType<typeof getEllipsePolygon>>();
+      const getExpandedPolygon = (slot: typeof slots[number], margin: number) => {
+        const cached = expandedPolygons.get(slot.id);
+        if (cached) {
+          return cached;
+        }
+
+        const polygon = getEllipsePolygon(
+          slot.x,
+          slot.y,
+          slot.width,
+          slot.height,
+          slot.rotation,
+          margin,
+          12,
+        );
+        expandedPolygons.set(slot.id, polygon);
+        return polygon;
+      };
+
+      slots.forEach((slot) => {
+        collisionMap.set(slot.id, {
+          boundaryReasons: [],
+          overlapIds: [],
+        });
+      });
+
+      let collisionErrorCount = 0;
+      for (let i = 0; i < expandedBounds.length; i++) {
+        const current = expandedBounds[i];
+
+        for (let j = i + 1; j < expandedBounds.length; j++) {
+          const other = expandedBounds[j];
+          if (other.minX > current.maxX) {
+            break;
+          }
+
+          if (current.maxY < other.minY || other.maxY < current.minY) {
+            continue;
+          }
+
+          const currentPoly = getExpandedPolygon(current.slot, current.margin);
+          const otherPoly = getExpandedPolygon(other.slot, other.margin);
+          if (!polygonsIntersect(currentPoly, otherPoly)) {
+            continue;
+          }
+
+          collisionMap.get(current.slot.id)?.overlapIds.push(other.slot.id);
+          collisionMap.get(other.slot.id)?.overlapIds.push(current.slot.id);
+          involvedIds.add(current.slot.id);
+          involvedIds.add(other.slot.id);
+          collisionErrorCount += 1;
+          connectorPairs.push({
+            key: [current.slot.id, other.slot.id].sort().join("|"),
+            firstId: current.slot.id,
+            secondId: other.slot.id,
+          });
+        }
+      }
+
+      return {
+        collisionErrorCount,
+        collisionMap,
+        connectorPairs,
+        involvedIds,
+        slotById,
+      };
+    });
+  }, [slots, spacing]);
 
   // ... (keep existing helpers)
 
@@ -336,6 +475,7 @@ export default function LayoutCanvas({
     const angle = Math.atan2(svgP.y - slotCy, svgP.x - slotCx);
 
     onSaveSnapshotRef.current?.(); // 保存快照供撤销
+    onEditInteractionChange?.(true);
     setIsRotating(true);
     setDraggingId(slot.id); // Set draggingId to keep slot active/highlighted
     rotateStartRef.current = {
@@ -349,165 +489,197 @@ export default function LayoutCanvas({
   // ... (Rotation Logic added previously)
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    e.preventDefault();
+    measurePerf("canvas.pointermove", () => {
+      e.preventDefault();
 
-    // 多指防护：仅处理主指针的移动事件
-    if (e.pointerType === 'touch' && primaryPointerIdRef.current !== null && e.pointerId !== primaryPointerIdRef.current) {
-      return;
-    }
-
-    // Pan
-    if (isPanning) {
-      const dx = e.clientX - panStartRef.current.x;
-      const dy = e.clientY - panStartRef.current.y;
-      if (svgRef.current) {
-        const screenCTM = svgRef.current.getScreenCTM();
-        if (screenCTM) {
-          const scale = screenCTM.a;
-          setPan(prev => ({
-            x: prev.x + dx / scale,
-            y: prev.y + dy / scale
-          }));
-        }
+      // 多指防护：仅处理主指针的移动事件
+      if (e.pointerType === 'touch' && primaryPointerIdRef.current !== null && e.pointerId !== primaryPointerIdRef.current) {
+        return;
       }
-      panStartRef.current = { x: e.clientX, y: e.clientY };
-      return;
-    }
 
-    // Marquee Selection
-    if (selectionBox) {
-      // Just update current point
-      const rect = parentRef.current?.getBoundingClientRect();
-      if (rect) {
-        setSelectionBox(prev => prev ? { ...prev, current: { x: e.clientX - rect.left, y: e.clientY - rect.top } } : null);
-      }
-      return;
-    }
-
-    // Rotate (Single Item)
-    if (isRotating && draggingId && svgRef.current && rotateStartRef.current) {
-      const slot = slots.find(s => s.id === draggingId);
-      if (!slot) return;
-
-      const pt = svgRef.current.createSVGPoint();
-      pt.x = e.clientX;
-      pt.y = e.clientY;
-      const svgP = pt.matrixTransform(svgRef.current.getScreenCTM()?.inverse());
-
-      const slotCx = slot.x;
-      const slotCy = trayDepth - slot.y;
-
-      const currentAngle = Math.atan2(svgP.y - slotCy, svgP.x - slotCx);
-      const deltaAngle = currentAngle - rotateStartRef.current.angle;
-      let deltaDeg = deltaAngle * (180 / Math.PI);
-
-      let newRotation = rotateStartRef.current.startRotation - deltaDeg;
-      if (e.shiftKey) {
-        newRotation = Math.round(newRotation / 15) * 15;
-      }
-      // 限定为 1 度为步长，不使用小数
-      newRotation = Math.round((newRotation % 360 + 360) % 360);
-
-      if (onUpdateSlotRotation) {
-        onUpdateSlotRotation(draggingId, newRotation);
-      }
-      return;
-    }
-
-    // Drag (Multi-item support)
-    if (draggingId && !isRotating && svgRef.current && dragStartRef.current) {
-      const pt = svgRef.current.createSVGPoint();
-      pt.x = e.clientX;
-      pt.y = e.clientY;
-      const svgP = pt.matrixTransform(svgRef.current.getScreenCTM()?.inverse());
-
-      // Calculate new position for the PRIMARY dragged slot
-      // We use the same offset logic for snapping
-      const dragSlotOrigin = dragStartRef.current.slotOrigins.get(draggingId);
-      if (!dragSlotOrigin) return;
-
-      // Current Mouse - Start Mouse = Delta for all
-      // But we need snapping for the Primary.
-      // Let's first calculate "Proposed Position" of Primary based on simple delta
-      const totalDx = svgP.x - dragStartRef.current.mouseStart.x;
-      const totalDy = svgRef.current.getScreenCTM() ? (svgP.y - dragStartRef.current.mouseStart.y) : 0;
-      // Note: SVG Y increases downwards. Slot Y increases upwards.
-      // DeltaY in SVG = +10 => Slot Y should vary by -10.
-      const totalPhysDx = totalDx;
-      const totalPhysDy = -(svgP.y - dragStartRef.current.mouseStart.y);
-
-      // Proposed Primary Phys Position
-      // Apply smooth snap
-      const snapStep = 0.2; // 0.2mm smooth snap
-      const roundToStep = (val: number) => Math.round(val / snapStep) * snapStep;
-
-      let proposedX = roundToStep(dragSlotOrigin.x + totalPhysDx);
-      let proposedY = roundToStep(dragSlotOrigin.y + totalPhysDy);
-
-      // Apply Snapping to Proposed Position
-      const dragSlot = slots.find(s => s.id === draggingId);
-      const dragBB = dragSlot ? getEllipseBoundingBox(dragSlot.width, dragSlot.height, dragSlot.rotation) : { halfW: 0, halfH: 0 };
-      const dragRx = dragBB.halfW;
-      const dragRy = dragBB.halfH;
-
-      const SNAP_THRESHOLD = 1.5;
-      const guides: GuideLine[] = [];
-
-      let finalX = proposedX;
-      let finalY = proposedY;
-
-      // Snap Logic (Same as before, but checking proposedX/Y)
-      for (const other of slots) {
-        if (selectedIds.has(other.id)) continue; // Don't snap to moved items
-
-        const otherBB = getEllipseBoundingBox(other.width, other.height, other.rotation);
-        const otherRx = otherBB.halfW;
-        const otherRy = otherBB.halfH;
-
-        // X Snaps
-        const xSnaps = [
-          { target: other.x, guide: other.x },
-          { target: other.x - otherRx + dragRx, guide: other.x - otherRx },
-          { target: other.x + otherRx - dragRx, guide: other.x + otherRx },
-        ];
-        for (const snap of xSnaps) {
-          if (Math.abs(finalX - snap.target) < SNAP_THRESHOLD) {
-            finalX = snap.target;
-            guides.push({ axis: 'x', value: snap.guide });
-            break;
+      // Pan
+      if (isPanning) {
+        const dx = e.clientX - panStartRef.current.x;
+        const dy = e.clientY - panStartRef.current.y;
+        if (svgRef.current) {
+          const screenCTM = svgRef.current.getScreenCTM();
+          if (screenCTM) {
+            const scale = screenCTM.a;
+            setPan(prev => ({
+              x: prev.x + dx / scale,
+              y: prev.y + dy / scale
+            }));
           }
         }
-
-        // Y Snaps
-        const ySnaps = [
-          { target: other.y, guide: other.y },
-          { target: other.y - otherRy + dragRy, guide: other.y - otherRy },
-          { target: other.y + otherRy - dragRy, guide: other.y + otherRy },
-        ];
-        for (const snap of ySnaps) {
-          if (Math.abs(finalY - snap.target) < SNAP_THRESHOLD) {
-            finalY = snap.target;
-            guides.push({ axis: 'y', value: trayDepth - snap.guide });
-            break;
-          }
-        }
+        panStartRef.current = { x: e.clientX, y: e.clientY };
+        return;
       }
 
-      setGuideLines(guides);
-
-      // Calculate FINAL delta based on snapped position
-      const finalDeltaX = finalX - dragSlotOrigin.x;
-      const finalDeltaY = finalY - dragSlotOrigin.y;
-
-      // Apply to ALL selected slots
-      selectedIds.forEach(id => {
-        const origin = dragStartRef.current?.slotOrigins.get(id);
-        if (origin) {
-          onUpdateSlot(id, origin.x + finalDeltaX, origin.y + finalDeltaY);
+      // Marquee Selection
+      if (selectionBox) {
+        // Just update current point
+        const rect = parentRef.current?.getBoundingClientRect();
+        if (rect) {
+          setSelectionBox(prev => prev ? { ...prev, current: { x: e.clientX - rect.left, y: e.clientY - rect.top } } : null);
         }
-      });
-    }
-  }, [draggingId, isPanning, isRotating, selectedIds, selectionBox, onUpdateSlot, onUpdateSlotRotation, trayDepth, slots]);
+        return;
+      }
+
+      // Rotate (Single Item)
+      if (isRotating && draggingId && svgRef.current && rotateStartRef.current) {
+        const slot = slots.find(s => s.id === draggingId);
+        if (!slot) return;
+
+        const pt = svgRef.current.createSVGPoint();
+        pt.x = e.clientX;
+        pt.y = e.clientY;
+        const svgP = pt.matrixTransform(svgRef.current.getScreenCTM()?.inverse());
+
+        const slotCx = slot.x;
+        const slotCy = trayDepth - slot.y;
+
+        const currentAngle = Math.atan2(svgP.y - slotCy, svgP.x - slotCx);
+        const deltaAngle = currentAngle - rotateStartRef.current.angle;
+        const deltaDeg = deltaAngle * (180 / Math.PI);
+
+        let newRotation = rotateStartRef.current.startRotation - deltaDeg;
+        if (e.shiftKey) {
+          newRotation = Math.round(newRotation / 15) * 15;
+        }
+        // 限定为 1 度为步长，不使用小数
+        newRotation = Math.round((newRotation % 360 + 360) % 360);
+
+        scheduleLiveUpdates([{
+          id: draggingId,
+          x: slot.x,
+          y: slot.y,
+          rotation: newRotation,
+        }]);
+        return;
+      }
+
+      // Drag (Multi-item support)
+      if (draggingId && !isRotating && svgRef.current && dragStartRef.current) {
+        const pt = svgRef.current.createSVGPoint();
+        pt.x = e.clientX;
+        pt.y = e.clientY;
+        const svgP = pt.matrixTransform(svgRef.current.getScreenCTM()?.inverse());
+
+        // Calculate new position for the PRIMARY dragged slot
+        // We use the same offset logic for snapping
+        const dragOrigins = dragStartRef.current.slotOrigins;
+        const dragSlotOrigin = dragOrigins.get(draggingId);
+        if (!dragSlotOrigin) return;
+
+        // Current Mouse - Start Mouse = Delta for all
+        // But we need snapping for the Primary.
+        // Let's first calculate "Proposed Position" of Primary based on simple delta
+        const totalDx = svgP.x - dragStartRef.current.mouseStart.x;
+        // Note: SVG Y increases downwards. Slot Y increases upwards.
+        // DeltaY in SVG = +10 => Slot Y should vary by -10.
+        const totalPhysDx = totalDx;
+        const totalPhysDy = -(svgP.y - dragStartRef.current.mouseStart.y);
+
+        // Proposed Primary Phys Position
+        // Apply smooth snap
+        const snapStep = 0.2; // 0.2mm smooth snap
+        const roundToStep = (val: number) => Math.round(val / snapStep) * snapStep;
+
+        const proposedX = roundToStep(dragSlotOrigin.x + totalPhysDx);
+        const proposedY = roundToStep(dragSlotOrigin.y + totalPhysDy);
+
+        // Apply Snapping to Proposed Position
+        const dragSlot = slots.find(s => s.id === draggingId);
+        const dragBB = dragSlot ? getEllipseBoundingBox(dragSlot.width, dragSlot.height, dragSlot.rotation) : { halfW: 0, halfH: 0 };
+        const dragRx = dragBB.halfW;
+        const dragRy = dragBB.halfH;
+
+        const SNAP_THRESHOLD = 1.5;
+        const trayCenterX = trayWidth / 2;
+        const trayCenterY = trayDepth / 2;
+        const guides: GuideLine[] = [];
+
+        let finalX = proposedX;
+        let finalY = proposedY;
+        let bestXSnap: { target: number; guide: number; distance: number } | null = null;
+        let bestYSnap: { target: number; guide: number; distance: number } | null = null;
+
+        const considerXSnap = (target: number, guide: number) => {
+          const distance = Math.abs(proposedX - target);
+          if (distance >= SNAP_THRESHOLD) return;
+          if (!bestXSnap || distance < bestXSnap.distance) {
+            bestXSnap = { target, guide, distance };
+          }
+        };
+
+        const considerYSnap = (target: number, guide: number) => {
+          const distance = Math.abs(proposedY - target);
+          if (distance >= SNAP_THRESHOLD) return;
+          if (!bestYSnap || distance < bestYSnap.distance) {
+            bestYSnap = { target, guide, distance };
+          }
+        };
+
+        // Snap Logic (Same as before, but checking proposedX/Y)
+        for (const other of slots) {
+          if (dragOrigins.has(other.id)) continue; // Don't snap to moved items
+
+          const otherBB = getEllipseBoundingBox(other.width, other.height, other.rotation);
+          const otherRx = otherBB.halfW;
+          const otherRy = otherBB.halfH;
+
+          considerXSnap(other.x, other.x);
+          considerXSnap(other.x - otherRx + dragRx, other.x - otherRx);
+          considerXSnap(other.x + otherRx - dragRx, other.x + otherRx);
+
+          considerYSnap(other.y, other.y);
+          considerYSnap(other.y - otherRy + dragRy, other.y - otherRy);
+          considerYSnap(other.y + otherRy - dragRy, other.y + otherRy);
+        }
+
+        considerXSnap(trayCenterX, trayCenterX);
+        considerYSnap(trayCenterY, trayCenterY);
+
+        if (bestXSnap) {
+          const { target, guide } = bestXSnap as {
+            target: number;
+            guide: number;
+            distance: number;
+          };
+          finalX = target;
+          guides.push({ axis: 'x', value: guide });
+        }
+
+        if (bestYSnap) {
+          const { target, guide } = bestYSnap as {
+            target: number;
+            guide: number;
+            distance: number;
+          };
+          finalY = target;
+          guides.push({ axis: 'y', value: trayDepth - guide });
+        }
+
+        setGuideLines(guides);
+
+        // Calculate FINAL delta based on snapped position
+        const finalDeltaX = finalX - dragSlotOrigin.x;
+        const finalDeltaY = finalY - dragSlotOrigin.y;
+
+        // Apply to ALL selected slots
+        const liveUpdates: SlotUpdate[] = [];
+        dragOrigins.forEach((origin, id) => {
+          liveUpdates.push({
+            id,
+            x: origin.x + finalDeltaX,
+            y: origin.y + finalDeltaY,
+          });
+        });
+
+        scheduleLiveUpdates(liveUpdates);
+      }
+    });
+  }, [draggingId, isPanning, isRotating, panStartRef, scheduleLiveUpdates, selectionBox, setPan, trayDepth, slots]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent, slotId?: string) => {
     e.preventDefault();
@@ -555,6 +727,7 @@ export default function LayoutCanvas({
 
       // Start Drag
       onSaveSnapshotRef.current?.(); // 保存快照供撤销
+      onEditInteractionChange?.(true);
       setDraggingId(slotId);
 
       // Init Drag Data
@@ -612,9 +785,12 @@ export default function LayoutCanvas({
         }
       }
     }
-  }, [selectedIds, isSpacePressed, slots, trayDepth]);
+  }, [isSpacePressed, panStartRef, selectedIds, setIsPanning, slots, trayDepth]);
 
   const handlePointerUp = useCallback(() => {
+    flushScheduledLiveUpdates();
+    onEditInteractionChange?.(false);
+
     // 释放主指针追踪
     primaryPointerIdRef.current = null;
 
@@ -678,21 +854,7 @@ export default function LayoutCanvas({
     rotateStartRef.current = null;
     dragStartRef.current = null;
     setGuideLines([]);
-  }, [selectionBox, selectedIds, slots, trayDepth]);
-
-  const collisionErrorCount = (() => {
-    let count = 0;
-    for (const slot of slots) {
-      const overlapIds = checkSlotCollision(slot.id, slot.x, slot.y, slot.width, slot.height, slot.rotation);
-      for (const otherId of overlapIds) {
-        // 只报告一个方向避免重复
-        if (slot.id < otherId) {
-          count += 1;
-        }
-      }
-    }
-    return count;
-  })();
+  }, [flushScheduledLiveUpdates, onEditInteractionChange, selectionBox, selectedIds, setIsPanning, slots, trayDepth]);
 
   const effectiveBaseplate = (() => {
     if (slots.length === 0) {
@@ -758,6 +920,14 @@ export default function LayoutCanvas({
       ),
     }
     : null;
+  const trayOutlineStroke = "#4b5563";
+  const trayOutlineStrokeWidth = 0.5 / zoom;
+  const trayOutlineStrokeDash = `${3 / zoom} ${3 / zoom}`;
+  const trayOutlineStrokeOpacity = 0.9;
+  const axisGuideStroke = "#38bdf8";
+  const axisGuideStrokeWidth = 0.3 / zoom;
+  const axisGuideStrokeDash = `${2 / zoom} ${2 / zoom}`;
+  const axisGuideStrokeOpacity = 0.8;
 
   return (
     <div
@@ -804,10 +974,10 @@ export default function LayoutCanvas({
             width={trayWidth}
             height={trayDepth}
             fill="none"
-            stroke="#4b5563"
-            strokeWidth={0.5 / zoom}
-            strokeDasharray={`${3 / zoom} ${3 / zoom}`}
-            strokeOpacity={0.9}
+            stroke={trayOutlineStroke}
+            strokeWidth={trayOutlineStrokeWidth}
+            strokeDasharray={trayOutlineStrokeDash}
+            strokeOpacity={trayOutlineStrokeOpacity}
           />
 
           {/* Effective Baseplate (inner) */}
@@ -833,10 +1003,10 @@ export default function LayoutCanvas({
                 y1={0}
                 x2={symmetryAxes.vertical}
                 y2={trayDepth}
-                stroke="#f59e0b"
-                strokeWidth={1 / zoom}
-                strokeDasharray={`${6 / zoom} ${4 / zoom}`}
-                strokeOpacity={0.7}
+                stroke={axisGuideStroke}
+                strokeWidth={axisGuideStrokeWidth}
+                strokeDasharray={axisGuideStrokeDash}
+                strokeOpacity={axisGuideStrokeOpacity}
               />
               <line
                 data-symmetry-axis="mirror-y"
@@ -844,49 +1014,33 @@ export default function LayoutCanvas({
                 y1={trayDepth - symmetryAxes.horizontal}
                 x2={trayWidth}
                 y2={trayDepth - symmetryAxes.horizontal}
-                stroke="#f59e0b"
-                strokeWidth={1 / zoom}
-                strokeDasharray={`${6 / zoom} ${4 / zoom}`}
-                strokeOpacity={0.45}
+                stroke={axisGuideStroke}
+                strokeWidth={axisGuideStrokeWidth}
+                strokeDasharray={axisGuideStrokeDash}
+                strokeOpacity={axisGuideStrokeOpacity}
               />
             </>
           )}
 
           {/* Slots */}
-          {(() => {
-            // 预计算所有碰撞信息，用于高亮冲突对方和生成摘要
-            const collisionMap = new Map<string, { boundaryReasons: string[]; overlapIds: string[] }>();
-            // 被其他碰撞槽位"牵连"高亮的 ID 集合
-            const involvedIds = new Set<string>();
-
-            for (const slot of slots) {
-              const boundaryReasons: string[] = [];
-              const overlapIds = checkSlotCollision(slot.id, slot.x, slot.y, slot.width, slot.height, slot.rotation);
-              collisionMap.set(slot.id, { boundaryReasons, overlapIds });
-              if (overlapIds.length > 0) {
-                involvedIds.add(slot.id);
-                overlapIds.forEach(id => involvedIds.add(id));
-              }
-            }
-
-            return slots.map((slot) => {
+          {slots.map((slot) => {
               // Geometry
               const w = slot.width + getSlotTolerance(slot.width);
               const h = slot.height + getSlotTolerance(slot.height);
-
-              // Collision Radius (Approximation)
-              const collisionR = getCollisionRadius(slot);
 
               // Position
               const svgY = trayDepth - slot.y;
 
               // Collision Check (from pre-computed map)
-              const info = collisionMap.get(slot.id)!;
+              const info = collisionState.collisionMap.get(slot.id) ?? {
+                boundaryReasons: [],
+                overlapIds: [],
+              };
               const isBoundary = info.boundaryReasons.length > 0;
               const isOverlap = info.overlapIds.length > 0;
               const isColliding = isBoundary || isOverlap;
               // 此槽位是否被别人的碰撞牵连高亮（但自身并非碰撞源）
-              const isInvolvedViaOther = !isColliding && involvedIds.has(slot.id);
+              const isInvolvedViaOther = !isColliding && collisionState.involvedIds.has(slot.id);
 
               const isHovered = hoveredId === slot.id;
               const isDragging = draggingId === slot.id;
@@ -897,20 +1051,17 @@ export default function LayoutCanvas({
               const bhLabelColor = "#86efac";
 
               // 分组颜色（Stepped 模式通过 groupId 查组色）
-              const steppedGroups = 'groups' in params
-                ? (params as SteppedLayoutParams).groups
-                : undefined;
               const isSteppedSlot = 'groupId' in slot;
               const isDimmedByGroupFocus = Boolean(
                 focusedGroupId &&
                 isSteppedSlot &&
                 (slot as { groupId: string }).groupId !== focusedGroupId,
               );
-              const groupColor = isSteppedSlot && steppedGroups
-                ? (steppedGroups.find(g => g.id === (slot as { groupId: string }).groupId)?.color ?? "#86efac")
+              const groupMeta = isSteppedSlot && steppedGroupMetaById
+                ? steppedGroupMetaById.get((slot as { groupId: string }).groupId)
                 : null;
-              const groupBottomHeight = isSteppedSlot && steppedGroups
-                ? (steppedGroups.find(g => g.id === (slot as { groupId: string }).groupId)?.bottomHeight ?? null)
+              const groupColor = isSteppedSlot
+                ? (groupMeta?.color ?? "#86efac")
                 : null;
 
               return (
@@ -1011,50 +1162,43 @@ export default function LayoutCanvas({
                   )}
                 </g>
               );
-            });
-          })()}
+          })}
 
           {/* Collision connector lines — 连接冲突的槽位对，增强可理解性 */}
-          {(() => {
-            const lines: React.ReactNode[] = [];
-            const drawn = new Set<string>();
-            for (const slot of slots) {
-              const overlapIds = checkSlotCollision(slot.id, slot.x, slot.y, slot.width, slot.height, slot.rotation);
-              for (const otherId of overlapIds) {
-                const key = [slot.id, otherId].sort().join("|");
-                if (drawn.has(key)) continue;
-                drawn.add(key);
-                const other = slots.find(s => s.id === otherId);
-                if (!other) continue;
-                const lineOpacity = !focusedGroupId
-                  ? 0.6
-                  : (('groupId' in slot && slot.groupId === focusedGroupId) || ('groupId' in other && other.groupId === focusedGroupId))
-                    ? 0.5
-                    : 0.12;
-                lines.push(
-                  <line
-                    key={`col-${key}`}
-                    x1={slot.x} y1={trayDepth - slot.y}
-                    x2={other.x} y2={trayDepth - other.y}
-                    stroke="#ef4444"
-                    strokeWidth={0.5 / zoom}
-                    strokeDasharray="3 2"
-                    opacity={lineOpacity}
-                    pointerEvents="none"
-                  />
-                );
-              }
+          {collisionState.connectorPairs.map((pair) => {
+            const slot = collisionState.slotById.get(pair.firstId);
+            const other = collisionState.slotById.get(pair.secondId);
+            if (!slot || !other) {
+              return null;
             }
-            return lines;
-          })()}
+
+            const lineOpacity = !focusedGroupId
+              ? 0.6
+              : (('groupId' in slot && slot.groupId === focusedGroupId) || ('groupId' in other && other.groupId === focusedGroupId))
+                ? 0.5
+                : 0.12;
+
+            return (
+              <line
+                key={`col-${pair.key}`}
+                x1={slot.x} y1={trayDepth - slot.y}
+                x2={other.x} y2={trayDepth - other.y}
+                stroke="#ef4444"
+                strokeWidth={0.5 / zoom}
+                strokeDasharray="3 2"
+                opacity={lineOpacity}
+                pointerEvents="none"
+              />
+            );
+          })}
 
           {/* Smart Guide Lines */}
           {guideLines.map((g, i) => (
             g.axis === 'x'
               ? <line key={`guide-${i}`} x1={g.value} y1={minY} x2={g.value} y2={minY + viewH}
-                stroke="#38bdf8" strokeWidth={0.3 / zoom} strokeDasharray="2 2" pointerEvents="none" opacity={0.8} />
+                stroke={axisGuideStroke} strokeWidth={axisGuideStrokeWidth} strokeDasharray={axisGuideStrokeDash} pointerEvents="none" opacity={axisGuideStrokeOpacity} />
               : <line key={`guide-${i}`} x1={minX} y1={g.value} x2={minX + viewW} y2={g.value}
-                stroke="#38bdf8" strokeWidth={0.3 / zoom} strokeDasharray="2 2" pointerEvents="none" opacity={0.8} />
+                stroke={axisGuideStroke} strokeWidth={axisGuideStrokeWidth} strokeDasharray={axisGuideStrokeDash} pointerEvents="none" opacity={axisGuideStrokeOpacity} />
           ))}
 
           {/* 分组轮廓预览（Stepped 模式：按高度升序渲染，高组颜色压住低组，重叠处显示最高组颜色） */}
@@ -1107,7 +1251,7 @@ export default function LayoutCanvas({
           zoom={zoom}
           selectedIds={selectedIds}
           slots={slots}
-          collisionErrorCount={collisionErrorCount}
+          collisionErrorCount={collisionState.collisionErrorCount}
         />
 
         {isEffectiveOversized && (

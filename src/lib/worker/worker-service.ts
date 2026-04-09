@@ -2,9 +2,10 @@ import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { TrayParams } from "@/types/tray";
 import type {
   CustomLayoutParams,
+  GroupOutlinePreview,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
-import type { WorkerRequest, WorkerResponse } from "./tray.worker";
+import type { WorkerResponse } from "./tray.worker";
 
 let _nextId = 0;
 function generateRequestId(): string {
@@ -13,8 +14,9 @@ function generateRequestId(): string {
 
 class TrayWorkerService {
   private worker: Worker | null = null;
-  private pendingResolves: Map<string, (result: any) => void> = new Map();
-  private pendingRejects: Map<string, (reason: any) => void> = new Map();
+  private pendingResolves: Map<string, (result: WorkerResponse) => void> =
+    new Map();
+  private pendingRejects: Map<string, (reason: unknown) => void> = new Map();
 
   constructor() {
     if (typeof window !== "undefined") {
@@ -51,9 +53,13 @@ class TrayWorkerService {
   ): Promise<{ geometry: Geom3; volume: number }> {
     const requestId = generateRequestId();
     return new Promise((resolve, reject) => {
-      this.pendingResolves.set(requestId, (data: any) =>
-        resolve({ geometry: data.geometry, volume: data.volumeInfo }),
-      );
+      this.pendingResolves.set(requestId, (data) => {
+        if (data.type !== "GENERATION_SUCCESS") {
+          reject(new Error(`Unexpected worker response: ${data.type}`));
+          return;
+        }
+        resolve({ geometry: data.geometry, volume: data.volumeInfo });
+      });
       this.pendingRejects.set(requestId, reject);
       this.worker?.postMessage({ type: "GENERATE_GRID", requestId, params });
     });
@@ -64,9 +70,13 @@ class TrayWorkerService {
   ): Promise<{ geometry: Geom3; volume: number }> {
     const requestId = generateRequestId();
     return new Promise((resolve, reject) => {
-      this.pendingResolves.set(requestId, (data: any) =>
-        resolve({ geometry: data.geometry, volume: data.volumeInfo }),
-      );
+      this.pendingResolves.set(requestId, (data) => {
+        if (data.type !== "GENERATION_SUCCESS") {
+          reject(new Error(`Unexpected worker response: ${data.type}`));
+          return;
+        }
+        resolve({ geometry: data.geometry, volume: data.volumeInfo });
+      });
       this.pendingRejects.set(requestId, reject);
       this.worker?.postMessage({ type: "GENERATE_CUSTOM", requestId, params });
     });
@@ -77,11 +87,39 @@ class TrayWorkerService {
   ): Promise<{ geometry: Geom3; volume: number }> {
     const requestId = generateRequestId();
     return new Promise((resolve, reject) => {
-      this.pendingResolves.set(requestId, (data: any) =>
-        resolve({ geometry: data.geometry, volume: data.volumeInfo }),
-      );
+      this.pendingResolves.set(requestId, (data) => {
+        if (data.type !== "GENERATION_SUCCESS") {
+          reject(new Error(`Unexpected worker response: ${data.type}`));
+          return;
+        }
+        resolve({ geometry: data.geometry, volume: data.volumeInfo });
+      });
       this.pendingRejects.set(requestId, reject);
       this.worker?.postMessage({ type: "GENERATE_STEPPED", requestId, params });
+    });
+  }
+
+  public async generateSteppedOutlinePreview(
+    params: SteppedLayoutParams,
+  ): Promise<{ outlinePreview: GroupOutlinePreview[] | null; durationMs: number }> {
+    const requestId = generateRequestId();
+    return new Promise((resolve, reject) => {
+      this.pendingResolves.set(requestId, (data) => {
+        if (data.type !== "STEPPED_OUTLINE_PREVIEW_SUCCESS") {
+          reject(new Error(`Unexpected worker response: ${data.type}`));
+          return;
+        }
+        resolve({
+          outlinePreview: data.outlinePreview,
+          durationMs: data.durationMs,
+        });
+      });
+      this.pendingRejects.set(requestId, reject);
+      this.worker?.postMessage({
+        type: "GENERATE_STEPPED_OUTLINE_PREVIEW",
+        requestId,
+        params,
+      });
     });
   }
 
@@ -91,7 +129,13 @@ class TrayWorkerService {
   ): Promise<{ blob: Blob; filename: string }> {
     const requestId = generateRequestId();
     return new Promise((resolve, reject) => {
-      this.pendingResolves.set(requestId, resolve);
+      this.pendingResolves.set(requestId, (data) => {
+        if (data.type !== "EXPORT_SUCCESS") {
+          reject(new Error(`Unexpected worker response: ${data.type}`));
+          return;
+        }
+        resolve(data);
+      });
       this.pendingRejects.set(requestId, reject);
       this.worker?.postMessage({
         type: "EXPORT_STL",

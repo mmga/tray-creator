@@ -3,10 +3,9 @@
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 import type { BridgeWarning } from "@/lib/stepped-connectivity";
 import { BASE_PRESETS, STEPPED_LIMITS, MAX_BUILD_SIZE, STEPPED_LAYOUT_DEFAULTS } from "@/lib/config";
-import { calculateSteppedTrayDimensions } from "@/lib/stepped-tray-model";
 import { Button } from "@/components/ui/button";
-import { useEffect, useMemo, useState } from "react";
 import { Switch } from "@/components/ui/switch";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
     Download,
     RotateCcw,
@@ -29,6 +28,13 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
 import { calculateWeight, calculateSteppedPrice } from "@/lib/pricing";
 import { BookMarked, Save } from "lucide-react";
+import { useToast } from "@/hooks/useToast";
+import { isPerfEnabled, resetPerfMetrics } from "@/lib/perf";
+import {
+    buildSteppedPerfFixture,
+    STEPPED_PERF_FIXTURE_SIZES,
+    type SteppedPerfFixtureSize,
+} from "@/lib/stepped-perf-fixtures";
 
 interface SteppedPanelProps {
     params: SteppedLayoutParams;
@@ -91,7 +97,13 @@ export default function SteppedPanel({
     onSaveDraft,
     currentDraftId,
 }: SteppedPanelProps) {
-    const dimensions = calculateSteppedTrayDimensions(params);
+    const { toast } = useToast();
+    const maxGroupHeight = useMemo(
+        () => (params.groups.length > 0
+            ? Math.max(...params.groups.map((group) => Math.max(group.bottomHeight, 3)))
+            : 0),
+        [params.groups],
+    );
     const effectiveWidth = effectiveDimensions.width;
     const effectiveDepth = effectiveDimensions.depth;
     const isOversized = effectiveWidth > MAX_BUILD_SIZE || effectiveDepth > MAX_BUILD_SIZE;
@@ -109,6 +121,18 @@ export default function SteppedPanel({
         lockedPreviewGroupId && validGroupIds.has(lockedPreviewGroupId)
             ? lockedPreviewGroupId
             : null;
+    const groupSlotCounts = useMemo(() => {
+        const counts = new Map<string, number>();
+        params.slots.forEach((slot) => {
+            counts.set(slot.groupId, (counts.get(slot.groupId) ?? 0) + 1);
+        });
+        return counts;
+    }, [params.slots]);
+    const activeGroup = useMemo(
+        () => params.groups.find((group) => group.id === params.activeGroupId) ?? null,
+        [params.activeGroupId, params.groups],
+    );
+    const perfEnabled = useMemo(() => isPerfEnabled(), []);
 
     useEffect(() => {
         if (!activePressedPreviewGroupId) {
@@ -156,6 +180,20 @@ export default function SteppedPanel({
         }
     };
 
+    const handleLoadPerfFixture = useCallback((size: SteppedPerfFixtureSize) => {
+        setPressedPreviewGroupId(null);
+        setLockedPreviewGroupId(null);
+        onPreviewGroupChange(null);
+        resetPerfMetrics();
+        setParams(buildSteppedPerfFixture(size));
+        toast("success", `已载入 ${size} 槽位性能样本，采样已清零`);
+    }, [onPreviewGroupChange, setParams, toast]);
+
+    const handleResetPerfSamples = useCallback(() => {
+        resetPerfMetrics();
+        toast("success", "性能采样已清零");
+    }, [toast]);
+
     return (
         <div className="flex flex-col gap-4 animate-fade-in">
 
@@ -166,7 +204,7 @@ export default function SteppedPanel({
                     <div className="space-y-1.5 mt-1">
                         {params.groups
                             .map((group, groupIndex) => {
-                                const groupSlotCount = params.slots.filter(s => s.groupId === group.id).length;
+                                const groupSlotCount = groupSlotCounts.get(group.id) ?? 0;
                                 const isActive = params.activeGroupId === group.id;
                                 const isPreviewing = previewGroupId === group.id;
                                 return (
@@ -378,17 +416,13 @@ export default function SteppedPanel({
                 <SectionHeader icon={BoxSelect} title="添加凹槽" collapsible defaultOpen={true}
                     summary={`已有 ${params.slots.length} 个凹槽`}>
                     <div className="space-y-2">
-                        {(() => {
-                            const activeGroup = params.groups.find(g => g.id === params.activeGroupId);
-                            if (!activeGroup) return null;
-                            return (
-                                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/70">
-                                    <span>新凹槽将加入</span>
-                                    <div className="w-2 h-2 rounded-sm" style={{ background: activeGroup.color }} />
-                                    <span style={{ color: activeGroup.color }}>{activeGroup.name}</span>
-                                </div>
-                            );
-                        })()}
+                        {activeGroup && (
+                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/70">
+                                <span>新凹槽将加入</span>
+                                <div className="w-2 h-2 rounded-sm" style={{ background: activeGroup.color }} />
+                                <span style={{ color: activeGroup.color }}>{activeGroup.name}</span>
+                            </div>
+                        )}
                         <div className="text-[10px] text-muted-foreground/70 font-bold tracking-wider uppercase mb-0.5">圆形</div>
                         <div className="grid grid-cols-3 gap-1.5">
                             {BASE_PRESETS.map((preset, i) => (
@@ -494,7 +528,7 @@ export default function SteppedPanel({
                             <div className="space-y-1">
                                 {params.groups
                                     .map((group) => {
-                                        const count = params.slots.filter(s => s.groupId === group.id).length;
+                                        const count = groupSlotCounts.get(group.id) ?? 0;
                                         return (
                                             <div key={group.id} className="flex items-center gap-2 text-[11px]">
                                                 <div className="w-2 h-2 rounded-sm shrink-0" style={{ background: group.color }} />
@@ -511,7 +545,7 @@ export default function SteppedPanel({
                             {[
                                 { label: "宽度", value: effectiveWidth, warn: effectiveWidth > MAX_BUILD_SIZE },
                                 { label: "深度", value: effectiveDepth, warn: effectiveDepth > MAX_BUILD_SIZE },
-                                { label: "高度", value: dimensions.height, warn: false },
+                                { label: "高度", value: maxGroupHeight, warn: false },
                             ].map(({ label, value, warn }) => (
                                 <div
                                     key={label}
@@ -581,6 +615,44 @@ export default function SteppedPanel({
                     params={params}
                     onImport={(p) => setParams(p as SteppedLayoutParams)}
                 />
+
+                {perfEnabled && (
+                    <div className="iron-panel rounded-sm p-3">
+                        <SectionHeader
+                            icon={Ruler}
+                            title="性能测量"
+                            collapsible
+                            defaultOpen={true}
+                            summary="20 / 50 / 100 槽位压力样本"
+                        >
+                            <div className="space-y-2 mt-1">
+                                <div className="text-[11px] leading-relaxed text-muted-foreground/75">
+                                    加载样本后在 2D 视图里拖拽中心区域 3 到 5 秒，观察右下角的 MOVE / COLL / OUTL。
+                                </div>
+                                <div className="grid grid-cols-3 gap-1.5">
+                                    {STEPPED_PERF_FIXTURE_SIZES.map((size) => (
+                                        <Button
+                                            key={size}
+                                            variant="outline"
+                                            onClick={() => handleLoadPerfFixture(size)}
+                                            className="h-8 text-xs border-[#5a4a2a] text-[#c8a84e] hover:bg-[#2a2518] hover:text-[#e0c870] hover:border-[#7a6a3a]"
+                                        >
+                                            {size} 槽位
+                                        </Button>
+                                    ))}
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    onClick={handleResetPerfSamples}
+                                    className="w-full h-8 text-xs border-[#2e2a24] text-muted-foreground hover:bg-[#1c1a16] hover:text-foreground/80 hover:border-[#3d372e]"
+                                >
+                                    <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+                                    清空采样
+                                </Button>
+                            </div>
+                        </SectionHeader>
+                    </div>
+                )}
 
                 {/* 草稿保存 */}
                 <div className="flex gap-2">

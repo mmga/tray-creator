@@ -188,11 +188,21 @@ export default function Home() {
               }}
               onUpdateSlotRotation={model.updateSlotRotation}
               onUpdateMultipleSlots={model.updateMultipleSlots}
+              onLiveUpdateMultipleSlots={model.updateMultipleSlotsLive}
               onInsertSlots={model.insertSlots}
               onDuplicateSlots={model.duplicateSlots}
               onUndo={model.undo}
               onSaveSnapshot={model.saveSnapshot}
               onSelectionChange={mode === "stepped" ? setSelectedSlotIds : undefined}
+              onEditInteractionChange={mode === "stepped"
+                ? (isInteracting) => {
+                  if (isInteracting) {
+                    steppedModel.pauseOutlinePreview();
+                  } else {
+                    steppedModel.resumeOutlinePreview();
+                  }
+                }
+                : undefined}
               outlinePreview={mode === "stepped" ? steppedModel.outlinePreview : undefined}
               focusedGroupId={mode === "stepped" ? previewGroupId : undefined}
             />
