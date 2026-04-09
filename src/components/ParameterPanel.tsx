@@ -3,7 +3,6 @@ import type { TrayParams } from "@/types/tray";
 import { BASE_HOLE_CONFIG, BASE_PRESETS, MAX_BUILD_SIZE } from "@/lib/config";
 import {
   DEFAULT_PRESET_INDEX,
-  DEFAULT_TRAY_PARAMS,
   PARAM_CONFIG,
 } from "@/lib/grid-config";
 import { calculateTrayDimensions } from "@/lib/tray-model";
@@ -29,7 +28,8 @@ import { calculateGridPrice, calculateWeight } from "@/lib/pricing";
 interface ParameterPanelProps {
   params: TrayParams;
   updateParam: <K extends keyof TrayParams>(key: K, value: TrayParams[K]) => void;
-  setParams: React.Dispatch<React.SetStateAction<TrayParams>>;
+  replaceParams: (next: TrayParams) => void;
+  resetParams: () => void;
   onGenerate: (options?: { shouldSwitchView?: boolean }) => void;
   onExportSTL: () => void;
   isGenerating: boolean;
@@ -39,7 +39,8 @@ interface ParameterPanelProps {
 export default function ParameterPanel({
   params,
   updateParam,
-  setParams,
+  replaceParams,
+  resetParams,
   onGenerate,
   onExportSTL,
   isGenerating,
@@ -69,7 +70,7 @@ export default function ParameterPanel({
   };
 
   const handleReset = () => {
-    setParams(DEFAULT_TRAY_PARAMS);
+    resetParams();
   };
 
 
@@ -309,7 +310,7 @@ export default function ParameterPanel({
         <ParamIOButtons
           mode="grid"
           params={params}
-          onImport={(p) => setParams(p as TrayParams)}
+          onImport={(p) => replaceParams(p as TrayParams)}
         />
       </div>
 

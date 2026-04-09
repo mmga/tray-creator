@@ -80,8 +80,9 @@ export default function Home() {
       return (
         <ParameterPanel
           params={gridModel.params}
-          setParams={gridModel.setParams}
           updateParam={gridModel.updateParam}
+          replaceParams={gridModel.replaceParams}
+          resetParams={gridModel.resetParams}
           onGenerate={gridModel.handleGenerate}
           onExportSTL={gridModel.handleExportSTL}
           isGenerating={gridModel.isGenerating}

@@ -12,11 +12,12 @@ import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 
 interface UseTrayModelReturn {
   params: TrayParams;
-  setParams: React.Dispatch<React.SetStateAction<TrayParams>>;
   updateParam: <K extends keyof TrayParams>(
     key: K,
     value: TrayParams[K],
   ) => void;
+  replaceParams: (next: TrayParams) => void;
+  resetParams: () => void;
   threeGeometry: THREE.BufferGeometry | null;
   volume: number; // in mm^3
   isGenerating: boolean;
@@ -35,14 +36,41 @@ export function useTrayModel(): UseTrayModelReturn {
   const { toast } = useToast();
   // 追踪参数是否在上次生成后发生了变更
   const [isPreviewStale, setIsPreviewStale] = useState(false);
-  const lastGeneratedParamsRef = useRef<string | null>(null);
+
+  const normalizeParams = useCallback((next: TrayParams): TrayParams => {
+    if (!next.boundarySpacingIndependent) {
+      return {
+        ...next,
+        boundarySpacing: next.spacing,
+      };
+    }
+    return next;
+  }, []);
+
+  const invalidatePreview = useCallback(() => {
+    jscadGeomRef.current = null;
+    setIsPreviewStale(true);
+  }, []);
+
+  const replaceParams = useCallback(
+    (next: TrayParams) => {
+      setParams(normalizeParams(next));
+      invalidatePreview();
+    },
+    [invalidatePreview, normalizeParams],
+  );
+
+  const resetParams = useCallback(() => {
+    setParams(normalizeParams(DEFAULT_TRAY_PARAMS));
+    invalidatePreview();
+  }, [invalidatePreview, normalizeParams]);
 
   const updateParam = useCallback(
     <K extends keyof TrayParams>(key: K, value: TrayParams[K]) => {
-      setParams((prev) => ({ ...prev, [key]: value }));
-      setIsPreviewStale(true);
+      setParams((prev) => normalizeParams({ ...prev, [key]: value }));
+      invalidatePreview();
     },
-    [],
+    [invalidatePreview, normalizeParams],
   );
 
   // 异步触发生成
@@ -58,7 +86,6 @@ export function useTrayModel(): UseTrayModelReturn {
         prev?.dispose();
         return threeGeom;
       });
-      lastGeneratedParamsRef.current = JSON.stringify(params);
       setIsPreviewStale(false);
     } catch (err) {
       console.error("生成失败:", err);
@@ -73,7 +100,14 @@ export function useTrayModel(): UseTrayModelReturn {
 
   // 导出 STL
   const handleExportSTL = useCallback(async () => {
-    if (!jscadGeomRef.current || !trayWorkerService) return;
+    if (isPreviewStale) {
+      toast("error", "参数已变更，请先点击开始锻造生成最新模型");
+      return;
+    }
+    if (!jscadGeomRef.current || !trayWorkerService) {
+      toast("error", "当前没有可导出的模型，请先点击开始锻造");
+      return;
+    }
     const filename = generateSTLFilename(
       params.rows,
       params.columns,
@@ -93,9 +127,10 @@ export function useTrayModel(): UseTrayModelReturn {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      // 同时下载 JSON 参数文件
       const jsonFilename = filename.replace(/\.stl$/i, ".json");
-      const jsonBlob = new Blob([JSON.stringify(params, null, 2)], { type: "application/json" });
+      const jsonBlob = new Blob([JSON.stringify(params, null, 2)], {
+        type: "application/json",
+      });
       const jsonUrl = URL.createObjectURL(jsonBlob);
       const jsonLink = document.createElement("a");
       jsonLink.href = jsonUrl;
@@ -111,12 +146,13 @@ export function useTrayModel(): UseTrayModelReturn {
         `STL 导出失败：${err instanceof Error ? err.message : "未知错误"}`,
       );
     }
-  }, [params, toast]);
+  }, [isPreviewStale, params, toast]);
 
   return {
     params,
-    setParams,
     updateParam,
+    replaceParams,
+    resetParams,
     threeGeometry,
     volume,
     isGenerating,
