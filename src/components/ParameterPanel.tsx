@@ -1,6 +1,11 @@
 "use client";
 import type { TrayParams } from "@/types/tray";
-import { BASE_PRESETS, DEFAULT_PRESET_INDEX, BASE_HOLE_CONFIG, PARAM_CONFIG, MAX_BUILD_SIZE } from "@/lib/config";
+import { BASE_HOLE_CONFIG, BASE_PRESETS, MAX_BUILD_SIZE } from "@/lib/config";
+import {
+  DEFAULT_PRESET_INDEX,
+  DEFAULT_TRAY_PARAMS,
+  PARAM_CONFIG,
+} from "@/lib/grid-config";
 import { calculateTrayDimensions } from "@/lib/tray-model";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -14,7 +19,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Download, RotateCcw, Play, Loader2, Layout, Wrench, Ruler, Share2 } from "lucide-react";
-import { DEFAULT_TRAY_PARAMS } from "@/lib/config";
 import { BaseHoleConfig } from "@/components/BaseHoleConfig";
 import { ParamIOButtons } from "@/components/ParamIOButtons";
 import { SectionHeader } from "@/components/ui/SectionHeader";
@@ -54,7 +58,7 @@ export default function ParameterPanel({
     }, 500); // 500ms debounce
 
     return () => clearTimeout(handler);
-  }, [params, autoPreview, isOversized]); // Notice we exclude onGenerate to prevent cycles, though React Hook rules technically want it. Assuming onGenerate is stable.
+  }, [params, autoPreview, isGenerating, isOversized, onGenerate]);
 
   const handlePresetChange = (value: string) => {
     const index = parseInt(value);
@@ -288,7 +292,7 @@ export default function ParameterPanel({
           导出 STL
         </Button>
         <Button
-          onClick={() => exportParams("grid", params as any)}
+          onClick={() => exportParams("grid", params)}
           className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-sm text-[#8cb880] font-semibold tracking-wider cursor-pointer transition-all duration-200 border border-[#4a6741] shadow-lg shadow-[#2a352830]"
         >
           <Share2 className="w-4 h-4 mr-2" />

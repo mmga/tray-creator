@@ -2,7 +2,8 @@
 
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 import type { BridgeWarning } from "@/lib/stepped-connectivity";
-import { BASE_PRESETS, STEPPED_LIMITS, MAX_BUILD_SIZE, STEPPED_LAYOUT_DEFAULTS } from "@/lib/config";
+import { BASE_PRESETS, MAX_BUILD_SIZE } from "@/lib/config";
+import { STEPPED_LIMITS, STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useCallback, useEffect, useMemo, useState } from "react";

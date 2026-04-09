@@ -9,10 +9,9 @@ import type {
   GroupOutlinePreview,
 } from "@/types/custom-tray";
 import {
-  STEPPED_LAYOUT_DEFAULTS,
-  GROUP_COLORS,
   getSlotTolerance,
 } from "@/lib/config";
+import { GROUP_COLORS, STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
 import { recordPerfSample } from "@/lib/perf";
 import { useUndoHistory } from "@/hooks/useUndoHistory";

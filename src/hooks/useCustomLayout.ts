@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useRef, useMemo } from "react";
 import type { CustomLayoutParams, FreeSlot } from "@/types/custom-tray";
-import { CUSTOM_LAYOUT_DEFAULTS, getSlotTolerance } from "@/lib/config";
+import { getSlotTolerance } from "@/lib/config";
+import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
 import { generateCustomSTLFilename } from "@/lib/stl-export";
 import { useUndoHistory } from "@/hooks/useUndoHistory";

@@ -4,7 +4,7 @@ import { useState, useCallback, useRef } from "react";
 import type { TrayParams } from "@/types/tray";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
 import { generateSTLFilename } from "@/lib/stl-export";
-import { DEFAULT_TRAY_PARAMS } from "@/lib/config";
+import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { trayWorkerService } from "@/lib/worker/worker-service";
 import { useToast } from "@/hooks/useToast";
 import type * as THREE from "three";
@@ -111,7 +111,7 @@ export function useTrayModel(): UseTrayModelReturn {
         `STL 导出失败：${err instanceof Error ? err.message : "未知错误"}`,
       );
     }
-  }, [params.rows, params.columns, params.holeDiameter, toast]);
+  }, [params, toast]);
 
   return {
     params,

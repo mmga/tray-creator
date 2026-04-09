@@ -1,7 +1,8 @@
 "use client";
 
 import type { CustomLayoutParams } from "@/types/custom-tray";
-import { BASE_PRESETS, ELLIPSE_PRESETS, CUSTOM_LIMITS, PARAM_CONFIG, MAX_BUILD_SIZE } from "@/lib/config";
+import { BASE_PRESETS, MAX_BUILD_SIZE, SHARED_LAYOUT_LIMITS } from "@/lib/config";
+import { CUSTOM_LAYOUT_DEFAULTS, CUSTOM_LIMITS, ELLIPSE_PRESETS } from "@/lib/custom-config";
 import { calculateCustomTrayDimensions } from "@/lib/custom-tray-model";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -66,7 +67,7 @@ export default function CustomPanel({
     }, 500); // 500ms debounce
 
     return () => clearTimeout(handler);
-  }, [params, autoPreview, isOversized]);
+  }, [params, autoPreview, isGenerating, isOversized, onGenerate]);
 
   const handleReset = () => {
     // Reset to defaults but keep current logic if needed
@@ -75,7 +76,6 @@ export default function CustomPanel({
     // However, CustomPanelProps passes setParams which expects full object.
     // We'll trust the parent or import default.
     // Let's import default to be safe.
-    const { CUSTOM_LAYOUT_DEFAULTS } = require("@/lib/config");
     setParams(CUSTOM_LAYOUT_DEFAULTS);
   };
 
@@ -154,25 +154,25 @@ export default function CustomPanel({
               />
             )}
             <ParamSlider
-              label={PARAM_CONFIG.baseThickness.label}
+              label={SHARED_LAYOUT_LIMITS.baseThickness.label}
               value={params.baseThickness}
               config={CUSTOM_LIMITS.baseThickness}
               onChange={(v) => updateParam("baseThickness", v)}
-              unit={PARAM_CONFIG.baseThickness.unit}
+              unit={SHARED_LAYOUT_LIMITS.baseThickness.unit}
             />
             <ParamSlider
-              label={PARAM_CONFIG.holeDepth.label}
+              label={SHARED_LAYOUT_LIMITS.holeDepth.label}
               value={params.holeDepth}
               config={CUSTOM_LIMITS.holeDepth}
               onChange={(v) => updateParam("holeDepth", v)}
-              unit={PARAM_CONFIG.holeDepth.unit}
+              unit={SHARED_LAYOUT_LIMITS.holeDepth.unit}
             />
             <ParamSlider
-              label={PARAM_CONFIG.cornerRadius.label}
+              label={SHARED_LAYOUT_LIMITS.cornerRadius.label}
               value={params.cornerRadius}
               config={CUSTOM_LIMITS.cornerRadius}
               onChange={(v) => updateParam("cornerRadius", v)}
-              unit={PARAM_CONFIG.cornerRadius.unit}
+              unit={SHARED_LAYOUT_LIMITS.cornerRadius.unit}
             />
           </div>
         </SectionHeader>
@@ -286,7 +286,7 @@ export default function CustomPanel({
           导出 STL
         </Button>
         <Button
-          onClick={() => exportParams("custom", params as any)}
+          onClick={() => exportParams("custom", params)}
           className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-sm text-[#8cb880] font-semibold tracking-wider cursor-pointer border border-[#4a6741] shadow-lg shadow-[#2a352830]"
         >
           <Share2 className="w-4 h-4 mr-2" />

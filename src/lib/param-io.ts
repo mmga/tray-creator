@@ -5,13 +5,15 @@ import type {
   AppMode,
 } from "@/types/custom-tray";
 import {
-  PARAM_CONFIG,
-  CUSTOM_LIMITS,
-  STEPPED_LIMITS,
-  STEPPED_LAYOUT_DEFAULTS,
-  GROUP_COLORS,
   DEFAULT_TRAY_PARAMS,
-} from "@/lib/config";
+  PARAM_CONFIG,
+} from "@/lib/grid-config";
+import { CUSTOM_LIMITS } from "@/lib/custom-config";
+import {
+  GROUP_COLORS,
+  STEPPED_LAYOUT_DEFAULTS,
+  STEPPED_LIMITS,
+} from "@/lib/stepped-config";
 import { createGroupStructureOverrides } from "@/lib/stepped-group-params";
 
 // ═══════════════════════════════════════════

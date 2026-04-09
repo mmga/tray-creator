@@ -1,6 +1,6 @@
 "use client";
 
-import { GROUP_COLORS } from "@/lib/config";
+import { GROUP_COLORS } from "@/lib/stepped-config";
 import { createGroupStructureOverrides } from "@/lib/stepped-group-params";
 import type {
   SlotGroup,
