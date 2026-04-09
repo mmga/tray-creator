@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
     FolderOpen,
     Save,
@@ -71,11 +71,6 @@ function DraftItemRow({
     const [pendingTitle, setPendingTitle] = useState(item.title);
     const [confirmDelete, setConfirmDelete] = useState(false);
 
-    // 外部 item.title 变更时同步
-    useEffect(() => {
-        setPendingTitle(item.title);
-    }, [item.title]);
-
     const commitRename = () => {
         if (pendingTitle.trim()) {
             onRename(pendingTitle.trim());
@@ -86,6 +81,12 @@ function DraftItemRow({
     const cancelRename = () => {
         setPendingTitle(item.title);
         setEditingTitle(false);
+    };
+
+    const startRename = () => {
+        setPendingTitle(item.title);
+        setConfirmDelete(false);
+        setEditingTitle(true);
     };
 
     return (
@@ -188,7 +189,7 @@ function DraftItemRow({
                             加载
                         </button>
                         <button
-                            onClick={() => setEditingTitle(true)}
+                            onClick={startRename}
                             className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground border border-[#2e2a24] hover:border-[#3d372e] rounded px-2 py-0.5 transition-colors"
                         >
                             <Pencil className="w-3 h-3" />

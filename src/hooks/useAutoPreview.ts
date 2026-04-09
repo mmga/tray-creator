@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useEffectEvent } from "react";
 
 interface UseAutoPreviewOptions {
   enabled: boolean;
@@ -20,10 +20,9 @@ export function useAutoPreview(
     delayMs = 500,
   }: UseAutoPreviewOptions,
 ) {
-  // Keep a stable ref so the effect does not depend on the callback identity.
-  // Callers typically pass inline arrow functions which change on every render.
-  const onGenerateRef = useRef(onGenerate);
-  onGenerateRef.current = onGenerate;
+  const handleGenerate = useEffectEvent(() => {
+    onGenerate();
+  });
 
   useEffect(() => {
     if (!enabled || isGenerating || isBlocked) {
@@ -31,10 +30,9 @@ export function useAutoPreview(
     }
 
     const handler = window.setTimeout(() => {
-      onGenerateRef.current();
+      handleGenerate();
     }, delayMs);
 
     return () => window.clearTimeout(handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [delayMs, enabled, isBlocked, isGenerating, trigger]);
 }

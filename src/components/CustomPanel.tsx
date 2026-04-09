@@ -169,7 +169,7 @@ export default function CustomPanel({
       </div>
 
       {/* 底板孔位 — 移动端默认折叠 */}
-      <BaseHoleConfig
+      <BaseHoleConfig<CustomLayoutParams>
         enableBaseHole={params.enableBaseHole}
         baseHoleSize={params.baseHoleSize}
         baseThickness={params.baseThickness}

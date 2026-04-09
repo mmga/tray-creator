@@ -1,6 +1,3 @@
-
-import { FreeSlot } from "@/types/custom-tray";
-
 interface Point {
   x: number;
   y: number;

@@ -184,7 +184,7 @@ export default function ParameterPanel({
       </div>
 
       {/* 底板孔位 — 移动端默认折叠 */}
-      <BaseHoleConfig
+      <BaseHoleConfig<TrayParams>
         enableBaseHole={params.enableBaseHole}
         baseHoleSize={params.baseHoleSize}
         baseThickness={params.baseThickness}

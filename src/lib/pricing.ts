@@ -55,13 +55,6 @@ export function calculateGridPrice(params: TrayParams): number {
   return total;
 }
 
-/**
- * 根据椭圆或圆形的宽高，计算等效圆面积对应的直径
- */
-function getEquivalentDiameter(width: number, height: number): number {
-  return Math.sqrt(width * height);
-}
-
 export function calculateCustomPrice(
   params: CustomLayoutParams,
   volume: number,

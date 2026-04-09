@@ -115,28 +115,40 @@ function ContextLostHandler() {
 }
 
 export default function TrayViewer({ geometry, isStale, isGenerating, onRegenerate }: TrayViewerProps) {
-  const [loadingStartTime, setLoadingStartTime] = useState<number | null>(null);
   const [loadingProgress, setLoadingProgress] = useState(0);
 
   useEffect(() => {
-    if (isGenerating) {
-      setLoadingStartTime(Date.now());
-      setLoadingProgress(0);
-    } else {
-      setLoadingStartTime(null);
-      setLoadingProgress(0);
-    }
-  }, [isGenerating]);
+    let frameId: number | null = null;
+    let intervalId: number | null = null;
 
-  useEffect(() => {
-    if (loadingStartTime === null) return;
-    const raf = setInterval(() => {
-      const elapsed = Date.now() - loadingStartTime;
-      // Slow progress that never completes (real completion handled by geometry update)
-      setLoadingProgress(Math.min(elapsed / 15000, 0.85));
-    }, 100);
-    return () => clearInterval(raf);
-  }, [loadingStartTime]);
+    if (isGenerating) {
+      const startTime = Date.now();
+      frameId = window.requestAnimationFrame(() => {
+        setLoadingProgress(0);
+
+        const updateProgress = () => {
+          const elapsed = Date.now() - startTime;
+          setLoadingProgress(Math.min(elapsed / 15000, 0.85));
+        };
+
+        updateProgress();
+        intervalId = window.setInterval(updateProgress, 100);
+      });
+    } else {
+      frameId = window.requestAnimationFrame(() => {
+        setLoadingProgress(0);
+      });
+    }
+
+    return () => {
+      if (frameId !== null) {
+        window.cancelAnimationFrame(frameId);
+      }
+      if (intervalId !== null) {
+        window.clearInterval(intervalId);
+      }
+    };
+  }, [isGenerating]);
 
   return (
     <div
