@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
+import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import type { SlotGroup, SteppedLayoutParams } from "@/types/custom-tray";
 import {
   calculateCustomPrice,
   calculateGridPrice,
+  calculateSimpleSteppedPrice,
   calculateSteppedPrice,
   calculateWeight,
   getSteppedPricingBreakdown,
@@ -174,10 +176,16 @@ describe("pricing", () => {
   it("returns zero for non-positive volume and scales custom prices from weight", () => {
     expect(calculateCustomPrice(CUSTOM_LAYOUT_DEFAULTS, 0)).toBe(0);
     expect(calculateSteppedPrice(STEPPED_LAYOUT_DEFAULTS, -1)).toBe(0);
+    expect(
+      calculateSimpleSteppedPrice(SIMPLE_STEPPED_LAYOUT_DEFAULTS, 0),
+    ).toBe(0);
     expect(calculateCustomPrice(CUSTOM_LAYOUT_DEFAULTS, 1000)).toBeCloseTo(
       0.2976,
       5,
     );
+    expect(
+      calculateSimpleSteppedPrice(SIMPLE_STEPPED_LAYOUT_DEFAULTS, 1000),
+    ).toBeCloseTo(0.2976, 5);
   });
 
   it("returns a zeroed stepped breakdown when no printable geometry exists", () => {

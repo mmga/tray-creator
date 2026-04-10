@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BASE_PRESETS } from "@/lib/config";
 import { CUSTOM_LAYOUT_DEFAULTS, ELLIPSE_PRESETS } from "@/lib/custom-config";
 import { PARAM_CONFIG, DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
+import { calculateSimpleSteppedDimensions, deriveSimpleSteppedLayout } from "@/lib/simple-stepped-layout";
+import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 
 const { useAutoPreviewMock, toastMock, resetPerfMetricsMock } = vi.hoisted(
@@ -214,6 +216,7 @@ vi.mock("@/components/ParamIOButtons", () => ({
 
 import CustomPanel from "@/components/CustomPanel";
 import ParameterPanel from "@/components/ParameterPanel";
+import SimpleSteppedPanel from "@/components/SimpleSteppedPanel";
 import SteppedPanel from "@/components/SteppedPanel";
 
 function createSteppedParams(overrides?: Partial<React.ComponentProps<typeof SteppedPanel>["params"]>) {
@@ -254,6 +257,47 @@ function createSteppedParams(overrides?: Partial<React.ComponentProps<typeof Ste
       },
     ],
     activeGroupId: "group-1",
+    ...overrides,
+  };
+}
+
+function createSimpleSteppedParams(
+  overrides?: Partial<React.ComponentProps<typeof SimpleSteppedPanel>["params"]>,
+) {
+  return {
+    ...SIMPLE_STEPPED_LAYOUT_DEFAULTS,
+    trayWidth: 150,
+    trayDepth: 130,
+    rows: [
+      { id: "row-1", name: "前排", slotIds: ["slot-1"] },
+      { id: "row-2", name: "后排", slotIds: ["slot-2"] },
+    ],
+    slots: [
+      {
+        id: "slot-1",
+        rowId: "row-1",
+        shape: "circle" as const,
+        diameter: 25,
+        x: 0,
+        y: 0,
+      },
+      {
+        id: "slot-2",
+        rowId: "row-2",
+        shape: "circle" as const,
+        diameter: 40,
+        x: 12,
+        y: 0,
+      },
+    ],
+    firstRowHeight: 5,
+    stepHeight: 4,
+    rowGap: 6,
+    spacing: 5,
+    outerMarginIndependent: false,
+    outerMargin: 5,
+    holeDepth: 3,
+    cornerRadius: 4,
     ...overrides,
   };
 }
@@ -449,6 +493,144 @@ describe("CustomPanel", { timeout: 15000 }, () => {
     expect(onExportSTL).toHaveBeenCalledTimes(1);
     expect(setParams).toHaveBeenNthCalledWith(1, CUSTOM_LAYOUT_DEFAULTS);
     expect(setParams).toHaveBeenNthCalledWith(2, { importedMode: "custom" });
+  });
+});
+
+describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
+  it("routes row management and slot insertion controls", () => {
+    const params = createSimpleSteppedParams();
+    const derivedLayout = deriveSimpleSteppedLayout(params, "row-1");
+    const effectiveDimensions = calculateSimpleSteppedDimensions(params);
+    const onSetActiveRow = vi.fn();
+    const onAddRow = vi.fn();
+    const onRemoveRow = vi.fn();
+    const onRenameRow = vi.fn();
+    const onClearRow = vi.fn();
+    const onReorderRows = vi.fn();
+    const onAddSlotToRow = vi.fn();
+
+    render(
+      <SimpleSteppedPanel
+        params={params}
+        derivedLayout={derivedLayout}
+        activeRowId="row-1"
+        effectiveDimensions={effectiveDimensions}
+        setParams={vi.fn()}
+        updateParam={vi.fn()}
+        onSetActiveRow={onSetActiveRow}
+        onAddRow={onAddRow}
+        onRemoveRow={onRemoveRow}
+        onRenameRow={onRenameRow}
+        onClearRow={onClearRow}
+        onReorderRows={onReorderRows}
+        onAddSlotToRow={onAddSlotToRow}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        onTrimTray={vi.fn()}
+        isGenerating={false}
+        isPreviewStale={false}
+        volume={0}
+      />,
+    );
+
+    fireEvent.change(screen.getByDisplayValue("前排"), {
+      target: { value: "第一排" },
+    });
+    fireEvent.click(screen.getAllByRole("button", { name: /25/ })[0]!);
+    fireEvent.click(screen.getByRole("button", { name: "清空本行" }));
+    fireEvent.click(screen.getByText("后排"));
+    fireEvent.click(screen.getAllByTitle("下移")[0]!);
+    fireEvent.click(screen.getAllByTitle("删除行")[0]!);
+    fireEvent.click(screen.getByRole("button", { name: "新建行" }));
+
+    expect(onRenameRow).toHaveBeenCalledWith("row-1", "第一排");
+    expect(onAddSlotToRow).toHaveBeenCalledWith("row-1", BASE_PRESETS[0].diameter);
+    expect(onClearRow).toHaveBeenCalledWith("row-1");
+    expect(onSetActiveRow).toHaveBeenCalledWith("row-2");
+    expect(onReorderRows).toHaveBeenCalledWith(0, 1);
+    expect(onRemoveRow).toHaveBeenCalledWith("row-1");
+    expect(onAddRow).toHaveBeenCalledTimes(1);
+  });
+
+  it("routes structure, trim, generate, export, reset, and import controls", () => {
+    const params = createSimpleSteppedParams({
+      outerMarginIndependent: true,
+      outerMargin: 8,
+    });
+    const derivedLayout = deriveSimpleSteppedLayout(params, "row-1");
+    const effectiveDimensions = calculateSimpleSteppedDimensions(params);
+    const updateParam = vi.fn();
+    const setParams = vi.fn();
+    const onGenerate = vi.fn();
+    const onExportSTL = vi.fn();
+    const onTrimTray = vi.fn();
+
+    render(
+      <SimpleSteppedPanel
+        params={params}
+        derivedLayout={derivedLayout}
+        activeRowId="row-1"
+        effectiveDimensions={effectiveDimensions}
+        setParams={setParams}
+        updateParam={updateParam}
+        onSetActiveRow={vi.fn()}
+        onAddRow={vi.fn()}
+        onRemoveRow={vi.fn()}
+        onRenameRow={vi.fn()}
+        onClearRow={vi.fn()}
+        onReorderRows={vi.fn()}
+        onAddSlotToRow={vi.fn()}
+        onGenerate={onGenerate}
+        onExportSTL={onExportSTL}
+        onTrimTray={onTrimTray}
+        isGenerating={false}
+        isPreviewStale={true}
+        volume={1000}
+      />,
+    );
+
+    expect(screen.getByText("当前预览已过期，请点击“开始锻造”生成最新模型。")).toBeInTheDocument();
+    expect(screen.getByText("¥0.3")).toBeInTheDocument();
+    expect(screen.getByText("估重: 0.7g")).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("switch", {
+        name: "simple-stepped-outer-margin-independent",
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "设置首排高度:5" }));
+    fireEvent.click(screen.getByRole("button", { name: "设置阶梯步进:4" }));
+    fireEvent.click(screen.getByRole("button", { name: "设置行间距:6" }));
+    fireEvent.click(screen.getByRole("button", { name: "设置凹槽间距:5" }));
+    fireEvent.click(screen.getByRole("button", { name: "设置边界间距:8" }));
+    fireEvent.click(screen.getByRole("button", { name: "设置凹槽深度:3" }));
+    fireEvent.click(screen.getByRole("button", { name: "设置底板圆角:4" }));
+    fireEvent.click(screen.getByRole("button", { name: "Trim 到凹槽占用区域" }));
+    fireEvent.click(screen.getByRole("button", { name: "开始锻造" }));
+    fireEvent.click(screen.getByRole("button", { name: "导出 STL" }));
+    fireEvent.click(screen.getByRole("button", { name: "重置参数" }));
+    fireEvent.click(screen.getByRole("button", { name: "导入参数" }));
+
+    expect(updateParam).toHaveBeenNthCalledWith(
+      1,
+      "outerMarginIndependent",
+      false,
+    );
+    expect(updateParam).toHaveBeenNthCalledWith(2, "firstRowHeight", 5.5);
+    expect(updateParam).toHaveBeenNthCalledWith(3, "stepHeight", 4.5);
+    expect(updateParam).toHaveBeenNthCalledWith(4, "rowGap", 7);
+    expect(updateParam).toHaveBeenNthCalledWith(5, "spacing", 6);
+    expect(updateParam).toHaveBeenNthCalledWith(6, "outerMargin", 9);
+    expect(updateParam).toHaveBeenNthCalledWith(7, "holeDepth", 3.2);
+    expect(updateParam).toHaveBeenNthCalledWith(8, "cornerRadius", 5);
+    expect(onTrimTray).toHaveBeenCalledTimes(1);
+    expect(onGenerate).toHaveBeenCalledTimes(1);
+    expect(onExportSTL).toHaveBeenCalledTimes(1);
+    expect(setParams).toHaveBeenNthCalledWith(1, SIMPLE_STEPPED_LAYOUT_DEFAULTS);
+    expect(setParams).toHaveBeenNthCalledWith(
+      2,
+      { importedMode: "simple-stepped" },
+    );
   });
 });
 
