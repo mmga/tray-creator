@@ -6,7 +6,6 @@ import { randomIdFactory } from "@/lib/id-factory";
 import type {
   SteppedLayoutParams,
   GroupOutlinePreview,
-  SteppedSlot,
 } from "@/types/custom-tray";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import { useUndoHistory } from "@/hooks/useUndoHistory";

@@ -528,8 +528,10 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
     [applyMultipleCanvasSlotUpdates],
   );
 
-  const updateSlotRotation = useCallback((_id: string, _rotation: number) => {
+  const updateSlotRotation = useCallback((id: string, rotation: number) => {
     // 第一版仅支持圆形槽，旋转无意义；保留接口兼容 LayoutCanvas。
+    void id;
+    void rotation;
   }, []);
 
   const duplicateSlots = useCallback(

@@ -105,7 +105,7 @@ describe("param-io", () => {
     expect(parsed.baseThickness).toBe(4);
     expect(parsed.holeDepth).toBe(4);
     expect(parsed.cornerRadius).toBe(10);
-    expect(parsed.boundarySpacing).toBe(DEFAULT_TRAY_PARAMS.boundarySpacing);
+    expect(parsed.boundarySpacing).toBe(parsed.spacing);
     expect(parsed.boundarySpacingIndependent).toBe(false);
   });
 

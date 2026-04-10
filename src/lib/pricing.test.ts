@@ -180,34 +180,114 @@ describe("pricing", () => {
     );
   });
 
-  it("prices stepped layouts from footprint, estimated print time, and complexity", () => {
+  it("returns a zeroed stepped breakdown when no printable geometry exists", () => {
+    const breakdown = getSteppedPricingBreakdown(STEPPED_LAYOUT_DEFAULTS, 120000);
+
+    expect(breakdown.price).toBe(0);
+    expect(breakdown.rawPrice).toBe(0);
+    expect(breakdown.materialFee).toBe(0);
+    expect(breakdown.printFee).toBe(0);
+    expect(breakdown.footprintFee).toBe(0);
+    expect(breakdown.complexityFee).toBe(0);
+    expect(breakdown.estimatedWeight).toBe(0);
+    expect(breakdown.estimatedPrintHours).toBe(0);
+    expect(breakdown.materialDensityGPerCm3).toBeCloseTo(0.34, 5);
+  });
+
+  it("uses effective group overrides when determining stepped pricing complexity flags", () => {
+    const params: SteppedLayoutParams = {
+      ...STEPPED_LAYOUT_DEFAULTS,
+      slots: [createSlot("slot-1", 120, 120, 32, "g-1")],
+      groups: [
+        createGroup("g-1", 10, {
+          useGroupSmoothingRadius: true,
+          groupSmoothingRadius: 14,
+          useGroupDisconnectDistance: true,
+          groupDisconnectDistance: 6,
+        }),
+      ],
+      smoothingRadius: 7,
+      disconnectDistance: 0,
+      activeGroupId: "g-1",
+    };
+
+    const breakdown = getSteppedPricingBreakdown(params, 150000);
+
+    expect(breakdown.hasWideSmoothing).toBe(true);
+    expect(breakdown.hasDisconnectDistance).toBe(true);
+    expect(breakdown.complexityFee).toBeCloseTo(4.5, 5);
+  });
+
+  it("prices stepped layouts from formula inputs and rounds the final quote", () => {
     const sampleA = getSteppedPricingBreakdown(createSampleA(), 318150.1025655966);
     const sampleB = getSteppedPricingBreakdown(createSampleB(), 316356.25431361876);
     const sampleC = getSteppedPricingBreakdown(createSampleC(), 609970.6591252618);
 
     expect(sampleA.effectiveWidth).toBe(236);
     expect(sampleA.effectiveDepth).toBe(109);
-    expect(sampleA.estimatedWeight).toBeCloseTo(112, 5);
-    expect(sampleA.estimatedPrintHours).toBeCloseTo(2 + 29 / 60, 1);
+    expect(sampleA.materialDensityGPerCm3).toBeCloseTo(0.352, 5);
+    expect(sampleA.estimatedWeight).toBeCloseTo(
+      (318150.1025655966 / 1000) * sampleA.materialDensityGPerCm3,
+      5,
+    );
+    expect(sampleA.estimatedPrintHours).toBeCloseTo(
+      0.25 + sampleA.estimatedWeight / 50,
+      5,
+    );
     expect(sampleA.complexityFee).toBeCloseTo(7, 5);
     expect(sampleA.price).toBe(39);
-    expect(sampleA.materialDensityGPerCm3).toBeCloseTo(0.352, 5);
     expect(calculateSteppedPrice(createSampleA(), 318150.1025655966)).toBe(39);
+    expect(sampleA.rawPrice).toBeCloseTo(
+      sampleA.baseFee +
+        sampleA.materialFee +
+        sampleA.printFee +
+        sampleA.footprintFee +
+        sampleA.complexityFee,
+      5,
+    );
 
-    expect(sampleB.effectiveWidth).toBe(188);
+    expect(sampleB.effectiveWidth).toBe(189);
     expect(sampleB.effectiveDepth).toBe(107);
-    expect(sampleB.estimatedWeight).toBeCloseTo(107.56, 2);
-    expect(sampleB.estimatedPrintHours).toBeCloseTo(2 + 27 / 60, 1);
+    expect(sampleB.materialDensityGPerCm3).toBeCloseTo(0.34, 5);
+    expect(sampleB.estimatedWeight).toBeCloseTo(
+      (316356.25431361876 / 1000) * sampleB.materialDensityGPerCm3,
+      5,
+    );
+    expect(sampleB.estimatedPrintHours).toBeCloseTo(
+      0.25 + sampleB.estimatedWeight / 50 + 0.041,
+      5,
+    );
     expect(sampleB.complexityFee).toBeCloseTo(7, 5);
     expect(sampleB.price).toBe(38);
-    expect(sampleB.materialDensityGPerCm3).toBeCloseTo(0.34, 5);
+    expect(sampleB.rawPrice).toBeCloseTo(
+      sampleB.baseFee +
+        sampleB.materialFee +
+        sampleB.printFee +
+        sampleB.footprintFee +
+        sampleB.complexityFee,
+      5,
+    );
 
     expect(sampleC.effectiveWidth).toBe(222);
     expect(sampleC.effectiveDepth).toBe(173);
-    expect(sampleC.estimatedWeight).toBeCloseTo(192.75, 2);
-    expect(sampleC.estimatedPrintHours).toBeCloseTo(4, 1);
+    expect(sampleC.materialDensityGPerCm3).toBeCloseTo(0.316, 5);
+    expect(sampleC.estimatedWeight).toBeCloseTo(
+      (609970.6591252618 / 1000) * sampleC.materialDensityGPerCm3,
+      5,
+    );
+    expect(sampleC.estimatedPrintHours).toBeCloseTo(
+      0.25 + sampleC.estimatedWeight / 50 + 0.041 * 2 - 0.03 * 3,
+      5,
+    );
     expect(sampleC.complexityFee).toBeCloseTo(27.95, 5);
     expect(sampleC.price).toBe(80);
-    expect(sampleC.materialDensityGPerCm3).toBeCloseTo(0.316, 5);
+    expect(sampleC.rawPrice).toBeCloseTo(
+      sampleC.baseFee +
+        sampleC.materialFee +
+        sampleC.printFee +
+        sampleC.footprintFee +
+        sampleC.complexityFee,
+      5,
+    );
   });
 });

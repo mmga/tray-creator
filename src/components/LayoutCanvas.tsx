@@ -228,24 +228,6 @@ export default function LayoutCanvas({
     onSelectionChange?.(Array.from(effectiveSelectedIds));
   }, [effectiveSelectedIds, isActive, onSelectionChange, selectedIds]);
 
-  useEffect(() => {
-    const validIds = new Set<string>(slots.map((slot) => slot.id));
-    setSelectedIds((prev) => {
-      const next = new Set<string>(
-        Array.from(prev).filter((id) => validIds.has(id)),
-      );
-      return next.size === prev.size ? prev : next;
-    });
-
-    if (draggingId && !validIds.has(draggingId)) {
-      setDraggingId(null);
-    }
-
-    if (hoveredId && !validIds.has(hoveredId)) {
-      setHoveredId(null);
-    }
-  }, [draggingId, hoveredId, slots]);
-
   const handleUpdateSlots = useCallback(
     (updates: CanvasSlotUpdate[]) => {
       if (onUpdateMultipleSlots) {
