@@ -57,6 +57,48 @@ const {
     baseHoleSize: "25",
   };
 
+  const simpleSteppedCanvasParams: CustomLayoutParams = {
+    trayWidth: 180,
+    trayDepth: 150,
+    slots: [
+      {
+        id: "simple-slot-1",
+        x: 72,
+        y: 48,
+        shape: "circle",
+        width: 25,
+        height: 25,
+        rotation: 0,
+      },
+      {
+        id: "simple-slot-2",
+        x: 112,
+        y: 48,
+        shape: "circle",
+        width: 25,
+        height: 25,
+        rotation: 0,
+      },
+      {
+        id: "simple-slot-3",
+        x: 90,
+        y: 110,
+        shape: "circle",
+        width: 40,
+        height: 40,
+        rotation: 0,
+      },
+    ],
+    spacing: 5,
+    boundarySpacing: 5,
+    boundarySpacingIndependent: false,
+    baseThickness: 5,
+    holeDepth: 3,
+    cornerRadius: 4,
+    enableBaseHole: false,
+    baseHoleSize: "25",
+  };
+
   const steppedParams: SteppedLayoutParams = {
     trayWidth: 260,
     trayDepth: 260,
@@ -178,13 +220,41 @@ const {
     },
     simpleSteppedModelMock: {
       params: {
-        trayWidth: 120,
-        trayDepth: 120,
-        rows: [],
-        slots: [],
+        trayWidth: 180,
+        trayDepth: 150,
+        rows: [
+          { id: "row-1", name: "前排", slotIds: ["simple-slot-1", "simple-slot-2"] },
+          { id: "row-2", name: "后排", slotIds: ["simple-slot-3"] },
+        ],
+        slots: [
+          {
+            id: "simple-slot-1",
+            rowId: "row-1",
+            shape: "circle",
+            diameter: 25,
+            x: -20,
+            y: 0,
+          },
+          {
+            id: "simple-slot-2",
+            rowId: "row-1",
+            shape: "circle",
+            diameter: 25,
+            x: 20,
+            y: 0,
+          },
+          {
+            id: "simple-slot-3",
+            rowId: "row-2",
+            shape: "circle",
+            diameter: 40,
+            x: 0,
+            y: 0,
+          },
+        ],
         firstRowHeight: 5,
         stepHeight: 5,
-        rowGap: 0,
+        rowGap: 6,
         spacing: 5,
         outerMarginIndependent: false,
         outerMargin: 5,
@@ -192,18 +262,66 @@ const {
         cornerRadius: 4,
       },
       derivedLayout: {
-        trayWidth: 120,
-        trayDepth: 120,
-        minimumTrayWidth: 0,
-        minimumTrayDepth: 0,
-        trayHeight: 0,
-        highestTopHeight: 0,
-        slotCount: 0,
-        activeRows: [],
-        rowBands: [],
+        trayWidth: 180,
+        trayDepth: 150,
+        minimumTrayWidth: 180,
+        minimumTrayDepth: 150,
+        trayHeight: 10,
+        highestTopHeight: 10,
+        slotCount: 3,
+        activeRows: [
+          {
+            id: "row-1",
+            name: "前排",
+            x: 0,
+            y: 0,
+            length: 180,
+            depth: 50,
+            centerY: 25,
+            holeCenterX: 90,
+            topHeight: 5,
+            extraHeight: 0,
+            slots: [],
+          },
+          {
+            id: "row-2",
+            name: "后排",
+            x: 0,
+            y: 56,
+            length: 180,
+            depth: 94,
+            centerY: 103,
+            holeCenterX: 90,
+            topHeight: 10,
+            extraHeight: 5,
+            slots: [],
+          },
+        ],
+        rowBands: [
+          {
+            id: "row-1",
+            name: "前排",
+            x: 0,
+            y: 0,
+            width: 180,
+            depth: 50,
+            topHeight: 5,
+            isActive: true,
+          },
+          {
+            id: "row-2",
+            name: "后排",
+            x: 0,
+            y: 56,
+            width: 180,
+            depth: 94,
+            topHeight: 10,
+            isActive: false,
+          },
+        ],
       },
-      activeRowId: null,
-      effectiveDimensions: { width: 120, depth: 120, height: 0 },
+      activeRowId: "row-1",
+      effectiveDimensions: { width: 180, depth: 150, height: 10 },
       setParams: vi.fn(),
       updateParam: vi.fn(),
       setActiveRow: vi.fn(),
@@ -219,16 +337,16 @@ const {
       updateMultipleSlotsLive: vi.fn(),
       updateSlotRotation: vi.fn(),
       duplicateSlots: vi.fn(),
-      canvasParams: customParams,
+      canvasParams: simpleSteppedCanvasParams,
       saveSnapshot: vi.fn(),
       undo: vi.fn(),
-      canUndo: false,
+      canUndo: true,
       resizeTray: vi.fn(),
       trimTray: vi.fn(),
       threeGeometry: { id: "simple-stepped-geometry" },
-      volume: 0,
+      volume: 30,
       isGenerating: false,
-      isPreviewStale: false,
+      isPreviewStale: true,
       handleGenerate: vi.fn(),
       handleExportSTL: vi.fn(),
     },
@@ -332,6 +450,9 @@ vi.mock("@/components/ModeTabs", () => ({
         <button type="button" onClick={() => onModeChange("custom")}>
           切到自定义
         </button>
+        <button type="button" onClick={() => onModeChange("simple-stepped")}>
+          切到简易阶梯
+        </button>
         <button type="button" onClick={() => onModeChange("stepped")}>
           切到阶梯
         </button>
@@ -390,21 +511,36 @@ vi.mock("@/components/LayoutCanvas", () => ({
     isActive,
     focusedGroupId,
     outlinePreview,
+    rowBands,
+    onResizeTray,
+    slotMoveScopeResolver,
     onSelectionChange,
     onEditInteractionChange,
   }: {
     isActive?: boolean;
     focusedGroupId?: string | null;
     outlinePreview?: GroupOutlinePreview[] | null;
+    rowBands?: Array<{ id: string }>;
+    onResizeTray?: (width: number, depth: number) => void;
+    slotMoveScopeResolver?: (draggingId: string, selectedIds: string[]) => string[];
     onSelectionChange?: (ids: string[]) => void;
     onEditInteractionChange?: (isInteracting: boolean) => void;
   }) {
+    const scopedDragIds = slotMoveScopeResolver?.("simple-slot-1", [
+      "simple-slot-1",
+      "simple-slot-2",
+      "simple-slot-3",
+    ]) ?? [];
+
     return (
       <div
         data-testid="layout-canvas"
         data-active={String(Boolean(isActive))}
         data-focused-group-id={focusedGroupId ?? ""}
         data-outline-count={outlinePreview?.length ?? 0}
+        data-row-band-count={rowBands?.length ?? 0}
+        data-has-resize-tray={String(Boolean(onResizeTray))}
+        data-scoped-drag-ids={scopedDragIds.join(",")}
       >
         <button
           type="button"
@@ -566,6 +702,7 @@ describe("Home page", { timeout: 15000 }, () => {
   beforeEach(() => {
     gridModelMock.handleGenerate.mockReset();
     customModelMock.handleGenerate.mockReset();
+    simpleSteppedModelMock.handleGenerate.mockReset();
     steppedModelMock.handleGenerate.mockReset();
     steppedModelMock.setActiveGroup.mockReset();
     steppedModelMock.pauseOutlinePreview.mockReset();
@@ -595,6 +732,40 @@ describe("Home page", { timeout: 15000 }, () => {
     expect(screen.getByTestId("tray-viewer")).toHaveAttribute(
       "data-geometry-id",
       "custom-geometry",
+    );
+    expect(screen.getByTestId("tray-viewer")).toHaveAttribute(
+      "data-is-stale",
+      "true",
+    );
+  });
+
+  it("wires simple stepped mode through the panel, canvas, and 3D regenerate flow", async () => {
+    render(<Home />);
+
+    fireEvent.click(screen.getByRole("button", { name: "切到简易阶梯" }));
+    await screen.findByTestId("simple-stepped-panel");
+
+    expect(screen.getByTestId("layout-canvas")).toHaveAttribute(
+      "data-row-band-count",
+      "2",
+    );
+    expect(screen.getByTestId("layout-canvas")).toHaveAttribute(
+      "data-has-resize-tray",
+      "true",
+    );
+    expect(screen.getByTestId("layout-canvas")).toHaveAttribute(
+      "data-scoped-drag-ids",
+      "simple-slot-1,simple-slot-2",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "3D 预览" }));
+
+    await waitFor(() => {
+      expect(simpleSteppedModelMock.handleGenerate).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.getByTestId("tray-viewer")).toHaveAttribute(
+      "data-geometry-id",
+      "simple-stepped-geometry",
     );
     expect(screen.getByTestId("tray-viewer")).toHaveAttribute(
       "data-is-stale",

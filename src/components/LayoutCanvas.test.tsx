@@ -498,4 +498,86 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
       "true",
     );
   });
+
+  it("uses simple stepped row bands to switch overflow semantics and drag scoping", async () => {
+    const slotMoveScopeResolver = vi.fn(() => ["slot-1"]);
+    const onSaveSnapshot = vi.fn();
+    const onEditInteractionChange = vi.fn();
+
+    render(
+      <LayoutCanvas
+        params={createCustomParams({
+          trayWidth: 280,
+          trayDepth: 270,
+          slots: [
+            {
+              id: "slot-1",
+              x: 72,
+              y: 48,
+              shape: "circle",
+              width: 25,
+              height: 25,
+              rotation: 0,
+            },
+            {
+              id: "slot-2",
+              x: 112,
+              y: 48,
+              shape: "circle",
+              width: 25,
+              height: 25,
+              rotation: 0,
+            },
+          ],
+        })}
+        rowBands={[
+          {
+            id: "row-1",
+            name: "前排",
+            x: 0,
+            y: 0,
+            width: 180,
+            depth: 50,
+            topHeight: 5,
+            isActive: true,
+          },
+          {
+            id: "row-2",
+            name: "后排",
+            x: 0,
+            y: 56,
+            width: 180,
+            depth: 94,
+            topHeight: 10,
+            isActive: false,
+          },
+        ]}
+        slotMoveScopeResolver={slotMoveScopeResolver}
+        onResizeTray={vi.fn()}
+        onUpdateSlot={vi.fn()}
+        onRemoveSlot={vi.fn()}
+        onSaveSnapshot={onSaveSnapshot}
+        onEditInteractionChange={onEditInteractionChange}
+      />,
+    );
+
+    expect(screen.getByTestId("canvas-overlay-layer")).toHaveAttribute(
+      "data-show-effective-baseplate",
+      "false",
+    );
+    expect(screen.getByText(/打印边框超限/)).toBeInTheDocument();
+
+    fireEvent.pointerDown(screen.getByTestId("canvas-slot-slot-1"), {
+      pointerId: 1,
+      pointerType: "mouse",
+      clientX: 32,
+      clientY: 44,
+    });
+
+    await waitFor(() => {
+      expect(slotMoveScopeResolver).toHaveBeenCalledWith("slot-1", ["slot-1"]);
+    });
+    expect(onSaveSnapshot).toHaveBeenCalledTimes(1);
+    expect(onEditInteractionChange).toHaveBeenCalledWith(true);
+  });
 });

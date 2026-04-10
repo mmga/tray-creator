@@ -1,13 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
+import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import type {
   AppMode,
   CustomLayoutParams,
+  SimpleSteppedLayoutParams,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import type { TrayParams } from "@/types/tray";
+import { calculateSimpleSteppedDimensions } from "@/lib/simple-stepped-layout";
 import {
   buildParamFile,
   createParamBlob,
@@ -223,6 +226,60 @@ describe("param-io", () => {
       groupId: parsed.groups[1].id,
     });
     expect("bottomHeight" in parsed.slots[0]).toBe(false);
+  });
+
+  it("normalizes simple stepped files and rebuilds row membership", () => {
+    const parsed = parseParamFileObject(
+      {
+        version: 1,
+        mode: "simple-stepped" as AppMode,
+        params: {
+          trayWidth: 40,
+          trayDepth: 50,
+          rows: [],
+          slots: [
+            {
+              shape: "ellipse",
+              diameter: 25,
+              x: 0,
+              y: Number.NaN,
+            },
+          ],
+          firstRowHeight: 99,
+          stepHeight: 99,
+          rowGap: 99,
+          spacing: 99,
+          outerMargin: 12,
+          holeDepth: 99,
+        },
+      },
+      "simple-stepped",
+    ) as SimpleSteppedLayoutParams;
+
+    const dimensions = calculateSimpleSteppedDimensions(parsed);
+
+    expect(parsed.rows).toHaveLength(1);
+    expect(parsed.rows[0]).toMatchObject({
+      id: "test-uuid",
+      name: "行 1",
+      slotIds: ["test-uuid"],
+    });
+    expect(parsed.slots[0]).toMatchObject({
+      id: "test-uuid",
+      shape: "circle",
+      rowId: "test-uuid",
+      y: 0,
+    });
+    expect(parsed.firstRowHeight).toBe(40);
+    expect(parsed.stepHeight).toBe(40);
+    expect(parsed.rowGap).toBe(40);
+    expect(parsed.spacing).toBe(20);
+    expect(parsed.outerMarginIndependent).toBe(true);
+    expect(parsed.outerMargin).toBe(12);
+    expect(parsed.holeDepth).toBe(20);
+    expect(parsed.cornerRadius).toBe(SIMPLE_STEPPED_LAYOUT_DEFAULTS.cornerRadius);
+    expect(parsed.trayWidth).toBeCloseTo(dimensions.width, 5);
+    expect(parsed.trayDepth).toBeCloseTo(dimensions.depth, 5);
   });
 
   it("rejects invalid versions and mismatched modes", () => {
