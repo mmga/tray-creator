@@ -6,7 +6,6 @@ import { randomIdFactory } from "@/lib/id-factory";
 import type {
   SteppedLayoutParams,
   GroupOutlinePreview,
-  SteppedSlot,
 } from "@/types/custom-tray";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import { useUndoHistory } from "@/hooks/useUndoHistory";
@@ -49,6 +48,10 @@ import {
   exportSteppedModelFiles,
   generateSteppedPreview,
 } from "@/lib/stepped-model-service";
+import {
+  generateSteppedOptimizationProposals,
+  type SteppedOptimizationProposal,
+} from "@/lib/stepped-global-optimize";
 
 export interface UseSteppedLayoutReturn {
   params: SteppedLayoutParams;
@@ -99,6 +102,11 @@ export interface UseSteppedLayoutReturn {
   isGenerating: boolean;
   isPreviewStale: boolean;
   bridgeWarning: BridgeWarning | null;
+  optimizationProposals: SteppedOptimizationProposal[];
+  isOptimizingLayout: boolean;
+  generateOptimizationProposals: () => void;
+  applyOptimizationProposal: (proposalId: SteppedOptimizationProposal["id"]) => void;
+  clearOptimizationProposals: () => void;
   pauseOutlinePreview: () => void;
   resumeOutlinePreview: () => void;
   handleGenerate: () => void;
@@ -115,6 +123,10 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     useState<THREE.BufferGeometry | null>(null);
   const [volume, setVolume] = useState<number>(0);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [optimizationProposals, setOptimizationProposals] = useState<
+    SteppedOptimizationProposal[]
+  >([]);
+  const [isOptimizingLayout, setIsOptimizingLayout] = useState(false);
   const jscadGeomRef = useRef<Geom3 | null>(null);
   const { toast } = useToast();
 
@@ -127,13 +139,21 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
   paramsRef.current = params;
   const [isPreviewStale, setIsPreviewStale] = useState(false);
   const paramsVersionRef = useRef(0);
+  const optimizationProposalsRef = useRef(optimizationProposals);
+  optimizationProposalsRef.current = optimizationProposals;
+
+  const clearOptimizationProposals = useCallback(() => {
+    setOptimizationProposals([]);
+    setIsOptimizingLayout(false);
+  }, []);
 
   const invalidatePreview = useCallback(() => {
     paramsVersionRef.current += 1;
     setIsPreviewStale(true);
     jscadGeomRef.current = null;
     setVolume(0);
-  }, []);
+    clearOptimizationProposals();
+  }, [clearOptimizationProposals]);
 
   const setParams = useCallback<
     React.Dispatch<React.SetStateAction<SteppedLayoutParams>>
@@ -386,8 +406,9 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
         pushState(prev);
         return next;
       });
+      clearOptimizationProposals();
     },
-    [pushState],
+    [clearOptimizationProposals, pushState],
   );
 
   const trimBaseplate = useCallback(() => {
@@ -465,6 +486,33 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     return buildSteppedBridgeWarning(params);
   }, [params]);
 
+  const generateOptimizationProposalsForCurrentParams = useCallback(() => {
+    setIsOptimizingLayout(true);
+    try {
+      setOptimizationProposals(
+        generateSteppedOptimizationProposals(paramsRef.current),
+      );
+    } finally {
+      setIsOptimizingLayout(false);
+    }
+  }, []);
+
+  const applyOptimizationProposal = useCallback(
+    (proposalId: SteppedOptimizationProposal["id"]) => {
+      const proposal = optimizationProposalsRef.current.find(
+        (entry) => entry.id === proposalId,
+      );
+      if (!proposal) {
+        return;
+      }
+
+      pushState(paramsRef.current, { force: true });
+      internalSetParams(proposal.params);
+      invalidatePreview();
+    },
+    [invalidatePreview, pushState],
+  );
+
   return {
     params,
     setParams,
@@ -497,6 +545,11 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     isGenerating,
     isPreviewStale,
     bridgeWarning,
+    optimizationProposals,
+    isOptimizingLayout,
+    generateOptimizationProposals: generateOptimizationProposalsForCurrentParams,
+    applyOptimizationProposal,
+    clearOptimizationProposals,
     pauseOutlinePreview,
     resumeOutlinePreview,
     handleGenerate,

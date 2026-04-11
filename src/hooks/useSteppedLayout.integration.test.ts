@@ -307,6 +307,59 @@ describe("useSteppedLayout", () => {
     ]);
   });
 
+  it("generates optimization proposals, applies them, and clears stale results", () => {
+    randomIdFactoryMock.createId
+      .mockReturnValueOnce("group-2")
+      .mockReturnValueOnce("slot-1")
+      .mockReturnValueOnce("slot-2");
+
+    const { result } = renderHook(() => useSteppedLayout());
+
+    act(() => {
+      result.current.addGroup();
+      result.current.addSlot(40);
+      result.current.setActiveGroup(STEPPED_LAYOUT_DEFAULTS.groups[0].id);
+      result.current.addSlot(25);
+    });
+
+    const beforeApply = result.current.params;
+
+    act(() => {
+      result.current.generateOptimizationProposals();
+    });
+    expect(result.current.isOptimizingLayout).toBe(false);
+    expect(result.current.optimizationProposals).toHaveLength(3);
+
+    const proposalToApply = result.current.optimizationProposals[0];
+    act(() => {
+      result.current.applyOptimizationProposal(proposalToApply.id);
+    });
+    expect(result.current.optimizationProposals).toEqual([]);
+    expect(result.current.params).toEqual(proposalToApply.params);
+    expect(result.current.isPreviewStale).toBe(true);
+
+    act(() => {
+      result.current.undo();
+    });
+    expect(result.current.params).toEqual(beforeApply);
+
+    act(() => {
+      result.current.generateOptimizationProposals();
+    });
+    expect(result.current.optimizationProposals).toHaveLength(3);
+
+    act(() => {
+      result.current.updateParam("spacing", 7);
+    });
+    expect(result.current.optimizationProposals).toEqual([]);
+
+    act(() => {
+      result.current.generateOptimizationProposals();
+      result.current.reorderGroups(1, 0);
+    });
+    expect(result.current.optimizationProposals).toEqual([]);
+  });
+
   it("ignores stale generation results and exports the latest generated model", async () => {
     randomIdFactoryMock.createId.mockReturnValue("slot-1");
     const staleGeometry = { id: "stale-geom" } as never;
