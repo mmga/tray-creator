@@ -307,7 +307,7 @@ describe("useSteppedLayout", () => {
     ]);
   });
 
-  it("generates optimization proposals, applies them, and clears stale results", () => {
+  it("generates optimization proposals, applies them, and clears stale results", async () => {
     randomIdFactoryMock.createId
       .mockReturnValueOnce("group-2")
       .mockReturnValueOnce("slot-1")
@@ -327,8 +327,11 @@ describe("useSteppedLayout", () => {
     act(() => {
       result.current.generateOptimizationProposals();
     });
-    expect(result.current.isOptimizingLayout).toBe(false);
-    expect(result.current.optimizationProposals).toHaveLength(3);
+    expect(result.current.isOptimizingLayout).toBe(true);
+    await waitFor(() => {
+      expect(result.current.isOptimizingLayout).toBe(false);
+      expect(result.current.optimizationProposals).toHaveLength(3);
+    });
 
     const proposalToApply = result.current.optimizationProposals[0];
     act(() => {
@@ -346,7 +349,10 @@ describe("useSteppedLayout", () => {
     act(() => {
       result.current.generateOptimizationProposals();
     });
-    expect(result.current.optimizationProposals).toHaveLength(3);
+    expect(result.current.isOptimizingLayout).toBe(true);
+    await waitFor(() => {
+      expect(result.current.optimizationProposals).toHaveLength(3);
+    });
 
     act(() => {
       result.current.updateParam("spacing", 7);
@@ -357,7 +363,10 @@ describe("useSteppedLayout", () => {
       result.current.generateOptimizationProposals();
       result.current.reorderGroups(1, 0);
     });
-    expect(result.current.optimizationProposals).toEqual([]);
+    await waitFor(() => {
+      expect(result.current.isOptimizingLayout).toBe(false);
+      expect(result.current.optimizationProposals).toEqual([]);
+    });
   });
 
   it("ignores stale generation results and exports the latest generated model", async () => {

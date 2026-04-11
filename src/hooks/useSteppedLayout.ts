@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useMemo } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import { browserDownloadPort } from "@/lib/download-port";
 import { randomIdFactory } from "@/lib/id-factory";
 import type {
@@ -140,12 +140,31 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
   const [isPreviewStale, setIsPreviewStale] = useState(false);
   const paramsVersionRef = useRef(0);
   const optimizationProposalsRef = useRef(optimizationProposals);
+  const optimizationRequestIdRef = useRef(0);
+  const optimizationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   optimizationProposalsRef.current = optimizationProposals;
 
+  const cancelPendingOptimization = useCallback(() => {
+    optimizationRequestIdRef.current += 1;
+    if (optimizationTimeoutRef.current !== null) {
+      clearTimeout(optimizationTimeoutRef.current);
+      optimizationTimeoutRef.current = null;
+    }
+  }, []);
+
   const clearOptimizationProposals = useCallback(() => {
+    cancelPendingOptimization();
     setOptimizationProposals([]);
     setIsOptimizingLayout(false);
-  }, []);
+  }, [cancelPendingOptimization]);
+
+  useEffect(() => {
+    return () => {
+      cancelPendingOptimization();
+    };
+  }, [cancelPendingOptimization]);
 
   const invalidatePreview = useCallback(() => {
     paramsVersionRef.current += 1;
@@ -487,15 +506,26 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
   }, [params]);
 
   const generateOptimizationProposalsForCurrentParams = useCallback(() => {
+    cancelPendingOptimization();
     setIsOptimizingLayout(true);
-    try {
-      setOptimizationProposals(
-        generateSteppedOptimizationProposals(paramsRef.current),
-      );
-    } finally {
-      setIsOptimizingLayout(false);
-    }
-  }, []);
+    setOptimizationProposals([]);
+    const requestId = optimizationRequestIdRef.current + 1;
+    optimizationRequestIdRef.current = requestId;
+    optimizationTimeoutRef.current = setTimeout(() => {
+      optimizationTimeoutRef.current = null;
+      try {
+        const proposals = generateSteppedOptimizationProposals(paramsRef.current);
+        if (optimizationRequestIdRef.current !== requestId) {
+          return;
+        }
+        setOptimizationProposals(proposals);
+      } finally {
+        if (optimizationRequestIdRef.current === requestId) {
+          setIsOptimizingLayout(false);
+        }
+      }
+    }, 0);
+  }, [cancelPendingOptimization]);
 
   const applyOptimizationProposal = useCallback(
     (proposalId: SteppedOptimizationProposal["id"]) => {

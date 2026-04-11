@@ -258,10 +258,13 @@ function createSteppedParams(overrides?: Partial<React.ComponentProps<typeof Ste
   };
 }
 
-function createOptimizationProposals() {
+function createOptimizationProposals(): React.ComponentProps<
+  typeof SteppedPanel
+>["optimizationProposals"] {
   return [
     {
       id: "compact",
+      kind: "compact",
       label: "最紧凑",
       description: "优先压缩整体占地面积。",
       params: createSteppedParams(),
@@ -276,6 +279,7 @@ function createOptimizationProposals() {
     },
     {
       id: "grouped",
+      kind: "grouped",
       label: "按组紧凑",
       description: "尽量保留同组相邻关系。",
       params: createSteppedParams(),
@@ -290,6 +294,7 @@ function createOptimizationProposals() {
     },
     {
       id: "minimal-move",
+      kind: "minimal-move",
       label: "最少改动",
       description: "优先减少对当前布局的扰动。",
       params: createSteppedParams(),
