@@ -168,6 +168,11 @@ export default function Home() {
           previewGroupId={previewGroupId}
           onPreviewGroupChange={setPreviewGroupId}
           bridgeWarning={steppedModel.bridgeWarning}
+          optimizationProposals={steppedModel.optimizationProposals}
+          isOptimizingLayout={steppedModel.isOptimizingLayout}
+          onGenerateOptimizationProposals={steppedModel.generateOptimizationProposals}
+          onApplyOptimizationProposal={steppedModel.applyOptimizationProposal}
+          onClearOptimizationProposals={steppedModel.clearOptimizationProposals}
           onOpenDraftDialog={steppedDrafts.openDialog}
           onSaveDraft={steppedDrafts.saveCurrentDraft}
           currentDraftId={steppedDrafts.currentDraftId}

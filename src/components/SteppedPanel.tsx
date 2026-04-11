@@ -2,6 +2,7 @@
 
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 import type { BridgeWarning } from "@/lib/stepped-connectivity";
+import type { SteppedOptimizationProposal } from "@/lib/stepped-global-optimize";
 import { BASE_PRESETS, MAX_BUILD_SIZE } from "@/lib/config";
 import { STEPPED_LIMITS, STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import { Button } from "@/components/ui/button";
@@ -171,6 +172,11 @@ interface SteppedPanelProps {
     previewGroupId: string | null;
     onPreviewGroupChange: (groupId: string | null) => void;
     bridgeWarning: BridgeWarning | null;
+    optimizationProposals: SteppedOptimizationProposal[];
+    isOptimizingLayout: boolean;
+    onGenerateOptimizationProposals: () => void;
+    onApplyOptimizationProposal: (proposalId: SteppedOptimizationProposal["id"]) => void;
+    onClearOptimizationProposals: () => void;
     // 草稿管理
     onOpenDraftDialog: () => void;
     onSaveDraft: () => void;
@@ -202,6 +208,11 @@ export default function SteppedPanel({
     previewGroupId,
     onPreviewGroupChange,
     bridgeWarning,
+    optimizationProposals,
+    isOptimizingLayout,
+    onGenerateOptimizationProposals,
+    onApplyOptimizationProposal,
+    onClearOptimizationProposals,
     onOpenDraftDialog,
     onSaveDraft,
     currentDraftId,
@@ -247,6 +258,7 @@ export default function SteppedPanel({
         [params, volume],
     );
     const hasGeneratedVolume = volume > 0;
+    const currentArea = effectiveWidth * effectiveDepth;
 
     useEffect(() => {
         if (!activePressedPreviewGroupId) {
@@ -307,6 +319,15 @@ export default function SteppedPanel({
         resetPerfMetrics();
         toast("success", "性能采样已清零");
     }, [toast]);
+
+    const formatAreaDelta = useCallback((proposalArea: number) => {
+        if (currentArea <= 0) {
+            return "较当前 0.0%";
+        }
+        const deltaPercent = ((proposalArea - currentArea) / currentArea) * 100;
+        const sign = deltaPercent > 0 ? "+" : "";
+        return `较当前 ${sign}${deltaPercent.toFixed(1)}%`;
+    }, [currentArea]);
 
     return (
         <div className="flex flex-col gap-4 animate-fade-in">
@@ -703,6 +724,105 @@ export default function SteppedPanel({
                         当前预览已过期，请点击“开始锻造”生成最新模型。
                     </div>
                 )}
+                <Button
+                    variant="outline"
+                    onClick={onGenerateOptimizationProposals}
+                    disabled={params.slots.length < 2 || isOptimizingLayout}
+                    className="w-full h-10 border-[#5a4a2a] text-[#c8a84e] cursor-pointer hover:bg-[#2a2518] hover:text-[#e0c870] hover:border-[#7a6a3a] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    {isOptimizingLayout ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                        <BoxSelect className="w-4 h-4 mr-2" />
+                    )}
+                    {isOptimizingLayout ? "优化中..." : "全局优化"}
+                </Button>
+                {optimizationProposals.length > 0 ? (
+                    <div className="iron-panel rounded-sm p-3">
+                        <div className="flex items-center justify-between gap-3">
+                            <div>
+                                <div className="text-xs font-semibold tracking-wide text-[#f3dfb6]">
+                                    优化建议
+                                </div>
+                                <div className="text-[10px] text-muted-foreground">
+                                    基于当前阶梯布局生成的 3 个全局重排候选
+                                </div>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={onClearOptimizationProposals}
+                                className="h-7 border-[#2e2a24] text-muted-foreground hover:bg-[#1c1a16] hover:text-foreground/80 hover:border-[#3d372e]"
+                            >
+                                关闭建议
+                            </Button>
+                        </div>
+                        <div className="mt-3 space-y-2">
+                            {optimizationProposals.map((proposal) => (
+                                <div
+                                    key={proposal.id}
+                                    className="rounded border border-[#2e2a24] bg-[#171511] p-3"
+                                >
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0">
+                                            <div className="text-sm font-semibold text-foreground">
+                                                {proposal.label}
+                                            </div>
+                                            <div className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
+                                                {proposal.description}
+                                            </div>
+                                        </div>
+                                        <Button
+                                            size="sm"
+                                            onClick={() => onApplyOptimizationProposal(proposal.id)}
+                                            className="h-8 shrink-0 blood-red border border-[#a02020] px-3 text-xs font-semibold tracking-wide text-[#f0d8b8] hover:brightness-125"
+                                        >
+                                            应用此方案
+                                        </Button>
+                                    </div>
+                                    <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
+                                        <div className="rounded border border-[#2e2a24] bg-[#1c1a16] px-2.5 py-2">
+                                            <div className="text-muted-foreground">宽 x 深</div>
+                                            <div className="mt-1 font-mono text-foreground">
+                                                {proposal.metrics.width.toFixed(0)} x {proposal.metrics.depth.toFixed(0)} mm
+                                            </div>
+                                        </div>
+                                        <div className="rounded border border-[#2e2a24] bg-[#1c1a16] px-2.5 py-2">
+                                            <div className="text-muted-foreground">面积</div>
+                                            <div className="mt-1 font-mono text-foreground">
+                                                {proposal.metrics.area.toFixed(0)} mm²
+                                            </div>
+                                            <div className="mt-1 text-[10px] text-muted-foreground">
+                                                {formatAreaDelta(proposal.metrics.area)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="mt-2 flex flex-wrap gap-1.5 text-[10px]">
+                                        <span
+                                            className={`rounded border px-2 py-1 ${proposal.metrics.isOversized
+                                                ? "border-[#8b1a1a50] bg-[#8b1a1a15] text-[#d27777]"
+                                                : "border-[#2a3528] bg-[#1c2a1a] text-[#8cb880]"
+                                                }`}
+                                        >
+                                            {proposal.metrics.isOversized ? "尺寸超限" : "尺寸正常"}
+                                        </span>
+                                        <span
+                                            className={`rounded border px-2 py-1 ${proposal.metrics.hasBridgeWarning
+                                                ? "border-[#7c5a1c] bg-[#2a2115] text-[#f0d8b8]"
+                                                : "border-[#2a3528] bg-[#1c2a1a] text-[#8cb880]"
+                                                }`}
+                                        >
+                                            {proposal.metrics.hasBridgeWarning ? "有桥接预警" : "无桥接预警"}
+                                        </span>
+                                        <span className="rounded border border-[#2e2a24] bg-[#1c1a16] px-2 py-1 text-muted-foreground">
+                                            位移 {proposal.metrics.displacement.toFixed(1)} mm
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ) : null}
                 <Button
                     onClick={onGenerate}
                     disabled={isGenerating || isOversized}
