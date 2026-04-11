@@ -745,7 +745,7 @@ export default function SteppedPanel({
                                     优化建议
                                 </div>
                                 <div className="text-[10px] text-muted-foreground">
-                                    基于当前阶梯布局生成的 3 个全局重排候选
+                                    基于当前阶梯布局生成的紧凑对称重排建议
                                 </div>
                             </div>
                             <Button

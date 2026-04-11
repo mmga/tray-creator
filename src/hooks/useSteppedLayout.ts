@@ -141,6 +141,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
   const paramsVersionRef = useRef(0);
   const optimizationProposalsRef = useRef(optimizationProposals);
   const optimizationRequestIdRef = useRef(0);
+  const optimizationVariantRef = useRef(0);
   const optimizationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -168,6 +169,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
 
   const invalidatePreview = useCallback(() => {
     paramsVersionRef.current += 1;
+    optimizationVariantRef.current = 0;
     setIsPreviewStale(true);
     jscadGeomRef.current = null;
     setVolume(0);
@@ -509,12 +511,17 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     cancelPendingOptimization();
     setIsOptimizingLayout(true);
     setOptimizationProposals([]);
+    const variantIndex = optimizationVariantRef.current;
+    optimizationVariantRef.current += 1;
     const requestId = optimizationRequestIdRef.current + 1;
     optimizationRequestIdRef.current = requestId;
     optimizationTimeoutRef.current = setTimeout(() => {
       optimizationTimeoutRef.current = null;
       try {
-        const proposals = generateSteppedOptimizationProposals(paramsRef.current);
+        const proposals = generateSteppedOptimizationProposals(
+          paramsRef.current,
+          { variantIndex },
+        );
         if (optimizationRequestIdRef.current !== requestId) {
           return;
         }

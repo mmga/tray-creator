@@ -330,10 +330,20 @@ describe("useSteppedLayout", () => {
     expect(result.current.isOptimizingLayout).toBe(true);
     await waitFor(() => {
       expect(result.current.isOptimizingLayout).toBe(false);
-      expect(result.current.optimizationProposals).toHaveLength(3);
+      expect(result.current.optimizationProposals).toHaveLength(1);
+    });
+
+    act(() => {
+      result.current.generateOptimizationProposals();
+    });
+    await waitFor(() => {
+      expect(result.current.isOptimizingLayout).toBe(false);
+      expect(result.current.optimizationProposals).toHaveLength(1);
     });
 
     const proposalToApply = result.current.optimizationProposals[0];
+    expect(proposalToApply).toBeTruthy();
+
     act(() => {
       result.current.applyOptimizationProposal(proposalToApply.id);
     });
@@ -351,7 +361,7 @@ describe("useSteppedLayout", () => {
     });
     expect(result.current.isOptimizingLayout).toBe(true);
     await waitFor(() => {
-      expect(result.current.optimizationProposals).toHaveLength(3);
+      expect(result.current.optimizationProposals).toHaveLength(1);
     });
 
     act(() => {

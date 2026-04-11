@@ -265,8 +265,8 @@ function createOptimizationProposals(): React.ComponentProps<
     {
       id: "compact",
       kind: "compact",
-      label: "最紧凑",
-      description: "优先压缩整体占地面积。",
+      label: "紧凑对称",
+      description: "仅在组内重排，不跨组混排；优先保证左右对称，并尽量收敛到横向约 5:2 的长方形。",
       params: createSteppedParams(),
       metrics: {
         width: 92,
@@ -275,36 +275,6 @@ function createOptimizationProposals(): React.ComponentProps<
         displacement: 48.6,
         hasBridgeWarning: false,
         isOversized: false,
-      },
-    },
-    {
-      id: "grouped",
-      kind: "grouped",
-      label: "按组紧凑",
-      description: "尽量保留同组相邻关系。",
-      params: createSteppedParams(),
-      metrics: {
-        width: 96,
-        depth: 84,
-        area: 8064,
-        displacement: 36.2,
-        hasBridgeWarning: true,
-        isOversized: false,
-      },
-    },
-    {
-      id: "minimal-move",
-      kind: "minimal-move",
-      label: "最少改动",
-      description: "优先减少对当前布局的扰动。",
-      params: createSteppedParams(),
-      metrics: {
-        width: 110,
-        depth: 92,
-        area: 10120,
-        displacement: 12.4,
-        hasBridgeWarning: false,
-        isOversized: true,
       },
     },
   ];
@@ -830,18 +800,14 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "全局优化" }));
-    fireEvent.click(screen.getAllByRole("button", { name: "应用此方案" })[1]!);
+    fireEvent.click(screen.getByRole("button", { name: "应用此方案" }));
     fireEvent.click(screen.getByRole("button", { name: "关闭建议" }));
 
     expect(screen.getByText("优化建议")).toBeInTheDocument();
-    expect(screen.getByText("最紧凑")).toBeInTheDocument();
-    expect(screen.getByText("按组紧凑")).toBeInTheDocument();
-    expect(screen.getByText("最少改动")).toBeInTheDocument();
+    expect(screen.getByText("紧凑对称")).toBeInTheDocument();
     expect(screen.getByText("较当前 -40.2%")).toBeInTheDocument();
-    expect(screen.getByText("较当前 -32.8%")).toBeInTheDocument();
-    expect(screen.getByText("较当前 -15.7%")).toBeInTheDocument();
     expect(onGenerateOptimizationProposals).toHaveBeenCalledTimes(1);
-    expect(onApplyOptimizationProposal).toHaveBeenCalledWith("grouped");
+    expect(onApplyOptimizationProposal).toHaveBeenCalledWith("compact");
     expect(onClearOptimizationProposals).toHaveBeenCalledTimes(1);
   });
 
