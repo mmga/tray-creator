@@ -10,7 +10,7 @@
 - 项目的 TDD 基础设施已经齐备：`vitest`、`jsdom`、统一测试初始化、单测/集成拆分、覆盖率报告都已建立。
 - 当前 TDD 改造对核心领域逻辑已经进入“中后段”，但对 hooks、UI 编排层和渲染层仍处于“前中段”。
 - 已进入稳定 TDD 节奏的区域主要集中在 `src/lib`，尤其是 stepped layout/model、pricing、draft、grid/custom layout service、`outline-geometry`、`stepped-outline-preview`、`stepped-tray-model`、`tray-model`、`custom-tray-model`、`stl-export`、`jscad-to-three`，以及 worker service / worker 入口链路。
-- 目前最大的空白点已经收敛到 hooks 编排层统计缺口，以及大部分组件面板和 UI 包装层。
+- 高价值 UI 面板里，`SteppedPanel` 已经开始进入有意义的 TDD 主循环；当前最大的空白点主要剩下 hooks 编排层统计缺口，以及 `ParameterPanel`、`SimpleSteppedPanel` 之外更大范围的 UI 包装层。
 
 ## 本次基线快照
 - 日期：2026-04-13
@@ -24,11 +24,11 @@
 
 ## 验证基线
 - `npm run test:unit`
-  - 结果：41 个测试文件通过，149 个测试通过
+  - 结果：41 个测试文件通过，151 个测试通过
 - `npm run test:integration`
   - 结果：6 个测试文件通过，28 个测试通过
 - `npm run test:coverage`
-  - 结果：statements 61.56%，branches 54.31%，functions 59.57%，lines 61.83%
+  - 结果：statements 62.1%，branches 54.97%，functions 60.25%，lines 62.41%
 
 ## 覆盖率解读
 - `src/lib` 是当前 TDD 改造主战场。高价值且覆盖较强的模块包括：
@@ -55,12 +55,32 @@
   - `src/components/ui/` 下的大部分文件
 
 ## 下一波 TDD 建议
-1. 优先给高价值面板补回归测试，例如 `SteppedPanel`、`ParameterPanel`、`SimpleSteppedPanel`，而不是先扩散到低价值 UI 原子组件。
+1. 继续沿高价值 UI 面板推进，优先补 `ParameterPanel` 和 `SimpleSteppedPanel` 里仍未覆盖的状态分支，而不是扩散到低价值 UI 原子组件。
 2. 调整覆盖率策略，让 hook 集成测试能在进度统计里被看见，或者单独建立一份 hooks 集成覆盖基线。
 3. 如果继续深挖 worker，可以补 `GENERATE_SIMPLE_STEPPED` 分支，完成 `tray.worker.ts` 的剩余未覆盖路径。
 4. 如果想继续做 `lib` 层扫尾，可补 `download-port.ts`、`id-factory.ts` 这类剩余轻量桥接文件。
 
 ## 进度记录
+
+### 2026-04-13 - 补齐 SteppedPanel 状态交互测试
+- 范围：继续推进高价值 UI 面板 TDD，优先补 `SteppedPanel` 的状态型交互。
+- 改动摘要：
+  - 在 `src/components/panels.test.tsx` 中新增 `SteppedPanel` 的组预览切换测试，覆盖 pointer 按住预览、释放恢复、键盘锁定预览与取消锁定。
+  - 新增 bridge warning 与草稿操作测试，覆盖桥接预警文案显示、`更新草稿` 和 `草稿列表` 两个草稿动作按钮的回调路由。
+  - 通过这组测试把 `SteppedPanel` 从“基础动作可点”推进到“关键状态转换可回归”的层次。
+- 验证命令：
+  - `npx vitest run src/components/panels.test.tsx`
+  - `npm run test:unit`
+  - `npm run test:coverage`
+- 覆盖率影响：
+  - 总 statements 从 `61.56%` 提升到 `62.1%`
+  - `src/components/SteppedPanel.tsx` 从 `48.57%` 提升到 `65.71%` statements
+  - `components` 整体从 `59.47%` 提升到 `62.95%` statements
+- 当前判断：
+  - `SteppedPanel` 已开始进入有意义的 TDD 主循环，不再只是覆盖基础点击路径。
+  - UI 层接下来的高价值目标更适合放在 `ParameterPanel`、`SimpleSteppedPanel` 的剩余状态分支，以及 hooks 统计可见性。
+- 下一步：
+  - 在 `ParameterPanel` 或 `SimpleSteppedPanel` 中继续补一轮状态分支与禁用态回归测试。
 
 ### 2026-04-13 - 补齐导出与渲染桥接测试
 - 范围：将 `stl-export.ts` 与 `jscad-to-three.ts` 纳入单测闭环。

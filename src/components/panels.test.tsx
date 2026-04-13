@@ -916,6 +916,65 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     expect(screen.getByRole("tooltip")).toHaveTextContent("最终报价");
   });
 
+  it("toggles preview groups through pointer and keyboard interactions", () => {
+    const onPreviewGroupChange = vi.fn();
+
+    render(
+      <SteppedPanel
+        params={createSteppedParams()}
+        effectiveDimensions={{ width: 120, depth: 140 }}
+        isPreviewStale={false}
+        updateParam={vi.fn()}
+        setParams={vi.fn()}
+        onAddSlot={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+        selectedSlotIds={[]}
+        onAddGroup={vi.fn()}
+        onRemoveGroup={vi.fn()}
+        onUpdateGroupHeight={vi.fn()}
+        onUpdateGroupSmoothingOverride={vi.fn()}
+        onUpdateGroupSmoothingRadius={vi.fn()}
+        onUpdateGroupDisconnectOverride={vi.fn()}
+        onUpdateGroupDisconnectDistance={vi.fn()}
+        onSetActiveGroup={vi.fn()}
+        onMoveSelectedSlotsToGroup={vi.fn()}
+        onReorderGroups={vi.fn()}
+        previewGroupId={null}
+        onPreviewGroupChange={onPreviewGroupChange}
+        bridgeWarning={null}
+        optimizationProposals={[]}
+        isOptimizingLayout={false}
+        onGenerateOptimizationProposals={vi.fn()}
+        onApplyOptimizationProposal={vi.fn()}
+        onClearOptimizationProposals={vi.fn()}
+        onOpenDraftDialog={vi.fn()}
+        onSaveDraft={vi.fn()}
+        currentDraftId={null}
+      />,
+    );
+
+    const previewButtons = screen.getAllByRole("button", {
+      name: "按住仅查看当前组",
+    });
+    Object.defineProperty(previewButtons[0]!, "setPointerCapture", {
+      configurable: true,
+      value: vi.fn(),
+    });
+
+    fireEvent.pointerDown(previewButtons[0]!, { pointerId: 1, pointerType: "mouse" });
+    fireEvent.pointerUp(previewButtons[0]!, { pointerId: 1, pointerType: "mouse" });
+    fireEvent.keyDown(previewButtons[1]!, { key: "Enter" });
+    fireEvent.keyDown(previewButtons[1]!, { key: "Enter" });
+
+    expect(onPreviewGroupChange).toHaveBeenNthCalledWith(1, "group-1");
+    expect(onPreviewGroupChange).toHaveBeenNthCalledWith(2, null);
+    expect(onPreviewGroupChange).toHaveBeenNthCalledWith(3, "group-2");
+    expect(onPreviewGroupChange).toHaveBeenNthCalledWith(4, null);
+  });
+
   it("renders optimization proposals and routes generate, apply, and clear actions", () => {
     const onGenerateOptimizationProposals = vi.fn();
     const onApplyOptimizationProposal = vi.fn();
@@ -1094,5 +1153,66 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     );
 
     expect(screen.getByRole("button", { name: "优化中..." })).toBeDisabled();
+  });
+
+  it("renders bridge warnings and routes draft actions", () => {
+    const onOpenDraftDialog = vi.fn();
+    const onSaveDraft = vi.fn();
+
+    render(
+      <SteppedPanel
+        params={createSteppedParams()}
+        effectiveDimensions={{ width: 120, depth: 140 }}
+        isPreviewStale={false}
+        updateParam={vi.fn()}
+        setParams={vi.fn()}
+        onAddSlot={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+        selectedSlotIds={[]}
+        onAddGroup={vi.fn()}
+        onRemoveGroup={vi.fn()}
+        onUpdateGroupHeight={vi.fn()}
+        onUpdateGroupSmoothingOverride={vi.fn()}
+        onUpdateGroupSmoothingRadius={vi.fn()}
+        onUpdateGroupDisconnectOverride={vi.fn()}
+        onUpdateGroupDisconnectDistance={vi.fn()}
+        onSetActiveGroup={vi.fn()}
+        onMoveSelectedSlotsToGroup={vi.fn()}
+        onReorderGroups={vi.fn()}
+        previewGroupId={null}
+        onPreviewGroupChange={vi.fn()}
+        bridgeWarning={{
+          groupId: "group-1",
+          groupName: "组 1",
+          separatedClusterCount: 3,
+          mergedClusterCount: 1,
+          effectiveBridgeGap: 6,
+        }}
+        optimizationProposals={[]}
+        isOptimizingLayout={false}
+        onGenerateOptimizationProposals={vi.fn()}
+        onApplyOptimizationProposal={vi.fn()}
+        onClearOptimizationProposals={vi.fn()}
+        onOpenDraftDialog={onOpenDraftDialog}
+        onSaveDraft={onSaveDraft}
+        currentDraftId="draft-1"
+      />,
+    );
+
+    expect(
+      screen.getByText("组 1 当前参数可能会将 3 个槽群连接为 1 个整体。"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("可以尝试增大“槽群断连距离”、减小“平滑半径”，或调整槽位位置。"),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "更新草稿" }));
+    fireEvent.click(screen.getByRole("button", { name: "草稿列表" }));
+
+    expect(onSaveDraft).toHaveBeenCalledTimes(1);
+    expect(onOpenDraftDialog).toHaveBeenCalledTimes(1);
   });
 });
