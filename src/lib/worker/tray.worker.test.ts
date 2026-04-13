@@ -1,0 +1,204 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
+import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
+import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
+
+const createTrayModel = vi.fn();
+const createCustomTrayModel = vi.fn();
+const createSimpleSteppedTrayModel = vi.fn();
+const createSteppedTrayModel = vi.fn();
+const buildSteppedOutlinePreview = vi.fn();
+const serialize = vi.fn();
+const measureVolume = vi.fn();
+
+vi.mock("../tray-model", () => ({
+  createTrayModel,
+}));
+
+vi.mock("../custom-tray-model", () => ({
+  createCustomTrayModel,
+}));
+
+vi.mock("../simple-stepped-tray-model", () => ({
+  createSimpleSteppedTrayModel,
+}));
+
+vi.mock("../stepped-tray-model", () => ({
+  createSteppedTrayModel,
+}));
+
+vi.mock("../stepped-outline-preview", () => ({
+  buildSteppedOutlinePreview,
+}));
+
+vi.mock("@jscad/stl-serializer", () => ({
+  default: {
+    serialize,
+  },
+}));
+
+vi.mock("@jscad/modeling/src/measurements", () => ({
+  measureVolume,
+}));
+
+function createWorkerSelf() {
+  return {
+    onmessage: null as ((event: MessageEvent) => Promise<void>) | null,
+    postMessage: vi.fn(),
+  };
+}
+
+async function loadWorkerModule() {
+  vi.resetModules();
+  const workerSelf = createWorkerSelf();
+  vi.stubGlobal("self", workerSelf);
+  await import("./tray.worker");
+  return workerSelf;
+}
+
+describe("tray worker", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("posts generation success for grid requests", async () => {
+    const workerSelf = await loadWorkerModule();
+    const geometry = { id: "grid-geom" };
+    createTrayModel.mockReturnValue(geometry);
+    measureVolume.mockReturnValue(123.4);
+
+    await workerSelf.onmessage?.({
+      data: {
+        type: "GENERATE_GRID",
+        requestId: "req-grid",
+        params: DEFAULT_TRAY_PARAMS,
+      },
+    } as MessageEvent);
+
+    expect(createTrayModel).toHaveBeenCalledWith(DEFAULT_TRAY_PARAMS);
+    expect(measureVolume).toHaveBeenCalledWith(geometry);
+    expect(workerSelf.postMessage).toHaveBeenCalledWith({
+      type: "GENERATION_SUCCESS",
+      requestId: "req-grid",
+      geometry,
+      volumeInfo: 123.4,
+    });
+  });
+
+  it("logs stepped debug info and posts generation success when debugging is enabled", async () => {
+    const workerSelf = await loadWorkerModule();
+    const geometry = { id: "stepped-geom" };
+    const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+    createSteppedTrayModel.mockReturnValue(geometry);
+    measureVolume.mockReturnValue(88);
+
+    await workerSelf.onmessage?.({
+      data: {
+        type: "GENERATE_STEPPED",
+        requestId: "req-stepped",
+        params: {
+          ...STEPPED_LAYOUT_DEFAULTS,
+          debugOrientation: true,
+        },
+      },
+    } as MessageEvent);
+
+    expect(createSteppedTrayModel).toHaveBeenCalled();
+    expect(infoSpy).toHaveBeenNthCalledWith(
+      1,
+      "[STEPPED_ORIENT]",
+      "worker_request",
+      expect.objectContaining({
+        requestId: "req-stepped",
+        spacing: STEPPED_LAYOUT_DEFAULTS.spacing,
+        smoothingRadius: STEPPED_LAYOUT_DEFAULTS.smoothingRadius,
+      }),
+    );
+    expect(infoSpy).toHaveBeenNthCalledWith(
+      2,
+      "[STEPPED_ORIENT]",
+      "worker_result",
+      { requestId: "req-stepped", volume: 88 },
+    );
+    expect(workerSelf.postMessage).toHaveBeenCalledWith({
+      type: "GENERATION_SUCCESS",
+      requestId: "req-stepped",
+      geometry,
+      volumeInfo: 88,
+    });
+  });
+
+  it("posts outline preview timing for stepped preview requests", async () => {
+    const workerSelf = await loadWorkerModule();
+    const preview = [{ key: "group-a", points: [] }];
+    buildSteppedOutlinePreview.mockReturnValue(preview);
+    const nowSpy = vi.spyOn(performance, "now");
+    nowSpy.mockReturnValueOnce(10).mockReturnValueOnce(17.5);
+
+    await workerSelf.onmessage?.({
+      data: {
+        type: "GENERATE_STEPPED_OUTLINE_PREVIEW",
+        requestId: "req-preview",
+        params: STEPPED_LAYOUT_DEFAULTS,
+      },
+    } as MessageEvent);
+
+    expect(buildSteppedOutlinePreview).toHaveBeenCalledWith(
+      STEPPED_LAYOUT_DEFAULTS,
+    );
+    expect(workerSelf.postMessage).toHaveBeenCalledWith({
+      type: "STEPPED_OUTLINE_PREVIEW_SUCCESS",
+      requestId: "req-preview",
+      outlinePreview: preview,
+      durationMs: 7.5,
+    });
+  });
+
+  it("serializes STL exports into a blob response", async () => {
+    const workerSelf = await loadWorkerModule();
+    serialize.mockReturnValue([new Uint8Array([1, 2, 3])]);
+
+    await workerSelf.onmessage?.({
+      data: {
+        type: "EXPORT_STL",
+        requestId: "req-export",
+        geometry: { id: "geom" },
+        filename: "tray.stl",
+      },
+    } as MessageEvent);
+
+    expect(serialize).toHaveBeenCalledWith(
+      { binary: true },
+      { id: "geom" },
+    );
+    expect(workerSelf.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "EXPORT_SUCCESS",
+        requestId: "req-export",
+        filename: "tray.stl",
+        blob: expect.any(Blob),
+      }),
+    );
+  });
+
+  it("posts structured errors for thrown failures", async () => {
+    const workerSelf = await loadWorkerModule();
+    createCustomTrayModel.mockImplementation(() => {
+      throw new Error("custom failed");
+    });
+
+    await workerSelf.onmessage?.({
+      data: {
+        type: "GENERATE_CUSTOM",
+        requestId: "req-custom",
+        params: CUSTOM_LAYOUT_DEFAULTS,
+      },
+    } as MessageEvent);
+
+    expect(workerSelf.postMessage).toHaveBeenCalledWith({
+      type: "ERROR",
+      requestId: "req-custom",
+      message: "custom failed",
+    });
+  });
+});

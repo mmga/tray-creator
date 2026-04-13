@@ -9,13 +9,13 @@
 ## 当前判断
 - 项目的 TDD 基础设施已经齐备：`vitest`、`jsdom`、统一测试初始化、单测/集成拆分、覆盖率报告都已建立。
 - 当前 TDD 改造对核心领域逻辑已经进入“中后段”，但对 hooks、UI 编排层和渲染层仍处于“前中段”。
-- 已进入稳定 TDD 节奏的区域主要集中在 `src/lib`，尤其是 stepped layout/model、pricing、draft、grid/custom layout service、`outline-geometry`、`stepped-outline-preview`、`stepped-tray-model`、`tray-model`、`custom-tray-model`，以及 `TrayWorkerService`。
-- 目前最大的空白点已经收敛到 worker 入口、hooks 编排层统计缺口，以及大部分组件面板和 UI 包装层。
+- 已进入稳定 TDD 节奏的区域主要集中在 `src/lib`，尤其是 stepped layout/model、pricing、draft、grid/custom layout service、`outline-geometry`、`stepped-outline-preview`、`stepped-tray-model`、`tray-model`、`custom-tray-model`，以及 worker service / worker 入口链路。
+- 目前最大的空白点已经收敛到 hooks 编排层统计缺口、大部分组件面板和 UI 包装层，以及少量导出/渲染桥接文件。
 
 ## 本次基线快照
 - 日期：2026-04-13
 - 源码文件数：94
-- 测试文件数：44
+- 测试文件数：45
 - graphify god node 与测试映射：
   - `TrayWorkerService`：已由 `src/lib/worker/worker-service.test.ts` 覆盖
   - `createDraft()` / `updateDraft()` / `readIndex()`：已由 `src/lib/local-drafts.test.ts` 覆盖
@@ -24,11 +24,11 @@
 
 ## 验证基线
 - `npm run test:unit`
-  - 结果：38 个测试文件通过，140 个测试通过
+  - 结果：39 个测试文件通过，145 个测试通过
 - `npm run test:integration`
   - 结果：6 个测试文件通过，28 个测试通过
 - `npm run test:coverage`
-  - 结果：statements 58.75%，branches 53.12%，functions 58.7%，lines 58.93%
+  - 结果：statements 59.45%，branches 53.78%，functions 58.8%，lines 59.68%
 
 ## 覆盖率解读
 - `src/lib` 是当前 TDD 改造主战场。高价值且覆盖较强的模块包括：
@@ -36,13 +36,11 @@
   - `stepped-connectivity.ts`、`stepped-bridge-warning.ts`、`stepped-global-optimize.ts`
   - `outline-geometry.ts`、`stepped-outline-preview.ts`、`stepped-tray-model.ts`
   - `tray-model.ts`、`custom-tray-model.ts`
-  - `pricing.ts`、`local-drafts.ts`、`worker-service.ts`
+  - `pricing.ts`、`local-drafts.ts`、`worker-service.ts`、`tray.worker.ts`
 - `src/hooks` 实际已有一批有价值的集成测试，但当前覆盖率命令排除了 `*.integration.test.ts`，所以 hooks 在覆盖率报告里表现为 `0%`，这个数字低估了真实验证进度。
 - `src/components` 对 `LayoutCanvas`、`TrayViewer`、`SteppedDraftDialog` 和部分 canvas 面板已有回归保护，但多数面板组件和 UI 包装层还没有进入稳定 TDD 闭环。
 
 ## 高优先级缺口
-- worker 运行时边界：
-  - `src/lib/worker/tray.worker.ts`
 - 尚未被直接计入覆盖率的 hook 编排层：
   - `src/hooks/useCanvasZoom.ts`
   - `src/hooks/useCanvasKeyboard.ts`
@@ -54,14 +52,36 @@
   - `src/components/ParameterPanel.tsx`
   - `src/components/SimpleSteppedPanel.tsx`
   - `src/components/ui/` 下的大部分文件
+- 导出 / 渲染桥接链路：
+  - `src/lib/stl-export.ts`
+  - `src/lib/jscad-to-three.ts`
 
 ## 下一波 TDD 建议
-1. 为 `src/lib/worker/tray.worker.ts` 增加运行时边界测试，补齐目前只测 service、不测 worker 入口的缺口。
-2. 优先给高价值面板补回归测试，例如 `SteppedPanel`、`ParameterPanel`、`SimpleSteppedPanel`，而不是先扩散到低价值 UI 原子组件。
-3. 调整覆盖率策略，让 hook 集成测试能在进度统计里被看见，或者单独建立一份 hooks 集成覆盖基线。
-4. 如果继续深挖模型层，可以考虑把 `stl-export.ts` 与 `jscad-to-three.ts` 也拉入回归面，补齐导出链路。
+1. 优先给高价值面板补回归测试，例如 `SteppedPanel`、`ParameterPanel`、`SimpleSteppedPanel`，而不是先扩散到低价值 UI 原子组件。
+2. 调整覆盖率策略，让 hook 集成测试能在进度统计里被看见，或者单独建立一份 hooks 集成覆盖基线。
+3. 把 `stl-export.ts` 与 `jscad-to-three.ts` 拉入回归面，补齐导出 / 渲染桥接链路。
+4. 如果继续深挖 worker，可以补 `GENERATE_SIMPLE_STEPPED` 分支，完成 `tray.worker.ts` 的剩余未覆盖路径。
 
 ## 进度记录
+
+### 2026-04-13 - 补齐 worker 入口边界测试
+- 范围：将 `tray.worker.ts` 纳入单测闭环。
+- 改动摘要：
+  - 新增 `src/lib/worker/tray.worker.test.ts`，覆盖 grid 生成成功、stepped 调试日志分支、outline preview 耗时回传、STL 导出响应、异常错误回传。
+  - 通过模块 mock 将测试聚焦在 worker 运行时协议和消息分发，不把断言耦合到底层建模实现。
+- 验证命令：
+  - `npx vitest run src/lib/worker/tray.worker.test.ts`
+  - `npm run test:unit`
+  - `npm run test:coverage`
+- 覆盖率影响：
+  - 总 statements 从 `58.75%` 提升到 `59.45%`
+  - `src/lib/worker/tray.worker.ts` 达到 `91.17%` statements / `91.17%` lines
+  - `lib/worker` 整体达到 `87.61%` statements / `88.18%` lines
+- 当前判断：
+  - worker service 和 worker 入口两端都已进入 TDD 主循环。
+  - `lib` 层剩余的高价值空白点已经更多集中在导出 / 渲染桥接链路，而不是核心建模与协议层。
+- 下一步：
+  - 优先在高价值 UI 面板、hooks 统计可见性、以及 `stl-export.ts` / `jscad-to-three.ts` 中选一条继续推进。
 
 ### 2026-04-13 - 补齐网格与自定义托盘模型测试
 - 范围：将 `tray-model` 与 `custom-tray-model` 纳入单测闭环。
