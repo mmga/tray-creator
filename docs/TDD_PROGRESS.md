@@ -62,6 +62,28 @@
 
 ## 进度记录
 
+### 2026-04-13 - 补齐 useCanvasZoom 手势与缩放测试
+- 范围：继续推进 hooks 编排层 TDD，将 `useCanvasZoom.ts` 的滚轮缩放、双指手势和 viewBox 推导纳入 unit coverage。
+- 改动摘要：
+  - 新增 `src/hooks/useCanvasZoom.test.ts`，覆盖初始 `viewBox`、`adjustZoom()` 钳制、`setPan()` 对可视窗口的联动，以及 `resetZoom()` 回归默认状态。
+  - 补充滚轮缩放测试，覆盖 `ctrl/meta` 手势时的 `preventDefault()` 路由，以及缩放增减后回到基准值的行为。
+  - 补充双指 pinch / pan 测试，覆盖触摸开始建档、移动时的缩放与平移联动，以及 `handleTouchEnd()` 之后忽略后续 move 的路径。
+  - 通过这组测试把 `LayoutCanvas` 依赖的核心缩放 hook 从 coverage 空白项推进到稳定可回归状态。
+- 验证命令：
+  - `npx vitest run src/hooks/useCanvasZoom.test.ts`
+  - `npm run test:unit`
+  - `npm run test:coverage`
+  - `npm run lint`
+- 覆盖率影响：
+  - 总 statements 从 `65.71%` 提升到 `66.91%`
+  - `hooks` 整体从 `15.95%` 提升到 `21.31%` statements，branches 提升到 `26.74%`
+  - `src/hooks/useCanvasZoom.ts` 达到 `100%` statements / `91.66%` branches / `100%` lines
+- 当前判断：
+  - 画布交互编排层里最核心的一条缩放 / 手势链路已经进入 unit-level 回归面，`LayoutCanvas` 的高频交互风险进一步下降。
+  - hooks 层剩余的主要空白已经更多集中在体量更大的 mode hooks，以及 coverage 统计仍未计入的 integration-only 路径。
+- 下一步：
+  - 继续补 `LayoutCanvas` 的高价值交互回归，或者转向 `download-port.ts`、`id-factory.ts` 这类轻量桥接文件做 `lib` 层扫尾。
+
 ### 2026-04-13 - 补齐 hooks 编排层基础单测
 - 范围：继续推进 hooks 编排层 TDD，将键盘交互、撤销历史、侧栏缩放和 live update 批处理拉入 unit coverage。
 - 改动摘要：
