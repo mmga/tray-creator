@@ -414,6 +414,45 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
     expect(resetParams).toHaveBeenCalledTimes(1);
     expect(replaceParams).toHaveBeenCalledWith({ importedMode: "grid" });
   });
+
+  it("surfaces oversized grid state and blocks auto preview generation", () => {
+    render(
+      <ParameterPanel
+        params={{
+          ...DEFAULT_TRAY_PARAMS,
+          rows: 6,
+          columns: 6,
+          holeDiameter: 60,
+          spacing: 10,
+        }}
+        updateParam={vi.fn()}
+        replaceParams={vi.fn()}
+        resetParams={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={1000}
+      />,
+    );
+
+    expect(screen.getByText("超过锻造极限 (260×260mm)")).toBeInTheDocument();
+    expect(screen.getByText("PLA估重: 0.7g")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "启用自动预览" }));
+
+    expect(useAutoPreviewMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        rows: 6,
+        columns: 6,
+        holeDiameter: 60,
+      }),
+      expect.objectContaining({
+        enabled: true,
+        isBlocked: true,
+        isGenerating: false,
+      }),
+    );
+  });
 });
 
 describe("CustomPanel", { timeout: 15000 }, () => {
@@ -653,6 +692,47 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
       2,
       { importedMode: "simple-stepped" },
     );
+  });
+
+  it("shows disabled states when no row is active, nothing can trim, and the layout is oversized", () => {
+    const params = createSimpleSteppedParams();
+    const derivedLayout = deriveSimpleSteppedLayout(params, null);
+
+    render(
+      <SimpleSteppedPanel
+        params={params}
+        derivedLayout={{
+          ...derivedLayout,
+          trayWidth: derivedLayout.minimumTrayWidth,
+          trayDepth: derivedLayout.minimumTrayDepth,
+        }}
+        activeRowId={null}
+        effectiveDimensions={{ width: 300, depth: 280, height: 12 }}
+        setParams={vi.fn()}
+        updateParam={vi.fn()}
+        onSetActiveRow={vi.fn()}
+        onAddRow={vi.fn()}
+        onRemoveRow={vi.fn()}
+        onRenameRow={vi.fn()}
+        onClearRow={vi.fn()}
+        onReorderRows={vi.fn()}
+        onAddSlotToRow={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        onTrimTray={vi.fn()}
+        isGenerating={false}
+        isPreviewStale={false}
+        volume={0}
+      />,
+    );
+
+    expect(screen.getByText("请先选择一行")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /25/ })[0]).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Trim 到凹槽占用区域" }),
+    ).toBeDisabled();
+    expect(screen.getByText("超过锻造极限")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "尺寸超限" })).toBeDisabled();
   });
 });
 

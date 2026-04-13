@@ -10,7 +10,7 @@
 - 项目的 TDD 基础设施已经齐备：`vitest`、`jsdom`、统一测试初始化、单测/集成拆分、覆盖率报告都已建立。
 - 当前 TDD 改造对核心领域逻辑已经进入“中后段”，但对 hooks、UI 编排层和渲染层仍处于“前中段”。
 - 已进入稳定 TDD 节奏的区域主要集中在 `src/lib`，尤其是 stepped layout/model、pricing、draft、grid/custom layout service、`outline-geometry`、`stepped-outline-preview`、`stepped-tray-model`、`tray-model`、`custom-tray-model`、`stl-export`、`jscad-to-three`，以及 worker service / worker 入口链路。
-- 高价值 UI 面板里，`SteppedPanel` 已经开始进入有意义的 TDD 主循环；当前最大的空白点主要剩下 hooks 编排层统计缺口，以及 `ParameterPanel`、`SimpleSteppedPanel` 之外更大范围的 UI 包装层。
+- 高价值 UI 面板里，`SteppedPanel` 已经进入有意义的 TDD 主循环，`ParameterPanel` 与 `SimpleSteppedPanel` 的边界状态也开始被回归覆盖；当前最大的空白点主要剩下 hooks 编排层统计缺口，以及更大范围的 UI 包装层。
 
 ## 本次基线快照
 - 日期：2026-04-13
@@ -24,11 +24,11 @@
 
 ## 验证基线
 - `npm run test:unit`
-  - 结果：41 个测试文件通过，151 个测试通过
+  - 结果：41 个测试文件通过，153 个测试通过
 - `npm run test:integration`
   - 结果：6 个测试文件通过，28 个测试通过
 - `npm run test:coverage`
-  - 结果：statements 62.1%，branches 54.97%，functions 60.25%，lines 62.41%
+  - 结果：statements 62.13%，branches 55.63%，functions 60.25%，lines 62.43%
 
 ## 覆盖率解读
 - `src/lib` 是当前 TDD 改造主战场。高价值且覆盖较强的模块包括：
@@ -55,12 +55,32 @@
   - `src/components/ui/` 下的大部分文件
 
 ## 下一波 TDD 建议
-1. 继续沿高价值 UI 面板推进，优先补 `ParameterPanel` 和 `SimpleSteppedPanel` 里仍未覆盖的状态分支，而不是扩散到低价值 UI 原子组件。
+1. 继续沿高价值 UI 面板推进，优先补 `ParameterPanel` 和 `SimpleSteppedPanel` 里仍未覆盖的状态分支，或者转向 `LayoutCanvas` / `TrayViewer` 这类用户可感知度更高的交互面。
 2. 调整覆盖率策略，让 hook 集成测试能在进度统计里被看见，或者单独建立一份 hooks 集成覆盖基线。
 3. 如果继续深挖 worker，可以补 `GENERATE_SIMPLE_STEPPED` 分支，完成 `tray.worker.ts` 的剩余未覆盖路径。
 4. 如果想继续做 `lib` 层扫尾，可补 `download-port.ts`、`id-factory.ts` 这类剩余轻量桥接文件。
 
 ## 进度记录
+
+### 2026-04-13 - 补齐网格与简易阶梯面板边界状态测试
+- 范围：继续推进高价值 UI 面板 TDD，补 `ParameterPanel` 与 `SimpleSteppedPanel` 的边界状态。
+- 改动摘要：
+  - 在 `src/components/panels.test.tsx` 中新增 `ParameterPanel` 的超限状态测试，覆盖超出锻造极限提示、已生成体积的耗材显示，以及自动预览在超限时的 `isBlocked` 路由。
+  - 新增 `SimpleSteppedPanel` 的禁用态测试，覆盖未选中行时的添加凹槽禁用、不可 Trim 时的禁用态，以及尺寸超限时主按钮和提示文案的回归。
+  - 通过这组测试把两个面板从“正常操作能走通”推进到“边界状态不回退”的层次。
+- 验证命令：
+  - `npx vitest run src/components/panels.test.tsx`
+  - `npm run test:unit`
+  - `npm run test:coverage`
+- 覆盖率影响：
+  - 总 statements 从 `62.1%` 提升到 `62.13%`
+  - `src/components/ParameterPanel.tsx` 的 branches 从 `60%` 提升到 `76.66%`
+  - `src/components/SimpleSteppedPanel.tsx` 的 branches 从 `68.42%` 提升到 `84.21%`
+- 当前判断：
+  - 高价值面板已经不只覆盖“可点击路径”，开始覆盖真实使用中容易回退的超限、禁用和阻断状态。
+  - 当前 UI 层更值得继续深挖的目标，已经逐步转向 `LayoutCanvas`、`TrayViewer` 和更复杂的交互容器。
+- 下一步：
+  - 在 `LayoutCanvas` 或 `TrayViewer` 中继续补一轮高价值交互回归，或者转向 hooks 覆盖率统计可见性。
 
 ### 2026-04-13 - 补齐 SteppedPanel 状态交互测试
 - 范围：继续推进高价值 UI 面板 TDD，优先补 `SteppedPanel` 的状态型交互。
