@@ -147,6 +147,23 @@ const {
     },
   ];
 
+  const optimizationProposals = [
+    {
+      id: "compact",
+      label: "最紧凑",
+      description: "优先压缩整体占地面积。",
+      params: steppedParams,
+      metrics: {
+        width: 140,
+        depth: 120,
+        area: 16800,
+        displacement: 20,
+        hasBridgeWarning: false,
+        isOversized: false,
+      },
+    },
+  ];
+
   return {
     gridModelMock: {
       params: gridParams,
@@ -216,6 +233,11 @@ const {
       outlinePreview,
       pauseOutlinePreview: vi.fn(),
       resumeOutlinePreview: vi.fn(),
+      optimizationProposals,
+      isOptimizingLayout: false,
+      generateOptimizationProposals: vi.fn(),
+      applyOptimizationProposal: vi.fn(),
+      clearOptimizationProposals: vi.fn(),
       threeGeometry: { id: "stepped-geometry" },
     },
     simpleSteppedModelMock: {
@@ -485,11 +507,21 @@ vi.mock("@/components/SteppedPanel", () => ({
     previewGroupId,
     currentDraftId,
     onPreviewGroupChange,
+    optimizationProposals,
+    isOptimizingLayout,
+    onGenerateOptimizationProposals,
+    onApplyOptimizationProposal,
+    onClearOptimizationProposals,
   }: {
     selectedSlotIds: string[];
     previewGroupId: string | null;
     currentDraftId: string | null;
     onPreviewGroupChange: (groupId: string | null) => void;
+    optimizationProposals: { id: string }[];
+    isOptimizingLayout: boolean;
+    onGenerateOptimizationProposals: () => void;
+    onApplyOptimizationProposal: (proposalId: string) => void;
+    onClearOptimizationProposals: () => void;
   }) {
     return (
       <div
@@ -497,9 +529,23 @@ vi.mock("@/components/SteppedPanel", () => ({
         data-selected-slot-ids={selectedSlotIds.join(",")}
         data-preview-group-id={previewGroupId ?? ""}
         data-current-draft-id={currentDraftId ?? ""}
+        data-optimization-count={optimizationProposals.length}
+        data-optimizing={String(isOptimizingLayout)}
       >
         <button type="button" onClick={() => onPreviewGroupChange("group-1")}>
           设置预览组
+        </button>
+        <button type="button" onClick={onGenerateOptimizationProposals}>
+          生成优化建议
+        </button>
+        <button
+          type="button"
+          onClick={() => onApplyOptimizationProposal(optimizationProposals[0]?.id ?? "")}
+        >
+          应用优化建议
+        </button>
+        <button type="button" onClick={onClearOptimizationProposals}>
+          清空优化建议
         </button>
       </div>
     );
@@ -707,6 +753,10 @@ describe("Home page", { timeout: 15000 }, () => {
     steppedModelMock.setActiveGroup.mockReset();
     steppedModelMock.pauseOutlinePreview.mockReset();
     steppedModelMock.resumeOutlinePreview.mockReset();
+    steppedModelMock.generateOptimizationProposals.mockReset();
+    steppedModelMock.applyOptimizationProposal.mockReset();
+    steppedModelMock.clearOptimizationProposals.mockReset();
+    steppedModelMock.isOptimizingLayout = false;
     steppedDraftsMock.getDraftList.mockClear();
     steppedDraftsMock.openDialog.mockReset();
     steppedDraftsMock.closeDialog.mockReset();
@@ -818,6 +868,38 @@ describe("Home page", { timeout: 15000 }, () => {
         "",
       );
     });
+  });
+
+  it("wires stepped optimization actions and state through the page", async () => {
+    steppedModelMock.isOptimizingLayout = true;
+
+    render(<Home />);
+
+    fireEvent.click(screen.getByRole("button", { name: "切到阶梯" }));
+    await screen.findByTestId("stepped-panel");
+
+    expect(screen.getByTestId("stepped-panel")).toHaveAttribute(
+      "data-optimization-count",
+      "1",
+    );
+    expect(screen.getByTestId("stepped-panel")).toHaveAttribute(
+      "data-optimizing",
+      "true",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "生成优化建议" }));
+    fireEvent.click(screen.getByRole("button", { name: "应用优化建议" }));
+    fireEvent.click(screen.getByRole("button", { name: "清空优化建议" }));
+
+    expect(
+      steppedModelMock.generateOptimizationProposals,
+    ).toHaveBeenCalledTimes(1);
+    expect(steppedModelMock.applyOptimizationProposal).toHaveBeenCalledWith(
+      "compact",
+    );
+    expect(steppedModelMock.clearOptimizationProposals).toHaveBeenCalledTimes(
+      1,
+    );
   });
 
   it("wires stepped draft dialog actions through stepped draft hooks and refreshes the list where needed", async () => {

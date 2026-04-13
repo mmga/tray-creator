@@ -302,6 +302,28 @@ function createSimpleSteppedParams(
   };
 }
 
+function createOptimizationProposals(): React.ComponentProps<
+  typeof SteppedPanel
+>["optimizationProposals"] {
+  return [
+    {
+      id: "compact",
+      kind: "compact",
+      label: "紧凑对称",
+      description: "仅在组内重排，不跨组混排；优先保证左右对称，并尽量收敛到横向约 5:2 的长方形。",
+      params: createSteppedParams(),
+      metrics: {
+        width: 92,
+        depth: 78,
+        area: 7176,
+        displacement: 48.6,
+        hasBridgeWarning: false,
+        isOversized: false,
+      },
+    },
+  ];
+}
+
 describe("ParameterPanel", { timeout: 15000 }, () => {
   beforeEach(() => {
     useAutoPreviewMock.mockReset();
@@ -696,6 +718,11 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         previewGroupId={null}
         onPreviewGroupChange={vi.fn()}
         bridgeWarning={null}
+        optimizationProposals={[]}
+        isOptimizingLayout={false}
+        onGenerateOptimizationProposals={vi.fn()}
+        onApplyOptimizationProposal={vi.fn()}
+        onClearOptimizationProposals={vi.fn()}
         onOpenDraftDialog={vi.fn()}
         onSaveDraft={vi.fn()}
         currentDraftId={null}
@@ -763,6 +790,11 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         previewGroupId={null}
         onPreviewGroupChange={vi.fn()}
         bridgeWarning={null}
+        optimizationProposals={[]}
+        isOptimizingLayout={false}
+        onGenerateOptimizationProposals={vi.fn()}
+        onApplyOptimizationProposal={vi.fn()}
+        onClearOptimizationProposals={vi.fn()}
         onOpenDraftDialog={vi.fn()}
         onSaveDraft={vi.fn()}
         currentDraftId={null}
@@ -857,6 +889,11 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         previewGroupId={null}
         onPreviewGroupChange={vi.fn()}
         bridgeWarning={null}
+        optimizationProposals={[]}
+        isOptimizingLayout={false}
+        onGenerateOptimizationProposals={vi.fn()}
+        onApplyOptimizationProposal={vi.fn()}
+        onClearOptimizationProposals={vi.fn()}
         onOpenDraftDialog={vi.fn()}
         onSaveDraft={vi.fn()}
         currentDraftId={null}
@@ -877,5 +914,185 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
       "估重 = 真实体积(cm³) × 有效打印密度(g/cm³)",
     );
     expect(screen.getByRole("tooltip")).toHaveTextContent("最终报价");
+  });
+
+  it("renders optimization proposals and routes generate, apply, and clear actions", () => {
+    const onGenerateOptimizationProposals = vi.fn();
+    const onApplyOptimizationProposal = vi.fn();
+    const onClearOptimizationProposals = vi.fn();
+
+    render(
+      <SteppedPanel
+        params={createSteppedParams({
+          slots: [
+            {
+              id: "slot-1",
+              x: 90,
+              y: 100,
+              shape: "circle",
+              width: 25,
+              height: 25,
+              rotation: 0,
+              groupId: "group-1",
+            },
+            {
+              id: "slot-2",
+              x: 140,
+              y: 100,
+              shape: "circle",
+              width: 40,
+              height: 40,
+              rotation: 0,
+              groupId: "group-2",
+            },
+          ],
+        })}
+        effectiveDimensions={{ width: 120, depth: 100 }}
+        isPreviewStale={false}
+        updateParam={vi.fn()}
+        setParams={vi.fn()}
+        onAddSlot={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+        selectedSlotIds={[]}
+        onAddGroup={vi.fn()}
+        onRemoveGroup={vi.fn()}
+        onUpdateGroupHeight={vi.fn()}
+        onUpdateGroupSmoothingOverride={vi.fn()}
+        onUpdateGroupSmoothingRadius={vi.fn()}
+        onUpdateGroupDisconnectOverride={vi.fn()}
+        onUpdateGroupDisconnectDistance={vi.fn()}
+        onSetActiveGroup={vi.fn()}
+        onMoveSelectedSlotsToGroup={vi.fn()}
+        onReorderGroups={vi.fn()}
+        previewGroupId={null}
+        onPreviewGroupChange={vi.fn()}
+        bridgeWarning={null}
+        optimizationProposals={createOptimizationProposals()}
+        isOptimizingLayout={false}
+        onGenerateOptimizationProposals={onGenerateOptimizationProposals}
+        onApplyOptimizationProposal={onApplyOptimizationProposal}
+        onClearOptimizationProposals={onClearOptimizationProposals}
+        onOpenDraftDialog={vi.fn()}
+        onSaveDraft={vi.fn()}
+        currentDraftId={null}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "全局优化" }));
+    fireEvent.click(screen.getByRole("button", { name: "应用此方案" }));
+    fireEvent.click(screen.getByRole("button", { name: "关闭建议" }));
+
+    expect(screen.getByText("优化建议")).toBeInTheDocument();
+    expect(screen.getByText("紧凑对称")).toBeInTheDocument();
+    expect(screen.getByText("较当前 -40.2%")).toBeInTheDocument();
+    expect(onGenerateOptimizationProposals).toHaveBeenCalledTimes(1);
+    expect(onApplyOptimizationProposal).toHaveBeenCalledWith("compact");
+    expect(onClearOptimizationProposals).toHaveBeenCalledTimes(1);
+  });
+
+  it("disables optimization when there are too few slots or generation is in progress", () => {
+    const { rerender } = render(
+      <SteppedPanel
+        params={createSteppedParams()}
+        effectiveDimensions={{ width: 120, depth: 140 }}
+        isPreviewStale={false}
+        updateParam={vi.fn()}
+        setParams={vi.fn()}
+        onAddSlot={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+        selectedSlotIds={[]}
+        onAddGroup={vi.fn()}
+        onRemoveGroup={vi.fn()}
+        onUpdateGroupHeight={vi.fn()}
+        onUpdateGroupSmoothingOverride={vi.fn()}
+        onUpdateGroupSmoothingRadius={vi.fn()}
+        onUpdateGroupDisconnectOverride={vi.fn()}
+        onUpdateGroupDisconnectDistance={vi.fn()}
+        onSetActiveGroup={vi.fn()}
+        onMoveSelectedSlotsToGroup={vi.fn()}
+        onReorderGroups={vi.fn()}
+        previewGroupId={null}
+        onPreviewGroupChange={vi.fn()}
+        bridgeWarning={null}
+        optimizationProposals={[]}
+        isOptimizingLayout={false}
+        onGenerateOptimizationProposals={vi.fn()}
+        onApplyOptimizationProposal={vi.fn()}
+        onClearOptimizationProposals={vi.fn()}
+        onOpenDraftDialog={vi.fn()}
+        onSaveDraft={vi.fn()}
+        currentDraftId={null}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "全局优化" })).toBeDisabled();
+
+    rerender(
+      <SteppedPanel
+        params={createSteppedParams({
+          slots: [
+            {
+              id: "slot-1",
+              x: 90,
+              y: 100,
+              shape: "circle",
+              width: 25,
+              height: 25,
+              rotation: 0,
+              groupId: "group-1",
+            },
+            {
+              id: "slot-2",
+              x: 140,
+              y: 100,
+              shape: "circle",
+              width: 40,
+              height: 40,
+              rotation: 0,
+              groupId: "group-2",
+            },
+          ],
+        })}
+        effectiveDimensions={{ width: 120, depth: 140 }}
+        isPreviewStale={false}
+        updateParam={vi.fn()}
+        setParams={vi.fn()}
+        onAddSlot={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+        selectedSlotIds={[]}
+        onAddGroup={vi.fn()}
+        onRemoveGroup={vi.fn()}
+        onUpdateGroupHeight={vi.fn()}
+        onUpdateGroupSmoothingOverride={vi.fn()}
+        onUpdateGroupSmoothingRadius={vi.fn()}
+        onUpdateGroupDisconnectOverride={vi.fn()}
+        onUpdateGroupDisconnectDistance={vi.fn()}
+        onSetActiveGroup={vi.fn()}
+        onMoveSelectedSlotsToGroup={vi.fn()}
+        onReorderGroups={vi.fn()}
+        previewGroupId={null}
+        onPreviewGroupChange={vi.fn()}
+        bridgeWarning={null}
+        optimizationProposals={[]}
+        isOptimizingLayout={true}
+        onGenerateOptimizationProposals={vi.fn()}
+        onApplyOptimizationProposal={vi.fn()}
+        onClearOptimizationProposals={vi.fn()}
+        onOpenDraftDialog={vi.fn()}
+        onSaveDraft={vi.fn()}
+        currentDraftId={null}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "优化中..." })).toBeDisabled();
   });
 });
