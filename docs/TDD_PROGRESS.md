@@ -62,6 +62,30 @@
 
 ## 进度记录
 
+### 2026-04-13 - 补齐 hooks 编排层基础单测
+- 范围：继续推进 hooks 编排层 TDD，将键盘交互、撤销历史、侧栏缩放和 live update 批处理拉入 unit coverage。
+- 改动摘要：
+  - 新增 `src/hooks/useCanvasKeyboard.test.ts`，覆盖方向键微调、可编辑目标忽略、复制粘贴、删除、撤销、Escape 清空与快捷键提示切换。
+  - 新增 `src/hooks/useActionPanelResize.test.ts`，覆盖拖拽宽度钳制、`pointerup` / `pointercancel` 清理，以及页面隐藏时终止 resize 的行为。
+  - 新增 `src/hooks/useUndoHistory.test.ts` 与 `src/hooks/useLiveSlotUpdates.test.ts`，覆盖连续操作合并窗口、强制入栈、50 条历史上限、RAF 批处理、立即 flush 和卸载清理。
+  - 通过这组测试把此前在覆盖率统计里几乎不可见的 hooks 编排层，拉进了可量化、可回归的单测闭环。
+- 验证命令：
+  - `npx vitest run src/hooks/useUndoHistory.test.ts src/hooks/useLiveSlotUpdates.test.ts src/hooks/useActionPanelResize.test.ts src/hooks/useCanvasKeyboard.test.ts`
+  - `npm run test:unit`
+  - `npm run test:coverage`
+- 覆盖率影响：
+  - 总 statements 从 `62.13%` 提升到 `65.71%`
+  - `hooks` 整体从 `0%` 提升到 `15.95%` statements，branches 提升到 `23.4%`
+  - `src/hooks/useCanvasKeyboard.ts` 达到 `95.77%` statements / `84.61%` branches
+  - `src/hooks/useActionPanelResize.ts` 达到 `97.43%` statements / `66.66%` branches
+  - `src/hooks/useLiveSlotUpdates.ts` 达到 `93.54%` statements / `78.57%` branches
+  - `src/hooks/useUndoHistory.ts` 达到 `100%` statements / `100%` branches
+- 当前判断：
+  - hooks 层终于不再完全依赖 integration tests 才能被验证，部分高频交互编排已经进入 unit-level 回归面。
+  - `useCanvasZoom.ts` 以及更大体量的 mode hooks 仍未被当前 coverage 统计看见，hooks 层还有明显纵深可挖。
+- 下一步：
+  - 优先补 `useCanvasZoom.ts`，或者继续向 `LayoutCanvas` 这种 hook 编排承载点补一轮用户可感知交互回归。
+
 ### 2026-04-13 - 补齐网格与简易阶梯面板边界状态测试
 - 范围：继续推进高价值 UI 面板 TDD，补 `ParameterPanel` 与 `SimpleSteppedPanel` 的边界状态。
 - 改动摘要：
