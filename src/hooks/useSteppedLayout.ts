@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useCallback, useRef, useMemo } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import { browserDownloadPort } from "@/lib/download-port";
 import { randomIdFactory } from "@/lib/id-factory";
 import type {
   SteppedLayoutParams,
   GroupOutlinePreview,
-  SteppedSlot,
 } from "@/types/custom-tray";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import { useUndoHistory } from "@/hooks/useUndoHistory";
@@ -49,6 +48,10 @@ import {
   exportSteppedModelFiles,
   generateSteppedPreview,
 } from "@/lib/stepped-model-service";
+import {
+  generateSteppedOptimizationProposals,
+  type SteppedOptimizationProposal,
+} from "@/lib/stepped-global-optimize";
 
 export interface UseSteppedLayoutReturn {
   params: SteppedLayoutParams;
@@ -99,6 +102,11 @@ export interface UseSteppedLayoutReturn {
   isGenerating: boolean;
   isPreviewStale: boolean;
   bridgeWarning: BridgeWarning | null;
+  optimizationProposals: SteppedOptimizationProposal[];
+  isOptimizingLayout: boolean;
+  generateOptimizationProposals: () => void;
+  applyOptimizationProposal: (proposalId: SteppedOptimizationProposal["id"]) => void;
+  clearOptimizationProposals: () => void;
   pauseOutlinePreview: () => void;
   resumeOutlinePreview: () => void;
   handleGenerate: () => void;
@@ -115,6 +123,10 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     useState<THREE.BufferGeometry | null>(null);
   const [volume, setVolume] = useState<number>(0);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [optimizationProposals, setOptimizationProposals] = useState<
+    SteppedOptimizationProposal[]
+  >([]);
+  const [isOptimizingLayout, setIsOptimizingLayout] = useState(false);
   const jscadGeomRef = useRef<Geom3 | null>(null);
   const { toast } = useToast();
 
@@ -127,13 +139,42 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
   paramsRef.current = params;
   const [isPreviewStale, setIsPreviewStale] = useState(false);
   const paramsVersionRef = useRef(0);
+  const optimizationProposalsRef = useRef(optimizationProposals);
+  const optimizationRequestIdRef = useRef(0);
+  const optimizationVariantRef = useRef(0);
+  const optimizationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  optimizationProposalsRef.current = optimizationProposals;
+
+  const cancelPendingOptimization = useCallback(() => {
+    optimizationRequestIdRef.current += 1;
+    if (optimizationTimeoutRef.current !== null) {
+      clearTimeout(optimizationTimeoutRef.current);
+      optimizationTimeoutRef.current = null;
+    }
+  }, []);
+
+  const clearOptimizationProposals = useCallback(() => {
+    cancelPendingOptimization();
+    setOptimizationProposals([]);
+    setIsOptimizingLayout(false);
+  }, [cancelPendingOptimization]);
+
+  useEffect(() => {
+    return () => {
+      cancelPendingOptimization();
+    };
+  }, [cancelPendingOptimization]);
 
   const invalidatePreview = useCallback(() => {
     paramsVersionRef.current += 1;
+    optimizationVariantRef.current = 0;
     setIsPreviewStale(true);
     jscadGeomRef.current = null;
     setVolume(0);
-  }, []);
+    clearOptimizationProposals();
+  }, [clearOptimizationProposals]);
 
   const setParams = useCallback<
     React.Dispatch<React.SetStateAction<SteppedLayoutParams>>
@@ -386,8 +427,9 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
         pushState(prev);
         return next;
       });
+      clearOptimizationProposals();
     },
-    [pushState],
+    [clearOptimizationProposals, pushState],
   );
 
   const trimBaseplate = useCallback(() => {
@@ -465,6 +507,49 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     return buildSteppedBridgeWarning(params);
   }, [params]);
 
+  const generateOptimizationProposalsForCurrentParams = useCallback(() => {
+    cancelPendingOptimization();
+    setIsOptimizingLayout(true);
+    setOptimizationProposals([]);
+    const variantIndex = optimizationVariantRef.current;
+    optimizationVariantRef.current += 1;
+    const requestId = optimizationRequestIdRef.current + 1;
+    optimizationRequestIdRef.current = requestId;
+    optimizationTimeoutRef.current = setTimeout(() => {
+      optimizationTimeoutRef.current = null;
+      try {
+        const proposals = generateSteppedOptimizationProposals(
+          paramsRef.current,
+          { variantIndex },
+        );
+        if (optimizationRequestIdRef.current !== requestId) {
+          return;
+        }
+        setOptimizationProposals(proposals);
+      } finally {
+        if (optimizationRequestIdRef.current === requestId) {
+          setIsOptimizingLayout(false);
+        }
+      }
+    }, 0);
+  }, [cancelPendingOptimization]);
+
+  const applyOptimizationProposal = useCallback(
+    (proposalId: SteppedOptimizationProposal["id"]) => {
+      const proposal = optimizationProposalsRef.current.find(
+        (entry) => entry.id === proposalId,
+      );
+      if (!proposal) {
+        return;
+      }
+
+      pushState(paramsRef.current, { force: true });
+      internalSetParams(proposal.params);
+      invalidatePreview();
+    },
+    [invalidatePreview, pushState],
+  );
+
   return {
     params,
     setParams,
@@ -497,6 +582,11 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     isGenerating,
     isPreviewStale,
     bridgeWarning,
+    optimizationProposals,
+    isOptimizingLayout,
+    generateOptimizationProposals: generateOptimizationProposalsForCurrentParams,
+    applyOptimizationProposal,
+    clearOptimizationProposals,
     pauseOutlinePreview,
     resumeOutlinePreview,
     handleGenerate,

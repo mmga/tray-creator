@@ -16,13 +16,17 @@ export function useUndoHistory<T>() {
   const lastPushTimeRef = useRef<number>(0);
 
   /** 将当前状态压入历史栈（在变更前调用） */
-  const pushState = useCallback((state: T) => {
+  const pushState = useCallback((state: T, options?: { force?: boolean }) => {
     const now = Date.now();
     const elapsed = now - lastPushTimeRef.current;
 
     // 如果距上次 push 时间很短，说明是连续操作（如拖拽/滑动），
     // 跳过入栈以避免大量重复快照
-    if (elapsed < MERGE_WINDOW_MS && historyRef.current.length > 0) {
+    if (
+      !options?.force &&
+      elapsed < MERGE_WINDOW_MS &&
+      historyRef.current.length > 0
+    ) {
       lastPushTimeRef.current = now;
       return;
     }
