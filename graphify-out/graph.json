@@ -9,7 +9,7 @@
       "source_file": "next-env.d.ts",
       "source_location": "L1",
       "id": "next_env_d",
-      "community": 22
+      "community": 24
     },
     {
       "label": "next.config.ts",
@@ -17,7 +17,7 @@
       "source_file": "next.config.ts",
       "source_location": "L1",
       "id": "next_config",
-      "community": 23
+      "community": 25
     },
     {
       "label": "rebuild_graphify.py",
@@ -25,7 +25,7 @@
       "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/scripts/rebuild_graphify.py",
       "source_location": "L1",
       "id": "rebuild_graphify",
-      "community": 21
+      "community": 23
     },
     {
       "label": "collect_code_files()",
@@ -33,7 +33,7 @@
       "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/scripts/rebuild_graphify.py",
       "source_location": "L46",
       "id": "rebuild_graphify_collect_code_files",
-      "community": 21
+      "community": 23
     },
     {
       "label": "main()",
@@ -41,7 +41,7 @@
       "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/scripts/rebuild_graphify.py",
       "source_location": "L79",
       "id": "rebuild_graphify_main",
-      "community": 21
+      "community": 23
     },
     {
       "label": "layout.tsx",
@@ -49,7 +49,7 @@
       "source_file": "src/app/layout.tsx",
       "source_location": "L1",
       "id": "layout",
-      "community": 4
+      "community": 0
     },
     {
       "label": "RootLayout()",
@@ -57,7 +57,7 @@
       "source_file": "src/app/layout.tsx",
       "source_location": "L29",
       "id": "layout_rootlayout",
-      "community": 4
+      "community": 0
     },
     {
       "label": "page.test.tsx",
@@ -65,7 +65,7 @@
       "source_file": "src/app/page.test.tsx",
       "source_location": "L1",
       "id": "page_test",
-      "community": 18
+      "community": 19
     },
     {
       "label": "default()",
@@ -73,7 +73,7 @@
       "source_file": "src/app/page.test.tsx",
       "source_location": "L407",
       "id": "page_test_default",
-      "community": 18
+      "community": 19
     },
     {
       "label": "ModeTabs()",
@@ -81,7 +81,7 @@
       "source_file": "src/app/page.test.tsx",
       "source_location": "L460",
       "id": "page_test_modetabs",
-      "community": 18
+      "community": 19
     },
     {
       "label": "SteppedDraftDialog()",
@@ -89,7 +89,7 @@
       "source_file": "src/app/page.test.tsx",
       "source_location": "L636",
       "id": "page_test_steppeddraftdialog",
-      "community": 18
+      "community": 19
     },
     {
       "label": "Tabs()",
@@ -97,7 +97,7 @@
       "source_file": "src/app/page.test.tsx",
       "source_location": "L704",
       "id": "page_test_tabs",
-      "community": 18
+      "community": 19
     },
     {
       "label": "TabsList()",
@@ -105,7 +105,7 @@
       "source_file": "src/app/page.test.tsx",
       "source_location": "L719",
       "id": "page_test_tabslist",
-      "community": 18
+      "community": 19
     },
     {
       "label": "TabsTrigger()",
@@ -113,7 +113,7 @@
       "source_file": "src/app/page.test.tsx",
       "source_location": "L722",
       "id": "page_test_tabstrigger",
-      "community": 18
+      "community": 19
     },
     {
       "label": "page.tsx",
@@ -129,7 +129,7 @@
       "source_file": "src/components/AlignmentToolbar.tsx",
       "source_location": "L1",
       "id": "alignmenttoolbar",
-      "community": 1
+      "community": 2
     },
     {
       "label": "BaseHoleConfig.tsx",
@@ -137,7 +137,7 @@
       "source_file": "src/components/BaseHoleConfig.tsx",
       "source_location": "L1",
       "id": "baseholeconfig",
-      "community": 2
+      "community": 1
     },
     {
       "label": "CustomPanel.tsx",
@@ -145,7 +145,7 @@
       "source_file": "src/components/CustomPanel.tsx",
       "source_location": "L1",
       "id": "custompanel",
-      "community": 2
+      "community": 1
     },
     {
       "label": "handleReset()",
@@ -153,7 +153,7 @@
       "source_file": "src/components/CustomPanel.tsx",
       "source_location": "L62",
       "id": "custompanel_handlereset",
-      "community": 2
+      "community": 1
     },
     {
       "label": "LayoutCanvas.test.tsx",
@@ -161,7 +161,7 @@
       "source_file": "src/components/LayoutCanvas.test.tsx",
       "source_location": "L1",
       "id": "layoutcanvas_test",
-      "community": 1
+      "community": 2
     },
     {
       "label": "default()",
@@ -169,7 +169,7 @@
       "source_file": "src/components/LayoutCanvas.test.tsx",
       "source_location": "L74",
       "id": "layoutcanvas_test_default",
-      "community": 1
+      "community": 2
     },
     {
       "label": "CanvasOverlayLayer()",
@@ -177,7 +177,7 @@
       "source_file": "src/components/LayoutCanvas.test.tsx",
       "source_location": "L101",
       "id": "layoutcanvas_test_canvasoverlaylayer",
-      "community": 1
+      "community": 2
     },
     {
       "label": "CanvasStatusBar()",
@@ -185,7 +185,7 @@
       "source_file": "src/components/LayoutCanvas.test.tsx",
       "source_location": "L152",
       "id": "layoutcanvas_test_canvasstatusbar",
-      "community": 1
+      "community": 2
     },
     {
       "label": "CanvasZoomControls()",
@@ -193,7 +193,7 @@
       "source_file": "src/components/LayoutCanvas.test.tsx",
       "source_location": "L170",
       "id": "layoutcanvas_test_canvaszoomcontrols",
-      "community": 1
+      "community": 2
     },
     {
       "label": "KeyboardHintsOverlay()",
@@ -201,7 +201,7 @@
       "source_file": "src/components/LayoutCanvas.test.tsx",
       "source_location": "L191",
       "id": "layoutcanvas_test_keyboardhintsoverlay",
-      "community": 1
+      "community": 2
     },
     {
       "label": "value()",
@@ -209,7 +209,7 @@
       "source_file": "src/components/LayoutCanvas.test.tsx",
       "source_location": "L288",
       "id": "layoutcanvas_test_value",
-      "community": 1
+      "community": 2
     },
     {
       "label": "LayoutCanvas.tsx",
@@ -217,7 +217,7 @@
       "source_file": "src/components/LayoutCanvas.tsx",
       "source_location": "L1",
       "id": "layoutcanvas",
-      "community": 1
+      "community": 2
     },
     {
       "label": "getSvgPointFromClient()",
@@ -225,7 +225,7 @@
       "source_file": "src/components/LayoutCanvas.tsx",
       "source_location": "L383",
       "id": "layoutcanvas_getsvgpointfromclient",
-      "community": 1
+      "community": 2
     },
     {
       "label": "handleRotateMouseDown()",
@@ -233,7 +233,7 @@
       "source_file": "src/components/LayoutCanvas.tsx",
       "source_location": "L396",
       "id": "layoutcanvas_handlerotatemousedown",
-      "community": 1
+      "community": 2
     },
     {
       "label": "handlePointerMove()",
@@ -241,7 +241,7 @@
       "source_file": "src/components/LayoutCanvas.tsx",
       "source_location": "L456",
       "id": "layoutcanvas_handlepointermove",
-      "community": 1
+      "community": 2
     },
     {
       "label": "handlePointerDown()",
@@ -249,7 +249,7 @@
       "source_file": "src/components/LayoutCanvas.tsx",
       "source_location": "L608",
       "id": "layoutcanvas_handlepointerdown",
-      "community": 1
+      "community": 2
     },
     {
       "label": "handlePointerUp()",
@@ -257,7 +257,7 @@
       "source_file": "src/components/LayoutCanvas.tsx",
       "source_location": "L708",
       "id": "layoutcanvas_handlepointerup",
-      "community": 1
+      "community": 2
     },
     {
       "label": "ModeTabs.test.tsx",
@@ -265,7 +265,7 @@
       "source_file": "src/components/ModeTabs.test.tsx",
       "source_location": "L1",
       "id": "modetabs_test",
-      "community": 20
+      "community": 22
     },
     {
       "label": "Tabs()",
@@ -273,7 +273,7 @@
       "source_file": "src/components/ModeTabs.test.tsx",
       "source_location": "L15",
       "id": "modetabs_test_tabs",
-      "community": 20
+      "community": 22
     },
     {
       "label": "TabsList()",
@@ -281,7 +281,7 @@
       "source_file": "src/components/ModeTabs.test.tsx",
       "source_location": "L30",
       "id": "modetabs_test_tabslist",
-      "community": 20
+      "community": 22
     },
     {
       "label": "TabsTrigger()",
@@ -289,7 +289,7 @@
       "source_file": "src/components/ModeTabs.test.tsx",
       "source_location": "L33",
       "id": "modetabs_test_tabstrigger",
-      "community": 20
+      "community": 22
     },
     {
       "label": "ModeTabs.tsx",
@@ -305,7 +305,7 @@
       "source_file": "src/components/PanelActionSection.tsx",
       "source_location": "L1",
       "id": "panelactionsection",
-      "community": 2
+      "community": 1
     },
     {
       "label": "ParamIOButtons.tsx",
@@ -313,7 +313,7 @@
       "source_file": "src/components/ParamIOButtons.tsx",
       "source_location": "L1",
       "id": "paramiobuttons",
-      "community": 2
+      "community": 1
     },
     {
       "label": "ParamIOButtons()",
@@ -321,7 +321,7 @@
       "source_file": "src/components/ParamIOButtons.tsx",
       "source_location": "L22",
       "id": "paramiobuttons_paramiobuttons",
-      "community": 2
+      "community": 1
     },
     {
       "label": "ParameterPanel.tsx",
@@ -329,7 +329,7 @@
       "source_file": "src/components/ParameterPanel.tsx",
       "source_location": "L1",
       "id": "parameterpanel",
-      "community": 2
+      "community": 1
     },
     {
       "label": "handlePresetChange()",
@@ -337,7 +337,7 @@
       "source_file": "src/components/ParameterPanel.tsx",
       "source_location": "L76",
       "id": "parameterpanel_handlepresetchange",
-      "community": 2
+      "community": 1
     },
     {
       "label": "handleReset()",
@@ -345,7 +345,7 @@
       "source_file": "src/components/ParameterPanel.tsx",
       "source_location": "L84",
       "id": "parameterpanel_handlereset",
-      "community": 2
+      "community": 1
     },
     {
       "label": "SimpleSteppedPanel.tsx",
@@ -353,7 +353,7 @@
       "source_file": "src/components/SimpleSteppedPanel.tsx",
       "source_location": "L1",
       "id": "simplesteppedpanel",
-      "community": 2
+      "community": 1
     },
     {
       "label": "handleReset()",
@@ -361,7 +361,7 @@
       "source_file": "src/components/SimpleSteppedPanel.tsx",
       "source_location": "L99",
       "id": "simplesteppedpanel_handlereset",
-      "community": 2
+      "community": 1
     },
     {
       "label": "SteppedDraftDialog.test.tsx",
@@ -369,7 +369,7 @@
       "source_file": "src/components/SteppedDraftDialog.test.tsx",
       "source_location": "L1",
       "id": "steppeddraftdialog_test",
-      "community": 5
+      "community": 4
     },
     {
       "label": "Dialog()",
@@ -377,7 +377,7 @@
       "source_file": "src/components/SteppedDraftDialog.test.tsx",
       "source_location": "L7",
       "id": "steppeddraftdialog_test_dialog",
-      "community": 5
+      "community": 4
     },
     {
       "label": "DialogContent()",
@@ -385,7 +385,7 @@
       "source_file": "src/components/SteppedDraftDialog.test.tsx",
       "source_location": "L25",
       "id": "steppeddraftdialog_test_dialogcontent",
-      "community": 5
+      "community": 4
     },
     {
       "label": "DialogHeader()",
@@ -393,7 +393,7 @@
       "source_file": "src/components/SteppedDraftDialog.test.tsx",
       "source_location": "L28",
       "id": "steppeddraftdialog_test_dialogheader",
-      "community": 5
+      "community": 4
     },
     {
       "label": "DialogTitle()",
@@ -401,7 +401,7 @@
       "source_file": "src/components/SteppedDraftDialog.test.tsx",
       "source_location": "L31",
       "id": "steppeddraftdialog_test_dialogtitle",
-      "community": 5
+      "community": 4
     },
     {
       "label": "createDraft()",
@@ -409,7 +409,7 @@
       "source_file": "src/components/SteppedDraftDialog.test.tsx",
       "source_location": "L43",
       "id": "steppeddraftdialog_test_createdraft",
-      "community": 5
+      "community": 4
     },
     {
       "label": "SteppedDraftDialog.tsx",
@@ -417,7 +417,7 @@
       "source_file": "src/components/SteppedDraftDialog.tsx",
       "source_location": "L1",
       "id": "steppeddraftdialog",
-      "community": 5
+      "community": 4
     },
     {
       "label": "commitRename()",
@@ -425,7 +425,7 @@
       "source_file": "src/components/SteppedDraftDialog.tsx",
       "source_location": "L74",
       "id": "steppeddraftdialog_commitrename",
-      "community": 5
+      "community": 4
     },
     {
       "label": "cancelRename()",
@@ -433,7 +433,7 @@
       "source_file": "src/components/SteppedDraftDialog.tsx",
       "source_location": "L81",
       "id": "steppeddraftdialog_cancelrename",
-      "community": 5
+      "community": 4
     },
     {
       "label": "startRename()",
@@ -441,7 +441,7 @@
       "source_file": "src/components/SteppedDraftDialog.tsx",
       "source_location": "L86",
       "id": "steppeddraftdialog_startrename",
-      "community": 5
+      "community": 4
     },
     {
       "label": "SteppedPanel.tsx",
@@ -449,7 +449,7 @@
       "source_file": "src/components/SteppedPanel.tsx",
       "source_location": "L1",
       "id": "steppedpanel",
-      "community": 2
+      "community": 1
     },
     {
       "label": "SteppedPricingFormulaTooltip()",
@@ -457,7 +457,7 @@
       "source_file": "src/components/SteppedPanel.tsx",
       "source_location": "L45",
       "id": "steppedpanel_steppedpricingformulatooltip",
-      "community": 2
+      "community": 1
     },
     {
       "label": "clearPreview()",
@@ -465,7 +465,7 @@
       "source_file": "src/components/SteppedPanel.tsx",
       "source_location": "L268",
       "id": "steppedpanel_clearpreview",
-      "community": 2
+      "community": 1
     },
     {
       "label": "if()",
@@ -473,7 +473,7 @@
       "source_file": "src/components/SteppedPanel.tsx",
       "source_location": "L391",
       "id": "steppedpanel_if",
-      "community": 2
+      "community": 1
     },
     {
       "label": "TrayViewer.test.tsx",
@@ -481,7 +481,7 @@
       "source_file": "src/components/TrayViewer.test.tsx",
       "source_location": "L1",
       "id": "trayviewer_test",
-      "community": 16
+      "community": 17
     },
     {
       "label": "Canvas()",
@@ -489,7 +489,7 @@
       "source_file": "src/components/TrayViewer.test.tsx",
       "source_location": "L42",
       "id": "trayviewer_test_canvas",
-      "community": 16
+      "community": 17
     },
     {
       "label": "useThree()",
@@ -497,7 +497,7 @@
       "source_file": "src/components/TrayViewer.test.tsx",
       "source_location": "L55",
       "id": "trayviewer_test_usethree",
-      "community": 16
+      "community": 17
     },
     {
       "label": "OrbitControls()",
@@ -505,7 +505,7 @@
       "source_file": "src/components/TrayViewer.test.tsx",
       "source_location": "L62",
       "id": "trayviewer_test_orbitcontrols",
-      "community": 16
+      "community": 17
     },
     {
       "label": "createGeometry()",
@@ -513,7 +513,7 @@
       "source_file": "src/components/TrayViewer.test.tsx",
       "source_location": "L68",
       "id": "trayviewer_test_creategeometry",
-      "community": 16
+      "community": 17
     },
     {
       "label": "TrayViewer.tsx",
@@ -521,7 +521,7 @@
       "source_file": "src/components/TrayViewer.tsx",
       "source_location": "L1",
       "id": "trayviewer",
-      "community": 16
+      "community": 17
     },
     {
       "label": "TrayMesh()",
@@ -529,7 +529,7 @@
       "source_file": "src/components/TrayViewer.tsx",
       "source_location": "L16",
       "id": "trayviewer_traymesh",
-      "community": 16
+      "community": 17
     },
     {
       "label": "CameraAutoFit()",
@@ -537,7 +537,7 @@
       "source_file": "src/components/TrayViewer.tsx",
       "source_location": "L49",
       "id": "trayviewer_cameraautofit",
-      "community": 16
+      "community": 17
     },
     {
       "label": "ContextLostHandler()",
@@ -545,7 +545,7 @@
       "source_file": "src/components/TrayViewer.tsx",
       "source_location": "L90",
       "id": "trayviewer_contextlosthandler",
-      "community": 16
+      "community": 17
     },
     {
       "label": "updateProgress()",
@@ -553,7 +553,7 @@
       "source_file": "src/components/TrayViewer.tsx",
       "source_location": "L129",
       "id": "trayviewer_updateprogress",
-      "community": 16
+      "community": 17
     },
     {
       "label": "alignment-sidebar.test.tsx",
@@ -561,7 +561,7 @@
       "source_file": "src/components/alignment-sidebar.test.tsx",
       "source_location": "L1",
       "id": "alignment_sidebar_test",
-      "community": 1
+      "community": 2
     },
     {
       "label": "default()",
@@ -569,7 +569,7 @@
       "source_file": "src/components/alignment-sidebar.test.tsx",
       "source_location": "L15",
       "id": "alignment_sidebar_test_default",
-      "community": 1
+      "community": 2
     },
     {
       "label": "createSlot()",
@@ -577,7 +577,7 @@
       "source_file": "src/components/alignment-sidebar.test.tsx",
       "source_location": "L43",
       "id": "alignment_sidebar_test_createslot",
-      "community": 1
+      "community": 2
     },
     {
       "label": "AlignPanel.test.tsx",
@@ -585,7 +585,7 @@
       "source_file": "src/components/canvas/AlignPanel.test.tsx",
       "source_location": "L1",
       "id": "alignpanel_test",
-      "community": 17
+      "community": 18
     },
     {
       "label": "createSlot()",
@@ -593,7 +593,7 @@
       "source_file": "src/components/canvas/AlignPanel.test.tsx",
       "source_location": "L6",
       "id": "alignpanel_test_createslot",
-      "community": 17
+      "community": 18
     },
     {
       "label": "AlignPanel.tsx",
@@ -601,7 +601,7 @@
       "source_file": "src/components/canvas/AlignPanel.tsx",
       "source_location": "L1",
       "id": "alignpanel",
-      "community": 17
+      "community": 18
     },
     {
       "label": "roundToStep()",
@@ -609,7 +609,7 @@
       "source_file": "src/components/canvas/AlignPanel.tsx",
       "source_location": "L15",
       "id": "alignpanel_roundtostep",
-      "community": 17
+      "community": 18
     },
     {
       "label": "getSlotBounds()",
@@ -617,7 +617,7 @@
       "source_file": "src/components/canvas/AlignPanel.tsx",
       "source_location": "L27",
       "id": "alignpanel_getslotbounds",
-      "community": 17
+      "community": 18
     },
     {
       "label": "getSelectionBounds()",
@@ -625,7 +625,7 @@
       "source_file": "src/components/canvas/AlignPanel.tsx",
       "source_location": "L38",
       "id": "alignpanel_getselectionbounds",
-      "community": 17
+      "community": 18
     },
     {
       "label": "getSelectionCenter()",
@@ -633,7 +633,7 @@
       "source_file": "src/components/canvas/AlignPanel.tsx",
       "source_location": "L59",
       "id": "alignpanel_getselectioncenter",
-      "community": 17
+      "community": 18
     },
     {
       "label": "AlignPanel()",
@@ -641,7 +641,7 @@
       "source_file": "src/components/canvas/AlignPanel.tsx",
       "source_location": "L71",
       "id": "alignpanel_alignpanel",
-      "community": 17
+      "community": 18
     },
     {
       "label": "CanvasOverlayLayer.tsx",
@@ -649,7 +649,7 @@
       "source_file": "src/components/canvas/CanvasOverlayLayer.tsx",
       "source_location": "L1",
       "id": "canvasoverlaylayer",
-      "community": 1
+      "community": 2
     },
     {
       "label": "CanvasSlotLayer.tsx",
@@ -657,7 +657,7 @@
       "source_file": "src/components/canvas/CanvasSlotLayer.tsx",
       "source_location": "L1",
       "id": "canvasslotlayer",
-      "community": 1
+      "community": 2
     },
     {
       "label": "CanvasStatusBar.tsx",
@@ -665,7 +665,7 @@
       "source_file": "src/components/canvas/CanvasStatusBar.tsx",
       "source_location": "L1",
       "id": "canvasstatusbar",
-      "community": 13
+      "community": 12
     },
     {
       "label": "formatPerfMs()",
@@ -673,7 +673,7 @@
       "source_file": "src/components/canvas/CanvasStatusBar.tsx",
       "source_location": "L26",
       "id": "canvasstatusbar_formatperfms",
-      "community": 13
+      "community": 12
     },
     {
       "label": "CanvasStatusBar()",
@@ -681,7 +681,7 @@
       "source_file": "src/components/canvas/CanvasStatusBar.tsx",
       "source_location": "L30",
       "id": "canvasstatusbar_canvasstatusbar",
-      "community": 13
+      "community": 12
     },
     {
       "label": "CanvasZoomControls.tsx",
@@ -689,7 +689,7 @@
       "source_file": "src/components/canvas/CanvasZoomControls.tsx",
       "source_location": "L1",
       "id": "canvaszoomcontrols",
-      "community": 1
+      "community": 2
     },
     {
       "label": "CanvasZoomControls()",
@@ -697,7 +697,7 @@
       "source_file": "src/components/canvas/CanvasZoomControls.tsx",
       "source_location": "L10",
       "id": "canvaszoomcontrols_canvaszoomcontrols",
-      "community": 1
+      "community": 2
     },
     {
       "label": "EditSidebar.tsx",
@@ -705,7 +705,7 @@
       "source_file": "src/components/canvas/EditSidebar.tsx",
       "source_location": "L1",
       "id": "editsidebar",
-      "community": 1
+      "community": 2
     },
     {
       "label": "KeyboardHintsOverlay.tsx",
@@ -713,7 +713,7 @@
       "source_file": "src/components/canvas/KeyboardHintsOverlay.tsx",
       "source_location": "L1",
       "id": "keyboardhintsoverlay",
-      "community": 1
+      "community": 2
     },
     {
       "label": "KeyboardHintsOverlay()",
@@ -721,7 +721,7 @@
       "source_file": "src/components/canvas/KeyboardHintsOverlay.tsx",
       "source_location": "L8",
       "id": "keyboardhintsoverlay_keyboardhintsoverlay",
-      "community": 1
+      "community": 2
     },
     {
       "label": "MirrorPanel.tsx",
@@ -785,7 +785,7 @@
       "source_file": "src/components/canvas/canvas-components.test.tsx",
       "source_location": "L1",
       "id": "canvas_components_test",
-      "community": 1
+      "community": 2
     },
     {
       "label": "createSteppedSlot()",
@@ -793,7 +793,7 @@
       "source_file": "src/components/canvas/canvas-components.test.tsx",
       "source_location": "L23",
       "id": "canvas_components_test_createsteppedslot",
-      "community": 1
+      "community": 2
     },
     {
       "label": "createGroup()",
@@ -801,7 +801,7 @@
       "source_file": "src/components/canvas/canvas-components.test.tsx",
       "source_location": "L37",
       "id": "canvas_components_test_creategroup",
-      "community": 1
+      "community": 2
     },
     {
       "label": "panels.test.tsx",
@@ -809,7 +809,7 @@
       "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L1",
       "id": "panels_test",
-      "community": 3
+      "community": 8
     },
     {
       "label": "SectionHeader()",
@@ -817,7 +817,7 @@
       "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L33",
       "id": "panels_test_sectionheader",
-      "community": 3
+      "community": 8
     },
     {
       "label": "BaseHoleConfig()",
@@ -825,7 +825,7 @@
       "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L50",
       "id": "panels_test_baseholeconfig",
-      "community": 3
+      "community": 8
     },
     {
       "label": "Switch()",
@@ -833,7 +833,7 @@
       "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L56",
       "id": "panels_test_switch",
-      "community": 3
+      "community": 8
     },
     {
       "label": "Select()",
@@ -841,7 +841,7 @@
       "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L88",
       "id": "panels_test_select",
-      "community": 3
+      "community": 8
     },
     {
       "label": "SelectTrigger()",
@@ -849,7 +849,7 @@
       "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L103",
       "id": "panels_test_selecttrigger",
-      "community": 3
+      "community": 8
     },
     {
       "label": "SelectValue()",
@@ -857,7 +857,7 @@
       "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L106",
       "id": "panels_test_selectvalue",
-      "community": 3
+      "community": 8
     },
     {
       "label": "SelectContent()",
@@ -865,7 +865,7 @@
       "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L110",
       "id": "panels_test_selectcontent",
-      "community": 3
+      "community": 8
     },
     {
       "label": "SelectItem()",
@@ -873,7 +873,7 @@
       "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L113",
       "id": "panels_test_selectitem",
-      "community": 3
+      "community": 8
     },
     {
       "label": "ParamSlider()",
@@ -881,7 +881,7 @@
       "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L131",
       "id": "panels_test_paramslider",
-      "community": 3
+      "community": 8
     },
     {
       "label": "ParamIOButtons()",
@@ -889,7 +889,7 @@
       "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L202",
       "id": "panels_test_paramiobuttons",
-      "community": 3
+      "community": 8
     },
     {
       "label": "ParamSlider.tsx",
@@ -897,7 +897,7 @@
       "source_file": "src/components/ui/ParamSlider.tsx",
       "source_location": "L1",
       "id": "paramslider",
-      "community": 2
+      "community": 1
     },
     {
       "label": "SectionHeader.tsx",
@@ -905,7 +905,7 @@
       "source_file": "src/components/ui/SectionHeader.tsx",
       "source_location": "L1",
       "id": "sectionheader",
-      "community": 2
+      "community": 1
     },
     {
       "label": "canCollapse()",
@@ -913,7 +913,7 @@
       "source_file": "src/components/ui/SectionHeader.tsx",
       "source_location": "L41",
       "id": "sectionheader_cancollapse",
-      "community": 2
+      "community": 1
     },
     {
       "label": "button.tsx",
@@ -921,7 +921,7 @@
       "source_file": "src/components/ui/button.tsx",
       "source_location": "L1",
       "id": "button",
-      "community": 2
+      "community": 1
     },
     {
       "label": "cn()",
@@ -929,7 +929,7 @@
       "source_file": "src/components/ui/button.tsx",
       "source_location": "L58",
       "id": "button_cn",
-      "community": 2
+      "community": 1
     },
     {
       "label": "dialog.tsx",
@@ -937,7 +937,7 @@
       "source_file": "src/components/ui/dialog.tsx",
       "source_location": "L1",
       "id": "dialog",
-      "community": 5
+      "community": 4
     },
     {
       "label": "DialogOverlay()",
@@ -945,7 +945,7 @@
       "source_file": "src/components/ui/dialog.tsx",
       "source_location": "L33",
       "id": "dialog_dialogoverlay",
-      "community": 5
+      "community": 4
     },
     {
       "label": "DialogHeader()",
@@ -953,7 +953,7 @@
       "source_file": "src/components/ui/dialog.tsx",
       "source_location": "L84",
       "id": "dialog_dialogheader",
-      "community": 5
+      "community": 4
     },
     {
       "label": "cn()",
@@ -961,7 +961,7 @@
       "source_file": "src/components/ui/dialog.tsx",
       "source_location": "L98",
       "id": "dialog_cn",
-      "community": 5
+      "community": 4
     },
     {
       "label": "input.tsx",
@@ -969,7 +969,7 @@
       "source_file": "src/components/ui/input.tsx",
       "source_location": "L1",
       "id": "input",
-      "community": 2
+      "community": 1
     },
     {
       "label": "Input()",
@@ -977,7 +977,7 @@
       "source_file": "src/components/ui/input.tsx",
       "source_location": "L5",
       "id": "input_input",
-      "community": 2
+      "community": 1
     },
     {
       "label": "label.tsx",
@@ -985,7 +985,7 @@
       "source_file": "src/components/ui/label.tsx",
       "source_location": "L1",
       "id": "label",
-      "community": 2
+      "community": 1
     },
     {
       "label": "Label()",
@@ -993,7 +993,7 @@
       "source_file": "src/components/ui/label.tsx",
       "source_location": "L8",
       "id": "label_label",
-      "community": 2
+      "community": 1
     },
     {
       "label": "select.tsx",
@@ -1001,7 +1001,7 @@
       "source_file": "src/components/ui/select.tsx",
       "source_location": "L1",
       "id": "select",
-      "community": 2
+      "community": 1
     },
     {
       "label": "Select()",
@@ -1009,7 +1009,7 @@
       "source_file": "src/components/ui/select.tsx",
       "source_location": "L9",
       "id": "select_select",
-      "community": 2
+      "community": 1
     },
     {
       "label": "SelectGroup()",
@@ -1017,7 +1017,7 @@
       "source_file": "src/components/ui/select.tsx",
       "source_location": "L15",
       "id": "select_selectgroup",
-      "community": 2
+      "community": 1
     },
     {
       "label": "SelectValue()",
@@ -1025,7 +1025,7 @@
       "source_file": "src/components/ui/select.tsx",
       "source_location": "L21",
       "id": "select_selectvalue",
-      "community": 2
+      "community": 1
     },
     {
       "label": "SelectTrigger()",
@@ -1033,7 +1033,7 @@
       "source_file": "src/components/ui/select.tsx",
       "source_location": "L27",
       "id": "select_selecttrigger",
-      "community": 2
+      "community": 1
     },
     {
       "label": "SelectLabel()",
@@ -1041,7 +1041,7 @@
       "source_file": "src/components/ui/select.tsx",
       "source_location": "L90",
       "id": "select_selectlabel",
-      "community": 2
+      "community": 1
     },
     {
       "label": "SelectItem()",
@@ -1049,7 +1049,7 @@
       "source_file": "src/components/ui/select.tsx",
       "source_location": "L103",
       "id": "select_selectitem",
-      "community": 2
+      "community": 1
     },
     {
       "label": "SelectSeparator()",
@@ -1057,7 +1057,7 @@
       "source_file": "src/components/ui/select.tsx",
       "source_location": "L130",
       "id": "select_selectseparator",
-      "community": 2
+      "community": 1
     },
     {
       "label": "SelectScrollUpButton()",
@@ -1065,7 +1065,7 @@
       "source_file": "src/components/ui/select.tsx",
       "source_location": "L143",
       "id": "select_selectscrollupbutton",
-      "community": 2
+      "community": 1
     },
     {
       "label": "SelectScrollDownButton()",
@@ -1073,7 +1073,7 @@
       "source_file": "src/components/ui/select.tsx",
       "source_location": "L161",
       "id": "select_selectscrolldownbutton",
-      "community": 2
+      "community": 1
     },
     {
       "label": "slider.tsx",
@@ -1081,7 +1081,7 @@
       "source_file": "src/components/ui/slider.tsx",
       "source_location": "L1",
       "id": "slider",
-      "community": 2
+      "community": 1
     },
     {
       "label": "Slider()",
@@ -1089,7 +1089,7 @@
       "source_file": "src/components/ui/slider.tsx",
       "source_location": "L8",
       "id": "slider_slider",
-      "community": 2
+      "community": 1
     },
     {
       "label": "cn()",
@@ -1097,7 +1097,7 @@
       "source_file": "src/components/ui/slider.tsx",
       "source_location": "L33",
       "id": "slider_cn",
-      "community": 2
+      "community": 1
     },
     {
       "label": "switch.tsx",
@@ -1105,7 +1105,7 @@
       "source_file": "src/components/ui/switch.tsx",
       "source_location": "L1",
       "id": "switch",
-      "community": 2
+      "community": 1
     },
     {
       "label": "tabs.tsx",
@@ -1124,12 +1124,20 @@
       "community": 0
     },
     {
+      "label": "useActionPanelResize.test.ts",
+      "file_type": "code",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/hooks/useActionPanelResize.test.ts",
+      "source_location": "L1",
+      "id": "useactionpanelresize_test",
+      "community": 2
+    },
+    {
       "label": "useActionPanelResize.ts",
       "file_type": "code",
       "source_file": "src/hooks/useActionPanelResize.ts",
       "source_location": "L1",
       "id": "useactionpanelresize",
-      "community": 1
+      "community": 2
     },
     {
       "label": "useActionPanelResize()",
@@ -1137,7 +1145,7 @@
       "source_file": "src/hooks/useActionPanelResize.ts",
       "source_location": "L11",
       "id": "useactionpanelresize_useactionpanelresize",
-      "community": 1
+      "community": 2
     },
     {
       "label": "useAutoPreview.ts",
@@ -1145,7 +1153,7 @@
       "source_file": "src/hooks/useAutoPreview.ts",
       "source_location": "L1",
       "id": "useautopreview",
-      "community": 2
+      "community": 1
     },
     {
       "label": "useAutoPreview()",
@@ -1153,7 +1161,31 @@
       "source_file": "src/hooks/useAutoPreview.ts",
       "source_location": "L13",
       "id": "useautopreview_useautopreview",
-      "community": 2
+      "community": 1
+    },
+    {
+      "label": "useCanvasKeyboard.test.ts",
+      "file_type": "code",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/hooks/useCanvasKeyboard.test.ts",
+      "source_location": "L1",
+      "id": "usecanvaskeyboard_test",
+      "community": 20
+    },
+    {
+      "label": "createSlot()",
+      "file_type": "code",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/hooks/useCanvasKeyboard.test.ts",
+      "source_location": "L7",
+      "id": "usecanvaskeyboard_test_createslot",
+      "community": 20
+    },
+    {
+      "label": "dispatchKeyboardEvent()",
+      "file_type": "code",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/hooks/useCanvasKeyboard.test.ts",
+      "source_location": "L19",
+      "id": "usecanvaskeyboard_test_dispatchkeyboardevent",
+      "community": 20
     },
     {
       "label": "useCanvasKeyboard.ts",
@@ -1161,7 +1193,7 @@
       "source_file": "src/hooks/useCanvasKeyboard.ts",
       "source_location": "L1",
       "id": "usecanvaskeyboard",
-      "community": 1
+      "community": 20
     },
     {
       "label": "useCanvasKeyboard()",
@@ -1169,7 +1201,7 @@
       "source_file": "src/hooks/useCanvasKeyboard.ts",
       "source_location": "L27",
       "id": "usecanvaskeyboard_usecanvaskeyboard",
-      "community": 1
+      "community": 20
     },
     {
       "label": "useCanvasZoom.ts",
@@ -1177,7 +1209,7 @@
       "source_file": "src/hooks/useCanvasZoom.ts",
       "source_location": "L1",
       "id": "usecanvaszoom",
-      "community": 1
+      "community": 2
     },
     {
       "label": "getTouchDistance()",
@@ -1185,7 +1217,7 @@
       "source_file": "src/hooks/useCanvasZoom.ts",
       "source_location": "L23",
       "id": "usecanvaszoom_gettouchdistance",
-      "community": 1
+      "community": 2
     },
     {
       "label": "getTouchCenter()",
@@ -1193,7 +1225,7 @@
       "source_file": "src/hooks/useCanvasZoom.ts",
       "source_location": "L30",
       "id": "usecanvaszoom_gettouchcenter",
-      "community": 1
+      "community": 2
     },
     {
       "label": "useCanvasZoom()",
@@ -1201,7 +1233,7 @@
       "source_file": "src/hooks/useCanvasZoom.ts",
       "source_location": "L38",
       "id": "usecanvaszoom_usecanvaszoom",
-      "community": 1
+      "community": 2
     },
     {
       "label": "useCustomLayout.integration.test.ts",
@@ -1209,7 +1241,7 @@
       "source_file": "src/hooks/useCustomLayout.integration.test.ts",
       "source_location": "L1",
       "id": "usecustomlayout_integration_test",
-      "community": 4
+      "community": 0
     },
     {
       "label": "createDeferred()",
@@ -1217,7 +1249,7 @@
       "source_file": "src/hooks/useCustomLayout.integration.test.ts",
       "source_location": "L44",
       "id": "usecustomlayout_integration_test_createdeferred",
-      "community": 4
+      "community": 0
     },
     {
       "label": "useCustomLayout.ts",
@@ -1225,7 +1257,7 @@
       "source_file": "src/hooks/useCustomLayout.ts",
       "source_location": "L1",
       "id": "usecustomlayout",
-      "community": 4
+      "community": 0
     },
     {
       "label": "useCustomLayout()",
@@ -1233,7 +1265,15 @@
       "source_file": "src/hooks/useCustomLayout.ts",
       "source_location": "L83",
       "id": "usecustomlayout_usecustomlayout",
-      "community": 4
+      "community": 0
+    },
+    {
+      "label": "useLiveSlotUpdates.test.ts",
+      "file_type": "code",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/hooks/useLiveSlotUpdates.test.ts",
+      "source_location": "L1",
+      "id": "useliveslotupdates_test",
+      "community": 2
     },
     {
       "label": "useLiveSlotUpdates.ts",
@@ -1241,7 +1281,7 @@
       "source_file": "src/hooks/useLiveSlotUpdates.ts",
       "source_location": "L1",
       "id": "useliveslotupdates",
-      "community": 1
+      "community": 2
     },
     {
       "label": "useLiveSlotUpdates()",
@@ -1249,7 +1289,7 @@
       "source_file": "src/hooks/useLiveSlotUpdates.ts",
       "source_location": "L10",
       "id": "useliveslotupdates_useliveslotupdates",
-      "community": 1
+      "community": 2
     },
     {
       "label": "useSimpleSteppedLayout.integration.test.ts",
@@ -1257,7 +1297,7 @@
       "source_file": "src/hooks/useSimpleSteppedLayout.integration.test.ts",
       "source_location": "L1",
       "id": "usesimplesteppedlayout_integration_test",
-      "community": 3
+      "community": 0
     },
     {
       "label": "createDeferred()",
@@ -1265,7 +1305,7 @@
       "source_file": "src/hooks/useSimpleSteppedLayout.integration.test.ts",
       "source_location": "L44",
       "id": "usesimplesteppedlayout_integration_test_createdeferred",
-      "community": 3
+      "community": 0
     },
     {
       "label": "useSimpleSteppedLayout.ts",
@@ -1273,7 +1313,7 @@
       "source_file": "src/hooks/useSimpleSteppedLayout.ts",
       "source_location": "L1",
       "id": "usesimplesteppedlayout",
-      "community": 3
+      "community": 0
     },
     {
       "label": "rebuildRowSlotIds()",
@@ -1281,7 +1321,7 @@
       "source_file": "src/hooks/useSimpleSteppedLayout.ts",
       "source_location": "L74",
       "id": "usesimplesteppedlayout_rebuildrowslotids",
-      "community": 3
+      "community": 0
     },
     {
       "label": "normalizeSimpleSteppedTraySize()",
@@ -1289,7 +1329,7 @@
       "source_file": "src/hooks/useSimpleSteppedLayout.ts",
       "source_location": "L84",
       "id": "usesimplesteppedlayout_normalizesimplesteppedtraysize",
-      "community": 3
+      "community": 0
     },
     {
       "label": "useSimpleSteppedLayout()",
@@ -1297,7 +1337,7 @@
       "source_file": "src/hooks/useSimpleSteppedLayout.ts",
       "source_location": "L104",
       "id": "usesimplesteppedlayout_usesimplesteppedlayout",
-      "community": 3
+      "community": 0
     },
     {
       "label": "useSteppedDrafts.integration.test.ts",
@@ -1401,7 +1441,7 @@
       "source_file": "src/hooks/useToast.tsx",
       "source_location": "L1",
       "id": "usetoast",
-      "community": 4
+      "community": 0
     },
     {
       "label": "ToastProvider()",
@@ -1409,7 +1449,7 @@
       "source_file": "src/hooks/useToast.tsx",
       "source_location": "L23",
       "id": "usetoast_toastprovider",
-      "community": 4
+      "community": 0
     },
     {
       "label": "useToast()",
@@ -1417,7 +1457,7 @@
       "source_file": "src/hooks/useToast.tsx",
       "source_location": "L47",
       "id": "usetoast_usetoast",
-      "community": 4
+      "community": 0
     },
     {
       "label": "Toaster()",
@@ -1425,7 +1465,7 @@
       "source_file": "src/hooks/useToast.tsx",
       "source_location": "L73",
       "id": "usetoast_toaster",
-      "community": 4
+      "community": 0
     },
     {
       "label": "useTrayModel.integration.test.ts",
@@ -1433,7 +1473,7 @@
       "source_file": "src/hooks/useTrayModel.integration.test.ts",
       "source_location": "L1",
       "id": "usetraymodel_integration_test",
-      "community": 4
+      "community": 0
     },
     {
       "label": "createDeferred()",
@@ -1441,7 +1481,7 @@
       "source_file": "src/hooks/useTrayModel.integration.test.ts",
       "source_location": "L36",
       "id": "usetraymodel_integration_test_createdeferred",
-      "community": 4
+      "community": 0
     },
     {
       "label": "useTrayModel.ts",
@@ -1449,7 +1489,7 @@
       "source_file": "src/hooks/useTrayModel.ts",
       "source_location": "L1",
       "id": "usetraymodel",
-      "community": 4
+      "community": 0
     },
     {
       "label": "useTrayModel()",
@@ -1457,7 +1497,15 @@
       "source_file": "src/hooks/useTrayModel.ts",
       "source_location": "L36",
       "id": "usetraymodel_usetraymodel",
-      "community": 4
+      "community": 0
+    },
+    {
+      "label": "useUndoHistory.test.ts",
+      "file_type": "code",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/hooks/useUndoHistory.test.ts",
+      "source_location": "L1",
+      "id": "useundohistory_test",
+      "community": 0
     },
     {
       "label": "useUndoHistory.ts",
@@ -1465,7 +1513,7 @@
       "source_file": "src/hooks/useUndoHistory.ts",
       "source_location": "L1",
       "id": "useundohistory",
-      "community": 3
+      "community": 0
     },
     {
       "label": "useUndoHistory()",
@@ -1473,7 +1521,7 @@
       "source_file": "src/hooks/useUndoHistory.ts",
       "source_location": "L14",
       "id": "useundohistory_useundohistory",
-      "community": 3
+      "community": 0
     },
     {
       "label": "canvas-collision-model.test.ts",
@@ -1481,7 +1529,7 @@
       "source_file": "src/lib/canvas-collision-model.test.ts",
       "source_location": "L1",
       "id": "canvas_collision_model_test",
-      "community": 1
+      "community": 2
     },
     {
       "label": "canvas-collision-model.ts",
@@ -1489,7 +1537,7 @@
       "source_file": "src/lib/canvas-collision-model.ts",
       "source_location": "L1",
       "id": "canvas_collision_model",
-      "community": 1
+      "community": 2
     },
     {
       "label": "buildCanvasCollisionState()",
@@ -1497,7 +1545,7 @@
       "source_file": "src/lib/canvas-collision-model.ts",
       "source_location": "L30",
       "id": "canvas_collision_model_buildcanvascollisionstate",
-      "community": 1
+      "community": 2
     },
     {
       "label": "canvas-selection-model.test.ts",
@@ -1505,7 +1553,7 @@
       "source_file": "src/lib/canvas-selection-model.test.ts",
       "source_location": "L1",
       "id": "canvas_selection_model_test",
-      "community": 1
+      "community": 2
     },
     {
       "label": "canvas-selection-model.ts",
@@ -1513,7 +1561,7 @@
       "source_file": "src/lib/canvas-selection-model.ts",
       "source_location": "L1",
       "id": "canvas_selection_model",
-      "community": 1
+      "community": 2
     },
     {
       "label": "sanitizeCanvasSelectedIds()",
@@ -1521,7 +1569,7 @@
       "source_file": "src/lib/canvas-selection-model.ts",
       "source_location": "L15",
       "id": "canvas_selection_model_sanitizecanvasselectedids",
-      "community": 1
+      "community": 2
     },
     {
       "label": "getCanvasSelectionBoxRect()",
@@ -1529,7 +1577,7 @@
       "source_file": "src/lib/canvas-selection-model.ts",
       "source_location": "L23",
       "id": "canvas_selection_model_getcanvasselectionboxrect",
-      "community": 1
+      "community": 2
     },
     {
       "label": "shouldApplyCanvasSelectionBox()",
@@ -1537,7 +1585,7 @@
       "source_file": "src/lib/canvas-selection-model.ts",
       "source_location": "L41",
       "id": "canvas_selection_model_shouldapplycanvasselectionbox",
-      "community": 1
+      "community": 2
     },
     {
       "label": "collectCanvasSelection()",
@@ -1545,7 +1593,7 @@
       "source_file": "src/lib/canvas-selection-model.ts",
       "source_location": "L55",
       "id": "canvas_selection_model_collectcanvasselection",
-      "community": 1
+      "community": 2
     },
     {
       "label": "canvas-slot-geometry.test.ts",
@@ -1553,7 +1601,7 @@
       "source_file": "src/lib/canvas-slot-geometry.test.ts",
       "source_location": "L1",
       "id": "canvas_slot_geometry_test",
-      "community": 1
+      "community": 2
     },
     {
       "label": "canvas-slot-geometry.ts",
@@ -1561,7 +1609,7 @@
       "source_file": "src/lib/canvas-slot-geometry.ts",
       "source_location": "L1",
       "id": "canvas_slot_geometry",
-      "community": 1
+      "community": 2
     },
     {
       "label": "normalizeDisplayAngle()",
@@ -1569,7 +1617,7 @@
       "source_file": "src/lib/canvas-slot-geometry.ts",
       "source_location": "L22",
       "id": "canvas_slot_geometry_normalizedisplayangle",
-      "community": 1
+      "community": 2
     },
     {
       "label": "getSlotLabelRotation()",
@@ -1577,7 +1625,7 @@
       "source_file": "src/lib/canvas-slot-geometry.ts",
       "source_location": "L27",
       "id": "canvas_slot_geometry_getslotlabelrotation",
-      "community": 1
+      "community": 2
     },
     {
       "label": "getEllipseBoundingBox()",
@@ -1585,7 +1633,7 @@
       "source_file": "src/lib/canvas-slot-geometry.ts",
       "source_location": "L34",
       "id": "canvas_slot_geometry_getellipseboundingbox",
-      "community": 1
+      "community": 2
     },
     {
       "label": "calculateEffectiveBaseplate()",
@@ -1593,7 +1641,7 @@
       "source_file": "src/lib/canvas-slot-geometry.ts",
       "source_location": "L55",
       "id": "canvas_slot_geometry_calculateeffectivebaseplate",
-      "community": 1
+      "community": 2
     },
     {
       "label": "canvas-snap-engine.test.ts",
@@ -1601,7 +1649,7 @@
       "source_file": "src/lib/canvas-snap-engine.test.ts",
       "source_location": "L1",
       "id": "canvas_snap_engine_test",
-      "community": 1
+      "community": 2
     },
     {
       "label": "canvas-snap-engine.ts",
@@ -1609,7 +1657,7 @@
       "source_file": "src/lib/canvas-snap-engine.ts",
       "source_location": "L1",
       "id": "canvas_snap_engine",
-      "community": 1
+      "community": 2
     },
     {
       "label": "roundToStep()",
@@ -1617,7 +1665,7 @@
       "source_file": "src/lib/canvas-snap-engine.ts",
       "source_location": "L35",
       "id": "canvas_snap_engine_roundtostep",
-      "community": 1
+      "community": 2
     },
     {
       "label": "calculateCanvasDragSnap()",
@@ -1625,7 +1673,7 @@
       "source_file": "src/lib/canvas-snap-engine.ts",
       "source_location": "L39",
       "id": "canvas_snap_engine_calculatecanvasdragsnap",
-      "community": 1
+      "community": 2
     },
     {
       "label": "canvas-types.ts",
@@ -1633,7 +1681,7 @@
       "source_file": "src/lib/canvas-types.ts",
       "source_location": "L1",
       "id": "canvas_types",
-      "community": 1
+      "community": 2
     },
     {
       "label": "collision.test.ts",
@@ -1681,7 +1729,7 @@
       "source_file": "src/lib/config.ts",
       "source_location": "L1",
       "id": "config",
-      "community": 2
+      "community": 1
     },
     {
       "label": "getSlotTolerance()",
@@ -1689,7 +1737,7 @@
       "source_file": "src/lib/config.ts",
       "source_location": "L18",
       "id": "config_getslottolerance",
-      "community": 2
+      "community": 1
     },
     {
       "label": "custom-config.ts",
@@ -1697,7 +1745,7 @@
       "source_file": "src/lib/custom-config.ts",
       "source_location": "L1",
       "id": "custom_config",
-      "community": 4
+      "community": 0
     },
     {
       "label": "custom-layout-actions.test.ts",
@@ -1705,7 +1753,7 @@
       "source_file": "src/lib/custom-layout-actions.test.ts",
       "source_location": "L1",
       "id": "custom_layout_actions_test",
-      "community": 6
+      "community": 3
     },
     {
       "label": "createIdFactory()",
@@ -1713,7 +1761,7 @@
       "source_file": "src/lib/custom-layout-actions.test.ts",
       "source_location": "L16",
       "id": "custom_layout_actions_test_createidfactory",
-      "community": 6
+      "community": 3
     },
     {
       "label": "custom-layout-actions.ts",
@@ -1721,7 +1769,7 @@
       "source_file": "src/lib/custom-layout-actions.ts",
       "source_location": "L1",
       "id": "custom_layout_actions",
-      "community": 6
+      "community": 3
     },
     {
       "label": "updateCustomLayoutParam()",
@@ -1729,7 +1777,7 @@
       "source_file": "src/lib/custom-layout-actions.ts",
       "source_location": "L14",
       "id": "custom_layout_actions_updatecustomlayoutparam",
-      "community": 6
+      "community": 3
     },
     {
       "label": "addCustomSlot()",
@@ -1737,7 +1785,7 @@
       "source_file": "src/lib/custom-layout-actions.ts",
       "source_location": "L56",
       "id": "custom_layout_actions_addcustomslot",
-      "community": 6
+      "community": 3
     },
     {
       "label": "removeCustomSlot()",
@@ -1745,7 +1793,7 @@
       "source_file": "src/lib/custom-layout-actions.ts",
       "source_location": "L98",
       "id": "custom_layout_actions_removecustomslot",
-      "community": 6
+      "community": 3
     },
     {
       "label": "updateCustomSlotPosition()",
@@ -1753,7 +1801,7 @@
       "source_file": "src/lib/custom-layout-actions.ts",
       "source_location": "L108",
       "id": "custom_layout_actions_updatecustomslotposition",
-      "community": 6
+      "community": 3
     },
     {
       "label": "applyCustomSlotUpdates()",
@@ -1761,7 +1809,7 @@
       "source_file": "src/lib/custom-layout-actions.ts",
       "source_location": "L122",
       "id": "custom_layout_actions_applycustomslotupdates",
-      "community": 6
+      "community": 3
     },
     {
       "label": "updateCustomSlotRotation()",
@@ -1769,7 +1817,7 @@
       "source_file": "src/lib/custom-layout-actions.ts",
       "source_location": "L143",
       "id": "custom_layout_actions_updatecustomslotrotation",
-      "community": 6
+      "community": 3
     },
     {
       "label": "insertCustomSlots()",
@@ -1777,7 +1825,7 @@
       "source_file": "src/lib/custom-layout-actions.ts",
       "source_location": "L156",
       "id": "custom_layout_actions_insertcustomslots",
-      "community": 6
+      "community": 3
     },
     {
       "label": "duplicateCustomSlots()",
@@ -1785,7 +1833,7 @@
       "source_file": "src/lib/custom-layout-actions.ts",
       "source_location": "L181",
       "id": "custom_layout_actions_duplicatecustomslots",
-      "community": 6
+      "community": 3
     },
     {
       "label": "trimCustomBaseplate()",
@@ -1793,7 +1841,7 @@
       "source_file": "src/lib/custom-layout-actions.ts",
       "source_location": "L212",
       "id": "custom_layout_actions_trimcustombaseplate",
-      "community": 6
+      "community": 3
     },
     {
       "label": "custom-layout-math.test.ts",
@@ -1801,7 +1849,7 @@
       "source_file": "src/lib/custom-layout-math.test.ts",
       "source_location": "L1",
       "id": "custom_layout_math_test",
-      "community": 4
+      "community": 5
     },
     {
       "label": "custom-layout-math.ts",
@@ -1809,7 +1857,7 @@
       "source_file": "src/lib/custom-layout-math.ts",
       "source_location": "L1",
       "id": "custom_layout_math",
-      "community": 4
+      "community": 5
     },
     {
       "label": "resolveCustomBoundarySpacing()",
@@ -1817,7 +1865,7 @@
       "source_file": "src/lib/custom-layout-math.ts",
       "source_location": "L13",
       "id": "custom_layout_math_resolvecustomboundaryspacing",
-      "community": 4
+      "community": 5
     },
     {
       "label": "calculateCustomEffectiveDimensions()",
@@ -1825,7 +1873,7 @@
       "source_file": "src/lib/custom-layout-math.ts",
       "source_location": "L23",
       "id": "custom_layout_math_calculatecustomeffectivedimensions",
-      "community": 4
+      "community": 5
     },
     {
       "label": "custom-layout-service.test.ts",
@@ -1833,7 +1881,7 @@
       "source_file": "src/lib/custom-layout-service.test.ts",
       "source_location": "L1",
       "id": "custom_layout_service_test",
-      "community": 4
+      "community": 5
     },
     {
       "label": "custom-layout-service.ts",
@@ -1841,7 +1889,7 @@
       "source_file": "src/lib/custom-layout-service.ts",
       "source_location": "L1",
       "id": "custom_layout_service",
-      "community": 4
+      "community": 5
     },
     {
       "label": "generateCustomPreview()",
@@ -1849,7 +1897,7 @@
       "source_file": "src/lib/custom-layout-service.ts",
       "source_location": "L15",
       "id": "custom_layout_service_generatecustompreview",
-      "community": 4
+      "community": 5
     },
     {
       "label": "getCustomSTLFilename()",
@@ -1857,7 +1905,7 @@
       "source_file": "src/lib/custom-layout-service.ts",
       "source_location": "L28",
       "id": "custom_layout_service_getcustomstlfilename",
-      "community": 4
+      "community": 5
     },
     {
       "label": "buildCustomParamsBlob()",
@@ -1865,7 +1913,7 @@
       "source_file": "src/lib/custom-layout-service.ts",
       "source_location": "L48",
       "id": "custom_layout_service_buildcustomparamsblob",
-      "community": 4
+      "community": 5
     },
     {
       "label": "exportCustomModelFiles()",
@@ -1873,7 +1921,7 @@
       "source_file": "src/lib/custom-layout-service.ts",
       "source_location": "L54",
       "id": "custom_layout_service_exportcustommodelfiles",
-      "community": 4
+      "community": 5
     },
     {
       "label": "custom-tray-model.test.ts",
@@ -1881,7 +1929,7 @@
       "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/lib/custom-tray-model.test.ts",
       "source_location": "L1",
       "id": "custom_tray_model_test",
-      "community": 2
+      "community": 1
     },
     {
       "label": "custom-tray-model.ts",
@@ -1889,7 +1937,7 @@
       "source_file": "src/lib/custom-tray-model.ts",
       "source_location": "L1",
       "id": "custom_tray_model",
-      "community": 2
+      "community": 1
     },
     {
       "label": "getSlotBoundingHalfSize()",
@@ -1897,7 +1945,7 @@
       "source_file": "src/lib/custom-tray-model.ts",
       "source_location": "L18",
       "id": "custom_tray_model_getslotboundinghalfsize",
-      "community": 2
+      "community": 1
     },
     {
       "label": "calculateEffectiveBaseplate()",
@@ -1905,7 +1953,7 @@
       "source_file": "src/lib/custom-tray-model.ts",
       "source_location": "L35",
       "id": "custom_tray_model_calculateeffectivebaseplate",
-      "community": 2
+      "community": 1
     },
     {
       "label": "createCustomTrayModel()",
@@ -1913,7 +1961,7 @@
       "source_file": "src/lib/custom-tray-model.ts",
       "source_location": "L88",
       "id": "custom_tray_model_createcustomtraymodel",
-      "community": 2
+      "community": 1
     },
     {
       "label": "calculateCustomTrayDimensions()",
@@ -1921,7 +1969,7 @@
       "source_file": "src/lib/custom-tray-model.ts",
       "source_location": "L151",
       "id": "custom_tray_model_calculatecustomtraydimensions",
-      "community": 2
+      "community": 1
     },
     {
       "label": "download-port.ts",
@@ -1929,7 +1977,7 @@
       "source_file": "src/lib/download-port.ts",
       "source_location": "L1",
       "id": "download_port",
-      "community": 4
+      "community": 0
     },
     {
       "label": "grid-config.ts",
@@ -1937,7 +1985,7 @@
       "source_file": "src/lib/grid-config.ts",
       "source_location": "L1",
       "id": "grid_config",
-      "community": 12
+      "community": 8
     },
     {
       "label": "grid-model-service.test.ts",
@@ -1945,7 +1993,7 @@
       "source_file": "src/lib/grid-model-service.test.ts",
       "source_location": "L1",
       "id": "grid_model_service_test",
-      "community": 11
+      "community": 5
     },
     {
       "label": "grid-model-service.ts",
@@ -1953,7 +2001,7 @@
       "source_file": "src/lib/grid-model-service.ts",
       "source_location": "L1",
       "id": "grid_model_service",
-      "community": 11
+      "community": 5
     },
     {
       "label": "generateGridPreview()",
@@ -1961,7 +2009,7 @@
       "source_file": "src/lib/grid-model-service.ts",
       "source_location": "L14",
       "id": "grid_model_service_generategridpreview",
-      "community": 11
+      "community": 5
     },
     {
       "label": "getGridSTLFilename()",
@@ -1969,7 +2017,7 @@
       "source_file": "src/lib/grid-model-service.ts",
       "source_location": "L27",
       "id": "grid_model_service_getgridstlfilename",
-      "community": 11
+      "community": 5
     },
     {
       "label": "buildGridParamsBlob()",
@@ -1977,7 +2025,7 @@
       "source_file": "src/lib/grid-model-service.ts",
       "source_location": "L31",
       "id": "grid_model_service_buildgridparamsblob",
-      "community": 11
+      "community": 5
     },
     {
       "label": "exportGridModelFiles()",
@@ -1985,7 +2033,7 @@
       "source_file": "src/lib/grid-model-service.ts",
       "source_location": "L37",
       "id": "grid_model_service_exportgridmodelfiles",
-      "community": 11
+      "community": 5
     },
     {
       "label": "grid-model-state.test.ts",
@@ -1993,7 +2041,7 @@
       "source_file": "src/lib/grid-model-state.test.ts",
       "source_location": "L1",
       "id": "grid_model_state_test",
-      "community": 12
+      "community": 8
     },
     {
       "label": "grid-model-state.ts",
@@ -2001,7 +2049,7 @@
       "source_file": "src/lib/grid-model-state.ts",
       "source_location": "L1",
       "id": "grid_model_state",
-      "community": 12
+      "community": 8
     },
     {
       "label": "getFiniteOr()",
@@ -2009,7 +2057,7 @@
       "source_file": "src/lib/grid-model-state.ts",
       "source_location": "L4",
       "id": "grid_model_state_getfiniteor",
-      "community": 12
+      "community": 8
     },
     {
       "label": "normalizeGridParams()",
@@ -2017,7 +2065,7 @@
       "source_file": "src/lib/grid-model-state.ts",
       "source_location": "L8",
       "id": "grid_model_state_normalizegridparams",
-      "community": 12
+      "community": 8
     },
     {
       "label": "replaceGridParams()",
@@ -2025,7 +2073,7 @@
       "source_file": "src/lib/grid-model-state.ts",
       "source_location": "L33",
       "id": "grid_model_state_replacegridparams",
-      "community": 12
+      "community": 8
     },
     {
       "label": "resetGridParams()",
@@ -2033,7 +2081,7 @@
       "source_file": "src/lib/grid-model-state.ts",
       "source_location": "L37",
       "id": "grid_model_state_resetgridparams",
-      "community": 12
+      "community": 8
     },
     {
       "label": "updateGridParam()",
@@ -2041,7 +2089,7 @@
       "source_file": "src/lib/grid-model-state.ts",
       "source_location": "L41",
       "id": "grid_model_state_updategridparam",
-      "community": 12
+      "community": 8
     },
     {
       "label": "id-factory.ts",
@@ -2049,7 +2097,7 @@
       "source_file": "src/lib/id-factory.ts",
       "source_location": "L1",
       "id": "id_factory",
-      "community": 0
+      "community": 3
     },
     {
       "label": "jscad-to-three.test.ts",
@@ -2057,7 +2105,7 @@
       "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/lib/jscad-to-three.test.ts",
       "source_location": "L1",
       "id": "jscad_to_three_test",
-      "community": 11
+      "community": 5
     },
     {
       "label": "jscad-to-three.ts",
@@ -2065,7 +2113,7 @@
       "source_file": "src/lib/jscad-to-three.ts",
       "source_location": "L1",
       "id": "jscad_to_three",
-      "community": 11
+      "community": 5
     },
     {
       "label": "projectTo2D()",
@@ -2073,7 +2121,7 @@
       "source_file": "src/lib/jscad-to-three.ts",
       "source_location": "L14",
       "id": "jscad_to_three_projectto2d",
-      "community": 11
+      "community": 5
     },
     {
       "label": "jscadToThreeGeometry()",
@@ -2081,7 +2129,7 @@
       "source_file": "src/lib/jscad-to-three.ts",
       "source_location": "L41",
       "id": "jscad_to_three_jscadtothreegeometry",
-      "community": 11
+      "community": 5
     },
     {
       "label": "layout-symmetry.test.ts",
@@ -2089,7 +2137,7 @@
       "source_file": "src/lib/layout-symmetry.test.ts",
       "source_location": "L1",
       "id": "layout_symmetry_test",
-      "community": 6
+      "community": 3
     },
     {
       "label": "layout-symmetry.ts",
@@ -2097,7 +2145,7 @@
       "source_file": "src/lib/layout-symmetry.ts",
       "source_location": "L1",
       "id": "layout_symmetry",
-      "community": 6
+      "community": 3
     },
     {
       "label": "roundToStep()",
@@ -2105,7 +2153,7 @@
       "source_file": "src/lib/layout-symmetry.ts",
       "source_location": "L25",
       "id": "layout_symmetry_roundtostep",
-      "community": 6
+      "community": 3
     },
     {
       "label": "normalizeRotation()",
@@ -2113,7 +2161,7 @@
       "source_file": "src/lib/layout-symmetry.ts",
       "source_location": "L29",
       "id": "layout_symmetry_normalizerotation",
-      "community": 6
+      "community": 3
     },
     {
       "label": "getSlotBounds()",
@@ -2121,7 +2169,7 @@
       "source_file": "src/lib/layout-symmetry.ts",
       "source_location": "L34",
       "id": "layout_symmetry_getslotbounds",
-      "community": 6
+      "community": 3
     },
     {
       "label": "getSelectionBounds()",
@@ -2129,7 +2177,7 @@
       "source_file": "src/lib/layout-symmetry.ts",
       "source_location": "L45",
       "id": "layout_symmetry_getselectionbounds",
-      "community": 6
+      "community": 3
     },
     {
       "label": "resolveMirrorAxis()",
@@ -2137,7 +2185,7 @@
       "source_file": "src/lib/layout-symmetry.ts",
       "source_location": "L64",
       "id": "layout_symmetry_resolvemirroraxis",
-      "community": 6
+      "community": 3
     },
     {
       "label": "mirrorSlot()",
@@ -2145,7 +2193,7 @@
       "source_file": "src/lib/layout-symmetry.ts",
       "source_location": "L85",
       "id": "layout_symmetry_mirrorslot",
-      "community": 6
+      "community": 3
     },
     {
       "label": "buildMirrorInsertSlots()",
@@ -2153,7 +2201,7 @@
       "source_file": "src/lib/layout-symmetry.ts",
       "source_location": "L105",
       "id": "layout_symmetry_buildmirrorinsertslots",
-      "community": 6
+      "community": 3
     },
     {
       "label": "buildMirrorMoveUpdates()",
@@ -2161,7 +2209,7 @@
       "source_file": "src/lib/layout-symmetry.ts",
       "source_location": "L134",
       "id": "layout_symmetry_buildmirrormoveupdates",
-      "community": 6
+      "community": 3
     },
     {
       "label": "countOutOfBoundsSlots()",
@@ -2169,7 +2217,7 @@
       "source_file": "src/lib/layout-symmetry.ts",
       "source_location": "L160",
       "id": "layout_symmetry_countoutofboundsslots",
-      "community": 6
+      "community": 3
     },
     {
       "label": "local-drafts.test.ts",
@@ -2193,7 +2241,7 @@
       "source_file": "src/lib/local-drafts.ts",
       "source_location": "L1",
       "id": "local_drafts",
-      "community": 5
+      "community": 4
     },
     {
       "label": "draftRecordKey()",
@@ -2201,7 +2249,7 @@
       "source_file": "src/lib/local-drafts.ts",
       "source_location": "L37",
       "id": "local_drafts_draftrecordkey",
-      "community": 5
+      "community": 4
     },
     {
       "label": "safeGetItem()",
@@ -2209,7 +2257,7 @@
       "source_file": "src/lib/local-drafts.ts",
       "source_location": "L47",
       "id": "local_drafts_safegetitem",
-      "community": 5
+      "community": 4
     },
     {
       "label": "safeSetItem()",
@@ -2217,7 +2265,7 @@
       "source_file": "src/lib/local-drafts.ts",
       "source_location": "L55",
       "id": "local_drafts_safesetitem",
-      "community": 5
+      "community": 4
     },
     {
       "label": "safeRemoveItem()",
@@ -2225,7 +2273,7 @@
       "source_file": "src/lib/local-drafts.ts",
       "source_location": "L65",
       "id": "local_drafts_saferemoveitem",
-      "community": 5
+      "community": 4
     },
     {
       "label": "readIndex()",
@@ -2233,7 +2281,7 @@
       "source_file": "src/lib/local-drafts.ts",
       "source_location": "L77",
       "id": "local_drafts_readindex",
-      "community": 5
+      "community": 4
     },
     {
       "label": "writeIndex()",
@@ -2241,7 +2289,7 @@
       "source_file": "src/lib/local-drafts.ts",
       "source_location": "L89",
       "id": "local_drafts_writeindex",
-      "community": 5
+      "community": 4
     },
     {
       "label": "buildSummary()",
@@ -2249,7 +2297,7 @@
       "source_file": "src/lib/local-drafts.ts",
       "source_location": "L97",
       "id": "local_drafts_buildsummary",
-      "community": 5
+      "community": 4
     },
     {
       "label": "listDrafts()",
@@ -2257,7 +2305,7 @@
       "source_file": "src/lib/local-drafts.ts",
       "source_location": "L113",
       "id": "local_drafts_listdrafts",
-      "community": 5
+      "community": 4
     },
     {
       "label": "getDraft()",
@@ -2265,7 +2313,7 @@
       "source_file": "src/lib/local-drafts.ts",
       "source_location": "L123",
       "id": "local_drafts_getdraft",
-      "community": 5
+      "community": 4
     },
     {
       "label": "createDraft()",
@@ -2273,7 +2321,7 @@
       "source_file": "src/lib/local-drafts.ts",
       "source_location": "L136",
       "id": "local_drafts_createdraft",
-      "community": 5
+      "community": 4
     },
     {
       "label": "updateDraft()",
@@ -2281,7 +2329,7 @@
       "source_file": "src/lib/local-drafts.ts",
       "source_location": "L183",
       "id": "local_drafts_updatedraft",
-      "community": 5
+      "community": 4
     },
     {
       "label": "renameDraft()",
@@ -2289,7 +2337,7 @@
       "source_file": "src/lib/local-drafts.ts",
       "source_location": "L224",
       "id": "local_drafts_renamedraft",
-      "community": 5
+      "community": 4
     },
     {
       "label": "deleteDraft()",
@@ -2297,7 +2345,7 @@
       "source_file": "src/lib/local-drafts.ts",
       "source_location": "L249",
       "id": "local_drafts_deletedraft",
-      "community": 5
+      "community": 4
     },
     {
       "label": "exportDraft()",
@@ -2305,7 +2353,7 @@
       "source_file": "src/lib/local-drafts.ts",
       "source_location": "L256",
       "id": "local_drafts_exportdraft",
-      "community": 5
+      "community": 4
     },
     {
       "label": "defaultDraftTitle()",
@@ -2313,7 +2361,7 @@
       "source_file": "src/lib/local-drafts.ts",
       "source_location": "L272",
       "id": "local_drafts_defaultdrafttitle",
-      "community": 5
+      "community": 4
     },
     {
       "label": "formatDraftTime()",
@@ -2321,7 +2369,7 @@
       "source_file": "src/lib/local-drafts.ts",
       "source_location": "L279",
       "id": "local_drafts_formatdrafttime",
-      "community": 5
+      "community": 4
     },
     {
       "label": "model-ports.ts",
@@ -2329,7 +2377,7 @@
       "source_file": "src/lib/model-ports.ts",
       "source_location": "L1",
       "id": "model_ports",
-      "community": 0
+      "community": 3
     },
     {
       "label": "model-utils.ts",
@@ -2337,7 +2385,7 @@
       "source_file": "src/lib/model-utils.ts",
       "source_location": "L1",
       "id": "model_utils",
-      "community": 2
+      "community": 1
     },
     {
       "label": "createBaseBody()",
@@ -2345,7 +2393,7 @@
       "source_file": "src/lib/model-utils.ts",
       "source_location": "L24",
       "id": "model_utils_createbasebody",
-      "community": 2
+      "community": 1
     },
     {
       "label": "subtractBaseHoles()",
@@ -2353,7 +2401,7 @@
       "source_file": "src/lib/model-utils.ts",
       "source_location": "L54",
       "id": "model_utils_subtractbaseholes",
-      "community": 2
+      "community": 1
     },
     {
       "label": "outline-geometry.test.ts",
@@ -2361,7 +2409,7 @@
       "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/lib/outline-geometry.test.ts",
       "source_location": "L1",
       "id": "outline_geometry_test",
-      "community": 9
+      "community": 11
     },
     {
       "label": "getDistances()",
@@ -2369,7 +2417,7 @@
       "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/lib/outline-geometry.test.ts",
       "source_location": "L12",
       "id": "outline_geometry_test_getdistances",
-      "community": 9
+      "community": 11
     },
     {
       "label": "getCentroid()",
@@ -2377,7 +2425,7 @@
       "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/lib/outline-geometry.test.ts",
       "source_location": "L19",
       "id": "outline_geometry_test_getcentroid",
-      "community": 9
+      "community": 11
     },
     {
       "label": "outline-geometry.ts",
@@ -2385,7 +2433,7 @@
       "source_file": "src/lib/outline-geometry.ts",
       "source_location": "L1",
       "id": "outline_geometry",
-      "community": 9
+      "community": 11
     },
     {
       "label": "computeAdaptiveSegments()",
@@ -2393,7 +2441,7 @@
       "source_file": "src/lib/outline-geometry.ts",
       "source_location": "L33",
       "id": "outline_geometry_computeadaptivesegments",
-      "community": 9
+      "community": 11
     },
     {
       "label": "computeTangencyEpsilon()",
@@ -2401,7 +2449,7 @@
       "source_file": "src/lib/outline-geometry.ts",
       "source_location": "L56",
       "id": "outline_geometry_computetangencyepsilon",
-      "community": 9
+      "community": 11
     },
     {
       "label": "signedPolygonArea()",
@@ -2409,7 +2457,7 @@
       "source_file": "src/lib/outline-geometry.ts",
       "source_location": "L125",
       "id": "outline_geometry_signedpolygonarea",
-      "community": 9
+      "community": 11
     },
     {
       "label": "lineIntersection()",
@@ -2417,7 +2465,7 @@
       "source_file": "src/lib/outline-geometry.ts",
       "source_location": "L137",
       "id": "outline_geometry_lineintersection",
-      "community": 9
+      "community": 11
     },
     {
       "label": "segmentIntersection()",
@@ -2425,7 +2473,7 @@
       "source_file": "src/lib/outline-geometry.ts",
       "source_location": "L154",
       "id": "outline_geometry_segmentintersection",
-      "community": 9
+      "community": 11
     },
     {
       "label": "removeSelfintersections()",
@@ -2433,7 +2481,7 @@
       "source_file": "src/lib/outline-geometry.ts",
       "source_location": "L173",
       "id": "outline_geometry_removeselfintersections",
-      "community": 9
+      "community": 11
     },
     {
       "label": "insetPolygon()",
@@ -2441,7 +2489,7 @@
       "source_file": "src/lib/outline-geometry.ts",
       "source_location": "L209",
       "id": "outline_geometry_insetpolygon",
-      "community": 9
+      "community": 11
     },
     {
       "label": "computeCircleIntersections()",
@@ -2449,7 +2497,7 @@
       "source_file": "src/lib/outline-geometry.ts",
       "source_location": "L315",
       "id": "outline_geometry_computecircleintersections",
-      "community": 9
+      "community": 11
     },
     {
       "label": "correctJunctionVertices()",
@@ -2457,7 +2505,7 @@
       "source_file": "src/lib/outline-geometry.ts",
       "source_location": "L349",
       "id": "outline_geometry_correctjunctionvertices",
-      "community": 9
+      "community": 11
     },
     {
       "label": "generateOutlineGeom2()",
@@ -2465,7 +2513,7 @@
       "source_file": "src/lib/outline-geometry.ts",
       "source_location": "L386",
       "id": "outline_geometry_generateoutlinegeom2",
-      "community": 9
+      "community": 11
     },
     {
       "label": "snapToCircles()",
@@ -2473,7 +2521,7 @@
       "source_file": "src/lib/outline-geometry.ts",
       "source_location": "L490",
       "id": "outline_geometry_snaptocircles",
-      "community": 9
+      "community": 11
     },
     {
       "label": "polygonArea()",
@@ -2481,7 +2529,7 @@
       "source_file": "src/lib/outline-geometry.ts",
       "source_location": "L610",
       "id": "outline_geometry_polygonarea",
-      "community": 9
+      "community": 11
     },
     {
       "label": "generateOutline()",
@@ -2489,7 +2537,7 @@
       "source_file": "src/lib/outline-geometry.ts",
       "source_location": "L622",
       "id": "outline_geometry_generateoutline",
-      "community": 9
+      "community": 11
     },
     {
       "label": "outlinePointsToGeom2()",
@@ -2497,7 +2545,7 @@
       "source_file": "src/lib/outline-geometry.ts",
       "source_location": "L654",
       "id": "outline_geometry_outlinepointstogeom2",
-      "community": 9
+      "community": 11
     },
     {
       "label": "param-io.test.ts",
@@ -2537,7 +2585,7 @@
       "source_file": "src/lib/param-io.ts",
       "source_location": "L1",
       "id": "param_io",
-      "community": 10
+      "community": 7
     },
     {
       "label": "getRawSteppedSmoothingRadius()",
@@ -2545,7 +2593,7 @@
       "source_file": "src/lib/param-io.ts",
       "source_location": "L39",
       "id": "param_io_getrawsteppedsmoothingradius",
-      "community": 10
+      "community": 7
     },
     {
       "label": "getRawSteppedDisconnectDistance()",
@@ -2553,7 +2601,7 @@
       "source_file": "src/lib/param-io.ts",
       "source_location": "L55",
       "id": "param_io_getrawsteppeddisconnectdistance",
-      "community": 10
+      "community": 7
     },
     {
       "label": "precisionReplacer()",
@@ -2561,7 +2609,7 @@
       "source_file": "src/lib/param-io.ts",
       "source_location": "L65",
       "id": "param_io_precisionreplacer",
-      "community": 10
+      "community": 7
     },
     {
       "label": "buildParamFile()",
@@ -2569,7 +2617,7 @@
       "source_file": "src/lib/param-io.ts",
       "source_location": "L72",
       "id": "param_io_buildparamfile",
-      "community": 10
+      "community": 7
     },
     {
       "label": "serializeParamFile()",
@@ -2577,7 +2625,7 @@
       "source_file": "src/lib/param-io.ts",
       "source_location": "L79",
       "id": "param_io_serializeparamfile",
-      "community": 10
+      "community": 7
     },
     {
       "label": "createParamBlob()",
@@ -2585,7 +2633,7 @@
       "source_file": "src/lib/param-io.ts",
       "source_location": "L86",
       "id": "param_io_createparamblob",
-      "community": 10
+      "community": 7
     },
     {
       "label": "downloadParamFile()",
@@ -2593,7 +2641,7 @@
       "source_file": "src/lib/param-io.ts",
       "source_location": "L92",
       "id": "param_io_downloadparamfile",
-      "community": 10
+      "community": 7
     },
     {
       "label": "exportParams()",
@@ -2601,7 +2649,7 @@
       "source_file": "src/lib/param-io.ts",
       "source_location": "L109",
       "id": "param_io_exportparams",
-      "community": 10
+      "community": 7
     },
     {
       "label": "parseParamFileObject()",
@@ -2609,7 +2657,7 @@
       "source_file": "src/lib/param-io.ts",
       "source_location": "L113",
       "id": "param_io_parseparamfileobject",
-      "community": 10
+      "community": 7
     },
     {
       "label": "importParams()",
@@ -2617,7 +2665,7 @@
       "source_file": "src/lib/param-io.ts",
       "source_location": "L192",
       "id": "param_io_importparams",
-      "community": 10
+      "community": 7
     },
     {
       "label": "requireNumber()",
@@ -2625,7 +2673,7 @@
       "source_file": "src/lib/param-io.ts",
       "source_location": "L214",
       "id": "param_io_requirenumber",
-      "community": 10
+      "community": 7
     },
     {
       "label": "clampField()",
@@ -2633,7 +2681,7 @@
       "source_file": "src/lib/param-io.ts",
       "source_location": "L220",
       "id": "param_io_clampfield",
-      "community": 10
+      "community": 7
     },
     {
       "label": "validateGridParams()",
@@ -2641,7 +2689,7 @@
       "source_file": "src/lib/param-io.ts",
       "source_location": "L229",
       "id": "param_io_validategridparams",
-      "community": 10
+      "community": 7
     },
     {
       "label": "validateCustomParams()",
@@ -2649,7 +2697,7 @@
       "source_file": "src/lib/param-io.ts",
       "source_location": "L283",
       "id": "param_io_validatecustomparams",
-      "community": 10
+      "community": 7
     },
     {
       "label": "validateSimpleSteppedParams()",
@@ -2657,7 +2705,7 @@
       "source_file": "src/lib/param-io.ts",
       "source_location": "L354",
       "id": "param_io_validatesimplesteppedparams",
-      "community": 10
+      "community": 7
     },
     {
       "label": "validateSteppedParams()",
@@ -2665,7 +2713,7 @@
       "source_file": "src/lib/param-io.ts",
       "source_location": "L504",
       "id": "param_io_validatesteppedparams",
-      "community": 10
+      "community": 7
     },
     {
       "label": "perf.ts",
@@ -2673,7 +2721,7 @@
       "source_file": "src/lib/perf.ts",
       "source_location": "L1",
       "id": "perf",
-      "community": 13
+      "community": 12
     },
     {
       "label": "updatePerfSnapshot()",
@@ -2681,7 +2729,7 @@
       "source_file": "src/lib/perf.ts",
       "source_location": "L50",
       "id": "perf_updateperfsnapshot",
-      "community": 13
+      "community": 12
     },
     {
       "label": "emitPerfListeners()",
@@ -2689,7 +2737,7 @@
       "source_file": "src/lib/perf.ts",
       "source_location": "L62",
       "id": "perf_emitperflisteners",
-      "community": 13
+      "community": 12
     },
     {
       "label": "schedulePerfListeners()",
@@ -2697,7 +2745,7 @@
       "source_file": "src/lib/perf.ts",
       "source_location": "L66",
       "id": "perf_scheduleperflisteners",
-      "community": 13
+      "community": 12
     },
     {
       "label": "resolvePerfEnabled()",
@@ -2705,7 +2753,7 @@
       "source_file": "src/lib/perf.ts",
       "source_location": "L89",
       "id": "perf_resolveperfenabled",
-      "community": 13
+      "community": 12
     },
     {
       "label": "isPerfEnabled()",
@@ -2713,7 +2761,7 @@
       "source_file": "src/lib/perf.ts",
       "source_location": "L109",
       "id": "perf_isperfenabled",
-      "community": 13
+      "community": 12
     },
     {
       "label": "measurePerf()",
@@ -2721,7 +2769,7 @@
       "source_file": "src/lib/perf.ts",
       "source_location": "L119",
       "id": "perf_measureperf",
-      "community": 13
+      "community": 12
     },
     {
       "label": "recordPerfSample()",
@@ -2729,7 +2777,7 @@
       "source_file": "src/lib/perf.ts",
       "source_location": "L132",
       "id": "perf_recordperfsample",
-      "community": 13
+      "community": 12
     },
     {
       "label": "subscribePerfMetrics()",
@@ -2737,7 +2785,7 @@
       "source_file": "src/lib/perf.ts",
       "source_location": "L153",
       "id": "perf_subscribeperfmetrics",
-      "community": 13
+      "community": 12
     },
     {
       "label": "getPerfMetricsSnapshot()",
@@ -2745,7 +2793,7 @@
       "source_file": "src/lib/perf.ts",
       "source_location": "L160",
       "id": "perf_getperfmetricssnapshot",
-      "community": 13
+      "community": 12
     },
     {
       "label": "resetPerfMetrics()",
@@ -2753,7 +2801,7 @@
       "source_file": "src/lib/perf.ts",
       "source_location": "L165",
       "id": "perf_resetperfmetrics",
-      "community": 13
+      "community": 12
     },
     {
       "label": "pricing.test.ts",
@@ -2761,7 +2809,7 @@
       "source_file": "src/lib/pricing.test.ts",
       "source_location": "L1",
       "id": "pricing_test",
-      "community": 8
+      "community": 10
     },
     {
       "label": "createGroup()",
@@ -2769,7 +2817,7 @@
       "source_file": "src/lib/pricing.test.ts",
       "source_location": "L16",
       "id": "pricing_test_creategroup",
-      "community": 8
+      "community": 10
     },
     {
       "label": "createSlot()",
@@ -2777,7 +2825,7 @@
       "source_file": "src/lib/pricing.test.ts",
       "source_location": "L34",
       "id": "pricing_test_createslot",
-      "community": 8
+      "community": 10
     },
     {
       "label": "createSampleA()",
@@ -2785,7 +2833,7 @@
       "source_file": "src/lib/pricing.test.ts",
       "source_location": "L53",
       "id": "pricing_test_createsamplea",
-      "community": 8
+      "community": 10
     },
     {
       "label": "createSampleB()",
@@ -2793,7 +2841,7 @@
       "source_file": "src/lib/pricing.test.ts",
       "source_location": "L84",
       "id": "pricing_test_createsampleb",
-      "community": 8
+      "community": 10
     },
     {
       "label": "createSampleC()",
@@ -2801,7 +2849,7 @@
       "source_file": "src/lib/pricing.test.ts",
       "source_location": "L114",
       "id": "pricing_test_createsamplec",
-      "community": 8
+      "community": 10
     },
     {
       "label": "pricing.ts",
@@ -2809,7 +2857,7 @@
       "source_file": "src/lib/pricing.ts",
       "source_location": "L1",
       "id": "pricing",
-      "community": 8
+      "community": 10
     },
     {
       "label": "getSlotPrice()",
@@ -2817,7 +2865,7 @@
       "source_file": "src/lib/pricing.ts",
       "source_location": "L18",
       "id": "pricing_getslotprice",
-      "community": 8
+      "community": 10
     },
     {
       "label": "clamp()",
@@ -2825,7 +2873,7 @@
       "source_file": "src/lib/pricing.ts",
       "source_location": "L81",
       "id": "pricing_clamp",
-      "community": 8
+      "community": 10
     },
     {
       "label": "getUsedSteppedGroups()",
@@ -2833,7 +2881,7 @@
       "source_file": "src/lib/pricing.ts",
       "source_location": "L85",
       "id": "pricing_getusedsteppedgroups",
-      "community": 8
+      "community": 10
     },
     {
       "label": "getSteppedStructureFlags()",
@@ -2841,7 +2889,7 @@
       "source_file": "src/lib/pricing.ts",
       "source_location": "L90",
       "id": "pricing_getsteppedstructureflags",
-      "community": 8
+      "community": 10
     },
     {
       "label": "getSteppedPricingCounts()",
@@ -2849,7 +2897,7 @@
       "source_file": "src/lib/pricing.ts",
       "source_location": "L110",
       "id": "pricing_getsteppedpricingcounts",
-      "community": 8
+      "community": 10
     },
     {
       "label": "calculateSteppedMaterialDensity()",
@@ -2857,7 +2905,7 @@
       "source_file": "src/lib/pricing.ts",
       "source_location": "L131",
       "id": "pricing_calculatesteppedmaterialdensity",
-      "community": 8
+      "community": 10
     },
     {
       "label": "calculateWeight()",
@@ -2865,7 +2913,7 @@
       "source_file": "src/lib/pricing.ts",
       "source_location": "L150",
       "id": "pricing_calculateweight",
-      "community": 8
+      "community": 10
     },
     {
       "label": "calculateGridPrice()",
@@ -2873,7 +2921,7 @@
       "source_file": "src/lib/pricing.ts",
       "source_location": "L160",
       "id": "pricing_calculategridprice",
-      "community": 8
+      "community": 10
     },
     {
       "label": "calculateCustomPrice()",
@@ -2881,7 +2929,7 @@
       "source_file": "src/lib/pricing.ts",
       "source_location": "L173",
       "id": "pricing_calculatecustomprice",
-      "community": 8
+      "community": 10
     },
     {
       "label": "getSteppedPricingBreakdown()",
@@ -2889,7 +2937,7 @@
       "source_file": "src/lib/pricing.ts",
       "source_location": "L182",
       "id": "pricing_getsteppedpricingbreakdown",
-      "community": 8
+      "community": 10
     },
     {
       "label": "calculateSteppedPrice()",
@@ -2897,7 +2945,7 @@
       "source_file": "src/lib/pricing.ts",
       "source_location": "L283",
       "id": "pricing_calculatesteppedprice",
-      "community": 8
+      "community": 10
     },
     {
       "label": "calculateSimpleSteppedPrice()",
@@ -2905,7 +2953,7 @@
       "source_file": "src/lib/pricing.ts",
       "source_location": "L290",
       "id": "pricing_calculatesimplesteppedprice",
-      "community": 8
+      "community": 10
     },
     {
       "label": "simple-stepped-config.ts",
@@ -2913,7 +2961,7 @@
       "source_file": "src/lib/simple-stepped-config.ts",
       "source_location": "L1",
       "id": "simple_stepped_config",
-      "community": 3
+      "community": 0
     },
     {
       "label": "simple-stepped-layout.test.ts",
@@ -2921,7 +2969,7 @@
       "source_file": "src/lib/simple-stepped-layout.test.ts",
       "source_location": "L1",
       "id": "simple_stepped_layout_test",
-      "community": 3
+      "community": 0
     },
     {
       "label": "createSimpleSteppedParams()",
@@ -2929,7 +2977,7 @@
       "source_file": "src/lib/simple-stepped-layout.test.ts",
       "source_location": "L13",
       "id": "simple_stepped_layout_test_createsimplesteppedparams",
-      "community": 3
+      "community": 0
     },
     {
       "label": "simple-stepped-layout.ts",
@@ -2937,7 +2985,7 @@
       "source_file": "src/lib/simple-stepped-layout.ts",
       "source_location": "L1",
       "id": "simple_stepped_layout",
-      "community": 3
+      "community": 9
     },
     {
       "label": "isFiniteNumber()",
@@ -2945,7 +2993,7 @@
       "source_file": "src/lib/simple-stepped-layout.ts",
       "source_location": "L80",
       "id": "simple_stepped_layout_isfinitenumber",
-      "community": 3
+      "community": 9
     },
     {
       "label": "getStoredTrayWidth()",
@@ -2953,7 +3001,7 @@
       "source_file": "src/lib/simple-stepped-layout.ts",
       "source_location": "L84",
       "id": "simple_stepped_layout_getstoredtraywidth",
-      "community": 3
+      "community": 9
     },
     {
       "label": "getStoredTrayDepth()",
@@ -2961,7 +3009,7 @@
       "source_file": "src/lib/simple-stepped-layout.ts",
       "source_location": "L90",
       "id": "simple_stepped_layout_getstoredtraydepth",
-      "community": 3
+      "community": 9
     },
     {
       "label": "getEffectiveOuterMargin()",
@@ -2969,7 +3017,7 @@
       "source_file": "src/lib/simple-stepped-layout.ts",
       "source_location": "L96",
       "id": "simple_stepped_layout_geteffectiveoutermargin",
-      "community": 3
+      "community": 9
     },
     {
       "label": "buildActiveRowSeeds()",
@@ -2977,7 +3025,7 @@
       "source_file": "src/lib/simple-stepped-layout.ts",
       "source_location": "L100",
       "id": "simple_stepped_layout_buildactiverowseeds",
-      "community": 3
+      "community": 9
     },
     {
       "label": "getSimpleSteppedEffectiveDiameter()",
@@ -2985,7 +3033,7 @@
       "source_file": "src/lib/simple-stepped-layout.ts",
       "source_location": "L157",
       "id": "simple_stepped_layout_getsimplesteppedeffectivediameter",
-      "community": 3
+      "community": 9
     },
     {
       "label": "getSimpleSteppedMaxLocalYOffset()",
@@ -2993,7 +3041,7 @@
       "source_file": "src/lib/simple-stepped-layout.ts",
       "source_location": "L163",
       "id": "simple_stepped_layout_getsimplesteppedmaxlocalyoffset",
-      "community": 3
+      "community": 9
     },
     {
       "label": "calculateSimpleSteppedMinimumTraySize()",
@@ -3001,7 +3049,7 @@
       "source_file": "src/lib/simple-stepped-layout.ts",
       "source_location": "L170",
       "id": "simple_stepped_layout_calculatesimplesteppedminimumtraysize",
-      "community": 3
+      "community": 9
     },
     {
       "label": "deriveSimpleSteppedLayout()",
@@ -3009,7 +3057,7 @@
       "source_file": "src/lib/simple-stepped-layout.ts",
       "source_location": "L186",
       "id": "simple_stepped_layout_derivesimplesteppedlayout",
-      "community": 3
+      "community": 9
     },
     {
       "label": "calculateSimpleSteppedDimensions()",
@@ -3017,7 +3065,7 @@
       "source_file": "src/lib/simple-stepped-layout.ts",
       "source_location": "L285",
       "id": "simple_stepped_layout_calculatesimplesteppeddimensions",
-      "community": 3
+      "community": 9
     },
     {
       "label": "buildSimpleSteppedRowBands()",
@@ -3025,7 +3073,7 @@
       "source_file": "src/lib/simple-stepped-layout.ts",
       "source_location": "L296",
       "id": "simple_stepped_layout_buildsimplesteppedrowbands",
-      "community": 3
+      "community": 9
     },
     {
       "label": "clampSimpleSteppedSlotUpdates()",
@@ -3033,7 +3081,7 @@
       "source_file": "src/lib/simple-stepped-layout.ts",
       "source_location": "L303",
       "id": "simple_stepped_layout_clampsimplesteppedslotupdates",
-      "community": 3
+      "community": 9
     },
     {
       "label": "simple-stepped-tray-model.test.ts",
@@ -3041,7 +3089,7 @@
       "source_file": "src/lib/simple-stepped-tray-model.test.ts",
       "source_location": "L1",
       "id": "simple_stepped_tray_model_test",
-      "community": 3
+      "community": 9
     },
     {
       "label": "createSimpleSteppedParams()",
@@ -3049,7 +3097,7 @@
       "source_file": "src/lib/simple-stepped-tray-model.test.ts",
       "source_location": "L8",
       "id": "simple_stepped_tray_model_test_createsimplesteppedparams",
-      "community": 3
+      "community": 9
     },
     {
       "label": "simple-stepped-tray-model.ts",
@@ -3057,7 +3105,7 @@
       "source_file": "src/lib/simple-stepped-tray-model.ts",
       "source_location": "L1",
       "id": "simple_stepped_tray_model",
-      "community": 3
+      "community": 9
     },
     {
       "label": "createEmptyGeom()",
@@ -3065,7 +3113,7 @@
       "source_file": "src/lib/simple-stepped-tray-model.ts",
       "source_location": "L24",
       "id": "simple_stepped_tray_model_createemptygeom",
-      "community": 3
+      "community": 9
     },
     {
       "label": "createSimpleSteppedTrayModel()",
@@ -3073,7 +3121,7 @@
       "source_file": "src/lib/simple-stepped-tray-model.ts",
       "source_location": "L36",
       "id": "simple_stepped_tray_model_createsimplesteppedtraymodel",
-      "community": 3
+      "community": 9
     },
     {
       "label": "calculateSimpleSteppedTrayDimensions()",
@@ -3081,7 +3129,7 @@
       "source_file": "src/lib/simple-stepped-tray-model.ts",
       "source_location": "L93",
       "id": "simple_stepped_tray_model_calculatesimplesteppedtraydimensions",
-      "community": 3
+      "community": 9
     },
     {
       "label": "calculateSimpleSteppedTrayVolume()",
@@ -3089,7 +3137,7 @@
       "source_file": "src/lib/simple-stepped-tray-model.ts",
       "source_location": "L104",
       "id": "simple_stepped_tray_model_calculatesimplesteppedtrayvolume",
-      "community": 3
+      "community": 9
     },
     {
       "label": "stepped-bridge-warning.test.ts",
@@ -3097,7 +3145,7 @@
       "source_file": "src/lib/stepped-bridge-warning.test.ts",
       "source_location": "L1",
       "id": "stepped_bridge_warning_test",
-      "community": 0
+      "community": 6
     },
     {
       "label": "stepped-bridge-warning.ts",
@@ -3105,7 +3153,7 @@
       "source_file": "src/lib/stepped-bridge-warning.ts",
       "source_location": "L1",
       "id": "stepped_bridge_warning",
-      "community": 0
+      "community": 6
     },
     {
       "label": "buildSteppedBridgeWarning()",
@@ -3113,7 +3161,7 @@
       "source_file": "src/lib/stepped-bridge-warning.ts",
       "source_location": "L11",
       "id": "stepped_bridge_warning_buildsteppedbridgewarning",
-      "community": 0
+      "community": 6
     },
     {
       "label": "stepped-config.ts",
@@ -3185,7 +3233,7 @@
       "source_file": "src/lib/stepped-global-optimize.test.ts",
       "source_location": "L1",
       "id": "stepped_global_optimize_test",
-      "community": 0
+      "community": 6
     },
     {
       "label": "createParams()",
@@ -3193,7 +3241,7 @@
       "source_file": "src/lib/stepped-global-optimize.test.ts",
       "source_location": "L11",
       "id": "stepped_global_optimize_test_createparams",
-      "community": 0
+      "community": 6
     },
     {
       "label": "stepped-global-optimize.ts",
@@ -3201,7 +3249,7 @@
       "source_file": "src/lib/stepped-global-optimize.ts",
       "source_location": "L1",
       "id": "stepped_global_optimize",
-      "community": 7
+      "community": 6
     },
     {
       "label": "getSlotGeometry()",
@@ -3209,7 +3257,7 @@
       "source_file": "src/lib/stepped-global-optimize.ts",
       "source_location": "L95",
       "id": "stepped_global_optimize_getslotgeometry",
-      "community": 7
+      "community": 6
     },
     {
       "label": "roundToStep()",
@@ -3217,7 +3265,7 @@
       "source_file": "src/lib/stepped-global-optimize.ts",
       "source_location": "L111",
       "id": "stepped_global_optimize_roundtostep",
-      "community": 7
+      "community": 6
     },
     {
       "label": "roundPosition()",
@@ -3225,7 +3273,7 @@
       "source_file": "src/lib/stepped-global-optimize.ts",
       "source_location": "L115",
       "id": "stepped_global_optimize_roundposition",
-      "community": 7
+      "community": 6
     },
     {
       "label": "normalizeSlotsToOrigin()",
@@ -3233,7 +3281,7 @@
       "source_file": "src/lib/stepped-global-optimize.ts",
       "source_location": "L119",
       "id": "stepped_global_optimize_normalizeslotstoorigin",
-      "community": 7
+      "community": 6
     },
     {
       "label": "sortSlotsByEffectiveSize()",
@@ -3241,7 +3289,7 @@
       "source_file": "src/lib/stepped-global-optimize.ts",
       "source_location": "L150",
       "id": "stepped_global_optimize_sortslotsbyeffectivesize",
-      "community": 7
+      "community": 6
     },
     {
       "label": "buildAlternatingOrder()",
@@ -3249,7 +3297,7 @@
       "source_file": "src/lib/stepped-global-optimize.ts",
       "source_location": "L173",
       "id": "stepped_global_optimize_buildalternatingorder",
-      "community": 7
+      "community": 6
     },
     {
       "label": "getTargetShelfWidth()",
@@ -3257,7 +3305,7 @@
       "source_file": "src/lib/stepped-global-optimize.ts",
       "source_location": "L191",
       "id": "stepped_global_optimize_gettargetshelfwidth",
-      "community": 7
+      "community": 6
     },
     {
       "label": "toRowSlotEntry()",
@@ -3265,7 +3313,7 @@
       "source_file": "src/lib/stepped-global-optimize.ts",
       "source_location": "L212",
       "id": "stepped_global_optimize_torowslotentry",
-      "community": 7
+      "community": 6
     },
     {
       "label": "arrangeRowSymmetrically()",
@@ -3273,7 +3321,7 @@
       "source_file": "src/lib/stepped-global-optimize.ts",
       "source_location": "L223",
       "id": "stepped_global_optimize_arrangerowsymmetrically",
-      "community": 7
+      "community": 6
     },
     {
       "label": "packSlotsIntoShelves()",
@@ -3281,7 +3329,7 @@
       "source_file": "src/lib/stepped-global-optimize.ts",
       "source_location": "L290",
       "id": "stepped_global_optimize_packslotsintoshelves",
-      "community": 7
+      "community": 6
     },
     {
       "label": "evaluateCompactCandidate()",
@@ -3289,7 +3337,7 @@
       "source_file": "src/lib/stepped-global-optimize.ts",
       "source_location": "L348",
       "id": "stepped_global_optimize_evaluatecompactcandidate",
-      "community": 7
+      "community": 6
     },
     {
       "label": "compareCompactCandidateEvaluations()",
@@ -3297,7 +3345,7 @@
       "source_file": "src/lib/stepped-global-optimize.ts",
       "source_location": "L379",
       "id": "stepped_global_optimize_comparecompactcandidateevaluations",
-      "community": 7
+      "community": 6
     },
     {
       "label": "serializeSlots()",
@@ -3305,7 +3353,7 @@
       "source_file": "src/lib/stepped-global-optimize.ts",
       "source_location": "L446",
       "id": "stepped_global_optimize_serializeslots",
-      "community": 7
+      "community": 6
     },
     {
       "label": "resolveAlignmentOffset()",
@@ -3313,7 +3361,7 @@
       "source_file": "src/lib/stepped-global-optimize.ts",
       "source_location": "L454",
       "id": "stepped_global_optimize_resolvealignmentoffset",
-      "community": 7
+      "community": 6
     },
     {
       "label": "buildGroupCompactCandidates()",
@@ -3321,7 +3369,7 @@
       "source_file": "src/lib/stepped-global-optimize.ts",
       "source_location": "L470",
       "id": "stepped_global_optimize_buildgroupcompactcandidates",
-      "community": 7
+      "community": 6
     },
     {
       "label": "composeGroupPlacements()",
@@ -3329,7 +3377,7 @@
       "source_file": "src/lib/stepped-global-optimize.ts",
       "source_location": "L547",
       "id": "stepped_global_optimize_composegroupplacements",
-      "community": 7
+      "community": 6
     },
     {
       "label": "buildCompactCandidates()",
@@ -3337,7 +3385,7 @@
       "source_file": "src/lib/stepped-global-optimize.ts",
       "source_location": "L601",
       "id": "stepped_global_optimize_buildcompactcandidates",
-      "community": 7
+      "community": 6
     },
     {
       "label": "createCompactSeed()",
@@ -3345,7 +3393,7 @@
       "source_file": "src/lib/stepped-global-optimize.ts",
       "source_location": "L708",
       "id": "stepped_global_optimize_createcompactseed",
-      "community": 7
+      "community": 6
     },
     {
       "label": "calculateDisplacement()",
@@ -3353,7 +3401,7 @@
       "source_file": "src/lib/stepped-global-optimize.ts",
       "source_location": "L731",
       "id": "stepped_global_optimize_calculatedisplacement",
-      "community": 7
+      "community": 6
     },
     {
       "label": "finalizeProposal()",
@@ -3361,7 +3409,7 @@
       "source_file": "src/lib/stepped-global-optimize.ts",
       "source_location": "L752",
       "id": "stepped_global_optimize_finalizeproposal",
-      "community": 7
+      "community": 6
     },
     {
       "label": "generateSteppedOptimizationProposals()",
@@ -3369,7 +3417,7 @@
       "source_file": "src/lib/stepped-global-optimize.ts",
       "source_location": "L788",
       "id": "stepped_global_optimize_generatesteppedoptimizationproposals",
-      "community": 7
+      "community": 6
     },
     {
       "label": "stepped-group-params.test.ts",
@@ -3377,7 +3425,7 @@
       "source_file": "src/lib/stepped-group-params.test.ts",
       "source_location": "L1",
       "id": "stepped_group_params_test",
-      "community": 0
+      "community": 7
     },
     {
       "label": "stepped-group-params.ts",
@@ -3385,7 +3433,7 @@
       "source_file": "src/lib/stepped-group-params.ts",
       "source_location": "L1",
       "id": "stepped_group_params",
-      "community": 0
+      "community": 7
     },
     {
       "label": "createGroupStructureOverrides()",
@@ -3393,7 +3441,7 @@
       "source_file": "src/lib/stepped-group-params.ts",
       "source_location": "L16",
       "id": "stepped_group_params_creategroupstructureoverrides",
-      "community": 0
+      "community": 7
     },
     {
       "label": "getEffectiveGroupStructureParams()",
@@ -3401,7 +3449,7 @@
       "source_file": "src/lib/stepped-group-params.ts",
       "source_location": "L27",
       "id": "stepped_group_params_geteffectivegroupstructureparams",
-      "community": 0
+      "community": 7
     },
     {
       "label": "stepped-layout-group-actions.test.ts",
@@ -3409,7 +3457,7 @@
       "source_file": "src/lib/stepped-layout-group-actions.test.ts",
       "source_location": "L1",
       "id": "stepped_layout_group_actions_test",
-      "community": 0
+      "community": 13
     },
     {
       "label": "createIdFactory()",
@@ -3417,7 +3465,7 @@
       "source_file": "src/lib/stepped-layout-group-actions.test.ts",
       "source_location": "L17",
       "id": "stepped_layout_group_actions_test_createidfactory",
-      "community": 0
+      "community": 13
     },
     {
       "label": "createParams()",
@@ -3425,7 +3473,7 @@
       "source_file": "src/lib/stepped-layout-group-actions.test.ts",
       "source_location": "L24",
       "id": "stepped_layout_group_actions_test_createparams",
-      "community": 0
+      "community": 13
     },
     {
       "label": "stepped-layout-group-actions.ts",
@@ -3433,7 +3481,7 @@
       "source_file": "src/lib/stepped-layout-group-actions.ts",
       "source_location": "L1",
       "id": "stepped_layout_group_actions",
-      "community": 0
+      "community": 13
     },
     {
       "label": "addSteppedGroup()",
@@ -3441,7 +3489,7 @@
       "source_file": "src/lib/stepped-layout-group-actions.ts",
       "source_location": "L6",
       "id": "stepped_layout_group_actions_addsteppedgroup",
-      "community": 0
+      "community": 13
     },
     {
       "label": "removeSteppedGroup()",
@@ -3449,7 +3497,7 @@
       "source_file": "src/lib/stepped-layout-group-actions.ts",
       "source_location": "L32",
       "id": "stepped_layout_group_actions_removesteppedgroup",
-      "community": 0
+      "community": 13
     },
     {
       "label": "updateSteppedGroupHeight()",
@@ -3457,7 +3505,7 @@
       "source_file": "src/lib/stepped-layout-group-actions.ts",
       "source_location": "L55",
       "id": "stepped_layout_group_actions_updatesteppedgroupheight",
-      "community": 0
+      "community": 13
     },
     {
       "label": "updateSteppedGroupSmoothingOverride()",
@@ -3465,7 +3513,7 @@
       "source_file": "src/lib/stepped-layout-group-actions.ts",
       "source_location": "L68",
       "id": "stepped_layout_group_actions_updatesteppedgroupsmoothingoverride",
-      "community": 0
+      "community": 13
     },
     {
       "label": "updateSteppedGroupSmoothingRadius()",
@@ -3473,7 +3521,7 @@
       "source_file": "src/lib/stepped-layout-group-actions.ts",
       "source_location": "L83",
       "id": "stepped_layout_group_actions_updatesteppedgroupsmoothingradius",
-      "community": 0
+      "community": 13
     },
     {
       "label": "updateSteppedGroupDisconnectOverride()",
@@ -3481,7 +3529,7 @@
       "source_file": "src/lib/stepped-layout-group-actions.ts",
       "source_location": "L96",
       "id": "stepped_layout_group_actions_updatesteppedgroupdisconnectoverride",
-      "community": 0
+      "community": 13
     },
     {
       "label": "updateSteppedGroupDisconnectDistance()",
@@ -3489,7 +3537,7 @@
       "source_file": "src/lib/stepped-layout-group-actions.ts",
       "source_location": "L111",
       "id": "stepped_layout_group_actions_updatesteppedgroupdisconnectdistance",
-      "community": 0
+      "community": 13
     },
     {
       "label": "setSteppedActiveGroup()",
@@ -3497,7 +3545,7 @@
       "source_file": "src/lib/stepped-layout-group-actions.ts",
       "source_location": "L126",
       "id": "stepped_layout_group_actions_setsteppedactivegroup",
-      "community": 0
+      "community": 13
     },
     {
       "label": "moveSteppedSlotsToGroup()",
@@ -3505,7 +3553,7 @@
       "source_file": "src/lib/stepped-layout-group-actions.ts",
       "source_location": "L136",
       "id": "stepped_layout_group_actions_movesteppedslotstogroup",
-      "community": 0
+      "community": 13
     },
     {
       "label": "reorderSteppedGroups()",
@@ -3513,7 +3561,7 @@
       "source_file": "src/lib/stepped-layout-group-actions.ts",
       "source_location": "L151",
       "id": "stepped_layout_group_actions_reordersteppedgroups",
-      "community": 0
+      "community": 13
     },
     {
       "label": "stepped-layout-math.ts",
@@ -3521,7 +3569,7 @@
       "source_file": "src/lib/stepped-layout-math.ts",
       "source_location": "L1",
       "id": "stepped_layout_math",
-      "community": 0
+      "community": 6
     },
     {
       "label": "calculateSteppedEffectiveDimensions()",
@@ -3529,7 +3577,7 @@
       "source_file": "src/lib/stepped-layout-math.ts",
       "source_location": "L9",
       "id": "stepped_layout_math_calculatesteppedeffectivedimensions",
-      "community": 0
+      "community": 6
     },
     {
       "label": "stepped-layout-slot-actions.test.ts",
@@ -3537,7 +3585,7 @@
       "source_file": "src/lib/stepped-layout-slot-actions.test.ts",
       "source_location": "L1",
       "id": "stepped_layout_slot_actions_test",
-      "community": 0
+      "community": 3
     },
     {
       "label": "createIdFactory()",
@@ -3545,7 +3593,7 @@
       "source_file": "src/lib/stepped-layout-slot-actions.test.ts",
       "source_location": "L16",
       "id": "stepped_layout_slot_actions_test_createidfactory",
-      "community": 0
+      "community": 3
     },
     {
       "label": "createParams()",
@@ -3553,7 +3601,7 @@
       "source_file": "src/lib/stepped-layout-slot-actions.test.ts",
       "source_location": "L23",
       "id": "stepped_layout_slot_actions_test_createparams",
-      "community": 0
+      "community": 3
     },
     {
       "label": "stepped-layout-slot-actions.ts",
@@ -3561,7 +3609,7 @@
       "source_file": "src/lib/stepped-layout-slot-actions.ts",
       "source_location": "L1",
       "id": "stepped_layout_slot_actions",
-      "community": 1
+      "community": 3
     },
     {
       "label": "updateSteppedLayoutParam()",
@@ -3569,7 +3617,7 @@
       "source_file": "src/lib/stepped-layout-slot-actions.ts",
       "source_location": "L18",
       "id": "stepped_layout_slot_actions_updatesteppedlayoutparam",
-      "community": 1
+      "community": 3
     },
     {
       "label": "addSteppedSlot()",
@@ -3577,7 +3625,7 @@
       "source_file": "src/lib/stepped-layout-slot-actions.ts",
       "source_location": "L36",
       "id": "stepped_layout_slot_actions_addsteppedslot",
-      "community": 1
+      "community": 3
     },
     {
       "label": "removeSteppedSlot()",
@@ -3585,7 +3633,7 @@
       "source_file": "src/lib/stepped-layout-slot-actions.ts",
       "source_location": "L74",
       "id": "stepped_layout_slot_actions_removesteppedslot",
-      "community": 1
+      "community": 3
     },
     {
       "label": "updateSteppedSlotPosition()",
@@ -3593,7 +3641,7 @@
       "source_file": "src/lib/stepped-layout-slot-actions.ts",
       "source_location": "L84",
       "id": "stepped_layout_slot_actions_updatesteppedslotposition",
-      "community": 1
+      "community": 3
     },
     {
       "label": "applySteppedSlotUpdates()",
@@ -3601,7 +3649,7 @@
       "source_file": "src/lib/stepped-layout-slot-actions.ts",
       "source_location": "L98",
       "id": "stepped_layout_slot_actions_applysteppedslotupdates",
-      "community": 1
+      "community": 3
     },
     {
       "label": "updateSteppedSlotRotation()",
@@ -3609,7 +3657,7 @@
       "source_file": "src/lib/stepped-layout-slot-actions.ts",
       "source_location": "L119",
       "id": "stepped_layout_slot_actions_updatesteppedslotrotation",
-      "community": 1
+      "community": 3
     },
     {
       "label": "insertSteppedSlots()",
@@ -3617,7 +3665,7 @@
       "source_file": "src/lib/stepped-layout-slot-actions.ts",
       "source_location": "L132",
       "id": "stepped_layout_slot_actions_insertsteppedslots",
-      "community": 1
+      "community": 3
     },
     {
       "label": "duplicateSteppedSlots()",
@@ -3625,7 +3673,7 @@
       "source_file": "src/lib/stepped-layout-slot-actions.ts",
       "source_location": "L158",
       "id": "stepped_layout_slot_actions_duplicatesteppedslots",
-      "community": 1
+      "community": 3
     },
     {
       "label": "trimSteppedBaseplate()",
@@ -3633,7 +3681,7 @@
       "source_file": "src/lib/stepped-layout-slot-actions.ts",
       "source_location": "L189",
       "id": "stepped_layout_slot_actions_trimsteppedbaseplate",
-      "community": 1
+      "community": 3
     },
     {
       "label": "stepped-model-service.test.ts",
@@ -3641,7 +3689,7 @@
       "source_file": "src/lib/stepped-model-service.test.ts",
       "source_location": "L1",
       "id": "stepped_model_service_test",
-      "community": 0
+      "community": 5
     },
     {
       "label": "stepped-model-service.ts",
@@ -3649,7 +3697,7 @@
       "source_file": "src/lib/stepped-model-service.ts",
       "source_location": "L1",
       "id": "stepped_model_service",
-      "community": 0
+      "community": 5
     },
     {
       "label": "generateSteppedPreview()",
@@ -3657,7 +3705,7 @@
       "source_file": "src/lib/stepped-model-service.ts",
       "source_location": "L18",
       "id": "stepped_model_service_generatesteppedpreview",
-      "community": 0
+      "community": 5
     },
     {
       "label": "getSteppedSTLFilename()",
@@ -3665,7 +3713,7 @@
       "source_file": "src/lib/stepped-model-service.ts",
       "source_location": "L31",
       "id": "stepped_model_service_getsteppedstlfilename",
-      "community": 0
+      "community": 5
     },
     {
       "label": "exportSteppedModelFiles()",
@@ -3673,7 +3721,7 @@
       "source_file": "src/lib/stepped-model-service.ts",
       "source_location": "L47",
       "id": "stepped_model_service_exportsteppedmodelfiles",
-      "community": 0
+      "community": 5
     },
     {
       "label": "stepped-outline-preview.test.ts",
@@ -3721,7 +3769,7 @@
       "source_file": "src/lib/stepped-perf-fixtures.ts",
       "source_location": "L1",
       "id": "stepped_perf_fixtures",
-      "community": 0
+      "community": 7
     },
     {
       "label": "roundToTenth()",
@@ -3729,7 +3777,7 @@
       "source_file": "src/lib/stepped-perf-fixtures.ts",
       "source_location": "L75",
       "id": "stepped_perf_fixtures_roundtotenth",
-      "community": 0
+      "community": 7
     },
     {
       "label": "buildPerfGroups()",
@@ -3737,7 +3785,7 @@
       "source_file": "src/lib/stepped-perf-fixtures.ts",
       "source_location": "L79",
       "id": "stepped_perf_fixtures_buildperfgroups",
-      "community": 0
+      "community": 7
     },
     {
       "label": "buildSteppedPerfFixture()",
@@ -3745,7 +3793,7 @@
       "source_file": "src/lib/stepped-perf-fixtures.ts",
       "source_location": "L92",
       "id": "stepped_perf_fixtures_buildsteppedperffixture",
-      "community": 0
+      "community": 7
     },
     {
       "label": "stepped-tray-model.test.ts",
@@ -3809,7 +3857,7 @@
       "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/lib/stl-export.test.ts",
       "source_location": "L1",
       "id": "stl_export_test",
-      "community": 11
+      "community": 5
     },
     {
       "label": "stl-export.ts",
@@ -3817,7 +3865,7 @@
       "source_file": "src/lib/stl-export.ts",
       "source_location": "L1",
       "id": "stl_export",
-      "community": 11
+      "community": 5
     },
     {
       "label": "exportToSTL()",
@@ -3825,7 +3873,7 @@
       "source_file": "src/lib/stl-export.ts",
       "source_location": "L7",
       "id": "stl_export_exporttostl",
-      "community": 11
+      "community": 5
     },
     {
       "label": "generateSTLFilename()",
@@ -3833,7 +3881,7 @@
       "source_file": "src/lib/stl-export.ts",
       "source_location": "L26",
       "id": "stl_export_generatestlfilename",
-      "community": 11
+      "community": 5
     },
     {
       "label": "generateCustomSTLFilename()",
@@ -3841,7 +3889,7 @@
       "source_file": "src/lib/stl-export.ts",
       "source_location": "L37",
       "id": "stl_export_generatecustomstlfilename",
-      "community": 11
+      "community": 5
     },
     {
       "label": "generateSimpleSteppedSTLFilename()",
@@ -3849,7 +3897,7 @@
       "source_file": "src/lib/stl-export.ts",
       "source_location": "L48",
       "id": "stl_export_generatesimplesteppedstlfilename",
-      "community": 11
+      "community": 5
     },
     {
       "label": "tray-model.test.ts",
@@ -3857,7 +3905,7 @@
       "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/lib/tray-model.test.ts",
       "source_location": "L1",
       "id": "tray_model_test",
-      "community": 12
+      "community": 8
     },
     {
       "label": "tray-model.ts",
@@ -3865,7 +3913,7 @@
       "source_file": "src/lib/tray-model.ts",
       "source_location": "L1",
       "id": "tray_model",
-      "community": 2
+      "community": 1
     },
     {
       "label": "getGridSpacingAxes()",
@@ -3873,7 +3921,7 @@
       "source_file": "src/lib/tray-model.ts",
       "source_location": "L26",
       "id": "tray_model_getgridspacingaxes",
-      "community": 2
+      "community": 1
     },
     {
       "label": "getGridBoundarySpacingAxes()",
@@ -3881,7 +3929,7 @@
       "source_file": "src/lib/tray-model.ts",
       "source_location": "L33",
       "id": "tray_model_getgridboundaryspacingaxes",
-      "community": 2
+      "community": 1
     },
     {
       "label": "createTrayModel()",
@@ -3889,7 +3937,7 @@
       "source_file": "src/lib/tray-model.ts",
       "source_location": "L45",
       "id": "tray_model_createtraymodel",
-      "community": 2
+      "community": 1
     },
     {
       "label": "calculateTrayDimensions()",
@@ -3897,7 +3945,7 @@
       "source_file": "src/lib/tray-model.ts",
       "source_location": "L124",
       "id": "tray_model_calculatetraydimensions",
-      "community": 2
+      "community": 1
     },
     {
       "label": "utils.ts",
@@ -3905,7 +3953,7 @@
       "source_file": "src/lib/utils.ts",
       "source_location": "L1",
       "id": "utils",
-      "community": 2
+      "community": 1
     },
     {
       "label": "cn()",
@@ -3913,7 +3961,7 @@
       "source_file": "src/lib/utils.ts",
       "source_location": "L4",
       "id": "utils_cn",
-      "community": 2
+      "community": 1
     },
     {
       "label": "tray.worker.test.ts",
@@ -3921,7 +3969,7 @@
       "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/lib/worker/tray.worker.test.ts",
       "source_location": "L1",
       "id": "tray_worker_test",
-      "community": 12
+      "community": 8
     },
     {
       "label": "createWorkerSelf()",
@@ -3929,7 +3977,7 @@
       "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/lib/worker/tray.worker.test.ts",
       "source_location": "L44",
       "id": "tray_worker_test_createworkerself",
-      "community": 12
+      "community": 8
     },
     {
       "label": "loadWorkerModule()",
@@ -3937,7 +3985,7 @@
       "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/lib/worker/tray.worker.test.ts",
       "source_location": "L51",
       "id": "tray_worker_test_loadworkermodule",
-      "community": 12
+      "community": 8
     },
     {
       "label": "tray.worker.ts",
@@ -3953,7 +4001,7 @@
       "source_file": "src/lib/worker/worker-service.test.ts",
       "source_location": "L1",
       "id": "worker_service_test",
-      "community": 12
+      "community": 0
     },
     {
       "label": "FakeWorker",
@@ -3961,7 +4009,7 @@
       "source_file": "src/lib/worker/worker-service.test.ts",
       "source_location": "L8",
       "id": "worker_service_test_fakeworker",
-      "community": 12
+      "community": 0
     },
     {
       "label": ".constructor()",
@@ -3969,7 +4017,7 @@
       "source_file": "src/lib/worker/worker-service.test.ts",
       "source_location": "L16",
       "id": "worker_service_test_fakeworker_constructor",
-      "community": 12
+      "community": 0
     },
     {
       "label": ".emit()",
@@ -3977,7 +4025,7 @@
       "source_file": "src/lib/worker/worker-service.test.ts",
       "source_location": "L22",
       "id": "worker_service_test_fakeworker_emit",
-      "community": 12
+      "community": 0
     },
     {
       "label": "worker-service.ts",
@@ -3985,7 +4033,7 @@
       "source_file": "src/lib/worker/worker-service.ts",
       "source_location": "L1",
       "id": "worker_service",
-      "community": 4
+      "community": 0
     },
     {
       "label": "generateRequestId()",
@@ -3993,7 +4041,7 @@
       "source_file": "src/lib/worker/worker-service.ts",
       "source_location": "L12",
       "id": "worker_service_generaterequestid",
-      "community": 4
+      "community": 16
     },
     {
       "label": "TrayWorkerService",
@@ -4001,7 +4049,7 @@
       "source_file": "src/lib/worker/worker-service.ts",
       "source_location": "L16",
       "id": "worker_service_trayworkerservice",
-      "community": 4
+      "community": 16
     },
     {
       "label": ".constructor()",
@@ -4009,7 +4057,7 @@
       "source_file": "src/lib/worker/worker-service.ts",
       "source_location": "L22",
       "id": "worker_service_trayworkerservice_constructor",
-      "community": 4
+      "community": 16
     },
     {
       "label": ".initWorker()",
@@ -4017,7 +4065,7 @@
       "source_file": "src/lib/worker/worker-service.ts",
       "source_location": "L28",
       "id": "worker_service_trayworkerservice_initworker",
-      "community": 4
+      "community": 16
     },
     {
       "label": ".handleMessage()",
@@ -4025,7 +4073,7 @@
       "source_file": "src/lib/worker/worker-service.ts",
       "source_location": "L36",
       "id": "worker_service_trayworkerservice_handlemessage",
-      "community": 4
+      "community": 16
     },
     {
       "label": ".generateGrid()",
@@ -4033,7 +4081,7 @@
       "source_file": "src/lib/worker/worker-service.ts",
       "source_location": "L52",
       "id": "worker_service_trayworkerservice_generategrid",
-      "community": 4
+      "community": 16
     },
     {
       "label": ".generateCustom()",
@@ -4041,7 +4089,7 @@
       "source_file": "src/lib/worker/worker-service.ts",
       "source_location": "L69",
       "id": "worker_service_trayworkerservice_generatecustom",
-      "community": 4
+      "community": 16
     },
     {
       "label": ".generateStepped()",
@@ -4049,7 +4097,7 @@
       "source_file": "src/lib/worker/worker-service.ts",
       "source_location": "L86",
       "id": "worker_service_trayworkerservice_generatestepped",
-      "community": 4
+      "community": 16
     },
     {
       "label": ".generateSimpleStepped()",
@@ -4057,7 +4105,7 @@
       "source_file": "src/lib/worker/worker-service.ts",
       "source_location": "L103",
       "id": "worker_service_trayworkerservice_generatesimplestepped",
-      "community": 4
+      "community": 16
     },
     {
       "label": ".generateSteppedOutlinePreview()",
@@ -4065,7 +4113,7 @@
       "source_file": "src/lib/worker/worker-service.ts",
       "source_location": "L124",
       "id": "worker_service_trayworkerservice_generatesteppedoutlinepreview",
-      "community": 4
+      "community": 16
     },
     {
       "label": ".exportSTL()",
@@ -4073,7 +4121,7 @@
       "source_file": "src/lib/worker/worker-service.ts",
       "source_location": "L148",
       "id": "worker_service_trayworkerservice_exportstl",
-      "community": 4
+      "community": 16
     },
     {
       "label": ".terminate()",
@@ -4081,7 +4129,7 @@
       "source_file": "src/lib/worker/worker-service.ts",
       "source_location": "L171",
       "id": "worker_service_trayworkerservice_terminate",
-      "community": 4
+      "community": 16
     },
     {
       "label": "setup.ts",
@@ -4089,7 +4137,7 @@
       "source_file": "src/test/setup.ts",
       "source_location": "L1",
       "id": "setup",
-      "community": 19
+      "community": 21
     },
     {
       "label": "defineWritableValue()",
@@ -4097,7 +4145,7 @@
       "source_file": "src/test/setup.ts",
       "source_location": "L5",
       "id": "setup_definewritablevalue",
-      "community": 19
+      "community": 21
     },
     {
       "label": "MockWorker",
@@ -4105,7 +4153,7 @@
       "source_file": "src/test/setup.ts",
       "source_location": "L19",
       "id": "setup_mockworker",
-      "community": 19
+      "community": 21
     },
     {
       "label": "MockResizeObserver",
@@ -4113,7 +4161,7 @@
       "source_file": "src/test/setup.ts",
       "source_location": "L29",
       "id": "setup_mockresizeobserver",
-      "community": 19
+      "community": 21
     },
     {
       "label": "MockIntersectionObserver",
@@ -4121,7 +4169,7 @@
       "source_file": "src/test/setup.ts",
       "source_location": "L35",
       "id": "setup_mockintersectionobserver",
-      "community": 19
+      "community": 21
     },
     {
       "label": "custom-tray.ts",
@@ -4137,7 +4185,7 @@
       "source_file": "src/types/jscad.d.ts",
       "source_location": "L1",
       "id": "jscad_d",
-      "community": 24
+      "community": 26
     },
     {
       "label": "tray.ts",
@@ -4145,7 +4193,7 @@
       "source_file": "src/types/tray.ts",
       "source_location": "L1",
       "id": "tray",
-      "community": 2
+      "community": 1
     },
     {
       "label": "vitest.config.ts",
@@ -4153,7 +4201,7 @@
       "source_file": "vitest.config.ts",
       "source_location": "L1",
       "id": "vitest_config",
-      "community": 2
+      "community": 1
     },
     {
       "label": "vitest.integration.config.ts",
@@ -4161,7 +4209,7 @@
       "source_file": "vitest.integration.config.ts",
       "source_location": "L1",
       "id": "vitest_integration_config",
-      "community": 2
+      "community": 1
     }
   ],
   "links": [
@@ -7310,6 +7358,18 @@
       "confidence_score": 1.0
     },
     {
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/hooks/useActionPanelResize.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_src": "useactionpanelresize_test",
+      "_tgt": "useactionpanelresize",
+      "source": "useactionpanelresize_test",
+      "target": "useactionpanelresize",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/hooks/useActionPanelResize.ts",
@@ -7331,6 +7391,54 @@
       "_tgt": "useautopreview_useautopreview",
       "source": "useautopreview",
       "target": "useautopreview_useautopreview",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/hooks/useCanvasKeyboard.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_src": "usecanvaskeyboard_test",
+      "_tgt": "usecanvaskeyboard",
+      "source": "usecanvaskeyboard_test",
+      "target": "usecanvaskeyboard",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/hooks/useCanvasKeyboard.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "_src": "usecanvaskeyboard_test",
+      "_tgt": "custom_tray",
+      "source": "usecanvaskeyboard_test",
+      "target": "custom_tray",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/hooks/useCanvasKeyboard.test.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "_src": "usecanvaskeyboard_test",
+      "_tgt": "usecanvaskeyboard_test_createslot",
+      "source": "usecanvaskeyboard_test",
+      "target": "usecanvaskeyboard_test_createslot",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/hooks/useCanvasKeyboard.test.ts",
+      "source_location": "L19",
+      "weight": 1.0,
+      "_src": "usecanvaskeyboard_test",
+      "_tgt": "usecanvaskeyboard_test_dispatchkeyboardevent",
+      "source": "usecanvaskeyboard_test",
+      "target": "usecanvaskeyboard_test_dispatchkeyboardevent",
       "confidence_score": 1.0
     },
     {
@@ -7583,6 +7691,30 @@
       "_tgt": "usecustomlayout_usecustomlayout",
       "source": "usecustomlayout",
       "target": "usecustomlayout_usecustomlayout",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/hooks/useLiveSlotUpdates.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_src": "useliveslotupdates_test",
+      "_tgt": "canvas_types",
+      "source": "useliveslotupdates_test",
+      "target": "canvas_types",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/hooks/useLiveSlotUpdates.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_src": "useliveslotupdates_test",
+      "_tgt": "useliveslotupdates",
+      "source": "useliveslotupdates_test",
+      "target": "useliveslotupdates",
       "confidence_score": 1.0
     },
     {
@@ -8447,6 +8579,18 @@
       "_tgt": "usetraymodel_usetraymodel",
       "source": "usetraymodel",
       "target": "usetraymodel_usetraymodel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/hooks/useUndoHistory.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_src": "useundohistory_test",
+      "_tgt": "useundohistory",
+      "source": "useundohistory_test",
+      "target": "useundohistory",
       "confidence_score": 1.0
     },
     {
