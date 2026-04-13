@@ -806,7 +806,7 @@
     {
       "label": "panels.test.tsx",
       "file_type": "code",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L1",
       "id": "panels_test",
       "community": 3
@@ -814,7 +814,7 @@
     {
       "label": "SectionHeader()",
       "file_type": "code",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L33",
       "id": "panels_test_sectionheader",
       "community": 3
@@ -822,7 +822,7 @@
     {
       "label": "BaseHoleConfig()",
       "file_type": "code",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L50",
       "id": "panels_test_baseholeconfig",
       "community": 3
@@ -830,7 +830,7 @@
     {
       "label": "Switch()",
       "file_type": "code",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L56",
       "id": "panels_test_switch",
       "community": 3
@@ -838,7 +838,7 @@
     {
       "label": "Select()",
       "file_type": "code",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L88",
       "id": "panels_test_select",
       "community": 3
@@ -846,7 +846,7 @@
     {
       "label": "SelectTrigger()",
       "file_type": "code",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L103",
       "id": "panels_test_selecttrigger",
       "community": 3
@@ -854,7 +854,7 @@
     {
       "label": "SelectValue()",
       "file_type": "code",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L106",
       "id": "panels_test_selectvalue",
       "community": 3
@@ -862,7 +862,7 @@
     {
       "label": "SelectContent()",
       "file_type": "code",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L110",
       "id": "panels_test_selectcontent",
       "community": 3
@@ -870,7 +870,7 @@
     {
       "label": "SelectItem()",
       "file_type": "code",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L113",
       "id": "panels_test_selectitem",
       "community": 3
@@ -878,7 +878,7 @@
     {
       "label": "ParamSlider()",
       "file_type": "code",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L131",
       "id": "panels_test_paramslider",
       "community": 3
@@ -886,7 +886,7 @@
     {
       "label": "ParamIOButtons()",
       "file_type": "code",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L202",
       "id": "panels_test_paramiobuttons",
       "community": 3
@@ -6760,7 +6760,7 @@
     {
       "relation": "imports_from",
       "confidence": "EXTRACTED",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L4",
       "weight": 1.0,
       "_src": "panels_test",
@@ -6772,7 +6772,7 @@
     {
       "relation": "imports_from",
       "confidence": "EXTRACTED",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L5",
       "weight": 1.0,
       "_src": "panels_test",
@@ -6784,7 +6784,7 @@
     {
       "relation": "imports_from",
       "confidence": "EXTRACTED",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L6",
       "weight": 1.0,
       "_src": "panels_test",
@@ -6796,7 +6796,7 @@
     {
       "relation": "imports_from",
       "confidence": "EXTRACTED",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L7",
       "weight": 1.0,
       "_src": "panels_test",
@@ -6808,7 +6808,7 @@
     {
       "relation": "imports_from",
       "confidence": "EXTRACTED",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L8",
       "weight": 1.0,
       "_src": "panels_test",
@@ -6820,7 +6820,7 @@
     {
       "relation": "imports_from",
       "confidence": "EXTRACTED",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L9",
       "weight": 1.0,
       "_src": "panels_test",
@@ -6832,7 +6832,7 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L33",
       "weight": 1.0,
       "_src": "panels_test",
@@ -6844,7 +6844,7 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L50",
       "weight": 1.0,
       "_src": "panels_test",
@@ -6856,7 +6856,7 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L56",
       "weight": 1.0,
       "_src": "panels_test",
@@ -6868,7 +6868,7 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L88",
       "weight": 1.0,
       "_src": "panels_test",
@@ -6880,7 +6880,7 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L103",
       "weight": 1.0,
       "_src": "panels_test",
@@ -6892,7 +6892,7 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L106",
       "weight": 1.0,
       "_src": "panels_test",
@@ -6904,7 +6904,7 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L110",
       "weight": 1.0,
       "_src": "panels_test",
@@ -6916,7 +6916,7 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L113",
       "weight": 1.0,
       "_src": "panels_test",
@@ -6928,7 +6928,7 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L131",
       "weight": 1.0,
       "_src": "panels_test",
@@ -6940,7 +6940,7 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "src/components/panels.test.tsx",
+      "source_file": "/Users/bianyunpeng/Desktop/project/mmga/tray-creator/src/components/panels.test.tsx",
       "source_location": "L202",
       "weight": 1.0,
       "_src": "panels_test",
