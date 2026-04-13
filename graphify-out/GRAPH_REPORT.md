@@ -1,11 +1,11 @@
 # Graph Report - .  (2026-04-13)
 
 ## Corpus Check
-- 142 files · ~0 words
+- 144 files · ~0 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 513 nodes · 962 edges · 24 communities detected
+- 515 nodes · 966 edges · 25 communities detected
 - Extraction: 83% EXTRACTED · 17% INFERRED · 0% AMBIGUOUS · INFERRED: 165 edges (avg confidence: 0.5)
 - Token cost: 0 input · 0 output
 
@@ -31,36 +31,36 @@ Cohesion: 0.05
 Nodes (14): FailingFileReader, analyzeBridgeWarning(), clusterConnectivityCircles(), getCircleGap(), getEffectiveBridgeGap(), exportSteppedModelFiles(), getSteppedSTLFilename(), buildPerfGroups() (+6 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.04
-Nodes (13): calculateEffectiveBaseplate(), getEllipseBoundingBox(), getSlotLabelRotation(), normalizeDisplayAngle(), calculateCanvasDragSnap(), roundToStep(), getEllipsePolygon(), getPolygonBuffer() (+5 more)
+Cohesion: 0.05
+Nodes (9): calculateEffectiveBaseplate(), getEllipseBoundingBox(), getSlotLabelRotation(), normalizeDisplayAngle(), calculateCanvasDragSnap(), roundToStep(), getSvgPointFromClient(), handlePointerDown() (+1 more)
 
 ### Community 2 - "Community 2"
-Cohesion: 0.06
-Nodes (7): calculateCustomTrayDimensions(), calculateEffectiveBaseplate(), createCustomTrayModel(), calculateTrayDimensions(), createTrayModel(), getGridBoundarySpacingAxes(), getGridSpacingAxes()
+Cohesion: 0.07
+Nodes (0): 
 
 ### Community 3 - "Community 3"
-Cohesion: 0.06
-Nodes (7): buildGridParamsBlob(), exportGridModelFiles(), getGridSTLFilename(), jscadToThreeGeometry(), projectTo2D(), generateRequestId(), TrayWorkerService
+Cohesion: 0.07
+Nodes (13): getSelectionBounds(), getSelectionCenter(), getEllipsePolygon(), getPolygonBuffer(), buildMirrorInsertSlots(), buildMirrorMoveUpdates(), getSelectionBounds(), mirrorSlot() (+5 more)
 
 ### Community 4 - "Community 4"
+Cohesion: 0.1
+Nodes (12): buildGridParamsBlob(), exportGridModelFiles(), getGridSTLFilename(), getFiniteOr(), normalizeGridParams(), replaceGridParams(), resetGridParams(), updateGridParam() (+4 more)
+
+### Community 5 - "Community 5"
 Cohesion: 0.13
 Nodes (15): buildSummary(), createDraft(), defaultDraftTitle(), deleteDraft(), draftRecordKey(), exportDraft(), getDraft(), listDrafts() (+7 more)
 
-### Community 5 - "Community 5"
+### Community 6 - "Community 6"
 Cohesion: 0.1
 Nodes (5): calculateCustomEffectiveDimensions(), resolveCustomBoundarySpacing(), buildCustomParamsBlob(), exportCustomModelFiles(), getCustomSTLFilename()
 
-### Community 6 - "Community 6"
-Cohesion: 0.1
-Nodes (7): buildMirrorInsertSlots(), buildMirrorMoveUpdates(), getSelectionBounds(), mirrorSlot(), normalizeRotation(), resolveMirrorAxis(), roundToStep()
-
 ### Community 7 - "Community 7"
-Cohesion: 0.17
-Nodes (18): arrangeRowSymmetrically(), buildAlternatingOrder(), buildCompactCandidates(), buildGroupCompactCandidates(), calculateDisplacement(), composeGroupPlacements(), createCompactSeed(), evaluateCompactCandidate() (+10 more)
+Cohesion: 0.09
+Nodes (4): jscadToThreeGeometry(), projectTo2D(), generateRequestId(), TrayWorkerService
 
 ### Community 8 - "Community 8"
-Cohesion: 0.13
-Nodes (5): getFiniteOr(), normalizeGridParams(), replaceGridParams(), resetGridParams(), updateGridParam()
+Cohesion: 0.17
+Nodes (18): arrangeRowSymmetrically(), buildAlternatingOrder(), buildCompactCandidates(), buildGroupCompactCandidates(), calculateDisplacement(), composeGroupPlacements(), createCompactSeed(), evaluateCompactCandidate() (+10 more)
 
 ### Community 9 - "Community 9"
 Cohesion: 0.17
@@ -87,32 +87,32 @@ Cohesion: 0.14
 Nodes (0): 
 
 ### Community 15 - "Community 15"
-Cohesion: 0.18
-Nodes (2): getSelectionBounds(), getSelectionCenter()
+Cohesion: 0.15
+Nodes (0): 
 
 ### Community 16 - "Community 16"
-Cohesion: 0.2
+Cohesion: 0.18
 Nodes (0): 
 
 ### Community 17 - "Community 17"
-Cohesion: 0.29
+Cohesion: 0.2
 Nodes (0): 
 
 ### Community 18 - "Community 18"
+Cohesion: 0.28
+Nodes (3): calculateCustomTrayDimensions(), calculateEffectiveBaseplate(), createCustomTrayModel()
+
+### Community 19 - "Community 19"
 Cohesion: 0.4
 Nodes (3): MockIntersectionObserver, MockResizeObserver, MockWorker
 
-### Community 19 - "Community 19"
+### Community 20 - "Community 20"
 Cohesion: 0.5
 Nodes (0): 
 
-### Community 20 - "Community 20"
-Cohesion: 1.0
-Nodes (2): collect_code_files(), main()
-
 ### Community 21 - "Community 21"
 Cohesion: 1.0
-Nodes (0): 
+Nodes (2): collect_code_files(), main()
 
 ### Community 22 - "Community 22"
 Cohesion: 1.0
@@ -122,14 +122,18 @@ Nodes (0):
 Cohesion: 1.0
 Nodes (0): 
 
+### Community 24 - "Community 24"
+Cohesion: 1.0
+Nodes (0): 
+
 ## Knowledge Gaps
 - **3 isolated node(s):** `MockWorker`, `MockResizeObserver`, `MockIntersectionObserver`
   These have ≤1 connection - possible missing edges or undocumented components.
-- **Thin community `Community 21`** (1 nodes): `next-env.d.ts`
+- **Thin community `Community 22`** (1 nodes): `next-env.d.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 22`** (1 nodes): `next.config.ts`
+- **Thin community `Community 23`** (1 nodes): `next.config.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 23`** (1 nodes): `jscad.d.ts`
+- **Thin community `Community 24`** (1 nodes): `jscad.d.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions
@@ -148,4 +152,4 @@ _Questions this graph is uniquely positioned to answer:_
 - **Should `Community 0` be split into smaller, more focused modules?**
   _Cohesion score 0.05 - nodes in this community are weakly interconnected._
 - **Should `Community 1` be split into smaller, more focused modules?**
-  _Cohesion score 0.04 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05 - nodes in this community are weakly interconnected._
