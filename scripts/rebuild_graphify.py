@@ -2,13 +2,18 @@
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
+
+LOCAL_GRAPHIFY_PATH = Path(__file__).resolve().parents[1] / "tmp" / "graphify-py"
+if LOCAL_GRAPHIFY_PATH.exists():
+    sys.path.insert(0, str(LOCAL_GRAPHIFY_PATH))
 
 from graphify.analyze import god_nodes, suggest_questions, surprising_connections
 from graphify.build import build_from_json
 from graphify.cluster import cluster, score_all
 from graphify.detect import _is_ignored, _is_noise_dir, _load_graphifyignore
-from graphify.export import to_json
+from graphify.export import to_html, to_json
 from graphify.extract import extract
 from graphify.report import generate
 
@@ -42,6 +47,21 @@ CODE_EXTENSIONS = {
     ".mm",
 }
 
+TEST_DIR_NAMES = {"test", "tests", "__test__", "__tests__"}
+
+
+def is_test_path(path: Path, root: Path) -> bool:
+    lower_name = path.name.lower()
+    if ".test." in lower_name or ".spec." in lower_name:
+        return True
+
+    try:
+        relative_parts = path.relative_to(root).parts
+    except ValueError:
+        relative_parts = path.parts
+
+    return any(part.lower() in TEST_DIR_NAMES for part in relative_parts[:-1])
+
 
 def collect_code_files(root: Path) -> list[Path]:
     ignore_patterns = _load_graphifyignore(root)
@@ -59,6 +79,7 @@ def collect_code_files(root: Path) -> list[Path]:
             for name in dirnames
             if not name.startswith(".")
             and name != "graphify-out"
+            and name.lower() not in TEST_DIR_NAMES
             and not _is_noise_dir(name)
             and not _is_ignored(current_dir / name, root, ignore_patterns)
         ]
@@ -68,6 +89,8 @@ def collect_code_files(root: Path) -> list[Path]:
             if filename.startswith("."):
                 continue
             if path.suffix.lower() not in CODE_EXTENSIONS:
+                continue
+            if is_test_path(path, root):
                 continue
             if _is_ignored(path, root, ignore_patterns):
                 continue
@@ -121,6 +144,7 @@ def main() -> int:
     )
     (out_dir / "GRAPH_REPORT.md").write_text(report, encoding="utf-8")
     to_json(graph, communities, str(out_dir / "graph.json"))
+    to_html(graph, communities, str(out_dir / "graph.html"), community_labels=labels)
 
     print(
         f"[graphify rebuild] Rebuilt clean code graph: "
