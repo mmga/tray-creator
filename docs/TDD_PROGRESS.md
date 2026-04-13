@@ -62,6 +62,29 @@
 
 ## 进度记录
 
+### 2026-04-13 - 补齐下载与 ID 桥接测试
+- 范围：继续推进 `lib` 层扫尾 TDD，将 `download-port.ts` 与 `id-factory.ts` 这两个轻量桥接文件纳入单测闭环。
+- 改动摘要：
+  - 新增 `src/lib/download-port.test.ts`，覆盖 Blob URL 创建、临时锚点挂载、下载文件名透传、点击触发，以及 DOM / URL 清理回收。
+  - 新增 `src/lib/id-factory.test.ts`，覆盖 `randomIdFactory.createId()` 对 `crypto.randomUUID()` 的代理行为。
+  - 对下载测试显式 mock 了 `HTMLAnchorElement.prototype.click()`，避免 jsdom 导航噪声污染全量测试输出。
+  - 通过这组测试把两个长期显示为 `0%` 的桥接文件从 coverage 空洞里清掉。
+- 验证命令：
+  - `npx vitest run src/lib/download-port.test.ts src/lib/id-factory.test.ts`
+  - `npm run test:unit`
+  - `npm run test:coverage`
+  - `npm run lint`
+- 覆盖率影响：
+  - 总 statements 从 `66.91%` 提升到 `67.16%`
+  - `lib` 整体从 `87.43%` 提升到 `87.93%` statements
+  - `src/lib/download-port.ts` 达到 `100%` statements / `100%` branches
+  - `src/lib/id-factory.ts` 达到 `100%` statements / `100%` branches
+- 当前判断：
+  - `lib` 层剩余的轻量桥接空白已经进一步收缩，当前更值得继续推进的目标重新回到 `LayoutCanvas` 一类用户可感知交互面，或者更大体量的 mode hooks。
+  - 当前 coverage 里的明显 “低成本高收益” 空白已经越来越少，后续单次增量会更依赖复杂交互和编排层测试。
+- 下一步：
+  - 优先补 `LayoutCanvas` / `TrayViewer` 的高价值交互回归，或者转向 `useTrayModel.ts` / `useCustomLayout.ts` 这类 mode hooks 的覆盖可见性。
+
 ### 2026-04-13 - 补齐 useCanvasZoom 手势与缩放测试
 - 范围：继续推进 hooks 编排层 TDD，将 `useCanvasZoom.ts` 的滚轮缩放、双指手势和 viewBox 推导纳入 unit coverage。
 - 改动摘要：
