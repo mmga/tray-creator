@@ -24,7 +24,8 @@
       "Skill(claude-hud:setup)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(/Users/bianyunpeng/.local/pipx/venvs/graphifyy/bin/python:*)"
     ]
   }
 }

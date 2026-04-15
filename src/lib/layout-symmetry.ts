@@ -27,7 +27,7 @@ export function roundToStep(value: number) {
 }
 
 function normalizeRotation(value: number) {
-  const normalized = ((value + 180) % 360 + 360) % 360 - 180;
+  const normalized = ((((value + 180) % 360) + 360) % 360) - 180;
   return normalized === -180 ? 180 : normalized;
 }
 

@@ -74,7 +74,11 @@ export function useCanvasKeyboard({
       });
     }
 
-    if ((event.ctrlKey || event.metaKey) && event.key === "z" && !event.shiftKey) {
+    if (
+      (event.ctrlKey || event.metaKey) &&
+      event.key === "z" &&
+      !event.shiftKey
+    ) {
       event.preventDefault();
       onUndo?.();
       return;
