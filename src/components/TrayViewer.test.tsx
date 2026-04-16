@@ -179,4 +179,42 @@ describe("TrayViewer", { timeout: 15000 }, () => {
       }),
     );
   });
+
+  it("prevents default on context loss and removes listeners on unmount", () => {
+    const { unmount } = render(
+      <TrayViewer
+        geometry={createGeometry()}
+        isStale={false}
+        isGenerating={false}
+      />,
+    );
+
+    const lostHandlerCall = glDomElement.addEventListener.mock.calls.find(
+      ([eventName]) => eventName === "webglcontextlost",
+    );
+    const restoredHandlerCall = glDomElement.addEventListener.mock.calls.find(
+      ([eventName]) => eventName === "webglcontextrestored",
+    );
+
+    expect(lostHandlerCall).toBeDefined();
+    expect(restoredHandlerCall).toBeDefined();
+
+    const preventDefault = vi.fn();
+    const lostHandler = lostHandlerCall?.[1] as ((event: Event) => void) | undefined;
+    const restoredHandler = restoredHandlerCall?.[1] as (() => void) | undefined;
+
+    lostHandler?.({ preventDefault } as unknown as Event);
+    expect(preventDefault).toHaveBeenCalledTimes(1);
+
+    unmount();
+
+    expect(glDomElement.removeEventListener).toHaveBeenCalledWith(
+      "webglcontextlost",
+      lostHandler,
+    );
+    expect(glDomElement.removeEventListener).toHaveBeenCalledWith(
+      "webglcontextrestored",
+      restoredHandler,
+    );
+  });
 });

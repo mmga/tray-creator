@@ -62,6 +62,31 @@
 
 ## 进度记录
 
+### 2026-04-16 - 补齐 LayoutCanvas 框选/控制区与 TrayViewer context lost 测试
+- 范围：继续推进高价值 UI 交互 TDD，补 `LayoutCanvas` 的框选与控制区交互，同时清掉 `TrayViewer` 剩余的 `webglcontextlost` 分支。
+- 改动摘要：
+  - 在 `src/components/LayoutCanvas.test.tsx` 中新增 Ctrl 框选测试，覆盖画布空白区域拖拽选择、保留已有选择集并把框选命中的槽位并入选区的路径。
+  - 新增 `LayoutCanvas` 控制区测试，覆盖缩放重置、快捷键提示打开/关闭，以及 action panel resizer 对 `startActionPanelResize()` 的路由。
+  - 在 `src/components/TrayViewer.test.tsx` 中新增 context lost 测试，覆盖 `preventDefault()` 调用以及组件卸载时 `webglcontextlost` / `webglcontextrestored` 监听清理。
+  - 通过这组测试把两个高频画布容器从“主路径可用”继续推进到“交互边角不易回退”的层次。
+- 验证命令：
+  - `pnpm exec vitest run src/components/LayoutCanvas.test.tsx`
+  - `pnpm exec vitest run src/components/TrayViewer.test.tsx`
+  - `pnpm test`
+  - `pnpm test:coverage`
+  - `pnpm lint`
+- 覆盖率影响：
+  - 总 statements 从 `68.41%` 提升到 `69.04%`
+  - `components` 整体从 `70.91%` 提升到 `74.96%` statements
+  - `src/components/LayoutCanvas.tsx` 从 `67.54%` 提升到 `76.39%` statements
+  - `src/components/LayoutCanvas.tsx` 的 branches 从 `58.45%` 提升到 `65.7%`
+  - `src/components/TrayViewer.tsx` 从 `94.02%` 提升到 `95.52%` statements，并达到 `100%` lines
+- 当前判断：
+  - `LayoutCanvas` 的主要高价值交互现在已经覆盖到选中、旋转、托盘缩放、框选和控制区，不再只是依赖浅层容器回归。
+  - 当前组件层的剩余高价值空白，已经更集中在 `LayoutCanvas` 的底部/角落 resize 分支、空白点击清选，以及 `TrayViewer` 的 loading 生命周期细枝末节。
+- 下一步：
+  - 优先继续补 `LayoutCanvas` 的 bottom/corner resize 与空白点击清选，或者转回 `SteppedPanel` / `SimpleSteppedPanel` 的剩余状态分支。
+
 ### 2026-04-16 - 补齐 LayoutCanvas 旋转与托盘缩放交互测试
 - 范围：继续推进高价值 UI 交互 TDD，将 `LayoutCanvas` 里此前未被保护的旋转实时更新与 simple stepped 托盘缩放链路纳入回归面。
 - 改动摘要：

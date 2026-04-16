@@ -771,4 +771,156 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     });
     expect(onEditInteractionChange).toHaveBeenLastCalledWith(false);
   });
+
+  it("adds slots through ctrl marquee selection on the canvas background", async () => {
+    const onSelectionChange = vi.fn();
+    const { container } = render(
+      <LayoutCanvas
+        params={createCustomParams({
+          slots: [
+            {
+              id: "slot-1",
+              x: 100,
+              y: 120,
+              shape: "circle",
+              width: 25,
+              height: 25,
+              rotation: 0,
+            },
+            {
+              id: "slot-2",
+              x: 140,
+              y: 100,
+              shape: "circle",
+              width: 25,
+              height: 25,
+              rotation: 0,
+            },
+          ],
+        })}
+        onUpdateSlot={vi.fn()}
+        onRemoveSlot={vi.fn()}
+        onSelectionChange={onSelectionChange}
+      />,
+    );
+
+    const svg = container.querySelector("svg");
+    const viewport = svg?.parentElement as HTMLDivElement | null;
+    expect(svg).not.toBeNull();
+    expect(viewport).not.toBeNull();
+
+    Object.defineProperty(viewport, "getBoundingClientRect", {
+      configurable: true,
+      value: () => ({
+        x: 0,
+        y: 0,
+        left: 0,
+        top: 0,
+        right: 400,
+        bottom: 400,
+        width: 400,
+        height: 400,
+        toJSON: () => "",
+      }),
+    });
+
+    fireEvent.pointerDown(screen.getByTestId("canvas-slot-slot-1"), {
+      pointerId: 1,
+      pointerType: "mouse",
+      clientX: 100,
+      clientY: 140,
+    });
+    fireEvent.pointerUp(svg!, {
+      pointerId: 1,
+      pointerType: "mouse",
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("canvas-slot-layer")).toHaveAttribute(
+        "data-selected-ids",
+        "slot-1",
+      );
+    });
+
+    onSelectionChange.mockClear();
+
+    fireEvent.pointerDown(svg!, {
+      pointerId: 2,
+      pointerType: "mouse",
+      clientX: 90,
+      clientY: 110,
+      ctrlKey: true,
+    });
+    fireEvent.pointerMove(svg!, {
+      pointerId: 2,
+      pointerType: "mouse",
+      clientX: 150,
+      clientY: 170,
+      ctrlKey: true,
+    });
+    fireEvent.pointerUp(svg!, {
+      pointerId: 2,
+      pointerType: "mouse",
+      clientX: 150,
+      clientY: 170,
+      ctrlKey: true,
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("canvas-slot-layer")).toHaveAttribute(
+        "data-selected-ids",
+        "slot-1,slot-2",
+      );
+    });
+    expect(onSelectionChange).toHaveBeenLastCalledWith(["slot-1", "slot-2"]);
+  });
+
+  it("routes zoom controls, keyboard hints, and action panel resize interactions", async () => {
+    const { container } = render(
+      <LayoutCanvas
+        params={createCustomParams()}
+        onUpdateSlot={vi.fn()}
+        onRemoveSlot={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("keyboard-hints")).toHaveAttribute(
+      "data-open",
+      "false",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "显示快捷键" }));
+    expect(screen.getByTestId("keyboard-hints")).toHaveAttribute(
+      "data-open",
+      "true",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "关闭快捷键" }));
+    expect(screen.getByTestId("keyboard-hints")).toHaveAttribute(
+      "data-open",
+      "false",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "重置缩放" }));
+    expect(resetZoomMock).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "打开镜像面板" }));
+    expect(screen.getByTestId("alignment-toolbar")).toHaveAttribute(
+      "data-active-tab-id",
+      "mirror",
+    );
+
+    const panelResizer = container.querySelector("div.cursor-col-resize");
+    expect(panelResizer).not.toBeNull();
+
+    fireEvent.pointerDown(panelResizer!, {
+      pointerId: 5,
+      pointerType: "mouse",
+      clientX: 284,
+    });
+
+    await waitFor(() => {
+      expect(startActionPanelResizeMock).toHaveBeenCalledWith(284);
+    });
+  });
 });
