@@ -62,6 +62,30 @@
 
 ## 进度记录
 
+### 2026-04-16 - 补齐 SteppedPanel preview 清理与性能样本测试
+- 范围：继续推进高价值 UI 面板 TDD，补 `SteppedPanel` 中此前未被回归保护的 preview 清理分支与性能样本入口。
+- 改动摘要：
+  - 扩展 `src/components/panels.test.tsx` 里的 perf mock，使测试可以按场景打开 `SteppedPanel` 的性能测量区，而不是长期停留在 `isPerfEnabled() === false` 的浅层覆盖。
+  - 新增 preview 清理测试，覆盖鼠标按住预览后的 `window.blur` 清理，以及 `previewGroupId` 在分组被删掉后自动回退到 `null` 的分支。
+  - 新增 touch / lost pointer capture / repeat key 测试，覆盖 touch 锁定预览、`lostpointercapture` 收尾，以及重复按键被忽略的 guard。
+  - 新增性能样本测试，覆盖 `50 槽位` fixture 载入、`resetPerfMetrics()`、toast 提示，以及 `清空采样` 的回调链路。
+  - 这轮仍然只改测试，没有修改生产代码，说明现有实现已经能满足这些新增行为断言。
+- 验证命令：
+  - `pnpm exec vitest run src/components/panels.test.tsx`
+  - `pnpm test`
+  - `pnpm test:coverage`
+  - `pnpm lint`
+- 覆盖率影响：
+  - 总 statements 从 `69.79%` 提升到 `70.72%`
+  - `components` 整体从 `79.73%` 提升到 `82.48%` statements
+  - `src/components/SteppedPanel.tsx` 从 `65.71%` 提升到 `79.28%` statements
+  - `src/components/SteppedPanel.tsx` 的 branches 从 `71.77%` 提升到 `78.22%`
+- 当前判断：
+  - `SteppedPanel` 现在已经不只是覆盖基础点击和草稿/优化主路径，preview 状态机与 perf 辅助面板这类容易回退的边角也进入了稳定回归面。
+  - 当前组件层剩余的高价值空白更集中在 `SteppedPanel` 底部结构参数区与报价 tooltip 的少量分支，以及 `SimpleSteppedPanel` 的状态型交互。
+- 下一步：
+  - 优先继续补 `SteppedPanel` 结构参数滑杆和 tooltip 键盘/零体积分支，或者转向 `SimpleSteppedPanel` 的剩余状态分支。
+
 ### 2026-04-16 - 补齐 LayoutCanvas hover / ctrl-toggle / class 状态测试
 - 范围：继续推进 `LayoutCanvas` 的高价值交互 TDD，补 hover、Ctrl 反选、Space/panning cursor，以及 action panel resize 状态的剩余分支。
 - 改动摘要：

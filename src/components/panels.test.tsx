@@ -6,15 +6,20 @@ import { CUSTOM_LAYOUT_DEFAULTS, ELLIPSE_PRESETS } from "@/lib/custom-config";
 import { PARAM_CONFIG, DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { calculateSimpleSteppedDimensions, deriveSimpleSteppedLayout } from "@/lib/simple-stepped-layout";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
+import { buildSteppedPerfFixture } from "@/lib/stepped-perf-fixtures";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 
-const { useAutoPreviewMock, toastMock, resetPerfMetricsMock } = vi.hoisted(
-  () => ({
-    useAutoPreviewMock: vi.fn(),
-    toastMock: vi.fn(),
-    resetPerfMetricsMock: vi.fn(),
-  }),
-);
+const {
+  useAutoPreviewMock,
+  toastMock,
+  resetPerfMetricsMock,
+  isPerfEnabledMock,
+} = vi.hoisted(() => ({
+  useAutoPreviewMock: vi.fn(),
+  toastMock: vi.fn(),
+  resetPerfMetricsMock: vi.fn(),
+  isPerfEnabledMock: vi.fn(() => false),
+}));
 
 vi.mock("@/hooks/useAutoPreview", () => ({
   useAutoPreview: useAutoPreviewMock,
@@ -25,7 +30,7 @@ vi.mock("@/hooks/useToast", () => ({
 }));
 
 vi.mock("@/lib/perf", () => ({
-  isPerfEnabled: () => false,
+  isPerfEnabled: isPerfEnabledMock,
   resetPerfMetrics: resetPerfMetricsMock,
 }));
 
@@ -740,6 +745,8 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
   beforeEach(() => {
     toastMock.mockReset();
     resetPerfMetricsMock.mockReset();
+    isPerfEnabledMock.mockReset();
+    isPerfEnabledMock.mockReturnValue(false);
   });
 
   it("updates the active group and its structure override controls", () => {
@@ -1053,6 +1060,231 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     expect(onPreviewGroupChange).toHaveBeenNthCalledWith(2, null);
     expect(onPreviewGroupChange).toHaveBeenNthCalledWith(3, "group-2");
     expect(onPreviewGroupChange).toHaveBeenNthCalledWith(4, null);
+  });
+
+  it("clears preview on blur and invalidates preview groups removed from params", () => {
+    const onPreviewGroupChange = vi.fn();
+    const { rerender } = render(
+      <SteppedPanel
+        params={createSteppedParams()}
+        effectiveDimensions={{ width: 120, depth: 140 }}
+        isPreviewStale={false}
+        updateParam={vi.fn()}
+        setParams={vi.fn()}
+        onAddSlot={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+        selectedSlotIds={[]}
+        onAddGroup={vi.fn()}
+        onRemoveGroup={vi.fn()}
+        onUpdateGroupHeight={vi.fn()}
+        onUpdateGroupSmoothingOverride={vi.fn()}
+        onUpdateGroupSmoothingRadius={vi.fn()}
+        onUpdateGroupDisconnectOverride={vi.fn()}
+        onUpdateGroupDisconnectDistance={vi.fn()}
+        onSetActiveGroup={vi.fn()}
+        onMoveSelectedSlotsToGroup={vi.fn()}
+        onReorderGroups={vi.fn()}
+        previewGroupId={null}
+        onPreviewGroupChange={onPreviewGroupChange}
+        bridgeWarning={null}
+        optimizationProposals={[]}
+        isOptimizingLayout={false}
+        onGenerateOptimizationProposals={vi.fn()}
+        onApplyOptimizationProposal={vi.fn()}
+        onClearOptimizationProposals={vi.fn()}
+        onOpenDraftDialog={vi.fn()}
+        onSaveDraft={vi.fn()}
+        currentDraftId={null}
+      />,
+    );
+
+    const previewButton = screen.getAllByRole("button", {
+      name: "按住仅查看当前组",
+    })[0]!;
+    Object.defineProperty(previewButton, "setPointerCapture", {
+      configurable: true,
+      value: vi.fn(),
+    });
+
+    fireEvent.pointerDown(previewButton, { pointerId: 1, pointerType: "mouse" });
+    window.dispatchEvent(new Event("blur"));
+
+    expect(onPreviewGroupChange).toHaveBeenNthCalledWith(1, "group-1");
+    expect(onPreviewGroupChange).toHaveBeenNthCalledWith(2, null);
+
+    const nextParams = createSteppedParams();
+
+    rerender(
+      <SteppedPanel
+        params={{
+          ...nextParams,
+          slots: [],
+          groups: [nextParams.groups[0]!],
+          activeGroupId: "group-1",
+        }}
+        effectiveDimensions={{ width: 120, depth: 140 }}
+        isPreviewStale={false}
+        updateParam={vi.fn()}
+        setParams={vi.fn()}
+        onAddSlot={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+        selectedSlotIds={[]}
+        onAddGroup={vi.fn()}
+        onRemoveGroup={vi.fn()}
+        onUpdateGroupHeight={vi.fn()}
+        onUpdateGroupSmoothingOverride={vi.fn()}
+        onUpdateGroupSmoothingRadius={vi.fn()}
+        onUpdateGroupDisconnectOverride={vi.fn()}
+        onUpdateGroupDisconnectDistance={vi.fn()}
+        onSetActiveGroup={vi.fn()}
+        onMoveSelectedSlotsToGroup={vi.fn()}
+        onReorderGroups={vi.fn()}
+        previewGroupId="group-2"
+        onPreviewGroupChange={onPreviewGroupChange}
+        bridgeWarning={null}
+        optimizationProposals={[]}
+        isOptimizingLayout={false}
+        onGenerateOptimizationProposals={vi.fn()}
+        onApplyOptimizationProposal={vi.fn()}
+        onClearOptimizationProposals={vi.fn()}
+        onOpenDraftDialog={vi.fn()}
+        onSaveDraft={vi.fn()}
+        currentDraftId={null}
+      />,
+    );
+
+    expect(onPreviewGroupChange).toHaveBeenNthCalledWith(3, null);
+  });
+
+  it("supports touch preview locking, lost pointer capture cleanup, and repeat-key guards", () => {
+    const onPreviewGroupChange = vi.fn();
+
+    render(
+      <SteppedPanel
+        params={createSteppedParams()}
+        effectiveDimensions={{ width: 120, depth: 140 }}
+        isPreviewStale={false}
+        updateParam={vi.fn()}
+        setParams={vi.fn()}
+        onAddSlot={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+        selectedSlotIds={[]}
+        onAddGroup={vi.fn()}
+        onRemoveGroup={vi.fn()}
+        onUpdateGroupHeight={vi.fn()}
+        onUpdateGroupSmoothingOverride={vi.fn()}
+        onUpdateGroupSmoothingRadius={vi.fn()}
+        onUpdateGroupDisconnectOverride={vi.fn()}
+        onUpdateGroupDisconnectDistance={vi.fn()}
+        onSetActiveGroup={vi.fn()}
+        onMoveSelectedSlotsToGroup={vi.fn()}
+        onReorderGroups={vi.fn()}
+        previewGroupId={null}
+        onPreviewGroupChange={onPreviewGroupChange}
+        bridgeWarning={null}
+        optimizationProposals={[]}
+        isOptimizingLayout={false}
+        onGenerateOptimizationProposals={vi.fn()}
+        onApplyOptimizationProposal={vi.fn()}
+        onClearOptimizationProposals={vi.fn()}
+        onOpenDraftDialog={vi.fn()}
+        onSaveDraft={vi.fn()}
+        currentDraftId={null}
+      />,
+    );
+
+    const previewButtons = screen.getAllByRole("button", {
+      name: "按住仅查看当前组",
+    });
+    Object.defineProperty(previewButtons[0]!, "setPointerCapture", {
+      configurable: true,
+      value: vi.fn(),
+    });
+
+    fireEvent.pointerDown(previewButtons[0]!, { pointerId: 1, pointerType: "mouse" });
+    fireEvent(previewButtons[0]!, new Event("lostpointercapture", { bubbles: true }));
+    fireEvent.pointerDown(previewButtons[1]!, { pointerId: 2, pointerType: "touch" });
+    fireEvent.pointerDown(previewButtons[1]!, { pointerId: 3, pointerType: "touch" });
+    fireEvent.keyDown(previewButtons[0]!, { key: " ", repeat: true });
+    fireEvent.keyDown(previewButtons[0]!, { key: " " });
+
+    expect(onPreviewGroupChange).toHaveBeenNthCalledWith(1, "group-1");
+    expect(onPreviewGroupChange).toHaveBeenNthCalledWith(2, null);
+    expect(onPreviewGroupChange).toHaveBeenNthCalledWith(3, "group-2");
+    expect(onPreviewGroupChange).toHaveBeenNthCalledWith(4, null);
+    expect(onPreviewGroupChange).toHaveBeenNthCalledWith(5, "group-1");
+    expect(onPreviewGroupChange).toHaveBeenCalledTimes(5);
+  });
+
+  it("loads stepped perf fixtures and resets sampling through the perf panel", () => {
+    isPerfEnabledMock.mockReturnValue(true);
+    const setParams = vi.fn();
+    const onPreviewGroupChange = vi.fn();
+
+    render(
+      <SteppedPanel
+        params={createSteppedParams()}
+        effectiveDimensions={{ width: 120, depth: 140 }}
+        isPreviewStale={false}
+        updateParam={vi.fn()}
+        setParams={setParams}
+        onAddSlot={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+        selectedSlotIds={[]}
+        onAddGroup={vi.fn()}
+        onRemoveGroup={vi.fn()}
+        onUpdateGroupHeight={vi.fn()}
+        onUpdateGroupSmoothingOverride={vi.fn()}
+        onUpdateGroupSmoothingRadius={vi.fn()}
+        onUpdateGroupDisconnectOverride={vi.fn()}
+        onUpdateGroupDisconnectDistance={vi.fn()}
+        onSetActiveGroup={vi.fn()}
+        onMoveSelectedSlotsToGroup={vi.fn()}
+        onReorderGroups={vi.fn()}
+        previewGroupId="group-1"
+        onPreviewGroupChange={onPreviewGroupChange}
+        bridgeWarning={null}
+        optimizationProposals={[]}
+        isOptimizingLayout={false}
+        onGenerateOptimizationProposals={vi.fn()}
+        onApplyOptimizationProposal={vi.fn()}
+        onClearOptimizationProposals={vi.fn()}
+        onOpenDraftDialog={vi.fn()}
+        onSaveDraft={vi.fn()}
+        currentDraftId={null}
+      />,
+    );
+
+    expect(screen.getByText("性能测量")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "50 槽位" }));
+    fireEvent.click(screen.getByRole("button", { name: "清空采样" }));
+
+    expect(onPreviewGroupChange).toHaveBeenCalledWith(null);
+    expect(resetPerfMetricsMock).toHaveBeenCalledTimes(2);
+    expect(setParams).toHaveBeenCalledWith(buildSteppedPerfFixture(50));
+    expect(toastMock).toHaveBeenNthCalledWith(
+      1,
+      "success",
+      "已载入 50 槽位性能样本，采样已清零",
+    );
+    expect(toastMock).toHaveBeenNthCalledWith(
+      2,
+      "success",
+      "性能采样已清零",
+    );
   });
 
   it("renders optimization proposals and routes generate, apply, and clear actions", () => {
