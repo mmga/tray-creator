@@ -858,6 +858,99 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
     expect(screen.getByText("超过锻造极限")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "尺寸超限" })).toBeDisabled();
   });
+
+  it("renders the empty-row state and only allows creating a new row", () => {
+    const onAddRow = vi.fn();
+    const params = createSimpleSteppedParams({
+      rows: [],
+      slots: [],
+    });
+    const derivedLayout = deriveSimpleSteppedLayout(params, null);
+
+    render(
+      <SimpleSteppedPanel
+        params={params}
+        derivedLayout={derivedLayout}
+        activeRowId={null}
+        effectiveDimensions={{ width: 0, depth: 0, height: 0 }}
+        setParams={vi.fn()}
+        updateParam={vi.fn()}
+        onSetActiveRow={vi.fn()}
+        onAddRow={onAddRow}
+        onRemoveRow={vi.fn()}
+        onRenameRow={vi.fn()}
+        onClearRow={vi.fn()}
+        onReorderRows={vi.fn()}
+        onAddSlotToRow={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        onTrimTray={vi.fn()}
+        isGenerating={false}
+        isPreviewStale={false}
+        volume={0}
+      />,
+    );
+
+    expect(
+      screen.getByText("还没有行，先新建一行再开始排布凹槽。"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("请先选择一行")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /25/ })[0]!).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "新建行" }));
+
+    expect(onAddRow).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders fallback row metrics and generating state for rows missing derived layout", () => {
+    const params = createSimpleSteppedParams({
+      rows: [
+        { id: "row-1", name: "前排", slotIds: ["slot-1"] },
+        { id: "row-2", name: "空白排", slotIds: [] },
+      ],
+      slots: [
+        {
+          id: "slot-1",
+          rowId: "row-1",
+          shape: "circle" as const,
+          diameter: 25,
+          x: 0,
+          y: 0,
+        },
+      ],
+    });
+    const derivedLayout = deriveSimpleSteppedLayout(params, "row-2");
+
+    render(
+      <SimpleSteppedPanel
+        params={params}
+        derivedLayout={derivedLayout}
+        activeRowId="row-2"
+        effectiveDimensions={{ width: 120, depth: 130, height: 9 }}
+        setParams={vi.fn()}
+        updateParam={vi.fn()}
+        onSetActiveRow={vi.fn()}
+        onAddRow={vi.fn()}
+        onRemoveRow={vi.fn()}
+        onRenameRow={vi.fn()}
+        onClearRow={vi.fn()}
+        onReorderRows={vi.fn()}
+        onAddSlotToRow={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        onTrimTray={vi.fn()}
+        isGenerating={true}
+        isPreviewStale={false}
+        volume={0}
+      />,
+    );
+
+    expect(screen.getByText("0 槽位 / 空行")).toBeInTheDocument();
+    expect(screen.getByText("图纸生成中...")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "锻造中..." })).toBeDisabled();
+    expect(screen.getByText("-")).toBeInTheDocument();
+    expect(screen.getAllByText("0mm")).toHaveLength(2);
+  });
 });
 
 describe("SteppedPanel", { timeout: 15000 }, () => {

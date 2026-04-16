@@ -62,6 +62,29 @@
 
 ## 进度记录
 
+### 2026-04-16 - 补齐 SimpleSteppedPanel 空行与生成状态测试
+- 范围：继续推进高价值 UI 面板 TDD，补 `SimpleSteppedPanel` 的零行、空行缺失 derived row，以及零体积生成状态分支。
+- 改动摘要：
+  - 在 `src/components/panels.test.tsx` 中新增零行测试，覆盖行管理空态文案、未选中行时的添加凹槽禁用态，以及仅允许通过 `新建行` 继续推进的路径。
+  - 新增空行 fallback 测试，覆盖某一行没有派生布局数据时的 `空行` 文案、层级 `-`、`0mm` 指标展示。
+  - 同一组测试里补了 `SimpleSteppedPanel` 零体积但 `isGenerating=true` 时的 `图纸生成中...` 和主按钮 `锻造中...` 分支，继续压缩统计区与底部操作区的状态空白。
+  - 这轮仍然只改测试，没有修改生产代码，说明现有组件实现已经满足新增行为断言。
+- 验证命令：
+  - `pnpm exec vitest run src/components/panels.test.tsx`
+  - `pnpm test`
+  - `pnpm test:coverage`
+  - `pnpm lint`
+- 覆盖率影响：
+  - 总 statements 从 `71.54%` 提升到 `71.56%`
+  - `components` 整体从 `87.55%` 提升到 `87.55%` statements，branches 从 `80.72%` 提升到 `82.44%`
+  - `src/components/SimpleSteppedPanel.tsx` 的 branches 提升到 `100%`
+  - `src/components/SteppedPanel.tsx` 维持 `100%` statements，`src/components/ParameterPanel.tsx` 维持上轮提升后的覆盖水平
+- 当前判断：
+  - `SimpleSteppedPanel` 的主要状态分支现在已经基本进入回归面，组件层最显著的空白继续向 `ParameterPanel` 剩余轻量行覆盖和其他 UI 包装层迁移。
+  - 当前面板类组件里，`SteppedPanel` 已基本收口，`SimpleSteppedPanel` 也接近完成，后续收益会更偏零散收尾。
+- 下一步：
+  - 优先补 `ParameterPanel` 剩余几条未覆盖行，或者转向 `TrayViewer` / `components/canvas` 下的次级 UI 组件。
+
 ### 2026-04-16 - 补齐 ParameterPanel 独立间距与零体积状态测试
 - 范围：继续推进高价值 UI 面板 TDD，补 `ParameterPanel` 的独立间距/结构参数分支，并顺手收掉 `SteppedPanel` 剩余的几条裸线。
 - 改动摘要：
