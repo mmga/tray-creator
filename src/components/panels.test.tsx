@@ -577,6 +577,57 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
 
     expect(screen.getByText("待锻造")).toBeInTheDocument();
   });
+
+  it("updates columns, rows, unified spacing, and reuses the auto-preview generate callback", () => {
+    const updateParam = vi.fn();
+    const onGenerate = vi.fn();
+
+    render(
+      <ParameterPanel
+        params={{
+          ...DEFAULT_TRAY_PARAMS,
+          columns: 2,
+          rows: 5,
+          spacingIndependent: false,
+          spacing: 5,
+        }}
+        updateParam={updateParam}
+        replaceParams={vi.fn()}
+        resetParams={vi.fn()}
+        onGenerate={onGenerate}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "启用自动预览" }));
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: `设置${PARAM_CONFIG.columns.label}:${DEFAULT_TRAY_PARAMS.columns}`,
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: `设置${PARAM_CONFIG.rows.label}:${DEFAULT_TRAY_PARAMS.rows}`,
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: `设置${PARAM_CONFIG.spacing.label}:${DEFAULT_TRAY_PARAMS.spacing}`,
+      }),
+    );
+
+    const autoPreviewOptions = useAutoPreviewMock.mock.calls.at(-1)?.[1] as
+      | { onGenerate?: () => void }
+      | undefined;
+    autoPreviewOptions?.onGenerate?.();
+
+    expect(updateParam).toHaveBeenNthCalledWith(1, "columns", 3);
+    expect(updateParam).toHaveBeenNthCalledWith(2, "rows", 6);
+    expect(updateParam).toHaveBeenNthCalledWith(3, "spacing", 6);
+    expect(onGenerate).toHaveBeenCalledWith({ shouldSwitchView: false });
+  });
 });
 
 describe("CustomPanel", { timeout: 15000 }, () => {

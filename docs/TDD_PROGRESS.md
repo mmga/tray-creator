@@ -62,6 +62,28 @@
 
 ## 进度记录
 
+### 2026-04-16 - 补齐 ParameterPanel 滑杆与 auto-preview 回调测试
+- 范围：继续推进高价值 UI 面板 TDD，收掉 `ParameterPanel` 剩余的统一间距、列/行滑杆，以及 `useAutoPreview` 回调分支。
+- 改动摘要：
+  - 在 `src/components/panels.test.tsx` 中新增 `ParameterPanel` 回归，覆盖 `columns`、`rows`、统一 `spacing` 三个滑杆的更新链路。
+  - 同一条测试里显式取出 `useAutoPreview()` 的 `onGenerate` 回调并执行，覆盖 `onGenerate({ shouldSwitchView: false })` 这条此前未被直接命中的路径。
+  - 这轮仍然只改测试，没有修改生产代码，说明现有 `ParameterPanel` 实现已经满足新增行为断言。
+- 验证命令：
+  - `pnpm exec vitest run src/components/panels.test.tsx`
+  - `pnpm test`
+  - `pnpm test:coverage`
+  - `pnpm lint`
+- 覆盖率影响：
+  - 总 statements 从 `71.56%` 提升到 `71.65%`
+  - `components` 整体从 `87.55%` 提升到 `88.13%` statements
+  - `src/components/ParameterPanel.tsx` 从 `88.88%` 提升到 `100%` statements
+  - `src/components/ParameterPanel.tsx` 的 functions 从 `80%` 提升到 `100%`
+- 当前判断：
+  - `ParameterPanel` 的语句和函数覆盖已经收口，当前组件层更大的剩余收益点已经不在主面板，而是次级 UI 容器和 `components/canvas` 下的若干包装层。
+  - 高价值 panel 组件里，`SteppedPanel`、`ParameterPanel`、`SimpleSteppedPanel` 现在都已进入比较完整的 TDD 闭环。
+- 下一步：
+  - 优先转向 `TrayViewer` / `components/canvas` 下的次级 UI 组件，或者补 `SteppedPanel` / `ParameterPanel` 剩余的 branch 收尾。
+
 ### 2026-04-16 - 补齐 SimpleSteppedPanel 空行与生成状态测试
 - 范围：继续推进高价值 UI 面板 TDD，补 `SimpleSteppedPanel` 的零行、空行缺失 derived row，以及零体积生成状态分支。
 - 改动摘要：
