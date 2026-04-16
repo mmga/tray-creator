@@ -124,11 +124,16 @@ vi.mock("@/components/canvas/CanvasSlotLayer", () => ({
     selectedIds,
     focusedGroupId,
     onSlotPointerDown,
+    onSlotRotatePointerDown,
   }: {
-    slots: Array<{ id: string }>;
+    slots: Array<{ id: string; x: number; y: number; rotation: number }>;
     selectedIds: ReadonlySet<string>;
     focusedGroupId?: string | null;
     onSlotPointerDown: (event: React.PointerEvent, slotId: string) => void;
+    onSlotRotatePointerDown: (
+      event: React.PointerEvent,
+      slot: { id: string; x: number; y: number; rotation: number },
+    ) => void;
   }) {
     return (
       <g
@@ -137,11 +142,16 @@ vi.mock("@/components/canvas/CanvasSlotLayer", () => ({
         data-focused-group-id={focusedGroupId ?? ""}
       >
         {slots.map((slot) => (
-          <g
-            key={slot.id}
-            data-testid={`canvas-slot-${slot.id}`}
-            onPointerDown={(event) => onSlotPointerDown(event, slot.id)}
-          />
+          <React.Fragment key={slot.id}>
+            <g
+              data-testid={`canvas-slot-${slot.id}`}
+              onPointerDown={(event) => onSlotPointerDown(event, slot.id)}
+            />
+            <g
+              data-testid={`canvas-rotate-${slot.id}`}
+              onPointerDown={(event) => onSlotRotatePointerDown(event, slot)}
+            />
+          </React.Fragment>
         ))}
       </g>
     );
@@ -306,6 +316,12 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
           },
         };
       },
+    });
+
+    Object.defineProperty(Element.prototype, "setPointerCapture", {
+      configurable: true,
+      writable: true,
+      value: vi.fn(),
     });
   });
 
@@ -579,5 +595,180 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     });
     expect(onSaveSnapshot).toHaveBeenCalledTimes(1);
     expect(onEditInteractionChange).toHaveBeenCalledWith(true);
+  });
+
+  it("schedules snapped live rotation updates while rotating a slot", async () => {
+    const onSaveSnapshot = vi.fn();
+    const onEditInteractionChange = vi.fn();
+    const { container } = render(
+      <LayoutCanvas
+        params={createCustomParams({
+          trayDepth: 160,
+          slots: [
+            {
+              id: "slot-1",
+              x: 100,
+              y: 120,
+              shape: "circle",
+              width: 25,
+              height: 25,
+              rotation: 0,
+            },
+          ],
+        })}
+        onUpdateSlot={vi.fn()}
+        onRemoveSlot={vi.fn()}
+        onSaveSnapshot={onSaveSnapshot}
+        onEditInteractionChange={onEditInteractionChange}
+      />,
+    );
+
+    const svg = container.querySelector("svg");
+    expect(svg).not.toBeNull();
+
+    fireEvent.pointerDown(screen.getByTestId("canvas-rotate-slot-1"), {
+      pointerId: 7,
+      pointerType: "mouse",
+      clientX: 120,
+      clientY: 40,
+    });
+
+    fireEvent.pointerMove(svg!, {
+      pointerId: 7,
+      pointerType: "mouse",
+      clientX: 100,
+      clientY: 20,
+      shiftKey: true,
+    });
+
+    await waitFor(() => {
+      expect(scheduleLiveUpdatesMock).toHaveBeenCalledWith([
+        {
+          id: "slot-1",
+          x: 100,
+          y: 120,
+          rotation: 90,
+        },
+      ]);
+    });
+    expect(onSaveSnapshot).toHaveBeenCalledTimes(1);
+    expect(onEditInteractionChange).toHaveBeenCalledWith(true);
+    expect(screen.getByTestId("alignment-toolbar")).toHaveAttribute(
+      "data-enable-copy-preview",
+      "false",
+    );
+
+    fireEvent.pointerUp(svg!, {
+      pointerId: 7,
+      pointerType: "mouse",
+    });
+
+    await waitFor(() => {
+      expect(flushScheduledLiveUpdatesMock).toHaveBeenCalledTimes(1);
+    });
+    expect(onEditInteractionChange).toHaveBeenLastCalledWith(false);
+    expect(screen.getByTestId("alignment-toolbar")).toHaveAttribute(
+      "data-enable-copy-preview",
+      "true",
+    );
+  });
+
+  it("resizes simple stepped trays from the drag handles and clamps to row bounds", async () => {
+    const onResizeTray = vi.fn();
+    const onSaveSnapshot = vi.fn();
+    const onEditInteractionChange = vi.fn();
+    const { container } = render(
+      <LayoutCanvas
+        params={createCustomParams({
+          trayWidth: 220,
+          trayDepth: 150,
+          slots: [
+            {
+              id: "slot-1",
+              x: 72,
+              y: 48,
+              shape: "circle",
+              width: 25,
+              height: 25,
+              rotation: 0,
+            },
+          ],
+        })}
+        rowBands={[
+          {
+            id: "row-1",
+            name: "前排",
+            x: 0,
+            y: 0,
+            width: 180,
+            depth: 60,
+            topHeight: 5,
+            isActive: true,
+          },
+          {
+            id: "row-2",
+            name: "后排",
+            x: 0,
+            y: 70,
+            width: 180,
+            depth: 60,
+            topHeight: 10,
+            isActive: false,
+          },
+        ]}
+        onResizeTray={onResizeTray}
+        onUpdateSlot={vi.fn()}
+        onRemoveSlot={vi.fn()}
+        onSaveSnapshot={onSaveSnapshot}
+        onEditInteractionChange={onEditInteractionChange}
+      />,
+    );
+
+    const svg = container.querySelector("svg");
+    const rightHandle = container.querySelector<SVGRectElement>(
+      'rect[style*="cursor: ew-resize"]',
+    );
+    expect(svg).not.toBeNull();
+    expect(rightHandle).not.toBeNull();
+
+    fireEvent.pointerDown(rightHandle!, {
+      pointerId: 9,
+      pointerType: "mouse",
+      clientX: 220,
+      clientY: 40,
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("alignment-toolbar")).toHaveAttribute(
+        "data-enable-copy-preview",
+        "false",
+      );
+    });
+    expect(onSaveSnapshot).toHaveBeenCalledTimes(1);
+    expect(onEditInteractionChange).toHaveBeenCalledWith(true);
+
+    fireEvent.pointerMove(svg!, {
+      pointerId: 9,
+      pointerType: "mouse",
+      clientX: 120,
+      clientY: 40,
+    });
+
+    await waitFor(() => {
+      expect(onResizeTray).toHaveBeenCalledWith(180, 150);
+    });
+
+    fireEvent.pointerUp(svg!, {
+      pointerId: 9,
+      pointerType: "mouse",
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("alignment-toolbar")).toHaveAttribute(
+        "data-enable-copy-preview",
+        "true",
+      );
+    });
+    expect(onEditInteractionChange).toHaveBeenLastCalledWith(false);
   });
 });

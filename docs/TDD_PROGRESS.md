@@ -62,6 +62,29 @@
 
 ## 进度记录
 
+### 2026-04-16 - 补齐 LayoutCanvas 旋转与托盘缩放交互测试
+- 范围：继续推进高价值 UI 交互 TDD，将 `LayoutCanvas` 里此前未被保护的旋转实时更新与 simple stepped 托盘缩放链路纳入回归面。
+- 改动摘要：
+  - 扩展 `src/components/LayoutCanvas.test.tsx` 的 `CanvasSlotLayer` mock，使测试可以直接驱动槽位旋转句柄，而不再只覆盖基础选中路径。
+  - 新增旋转交互测试，覆盖 `onSaveSnapshot()` / `onEditInteractionChange(true)`、Shift 吸附角度、`scheduleLiveUpdates()` 的实时旋转更新，以及释放指针后 `flushScheduledLiveUpdates()` 与复制预览恢复。
+  - 新增 simple stepped 托盘缩放测试，覆盖右侧 resize handle 的拖拽路径、基于 row bands 的最小宽度钳制，以及缩放期间禁用复制预览、结束后恢复的状态切换。
+  - 通过这组测试把 `LayoutCanvas` 从“基础选中和 outline 透传可测”推进到“核心编辑交互可回归”的层次。
+- 验证命令：
+  - `pnpm exec vitest run src/components/LayoutCanvas.test.tsx`
+  - `pnpm test`
+  - `pnpm test:coverage`
+  - `pnpm lint`
+- 覆盖率影响：
+  - 总 statements 从 `67.16%` 提升到 `68.41%`
+  - `components` 整体从 `62.95%` 提升到 `70.91%` statements
+  - `src/components/LayoutCanvas.tsx` 从 `49.5%` 提升到 `67.54%` statements
+  - `src/components/LayoutCanvas.tsx` 的 branches 从 `45.89%` 提升到 `58.45%`
+- 当前判断：
+  - `LayoutCanvas` 已经开始进入有意义的 TDD 主循环，不再只覆盖浅层容器透传，而是开始保护实际编辑态交互。
+  - 组件层当前最值得继续补的空白，已经收敛到 `LayoutCanvas` 剩余分支（如框选、action panel resizer、快捷键提示切换）以及 `TrayViewer` 的剩余 context-lost 细枝末节。
+- 下一步：
+  - 优先继续深挖 `LayoutCanvas` 的框选与 action panel 交互，或者补掉 `TrayViewer` 的 WebGL context lost preventDefault 分支。
+
 ### 2026-04-13 - 补齐下载与 ID 桥接测试
 - 范围：继续推进 `lib` 层扫尾 TDD，将 `download-port.ts` 与 `id-factory.ts` 这两个轻量桥接文件纳入单测闭环。
 - 改动摘要：
