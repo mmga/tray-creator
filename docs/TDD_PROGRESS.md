@@ -62,6 +62,28 @@
 
 ## 进度记录
 
+### 2026-04-16 - 补齐 MirrorPanel 安全预检与冲突跳过测试
+- 范围：继续推进 `components/canvas` 层 TDD，补 `MirrorPanel` 的安全预检展示和“仅间距冲突跳过”复制分支。
+- 改动摘要：
+  - 在 `src/components/canvas/canvas-components.test.tsx` 中新增安全预检回归，覆盖 `enableCopyPreview=true` 时 `mirror-x` / `mirror-y` 两个方向都无异常的 `左右安全`、`上下安全` 文案，以及安全态 preview tag class 分支。
+  - 新增镜像复制冲突测试，覆盖存在有效副本时只跳过 `skippedCollisionCount`、不进入 `skippedDuplicateCount` 的 toast 拼装路径。
+  - 这轮仍然只改测试，没有修改生产代码，说明现有 `MirrorPanel` 实现已经满足新增行为断言。
+- 验证命令：
+  - `pnpm exec vitest run src/components/canvas/canvas-components.test.tsx`
+  - `pnpm test`
+  - `pnpm test:coverage`
+  - `pnpm lint`
+- 覆盖率影响：
+  - 总 statements 从 `71.65%` 提升到 `71.74%`
+  - 总 branches 从 `64.97%` 提升到 `65.33%`
+  - `src/components/canvas/MirrorPanel.tsx` 提升到 `88.54%` statements / `81.42%` branches
+  - `components/canvas` 整体提升到 `74.08%` statements / `62.44%` branches
+- 当前判断：
+  - `MirrorPanel` 的主要用户可见路径已经基本进入回归面，当前剩余空白更多偏少量防御性分支和 `components/canvas` 下其他包装层。
+  - 组件层继续挖收益最高的点，已经更偏向 `AlignPanel`、`CanvasSlotLayer` 这类还有明显 branch 缺口的次级画布组件。
+- 下一步：
+  - 优先转向 `AlignPanel` 的禁用态/批量对齐结果分支，或者继续补 `CanvasSlotLayer` / `CanvasOverlayLayer` 剩余的状态型路径。
+
 ### 2026-04-16 - 补齐 ParameterPanel 滑杆与 auto-preview 回调测试
 - 范围：继续推进高价值 UI 面板 TDD，收掉 `ParameterPanel` 剩余的统一间距、列/行滑杆，以及 `useAutoPreview` 回调分支。
 - 改动摘要：

@@ -182,6 +182,118 @@ describe("MirrorPanel", { timeout: 15000 }, () => {
       expect.stringContaining("1 个副本与现有槽位重合"),
     );
   });
+
+  it("renders safe mirror-copy previews when both axes can insert cleanly", async () => {
+    const selectedSlots: FreeSlot[] = [
+      {
+        id: "slot-1",
+        x: 30,
+        y: 30,
+        shape: "ellipse",
+        width: 24,
+        height: 16,
+        rotation: 10,
+      },
+    ];
+
+    const { container } = render(
+      <MirrorPanel
+        allSlots={selectedSlots}
+        selectedSlots={selectedSlots}
+        unselectedSlots={[]}
+        onUpdateSlots={vi.fn()}
+        onInsertSlots={vi.fn()}
+        enableCopyPreview={true}
+        spacing={4}
+        trayWidth={120}
+        trayDepth={100}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(
+        container.querySelector('[data-symmetry-preview="mirror-x"]'),
+      ).toHaveTextContent("左右安全");
+      expect(
+        container.querySelector('[data-symmetry-preview="mirror-y"]'),
+      ).toHaveTextContent("上下安全");
+    });
+
+    expect(
+      container.querySelector('[data-symmetry-preview="mirror-x"]'),
+    ).toHaveClass("border-[#2a3a25]");
+    expect(
+      container.querySelector('[data-symmetry-preview="mirror-y"]'),
+    ).toHaveClass("border-[#2a3a25]");
+  });
+
+  it("skips only spacing-collision copies while inserting remaining mirrored slots", () => {
+    const selectedSlots: FreeSlot[] = [
+      {
+        id: "slot-1",
+        x: 20,
+        y: 40,
+        shape: "circle",
+        width: 20,
+        height: 20,
+        rotation: 0,
+      },
+      {
+        id: "slot-2",
+        x: 35,
+        y: 80,
+        shape: "circle",
+        width: 20,
+        height: 20,
+        rotation: 0,
+      },
+    ];
+    const collisionOnlySlot: FreeSlot = {
+      id: "slot-3",
+      x: 85,
+      y: 80,
+      shape: "circle",
+      width: 20,
+      height: 20,
+      rotation: 0,
+    };
+    const onInsertSlots = vi.fn();
+
+    render(
+      <MirrorPanel
+        allSlots={[...selectedSlots, collisionOnlySlot]}
+        selectedSlots={selectedSlots}
+        unselectedSlots={[collisionOnlySlot]}
+        onUpdateSlots={vi.fn()}
+        onInsertSlots={onInsertSlots}
+        enableCopyPreview={false}
+        spacing={4}
+        trayWidth={120}
+        trayDepth={100}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /左右复/ }));
+
+    expect(onInsertSlots).toHaveBeenCalledWith([
+      {
+        x: 100,
+        y: 40,
+        shape: "circle",
+        width: 20,
+        height: 20,
+        rotation: 180,
+      },
+    ]);
+    expect(toastMock).toHaveBeenCalledWith(
+      "info",
+      expect.stringContaining("1 个副本会产生间距冲突"),
+    );
+    expect(toastMock).not.toHaveBeenCalledWith(
+      "info",
+      expect.stringContaining("与现有槽位重合"),
+    );
+  });
 });
 
 describe("CanvasSlotLayer", { timeout: 15000 }, () => {
