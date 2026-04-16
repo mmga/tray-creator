@@ -851,6 +851,106 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     );
   });
 
+  it("routes group action buttons and nested controls without bubbling selection", () => {
+    const onSetActiveGroup = vi.fn();
+    const onUpdateGroupHeight = vi.fn();
+    const onUpdateGroupSmoothingOverride = vi.fn();
+    const onUpdateGroupDisconnectOverride = vi.fn();
+    const onReorderGroups = vi.fn();
+    const onRemoveGroup = vi.fn();
+
+    render(
+      <SteppedPanel
+        params={createSteppedParams({
+          groups: [
+            {
+              id: "group-1",
+              name: "组 1",
+              color: "#ef4444",
+              bottomHeight: 10,
+              useGroupSmoothingRadius: true,
+              groupSmoothingRadius: 40,
+              useGroupDisconnectDistance: true,
+              groupDisconnectDistance: 4,
+            },
+            {
+              id: "group-2",
+              name: "组 2",
+              color: "#3b82f6",
+              bottomHeight: 16,
+              useGroupSmoothingRadius: false,
+              groupSmoothingRadius: 55,
+              useGroupDisconnectDistance: false,
+              groupDisconnectDistance: 6,
+            },
+          ],
+        })}
+        effectiveDimensions={{ width: 120, depth: 140 }}
+        isPreviewStale={false}
+        updateParam={vi.fn()}
+        setParams={vi.fn()}
+        onAddSlot={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+        selectedSlotIds={[]}
+        onAddGroup={vi.fn()}
+        onRemoveGroup={onRemoveGroup}
+        onUpdateGroupHeight={onUpdateGroupHeight}
+        onUpdateGroupSmoothingOverride={onUpdateGroupSmoothingOverride}
+        onUpdateGroupSmoothingRadius={vi.fn()}
+        onUpdateGroupDisconnectOverride={onUpdateGroupDisconnectOverride}
+        onUpdateGroupDisconnectDistance={vi.fn()}
+        onSetActiveGroup={onSetActiveGroup}
+        onMoveSelectedSlotsToGroup={vi.fn()}
+        onReorderGroups={onReorderGroups}
+        previewGroupId={null}
+        onPreviewGroupChange={vi.fn()}
+        bridgeWarning={null}
+        optimizationProposals={[]}
+        isOptimizingLayout={false}
+        onGenerateOptimizationProposals={vi.fn()}
+        onApplyOptimizationProposal={vi.fn()}
+        onClearOptimizationProposals={vi.fn()}
+        onOpenDraftDialog={vi.fn()}
+        onSaveDraft={vi.fn()}
+        currentDraftId={null}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "设置圆柱高度:10" }),
+    );
+    expect(onSetActiveGroup).toHaveBeenCalledWith("group-1");
+    onSetActiveGroup.mockClear();
+    fireEvent.click(
+      screen.getByRole("switch", { name: "组 1 平滑半径独立设置" }),
+    );
+    fireEvent.click(
+      screen.getByRole("switch", { name: "组 1 槽群断连距离独立设置" }),
+    );
+    fireEvent.click(screen.getAllByTitle("下移")[0]!);
+    fireEvent.click(screen.getAllByTitle("上移")[1]!);
+    fireEvent.click(
+      screen.getAllByTitle("删除组（同时删除组内所有凹槽）")[0]!,
+    );
+
+    expect(onUpdateGroupHeight).toHaveBeenCalledWith("group-1", 11);
+    expect(onUpdateGroupSmoothingOverride).toHaveBeenCalledWith(
+      "group-1",
+      false,
+    );
+    expect(onUpdateGroupDisconnectOverride).toHaveBeenCalledWith(
+      "group-1",
+      false,
+    );
+    expect(onReorderGroups).toHaveBeenNthCalledWith(1, 0, 1);
+    expect(onReorderGroups).toHaveBeenNthCalledWith(2, 1, 0);
+    expect(onRemoveGroup).toHaveBeenCalledWith("group-1");
+    expect(onSetActiveGroup).not.toHaveBeenCalled();
+  });
+
   it("routes stepped panel actions for add group, moving slots, reset, and import", () => {
     const setParams = vi.fn();
     const onAddGroup = vi.fn();
@@ -1404,6 +1504,66 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     expect(onPreviewGroupChange).toHaveBeenNthCalledWith(4, null);
     expect(onPreviewGroupChange).toHaveBeenNthCalledWith(5, "group-1");
     expect(onPreviewGroupChange).toHaveBeenCalledTimes(5);
+  });
+
+  it("ignores unrelated preview keys and clears pressed preview on pointer cancel", () => {
+    const onPreviewGroupChange = vi.fn();
+
+    render(
+      <SteppedPanel
+        params={createSteppedParams()}
+        effectiveDimensions={{ width: 120, depth: 140 }}
+        isPreviewStale={false}
+        updateParam={vi.fn()}
+        setParams={vi.fn()}
+        onAddSlot={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+        selectedSlotIds={[]}
+        onAddGroup={vi.fn()}
+        onRemoveGroup={vi.fn()}
+        onUpdateGroupHeight={vi.fn()}
+        onUpdateGroupSmoothingOverride={vi.fn()}
+        onUpdateGroupSmoothingRadius={vi.fn()}
+        onUpdateGroupDisconnectOverride={vi.fn()}
+        onUpdateGroupDisconnectDistance={vi.fn()}
+        onSetActiveGroup={vi.fn()}
+        onMoveSelectedSlotsToGroup={vi.fn()}
+        onReorderGroups={vi.fn()}
+        previewGroupId={null}
+        onPreviewGroupChange={onPreviewGroupChange}
+        bridgeWarning={null}
+        optimizationProposals={[]}
+        isOptimizingLayout={false}
+        onGenerateOptimizationProposals={vi.fn()}
+        onApplyOptimizationProposal={vi.fn()}
+        onClearOptimizationProposals={vi.fn()}
+        onOpenDraftDialog={vi.fn()}
+        onSaveDraft={vi.fn()}
+        currentDraftId={null}
+      />,
+    );
+
+    const previewButton = screen.getAllByRole("button", {
+      name: "按住仅查看当前组",
+    })[0]!;
+    Object.defineProperty(previewButton, "setPointerCapture", {
+      configurable: true,
+      value: vi.fn(),
+    });
+
+    fireEvent.keyDown(previewButton, { key: "Escape" });
+    fireEvent.pointerDown(previewButton, { pointerId: 7, pointerType: "mouse" });
+    fireEvent.pointerCancel(previewButton, {
+      pointerId: 7,
+      pointerType: "mouse",
+    });
+
+    expect(onPreviewGroupChange).toHaveBeenNthCalledWith(1, "group-1");
+    expect(onPreviewGroupChange).toHaveBeenNthCalledWith(2, null);
+    expect(onPreviewGroupChange).toHaveBeenCalledTimes(2);
   });
 
   it("loads stepped perf fixtures and resets sampling through the perf panel", () => {

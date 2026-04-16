@@ -62,6 +62,29 @@
 
 ## 进度记录
 
+### 2026-04-16 - 补齐 SteppedPanel group 管理与 pointer cancel 测试
+- 范围：继续推进 `SteppedPanel` 的高价值 UI TDD，补 group 管理按钮、圆柱高度调整，以及 preview 的 `pointercancel` / 非触发键盘分支。
+- 改动摘要：
+  - 在 `src/components/panels.test.tsx` 中新增 group 管理测试，覆盖 `圆柱高度` 滑杆、组内结构开关、`上移` / `下移` / `删除组` 三个按钮的回调链路。
+  - 同一组测试里显式断言了真正带 `stopPropagation()` 的 switch 和 group action buttons 不会错误触发组选中，从而把这批嵌套交互的冒泡边界纳入回归面。
+  - 新增 preview `pointercancel` 测试，覆盖鼠标按住预览后被取消时的清理路径，以及非 `Enter` / `Space` 键输入被忽略的 guard。
+  - 这轮仍然只改测试，没有修改生产代码，说明现有 `SteppedPanel` 实现已经满足新增行为断言。
+- 验证命令：
+  - `pnpm exec vitest run src/components/panels.test.tsx`
+  - `pnpm test`
+  - `pnpm test:coverage`
+  - `pnpm lint`
+- 覆盖率影响：
+  - 总 statements 从 `71.08%` 提升到 `71.31%`
+  - `components` 整体从 `84.8%` 提升到 `86.25%` statements
+  - `src/components/SteppedPanel.tsx` 从 `90.71%` 提升到 `97.85%` statements
+  - `src/components/SteppedPanel.tsx` 的 branches 从 `87.9%` 提升到 `88.7%`
+- 当前判断：
+  - `SteppedPanel` 现在已经基本进入收尾阶段，主交互、group 管理、preview 状态、perf、tooltip 和生成状态都已有明确回归保护。
+  - 当前组件层更值得继续投入的空白，已经逐步从 `SteppedPanel` 转向 `SimpleSteppedPanel`、`ParameterPanel`，或者 `TrayViewer` / `LayoutCanvas` 之外的其他 UI 包装层。
+- 下一步：
+  - 优先转向 `SimpleSteppedPanel` / `ParameterPanel` 的剩余状态分支，或者补 `SteppedPanel` 最后几条边界线段后收口。
+
 ### 2026-04-16 - 补齐 SteppedPanel 结构参数与 tooltip 状态测试
 - 范围：继续推进 `SteppedPanel` 的高价值 UI TDD，补全结构参数滑杆、添加凹槽入口，以及报价 tooltip 与生成状态的剩余分支。
 - 改动摘要：
