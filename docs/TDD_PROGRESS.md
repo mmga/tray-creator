@@ -62,6 +62,28 @@
 
 ## 进度记录
 
+### 2026-04-16 - 补齐 AlignPanel 对齐与排布主路径测试
+- 范围：继续推进 `components/canvas` 层 TDD，把 `AlignPanel` 拉进稳定回归面。
+- 改动摘要：
+  - 在 `src/components/canvas/canvas-components.test.tsx` 中新增 `AlignPanel` 的单选禁用态测试，覆盖六个对齐/排布按钮在 `selectedSlots.length < 2` 时的禁用分支，以及当前槽距提示文案。
+  - 新增 `AlignPanel` 主路径测试，串行覆盖 `left`、`center-x`、`right`、`top`、`center-y`、`bottom` 六个对齐分支，以及 `row` / `column` 两条自动排布路径。
+  - 这轮仍然只改测试，没有修改生产代码，说明现有 `AlignPanel` 实现已经满足新增行为断言。
+- 验证命令：
+  - `pnpm exec vitest run src/components/canvas/canvas-components.test.tsx`
+  - `pnpm test`
+  - `pnpm test:coverage`
+  - `pnpm lint`
+- 覆盖率影响：
+  - 总 statements 从 `71.74%` 提升到 `72.56%`
+  - 总 branches 从 `65.33%` 提升到 `65.59%`
+  - `components/canvas` 整体从 `74.08%` 提升到 `87.22%` statements
+  - `src/components/canvas/AlignPanel.tsx` 从 `59.61%` 提升到 `94.23%` statements，functions 提升到 `100%`
+- 当前判断：
+  - `AlignPanel` 的用户可见主路径已经基本被回归保护，`components/canvas` 当前更明显的剩余空白开始集中在 `CanvasSlotLayer` 的 branch 细节和若干未进场的小包装层。
+  - 组件层继续挖高收益点时，最合适的对象已经更偏向 `CanvasSlotLayer` / `CanvasOverlayLayer` 的状态分支，或者 `components/ui` 下仍为 `0%` 的轻量包装组件。
+- 下一步：
+  - 优先补 `CanvasSlotLayer` 的 hover/drag/collision 可视状态分支，或者转向 `components/ui` 下被面板广泛复用但还没直接回归的基础包装层。
+
 ### 2026-04-16 - 补齐 MirrorPanel 安全预检与冲突跳过测试
 - 范围：继续推进 `components/canvas` 层 TDD，补 `MirrorPanel` 的安全预检展示和“仅间距冲突跳过”复制分支。
 - 改动摘要：

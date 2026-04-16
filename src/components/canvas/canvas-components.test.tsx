@@ -2,6 +2,7 @@ import * as React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildCanvasCollisionState } from "@/lib/canvas-collision-model";
+import AlignPanel from "@/components/canvas/AlignPanel";
 import { CanvasOverlayLayer } from "@/components/canvas/CanvasOverlayLayer";
 import { CanvasSlotLayer } from "@/components/canvas/CanvasSlotLayer";
 import MirrorPanel from "@/components/canvas/MirrorPanel";
@@ -293,6 +294,134 @@ describe("MirrorPanel", { timeout: 15000 }, () => {
       "info",
       expect.stringContaining("与现有槽位重合"),
     );
+  });
+});
+
+describe("AlignPanel", { timeout: 15000 }, () => {
+  it("disables all actions when fewer than two slots are selected", () => {
+    render(
+      <AlignPanel
+        selectedSlots={[
+          {
+            id: "slot-1",
+            x: 20,
+            y: 20,
+            shape: "circle",
+            width: 25,
+            height: 25,
+            rotation: 0,
+          },
+        ]}
+        onUpdateSlots={vi.fn()}
+        spacing={6}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: /左/ })).toBeDisabled();
+    expect(screen.getAllByRole("button", { name: /中/ })).toHaveLength(2);
+    expect(screen.getByRole("button", { name: /右/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /上/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /下/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /一排/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /一列/ })).toBeDisabled();
+    expect(screen.getByText("排布间距自动使用当前槽距 6 mm。")).toBeInTheDocument();
+  });
+
+  it("aligns selected slots and arranges them into rows or columns", () => {
+    const selectedSlots: FreeSlot[] = [
+      {
+        id: "slot-1",
+        x: 20,
+        y: 20,
+        shape: "circle",
+        width: 25,
+        height: 25,
+        rotation: 0,
+      },
+      {
+        id: "slot-2",
+        x: 60,
+        y: 60,
+        shape: "circle",
+        width: 25,
+        height: 25,
+        rotation: 0,
+      },
+      {
+        id: "slot-3",
+        x: 100,
+        y: 30,
+        shape: "circle",
+        width: 25,
+        height: 25,
+        rotation: 0,
+      },
+    ];
+    const onUpdateSlots = vi.fn();
+
+    render(
+      <AlignPanel
+        selectedSlots={selectedSlots}
+        onUpdateSlots={onUpdateSlots}
+        spacing={6}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /左/ }));
+    expect(onUpdateSlots).toHaveBeenLastCalledWith([
+      { id: "slot-1", x: 20, y: 20 },
+      { id: "slot-2", x: 20, y: 60 },
+      { id: "slot-3", x: 20, y: 30 },
+    ]);
+
+    fireEvent.click(screen.getAllByRole("button", { name: /中/ })[0]!);
+    expect(onUpdateSlots).toHaveBeenLastCalledWith([
+      { id: "slot-1", x: 60, y: 20 },
+      { id: "slot-2", x: 60, y: 60 },
+      { id: "slot-3", x: 60, y: 30 },
+    ]);
+
+    fireEvent.click(screen.getByRole("button", { name: /右/ }));
+    expect(onUpdateSlots).toHaveBeenLastCalledWith([
+      { id: "slot-1", x: 100, y: 20 },
+      { id: "slot-2", x: 100, y: 60 },
+      { id: "slot-3", x: 100, y: 30 },
+    ]);
+
+    fireEvent.click(screen.getByRole("button", { name: /上/ }));
+    expect(onUpdateSlots).toHaveBeenLastCalledWith([
+      { id: "slot-1", x: 20, y: 60 },
+      { id: "slot-2", x: 60, y: 60 },
+      { id: "slot-3", x: 100, y: 60 },
+    ]);
+
+    fireEvent.click(screen.getAllByRole("button", { name: /中/ })[1]!);
+    expect(onUpdateSlots).toHaveBeenLastCalledWith([
+      { id: "slot-1", x: 20, y: 40 },
+      { id: "slot-2", x: 60, y: 40 },
+      { id: "slot-3", x: 100, y: 40 },
+    ]);
+
+    fireEvent.click(screen.getByRole("button", { name: /下/ }));
+    expect(onUpdateSlots).toHaveBeenLastCalledWith([
+      { id: "slot-1", x: 20, y: 20 },
+      { id: "slot-2", x: 60, y: 20 },
+      { id: "slot-3", x: 100, y: 20 },
+    ]);
+
+    fireEvent.click(screen.getByRole("button", { name: /一排/ }));
+    expect(onUpdateSlots).toHaveBeenLastCalledWith([
+      { id: "slot-1", x: 28.8, y: 40 },
+      { id: "slot-2", x: 60, y: 40 },
+      { id: "slot-3", x: 91.2, y: 40 },
+    ]);
+
+    fireEvent.click(screen.getByRole("button", { name: /一列/ }));
+    expect(onUpdateSlots).toHaveBeenLastCalledWith([
+      { id: "slot-1", x: 60, y: 8.8 },
+      { id: "slot-3", x: 60, y: 40 },
+      { id: "slot-2", x: 60, y: 71.2 },
+    ]);
   });
 });
 
