@@ -62,6 +62,30 @@
 
 ## 进度记录
 
+### 2026-04-16 - 补齐 SteppedPanel 结构参数与 tooltip 状态测试
+- 范围：继续推进 `SteppedPanel` 的高价值 UI TDD，补全结构参数滑杆、添加凹槽入口，以及报价 tooltip 与生成状态的剩余分支。
+- 改动摘要：
+  - 调整 `src/components/panels.test.tsx` 中的 `Switch` mock，让测试态会真实透传 `onClick`，从而把分组结构开关上的 `stopPropagation()` 分支也纳入回归面。
+  - 新增 `SteppedPanel` 的添加凹槽与全局结构参数测试，覆盖圆形 preset 按钮，以及 `spacing`、`holeDepth`、`smoothingRadius`、`disconnectDistance` 四个全局滑杆的更新链路。
+  - 新增报价 tooltip fallback 测试，覆盖无体积提示文案、`mouseEnter` / `mouseLeave`、`focus` / `blur`、点击打开后 `Escape` 关闭等状态切换。
+  - 同一组测试里补了 `图纸生成中...`、`锻造中...` 与超限后的 `尺寸超限` 文案/禁用态，继续压缩 `SteppedPanel` 剩余空白。
+  - 这轮仍然只改测试，没有修改生产代码，说明现有组件实现已经满足新增行为断言。
+- 验证命令：
+  - `pnpm exec vitest run src/components/panels.test.tsx`
+  - `pnpm test`
+  - `pnpm test:coverage`
+  - `pnpm lint`
+- 覆盖率影响：
+  - 总 statements 从 `70.72%` 提升到 `71.08%`
+  - `components` 整体从 `82.48%` 提升到 `84.8%` statements
+  - `src/components/SteppedPanel.tsx` 从 `79.28%` 提升到 `90.71%` statements
+  - `src/components/SteppedPanel.tsx` 的 branches 从 `78.22%` 提升到 `87.9%`
+- 当前判断：
+  - `SteppedPanel` 现在已经进入比较完整的 TDD 闭环，结构参数、preview、优化、perf、tooltip 和生成状态都开始有明确回归保护。
+  - 组件层当前更值得继续深挖的空白，已经收敛到 `SteppedPanel` 里少量 group 管理边角分支，以及 `SimpleSteppedPanel` / `ParameterPanel` 的剩余状态覆盖。
+- 下一步：
+  - 优先补 `SteppedPanel` 的 `pointercancel`、非触发键盘输入、组 reorder/delete 边界，或者转向 `SimpleSteppedPanel` 的状态型分支。
+
 ### 2026-04-16 - 补齐 SteppedPanel preview 清理与性能样本测试
 - 范围：继续推进高价值 UI 面板 TDD，补 `SteppedPanel` 中此前未被回归保护的 preview 清理分支与性能样本入口。
 - 改动摘要：

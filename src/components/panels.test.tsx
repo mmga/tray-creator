@@ -61,11 +61,13 @@ vi.mock("@/components/ui/switch", () => ({
   Switch({
     checked = false,
     onCheckedChange,
+    onClick,
     id,
     "aria-label": ariaLabel,
   }: {
     checked?: boolean;
     onCheckedChange?: (checked: boolean) => void;
+    onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
     id?: string;
     "aria-label"?: string;
   }) {
@@ -75,7 +77,10 @@ vi.mock("@/components/ui/switch", () => ({
         role="switch"
         aria-checked={checked}
         aria-label={ariaLabel ?? id ?? "switch"}
-        onClick={() => onCheckedChange?.(!checked)}
+        onClick={(event) => {
+          onClick?.(event);
+          onCheckedChange?.(!checked);
+        }}
       />
     );
   },
@@ -902,6 +907,78 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     expect(setParams).toHaveBeenNthCalledWith(2, { importedMode: "stepped" });
   });
 
+  it("adds slots from presets and updates global stepped structure controls", () => {
+    const updateParam = vi.fn();
+    const onAddSlot = vi.fn();
+
+    render(
+      <SteppedPanel
+        params={createSteppedParams({
+          activeGroupId: "group-2",
+          spacing: 5,
+          holeDepth: 3,
+          smoothingRadius: 14,
+          disconnectDistance: 2,
+        })}
+        effectiveDimensions={{ width: 120, depth: 140 }}
+        isPreviewStale={false}
+        updateParam={updateParam}
+        setParams={vi.fn()}
+        onAddSlot={onAddSlot}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+        selectedSlotIds={[]}
+        onAddGroup={vi.fn()}
+        onRemoveGroup={vi.fn()}
+        onUpdateGroupHeight={vi.fn()}
+        onUpdateGroupSmoothingOverride={vi.fn()}
+        onUpdateGroupSmoothingRadius={vi.fn()}
+        onUpdateGroupDisconnectOverride={vi.fn()}
+        onUpdateGroupDisconnectDistance={vi.fn()}
+        onSetActiveGroup={vi.fn()}
+        onMoveSelectedSlotsToGroup={vi.fn()}
+        onReorderGroups={vi.fn()}
+        previewGroupId={null}
+        onPreviewGroupChange={vi.fn()}
+        bridgeWarning={null}
+        optimizationProposals={[]}
+        isOptimizingLayout={false}
+        onGenerateOptimizationProposals={vi.fn()}
+        onApplyOptimizationProposal={vi.fn()}
+        onClearOptimizationProposals={vi.fn()}
+        onOpenDraftDialog={vi.fn()}
+        onSaveDraft={vi.fn()}
+        currentDraftId={null}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: String(BASE_PRESETS[0].diameter),
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "设置凹槽间距:5" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "设置凹槽深度:3" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "设置平滑半径:14" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "设置槽群断连距离:2" }),
+    );
+
+    expect(onAddSlot).toHaveBeenCalledWith(BASE_PRESETS[0].diameter);
+    expect(updateParam).toHaveBeenNthCalledWith(1, "spacing", 6);
+    expect(updateParam).toHaveBeenNthCalledWith(2, "holeDepth", 3.2);
+    expect(updateParam).toHaveBeenNthCalledWith(3, "smoothingRadius", 15);
+    expect(updateParam).toHaveBeenNthCalledWith(4, "disconnectDistance", 3);
+  });
+
   it("shows the stepped pricing formula tooltip on hover", () => {
     render(
       <SteppedPanel
@@ -1001,6 +1078,110 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
       "估重 = 真实体积(cm³) × 有效打印密度(g/cm³)",
     );
     expect(screen.getByRole("tooltip")).toHaveTextContent("最终报价");
+  });
+
+  it("shows fallback pricing help and generating or oversized status text", () => {
+    const tooltipButtonLabel = "查看阶梯底座报价公式";
+    const { rerender } = render(
+      <SteppedPanel
+        params={createSteppedParams()}
+        effectiveDimensions={{ width: 120, depth: 140 }}
+        isPreviewStale={false}
+        updateParam={vi.fn()}
+        setParams={vi.fn()}
+        onAddSlot={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={true}
+        volume={0}
+        selectedSlotIds={[]}
+        onAddGroup={vi.fn()}
+        onRemoveGroup={vi.fn()}
+        onUpdateGroupHeight={vi.fn()}
+        onUpdateGroupSmoothingOverride={vi.fn()}
+        onUpdateGroupSmoothingRadius={vi.fn()}
+        onUpdateGroupDisconnectOverride={vi.fn()}
+        onUpdateGroupDisconnectDistance={vi.fn()}
+        onSetActiveGroup={vi.fn()}
+        onMoveSelectedSlotsToGroup={vi.fn()}
+        onReorderGroups={vi.fn()}
+        previewGroupId={null}
+        onPreviewGroupChange={vi.fn()}
+        bridgeWarning={null}
+        optimizationProposals={[]}
+        isOptimizingLayout={false}
+        onGenerateOptimizationProposals={vi.fn()}
+        onApplyOptimizationProposal={vi.fn()}
+        onClearOptimizationProposals={vi.fn()}
+        onOpenDraftDialog={vi.fn()}
+        onSaveDraft={vi.fn()}
+        currentDraftId={null}
+      />,
+    );
+
+    const tooltipButton = screen.getByRole("button", {
+      name: tooltipButtonLabel,
+    });
+
+    expect(screen.getByText("图纸生成中...")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "锻造中..." })).toBeDisabled();
+
+    fireEvent.mouseEnter(tooltipButton);
+    expect(screen.getByRole("tooltip")).toHaveTextContent(
+      "生成模型后会按当前体积估重，并同步计算机时、占地与复杂度。",
+    );
+    fireEvent.mouseLeave(tooltipButton);
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+
+    fireEvent.focus(tooltipButton);
+    expect(screen.getByRole("tooltip")).toBeInTheDocument();
+    fireEvent.blur(tooltipButton, { relatedTarget: null });
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+
+    fireEvent.click(tooltipButton);
+    expect(screen.getByRole("tooltip")).toHaveTextContent("复杂度 =");
+    fireEvent.keyDown(tooltipButton, { key: "Escape" });
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+
+    rerender(
+      <SteppedPanel
+        params={createSteppedParams()}
+        effectiveDimensions={{ width: 280, depth: 270 }}
+        isPreviewStale={false}
+        updateParam={vi.fn()}
+        setParams={vi.fn()}
+        onAddSlot={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+        selectedSlotIds={[]}
+        onAddGroup={vi.fn()}
+        onRemoveGroup={vi.fn()}
+        onUpdateGroupHeight={vi.fn()}
+        onUpdateGroupSmoothingOverride={vi.fn()}
+        onUpdateGroupSmoothingRadius={vi.fn()}
+        onUpdateGroupDisconnectOverride={vi.fn()}
+        onUpdateGroupDisconnectDistance={vi.fn()}
+        onSetActiveGroup={vi.fn()}
+        onMoveSelectedSlotsToGroup={vi.fn()}
+        onReorderGroups={vi.fn()}
+        previewGroupId={null}
+        onPreviewGroupChange={vi.fn()}
+        bridgeWarning={null}
+        optimizationProposals={[]}
+        isOptimizingLayout={false}
+        onGenerateOptimizationProposals={vi.fn()}
+        onApplyOptimizationProposal={vi.fn()}
+        onClearOptimizationProposals={vi.fn()}
+        onOpenDraftDialog={vi.fn()}
+        onSaveDraft={vi.fn()}
+        currentDraftId={null}
+      />,
+    );
+
+    expect(screen.getByText("超过锻造极限")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "尺寸超限" })).toBeDisabled();
   });
 
   it("toggles preview groups through pointer and keyboard interactions", () => {
