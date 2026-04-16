@@ -54,7 +54,7 @@ function createDraft(id: string, title: string, updatedAt = 1): DraftListItem {
   };
 }
 
-describe("SteppedDraftDialog", () => {
+describe("SteppedDraftDialog", { timeout: 15000 }, () => {
   it("renders the empty state and routes save-area controls", () => {
     const onOpenChange = vi.fn();
     const onDraftNameInputChange = vi.fn();

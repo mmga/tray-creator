@@ -923,4 +923,200 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
       expect(startActionPanelResizeMock).toHaveBeenCalledWith(284);
     });
   });
+
+  it("clears the current selection when clicking the canvas background without ctrl", async () => {
+    const onSelectionChange = vi.fn();
+    const { container } = render(
+      <LayoutCanvas
+        params={createCustomParams({
+          slots: [
+            {
+              id: "slot-1",
+              x: 100,
+              y: 120,
+              shape: "circle",
+              width: 25,
+              height: 25,
+              rotation: 0,
+            },
+          ],
+        })}
+        onUpdateSlot={vi.fn()}
+        onRemoveSlot={vi.fn()}
+        onSelectionChange={onSelectionChange}
+      />,
+    );
+
+    const svg = container.querySelector("svg");
+    const viewport = svg?.parentElement as HTMLDivElement | null;
+    expect(svg).not.toBeNull();
+    expect(viewport).not.toBeNull();
+
+    Object.defineProperty(viewport, "getBoundingClientRect", {
+      configurable: true,
+      value: () => ({
+        x: 0,
+        y: 0,
+        left: 0,
+        top: 0,
+        right: 400,
+        bottom: 400,
+        width: 400,
+        height: 400,
+        toJSON: () => "",
+      }),
+    });
+
+    fireEvent.pointerDown(screen.getByTestId("canvas-slot-slot-1"), {
+      pointerId: 1,
+      pointerType: "mouse",
+      clientX: 100,
+      clientY: 140,
+    });
+    fireEvent.pointerUp(svg!, {
+      pointerId: 1,
+      pointerType: "mouse",
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("canvas-slot-layer")).toHaveAttribute(
+        "data-selected-ids",
+        "slot-1",
+      );
+    });
+
+    onSelectionChange.mockClear();
+
+    fireEvent.pointerDown(svg!, {
+      pointerId: 2,
+      pointerType: "mouse",
+      clientX: 20,
+      clientY: 20,
+    });
+    fireEvent.pointerUp(svg!, {
+      pointerId: 2,
+      pointerType: "mouse",
+      clientX: 20,
+      clientY: 20,
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("canvas-slot-layer")).toHaveAttribute(
+        "data-selected-ids",
+        "",
+      );
+    });
+    expect(onSelectionChange).toHaveBeenLastCalledWith([]);
+  });
+
+  it("resizes simple stepped trays from the bottom and corner handles", async () => {
+    const onResizeTray = vi.fn();
+    const onSaveSnapshot = vi.fn();
+    const onEditInteractionChange = vi.fn();
+    const { container } = render(
+      <LayoutCanvas
+        params={createCustomParams({
+          trayWidth: 220,
+          trayDepth: 150,
+          slots: [
+            {
+              id: "slot-1",
+              x: 72,
+              y: 48,
+              shape: "circle",
+              width: 25,
+              height: 25,
+              rotation: 0,
+            },
+          ],
+        })}
+        rowBands={[
+          {
+            id: "row-1",
+            name: "前排",
+            x: 0,
+            y: 0,
+            width: 180,
+            depth: 60,
+            topHeight: 5,
+            isActive: true,
+          },
+          {
+            id: "row-2",
+            name: "后排",
+            x: 0,
+            y: 70,
+            width: 180,
+            depth: 60,
+            topHeight: 10,
+            isActive: false,
+          },
+        ]}
+        onResizeTray={onResizeTray}
+        onUpdateSlot={vi.fn()}
+        onRemoveSlot={vi.fn()}
+        onSaveSnapshot={onSaveSnapshot}
+        onEditInteractionChange={onEditInteractionChange}
+      />,
+    );
+
+    const svg = container.querySelector("svg");
+    const bottomHandle = container.querySelector<SVGRectElement>(
+      'rect[style*="cursor: ns-resize"]',
+    );
+    const cornerHandle = container.querySelector<SVGRectElement>(
+      'rect[style*="cursor: nwse-resize"]',
+    );
+    expect(svg).not.toBeNull();
+    expect(bottomHandle).not.toBeNull();
+    expect(cornerHandle).not.toBeNull();
+
+    fireEvent.pointerDown(bottomHandle!, {
+      pointerId: 3,
+      pointerType: "mouse",
+      clientX: 120,
+      clientY: 150,
+    });
+    fireEvent.pointerMove(svg!, {
+      pointerId: 3,
+      pointerType: "mouse",
+      clientX: 120,
+      clientY: 80,
+    });
+
+    await waitFor(() => {
+      expect(onResizeTray).toHaveBeenCalledWith(220, 130);
+    });
+
+    fireEvent.pointerUp(svg!, {
+      pointerId: 3,
+      pointerType: "mouse",
+    });
+
+    fireEvent.pointerDown(cornerHandle!, {
+      pointerId: 4,
+      pointerType: "mouse",
+      clientX: 220,
+      clientY: 150,
+    });
+    fireEvent.pointerMove(svg!, {
+      pointerId: 4,
+      pointerType: "mouse",
+      clientX: 120,
+      clientY: 80,
+    });
+
+    await waitFor(() => {
+      expect(onResizeTray).toHaveBeenCalledWith(180, 130);
+    });
+
+    fireEvent.pointerUp(svg!, {
+      pointerId: 4,
+      pointerType: "mouse",
+    });
+
+    expect(onSaveSnapshot).toHaveBeenCalledTimes(2);
+    expect(onEditInteractionChange).toHaveBeenNthCalledWith(1, true);
+    expect(onEditInteractionChange).toHaveBeenLastCalledWith(false);
+  });
 });

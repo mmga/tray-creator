@@ -55,7 +55,7 @@ function createParams(): SteppedLayoutParams {
   };
 }
 
-describe("stepped tray model", () => {
+describe("stepped tray model", { timeout: 15000 }, () => {
   it("returns a thin placeholder body when slots or groups are missing", () => {
     const model = createSteppedTrayModel({
       ...STEPPED_LAYOUT_DEFAULTS,

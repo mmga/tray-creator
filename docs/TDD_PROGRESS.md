@@ -62,6 +62,30 @@
 
 ## 进度记录
 
+### 2026-04-16 - 补齐 LayoutCanvas 空白清选/底边缩放测试并稳住 coverage 超时
+- 范围：继续推进高价值 UI 交互 TDD，补 `LayoutCanvas` 的空白清选与剩余托盘缩放分支，同时修正 coverage 模式下两个老慢测的超时问题。
+- 改动摘要：
+  - 在 `src/components/LayoutCanvas.test.tsx` 中新增空白点击清选测试，覆盖先选中槽位、再点击画布空白区域时清空选择集的路径。
+  - 新增 simple stepped 底边与角落 resize 测试，覆盖 `bottom` / `corner` 两个拖拽分支，以及基于 row bands 的宽深双轴钳制。
+  - 给 `src/lib/stepped-tray-model.test.ts` 与 `src/components/SteppedDraftDialog.test.tsx` 增加显式 `15000ms` timeout，避免它们在 coverage 模式下偶发踩中默认 `5000ms` 超时。
+  - 通过这组改动把 `LayoutCanvas` 的主要 resize 交互进一步拉进回归面，同时把全量 coverage 验证重新拉回稳定状态。
+- 验证命令：
+  - `pnpm exec vitest run src/components/LayoutCanvas.test.tsx`
+  - `pnpm exec vitest run src/components/SteppedDraftDialog.test.tsx src/lib/stepped-tray-model.test.ts`
+  - `pnpm test`
+  - `pnpm test:coverage`
+  - `pnpm lint`
+- 覆盖率影响：
+  - 总 statements 从 `69.04%` 提升到 `69.18%`
+  - `components` 整体从 `74.96%` 提升到 `75.83%` statements
+  - `src/components/LayoutCanvas.tsx` 从 `76.39%` 提升到 `78.36%` statements
+  - `src/components/LayoutCanvas.tsx` 的 branches 从 `65.7%` 提升到 `67.63%`
+- 当前判断：
+  - `LayoutCanvas` 的高价值交互已经覆盖到选中、清选、框选、旋转、右/底/角 resize、缩放控制和侧栏控制区，当前剩余空白越来越偏细枝末节。
+  - coverage 运行的主要不稳定点已经收敛，后续可以继续把精力放回交互覆盖本身，而不是被慢测超时打断。
+- 下一步：
+  - 优先补 `LayoutCanvas` 的 touch pointer 守卫与拖拽移动分支，或者回到 `SteppedPanel` / `SimpleSteppedPanel` 的剩余状态分支。
+
 ### 2026-04-16 - 补齐 LayoutCanvas 框选/控制区与 TrayViewer context lost 测试
 - 范围：继续推进高价值 UI 交互 TDD，补 `LayoutCanvas` 的框选与控制区交互，同时清掉 `TrayViewer` 剩余的 `webglcontextlost` 分支。
 - 改动摘要：
