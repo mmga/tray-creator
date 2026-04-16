@@ -9,6 +9,7 @@ import type {
 } from "@/types/custom-tray";
 
 const {
+  calculateCanvasDragSnapMock,
   flushScheduledLiveUpdatesMock,
   scheduleLiveUpdatesMock,
   startActionPanelResizeMock,
@@ -16,6 +17,7 @@ const {
   resetZoomMock,
   useCanvasKeyboardMock,
 } = vi.hoisted(() => ({
+  calculateCanvasDragSnapMock: vi.fn(),
   flushScheduledLiveUpdatesMock: vi.fn(),
   scheduleLiveUpdatesMock: vi.fn(),
   startActionPanelResizeMock: vi.fn(),
@@ -26,6 +28,10 @@ const {
 
 vi.mock("@/lib/perf", () => ({
   measurePerf: (_label: string, fn: () => unknown) => fn(),
+}));
+
+vi.mock("@/lib/canvas-snap-engine", () => ({
+  calculateCanvasDragSnap: calculateCanvasDragSnapMock,
 }));
 
 vi.mock("@/hooks/useCanvasZoom", () => ({
@@ -285,6 +291,7 @@ function createSteppedParams(
 
 describe("LayoutCanvas", { timeout: 15000 }, () => {
   beforeEach(() => {
+    calculateCanvasDragSnapMock.mockReset();
     flushScheduledLiveUpdatesMock.mockReset();
     scheduleLiveUpdatesMock.mockReset();
     startActionPanelResizeMock.mockReset();
@@ -1117,6 +1124,163 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
 
     expect(onSaveSnapshot).toHaveBeenCalledTimes(2);
     expect(onEditInteractionChange).toHaveBeenNthCalledWith(1, true);
+    expect(onEditInteractionChange).toHaveBeenLastCalledWith(false);
+  });
+
+  it("cancels drag interaction when the scoped move set is empty", async () => {
+    const slotMoveScopeResolver = vi.fn(() => []);
+    const onSaveSnapshot = vi.fn();
+    const onEditInteractionChange = vi.fn();
+
+    render(
+      <LayoutCanvas
+        params={createCustomParams({
+          slots: [
+            {
+              id: "slot-1",
+              x: 100,
+              y: 120,
+              shape: "circle",
+              width: 25,
+              height: 25,
+              rotation: 0,
+            },
+          ],
+        })}
+        slotMoveScopeResolver={slotMoveScopeResolver}
+        onUpdateSlot={vi.fn()}
+        onRemoveSlot={vi.fn()}
+        onSaveSnapshot={onSaveSnapshot}
+        onEditInteractionChange={onEditInteractionChange}
+      />,
+    );
+
+    fireEvent.pointerDown(screen.getByTestId("canvas-slot-slot-1"), {
+      pointerId: 6,
+      pointerType: "mouse",
+      clientX: 100,
+      clientY: 140,
+    });
+
+    await waitFor(() => {
+      expect(slotMoveScopeResolver).toHaveBeenCalledWith("slot-1", ["slot-1"]);
+    });
+    expect(onSaveSnapshot).not.toHaveBeenCalled();
+    expect(onEditInteractionChange).toHaveBeenLastCalledWith(false);
+    expect(screen.getByTestId("alignment-toolbar")).toHaveAttribute(
+      "data-enable-copy-preview",
+      "true",
+    );
+  });
+
+  it("ignores secondary touch pointers and only drags with the primary touch", async () => {
+    const onSaveSnapshot = vi.fn();
+    const onEditInteractionChange = vi.fn();
+    const { container } = render(
+      <LayoutCanvas
+        params={createCustomParams({
+          slots: [
+            {
+              id: "slot-1",
+              x: 100,
+              y: 120,
+              shape: "circle",
+              width: 25,
+              height: 25,
+              rotation: 0,
+            },
+            {
+              id: "slot-2",
+              x: 150,
+              y: 120,
+              shape: "circle",
+              width: 25,
+              height: 25,
+              rotation: 0,
+            },
+          ],
+        })}
+        onUpdateSlot={vi.fn()}
+        onRemoveSlot={vi.fn()}
+        onSaveSnapshot={onSaveSnapshot}
+        onEditInteractionChange={onEditInteractionChange}
+      />,
+    );
+
+    const svg = container.querySelector("svg");
+    expect(svg).not.toBeNull();
+
+    fireEvent.pointerDown(screen.getByTestId("canvas-slot-slot-1"), {
+      pointerId: 1,
+      pointerType: "touch",
+      clientX: 100,
+      clientY: 140,
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("canvas-slot-layer")).toHaveAttribute(
+        "data-selected-ids",
+        "slot-1",
+      );
+    });
+    expect(onSaveSnapshot).toHaveBeenCalledTimes(1);
+
+    fireEvent.pointerDown(screen.getByTestId("canvas-slot-slot-2"), {
+      pointerId: 2,
+      pointerType: "touch",
+      clientX: 150,
+      clientY: 140,
+    });
+
+    expect(onSaveSnapshot).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("canvas-slot-layer")).toHaveAttribute(
+      "data-selected-ids",
+      "slot-1",
+    );
+
+    fireEvent.pointerMove(svg!, {
+      pointerId: 2,
+      pointerType: "touch",
+      clientX: 155,
+      clientY: 150,
+    });
+
+    expect(calculateCanvasDragSnapMock).not.toHaveBeenCalled();
+    expect(scheduleLiveUpdatesMock).not.toHaveBeenCalled();
+
+    calculateCanvasDragSnapMock.mockReturnValue({
+      finalX: 130,
+      finalY: 150,
+      guides: [],
+    });
+
+    fireEvent.pointerMove(svg!, {
+      pointerId: 1,
+      pointerType: "touch",
+      clientX: 130,
+      clientY: 150,
+    });
+
+    await waitFor(() => {
+      expect(calculateCanvasDragSnapMock).toHaveBeenCalledTimes(1);
+    });
+    expect(scheduleLiveUpdatesMock).toHaveBeenCalledWith([
+      {
+        id: "slot-1",
+        x: 130,
+        y: 150,
+      },
+    ]);
+    expect(onEditInteractionChange).toHaveBeenCalledWith(true);
+
+    fireEvent.pointerUp(svg!, {
+      pointerId: 1,
+      pointerType: "touch",
+    });
+
+    await waitFor(() => {
+      expect(flushScheduledLiveUpdatesMock).toHaveBeenCalledTimes(1);
+    });
     expect(onEditInteractionChange).toHaveBeenLastCalledWith(false);
   });
 });

@@ -62,6 +62,29 @@
 
 ## 进度记录
 
+### 2026-04-16 - 补齐 LayoutCanvas touch 守卫与拖拽移动测试
+- 范围：继续推进 `LayoutCanvas` 的高价值交互 TDD，补 touch 主指针守卫、拖拽 live update，以及空 scoped drag 的取消路径。
+- 改动摘要：
+  - 在 `src/components/LayoutCanvas.test.tsx` 中引入对 `calculateCanvasDragSnap()` 的 mock，把测试焦点收敛到画布编排层，不把断言耦合到底层吸附算法细节。
+  - 新增空 scoped drag 测试，覆盖 `slotMoveScopeResolver()` 返回空数组时取消拖拽、不保存快照、并立即复位编辑态的分支。
+  - 新增 primary-touch-only 拖拽测试，覆盖 secondary touch `pointerdown` / `pointermove` 被忽略、primary touch 才会进入拖拽与 `scheduleLiveUpdates()` 的路径。
+  - 通过这组测试把 `LayoutCanvas` 里此前还未进入回归面的 touch 守卫和拖拽分支补齐到更接近完整的交互闭环。
+- 验证命令：
+  - `pnpm exec vitest run src/components/LayoutCanvas.test.tsx`
+  - `pnpm test`
+  - `pnpm test:coverage`
+  - `pnpm lint`
+- 覆盖率影响：
+  - 总 statements 从 `69.18%` 提升到 `69.7%`
+  - `components` 整体从 `75.83%` 提升到 `79.16%` statements
+  - `src/components/LayoutCanvas.tsx` 从 `78.36%` 提升到 `85.9%` statements
+  - `src/components/LayoutCanvas.tsx` 的 branches 从 `67.63%` 提升到 `75.84%`
+- 当前判断：
+  - `LayoutCanvas` 已经不只是覆盖选中和 resize 主路径，触摸守卫、拖拽编排和 interaction cancel 这些更容易回退的边角也开始稳定进入回归面。
+  - 组件层当前最值得继续补的，已经更多转向 `LayoutCanvas` 剩余的少量细枝末节，以及 `SteppedPanel` / `SimpleSteppedPanel` 还没完全压平的状态分支。
+- 下一步：
+  - 优先补 `LayoutCanvas` 剩余未覆盖的鼠标拖拽多选联动细节，或者转回 `SteppedPanel` / `SimpleSteppedPanel` 继续吃状态分支。
+
 ### 2026-04-16 - 补齐 LayoutCanvas 空白清选/底边缩放测试并稳住 coverage 超时
 - 范围：继续推进高价值 UI 交互 TDD，补 `LayoutCanvas` 的空白清选与剩余托盘缩放分支，同时修正 coverage 模式下两个老慢测的超时问题。
 - 改动摘要：
