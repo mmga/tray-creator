@@ -463,6 +463,120 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
       }),
     );
   });
+
+  it("updates spacing-independent grid controls and shows an unmatched preset placeholder", () => {
+    const updateParam = vi.fn();
+
+    render(
+      <ParameterPanel
+        params={{
+          ...DEFAULT_TRAY_PARAMS,
+          holeDiameter: 27,
+          spacingIndependent: true,
+          spacingX: 6.5,
+          spacingY: 7.5,
+          boundarySpacingIndependent: false,
+          boundarySpacing: 9,
+        }}
+        updateParam={updateParam}
+        replaceParams={vi.fn()}
+        resetParams={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+      />,
+    );
+
+    expect(screen.getByText("选择底座尺寸")).toBeInTheDocument();
+    expect(screen.getByText("待锻造")).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("switch", {
+        name: "grid-spacing-independent",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: `设置${PARAM_CONFIG.spacingX.label}:6.5`,
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: `设置${PARAM_CONFIG.spacingY.label}:7.5`,
+      }),
+    );
+
+    expect(updateParam).toHaveBeenNthCalledWith(
+      1,
+      "spacingIndependent",
+      false,
+    );
+    expect(updateParam).toHaveBeenNthCalledWith(2, "spacingX", 6.6);
+    expect(updateParam).toHaveBeenNthCalledWith(3, "spacingY", 7.6);
+  });
+
+  it("routes structure controls when base holes are enabled and shows generating text without volume", () => {
+    const updateParam = vi.fn();
+    const { rerender } = render(
+      <ParameterPanel
+        params={{
+          ...DEFAULT_TRAY_PARAMS,
+          enableBaseHole: true,
+          baseThickness: 3,
+          holeDepth: 3,
+          cornerRadius: 4,
+        }}
+        updateParam={updateParam}
+        replaceParams={vi.fn()}
+        resetParams={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={true}
+        volume={0}
+      />,
+    );
+
+    expect(screen.getByText("图纸生成中...")).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: `设置${PARAM_CONFIG.baseThickness.label}:${DEFAULT_TRAY_PARAMS.baseThickness}`,
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: `设置${PARAM_CONFIG.holeDepth.label}:${DEFAULT_TRAY_PARAMS.holeDepth}`,
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: `设置${PARAM_CONFIG.cornerRadius.label}:${DEFAULT_TRAY_PARAMS.cornerRadius}`,
+      }),
+    );
+
+    expect(updateParam).toHaveBeenNthCalledWith(1, "baseThickness", 3.2);
+    expect(updateParam).toHaveBeenNthCalledWith(2, "holeDepth", 3.2);
+    expect(updateParam).toHaveBeenNthCalledWith(3, "cornerRadius", 5);
+
+    rerender(
+      <ParameterPanel
+        params={{
+          ...DEFAULT_TRAY_PARAMS,
+          enableBaseHole: true,
+        }}
+        updateParam={updateParam}
+        replaceParams={vi.fn()}
+        resetParams={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+      />,
+    );
+
+    expect(screen.getByText("待锻造")).toBeInTheDocument();
+  });
 });
 
 describe("CustomPanel", { timeout: 15000 }, () => {
@@ -1564,6 +1678,69 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     expect(onPreviewGroupChange).toHaveBeenNthCalledWith(1, "group-1");
     expect(onPreviewGroupChange).toHaveBeenNthCalledWith(2, null);
     expect(onPreviewGroupChange).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps preview button clicks and touch pointer-up from changing group selection", () => {
+    const onSetActiveGroup = vi.fn();
+    const onPreviewGroupChange = vi.fn();
+
+    render(
+      <SteppedPanel
+        params={createSteppedParams()}
+        effectiveDimensions={{ width: 0, depth: 0 }}
+        isPreviewStale={false}
+        updateParam={vi.fn()}
+        setParams={vi.fn()}
+        onAddSlot={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+        selectedSlotIds={[]}
+        onAddGroup={vi.fn()}
+        onRemoveGroup={vi.fn()}
+        onUpdateGroupHeight={vi.fn()}
+        onUpdateGroupSmoothingOverride={vi.fn()}
+        onUpdateGroupSmoothingRadius={vi.fn()}
+        onUpdateGroupDisconnectOverride={vi.fn()}
+        onUpdateGroupDisconnectDistance={vi.fn()}
+        onSetActiveGroup={onSetActiveGroup}
+        onMoveSelectedSlotsToGroup={vi.fn()}
+        onReorderGroups={vi.fn()}
+        previewGroupId={null}
+        onPreviewGroupChange={onPreviewGroupChange}
+        bridgeWarning={null}
+        optimizationProposals={[
+          {
+            ...createOptimizationProposals()[0]!,
+            metrics: {
+              ...createOptimizationProposals()[0]!.metrics,
+              area: 0,
+            },
+          },
+        ]}
+        isOptimizingLayout={false}
+        onGenerateOptimizationProposals={vi.fn()}
+        onApplyOptimizationProposal={vi.fn()}
+        onClearOptimizationProposals={vi.fn()}
+        onOpenDraftDialog={vi.fn()}
+        onSaveDraft={vi.fn()}
+        currentDraftId={null}
+      />,
+    );
+
+    const previewButton = screen.getAllByRole("button", {
+      name: "按住仅查看当前组",
+    })[0]!;
+
+    fireEvent.click(previewButton);
+    fireEvent.pointerDown(previewButton, { pointerId: 9, pointerType: "touch" });
+    fireEvent.pointerUp(previewButton, { pointerId: 9, pointerType: "touch" });
+
+    expect(screen.getByText("较当前 0.0%")).toBeInTheDocument();
+    expect(onPreviewGroupChange).toHaveBeenCalledWith("group-1");
+    expect(onSetActiveGroup).not.toHaveBeenCalled();
+    expect(onPreviewGroupChange).toHaveBeenCalledTimes(1);
   });
 
   it("loads stepped perf fixtures and resets sampling through the perf panel", () => {

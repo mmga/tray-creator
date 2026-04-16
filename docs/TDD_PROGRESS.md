@@ -62,6 +62,30 @@
 
 ## 进度记录
 
+### 2026-04-16 - 补齐 ParameterPanel 独立间距与零体积状态测试
+- 范围：继续推进高价值 UI 面板 TDD，补 `ParameterPanel` 的独立间距/结构参数分支，并顺手收掉 `SteppedPanel` 剩余的几条裸线。
+- 改动摘要：
+  - 在 `src/components/panels.test.tsx` 中新增 `ParameterPanel` 的 spacing-independent 测试，覆盖未命中 preset 时的 placeholder、`spacingIndependent` 开关、`spacingX` / `spacingY` 两个独立滑杆，以及零体积下的 `待锻造` 文案。
+  - 新增 `ParameterPanel` 的结构参数测试，覆盖 `enableBaseHole` 打开后的 `baseThickness` 约束分支、`baseThickness` / `holeDepth` / `cornerRadius` 三个滑杆，以及零体积但 `isGenerating=true` 时的 `图纸生成中...` 文案。
+  - 补了一条 `SteppedPanel` 尾部回归，覆盖预览按钮的 click `stopPropagation()`、touch `pointerup` 提前返回，以及 `currentArea <= 0` 时 `formatAreaDelta()` 的 `较当前 0.0%` 分支。
+  - 这轮仍然只改测试，没有修改生产代码，说明现有组件实现已经满足新增行为断言。
+- 验证命令：
+  - `pnpm exec vitest run src/components/panels.test.tsx`
+  - `pnpm test`
+  - `pnpm test:coverage`
+  - `pnpm lint`
+- 覆盖率影响：
+  - 总 statements 从 `71.31%` 提升到 `71.54%`
+  - `components` 整体从 `86.25%` 提升到 `87.55%` statements
+  - `src/components/ParameterPanel.tsx` 从 `72.22%` 提升到 `88.88%` statements
+  - `src/components/ParameterPanel.tsx` 的 branches 从 `76.66%` 提升到 `96.66%`
+  - `src/components/SteppedPanel.tsx` 从 `97.85%` 提升到 `100%` statements
+- 当前判断：
+  - `SteppedPanel` 的 statement/line 覆盖已经收口，主空白基本转移到 `ParameterPanel` 剩余的少量滑杆行和 `SimpleSteppedPanel` 的状态型 UI 分支。
+  - 组件层当前最值得继续深挖的对象，已经从 `SteppedPanel` 明显转向 `SimpleSteppedPanel`，其次是 `ParameterPanel` 剩余的轻量收尾。
+- 下一步：
+  - 优先转向 `SimpleSteppedPanel` 的空行/缺失 derived row/生成中文案等剩余状态分支，或者把 `ParameterPanel` 最后几条未覆盖行补平。
+
 ### 2026-04-16 - 补齐 SteppedPanel group 管理与 pointer cancel 测试
 - 范围：继续推进 `SteppedPanel` 的高价值 UI TDD，补 group 管理按钮、圆柱高度调整，以及 preview 的 `pointercancel` / 非触发键盘分支。
 - 改动摘要：
