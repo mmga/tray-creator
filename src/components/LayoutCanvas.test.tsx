@@ -9,17 +9,38 @@ import type {
 } from "@/types/custom-tray";
 
 const {
+  actionPanelResizeState,
   calculateCanvasDragSnapMock,
+  canvasZoomState,
   flushScheduledLiveUpdatesMock,
   scheduleLiveUpdatesMock,
+  setIsPanningMock,
+  setIsSpacePressedMock,
+  setPanMock,
   startActionPanelResizeMock,
   stopActionPanelResizeMock,
   resetZoomMock,
   useCanvasKeyboardMock,
 } = vi.hoisted(() => ({
+  actionPanelResizeState: {
+    actionPanelWidth: 200,
+    isResizingActionPanel: false,
+  },
   calculateCanvasDragSnapMock: vi.fn(),
+  canvasZoomState: {
+    isSpacePressed: false,
+    isPanning: false,
+    panStartRef: { current: { x: 0, y: 0 } },
+  },
   flushScheduledLiveUpdatesMock: vi.fn(),
   scheduleLiveUpdatesMock: vi.fn(),
+  setIsPanningMock: vi.fn((value: boolean) => {
+    canvasZoomState.isPanning = value;
+  }),
+  setIsSpacePressedMock: vi.fn((value: boolean) => {
+    canvasZoomState.isSpacePressed = value;
+  }),
+  setPanMock: vi.fn(),
   startActionPanelResizeMock: vi.fn(),
   stopActionPanelResizeMock: vi.fn(),
   resetZoomMock: vi.fn(),
@@ -37,17 +58,17 @@ vi.mock("@/lib/canvas-snap-engine", () => ({
 vi.mock("@/hooks/useCanvasZoom", () => ({
   useCanvasZoom: () => ({
     zoom: 1,
-    setPan: vi.fn(),
+    setPan: setPanMock,
     viewBox: "-20 -20 320 320",
     viewW: 320,
     viewH: 320,
     minX: -20,
     minY: -20,
-    isSpacePressed: false,
-    setIsSpacePressed: vi.fn(),
-    isPanning: false,
-    setIsPanning: vi.fn(),
-    panStartRef: { current: { x: 0, y: 0 } },
+    isSpacePressed: canvasZoomState.isSpacePressed,
+    setIsSpacePressed: setIsSpacePressedMock,
+    isPanning: canvasZoomState.isPanning,
+    setIsPanning: setIsPanningMock,
+    panStartRef: canvasZoomState.panStartRef,
     handleWheel: vi.fn(),
     handleTouchStart: vi.fn(),
     handleTouchMove: vi.fn(),
@@ -62,8 +83,8 @@ vi.mock("@/hooks/useCanvasKeyboard", () => ({
 
 vi.mock("@/hooks/useActionPanelResize", () => ({
   useActionPanelResize: () => ({
-    actionPanelWidth: 200,
-    isResizingActionPanel: false,
+    actionPanelWidth: actionPanelResizeState.actionPanelWidth,
+    isResizingActionPanel: actionPanelResizeState.isResizingActionPanel,
     startActionPanelResize: startActionPanelResizeMock,
     stopActionPanelResize: stopActionPanelResizeMock,
   }),
@@ -128,14 +149,20 @@ vi.mock("@/components/canvas/CanvasSlotLayer", () => ({
   CanvasSlotLayer({
     slots,
     selectedIds,
+    hoveredId,
     focusedGroupId,
     onSlotPointerDown,
+    onSlotPointerEnter,
+    onSlotPointerLeave,
     onSlotRotatePointerDown,
   }: {
     slots: Array<{ id: string; x: number; y: number; rotation: number }>;
     selectedIds: ReadonlySet<string>;
+    hoveredId: string | null;
     focusedGroupId?: string | null;
     onSlotPointerDown: (event: React.PointerEvent, slotId: string) => void;
+    onSlotPointerEnter: (slotId: string) => void;
+    onSlotPointerLeave: () => void;
     onSlotRotatePointerDown: (
       event: React.PointerEvent,
       slot: { id: string; x: number; y: number; rotation: number },
@@ -145,12 +172,15 @@ vi.mock("@/components/canvas/CanvasSlotLayer", () => ({
       <g
         data-testid="canvas-slot-layer"
         data-selected-ids={Array.from(selectedIds).join(",")}
+        data-hovered-id={hoveredId ?? ""}
         data-focused-group-id={focusedGroupId ?? ""}
       >
         {slots.map((slot) => (
           <React.Fragment key={slot.id}>
             <g
               data-testid={`canvas-slot-${slot.id}`}
+              onPointerEnter={() => onSlotPointerEnter(slot.id)}
+              onPointerLeave={() => onSlotPointerLeave()}
               onPointerDown={(event) => onSlotPointerDown(event, slot.id)}
             />
             <g
@@ -291,9 +321,17 @@ function createSteppedParams(
 
 describe("LayoutCanvas", { timeout: 15000 }, () => {
   beforeEach(() => {
+    actionPanelResizeState.actionPanelWidth = 200;
+    actionPanelResizeState.isResizingActionPanel = false;
     calculateCanvasDragSnapMock.mockReset();
+    canvasZoomState.isSpacePressed = false;
+    canvasZoomState.isPanning = false;
+    canvasZoomState.panStartRef.current = { x: 0, y: 0 };
     flushScheduledLiveUpdatesMock.mockReset();
     scheduleLiveUpdatesMock.mockReset();
+    setIsPanningMock.mockClear();
+    setIsSpacePressedMock.mockClear();
+    setPanMock.mockClear();
     startActionPanelResizeMock.mockReset();
     stopActionPanelResizeMock.mockReset();
     resetZoomMock.mockReset();
@@ -385,6 +423,37 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
       "data-selected-ids",
       "",
     );
+  });
+
+  it("tracks hovered slots and supports boundary spacing overrides", async () => {
+    render(
+      <LayoutCanvas
+        params={createCustomParams({
+          boundarySpacingIndependent: true,
+          boundarySpacing: 18,
+        })}
+        onUpdateSlot={vi.fn()}
+        onRemoveSlot={vi.fn()}
+      />,
+    );
+
+    fireEvent.pointerEnter(screen.getByTestId("canvas-slot-slot-1"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("canvas-slot-layer")).toHaveAttribute(
+        "data-hovered-id",
+        "slot-1",
+      );
+    });
+
+    fireEvent.pointerLeave(screen.getByTestId("canvas-slot-slot-1"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("canvas-slot-layer")).toHaveAttribute(
+        "data-hovered-id",
+        "",
+      );
+    });
   });
 
   it("flushes live updates and hides the active toolbar tab when the canvas becomes inactive", async () => {
@@ -882,6 +951,60 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     expect(onSelectionChange).toHaveBeenLastCalledWith(["slot-1", "slot-2"]);
   });
 
+  it("toggles the selected slot off when ctrl-clicking it again", async () => {
+    const onSelectionChange = vi.fn();
+    const { container } = render(
+      <LayoutCanvas
+        params={createCustomParams()}
+        onUpdateSlot={vi.fn()}
+        onRemoveSlot={vi.fn()}
+        onSelectionChange={onSelectionChange}
+      />,
+    );
+
+    const svg = container.querySelector("svg");
+    expect(svg).not.toBeNull();
+
+    fireEvent.pointerDown(screen.getByTestId("canvas-slot-slot-1"), {
+      pointerId: 1,
+      pointerType: "mouse",
+      clientX: 100,
+      clientY: 140,
+    });
+    fireEvent.pointerUp(svg!, {
+      pointerId: 1,
+      pointerType: "mouse",
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("canvas-slot-layer")).toHaveAttribute(
+        "data-selected-ids",
+        "slot-1",
+      );
+    });
+
+    fireEvent.pointerDown(screen.getByTestId("canvas-slot-slot-1"), {
+      pointerId: 2,
+      pointerType: "mouse",
+      clientX: 100,
+      clientY: 140,
+      ctrlKey: true,
+    });
+    fireEvent.pointerUp(svg!, {
+      pointerId: 2,
+      pointerType: "mouse",
+      ctrlKey: true,
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("canvas-slot-layer")).toHaveAttribute(
+        "data-selected-ids",
+        "",
+      );
+    });
+    expect(onSelectionChange).toHaveBeenLastCalledWith([]);
+  });
+
   it("routes zoom controls, keyboard hints, and action panel resize interactions", async () => {
     const { container } = render(
       <LayoutCanvas
@@ -929,6 +1052,29 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     await waitFor(() => {
       expect(startActionPanelResizeMock).toHaveBeenCalledWith(284);
     });
+  });
+
+  it("renders cursor and panel classes for active zoom and resize states", () => {
+    canvasZoomState.isSpacePressed = true;
+    canvasZoomState.isPanning = true;
+    actionPanelResizeState.isResizingActionPanel = true;
+
+    const { container } = render(
+      <LayoutCanvas
+        params={createCustomParams()}
+        onUpdateSlot={vi.fn()}
+        onRemoveSlot={vi.fn()}
+      />,
+    );
+
+    const viewport = container.querySelector("div.relative.min-h-0.min-w-0.flex-1");
+    const svg = container.querySelector("svg");
+    const aside = container.querySelector("aside");
+
+    expect(viewport).toHaveClass("cursor-grab");
+    expect(viewport).toHaveClass("cursor-grabbing");
+    expect(svg).not.toHaveClass("cursor-crosshair");
+    expect(aside).not.toHaveClass("transition-[width]");
   });
 
   it("clears the current selection when clicking the canvas background without ctrl", async () => {

@@ -62,6 +62,30 @@
 
 ## 进度记录
 
+### 2026-04-16 - 补齐 LayoutCanvas hover / ctrl-toggle / class 状态测试
+- 范围：继续推进 `LayoutCanvas` 的高价值交互 TDD，补 hover、Ctrl 反选、Space/panning cursor，以及 action panel resize 状态的剩余分支。
+- 改动摘要：
+  - 扩展 `src/components/LayoutCanvas.test.tsx` 的 hook mock，使 `useCanvasZoom()` 和 `useActionPanelResize()` 能按测试场景切换状态，并让 `CanvasSlotLayer` mock 暴露 hovered slot。
+  - 新增 hover 测试，覆盖 `onSlotPointerEnter()` / `onSlotPointerLeave()` 与 `effectiveHoveredId` 的透传，并顺带覆盖 `boundarySpacingIndependent` 的自定义边距分支。
+  - 新增 Ctrl 反选测试，覆盖已选槽位再次 Ctrl 点击后移出选区的分支。
+  - 新增 Space/panning 与 panel resize class 测试，覆盖 `cursor-grab` / `cursor-grabbing`、SVG 取消 `cursor-crosshair`，以及 `isResizingActionPanel` 下移除 width transition 的分支。
+  - 通过这组测试把 `LayoutCanvas` 从“主要交互可回归”继续推进到“状态类分支也开始被显式保护”的层次。
+- 验证命令：
+  - `pnpm exec vitest run src/components/LayoutCanvas.test.tsx`
+  - `pnpm test`
+  - `pnpm test:coverage`
+  - `pnpm lint`
+- 覆盖率影响：
+  - 总 statements 从 `69.7%` 提升到 `69.79%`
+  - `components` 整体从 `79.16%` 提升到 `79.73%` statements
+  - `src/components/LayoutCanvas.tsx` 从 `85.9%` 提升到 `87.21%` statements
+  - `src/components/LayoutCanvas.tsx` 的 branches 从 `75.84%` 提升到 `81.15%`
+- 当前判断：
+  - `LayoutCanvas` 现在已经覆盖到 hover、选中/反选、清选、框选、旋转、拖拽、touch 守卫、resize、缩放和侧栏状态，主交互层面的 TDD 闭环已经比较完整。
+  - 当前组件层更值得继续深挖的空白，已经逐步从 `LayoutCanvas` 转向 `SteppedPanel` / `SimpleSteppedPanel` 这类状态密集面板，或者 `TrayViewer` 剩余的少量生命周期分支。
+- 下一步：
+  - 优先转回 `SteppedPanel` / `SimpleSteppedPanel` 继续吃状态分支，或者把 `LayoutCanvas` 剩余的极少数异常路径补平。
+
 ### 2026-04-16 - 补齐 LayoutCanvas touch 守卫与拖拽移动测试
 - 范围：继续推进 `LayoutCanvas` 的高价值交互 TDD，补 touch 主指针守卫、拖拽 live update，以及空 scoped drag 的取消路径。
 - 改动摘要：
