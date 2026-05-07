@@ -49,4 +49,48 @@ describe("grid model state", () => {
       boundarySpacing: DEFAULT_TRAY_PARAMS.spacing,
     });
   });
+
+  it("only preserves half-circle slots for single-axis grids", () => {
+    expect(
+      normalizeGridParams({
+        ...DEFAULT_TRAY_PARAMS,
+        rows: 1,
+        halfCircleSlots: true,
+      }),
+    ).toMatchObject({
+      rows: 1,
+      halfCircleSlots: true,
+    });
+
+    expect(
+      normalizeGridParams({
+        ...DEFAULT_TRAY_PARAMS,
+        rows: 3,
+        columns: 1,
+        halfCircleSlots: true,
+      }),
+    ).toMatchObject({
+      rows: 3,
+      columns: 1,
+      halfCircleSlots: true,
+    });
+
+    expect(
+      normalizeGridParams({
+        ...DEFAULT_TRAY_PARAMS,
+        rows: 2,
+        columns: 2,
+        halfCircleSlots: true,
+      }),
+    ).toMatchObject({
+      rows: 2,
+      columns: 2,
+      halfCircleSlots: false,
+    });
+
+    expect(updateGridParam(DEFAULT_TRAY_PARAMS, "rows", 2)).toMatchObject({
+      rows: 2,
+      halfCircleSlots: false,
+    });
+  });
 });

@@ -8,8 +8,8 @@ import {
   type SlotCenter,
 } from "@/lib/model-utils";
 
-const { subtract } = booleans;
-const { cylinder } = primitives;
+const { intersect, subtract, union } = booleans;
+const { cuboid, cylinder } = primitives;
 const { translate } = transforms;
 
 /**
@@ -42,6 +42,38 @@ export function getGridBoundarySpacingAxes(params: TrayParams) {
   };
 }
 
+function createHalfCircleTrayBody(
+  width: number,
+  depth: number,
+  baseThickness: number,
+  holeDepth: number,
+  cornerRadius: number,
+  splitAxis: "x" | "y",
+) {
+  const base = createBaseBody(width, depth, baseThickness, cornerRadius);
+  const upper = translate(
+    [0, 0, baseThickness],
+    createBaseBody(width, depth, holeDepth, cornerRadius),
+  );
+  const clipCenter: [number, number, number] =
+    splitAxis === "y"
+      ? [0, -depth / 4, baseThickness + holeDepth / 2]
+      : [-width / 4, 0, baseThickness + holeDepth / 2];
+  const clipSize: [number, number, number] =
+    splitAxis === "y"
+      ? [width + 1, depth / 2, holeDepth + 0.1]
+      : [width / 2, depth + 1, holeDepth + 0.1];
+  const farSideUpper = intersect(
+    upper,
+    cuboid({
+      center: clipCenter,
+      size: clipSize,
+    }),
+  );
+
+  return union(base, farSideUpper);
+}
+
 export function createTrayModel(params: TrayParams): Geom3 {
   const {
     rows,
@@ -67,14 +99,26 @@ export function createTrayModel(params: TrayParams): Geom3 {
   const totalDepth =
     2 * boundarySpacingY + (rows - 1) * spacingY + rows * actualHoleDiameter;
   const totalHeight = baseThickness + holeDepth;
+  const usesHalfCircleSlots =
+    params.halfCircleSlots && (rows === 1 || columns === 1);
+  const halfCircleSplitAxis = rows === 1 ? "y" : "x";
 
   // 1. 创建底板实体
-  const body = createBaseBody(
-    totalWidth,
-    totalDepth,
-    totalHeight,
-    cornerRadius,
-  );
+  const body = usesHalfCircleSlots
+    ? createHalfCircleTrayBody(
+        totalWidth,
+        totalDepth,
+        baseThickness,
+        holeDepth,
+        cornerRadius,
+        halfCircleSplitAxis,
+      )
+    : createBaseBody(
+        totalWidth,
+        totalDepth,
+        totalHeight,
+        cornerRadius,
+      );
 
   // 2. 计算凹槽中心坐标
   const centers: SlotCenter[] = [];
@@ -98,7 +142,11 @@ export function createTrayModel(params: TrayParams): Geom3 {
   // 3. 凹槽阵列（从顶部向下挖）
   const holes: Geom3[] = centers.map(({ cx, cy }) =>
     translate(
-      [cx, cy, baseThickness + holeDepth / 2],
+      [
+        cx,
+        cy,
+        baseThickness + holeDepth / 2 + (usesHalfCircleSlots ? 0.01 : 0),
+      ],
       cylinder({
         radius: holeRadius,
         height: holeDepth + 0.02, // 略微超过以确保布尔运算干净

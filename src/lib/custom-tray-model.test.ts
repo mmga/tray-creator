@@ -64,7 +64,7 @@ describe("custom tray model", () => {
           width: 40,
           height: 20,
           rotation: 30,
-          shape: "ellipse",
+          shape: "ellipse" as const,
         },
       ],
     };

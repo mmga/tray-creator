@@ -18,6 +18,8 @@ export function normalizeGridParams(next: TrayParams): TrayParams {
   const boundarySpacing = boundarySpacingIndependent
     ? getFiniteOr(next.boundarySpacing, spacing)
     : spacing;
+  const halfCircleSlots =
+    (next.rows === 1 || next.columns === 1) && Boolean(next.halfCircleSlots);
 
   return {
     ...next,
@@ -27,6 +29,7 @@ export function normalizeGridParams(next: TrayParams): TrayParams {
     spacingY,
     boundarySpacingIndependent,
     boundarySpacing,
+    halfCircleSlots,
   };
 }
 

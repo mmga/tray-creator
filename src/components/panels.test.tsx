@@ -628,6 +628,80 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
     expect(updateParam).toHaveBeenNthCalledWith(3, "spacing", 6);
     expect(onGenerate).toHaveBeenCalledWith({ shouldSwitchView: false });
   });
+
+  it("shows the half-circle slot toggle only for single-axis grids", () => {
+    const updateParam = vi.fn();
+    const { rerender } = render(
+      <ParameterPanel
+        params={{
+          ...DEFAULT_TRAY_PARAMS,
+          rows: 1,
+          halfCircleSlots: false,
+        }}
+        updateParam={updateParam}
+        replaceParams={vi.fn()}
+        resetParams={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("switch", {
+        name: "grid-half-circle-slots",
+      }),
+    );
+
+    expect(screen.getByText("单排/单列半圆槽")).toBeInTheDocument();
+    expect(updateParam).toHaveBeenCalledWith("halfCircleSlots", true);
+
+    rerender(
+      <ParameterPanel
+        params={{
+          ...DEFAULT_TRAY_PARAMS,
+          rows: 3,
+          columns: 1,
+          halfCircleSlots: true,
+        }}
+        updateParam={updateParam}
+        replaceParams={vi.fn()}
+        resetParams={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+      />,
+    );
+
+    expect(screen.getByText("单排/单列半圆槽")).toBeInTheDocument();
+
+    rerender(
+      <ParameterPanel
+        params={{
+          ...DEFAULT_TRAY_PARAMS,
+          rows: 2,
+          columns: 2,
+          halfCircleSlots: true,
+        }}
+        updateParam={updateParam}
+        replaceParams={vi.fn()}
+        resetParams={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+      />,
+    );
+
+    expect(screen.queryByText("单排/单列半圆槽")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("switch", {
+        name: "grid-half-circle-slots",
+      }),
+    ).not.toBeInTheDocument();
+  });
 });
 
 describe("CustomPanel", { timeout: 15000 }, () => {

@@ -13,6 +13,7 @@ export const DEFAULT_TRAY_PARAMS: TrayParams = {
   spacingY: 5,
   boundarySpacing: 5,
   boundarySpacingIndependent: false,
+  halfCircleSlots: false,
   baseThickness: 3,
   holeDepth: 3,
   cornerRadius: 4,

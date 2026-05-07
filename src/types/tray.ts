@@ -26,6 +26,8 @@ export interface TrayParams {
   boundarySpacing: number;
   /** 是否独立调整边界间距（false 时 X/Y 两轴分别跟随对应的 spacing） */
   boundarySpacingIndependent: boolean;
+  /** 单排托盘是否使用半圆槽；仅 rows=1 时生效 */
+  halfCircleSlots: boolean;
   /** 是否启用底板磁吸孔 */
   enableBaseHole: boolean;
   /** 底板磁吸孔规格: '19.5' (19.5x1mm) | '25' (25x1.2mm) */

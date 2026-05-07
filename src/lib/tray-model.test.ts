@@ -90,4 +90,65 @@ describe("tray model", () => {
     expect(maxY - minY).toBeCloseTo(dimensions.depth, 1);
     expect(maxZ - minZ).toBeCloseTo(dimensions.height, 1);
   });
+
+  it("keeps single-row half-circle trays at the same footprint with less upper material", () => {
+    const params = {
+      ...DEFAULT_TRAY_PARAMS,
+      rows: 1,
+      columns: 3,
+      holeDiameter: 32,
+      halfCircleSlots: false,
+    };
+    const fullModel = createTrayModel(params);
+    const halfModel = createTrayModel({ ...params, halfCircleSlots: true });
+    const fullBounds = measureBoundingBox(fullModel);
+    const halfBounds = measureBoundingBox(halfModel);
+    const dimensions = calculateTrayDimensions(params);
+
+    expect(halfBounds[1][0] - halfBounds[0][0]).toBeCloseTo(dimensions.width, 1);
+    expect(halfBounds[1][1] - halfBounds[0][1]).toBeCloseTo(dimensions.depth, 1);
+    expect(halfBounds[1][2] - halfBounds[0][2]).toBeCloseTo(dimensions.height, 1);
+    expect(halfBounds).toEqual(fullBounds);
+    expect(measureVolume(halfModel)).toBeLessThan(measureVolume(fullModel));
+    expect(measureVolume(halfModel)).toBeGreaterThan(
+      dimensions.width * dimensions.depth * params.baseThickness * 0.9,
+    );
+  });
+
+  it("supports half-circle trays for single-column grids", () => {
+    const params = {
+      ...DEFAULT_TRAY_PARAMS,
+      rows: 3,
+      columns: 1,
+      holeDiameter: 32,
+      halfCircleSlots: false,
+    };
+    const fullModel = createTrayModel(params);
+    const halfModel = createTrayModel({ ...params, halfCircleSlots: true });
+    const fullBounds = measureBoundingBox(fullModel);
+    const halfBounds = measureBoundingBox(halfModel);
+    const dimensions = calculateTrayDimensions(params);
+
+    expect(halfBounds[1][0] - halfBounds[0][0]).toBeCloseTo(dimensions.width, 1);
+    expect(halfBounds[1][1] - halfBounds[0][1]).toBeCloseTo(dimensions.depth, 1);
+    expect(halfBounds[1][2] - halfBounds[0][2]).toBeCloseTo(dimensions.height, 1);
+    expect(halfBounds).toEqual(fullBounds);
+    expect(measureVolume(halfModel)).toBeLessThan(measureVolume(fullModel));
+    expect(measureVolume(halfModel)).toBeGreaterThan(
+      dimensions.width * dimensions.depth * params.baseThickness * 0.9,
+    );
+  });
+
+  it("ignores half-circle slots when grid has multiple rows", () => {
+    const params = {
+      ...DEFAULT_TRAY_PARAMS,
+      rows: 2,
+      columns: 3,
+      halfCircleSlots: false,
+    };
+
+    expect(
+      measureVolume(createTrayModel({ ...params, halfCircleSlots: true })),
+    ).toBeCloseTo(measureVolume(createTrayModel(params)), 5);
+  });
 });

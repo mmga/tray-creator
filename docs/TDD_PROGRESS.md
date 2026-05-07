@@ -62,6 +62,30 @@
 
 ## 进度记录
 
+### 2026-05-07 - 实现网格单轴半圆槽选项
+- 范围：按 TDD 实现网格模式单排或单列时可用的半圆槽选项，覆盖参数归一化、导入兼容、面板入口和 JSCAD 几何生成。
+- 改动摘要：
+  - 在 `TrayParams` / `DEFAULT_TRAY_PARAMS` 中新增 `halfCircleSlots`，并在 `normalizeGridParams()` / `validateGridParams()` 中保证它只在 `rows=1 || columns=1` 时保留，旧配置文件默认回落为 `false`。
+  - 在 `ParameterPanel` 布局区新增 `单排/单列半圆槽` 开关，只在单轴排列下渲染；开启时布局摘要显示半圆槽状态。
+  - 在 `createTrayModel()` 中新增半圆槽几何路径：完整矩形底板保持 `baseThickness`，上层 `holeDepth` 只保留远离摄影机的一半，并按单排/单列方向沿原圆心线生成半圆槽阶梯结构。
+  - 补了 `tray-model`、`grid-model-state`、`param-io` 和 `ParameterPanel` 的回归测试；同时修正几处测试文件里的静态类型问题，让 `pnpm typecheck` 可以通过。
+- 验证命令：
+  - `pnpm exec vitest run src/lib/tray-model.test.ts src/lib/grid-model-state.test.ts src/lib/param-io.test.ts src/components/panels.test.tsx`
+  - `pnpm test`
+  - `pnpm typecheck`
+  - `pnpm lint`
+  - `pnpm test:coverage`
+- 覆盖率影响：
+  - 总 statements 从 `72.56%` 提升到 `72.68%`
+  - 总 branches 从 `65.59%` 提升到 `66.08%`
+  - `components` 整体提升到 `88.18%` statements
+  - `lib` 整体提升到 `89.14%` statements / `71.47%` branches
+- 当前判断：
+  - 半圆槽的核心行为已经有模型级、状态级、导入级和面板级回归保护，几何断言覆盖了“同 footprint、同总高度、体积减少、双轴多槽忽略”的关键约束。
+  - 当前实现仍沿用网格模式既有 STL 文件命名和报价规则；半圆槽会通过实际生成体积影响耗材估重，但不会改变按槽数量计算的基础报价。
+- 下一步：
+  - 如果要进一步增强可见性，可以补 `TrayViewer` 截图/像素级预览验证，或在导出文件名里追加半圆槽标识。
+
 ### 2026-04-16 - 补齐 AlignPanel 对齐与排布主路径测试
 - 范围：继续推进 `components/canvas` 层 TDD，把 `AlignPanel` 拉进稳定回归面。
 - 改动摘要：

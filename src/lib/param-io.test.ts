@@ -110,6 +110,52 @@ describe("param-io", () => {
     expect(parsed.cornerRadius).toBe(10);
     expect(parsed.boundarySpacing).toBe(parsed.spacing);
     expect(parsed.boundarySpacingIndependent).toBe(false);
+    expect(parsed.halfCircleSlots).toBe(false);
+  });
+
+  it("preserves imported half-circle slots only for single-axis grids", () => {
+    const singleRow = parseParamFileObject(
+      {
+        version: 1,
+        mode: "grid" as AppMode,
+        params: {
+          ...DEFAULT_TRAY_PARAMS,
+          rows: 1,
+          halfCircleSlots: true,
+        },
+      },
+      "grid",
+    ) as TrayParams;
+    const singleColumn = parseParamFileObject(
+      {
+        version: 1,
+        mode: "grid" as AppMode,
+        params: {
+          ...DEFAULT_TRAY_PARAMS,
+          rows: 3,
+          columns: 1,
+          halfCircleSlots: true,
+        },
+      },
+      "grid",
+    ) as TrayParams;
+    const multiRow = parseParamFileObject(
+      {
+        version: 1,
+        mode: "grid" as AppMode,
+        params: {
+          ...DEFAULT_TRAY_PARAMS,
+          rows: 2,
+          columns: 2,
+          halfCircleSlots: true,
+        },
+      },
+      "grid",
+    ) as TrayParams;
+
+    expect(singleRow.halfCircleSlots).toBe(true);
+    expect(singleColumn.halfCircleSlots).toBe(true);
+    expect(multiRow.halfCircleSlots).toBe(false);
   });
 
   it("migrates custom files into stepped params", () => {

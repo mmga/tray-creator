@@ -278,6 +278,13 @@ function validateGridParams(params: TrayParams) {
   if (!obj.boundarySpacingIndependent) {
     obj.boundarySpacing = obj.spacing;
   }
+
+  if (typeof obj.halfCircleSlots !== "boolean") {
+    obj.halfCircleSlots = false;
+  }
+  if (obj.rows !== 1 && obj.columns !== 1) {
+    obj.halfCircleSlots = false;
+  }
 }
 
 function validateCustomParams(params: CustomLayoutParams) {

@@ -58,6 +58,9 @@ export default function ParameterPanel({
     : params.spacingIndependent
       ? `边距 X${boundarySpacingX}mm / Y${boundarySpacingY}mm`
       : `边距${boundarySpacingX}mm`;
+  const canUseHalfCircleSlots = params.rows === 1 || params.columns === 1;
+  const slotModeSummary =
+    canUseHalfCircleSlots && params.halfCircleSlots ? " / 半圆槽" : "";
   const isOversized = dimensions.width > MAX_BUILD_SIZE || dimensions.depth > MAX_BUILD_SIZE;
   const [autoPreview, setAutoPreview] = useState(false);
   const selectedPresetIndex = BASE_PRESETS.findIndex(
@@ -92,7 +95,7 @@ export default function ParameterPanel({
       {/* 布局参数 — 移动端默认展开 */}
       <div className="iron-panel rounded-sm p-4">
         <SectionHeader icon={Layout} title="布局" collapsible defaultOpen={true}
-          summary={`${params.columns}×${params.rows} / ⌀${params.holeDiameter}mm / ${spacingSummary} / ${boundarySummary}`}>
+          summary={`${params.columns}×${params.rows}${slotModeSummary} / ⌀${params.holeDiameter}mm / ${spacingSummary} / ${boundarySummary}`}>
           <div className="space-y-4">
             {/* 底座预设 */}
             <div className="space-y-1.5">
@@ -132,6 +135,19 @@ export default function ParameterPanel({
               onChange={(v) => updateParam("rows", v)}
               unit={PARAM_CONFIG.rows.unit}
             />
+            {canUseHalfCircleSlots && (
+              <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
+                <Label htmlFor="grid-half-circle-slots" className="text-sm cursor-pointer text-[#f0d8b8]">
+                  单排/单列半圆槽
+                </Label>
+                <Switch
+                  id="grid-half-circle-slots"
+                  checked={params.halfCircleSlots}
+                  onCheckedChange={(checked) => updateParam("halfCircleSlots", checked)}
+                  className="data-[state=checked]:bg-[#8cb880]"
+                />
+              </div>
+            )}
             <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
               <Label htmlFor="grid-spacing-independent" className="text-sm cursor-pointer text-[#f0d8b8]">
                 X / Y 间距独立调整

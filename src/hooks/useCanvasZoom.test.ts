@@ -87,8 +87,8 @@ describe("useCanvasZoom", () => {
     };
 
     act(() => {
-      result.current.handleWheel(ctrlWheelEvent as React.WheelEvent);
-      result.current.handleWheel(plainWheelEvent as React.WheelEvent);
+      result.current.handleWheel(ctrlWheelEvent as unknown as React.WheelEvent);
+      result.current.handleWheel(plainWheelEvent as unknown as React.WheelEvent);
     });
 
     expect(ctrlWheelEvent.preventDefault).toHaveBeenCalledTimes(1);
