@@ -47,6 +47,7 @@ describe("grid model state", () => {
     expect(resetGridParams()).toEqual({
       ...DEFAULT_TRAY_PARAMS,
       boundarySpacing: DEFAULT_TRAY_PARAMS.spacing,
+      enableBaseHole: true,
     });
   });
 
@@ -91,6 +92,55 @@ describe("grid model state", () => {
     expect(updateGridParam(DEFAULT_TRAY_PARAMS, "rows", 2)).toMatchObject({
       rows: 2,
       halfCircleSlots: false,
+    });
+  });
+
+  it("keeps structure modes mutually exclusive and forces base holes for base plates", () => {
+    expect(
+      normalizeGridParams({
+        ...DEFAULT_TRAY_PARAMS,
+        basePlateOnly: true,
+        halfCircleSlots: true,
+        enableBaseHole: false,
+      }),
+    ).toMatchObject({
+      basePlateOnly: true,
+      halfCircleSlots: false,
+      enableBaseHole: true,
+    });
+
+    expect(
+      updateGridParam(
+        {
+          ...DEFAULT_TRAY_PARAMS,
+          rows: 1,
+          basePlateOnly: true,
+          halfCircleSlots: false,
+        },
+        "halfCircleSlots",
+        true,
+      ),
+    ).toMatchObject({
+      basePlateOnly: false,
+      halfCircleSlots: true,
+    });
+
+    expect(
+      updateGridParam(
+        {
+          ...DEFAULT_TRAY_PARAMS,
+          rows: 1,
+          basePlateOnly: false,
+          halfCircleSlots: true,
+          enableBaseHole: false,
+        },
+        "basePlateOnly",
+        true,
+      ),
+    ).toMatchObject({
+      basePlateOnly: true,
+      halfCircleSlots: false,
+      enableBaseHole: true,
     });
   });
 });

@@ -64,6 +64,22 @@ describe("tray model", () => {
     expect(dimensions.height).toBe(6);
   });
 
+  it("calculates base-plate-only trays with the same footprint and base height", () => {
+    const dimensions = calculateTrayDimensions({
+      ...DEFAULT_TRAY_PARAMS,
+      rows: 2,
+      columns: 3,
+      holeDiameter: 32,
+      baseThickness: 3.4,
+      holeDepth: 4,
+      basePlateOnly: true,
+    });
+
+    expect(dimensions.width).toBeCloseTo(117.2, 5);
+    expect(dimensions.depth).toBeCloseTo(79.8, 5);
+    expect(dimensions.height).toBe(3.4);
+  });
+
   it("keeps positive volume and removes more material when enabling base holes", () => {
     const params = {
       ...DEFAULT_TRAY_PARAMS,
@@ -150,5 +166,41 @@ describe("tray model", () => {
     expect(
       measureVolume(createTrayModel({ ...params, halfCircleSlots: true })),
     ).toBeCloseTo(measureVolume(createTrayModel(params)), 5);
+  });
+
+  it("generates only the embedded-hole base plate when base-plate-only mode is enabled", () => {
+    const params = {
+      ...DEFAULT_TRAY_PARAMS,
+      rows: 2,
+      columns: 2,
+      baseThickness: 3.2,
+      holeDepth: 4,
+      enableBaseHole: true as const,
+      basePlateOnly: true,
+      halfCircleSlots: true,
+    };
+    const fullModel = createTrayModel({
+      ...params,
+      basePlateOnly: false,
+      halfCircleSlots: false,
+    });
+    const baseOnlyModel = createTrayModel(params);
+    const noMagnetBaseOnlyModel = createTrayModel({
+      ...params,
+      enableBaseHole: false,
+    });
+    const [[minX, minY, minZ], [maxX, maxY, maxZ]] =
+      measureBoundingBox(baseOnlyModel);
+    const dimensions = calculateTrayDimensions(params);
+
+    expect(maxX - minX).toBeCloseTo(dimensions.width, 1);
+    expect(maxY - minY).toBeCloseTo(dimensions.depth, 1);
+    expect(maxZ - minZ).toBeCloseTo(params.baseThickness, 1);
+    expect(dimensions.height).toBe(params.baseThickness);
+    expect(measureVolume(baseOnlyModel)).toBeLessThan(measureVolume(fullModel));
+    expect(measureVolume(baseOnlyModel)).toBeCloseTo(
+      measureVolume(noMagnetBaseOnlyModel),
+      5,
+    );
   });
 });

@@ -97,6 +97,8 @@ describe("param-io", () => {
         cornerRadius: 99,
         boundarySpacing: undefined,
         boundarySpacingIndependent: undefined,
+        enableBaseHole: undefined,
+        basePlateOnly: undefined,
       },
     };
 
@@ -111,6 +113,8 @@ describe("param-io", () => {
     expect(parsed.boundarySpacing).toBe(parsed.spacing);
     expect(parsed.boundarySpacingIndependent).toBe(false);
     expect(parsed.halfCircleSlots).toBe(false);
+    expect(parsed.basePlateOnly).toBe(false);
+    expect(parsed.enableBaseHole).toBe(true);
   });
 
   it("preserves imported half-circle slots only for single-axis grids", () => {
@@ -156,6 +160,27 @@ describe("param-io", () => {
     expect(singleRow.halfCircleSlots).toBe(true);
     expect(singleColumn.halfCircleSlots).toBe(true);
     expect(multiRow.halfCircleSlots).toBe(false);
+  });
+
+  it("imports base-plate-only grid mode as a mutually exclusive magnetic base", () => {
+    const parsed = parseParamFileObject(
+      {
+        version: 1,
+        mode: "grid" as AppMode,
+        params: {
+          ...DEFAULT_TRAY_PARAMS,
+          rows: 1,
+          halfCircleSlots: true,
+          basePlateOnly: true,
+          enableBaseHole: false,
+        },
+      },
+      "grid",
+    ) as TrayParams;
+
+    expect(parsed.basePlateOnly).toBe(true);
+    expect(parsed.halfCircleSlots).toBe(false);
+    expect(parsed.enableBaseHole).toBe(true);
   });
 
   it("migrates custom files into stepped params", () => {

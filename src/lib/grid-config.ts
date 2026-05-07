@@ -14,10 +14,11 @@ export const DEFAULT_TRAY_PARAMS: TrayParams = {
   boundarySpacing: 5,
   boundarySpacingIndependent: false,
   halfCircleSlots: false,
+  basePlateOnly: false,
   baseThickness: 3,
   holeDepth: 3,
   cornerRadius: 4,
-  enableBaseHole: false,
+  enableBaseHole: true,
   baseHoleSize: "25",
 };
 

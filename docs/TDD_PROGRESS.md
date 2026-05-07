@@ -62,6 +62,31 @@
 
 ## 进度记录
 
+### 2026-05-07 - 实现网格高级结构模式与仅内嵌孔底板
+- 范围：继续推进网格模式 TDD，把 `完整圆槽`、`半圆槽`、`仅内嵌孔底板` 收敛成互斥结构模式。
+- 改动摘要：
+  - 在 `TrayParams` / `DEFAULT_TRAY_PARAMS` 中新增 `basePlateOnly`，并把 `enableBaseHole` 默认值改为 `true`；旧网格配置缺少 `enableBaseHole` 时迁移为新默认，显式 `false` 仍被尊重，除非进入仅底板模式。
+  - 在 `normalizeGridParams()` / `validateGridParams()` 中维护互斥规则：`basePlateOnly=true` 会强制 `enableBaseHole=true` 并关闭 `halfCircleSlots`；开启半圆槽会关闭仅底板模式。
+  - 在 `ParameterPanel` 增加 `高级设置` 分组，用三段式结构模式按钮替代原来的半圆槽独立开关；半圆槽只在单排/单列可选，仅内嵌孔底板始终可选。
+  - 在 `createTrayModel()` / `calculateTrayDimensions()` 中实现仅底板几何：保留网格 footprint，只生成 `baseThickness` 高度的底板和内嵌磁吸孔，不生成上层凹槽，也不 subtract 圆槽。
+  - 补了模型尺寸/体积、状态互斥、导入迁移和面板交互回归；同步修正受新增字段影响的页面测试 mock。
+- 验证命令：
+  - `pnpm exec vitest run src/lib/tray-model.test.ts src/lib/grid-model-state.test.ts src/lib/param-io.test.ts src/components/panels.test.tsx`
+  - `pnpm test`
+  - `pnpm typecheck`
+  - `pnpm lint`
+  - `pnpm test:coverage`
+- 覆盖率影响：
+  - 总 statements 从 `72.68%` 提升到 `72.84%`
+  - 总 branches 从 `66.08%` 提升到 `66.39%`
+  - `components` 整体提升到 `88.27%` statements
+  - `lib` 整体提升到 `89.22%` statements / `72.04%` branches
+- 当前判断：
+  - 网格结构模式现在有明确的互斥状态模型，面板入口和导入路径都不再允许半圆槽与仅底板模式同时生效。
+  - 仅内嵌孔底板的核心约束已经被模型级测试覆盖：footprint 不变、高度等于 `baseThickness`、体积小于完整圆槽，并且即使传入 `enableBaseHole=false` 也会生成内嵌孔。
+- 下一步：
+  - 如果继续打磨用户反馈，可以考虑在 `BaseHoleConfig` 中针对仅底板模式禁用“普通托盘”按钮，避免 UI 上出现短暂可点但状态会被归一化拉回的入口。
+
 ### 2026-05-07 - 实现网格单轴半圆槽选项
 - 范围：按 TDD 实现网格模式单排或单列时可用的半圆槽选项，覆盖参数归一化、导入兼容、面板入口和 JSCAD 几何生成。
 - 改动摘要：

@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Layout, Wrench, Ruler } from "lucide-react";
+import { Layout, Wrench, Ruler, SlidersHorizontal } from "lucide-react";
 import { BaseHoleConfig } from "@/components/BaseHoleConfig";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
@@ -59,8 +59,17 @@ export default function ParameterPanel({
       ? `边距 X${boundarySpacingX}mm / Y${boundarySpacingY}mm`
       : `边距${boundarySpacingX}mm`;
   const canUseHalfCircleSlots = params.rows === 1 || params.columns === 1;
-  const slotModeSummary =
-    canUseHalfCircleSlots && params.halfCircleSlots ? " / 半圆槽" : "";
+  const structureMode = params.basePlateOnly
+    ? "base-plate-only"
+    : params.halfCircleSlots
+      ? "half-circle"
+      : "full";
+  const structureModeLabel =
+    structureMode === "base-plate-only"
+      ? "仅内嵌孔底板"
+      : structureMode === "half-circle"
+        ? "半圆槽"
+        : "完整圆槽";
   const isOversized = dimensions.width > MAX_BUILD_SIZE || dimensions.depth > MAX_BUILD_SIZE;
   const [autoPreview, setAutoPreview] = useState(false);
   const selectedPresetIndex = BASE_PRESETS.findIndex(
@@ -88,6 +97,26 @@ export default function ParameterPanel({
     resetParams();
   };
 
+  const handleStructureModeChange = (
+    mode: "full" | "half-circle" | "base-plate-only",
+  ) => {
+    if (mode === "full") {
+      updateParam("halfCircleSlots", false);
+      updateParam("basePlateOnly", false);
+      return;
+    }
+
+    if (mode === "half-circle") {
+      if (!canUseHalfCircleSlots) {
+        return;
+      }
+      updateParam("halfCircleSlots", true);
+      return;
+    }
+
+    updateParam("basePlateOnly", true);
+  };
+
 
 
   return (
@@ -95,7 +124,7 @@ export default function ParameterPanel({
       {/* 布局参数 — 移动端默认展开 */}
       <div className="iron-panel rounded-sm p-4">
         <SectionHeader icon={Layout} title="布局" collapsible defaultOpen={true}
-          summary={`${params.columns}×${params.rows}${slotModeSummary} / ⌀${params.holeDiameter}mm / ${spacingSummary} / ${boundarySummary}`}>
+          summary={`${params.columns}×${params.rows} / ${structureModeLabel} / ⌀${params.holeDiameter}mm / ${spacingSummary} / ${boundarySummary}`}>
           <div className="space-y-4">
             {/* 底座预设 */}
             <div className="space-y-1.5">
@@ -135,19 +164,6 @@ export default function ParameterPanel({
               onChange={(v) => updateParam("rows", v)}
               unit={PARAM_CONFIG.rows.unit}
             />
-            {canUseHalfCircleSlots && (
-              <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
-                <Label htmlFor="grid-half-circle-slots" className="text-sm cursor-pointer text-[#f0d8b8]">
-                  单排/单列半圆槽
-                </Label>
-                <Switch
-                  id="grid-half-circle-slots"
-                  checked={params.halfCircleSlots}
-                  onCheckedChange={(checked) => updateParam("halfCircleSlots", checked)}
-                  className="data-[state=checked]:bg-[#8cb880]"
-                />
-              </div>
-            )}
             <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
               <Label htmlFor="grid-spacing-independent" className="text-sm cursor-pointer text-[#f0d8b8]">
                 X / Y 间距独立调整
@@ -205,6 +221,40 @@ export default function ParameterPanel({
                 unit={PARAM_CONFIG.boundarySpacing.unit}
               />
             )}
+          </div>
+        </SectionHeader>
+      </div>
+
+      {/* 高级设置 — 结构模式互斥选择 */}
+      <div className="iron-panel rounded-sm p-4">
+        <SectionHeader icon={SlidersHorizontal} title="高级设置" collapsible defaultOpen={false}
+          summary={`结构模式：${structureModeLabel}`}>
+          <div className="space-y-2">
+            <Label className="text-sm text-muted-foreground">结构模式</Label>
+            <div className="grid grid-cols-3 gap-1 rounded-sm border border-[#2e2a24] bg-[#1c1a16] p-1">
+              {[
+                { mode: "full" as const, label: "完整圆槽", disabled: false },
+                { mode: "half-circle" as const, label: "半圆槽", disabled: !canUseHalfCircleSlots },
+                { mode: "base-plate-only" as const, label: "仅内嵌孔底板", disabled: false },
+              ].map(({ mode, label, disabled }) => {
+                const active = structureMode === mode;
+                return (
+                  <button
+                    key={mode}
+                    type="button"
+                    aria-pressed={active}
+                    disabled={disabled}
+                    onClick={() => handleStructureModeChange(mode)}
+                    className={`min-h-9 px-2 text-xs font-semibold transition-colors ${active
+                      ? "bg-[#8cb880] text-[#11140f]"
+                      : "text-[#d8d1c5] hover:bg-[#252119] disabled:cursor-not-allowed disabled:opacity-35"
+                      }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </SectionHeader>
       </div>

@@ -629,7 +629,7 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
     expect(onGenerate).toHaveBeenCalledWith({ shouldSwitchView: false });
   });
 
-  it("shows the half-circle slot toggle only for single-axis grids", () => {
+  it("routes mutually exclusive grid structure modes from advanced settings", () => {
     const updateParam = vi.fn();
     const { rerender } = render(
       <ParameterPanel
@@ -648,13 +648,8 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
       />,
     );
 
-    fireEvent.click(
-      screen.getByRole("switch", {
-        name: "grid-half-circle-slots",
-      }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "半圆槽" }));
 
-    expect(screen.getByText("单排/单列半圆槽")).toBeInTheDocument();
     expect(updateParam).toHaveBeenCalledWith("halfCircleSlots", true);
 
     rerender(
@@ -675,7 +670,10 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
       />,
     );
 
-    expect(screen.getByText("单排/单列半圆槽")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "半圆槽" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
 
     rerender(
       <ParameterPanel
@@ -695,12 +693,38 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
       />,
     );
 
-    expect(screen.queryByText("单排/单列半圆槽")).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("switch", {
-        name: "grid-half-circle-slots",
-      }),
-    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "半圆槽" })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "仅内嵌孔底板" }));
+
+    expect(updateParam).toHaveBeenLastCalledWith("basePlateOnly", true);
+
+    rerender(
+      <ParameterPanel
+        params={{
+          ...DEFAULT_TRAY_PARAMS,
+          rows: 1,
+          halfCircleSlots: true,
+          basePlateOnly: false,
+        }}
+        updateParam={updateParam}
+        replaceParams={vi.fn()}
+        resetParams={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "完整圆槽" }));
+
+    expect(updateParam).toHaveBeenNthCalledWith(
+      updateParam.mock.calls.length - 1,
+      "halfCircleSlots",
+      false,
+    );
+    expect(updateParam).toHaveBeenLastCalledWith("basePlateOnly", false);
   });
 });
 

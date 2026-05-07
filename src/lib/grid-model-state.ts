@@ -18,8 +18,12 @@ export function normalizeGridParams(next: TrayParams): TrayParams {
   const boundarySpacing = boundarySpacingIndependent
     ? getFiniteOr(next.boundarySpacing, spacing)
     : spacing;
+  const basePlateOnly = Boolean(next.basePlateOnly);
   const halfCircleSlots =
-    (next.rows === 1 || next.columns === 1) && Boolean(next.halfCircleSlots);
+    !basePlateOnly &&
+    (next.rows === 1 || next.columns === 1) &&
+    Boolean(next.halfCircleSlots);
+  const enableBaseHole = basePlateOnly ? true : Boolean(next.enableBaseHole);
 
   return {
     ...next,
@@ -30,6 +34,8 @@ export function normalizeGridParams(next: TrayParams): TrayParams {
     boundarySpacingIndependent,
     boundarySpacing,
     halfCircleSlots,
+    basePlateOnly,
+    enableBaseHole,
   };
 }
 
@@ -93,6 +99,25 @@ export function updateGridParam<K extends keyof TrayParams>(
       ...params,
       boundarySpacingIndependent: true,
       boundarySpacing: getFiniteOr(params.boundarySpacing, params.spacing),
+    });
+  }
+
+  if (key === "basePlateOnly") {
+    const nextBasePlateOnly = value as TrayParams["basePlateOnly"];
+    return normalizeGridParams({
+      ...params,
+      basePlateOnly: nextBasePlateOnly,
+      halfCircleSlots: nextBasePlateOnly ? false : params.halfCircleSlots,
+      enableBaseHole: nextBasePlateOnly ? true : params.enableBaseHole,
+    });
+  }
+
+  if (key === "halfCircleSlots") {
+    const nextHalfCircleSlots = value as TrayParams["halfCircleSlots"];
+    return normalizeGridParams({
+      ...params,
+      halfCircleSlots: nextHalfCircleSlots,
+      basePlateOnly: nextHalfCircleSlots ? false : params.basePlateOnly,
     });
   }
 

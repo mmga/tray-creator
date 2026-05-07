@@ -282,8 +282,20 @@ function validateGridParams(params: TrayParams) {
   if (typeof obj.halfCircleSlots !== "boolean") {
     obj.halfCircleSlots = false;
   }
+  if (typeof obj.basePlateOnly !== "boolean") {
+    obj.basePlateOnly = false;
+  }
   if (obj.rows !== 1 && obj.columns !== 1) {
     obj.halfCircleSlots = false;
+  }
+  if (obj.basePlateOnly) {
+    obj.halfCircleSlots = false;
+  }
+  if (typeof obj.enableBaseHole !== "boolean") {
+    obj.enableBaseHole = DEFAULT_TRAY_PARAMS.enableBaseHole;
+  }
+  if (obj.basePlateOnly) {
+    obj.enableBaseHole = true;
   }
 }
 

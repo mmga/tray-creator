@@ -19,7 +19,7 @@ const { translate } = transforms;
  * - 底板 + 墙壁一体，通过 2D 圆角矩形线性拉伸生成
  *   → 圆角只出现在竖直方向的 4 条边上
  * - 凹槽从顶部向下挖，深度 = holeDepth，到达底板顶面
- * - 总高度 = baseThickness + holeDepth
+ * - 总高度 = baseThickness + holeDepth，仅底板模式下为 baseThickness
  * - 间距支持统一 / X-Y 独立：边-凹槽与凹槽-凹槽分别按轴计算
  * - 凹槽实际直径 = holeDiameter + HOLE_TOLERANCE
  */
@@ -98,13 +98,22 @@ export function createTrayModel(params: TrayParams): Geom3 {
     columns * actualHoleDiameter;
   const totalDepth =
     2 * boundarySpacingY + (rows - 1) * spacingY + rows * actualHoleDiameter;
-  const totalHeight = baseThickness + holeDepth;
+  const totalHeight = params.basePlateOnly ? baseThickness : baseThickness + holeDepth;
   const usesHalfCircleSlots =
-    params.halfCircleSlots && (rows === 1 || columns === 1);
+    !params.basePlateOnly &&
+    params.halfCircleSlots &&
+    (rows === 1 || columns === 1);
   const halfCircleSplitAxis = rows === 1 ? "y" : "x";
 
   // 1. 创建底板实体
-  const body = usesHalfCircleSlots
+  const body = params.basePlateOnly
+    ? createBaseBody(
+        totalWidth,
+        totalDepth,
+        baseThickness,
+        cornerRadius,
+      )
+    : usesHalfCircleSlots
     ? createHalfCircleTrayBody(
         totalWidth,
         totalDepth,
@@ -156,10 +165,10 @@ export function createTrayModel(params: TrayParams): Geom3 {
   );
 
   // 4. 布尔减法：实体 - 凹槽
-  let tray = subtract(body, ...holes);
+  let tray = params.basePlateOnly ? body : subtract(body, ...holes);
 
   // 5. 底板磁吸孔
-  if (params.enableBaseHole) {
+  if (params.enableBaseHole || params.basePlateOnly) {
     tray = subtractBaseHoles(tray, centers, baseThickness, params.baseHoleSize);
   }
 
@@ -190,6 +199,6 @@ export function calculateTrayDimensions(params: TrayParams) {
       2 * boundarySpacingY +
       (rows - 1) * spacingY +
       rows * actualHoleDiameter,
-    height: baseThickness + holeDepth,
+    height: params.basePlateOnly ? baseThickness : baseThickness + holeDepth,
   };
 }
