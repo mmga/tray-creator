@@ -9,6 +9,7 @@ import {
 import type { Geom2, Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { SteppedLayoutParams, SteppedSlot } from "@/types/custom-tray";
 import { RENDER_CONFIG, getSlotOuterOffset } from "@/lib/config";
+import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
 import {
   generateOutlineGeom2,
   type OutlineCircle,
@@ -37,15 +38,24 @@ function getSlotBoundingHalfSize(
   shape: SteppedSlot["shape"],
 ) {
   const rad = (rotation * Math.PI) / 180;
-  const a = width / 2;
-  const b = height / 2;
   const offset = getSlotOuterOffset(width, height, shape);
-  const halfW = Math.sqrt(
-    Math.pow(a * Math.cos(rad), 2) + Math.pow(b * Math.sin(rad), 2),
-  ) + offset;
-  const halfH = Math.sqrt(
-    Math.pow(a * Math.sin(rad), 2) + Math.pow(b * Math.cos(rad), 2),
-  ) + offset;
+  const points = sampleSlotProfilePoints(
+    width,
+    height,
+    shape,
+    offset,
+    RENDER_CONFIG.cylinderSegments,
+  );
+  let halfW = 0;
+  let halfH = 0;
+
+  for (const point of points) {
+    const x = point.x * Math.cos(rad) - point.y * Math.sin(rad);
+    const y = point.x * Math.sin(rad) + point.y * Math.cos(rad);
+    halfW = Math.max(halfW, Math.abs(x));
+    halfH = Math.max(halfH, Math.abs(y));
+  }
+
   return { halfW, halfH };
 }
 
@@ -62,27 +72,13 @@ function createOffsetSlotShape(
     });
   }
 
-  const rx = width / 2;
-  const ry = height / 2;
-  const points: [number, number][] = [];
-
-  for (let i = 0; i < RENDER_CONFIG.cylinderSegments; i += 1) {
-    const theta = (i / RENDER_CONFIG.cylinderSegments) * 2 * Math.PI;
-    const cosTheta = Math.cos(theta);
-    const sinTheta = Math.sin(theta);
-    let x = rx * cosTheta;
-    let y = ry * sinTheta;
-    const nx = rx === 0 ? 0 : cosTheta / rx;
-    const ny = ry === 0 ? 0 : sinTheta / ry;
-    const normalLength = Math.hypot(nx, ny);
-
-    if (normalLength > 0) {
-      x += (offset * nx) / normalLength;
-      y += (offset * ny) / normalLength;
-    }
-
-    points.push([x, y]);
-  }
+  const points = sampleSlotProfilePoints(
+    width,
+    height,
+    shape,
+    offset,
+    RENDER_CONFIG.cylinderSegments,
+  ).map((point): [number, number] => [point.x, point.y]);
 
   return geom2.fromPoints(points);
 }

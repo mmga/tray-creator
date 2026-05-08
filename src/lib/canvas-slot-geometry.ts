@@ -1,4 +1,5 @@
-import { getSlotOuterOffset } from "@/lib/config";
+import { RENDER_CONFIG, getSlotOuterOffset } from "@/lib/config";
+import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
 import type { FreeSlot } from "@/types/custom-tray";
 
 export interface CanvasEllipseBoundingBox {
@@ -36,30 +37,36 @@ export function getEllipseBoundingBox(
   height: number,
   rotation: number,
   shape?: FreeSlot["shape"],
+  ellipseProfileExponent?: number,
 ): CanvasEllipseBoundingBox {
   const radians = (rotation * Math.PI) / 180;
-  const radiusX = width / 2;
-  const radiusY = height / 2;
   const offset = getSlotOuterOffset(width, height, shape);
+  const points = sampleSlotProfilePoints(
+    width,
+    height,
+    shape,
+    offset,
+    RENDER_CONFIG.cylinderSegments,
+    ellipseProfileExponent,
+  );
+  let halfW = 0;
+  let halfH = 0;
 
-  return {
-    halfW:
-      Math.sqrt(
-        Math.pow(radiusX * Math.cos(radians), 2) +
-          Math.pow(radiusY * Math.sin(radians), 2),
-      ) + offset,
-    halfH:
-      Math.sqrt(
-        Math.pow(radiusX * Math.sin(radians), 2) +
-          Math.pow(radiusY * Math.cos(radians), 2),
-      ) + offset,
-  };
+  for (const point of points) {
+    const x = point.x * Math.cos(radians) - point.y * Math.sin(radians);
+    const y = point.x * Math.sin(radians) + point.y * Math.cos(radians);
+    halfW = Math.max(halfW, Math.abs(x));
+    halfH = Math.max(halfH, Math.abs(y));
+  }
+
+  return { halfW, halfH };
 }
 
 export function calculateEffectiveBaseplate(
   slots: ReadonlyArray<CanvasGeometrySlot>,
   trayDepth: number,
   boundarySpacing: number,
+  ellipseProfileExponent?: number,
 ): CanvasEffectiveBaseplate {
   if (slots.length === 0) {
     return {
@@ -82,6 +89,7 @@ export function calculateEffectiveBaseplate(
       slot.height,
       slot.rotation,
       slot.shape,
+      ellipseProfileExponent,
     );
     minX = Math.min(minX, slot.x - halfW);
     maxX = Math.max(maxX, slot.x + halfW);

@@ -27,15 +27,26 @@ interface MirrorPanelProps {
   spacing: number;
   trayWidth: number;
   trayDepth: number;
+  ellipseProfileExponent?: number;
 }
 
 function buildCollisionPolygon(
   slot: Pick<FreeSlot, "x" | "y" | "width" | "height" | "rotation" | "shape">,
   spacing: number,
+  ellipseProfileExponent?: number,
 ) {
   const margin =
     spacing / 2 + getSlotOuterOffset(slot.width, slot.height, slot.shape);
-  return getEllipsePolygon(slot.x, slot.y, slot.width, slot.height, slot.rotation, margin, 12);
+  return getEllipsePolygon(
+    slot.x,
+    slot.y,
+    slot.width,
+    slot.height,
+    slot.rotation,
+    margin,
+    12,
+    ellipseProfileExponent,
+  );
 }
 
 function isSameGeometry(
@@ -57,9 +68,19 @@ function hasSpacingCollision(
   candidate: SymmetryInsertSlot,
   others: Array<FreeSlot | SteppedSlot | SymmetryInsertSlot>,
   spacing: number,
+  ellipseProfileExponent?: number,
 ) {
-  const candidatePolygon = buildCollisionPolygon(candidate, spacing);
-  return others.some((other) => polygonsIntersect(candidatePolygon, buildCollisionPolygon(other, spacing)));
+  const candidatePolygon = buildCollisionPolygon(
+    candidate,
+    spacing,
+    ellipseProfileExponent,
+  );
+  return others.some((other) =>
+    polygonsIntersect(
+      candidatePolygon,
+      buildCollisionPolygon(other, spacing, ellipseProfileExponent),
+    ),
+  );
 }
 
 export default function MirrorPanel({
@@ -72,6 +93,7 @@ export default function MirrorPanel({
   spacing,
   trayWidth,
   trayDepth,
+  ellipseProfileExponent,
 }: MirrorPanelProps) {
   const { toast } = useToast();
   const hasSelection = selectedSlots.length > 0;
@@ -100,7 +122,14 @@ export default function MirrorPanel({
         return;
       }
 
-      if (hasSpacingCollision(insertSlot, [...allSlots, ...acceptedInserts], spacing)) {
+      if (
+        hasSpacingCollision(
+          insertSlot,
+          [...allSlots, ...acceptedInserts],
+          spacing,
+          ellipseProfileExponent,
+        )
+      ) {
         skippedCollisionCount += 1;
         return;
       }
@@ -112,9 +141,14 @@ export default function MirrorPanel({
       acceptedInserts,
       skippedDuplicateCount,
       skippedCollisionCount,
-      outOfBoundsCount: countOutOfBoundsSlots(acceptedInserts, trayWidth, trayDepth),
+      outOfBoundsCount: countOutOfBoundsSlots(
+        acceptedInserts,
+        trayWidth,
+        trayDepth,
+        ellipseProfileExponent,
+      ),
     };
-  }, [allSlots, selectedSlots, spacing, trayDepth, trayWidth]);
+  }, [allSlots, ellipseProfileExponent, selectedSlots, spacing, trayDepth, trayWidth]);
 
   useEffect(() => {
     if (!enableCopyPreview || !hasSelection) {
@@ -160,9 +194,24 @@ export default function MirrorPanel({
       })
       .filter((slot): slot is SymmetrySlot => slot !== null);
 
-    const outOfBoundsCount = countOutOfBoundsSlots(nextSlots, trayWidth, trayDepth);
+    const outOfBoundsCount = countOutOfBoundsSlots(
+      nextSlots,
+      trayWidth,
+      trayDepth,
+      ellipseProfileExponent,
+    );
     const collisionCount = nextSlots.reduce((count, nextSlot) => {
-      return count + (hasSpacingCollision(nextSlot, unselectedSlots, spacing) ? 1 : 0);
+      return (
+        count +
+        (hasSpacingCollision(
+          nextSlot,
+          unselectedSlots,
+          spacing,
+          ellipseProfileExponent,
+        )
+          ? 1
+          : 0)
+      );
     }, 0);
 
     if (outOfBoundsCount > 0) {

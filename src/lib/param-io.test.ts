@@ -230,6 +230,38 @@ describe("param-io", () => {
     });
   });
 
+  it("fills and clamps custom ellipse profile exponent on import", () => {
+    const parsed = parseParamFileObject(
+      {
+        version: 1,
+        mode: "custom" as AppMode,
+        params: {
+          ...CUSTOM_LAYOUT_DEFAULTS,
+          ellipseProfileExponent: 99,
+        },
+      },
+      "custom",
+    ) as CustomLayoutParams;
+
+    expect(parsed.ellipseProfileExponent).toBe(4);
+
+    const legacyParsed = parseParamFileObject(
+      {
+        version: 1,
+        mode: "custom" as AppMode,
+        params: {
+          ...CUSTOM_LAYOUT_DEFAULTS,
+          ellipseProfileExponent: undefined,
+        },
+      },
+      "custom",
+    ) as CustomLayoutParams;
+
+    expect(legacyParsed.ellipseProfileExponent).toBe(
+      CUSTOM_LAYOUT_DEFAULTS.ellipseProfileExponent,
+    );
+  });
+
   it("migrates legacy stepped files with bottomHeight and bridgeRadius", () => {
     const legacyStepped = {
       version: 1,

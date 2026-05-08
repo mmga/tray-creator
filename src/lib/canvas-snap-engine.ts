@@ -30,6 +30,7 @@ interface CalculateCanvasDragSnapOptions<TSlot extends CanvasSnapSlot> {
   trayDepth: number;
   currentMouse: CanvasPoint;
   startMouse: CanvasPoint;
+  ellipseProfileExponent?: number;
 }
 
 function roundToStep(value: number) {
@@ -44,6 +45,7 @@ export function calculateCanvasDragSnap<TSlot extends CanvasSnapSlot>({
   trayDepth,
   currentMouse,
   startMouse,
+  ellipseProfileExponent,
 }: CalculateCanvasDragSnapOptions<TSlot>): CanvasDragSnapResult | null {
   const draggingOrigin = dragOrigins.get(draggingSlotId);
   const draggingSlot = slots.find((slot) => slot.id === draggingSlotId);
@@ -62,6 +64,7 @@ export function calculateCanvasDragSnap<TSlot extends CanvasSnapSlot>({
     draggingSlot.height,
     draggingSlot.rotation,
     draggingSlot.shape,
+    ellipseProfileExponent,
   );
 
   let finalX = proposedX;
@@ -101,6 +104,7 @@ export function calculateCanvasDragSnap<TSlot extends CanvasSnapSlot>({
       other.height,
       other.rotation,
       other.shape,
+      ellipseProfileExponent,
     );
 
     considerXSnap(other.x, other.x);

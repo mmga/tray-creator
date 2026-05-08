@@ -104,10 +104,12 @@ export interface CustomLayoutParams {
   holeDepth: number;
   /** 圆角半径 (mm) */
   cornerRadius: number;
+  /** 椭圆轮廓指数：2 为标准椭圆，大于 2 会让中段弧线更饱满 */
+  ellipseProfileExponent?: number;
   /** 是否启用底板磁吸孔 */
   enableBaseHole: boolean;
-  /** 底板磁吸孔规格: '19.5' (19.5x1mm) | '25' (25x1.2mm) */
-  baseHoleSize: "19.5" | "25";
+  /** 底板磁吸孔规格: '25' (25x1.2mm) */
+  baseHoleSize: "25";
 }
 
 /** 阶梯底座布局参数 */

@@ -200,6 +200,10 @@ export default function LayoutCanvas({
     "boundarySpacingIndependent" in params && params.boundarySpacingIndependent
       ? (params as CustomLayoutParams).boundarySpacing
       : spacing;
+  const ellipseProfileExponent =
+    "ellipseProfileExponent" in params
+      ? params.ellipseProfileExponent
+      : undefined;
   const steppedGroupMetaById = useMemo(() => {
     if (!("groups" in params)) {
       return null;
@@ -321,14 +325,20 @@ export default function LayoutCanvas({
   const collisionState = useMemo(
     () =>
       measurePerf("canvas.collision", () =>
-        buildCanvasCollisionState(slots, spacing),
+        buildCanvasCollisionState(slots, spacing, ellipseProfileExponent),
       ),
-    [slots, spacing],
+    [ellipseProfileExponent, slots, spacing],
   );
 
   const effectiveBaseplate = useMemo(
-    () => calculateEffectiveBaseplate(slots, trayDepth, boundarySpacing),
-    [boundarySpacing, slots, trayDepth],
+    () =>
+      calculateEffectiveBaseplate(
+        slots,
+        trayDepth,
+        boundarySpacing,
+        ellipseProfileExponent,
+      ),
+    [boundarySpacing, ellipseProfileExponent, slots, trayDepth],
   );
 
   const isSimpleSteppedCanvas = Boolean(rowBands);
@@ -577,6 +587,7 @@ export default function LayoutCanvas({
           trayDepth,
           currentMouse: svgPoint,
           startMouse: dragStartRef.current.mouseStart,
+          ellipseProfileExponent,
         });
         if (!dragSnap) {
           return;
@@ -884,6 +895,7 @@ export default function LayoutCanvas({
             onSlotPointerEnter={setHoveredId}
             onSlotPointerLeave={() => setHoveredId(null)}
             onSlotRotatePointerDown={handleRotateMouseDown}
+            ellipseProfileExponent={ellipseProfileExponent}
           />
         </svg>
 
@@ -967,6 +979,7 @@ export default function LayoutCanvas({
           trayDepth={trayDepth}
           activeTabId={isActive ? activeActionTab : null}
           onActiveTabChange={setActiveActionTab}
+          ellipseProfileExponent={ellipseProfileExponent}
         />
       </aside>
     </div>

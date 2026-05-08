@@ -9,7 +9,7 @@ import {
   Columns2,
   Rows2,
 } from "lucide-react";
-import { getSlotOuterOffset } from "@/lib/config";
+import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
 
 const STEP = 0.2;
 const roundToStep = (value: number) => Math.round(value / STEP) * STEP;
@@ -22,25 +22,26 @@ interface AlignPanelProps {
   selectedSlots: Array<FreeSlot | SteppedSlot>;
   onUpdateSlots: (updates: SlotUpdate[]) => void;
   spacing: number;
+  ellipseProfileExponent?: number;
 }
 
 function getSlotBounds(
   slot: Pick<FreeSlot, "width" | "height" | "rotation" | "shape">,
+  ellipseProfileExponent?: number,
 ) {
-  const rad = ((slot.rotation || 0) * Math.PI) / 180;
-  const a = slot.width / 2;
-  const b = slot.height / 2;
-  const offset = getSlotOuterOffset(slot.width, slot.height, slot.shape);
-
-  return {
-    halfW:
-      Math.sqrt((a * Math.cos(rad)) ** 2 + (b * Math.sin(rad)) ** 2) + offset,
-    halfH:
-      Math.sqrt((a * Math.sin(rad)) ** 2 + (b * Math.cos(rad)) ** 2) + offset,
-  };
+  return getEllipseBoundingBox(
+    slot.width,
+    slot.height,
+    slot.rotation,
+    slot.shape,
+    ellipseProfileExponent,
+  );
 }
 
-function getSelectionBounds(selectedSlots: Array<FreeSlot | SteppedSlot>) {
+function getSelectionBounds(
+  selectedSlots: Array<FreeSlot | SteppedSlot>,
+  ellipseProfileExponent?: number,
+) {
   if (selectedSlots.length === 0) {
     return null;
   }
@@ -51,7 +52,7 @@ function getSelectionBounds(selectedSlots: Array<FreeSlot | SteppedSlot>) {
   let maxY = -Infinity;
 
   selectedSlots.forEach((slot) => {
-    const { halfW, halfH } = getSlotBounds(slot);
+    const { halfW, halfH } = getSlotBounds(slot, ellipseProfileExponent);
     minX = Math.min(minX, slot.x - halfW);
     maxX = Math.max(maxX, slot.x + halfW);
     minY = Math.min(minY, slot.y - halfH);
@@ -61,8 +62,11 @@ function getSelectionBounds(selectedSlots: Array<FreeSlot | SteppedSlot>) {
   return { minX, maxX, minY, maxY };
 }
 
-function getSelectionCenter(selectedSlots: Array<FreeSlot | SteppedSlot>) {
-  const bounds = getSelectionBounds(selectedSlots);
+function getSelectionCenter(
+  selectedSlots: Array<FreeSlot | SteppedSlot>,
+  ellipseProfileExponent?: number,
+) {
+  const bounds = getSelectionBounds(selectedSlots, ellipseProfileExponent);
   if (!bounds) {
     return null;
   }
@@ -73,7 +77,12 @@ function getSelectionCenter(selectedSlots: Array<FreeSlot | SteppedSlot>) {
   };
 }
 
-export default function AlignPanel({ selectedSlots, onUpdateSlots, spacing }: AlignPanelProps) {
+export default function AlignPanel({
+  selectedSlots,
+  onUpdateSlots,
+  spacing,
+  ellipseProfileExponent,
+}: AlignPanelProps) {
   const hasMultiple = selectedSlots.length > 1;
   const actionBtnClass = "flex h-9 items-center justify-center gap-1.5 rounded-sm border border-[#3a352c] bg-[#1a1813] px-3 text-xs text-[#d8d1c5] transition-colors hover:border-[#5d5547] hover:bg-[#252119] hover:text-white disabled:cursor-not-allowed disabled:opacity-35";
 
@@ -82,7 +91,7 @@ export default function AlignPanel({ selectedSlots, onUpdateSlots, spacing }: Al
       return;
     }
 
-    const bounds = getSelectionBounds(selectedSlots);
+    const bounds = getSelectionBounds(selectedSlots, ellipseProfileExponent);
     if (!bounds) {
       return;
     }
@@ -95,7 +104,7 @@ export default function AlignPanel({ selectedSlots, onUpdateSlots, spacing }: Al
     switch (type) {
       case "left":
         selectedSlots.forEach((slot) => {
-          const { halfW } = getSlotBounds(slot);
+          const { halfW } = getSlotBounds(slot, ellipseProfileExponent);
           updates.push({ id: slot.id, x: roundToStep(minX + halfW), y: slot.y });
         });
         break;
@@ -106,13 +115,13 @@ export default function AlignPanel({ selectedSlots, onUpdateSlots, spacing }: Al
         break;
       case "right":
         selectedSlots.forEach((slot) => {
-          const { halfW } = getSlotBounds(slot);
+          const { halfW } = getSlotBounds(slot, ellipseProfileExponent);
           updates.push({ id: slot.id, x: roundToStep(maxX - halfW), y: slot.y });
         });
         break;
       case "top":
         selectedSlots.forEach((slot) => {
-          const { halfH } = getSlotBounds(slot);
+          const { halfH } = getSlotBounds(slot, ellipseProfileExponent);
           updates.push({ id: slot.id, x: slot.x, y: roundToStep(maxY - halfH) });
         });
         break;
@@ -123,7 +132,7 @@ export default function AlignPanel({ selectedSlots, onUpdateSlots, spacing }: Al
         break;
       case "bottom":
         selectedSlots.forEach((slot) => {
-          const { halfH } = getSlotBounds(slot);
+          const { halfH } = getSlotBounds(slot, ellipseProfileExponent);
           updates.push({ id: slot.id, x: slot.x, y: roundToStep(minY + halfH) });
         });
         break;
@@ -139,7 +148,7 @@ export default function AlignPanel({ selectedSlots, onUpdateSlots, spacing }: Al
       return;
     }
 
-    const center = getSelectionCenter(selectedSlots);
+    const center = getSelectionCenter(selectedSlots, ellipseProfileExponent);
     if (!center) {
       return;
     }
@@ -148,26 +157,34 @@ export default function AlignPanel({ selectedSlots, onUpdateSlots, spacing }: Al
 
     if (type === "row") {
       const sorted = [...selectedSlots].sort((left, right) => left.x - right.x);
-      const totalWidth = sorted.reduce((sum, slot) => sum + getSlotBounds(slot).halfW * 2, 0);
+      const totalWidth = sorted.reduce(
+        (sum, slot) =>
+          sum + getSlotBounds(slot, ellipseProfileExponent).halfW * 2,
+        0,
+      );
       const totalGap = spacing * (sorted.length - 1);
       const totalSpan = totalWidth + totalGap;
 
       let cursor = center.cx - totalSpan / 2;
       sorted.forEach((slot) => {
-        const { halfW } = getSlotBounds(slot);
+        const { halfW } = getSlotBounds(slot, ellipseProfileExponent);
         const nextX = cursor + halfW;
         updates.push({ id: slot.id, x: roundToStep(nextX), y: roundToStep(center.cy) });
         cursor += halfW * 2 + spacing;
       });
     } else {
       const sorted = [...selectedSlots].sort((left, right) => left.y - right.y);
-      const totalHeight = sorted.reduce((sum, slot) => sum + getSlotBounds(slot).halfH * 2, 0);
+      const totalHeight = sorted.reduce(
+        (sum, slot) =>
+          sum + getSlotBounds(slot, ellipseProfileExponent).halfH * 2,
+        0,
+      );
       const totalGap = spacing * (sorted.length - 1);
       const totalSpan = totalHeight + totalGap;
 
       let cursor = center.cy - totalSpan / 2;
       sorted.forEach((slot) => {
-        const { halfH } = getSlotBounds(slot);
+        const { halfH } = getSlotBounds(slot, ellipseProfileExponent);
         const nextY = cursor + halfH;
         updates.push({ id: slot.id, x: roundToStep(center.cx), y: roundToStep(nextY) });
         cursor += halfH * 2 + spacing;

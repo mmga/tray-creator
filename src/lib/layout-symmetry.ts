@@ -1,5 +1,5 @@
 import type { FreeSlot } from "@/types/custom-tray";
-import { getSlotOuterOffset } from "@/lib/config";
+import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
 
 const STEP = 0.2;
 
@@ -31,21 +31,23 @@ function normalizeRotation(value: number) {
   return normalized === -180 ? 180 : normalized;
 }
 
-export function getSlotBounds(slot: SymmetryBoundsSlot) {
-  const rad = ((slot.rotation || 0) * Math.PI) / 180;
-  const a = slot.width / 2;
-  const b = slot.height / 2;
-  const offset = getSlotOuterOffset(slot.width, slot.height, slot.shape);
-
-  return {
-    halfW:
-      Math.sqrt((a * Math.cos(rad)) ** 2 + (b * Math.sin(rad)) ** 2) + offset,
-    halfH:
-      Math.sqrt((a * Math.sin(rad)) ** 2 + (b * Math.cos(rad)) ** 2) + offset,
-  };
+export function getSlotBounds(
+  slot: SymmetryBoundsSlot,
+  ellipseProfileExponent?: number,
+) {
+  return getEllipseBoundingBox(
+    slot.width,
+    slot.height,
+    slot.rotation,
+    slot.shape,
+    ellipseProfileExponent,
+  );
 }
 
-export function getSelectionBounds(selected: SymmetryBoundsSlot[]) {
+export function getSelectionBounds(
+  selected: SymmetryBoundsSlot[],
+  ellipseProfileExponent?: number,
+) {
   if (selected.length === 0) return null;
 
   let minX = Infinity;
@@ -54,7 +56,7 @@ export function getSelectionBounds(selected: SymmetryBoundsSlot[]) {
   let maxY = -Infinity;
 
   selected.forEach((slot) => {
-    const { halfW, halfH } = getSlotBounds(slot);
+    const { halfW, halfH } = getSlotBounds(slot, ellipseProfileExponent);
     minX = Math.min(minX, slot.x - halfW);
     maxX = Math.max(maxX, slot.x + halfW);
     minY = Math.min(minY, slot.y - halfH);
@@ -70,12 +72,13 @@ export function resolveMirrorAxis(
   trayDepth: number,
   axisSource: SymmetryAxisSource,
   mode: SymmetryMode,
+  ellipseProfileExponent?: number,
 ) {
   if (axisSource === "tray") {
     return mode === "mirror-x" ? trayWidth / 2 : trayDepth / 2;
   }
 
-  const bounds = getSelectionBounds(selected);
+  const bounds = getSelectionBounds(selected, ellipseProfileExponent);
   if (!bounds) {
     return mode === "mirror-x" ? trayWidth / 2 : trayDepth / 2;
   }
@@ -164,9 +167,10 @@ export function countOutOfBoundsSlots(
   slots: SymmetryBoundsSlot[],
   trayWidth: number,
   trayDepth: number,
+  ellipseProfileExponent?: number,
 ) {
   return slots.reduce((count, slot) => {
-    const { halfW, halfH } = getSlotBounds(slot);
+    const { halfW, halfH } = getSlotBounds(slot, ellipseProfileExponent);
     const isOutOfBounds =
       slot.x - halfW < 0 ||
       slot.x + halfW > trayWidth ||

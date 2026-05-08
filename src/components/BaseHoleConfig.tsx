@@ -14,7 +14,7 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 
 interface BaseHoleConfigFields {
   enableBaseHole: boolean;
-  baseHoleSize: "19.5" | "25";
+  baseHoleSize: "25";
   baseThickness: number;
 }
 
@@ -81,7 +81,7 @@ export function BaseHoleConfig<TParams extends BaseHoleConfigFields>({
                 <Label className="text-[11px] text-muted-foreground">孔位规格</Label>
                 <Select
                   value={baseHoleSize}
-                  onValueChange={(v: "19.5" | "25") => updateParam("baseHoleSize", v)}
+                  onValueChange={(v: "25") => updateParam("baseHoleSize", v)}
                 >
                   <SelectTrigger className="h-8 bg-[#1c1a16] border-[#2e2a24] text-xs text-foreground hover:border-primary/40 cursor-pointer transition-all duration-200">
                     <SelectValue placeholder="选择规格" />
@@ -89,9 +89,6 @@ export function BaseHoleConfig<TParams extends BaseHoleConfigFields>({
                   <SelectContent className="bg-[#16140f] border-[#2e2a24]">
                     <SelectItem value="25" className="text-xs text-foreground/90 cursor-pointer focus:bg-primary/10 focus:text-primary">
                       ⌀25.0mm × 1.2mm (推荐)
-                    </SelectItem>
-                    <SelectItem value="19.5" className="text-xs text-foreground/90 cursor-pointer focus:bg-primary/10 focus:text-primary">
-                      ⌀19.5mm × 1.2mm
                     </SelectItem>
                   </SelectContent>
                 </Select>

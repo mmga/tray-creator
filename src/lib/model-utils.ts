@@ -55,7 +55,7 @@ export function subtractBaseHoles(
     tray: Geom3,
     centers: SlotCenter[],
     baseThickness: number,
-    baseHoleSize: "19.5" | "25",
+    baseHoleSize: "25",
 ): Geom3 {
     if (centers.length === 0) return tray;
 

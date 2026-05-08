@@ -9,7 +9,7 @@ import {
   DEFAULT_TRAY_PARAMS,
   PARAM_CONFIG,
 } from "@/lib/grid-config";
-import { CUSTOM_LIMITS } from "@/lib/custom-config";
+import { CUSTOM_LAYOUT_DEFAULTS, CUSTOM_LIMITS } from "@/lib/custom-config";
 import {
   GROUP_COLORS,
   STEPPED_LAYOUT_DEFAULTS,
@@ -364,6 +364,19 @@ function validateCustomParams(params: CustomLayoutParams) {
   clampField(obj, "baseThickness", CUSTOM_LIMITS.baseThickness);
   clampField(obj, "holeDepth", CUSTOM_LIMITS.holeDepth);
   clampField(obj, "cornerRadius", CUSTOM_LIMITS.cornerRadius);
+  if (
+    typeof obj.ellipseProfileExponent !== "number" ||
+    !Number.isFinite(obj.ellipseProfileExponent)
+  ) {
+    obj.ellipseProfileExponent =
+      CUSTOM_LAYOUT_DEFAULTS.ellipseProfileExponent ??
+      CUSTOM_LIMITS.ellipseProfileExponent.min;
+  }
+  clampField(
+    obj,
+    "ellipseProfileExponent",
+    CUSTOM_LIMITS.ellipseProfileExponent,
+  );
 
   if (!obj.boundarySpacingIndependent) {
     obj.boundarySpacing = obj.spacing;

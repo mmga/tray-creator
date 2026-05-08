@@ -14,6 +14,12 @@ const DEFAULT_HOLE_TOLERANCE = 0.4;
 /** 椭圆凹槽轮廓向外等距扩张的距离 (mm) */
 const ELLIPSE_OUTER_OFFSET = 0.4;
 
+/**
+ * 椭圆轮廓丰满度。
+ * 2 = 标准椭圆；大于 2 会把中段弧线撑得更饱满，同时保持长短轴端点不变。
+ */
+export const ELLIPSE_PROFILE_EXPONENT = 2.6;
+
 /** 特定直径的公差映射表 */
 const SLOT_TOLERANCE_MAP: Record<number, number> = {
   25: 0.2,
@@ -44,7 +50,6 @@ export function getSlotOuterOffset(
 
 export const BASE_HOLE_CONFIG = {
   presets: {
-    "19.5": { diameter: 19.5, depth: 1.2 },
     "25": { diameter: 25, depth: 1.2 },
   },
   tolerance: 0.2,
@@ -60,6 +65,7 @@ export const BASE_PRESETS: BasePreset[] = [
   { name: "大型 (40mm)", diameter: 40 },
   { name: "超大型 (50mm)", diameter: 50 },
   { name: "巨型 (60mm)", diameter: 60 },
+  { name: "超巨型 (65mm)", diameter: 65 },
 ];
 
 /** 网格 / 自定义模式共用的结构参数范围 */

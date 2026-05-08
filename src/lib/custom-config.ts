@@ -1,9 +1,9 @@
 import type { CustomLayoutParams } from "@/types/custom-tray";
-import { SHARED_LAYOUT_LIMITS } from "@/lib/config";
+import { ELLIPSE_PROFILE_EXPONENT, SHARED_LAYOUT_LIMITS } from "@/lib/config";
 
 export const ELLIPSE_PRESETS = [
   { name: "60x35.5mm", width: 60, height: 35.5 },
-  { name: "75x42mm", width: 75, height: 42 },
+  { name: "75x43mm", width: 75, height: 43 },
   { name: "90x52mm", width: 90, height: 52 },
   { name: "105x70mm", width: 105, height: 70 },
   { name: "120x92mm", width: 120, height: 92 },
@@ -21,6 +21,7 @@ export const CUSTOM_LAYOUT_DEFAULTS: CustomLayoutParams = {
   baseThickness: 3,
   holeDepth: 3,
   cornerRadius: 6,
+  ellipseProfileExponent: ELLIPSE_PROFILE_EXPONENT,
   enableBaseHole: false,
   baseHoleSize: "25",
 };
@@ -33,4 +34,11 @@ export const CUSTOM_LIMITS = {
   baseThickness: SHARED_LAYOUT_LIMITS.baseThickness,
   holeDepth: SHARED_LAYOUT_LIMITS.holeDepth,
   cornerRadius: SHARED_LAYOUT_LIMITS.cornerRadius,
+  ellipseProfileExponent: {
+    label: "椭圆丰满度",
+    min: 2,
+    max: 4,
+    step: 0.05,
+    unit: "",
+  },
 } as const;

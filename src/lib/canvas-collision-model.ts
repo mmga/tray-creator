@@ -30,6 +30,7 @@ type CanvasCollisionSlot = Pick<
 export function buildCanvasCollisionState<TSlot extends CanvasCollisionSlot>(
   slots: ReadonlyArray<TSlot>,
   spacing: number,
+  ellipseProfileExponent?: number,
 ): CanvasCollisionState<TSlot> {
   const collisionMap = new Map<string, CanvasCollisionInfo>();
   const involvedIds = new Set<string>();
@@ -55,6 +56,7 @@ export function buildCanvasCollisionState<TSlot extends CanvasCollisionSlot>(
         slot.height,
         slot.rotation,
         slot.shape,
+        ellipseProfileExponent,
       );
 
       return {
@@ -82,6 +84,7 @@ export function buildCanvasCollisionState<TSlot extends CanvasCollisionSlot>(
       slot.rotation,
       margin,
       12,
+      ellipseProfileExponent,
     );
     expandedPolygons.set(slot.id, polygon);
     return polygon;

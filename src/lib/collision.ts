@@ -1,3 +1,5 @@
+import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
+
 interface Point {
   x: number;
   y: number;
@@ -40,33 +42,23 @@ export function getEllipsePolygon(
   rotation: number,
   margin: number = 0,
   steps: number = DEFAULT_STEPS,
+  ellipseProfileExponent?: number,
 ): Point[] {
   const points = getPolygonBuffer(steps);
   const rad = (rotation * Math.PI) / 180;
   const cosRot = Math.cos(rad);
   const sinRot = Math.sin(rad);
-
-  const rx = w / 2;
-  const ry = h / 2;
+  const localPoints = sampleSlotProfilePoints(
+    w,
+    h,
+    Math.abs(w - h) < 1e-9 ? "circle" : "ellipse",
+    margin,
+    steps,
+    ellipseProfileExponent,
+  );
 
   for (let i = 0; i < steps; i++) {
-    const theta = (i / steps) * 2 * Math.PI;
-    const cosTheta = Math.cos(theta);
-    const sinTheta = Math.sin(theta);
-
-    // Point on unrotated ellipse at origin, then offset along the normal.
-    let dx = rx * cosTheta;
-    let dy = ry * sinTheta;
-
-    if (margin !== 0) {
-      const nx = rx === 0 ? 0 : cosTheta / rx;
-      const ny = ry === 0 ? 0 : sinTheta / ry;
-      const normalLength = Math.hypot(nx, ny);
-      if (normalLength > 0) {
-        dx += (margin * nx) / normalLength;
-        dy += (margin * ny) / normalLength;
-      }
-    }
+    const { x: dx, y: dy } = localPoints[i];
 
     // Rotate and translate
     points[i].x = x + (dx * cosRot - dy * sinRot);

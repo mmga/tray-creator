@@ -1,4 +1,4 @@
-import { getSlotOuterOffset } from "@/lib/config";
+import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
 import type { LayoutExtents } from "@/lib/custom-layout-math";
 import type { IdFactory } from "@/lib/model-ports";
 import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
@@ -62,25 +62,26 @@ export function addCustomSlot(
   const isCircle = !height || width === height;
   const shape = isCircle ? "circle" : "ellipse";
   const slotHeight = height || width;
-  const newSlotHalfW =
-    width / 2 + getSlotOuterOffset(width, slotHeight, shape);
+  const { halfW: newSlotHalfW } = getEllipseBoundingBox(
+    width,
+    slotHeight,
+    0,
+    shape,
+    params.ellipseProfileExponent,
+  );
 
   let nextX = params.trayWidth / 2;
   let nextY = params.trayDepth / 2;
 
   if (params.slots.length > 0) {
     const lastSlot = params.slots[params.slots.length - 1];
-    const rad = (lastSlot.rotation * Math.PI) / 180;
-    const a = lastSlot.width / 2;
-    const b = lastSlot.height / 2;
-    const offset = getSlotOuterOffset(
+    const { halfW: lastHalfW } = getEllipseBoundingBox(
       lastSlot.width,
       lastSlot.height,
+      lastSlot.rotation,
       lastSlot.shape,
+      params.ellipseProfileExponent,
     );
-    const lastHalfW = Math.sqrt(
-      Math.pow(a * Math.cos(rad), 2) + Math.pow(b * Math.sin(rad), 2),
-    ) + offset;
     nextX = lastSlot.x + lastHalfW + params.spacing + newSlotHalfW;
     nextY = lastSlot.y;
   }

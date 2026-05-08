@@ -114,7 +114,7 @@ export default function CustomPanel({
       {/* 结构参数 — 移动端默认折叠 */}
       <div className="iron-panel rounded-sm p-4">
         <SectionHeader icon={Wrench} title="结构参数" collapsible defaultOpen={false}
-          summary={`槽距${params.spacing}mm / 边距${(params.boundarySpacingIndependent ? params.boundarySpacing : params.spacing)}mm / 底厚${params.baseThickness}mm`}>
+          summary={`槽距${params.spacing}mm / 边距${(params.boundarySpacingIndependent ? params.boundarySpacing : params.spacing)}mm / 椭圆${(params.ellipseProfileExponent ?? CUSTOM_LAYOUT_DEFAULTS.ellipseProfileExponent ?? CUSTOM_LIMITS.ellipseProfileExponent.min).toFixed(1)}`}>
           <div className="space-y-4">
             <ParamSlider
               label={CUSTOM_LIMITS.spacing.label}
@@ -163,6 +163,17 @@ export default function CustomPanel({
               config={CUSTOM_LIMITS.cornerRadius}
               onChange={(v) => updateParam("cornerRadius", v)}
               unit={SHARED_LAYOUT_LIMITS.cornerRadius.unit}
+            />
+            <ParamSlider
+              label={CUSTOM_LIMITS.ellipseProfileExponent.label}
+              value={
+                params.ellipseProfileExponent ??
+                CUSTOM_LAYOUT_DEFAULTS.ellipseProfileExponent ??
+                CUSTOM_LIMITS.ellipseProfileExponent.min
+              }
+              config={CUSTOM_LIMITS.ellipseProfileExponent}
+              onChange={(v) => updateParam("ellipseProfileExponent", v)}
+              unit={CUSTOM_LIMITS.ellipseProfileExponent.unit}
             />
           </div>
         </SectionHeader>

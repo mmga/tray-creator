@@ -17,6 +17,7 @@ interface AlignmentToolbarProps {
   spacing: number;
   trayWidth: number;
   trayDepth: number;
+  ellipseProfileExponent?: number;
   activeTabId: string | null;
   onActiveTabChange: (tabId: string | null) => void;
 }
@@ -34,6 +35,7 @@ export default function AlignmentToolbar({
   spacing,
   trayWidth,
   trayDepth,
+  ellipseProfileExponent,
   activeTabId,
   onActiveTabChange,
 }: AlignmentToolbarProps) {
@@ -51,7 +53,14 @@ export default function AlignmentToolbar({
       label: "对齐",
       summary: "边缘对齐与等距排布",
       icon: AlignCenterHorizontal,
-      content: <AlignPanel selectedSlots={selected} onUpdateSlots={onUpdateSlots} spacing={spacing} />,
+      content: (
+        <AlignPanel
+          selectedSlots={selected}
+          onUpdateSlots={onUpdateSlots}
+          spacing={spacing}
+          ellipseProfileExponent={ellipseProfileExponent}
+        />
+      ),
     },
     {
       id: "mirror",
@@ -69,6 +78,7 @@ export default function AlignmentToolbar({
           spacing={spacing}
           trayWidth={trayWidth}
           trayDepth={trayDepth}
+          ellipseProfileExponent={ellipseProfileExponent}
         />
       ),
     },

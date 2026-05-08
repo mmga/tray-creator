@@ -32,8 +32,8 @@ export interface TrayParams {
   basePlateOnly: boolean;
   /** 是否启用底板磁吸孔 */
   enableBaseHole: boolean;
-  /** 底板磁吸孔规格: '19.5' (19.5x1mm) | '25' (25x1.2mm) */
-  baseHoleSize: "19.5" | "25";
+  /** 底板磁吸孔规格: '25' (25x1.2mm) */
+  baseHoleSize: "25";
 }
 
 /**

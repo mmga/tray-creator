@@ -19,6 +19,7 @@ interface CanvasSlotLayerProps {
   steppedGroupMetaById: ReadonlyMap<string, SlotGroup> | null;
   collisionState: CanvasCollisionState<FreeSlot | SteppedSlot>;
   isSpacePressed: boolean;
+  ellipseProfileExponent?: number;
   onSlotPointerDown: (event: React.PointerEvent, slotId: string) => void;
   onSlotPointerEnter: (slotId: string) => void;
   onSlotPointerLeave: (slotId: string) => void;
@@ -40,13 +41,23 @@ export const CanvasSlotLayer = memo(function CanvasSlotLayer({
   steppedGroupMetaById,
   collisionState,
   isSpacePressed,
+  ellipseProfileExponent,
   onSlotPointerDown,
   onSlotPointerEnter,
   onSlotPointerLeave,
   onSlotRotatePointerDown,
 }: CanvasSlotLayerProps) {
   const getLocalPath = (width: number, height: number, margin: number) => {
-    const points = getEllipsePolygon(0, 0, width, height, 0, margin, 64);
+    const points = getEllipsePolygon(
+      0,
+      0,
+      width,
+      height,
+      0,
+      margin,
+      64,
+      ellipseProfileExponent,
+    );
     return points
       .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
       .join(" ") + " Z";
