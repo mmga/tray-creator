@@ -7,7 +7,7 @@ const SNAP_STEP = 0.2;
 
 type CanvasSnapSlot = Pick<
   FreeSlot,
-  "id" | "x" | "y" | "width" | "height" | "rotation"
+  "id" | "x" | "y" | "width" | "height" | "rotation" | "shape"
 >;
 
 export interface CanvasDragSnapResult {
@@ -61,6 +61,7 @@ export function calculateCanvasDragSnap<TSlot extends CanvasSnapSlot>({
     draggingSlot.width,
     draggingSlot.height,
     draggingSlot.rotation,
+    draggingSlot.shape,
   );
 
   let finalX = proposedX;
@@ -99,6 +100,7 @@ export function calculateCanvasDragSnap<TSlot extends CanvasSnapSlot>({
       other.width,
       other.height,
       other.rotation,
+      other.shape,
     );
 
     considerXSnap(other.x, other.x);

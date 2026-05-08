@@ -1,7 +1,13 @@
-import { booleans, primitives, transforms, extrusions } from "@jscad/modeling";
-import type { Geom3 } from "@jscad/modeling/src/geometries/types";
-import type { CustomLayoutParams } from "@/types/custom-tray";
-import { RENDER_CONFIG, getSlotTolerance } from "@/lib/config";
+import {
+  booleans,
+  primitives,
+  transforms,
+  extrusions,
+  geometries,
+} from "@jscad/modeling";
+import type { Geom2, Geom3 } from "@jscad/modeling/src/geometries/types";
+import type { CustomLayoutParams, FreeSlot } from "@/types/custom-tray";
+import { RENDER_CONFIG, getSlotOuterOffset } from "@/lib/config";
 import {
   createBaseBody,
   subtractBaseHoles,
@@ -12,6 +18,7 @@ const { subtract } = booleans;
 const { translate, rotateZ } = transforms;
 const { ellipse } = primitives;
 const { extrudeLinear } = extrusions;
+const { geom2 } = geometries;
 
 const DEG_TO_RAD = Math.PI / 180;
 
@@ -19,17 +26,57 @@ function getSlotBoundingHalfSize(
   width: number,
   height: number,
   rotation: number,
+  shape: FreeSlot["shape"],
 ) {
   const rad = (rotation * Math.PI) / 180;
-  const a = (width + getSlotTolerance(width)) / 2;
-  const b = (height + getSlotTolerance(height)) / 2;
+  const a = width / 2;
+  const b = height / 2;
+  const offset = getSlotOuterOffset(width, height, shape);
   const halfW = Math.sqrt(
     Math.pow(a * Math.cos(rad), 2) + Math.pow(b * Math.sin(rad), 2),
-  );
+  ) + offset;
   const halfH = Math.sqrt(
     Math.pow(a * Math.sin(rad), 2) + Math.pow(b * Math.cos(rad), 2),
-  );
+  ) + offset;
   return { halfW, halfH };
+}
+
+function createOffsetSlotShape(
+  width: number,
+  height: number,
+  shape: FreeSlot["shape"],
+): Geom2 {
+  const offset = getSlotOuterOffset(width, height, shape);
+  if (offset <= 0) {
+    return ellipse({
+      radius: [width / 2, height / 2],
+      segments: RENDER_CONFIG.cylinderSegments,
+    });
+  }
+
+  const rx = width / 2;
+  const ry = height / 2;
+  const points: [number, number][] = [];
+
+  for (let i = 0; i < RENDER_CONFIG.cylinderSegments; i += 1) {
+    const theta = (i / RENDER_CONFIG.cylinderSegments) * 2 * Math.PI;
+    const cosTheta = Math.cos(theta);
+    const sinTheta = Math.sin(theta);
+    let x = rx * cosTheta;
+    let y = ry * sinTheta;
+    const nx = rx === 0 ? 0 : cosTheta / rx;
+    const ny = ry === 0 ? 0 : sinTheta / ry;
+    const normalLength = Math.hypot(nx, ny);
+
+    if (normalLength > 0) {
+      x += (offset * nx) / normalLength;
+      y += (offset * ny) / normalLength;
+    }
+
+    points.push([x, y]);
+  }
+
+  return geom2.fromPoints(points);
 }
 
 function calculateEffectiveBaseplate(params: CustomLayoutParams) {
@@ -59,6 +106,7 @@ function calculateEffectiveBaseplate(params: CustomLayoutParams) {
       slot.width,
       slot.height,
       slot.rotation,
+      slot.shape,
     );
     minX = Math.min(minX, slot.x - halfW);
     maxX = Math.max(maxX, slot.x + halfW);
@@ -118,14 +166,8 @@ export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
     const height = slot.height;
     const rotation = slot.rotation || 0;
 
-    const actualW = width + getSlotTolerance(width);
-    const actualH = height + getSlotTolerance(height);
-
-    // 2D 椭圆 → 拉伸 → 旋转 → 平移
-    const holeShape2D = ellipse({
-      radius: [actualW / 2, actualH / 2],
-      segments: RENDER_CONFIG.cylinderSegments,
-    });
+    // 2D 椭圆 → 等距外扩 → 拉伸 → 旋转 → 平移
+    const holeShape2D = createOffsetSlotShape(width, height, slot.shape);
 
     const hole3D = extrudeLinear({ height: holeDepth + 0.02 }, holeShape2D);
     const rotatedHole = rotateZ(rotation * DEG_TO_RAD, hole3D);

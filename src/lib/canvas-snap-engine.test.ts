@@ -18,9 +18,25 @@ describe("canvas snap engine", () => {
 
   it("snaps to slot centers and tray center guides", () => {
     const slots = [
-      { id: "drag", x: 10, y: 10, width: 20, height: 20, rotation: 0 },
-      { id: "other", x: 20, y: 30, width: 20, height: 20, rotation: 0 },
-    ];
+      {
+        id: "drag",
+        x: 10,
+        y: 10,
+        width: 20,
+        height: 20,
+        rotation: 0,
+        shape: "circle",
+      },
+      {
+        id: "other",
+        x: 20,
+        y: 30,
+        width: 20,
+        height: 20,
+        rotation: 0,
+        shape: "circle",
+      },
+    ] as const;
 
     expect(
       calculateCanvasDragSnap({
@@ -44,9 +60,25 @@ describe("canvas snap engine", () => {
 
   it("snaps to aligned edges and skips targets outside the threshold", () => {
     const slots = [
-      { id: "drag", x: 10, y: 10, width: 20, height: 20, rotation: 0 },
-      { id: "other", x: 50, y: 40, width: 40, height: 20, rotation: 0 },
-    ];
+      {
+        id: "drag",
+        x: 10,
+        y: 10,
+        width: 20,
+        height: 20,
+        rotation: 0,
+        shape: "circle",
+      },
+      {
+        id: "other",
+        x: 50,
+        y: 40,
+        width: 40,
+        height: 20,
+        rotation: 0,
+        shape: "circle",
+      },
+    ] as const;
 
     expect(
       calculateCanvasDragSnap({

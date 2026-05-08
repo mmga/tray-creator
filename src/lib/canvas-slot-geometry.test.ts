@@ -20,6 +20,15 @@ describe("canvas slot geometry", () => {
       halfH: 5.2,
     });
 
+    expect(getEllipseBoundingBox(20, 10, 0, "ellipse")).toEqual({
+      halfW: 10.4,
+      halfH: 5.4,
+    });
+
+    const diagonalEllipse = getEllipseBoundingBox(20, 10, 45, "ellipse");
+    expect(diagonalEllipse.halfW).toBeCloseTo(Math.sqrt(62.5) + 0.4, 5);
+    expect(diagonalEllipse.halfH).toBeCloseTo(Math.sqrt(62.5) + 0.4, 5);
+
     const rotated = getEllipseBoundingBox(20, 10, 90);
     expect(rotated.halfW).toBeCloseTo(5.2, 5);
     expect(rotated.halfH).toBeCloseTo(10.2, 5);
@@ -37,8 +46,8 @@ describe("canvas slot geometry", () => {
     expect(
       calculateEffectiveBaseplate(
         [
-          { x: 30, y: 40, width: 20, height: 20, rotation: 0 },
-          { x: 80, y: 100, width: 20, height: 20, rotation: 0 },
+          { x: 30, y: 40, width: 20, height: 20, rotation: 0, shape: "circle" },
+          { x: 80, y: 100, width: 20, height: 20, rotation: 0, shape: "circle" },
         ],
         200,
         7,

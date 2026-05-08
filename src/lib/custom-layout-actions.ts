@@ -1,4 +1,4 @@
-import { getSlotTolerance } from "@/lib/config";
+import { getSlotOuterOffset } from "@/lib/config";
 import type { LayoutExtents } from "@/lib/custom-layout-math";
 import type { IdFactory } from "@/lib/model-ports";
 import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
@@ -60,9 +60,10 @@ export function addCustomSlot(
   height?: number,
 ): CustomLayoutParams {
   const isCircle = !height || width === height;
+  const shape = isCircle ? "circle" : "ellipse";
   const slotHeight = height || width;
   const newSlotHalfW =
-    (width + getSlotTolerance(Math.max(width, slotHeight))) / 2;
+    width / 2 + getSlotOuterOffset(width, slotHeight, shape);
 
   let nextX = params.trayWidth / 2;
   let nextY = params.trayDepth / 2;
@@ -70,11 +71,16 @@ export function addCustomSlot(
   if (params.slots.length > 0) {
     const lastSlot = params.slots[params.slots.length - 1];
     const rad = (lastSlot.rotation * Math.PI) / 180;
-    const a = (lastSlot.width + getSlotTolerance(lastSlot.width)) / 2;
-    const b = (lastSlot.height + getSlotTolerance(lastSlot.height)) / 2;
+    const a = lastSlot.width / 2;
+    const b = lastSlot.height / 2;
+    const offset = getSlotOuterOffset(
+      lastSlot.width,
+      lastSlot.height,
+      lastSlot.shape,
+    );
     const lastHalfW = Math.sqrt(
       Math.pow(a * Math.cos(rad), 2) + Math.pow(b * Math.sin(rad), 2),
-    );
+    ) + offset;
     nextX = lastSlot.x + lastHalfW + params.spacing + newSlotHalfW;
     nextY = lastSlot.y;
   }
@@ -83,7 +89,7 @@ export function addCustomSlot(
     id: idFactory.createId(),
     x: nextX,
     y: nextY,
-    shape: isCircle ? "circle" : "ellipse",
+    shape,
     width,
     height: slotHeight,
     rotation: 0,

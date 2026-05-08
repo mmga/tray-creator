@@ -1,7 +1,7 @@
 import { startTransition, useCallback, useEffect, useState } from "react";
 import { Copy, FlipHorizontal, FlipVertical } from "lucide-react";
 import type { FreeSlot, SteppedSlot } from "@/types/custom-tray";
-import { getSlotTolerance } from "@/lib/config";
+import { getSlotOuterOffset } from "@/lib/config";
 import { getEllipsePolygon, polygonsIntersect } from "@/lib/collision";
 import { useToast } from "@/hooks/useToast";
 import {
@@ -30,10 +30,11 @@ interface MirrorPanelProps {
 }
 
 function buildCollisionPolygon(
-  slot: Pick<FreeSlot, "x" | "y" | "width" | "height" | "rotation">,
+  slot: Pick<FreeSlot, "x" | "y" | "width" | "height" | "rotation" | "shape">,
   spacing: number,
 ) {
-  const margin = spacing / 2 + getSlotTolerance(slot.width) / 2;
+  const margin =
+    spacing / 2 + getSlotOuterOffset(slot.width, slot.height, slot.shape);
   return getEllipsePolygon(slot.x, slot.y, slot.width, slot.height, slot.rotation, margin, 12);
 }
 

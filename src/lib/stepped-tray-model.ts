@@ -4,10 +4,11 @@ import {
   transforms,
   extrusions,
   measurements,
+  geometries,
 } from "@jscad/modeling";
-import type { Geom3 } from "@jscad/modeling/src/geometries/types";
-import type { SteppedLayoutParams } from "@/types/custom-tray";
-import { RENDER_CONFIG, getSlotTolerance } from "@/lib/config";
+import type { Geom2, Geom3 } from "@jscad/modeling/src/geometries/types";
+import type { SteppedLayoutParams, SteppedSlot } from "@/types/custom-tray";
+import { RENDER_CONFIG, getSlotOuterOffset } from "@/lib/config";
 import {
   generateOutlineGeom2,
   type OutlineCircle,
@@ -25,6 +26,7 @@ const { translate, rotateZ } = transforms;
 const { ellipse, circle } = primitives;
 const { extrudeLinear } = extrusions;
 const { measureVolume } = measurements;
+const { geom2 } = geometries;
 
 const DEG_TO_RAD = Math.PI / 180;
 
@@ -32,17 +34,57 @@ function getSlotBoundingHalfSize(
   width: number,
   height: number,
   rotation: number,
+  shape: SteppedSlot["shape"],
 ) {
   const rad = (rotation * Math.PI) / 180;
-  const a = (width + getSlotTolerance(width)) / 2;
-  const b = (height + getSlotTolerance(height)) / 2;
+  const a = width / 2;
+  const b = height / 2;
+  const offset = getSlotOuterOffset(width, height, shape);
   const halfW = Math.sqrt(
     Math.pow(a * Math.cos(rad), 2) + Math.pow(b * Math.sin(rad), 2),
-  );
+  ) + offset;
   const halfH = Math.sqrt(
     Math.pow(a * Math.sin(rad), 2) + Math.pow(b * Math.cos(rad), 2),
-  );
+  ) + offset;
   return { halfW, halfH };
+}
+
+function createOffsetSlotShape(
+  width: number,
+  height: number,
+  shape: SteppedSlot["shape"],
+): Geom2 {
+  const offset = getSlotOuterOffset(width, height, shape);
+  if (offset <= 0) {
+    return ellipse({
+      radius: [width / 2, height / 2],
+      segments: RENDER_CONFIG.cylinderSegments,
+    });
+  }
+
+  const rx = width / 2;
+  const ry = height / 2;
+  const points: [number, number][] = [];
+
+  for (let i = 0; i < RENDER_CONFIG.cylinderSegments; i += 1) {
+    const theta = (i / RENDER_CONFIG.cylinderSegments) * 2 * Math.PI;
+    const cosTheta = Math.cos(theta);
+    const sinTheta = Math.sin(theta);
+    let x = rx * cosTheta;
+    let y = ry * sinTheta;
+    const nx = rx === 0 ? 0 : cosTheta / rx;
+    const ny = ry === 0 ? 0 : sinTheta / ry;
+    const normalLength = Math.hypot(nx, ny);
+
+    if (normalLength > 0) {
+      x += (offset * nx) / normalLength;
+      y += (offset * ny) / normalLength;
+    }
+
+    points.push([x, y]);
+  }
+
+  return geom2.fromPoints(points);
 }
 
 function calculateEffectiveBaseplate(params: SteppedLayoutParams) {
@@ -70,6 +112,7 @@ function calculateEffectiveBaseplate(params: SteppedLayoutParams) {
       slot.width,
       slot.height,
       slot.rotation,
+      slot.shape,
     );
     minX = Math.min(minX, slot.x - halfW);
     maxX = Math.max(maxX, slot.x + halfW);
@@ -129,8 +172,9 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
     const cx = normalizedX - trayWidth / 2;
     const cy = normalizedY - trayDepth / 2;
     const rotation = slot.rotation || 0;
-    const actualW = slot.width + getSlotTolerance(slot.width);
-    const actualH = slot.height + getSlotTolerance(slot.height);
+    const offset = getSlotOuterOffset(slot.width, slot.height, slot.shape);
+    const actualW = slot.width + offset * 2;
+    const actualH = slot.height + offset * 2;
     const columnHeight = Math.max(group?.bottomHeight ?? 10, 3);
     return {
       slot,
@@ -161,8 +205,8 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
         d.slot.width,
         d.slot.height,
         spacing,
-        getSlotTolerance(d.slot.width),
-        getSlotTolerance(d.slot.height),
+        getSlotOuterOffset(d.slot.width, d.slot.height, d.slot.shape) * 2,
+        getSlotOuterOffset(d.slot.width, d.slot.height, d.slot.shape) * 2,
       );
       circleMap.set(d.slot.id, { id: d.slot.id, cx: d.cx, cy: d.cy, rOuter });
       slotDataMap.set(d.slot.id, d);
@@ -280,10 +324,11 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
   const holes: Geom3[] = [];
   for (const d of slotData) {
     const clampedHoleDepth = Math.min(holeDepth, d.columnHeight);
-    const holeShape = ellipse({
-      radius: [d.actualW / 2, d.actualH / 2],
-      segments: RENDER_CONFIG.cylinderSegments,
-    });
+    const holeShape = createOffsetSlotShape(
+      d.slot.width,
+      d.slot.height,
+      d.slot.shape,
+    );
     const hole3D = extrudeLinear(
       { height: clampedHoleDepth + 0.02 },
       holeShape,

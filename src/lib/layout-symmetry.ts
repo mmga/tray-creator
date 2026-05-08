@@ -1,5 +1,5 @@
 import type { FreeSlot } from "@/types/custom-tray";
-import { getSlotTolerance } from "@/lib/config";
+import { getSlotOuterOffset } from "@/lib/config";
 
 const STEP = 0.2;
 
@@ -8,7 +8,7 @@ export type SymmetryMode = "mirror-x" | "mirror-y";
 export type SymmetrySlot = FreeSlot & { groupId?: string };
 export type SymmetryBoundsSlot = Pick<
   FreeSlot,
-  "x" | "y" | "width" | "height" | "rotation"
+  "x" | "y" | "width" | "height" | "rotation" | "shape"
 >;
 
 export interface SymmetryInsertSlot extends Omit<FreeSlot, "id"> {
@@ -33,12 +33,15 @@ function normalizeRotation(value: number) {
 
 export function getSlotBounds(slot: SymmetryBoundsSlot) {
   const rad = ((slot.rotation || 0) * Math.PI) / 180;
-  const a = (slot.width + getSlotTolerance(slot.width)) / 2;
-  const b = (slot.height + getSlotTolerance(slot.height)) / 2;
+  const a = slot.width / 2;
+  const b = slot.height / 2;
+  const offset = getSlotOuterOffset(slot.width, slot.height, slot.shape);
 
   return {
-    halfW: Math.sqrt((a * Math.cos(rad)) ** 2 + (b * Math.sin(rad)) ** 2),
-    halfH: Math.sqrt((a * Math.sin(rad)) ** 2 + (b * Math.cos(rad)) ** 2),
+    halfW:
+      Math.sqrt((a * Math.cos(rad)) ** 2 + (b * Math.sin(rad)) ** 2) + offset,
+    halfH:
+      Math.sqrt((a * Math.sin(rad)) ** 2 + (b * Math.cos(rad)) ** 2) + offset,
   };
 }
 

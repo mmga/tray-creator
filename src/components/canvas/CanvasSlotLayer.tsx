@@ -1,7 +1,8 @@
 "use client";
 
 import { memo } from "react";
-import { getSlotTolerance } from "@/lib/config";
+import { getSlotOuterOffset } from "@/lib/config";
+import { getEllipsePolygon } from "@/lib/collision";
 import { getSlotLabelRotation } from "@/lib/canvas-slot-geometry";
 import type { CanvasCollisionState } from "@/lib/canvas-collision-model";
 import type { FreeSlot, SlotGroup, SteppedSlot } from "@/types/custom-tray";
@@ -44,11 +45,29 @@ export const CanvasSlotLayer = memo(function CanvasSlotLayer({
   onSlotPointerLeave,
   onSlotRotatePointerDown,
 }: CanvasSlotLayerProps) {
+  const getLocalPath = (width: number, height: number, margin: number) => {
+    const points = getEllipsePolygon(0, 0, width, height, 0, margin, 64);
+    return points
+      .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
+      .join(" ") + " Z";
+  };
+
   return (
     <>
       {slots.map((slot) => {
-        const width = slot.width + getSlotTolerance(slot.width);
-        const height = slot.height + getSlotTolerance(slot.height);
+        const slotOffset = getSlotOuterOffset(
+          slot.width,
+          slot.height,
+          slot.shape,
+        );
+        const width = slot.width + slotOffset * 2;
+        const height = slot.height + slotOffset * 2;
+        const slotPath = getLocalPath(slot.width, slot.height, slotOffset);
+        const spacingPath = getLocalPath(
+          slot.width,
+          slot.height,
+          slotOffset + spacing,
+        );
         const svgY = trayDepth - slot.y;
 
         const collisionInfo = collisionState.collisionMap.get(slot.id) ?? {
@@ -94,9 +113,8 @@ export const CanvasSlotLayer = memo(function CanvasSlotLayer({
             }}
           >
             <g transform={`rotate(${-slot.rotation})`}>
-              <ellipse
-                rx={width / 2 + spacing}
-                ry={height / 2 + spacing}
+              <path
+                d={spacingPath}
                 fill="none"
                 stroke={
                   isColliding
@@ -120,9 +138,12 @@ export const CanvasSlotLayer = memo(function CanvasSlotLayer({
               />
 
               {(isColliding || isInvolvedViaOther || isHovered || isDragging) && (
-                <ellipse
-                  rx={Math.max(0, width / 2 - 0.5 / zoom)}
-                  ry={Math.max(0, height / 2 - 0.5 / zoom)}
+                <path
+                  d={getLocalPath(
+                    slot.width,
+                    slot.height,
+                    Math.max(0, slotOffset - 0.5 / zoom),
+                  )}
                   fill="none"
                   stroke={
                     isColliding || isInvolvedViaOther ? "#ef4444" : "#fbbf24"
@@ -133,9 +154,8 @@ export const CanvasSlotLayer = memo(function CanvasSlotLayer({
                 />
               )}
 
-              <ellipse
-                rx={width / 2}
-                ry={height / 2}
+              <path
+                d={slotPath}
                 fill={
                   isSteppedSlot
                     ? isSelected

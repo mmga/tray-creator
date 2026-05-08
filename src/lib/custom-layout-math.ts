@@ -45,6 +45,7 @@ export function calculateCustomEffectiveDimensions(
       slot.width,
       slot.height,
       slot.rotation,
+      slot.shape,
     );
     minX = Math.min(minX, slot.x - halfW);
     maxX = Math.max(maxX, slot.x + halfW);

@@ -6,8 +6,13 @@ import type { BasePreset } from "@/types/tray";
  * - 模式专属默认值/范围放到各自的 *-config 文件
  */
 
+type SlotShape = "circle" | "ellipse";
+
 /** 默认凹槽公差 (mm)，静默追加到凹槽直径，不在 UI 中显示 */
 const DEFAULT_HOLE_TOLERANCE = 0.4;
+
+/** 椭圆凹槽轮廓向外等距扩张的距离 (mm) */
+const ELLIPSE_OUTER_OFFSET = 0.4;
 
 /** 特定直径的公差映射表 */
 const SLOT_TOLERANCE_MAP: Record<number, number> = {
@@ -15,8 +20,26 @@ const SLOT_TOLERANCE_MAP: Record<number, number> = {
 };
 
 /** 根据凹槽直径获取公差 */
-export function getSlotTolerance(diameter: number): number {
-  return SLOT_TOLERANCE_MAP[diameter] ?? DEFAULT_HOLE_TOLERANCE;
+export function getSlotTolerance(diameter: number, shape?: SlotShape): number {
+  if (shape === "ellipse") {
+    return ELLIPSE_OUTER_OFFSET * 2;
+  }
+
+  const baseTolerance = SLOT_TOLERANCE_MAP[diameter] ?? DEFAULT_HOLE_TOLERANCE;
+  return baseTolerance;
+}
+
+/** 获取凹槽轮廓向外等距扩张的距离。 */
+export function getSlotOuterOffset(
+  width: number,
+  height: number = width,
+  shape?: SlotShape,
+): number {
+  if (shape === "ellipse") {
+    return ELLIPSE_OUTER_OFFSET;
+  }
+
+  return getSlotTolerance(Math.max(width, height), shape) / 2;
 }
 
 export const BASE_HOLE_CONFIG = {

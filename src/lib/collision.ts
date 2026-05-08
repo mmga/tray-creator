@@ -46,16 +46,27 @@ export function getEllipsePolygon(
   const cosRot = Math.cos(rad);
   const sinRot = Math.sin(rad);
 
-  // Effective radii (half dimensions + margin)
-  const rx = w / 2 + margin;
-  const ry = h / 2 + margin;
+  const rx = w / 2;
+  const ry = h / 2;
 
   for (let i = 0; i < steps; i++) {
     const theta = (i / steps) * 2 * Math.PI;
+    const cosTheta = Math.cos(theta);
+    const sinTheta = Math.sin(theta);
 
-    // Point on unrotated ellipse at origin
-    const dx = rx * Math.cos(theta);
-    const dy = ry * Math.sin(theta);
+    // Point on unrotated ellipse at origin, then offset along the normal.
+    let dx = rx * cosTheta;
+    let dy = ry * sinTheta;
+
+    if (margin !== 0) {
+      const nx = rx === 0 ? 0 : cosTheta / rx;
+      const ny = ry === 0 ? 0 : sinTheta / ry;
+      const normalLength = Math.hypot(nx, ny);
+      if (normalLength > 0) {
+        dx += (margin * nx) / normalLength;
+        dy += (margin * ny) / normalLength;
+      }
+    }
 
     // Rotate and translate
     points[i].x = x + (dx * cosRot - dy * sinRot);

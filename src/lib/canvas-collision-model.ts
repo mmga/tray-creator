@@ -1,5 +1,5 @@
 import { getEllipsePolygon, polygonsIntersect } from "@/lib/collision";
-import { getSlotTolerance } from "@/lib/config";
+import { getSlotOuterOffset } from "@/lib/config";
 import type { FreeSlot } from "@/types/custom-tray";
 import { getEllipseBoundingBox } from "./canvas-slot-geometry";
 
@@ -24,7 +24,7 @@ export interface CanvasCollisionState<TSlot extends { id: string }> {
 
 type CanvasCollisionSlot = Pick<
   FreeSlot,
-  "id" | "x" | "y" | "width" | "height" | "rotation"
+  "id" | "x" | "y" | "width" | "height" | "rotation" | "shape"
 >;
 
 export function buildCanvasCollisionState<TSlot extends CanvasCollisionSlot>(
@@ -48,11 +48,13 @@ export function buildCanvasCollisionState<TSlot extends CanvasCollisionSlot>(
 
   const expandedBounds = slots
     .map((slot) => {
-      const margin = spacing / 2 + getSlotTolerance(slot.width) / 2;
+      const margin =
+        spacing / 2 + getSlotOuterOffset(slot.width, slot.height, slot.shape);
       const { halfW, halfH } = getEllipseBoundingBox(
         slot.width,
         slot.height,
         slot.rotation,
+        slot.shape,
       );
 
       return {

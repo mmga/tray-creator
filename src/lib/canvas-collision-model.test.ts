@@ -19,6 +19,7 @@ describe("canvas collision model", () => {
           width: 25,
           height: 25,
           rotation: 0,
+          shape: "circle",
         },
         {
           id: "slot-2",
@@ -27,6 +28,7 @@ describe("canvas collision model", () => {
           width: 25,
           height: 25,
           rotation: 0,
+          shape: "circle",
         },
         {
           id: "slot-3",
@@ -35,8 +37,9 @@ describe("canvas collision model", () => {
           width: 25,
           height: 25,
           rotation: 0,
+          shape: "circle",
         },
-      ],
+      ] as const,
       5,
     );
 

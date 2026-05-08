@@ -1,4 +1,4 @@
-import { getSlotTolerance } from "@/lib/config";
+import { getSlotOuterOffset } from "@/lib/config";
 import type { FreeSlot } from "@/types/custom-tray";
 
 export interface CanvasEllipseBoundingBox {
@@ -16,7 +16,7 @@ export interface CanvasEffectiveBaseplate {
 
 type CanvasGeometrySlot = Pick<
   FreeSlot,
-  "x" | "y" | "width" | "height" | "rotation"
+  "x" | "y" | "width" | "height" | "rotation" | "shape"
 >;
 
 export function normalizeDisplayAngle(angle: number) {
@@ -35,20 +35,24 @@ export function getEllipseBoundingBox(
   width: number,
   height: number,
   rotation: number,
+  shape?: FreeSlot["shape"],
 ): CanvasEllipseBoundingBox {
   const radians = (rotation * Math.PI) / 180;
-  const radiusX = (width + getSlotTolerance(width)) / 2;
-  const radiusY = (height + getSlotTolerance(height)) / 2;
+  const radiusX = width / 2;
+  const radiusY = height / 2;
+  const offset = getSlotOuterOffset(width, height, shape);
 
   return {
-    halfW: Math.sqrt(
-      Math.pow(radiusX * Math.cos(radians), 2) +
-        Math.pow(radiusY * Math.sin(radians), 2),
-    ),
-    halfH: Math.sqrt(
-      Math.pow(radiusX * Math.sin(radians), 2) +
-        Math.pow(radiusY * Math.cos(radians), 2),
-    ),
+    halfW:
+      Math.sqrt(
+        Math.pow(radiusX * Math.cos(radians), 2) +
+          Math.pow(radiusY * Math.sin(radians), 2),
+      ) + offset,
+    halfH:
+      Math.sqrt(
+        Math.pow(radiusX * Math.sin(radians), 2) +
+          Math.pow(radiusY * Math.cos(radians), 2),
+      ) + offset,
   };
 }
 
@@ -77,6 +81,7 @@ export function calculateEffectiveBaseplate(
       slot.width,
       slot.height,
       slot.rotation,
+      slot.shape,
     );
     minX = Math.min(minX, slot.x - halfW);
     maxX = Math.max(maxX, slot.x + halfW);

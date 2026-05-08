@@ -1,4 +1,4 @@
-import { getSlotTolerance } from "@/lib/config";
+import { getSlotOuterOffset } from "@/lib/config";
 import {
   analyzeBridgeWarning,
   getConnectivityRadius,
@@ -72,8 +72,8 @@ export function buildSteppedBridgeWarning(
         slot.width,
         slot.height,
         params.spacing,
-        getSlotTolerance(slot.width),
-        getSlotTolerance(slot.height),
+        getSlotOuterOffset(slot.width, slot.height, slot.shape) * 2,
+        getSlotOuterOffset(slot.width, slot.height, slot.shape) * 2,
       ),
     }));
 

@@ -3,7 +3,7 @@ import type {
   SteppedLayoutParams,
   SteppedSlot,
 } from "@/types/custom-tray";
-import { getSlotTolerance } from "@/lib/config";
+import { getSlotOuterOffset } from "@/lib/config";
 import { getEffectiveGroupStructureParams } from "@/lib/stepped-group-params";
 import { generateOutline } from "@/lib/outline-geometry";
 import {
@@ -79,8 +79,8 @@ export function buildSteppedOutlinePreview(
         slot.width,
         slot.height,
         params.spacing,
-        getSlotTolerance(slot.width),
-        getSlotTolerance(slot.height),
+        getSlotOuterOffset(slot.width, slot.height, slot.shape) * 2,
+        getSlotOuterOffset(slot.width, slot.height, slot.shape) * 2,
       ),
     }));
 
