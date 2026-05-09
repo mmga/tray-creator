@@ -718,15 +718,20 @@ vi.mock("@/components/ui/tabs", async () => {
         </TabsContext.Provider>
       );
     },
-    TabsList({ children }: { children: React.ReactNode }) {
-      return <div data-testid="tabs-list">{children}</div>;
+    TabsList({
+      children,
+      ...props
+    }: React.HTMLAttributes<HTMLDivElement> & { children: React.ReactNode }) {
+      return <div data-testid="tabs-list" {...props}>{children}</div>;
     },
     TabsTrigger({
       value,
       children,
+      onKeyDown,
     }: {
       value: string;
       children: React.ReactNode;
+      onKeyDown?: React.KeyboardEventHandler<HTMLButtonElement>;
     }) {
       const { value: activeValue, onValueChange } =
         ReactModule.useContext(TabsContext);
@@ -736,6 +741,28 @@ vi.mock("@/components/ui/tabs", async () => {
           type="button"
           data-state={activeValue === value ? "active" : "inactive"}
           onClick={() => onValueChange?.(value)}
+          onKeyDown={(event) => {
+            onKeyDown?.(event);
+            if (event.defaultPrevented) {
+              return;
+            }
+
+            if (event.key === "ArrowRight") {
+              if (value === "2d") {
+                onValueChange?.("3d");
+              } else if (value === "3d") {
+                onValueChange?.("2d");
+              }
+            }
+
+            if (event.key === "ArrowLeft") {
+              if (value === "3d") {
+                onValueChange?.("2d");
+              } else if (value === "2d") {
+                onValueChange?.("3d");
+              }
+            }
+          }}
         >
           {children}
         </button>
@@ -788,6 +815,39 @@ describe("Home page", { timeout: 15000 }, () => {
     expect(screen.getByTestId("tray-viewer")).toHaveAttribute(
       "data-is-stale",
       "true",
+    );
+  });
+
+  it("does not switch 2D and 3D views on left or right arrow keys", async () => {
+    render(<Home />);
+
+    fireEvent.click(screen.getByRole("button", { name: "切到自定义" }));
+    await screen.findByTestId("custom-panel");
+
+    const twoDTrigger = screen.getByRole("button", { name: "2D 编辑" });
+    twoDTrigger.focus();
+    fireEvent.keyDown(twoDTrigger, { key: "ArrowRight" });
+
+    expect(screen.getByRole("button", { name: "2D 编辑" })).toHaveAttribute(
+      "data-state",
+      "active",
+    );
+    expect(screen.getByRole("button", { name: "3D 预览" })).toHaveAttribute(
+      "data-state",
+      "inactive",
+    );
+
+    const threeDTrigger = screen.getByRole("button", { name: "3D 预览" });
+    threeDTrigger.focus();
+    fireEvent.keyDown(threeDTrigger, { key: "ArrowLeft" });
+
+    expect(screen.getByRole("button", { name: "2D 编辑" })).toHaveAttribute(
+      "data-state",
+      "active",
+    );
+    expect(screen.getByRole("button", { name: "3D 预览" })).toHaveAttribute(
+      "data-state",
+      "inactive",
     );
   });
 
