@@ -29,9 +29,10 @@ function getSlotBoundingHalfSize(
   rotation: number,
   shape: FreeSlot["shape"],
   ellipseProfileExponent?: number,
+  ellipseOuterOffset?: number,
 ) {
   const rad = (rotation * Math.PI) / 180;
-  const offset = getSlotOuterOffset(width, height, shape);
+  const offset = getSlotOuterOffset(width, height, shape, ellipseOuterOffset);
   const points = sampleSlotProfilePoints(
     width,
     height,
@@ -58,8 +59,9 @@ function createOffsetSlotShape(
   height: number,
   shape: FreeSlot["shape"],
   ellipseProfileExponent?: number,
+  ellipseOuterOffset?: number,
 ): Geom2 {
-  const offset = getSlotOuterOffset(width, height, shape);
+  const offset = getSlotOuterOffset(width, height, shape, ellipseOuterOffset);
   if (offset <= 0) {
     return ellipse({
       radius: [width / 2, height / 2],
@@ -107,7 +109,8 @@ function calculateEffectiveBaseplate(params: CustomLayoutParams) {
       slot.height,
       slot.rotation,
       slot.shape,
-      params.ellipseProfileExponent,
+      slot.profileExponent,
+      slot.outerOffset,
     );
     minX = Math.min(minX, slot.x - halfW);
     maxX = Math.max(maxX, slot.x + halfW);
@@ -172,7 +175,8 @@ export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
       width,
       height,
       slot.shape,
-      params.ellipseProfileExponent,
+      slot.profileExponent,
+      slot.outerOffset,
     );
 
     const hole3D = extrudeLinear({ height: holeDepth + 0.02 }, holeShape2D);

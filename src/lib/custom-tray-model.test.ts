@@ -84,4 +84,56 @@ describe("custom tray model", () => {
     expect(maxY - minY).toBeCloseTo(dimensions.depth, 1);
     expect(maxZ - minZ).toBeCloseTo(dimensions.height, 1);
   });
+
+  it("uses slot-level ellipse geometry instead of a global fullness parameter", () => {
+    const shallowEllipse = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      slots: [
+        {
+          id: "slot-1",
+          x: 60,
+          y: 50,
+          width: 90,
+          height: 52,
+          rotation: 45,
+          shape: "ellipse" as const,
+          outerOffset: 0.4,
+          profileExponent: 2.2,
+        },
+      ],
+    };
+    const fullerEllipse = {
+      ...shallowEllipse,
+      slots: [
+        {
+          ...shallowEllipse.slots[0],
+          outerOffset: 0.9,
+          profileExponent: 3.8,
+        },
+      ],
+    };
+
+    const baselineEllipse = {
+      ...shallowEllipse,
+      slots: [
+        {
+          ...shallowEllipse.slots[0],
+          outerOffset: undefined,
+          profileExponent: undefined,
+        },
+      ],
+    };
+
+    const baselineDimensions = calculateCustomTrayDimensions(baselineEllipse);
+    const shallowDimensions = calculateCustomTrayDimensions(shallowEllipse);
+    const fullerDimensions = calculateCustomTrayDimensions(fullerEllipse);
+    const shallowVolume = measureVolume(createCustomTrayModel(shallowEllipse));
+    const fullerVolume = measureVolume(createCustomTrayModel(fullerEllipse));
+
+    expect(shallowDimensions.width).not.toBeCloseTo(baselineDimensions.width);
+    expect(shallowDimensions.depth).not.toBeCloseTo(baselineDimensions.depth);
+    expect(fullerDimensions.width).toBeGreaterThan(shallowDimensions.width);
+    expect(fullerDimensions.depth).toBeGreaterThan(shallowDimensions.depth);
+    expect(fullerVolume).toBeGreaterThan(shallowVolume);
+  });
 });

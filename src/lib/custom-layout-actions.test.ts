@@ -74,6 +74,34 @@ describe("custom layout actions", () => {
     expect(removed.slots.map((slot) => slot.id)).toEqual(["slot-1"]);
   });
 
+  it("stores ellipse preset geometry on the slot instance", () => {
+    const empty = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      trayWidth: 200,
+      trayDepth: 160,
+    };
+
+    const withEllipse = addCustomSlot(
+      empty,
+      createIdFactory("ellipse-1"),
+      60,
+      35.5,
+      {
+        outerOffset: 0.55,
+        profileExponent: 3.1,
+      },
+    );
+
+    expect(withEllipse.slots[0]).toMatchObject({
+      id: "ellipse-1",
+      shape: "ellipse",
+      width: 60,
+      height: 35.5,
+      outerOffset: 0.55,
+      profileExponent: 3.1,
+    });
+  });
+
   it("inserts and duplicates slots with generated ids", () => {
     const params = {
       ...CUSTOM_LAYOUT_DEFAULTS,
@@ -82,10 +110,12 @@ describe("custom layout actions", () => {
           id: "slot-1",
           x: 20,
           y: 30,
-          shape: "circle" as const,
-          width: 25,
-          height: 25,
+          shape: "ellipse" as const,
+          width: 30,
+          height: 20,
           rotation: 0,
+          outerOffset: 0.45,
+          profileExponent: 3.2,
         },
       ],
     };
@@ -101,6 +131,8 @@ describe("custom layout actions", () => {
           width: 30,
           height: 20,
           rotation: 15,
+          outerOffset: 0.6,
+          profileExponent: 3.4,
         },
         {
           x: 90,
@@ -122,6 +154,8 @@ describe("custom layout actions", () => {
         width: 30,
         height: 20,
         rotation: 15,
+        outerOffset: 0.6,
+        profileExponent: 3.4,
       },
       {
         id: "slot-3",
@@ -145,6 +179,8 @@ describe("custom layout actions", () => {
       id: "copy-1",
       x: 30,
       y: 20,
+      outerOffset: 0.45,
+      profileExponent: 3.2,
     });
   });
 

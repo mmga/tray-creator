@@ -8,7 +8,14 @@ export type SymmetryMode = "mirror-x" | "mirror-y";
 export type SymmetrySlot = FreeSlot & { groupId?: string };
 export type SymmetryBoundsSlot = Pick<
   FreeSlot,
-  "x" | "y" | "width" | "height" | "rotation" | "shape"
+  | "x"
+  | "y"
+  | "width"
+  | "height"
+  | "rotation"
+  | "shape"
+  | "outerOffset"
+  | "profileExponent"
 >;
 
 export interface SymmetryInsertSlot extends Omit<FreeSlot, "id"> {
@@ -40,7 +47,8 @@ export function getSlotBounds(
     slot.height,
     slot.rotation,
     slot.shape,
-    ellipseProfileExponent,
+    slot.profileExponent ?? ellipseProfileExponent,
+    slot.outerOffset,
   );
 }
 
@@ -132,6 +140,12 @@ export function buildMirrorInsertSlots(
       width: mirrored.width,
       height: mirrored.height,
       rotation: mirrored.rotation,
+      ...(mirrored.shape === "ellipse"
+        ? {
+            outerOffset: mirrored.outerOffset,
+            profileExponent: mirrored.profileExponent,
+          }
+        : {}),
       ...(mirrored.groupId ? { groupId: mirrored.groupId } : {}),
     };
   });

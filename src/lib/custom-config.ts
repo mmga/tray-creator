@@ -1,14 +1,66 @@
 import type { CustomLayoutParams } from "@/types/custom-tray";
 import { ELLIPSE_PROFILE_EXPONENT, SHARED_LAYOUT_LIMITS } from "@/lib/config";
 
-export const ELLIPSE_PRESETS = [
-  { name: "60x35.5mm", width: 60, height: 35.5 },
-  { name: "75x43mm", width: 75, height: 43 },
-  { name: "90x52mm", width: 90, height: 52 },
-  { name: "105x70mm", width: 105, height: 70 },
-  { name: "120x92mm", width: 120, height: 92 },
-  { name: "150x95mm", width: 150, height: 95 },
-  { name: "170x105mm", width: 170, height: 105 },
+const DEFAULT_ELLIPSE_OUTER_OFFSET = 0.4;
+
+export interface EllipsePreset {
+  name: string;
+  width: number;
+  height: number;
+  outerOffset: number;
+  profileExponent: number;
+}
+
+export const ELLIPSE_PRESETS: EllipsePreset[] = [
+  {
+    name: "60x35.5mm",
+    width: 60,
+    height: 35.5,
+    outerOffset: DEFAULT_ELLIPSE_OUTER_OFFSET,
+    profileExponent: ELLIPSE_PROFILE_EXPONENT,
+  },
+  {
+    name: "75x43mm",
+    width: 75,
+    height: 43,
+    outerOffset: DEFAULT_ELLIPSE_OUTER_OFFSET,
+    profileExponent: ELLIPSE_PROFILE_EXPONENT,
+  },
+  {
+    name: "90x52mm",
+    width: 90,
+    height: 52,
+    outerOffset: DEFAULT_ELLIPSE_OUTER_OFFSET,
+    profileExponent: ELLIPSE_PROFILE_EXPONENT,
+  },
+  {
+    name: "105x70mm",
+    width: 105,
+    height: 70,
+    outerOffset: DEFAULT_ELLIPSE_OUTER_OFFSET,
+    profileExponent: ELLIPSE_PROFILE_EXPONENT,
+  },
+  {
+    name: "120x92mm",
+    width: 120,
+    height: 92,
+    outerOffset: DEFAULT_ELLIPSE_OUTER_OFFSET,
+    profileExponent: ELLIPSE_PROFILE_EXPONENT,
+  },
+  {
+    name: "150x95mm",
+    width: 150,
+    height: 95,
+    outerOffset: DEFAULT_ELLIPSE_OUTER_OFFSET,
+    profileExponent: ELLIPSE_PROFILE_EXPONENT,
+  },
+  {
+    name: "170x105mm",
+    width: 170,
+    height: 105,
+    outerOffset: DEFAULT_ELLIPSE_OUTER_OFFSET,
+    profileExponent: ELLIPSE_PROFILE_EXPONENT,
+  },
 ];
 
 export const CUSTOM_LAYOUT_DEFAULTS: CustomLayoutParams = {
@@ -21,7 +73,6 @@ export const CUSTOM_LAYOUT_DEFAULTS: CustomLayoutParams = {
   baseThickness: 3,
   holeDepth: 3,
   cornerRadius: 6,
-  ellipseProfileExponent: ELLIPSE_PROFILE_EXPONENT,
   enableBaseHole: false,
   baseHoleSize: "25",
 };
@@ -34,11 +85,4 @@ export const CUSTOM_LIMITS = {
   baseThickness: SHARED_LAYOUT_LIMITS.baseThickness,
   holeDepth: SHARED_LAYOUT_LIMITS.holeDepth,
   cornerRadius: SHARED_LAYOUT_LIMITS.cornerRadius,
-  ellipseProfileExponent: {
-    label: "椭圆丰满度",
-    min: 2,
-    max: 4,
-    step: 0.05,
-    unit: "",
-  },
 } as const;

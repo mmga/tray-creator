@@ -2,8 +2,14 @@
 
 import type { CustomLayoutParams } from "@/types/custom-tray";
 import { BASE_PRESETS, MAX_BUILD_SIZE, SHARED_LAYOUT_LIMITS } from "@/lib/config";
-import { CUSTOM_LAYOUT_DEFAULTS, CUSTOM_LIMITS, ELLIPSE_PRESETS } from "@/lib/custom-config";
+import {
+  CUSTOM_LAYOUT_DEFAULTS,
+  CUSTOM_LIMITS,
+  ELLIPSE_PRESETS,
+  type EllipsePreset,
+} from "@/lib/custom-config";
 import { calculateCustomTrayDimensions } from "@/lib/custom-tray-model";
+import type { EllipseSlotConfig } from "@/lib/custom-layout-actions";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -28,11 +34,18 @@ interface CustomPanelProps {
   effectiveDimensions: { width: number; depth: number };
   updateParam: <K extends keyof CustomLayoutParams>(key: K, value: CustomLayoutParams[K]) => void;
   setParams: React.Dispatch<React.SetStateAction<CustomLayoutParams>>;
-  onAddSlot: (width: number, height?: number) => void;
+  onAddSlot: (width: number, height?: number, ellipseConfig?: EllipseSlotConfig) => void;
   onGenerate: (options?: { shouldSwitchView?: boolean }) => void;
   onExportSTL: () => void;
   isGenerating: boolean;
   volume: number;
+}
+
+function getEllipseSlotConfig(preset: EllipsePreset): EllipseSlotConfig {
+  return {
+    outerOffset: preset.outerOffset,
+    profileExponent: preset.profileExponent,
+  };
 }
 
 export default function CustomPanel({
@@ -99,7 +112,13 @@ export default function CustomPanel({
                   key={i}
                   variant="outline"
                   size="sm"
-                  onClick={() => onAddSlot(preset.width, preset.height)}
+                  onClick={() =>
+                    onAddSlot(
+                      preset.width,
+                      preset.height,
+                      getEllipseSlotConfig(preset),
+                    )
+                  }
                   className="h-10 lg:h-7 text-xs lg:text-[11px] border-[#2e2a24] bg-[#1c1a16] hover:bg-[#2e2a24] hover:text-primary transition-all"
                 >
                   <Plus className="w-3 h-3 mr-1" />
@@ -114,7 +133,7 @@ export default function CustomPanel({
       {/* 结构参数 — 移动端默认折叠 */}
       <div className="iron-panel rounded-sm p-4">
         <SectionHeader icon={Wrench} title="结构参数" collapsible defaultOpen={false}
-          summary={`槽距${params.spacing}mm / 边距${(params.boundarySpacingIndependent ? params.boundarySpacing : params.spacing)}mm / 椭圆${(params.ellipseProfileExponent ?? CUSTOM_LAYOUT_DEFAULTS.ellipseProfileExponent ?? CUSTOM_LIMITS.ellipseProfileExponent.min).toFixed(1)}`}>
+          summary={`槽距${params.spacing}mm / 边距${(params.boundarySpacingIndependent ? params.boundarySpacing : params.spacing)}mm`}>
           <div className="space-y-4">
             <ParamSlider
               label={CUSTOM_LIMITS.spacing.label}
@@ -163,17 +182,6 @@ export default function CustomPanel({
               config={CUSTOM_LIMITS.cornerRadius}
               onChange={(v) => updateParam("cornerRadius", v)}
               unit={SHARED_LAYOUT_LIMITS.cornerRadius.unit}
-            />
-            <ParamSlider
-              label={CUSTOM_LIMITS.ellipseProfileExponent.label}
-              value={
-                params.ellipseProfileExponent ??
-                CUSTOM_LAYOUT_DEFAULTS.ellipseProfileExponent ??
-                CUSTOM_LIMITS.ellipseProfileExponent.min
-              }
-              config={CUSTOM_LIMITS.ellipseProfileExponent}
-              onChange={(v) => updateParam("ellipseProfileExponent", v)}
-              unit={CUSTOM_LIMITS.ellipseProfileExponent.unit}
             />
           </div>
         </SectionHeader>

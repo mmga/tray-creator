@@ -46,7 +46,8 @@ export function calculateCustomEffectiveDimensions(
       slot.height,
       slot.rotation,
       slot.shape,
-      params.ellipseProfileExponent,
+      slot.profileExponent,
+      slot.outerOffset,
     );
     minX = Math.min(minX, slot.x - halfW);
     maxX = Math.max(maxX, slot.x + halfW);

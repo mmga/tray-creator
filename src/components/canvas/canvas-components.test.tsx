@@ -466,7 +466,7 @@ describe("CanvasSlotLayer", { timeout: 15000 }, () => {
     const labelGroup = container.querySelector('g[transform="rotate(10)"]');
 
     expect(translatedGroup).toHaveStyle({ opacity: "0.18" });
-    expect(container.querySelector('ellipse[fill="#f97316"]')).not.toBeNull();
+    expect(container.querySelector('path[fill="#f97316"]')).not.toBeNull();
     expect(labelGroup).not.toBeNull();
     expect(container).toHaveTextContent("40x20");
     expect(rotateHandle).not.toBeNull();

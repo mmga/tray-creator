@@ -17,7 +17,6 @@ interface AlignmentToolbarProps {
   spacing: number;
   trayWidth: number;
   trayDepth: number;
-  ellipseProfileExponent?: number;
   activeTabId: string | null;
   onActiveTabChange: (tabId: string | null) => void;
 }
@@ -35,7 +34,6 @@ export default function AlignmentToolbar({
   spacing,
   trayWidth,
   trayDepth,
-  ellipseProfileExponent,
   activeTabId,
   onActiveTabChange,
 }: AlignmentToolbarProps) {
@@ -58,7 +56,6 @@ export default function AlignmentToolbar({
           selectedSlots={selected}
           onUpdateSlots={onUpdateSlots}
           spacing={spacing}
-          ellipseProfileExponent={ellipseProfileExponent}
         />
       ),
     },
@@ -78,7 +75,6 @@ export default function AlignmentToolbar({
           spacing={spacing}
           trayWidth={trayWidth}
           trayDepth={trayDepth}
-          ellipseProfileExponent={ellipseProfileExponent}
         />
       ),
     },

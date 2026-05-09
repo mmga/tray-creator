@@ -47,7 +47,12 @@ export const CanvasSlotLayer = memo(function CanvasSlotLayer({
   onSlotPointerLeave,
   onSlotRotatePointerDown,
 }: CanvasSlotLayerProps) {
-  const getLocalPath = (width: number, height: number, margin: number) => {
+  const getLocalPath = (
+    width: number,
+    height: number,
+    margin: number,
+    profileExponent?: number,
+  ) => {
     const points = getEllipsePolygon(
       0,
       0,
@@ -56,7 +61,7 @@ export const CanvasSlotLayer = memo(function CanvasSlotLayer({
       0,
       margin,
       64,
-      ellipseProfileExponent,
+      profileExponent ?? ellipseProfileExponent,
     );
     return points
       .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
@@ -70,14 +75,21 @@ export const CanvasSlotLayer = memo(function CanvasSlotLayer({
           slot.width,
           slot.height,
           slot.shape,
+          slot.outerOffset,
         );
         const width = slot.width + slotOffset * 2;
         const height = slot.height + slotOffset * 2;
-        const slotPath = getLocalPath(slot.width, slot.height, slotOffset);
+        const slotPath = getLocalPath(
+          slot.width,
+          slot.height,
+          slotOffset,
+          slot.profileExponent,
+        );
         const spacingPath = getLocalPath(
           slot.width,
           slot.height,
           slotOffset + spacing,
+          slot.profileExponent,
         );
         const svgY = trayDepth - slot.y;
 
@@ -154,6 +166,7 @@ export const CanvasSlotLayer = memo(function CanvasSlotLayer({
                     slot.width,
                     slot.height,
                     Math.max(0, slotOffset - 0.5 / zoom),
+                    slot.profileExponent,
                   )}
                   fill="none"
                   stroke={

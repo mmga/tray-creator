@@ -9,7 +9,7 @@ import {
   DEFAULT_TRAY_PARAMS,
   PARAM_CONFIG,
 } from "@/lib/grid-config";
-import { CUSTOM_LAYOUT_DEFAULTS, CUSTOM_LIMITS } from "@/lib/custom-config";
+import { CUSTOM_LIMITS } from "@/lib/custom-config";
 import {
   GROUP_COLORS,
   STEPPED_LAYOUT_DEFAULTS,
@@ -138,6 +138,8 @@ export function parseParamFileObject(
         ...slot,
         shape: "circle" as const,
         height: slot.width,
+        outerOffset: undefined,
+        profileExponent: undefined,
         groupId: defaultGroupId,
       })),
       groups: [
@@ -352,6 +354,23 @@ function validateCustomParams(params: CustomLayoutParams) {
     }
 
     slot.rotation = (((slot.rotation as number) % 360) + 360) % 360;
+    if (slot.shape === "ellipse") {
+      if (
+        typeof slot.outerOffset !== "number" ||
+        !Number.isFinite(slot.outerOffset)
+      ) {
+        delete slot.outerOffset;
+      }
+      if (
+        typeof slot.profileExponent !== "number" ||
+        !Number.isFinite(slot.profileExponent)
+      ) {
+        delete slot.profileExponent;
+      }
+    } else {
+      delete slot.outerOffset;
+      delete slot.profileExponent;
+    }
     if (typeof slot.id !== "string" || !slot.id) {
       slot.id = crypto.randomUUID();
     }
@@ -364,19 +383,6 @@ function validateCustomParams(params: CustomLayoutParams) {
   clampField(obj, "baseThickness", CUSTOM_LIMITS.baseThickness);
   clampField(obj, "holeDepth", CUSTOM_LIMITS.holeDepth);
   clampField(obj, "cornerRadius", CUSTOM_LIMITS.cornerRadius);
-  if (
-    typeof obj.ellipseProfileExponent !== "number" ||
-    !Number.isFinite(obj.ellipseProfileExponent)
-  ) {
-    obj.ellipseProfileExponent =
-      CUSTOM_LAYOUT_DEFAULTS.ellipseProfileExponent ??
-      CUSTOM_LIMITS.ellipseProfileExponent.min;
-  }
-  clampField(
-    obj,
-    "ellipseProfileExponent",
-    CUSTOM_LIMITS.ellipseProfileExponent,
-  );
 
   if (!obj.boundarySpacingIndependent) {
     obj.boundarySpacing = obj.spacing;

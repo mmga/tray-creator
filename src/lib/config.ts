@@ -12,7 +12,7 @@ type SlotShape = "circle" | "ellipse";
 const DEFAULT_HOLE_TOLERANCE = 0.4;
 
 /** 椭圆凹槽轮廓向外等距扩张的距离 (mm) */
-const ELLIPSE_OUTER_OFFSET = 0.4;
+export const ELLIPSE_OUTER_OFFSET = 0.4;
 
 /**
  * 椭圆轮廓丰满度。
@@ -40,9 +40,10 @@ export function getSlotOuterOffset(
   width: number,
   height: number = width,
   shape?: SlotShape,
+  ellipseOuterOffset?: number,
 ): number {
   if (shape === "ellipse") {
-    return ELLIPSE_OUTER_OFFSET;
+    return ellipseOuterOffset ?? ELLIPSE_OUTER_OFFSET;
   }
 
   return getSlotTolerance(Math.max(width, height), shape) / 2;

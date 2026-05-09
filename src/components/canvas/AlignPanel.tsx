@@ -26,7 +26,10 @@ interface AlignPanelProps {
 }
 
 function getSlotBounds(
-  slot: Pick<FreeSlot, "width" | "height" | "rotation" | "shape">,
+  slot: Pick<
+    FreeSlot,
+    "width" | "height" | "rotation" | "shape" | "outerOffset" | "profileExponent"
+  >,
   ellipseProfileExponent?: number,
 ) {
   return getEllipseBoundingBox(
@@ -34,7 +37,8 @@ function getSlotBounds(
     slot.height,
     slot.rotation,
     slot.shape,
-    ellipseProfileExponent,
+    slot.profileExponent ?? ellipseProfileExponent,
+    slot.outerOffset,
   );
 }
 

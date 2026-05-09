@@ -17,7 +17,14 @@ export interface CanvasEffectiveBaseplate {
 
 type CanvasGeometrySlot = Pick<
   FreeSlot,
-  "x" | "y" | "width" | "height" | "rotation" | "shape"
+  | "x"
+  | "y"
+  | "width"
+  | "height"
+  | "rotation"
+  | "shape"
+  | "outerOffset"
+  | "profileExponent"
 >;
 
 export function normalizeDisplayAngle(angle: number) {
@@ -38,9 +45,10 @@ export function getEllipseBoundingBox(
   rotation: number,
   shape?: FreeSlot["shape"],
   ellipseProfileExponent?: number,
+  ellipseOuterOffset?: number,
 ): CanvasEllipseBoundingBox {
   const radians = (rotation * Math.PI) / 180;
-  const offset = getSlotOuterOffset(width, height, shape);
+  const offset = getSlotOuterOffset(width, height, shape, ellipseOuterOffset);
   const points = sampleSlotProfilePoints(
     width,
     height,
@@ -89,7 +97,8 @@ export function calculateEffectiveBaseplate(
       slot.height,
       slot.rotation,
       slot.shape,
-      ellipseProfileExponent,
+      slot.profileExponent ?? ellipseProfileExponent,
+      slot.outerOffset,
     );
     minX = Math.min(minX, slot.x - halfW);
     maxX = Math.max(maxX, slot.x + halfW);

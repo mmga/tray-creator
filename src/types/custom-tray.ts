@@ -39,6 +39,10 @@ export interface FreeSlot {
   width: number; // 圆形时为直径，椭圆时长轴
   height: number; // 圆形时为直径，椭圆时短轴
   rotation: number; // 旋转角度 (度)
+  /** 椭圆凹槽专属：轮廓向外等距扩张的距离 (mm) */
+  outerOffset?: number;
+  /** 椭圆凹槽专属：2 为标准椭圆，大于 2 会让中段弧线更饱满 */
+  profileExponent?: number;
 }
 
 /** 阶梯底座凹槽：继承 FreeSlot，通过 groupId 关联到所属分组 */
@@ -104,8 +108,6 @@ export interface CustomLayoutParams {
   holeDepth: number;
   /** 圆角半径 (mm) */
   cornerRadius: number;
-  /** 椭圆轮廓指数：2 为标准椭圆，大于 2 会让中段弧线更饱满 */
-  ellipseProfileExponent?: number;
   /** 是否启用底板磁吸孔 */
   enableBaseHole: boolean;
   /** 底板磁吸孔规格: '25' (25x1.2mm) */

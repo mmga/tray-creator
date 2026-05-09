@@ -766,7 +766,29 @@ describe("CustomPanel", { timeout: 15000 }, () => {
       2,
       ELLIPSE_PRESETS[0].width,
       ELLIPSE_PRESETS[0].height,
+      {
+        outerOffset: ELLIPSE_PRESETS[0].outerOffset,
+        profileExponent: ELLIPSE_PRESETS[0].profileExponent,
+      },
     );
+  });
+
+  it("does not render a global ellipse fullness control", () => {
+    render(
+      <CustomPanel
+        params={CUSTOM_LAYOUT_DEFAULTS}
+        effectiveDimensions={{ width: 120, depth: 140 }}
+        updateParam={vi.fn()}
+        setParams={vi.fn()}
+        onAddSlot={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+      />,
+    );
+
+    expect(screen.queryByText("椭圆丰满度")).not.toBeInTheDocument();
   });
 
   it("routes layout actions and reset/import through the panel controls", () => {

@@ -230,36 +230,37 @@ describe("param-io", () => {
     });
   });
 
-  it("fills and clamps custom ellipse profile exponent on import", () => {
+  it("sanitizes slot-level ellipse geometry on custom import", () => {
     const parsed = parseParamFileObject(
       {
         version: 1,
         mode: "custom" as AppMode,
         params: {
           ...CUSTOM_LAYOUT_DEFAULTS,
-          ellipseProfileExponent: 99,
+          slots: [
+            {
+              id: "ellipse-1",
+              x: 40,
+              y: 50,
+              width: 75,
+              height: 43,
+              rotation: 405,
+              shape: "ellipse",
+              outerOffset: Number.NaN,
+              profileExponent: Number.POSITIVE_INFINITY,
+            },
+          ],
         },
       },
       "custom",
     ) as CustomLayoutParams;
 
-    expect(parsed.ellipseProfileExponent).toBe(4);
-
-    const legacyParsed = parseParamFileObject(
-      {
-        version: 1,
-        mode: "custom" as AppMode,
-        params: {
-          ...CUSTOM_LAYOUT_DEFAULTS,
-          ellipseProfileExponent: undefined,
-        },
-      },
-      "custom",
-    ) as CustomLayoutParams;
-
-    expect(legacyParsed.ellipseProfileExponent).toBe(
-      CUSTOM_LAYOUT_DEFAULTS.ellipseProfileExponent,
-    );
+    expect(parsed.slots[0]).toMatchObject({
+      id: "ellipse-1",
+      rotation: 45,
+    });
+    expect("outerOffset" in parsed.slots[0]).toBe(false);
+    expect("profileExponent" in parsed.slots[0]).toBe(false);
   });
 
   it("migrates legacy stepped files with bottomHeight and bridgeRadius", () => {

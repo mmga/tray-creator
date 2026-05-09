@@ -62,6 +62,32 @@
 
 ## 进度记录
 
+### 2026-05-09 - 固化椭圆 preset 几何配置
+- 范围：继续推进自定义布局 TDD，把椭圆的 `外扩量` 与 `丰满度` 从全局可调参数改为 preset 固定配置，并随每个椭圆槽实例持久化。
+- 改动摘要：
+  - 在 `FreeSlot` 上新增 `outerOffset` / `profileExponent`，删除 `CustomLayoutParams` 里的全局 `ellipseProfileExponent`；`ELLIPSE_PRESETS` 现在直接携带固定的椭圆几何配置。
+  - 在 `CustomPanel` 中移除了 `椭圆丰满度` 滑杆和相关摘要文案；椭圆 preset 按钮现在会把尺寸与固定几何配置一起传给 `onAddSlot()`。
+  - 在 `addCustomSlot()` / `useCustomLayout()` / `insertCustomSlots()` / `duplicateCustomSlots()` 中打通 slot 级椭圆配置写入与复制链路，保证新增、镜像、复制后的椭圆槽都保留自己的几何参数。
+  - 在 `custom-tray-model`、`canvas-slot-geometry`、`canvas-collision-model`、`canvas-snap-engine`、`layout-symmetry`、`CanvasSlotLayer`、`AlignPanel`、`MirrorPanel`、`LayoutCanvas` 中改为优先读取 slot 自身的 `outerOffset/profileExponent`，不再依赖全局自定义参数。
+  - 在 `param-io` 中移除了自定义模式全局椭圆丰满度的导入校验；自定义槽位导入现在只对 slot 级椭圆字段做轻量清洗，非法值直接丢弃。
+  - 新增并修正了 `custom-layout-actions`、`custom-tray-model`、`canvas-slot-geometry`、`param-io`、`CustomPanel`、`CanvasSlotLayer` 的回归测试，覆盖 preset 配置写入、slot 级几何影响尺寸/体积、UI 退场和 slot 复制保真。
+- 验证命令：
+  - `pnpm exec vitest run src/lib/custom-layout-actions.test.ts src/lib/custom-tray-model.test.ts src/lib/canvas-slot-geometry.test.ts src/lib/param-io.test.ts src/components/panels.test.tsx`
+  - `pnpm test`
+  - `pnpm typecheck`
+  - `pnpm lint`
+  - `pnpm test:coverage`
+- 覆盖率影响：
+  - 总 statements 从 `72.84%` 提升到 `73.14%`
+  - 总 branches 从 `66.39%` 提升到 `66.93%`
+  - `components` 整体提升到 `88.29%` statements
+  - `lib` 整体提升到 `89.33%` statements / `72.75%` branches
+- 当前判断：
+  - 椭圆几何现在已经从“页面上的全局调参”收敛成“preset 固定配置 + slot 级持久化”，更符合打样后固化参数的生产流程。
+  - 现有 2D/3D 预览、碰撞、对齐、镜像、导入导出路径都已切到 slot 级数据源，后续只需要维护 preset 表即可调整不同椭圆规格的固定形状。
+- 下一步：
+  - 如果继续做自定义模式扫尾，可以补 `useCustomLayout` 的 hook 级测试，把新增的 slot 几何配置在 undo/history/preview stale 链路上的行为也补成显式回归。
+
 ### 2026-05-07 - 实现网格高级结构模式与仅内嵌孔底板
 - 范围：继续推进网格模式 TDD，把 `完整圆槽`、`半圆槽`、`仅内嵌孔底板` 收敛成互斥结构模式。
 - 改动摘要：

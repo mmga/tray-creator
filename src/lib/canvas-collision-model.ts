@@ -24,7 +24,15 @@ export interface CanvasCollisionState<TSlot extends { id: string }> {
 
 type CanvasCollisionSlot = Pick<
   FreeSlot,
-  "id" | "x" | "y" | "width" | "height" | "rotation" | "shape"
+  | "id"
+  | "x"
+  | "y"
+  | "width"
+  | "height"
+  | "rotation"
+  | "shape"
+  | "outerOffset"
+  | "profileExponent"
 >;
 
 export function buildCanvasCollisionState<TSlot extends CanvasCollisionSlot>(
@@ -50,13 +58,20 @@ export function buildCanvasCollisionState<TSlot extends CanvasCollisionSlot>(
   const expandedBounds = slots
     .map((slot) => {
       const margin =
-        spacing / 2 + getSlotOuterOffset(slot.width, slot.height, slot.shape);
+        spacing / 2 +
+        getSlotOuterOffset(
+          slot.width,
+          slot.height,
+          slot.shape,
+          slot.outerOffset,
+        );
       const { halfW, halfH } = getEllipseBoundingBox(
         slot.width,
         slot.height,
         slot.rotation,
         slot.shape,
-        ellipseProfileExponent,
+        slot.profileExponent ?? ellipseProfileExponent,
+        slot.outerOffset,
       );
 
       return {
@@ -84,7 +99,7 @@ export function buildCanvasCollisionState<TSlot extends CanvasCollisionSlot>(
       slot.rotation,
       margin,
       12,
-      ellipseProfileExponent,
+      slot.profileExponent ?? ellipseProfileExponent,
     );
     expandedPolygons.set(slot.id, polygon);
     return polygon;

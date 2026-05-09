@@ -31,12 +31,28 @@ interface MirrorPanelProps {
 }
 
 function buildCollisionPolygon(
-  slot: Pick<FreeSlot, "x" | "y" | "width" | "height" | "rotation" | "shape">,
+  slot: Pick<
+    FreeSlot,
+    | "x"
+    | "y"
+    | "width"
+    | "height"
+    | "rotation"
+    | "shape"
+    | "outerOffset"
+    | "profileExponent"
+  >,
   spacing: number,
   ellipseProfileExponent?: number,
 ) {
   const margin =
-    spacing / 2 + getSlotOuterOffset(slot.width, slot.height, slot.shape);
+    spacing / 2 +
+    getSlotOuterOffset(
+      slot.width,
+      slot.height,
+      slot.shape,
+      slot.outerOffset,
+    );
   return getEllipsePolygon(
     slot.x,
     slot.y,
@@ -45,7 +61,7 @@ function buildCollisionPolygon(
     slot.rotation,
     margin,
     12,
-    ellipseProfileExponent,
+    slot.profileExponent ?? ellipseProfileExponent,
   );
 }
 

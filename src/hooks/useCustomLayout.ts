@@ -9,6 +9,7 @@ import {
   addCustomSlot,
   applyCustomSlotUpdates,
   duplicateCustomSlots,
+  type EllipseSlotConfig,
   insertCustomSlots,
   removeCustomSlot,
   trimCustomBaseplate,
@@ -38,7 +39,7 @@ interface UseCustomLayoutReturn {
     key: K,
     value: CustomLayoutParams[K],
   ) => void;
-  addSlot: (width: number, height?: number) => void;
+  addSlot: (width: number, height?: number, ellipseConfig?: EllipseSlotConfig) => void;
   removeSlot: (id: string) => void;
   updateSlotPosition: (id: string, x: number, y: number) => void;
   updateMultipleSlots: (
@@ -161,10 +162,16 @@ export function useCustomLayout(): UseCustomLayoutReturn {
   );
 
   const addSlot = useCallback(
-    (width: number, height?: number) => {
+    (width: number, height?: number, ellipseConfig?: EllipseSlotConfig) => {
       internalSetParams((prev) => {
         pushState(prev);
-        return addCustomSlot(prev, randomIdFactory, width, height);
+        return addCustomSlot(
+          prev,
+          randomIdFactory,
+          width,
+          height,
+          ellipseConfig,
+        );
       });
       invalidatePreview();
     },

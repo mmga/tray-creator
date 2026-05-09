@@ -4,6 +4,11 @@ import type { IdFactory } from "@/lib/model-ports";
 import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
 import type { CustomLayoutParams, FreeSlot } from "@/types/custom-tray";
 
+export interface EllipseSlotConfig {
+  outerOffset?: number;
+  profileExponent?: number;
+}
+
 export interface CustomSlotUpdate {
   id: string;
   x: number;
@@ -58,6 +63,7 @@ export function addCustomSlot(
   idFactory: IdFactory,
   width: number,
   height?: number,
+  ellipseConfig?: EllipseSlotConfig,
 ): CustomLayoutParams {
   const isCircle = !height || width === height;
   const shape = isCircle ? "circle" : "ellipse";
@@ -67,7 +73,8 @@ export function addCustomSlot(
     slotHeight,
     0,
     shape,
-    params.ellipseProfileExponent,
+    ellipseConfig?.profileExponent,
+    ellipseConfig?.outerOffset,
   );
 
   let nextX = params.trayWidth / 2;
@@ -80,7 +87,8 @@ export function addCustomSlot(
       lastSlot.height,
       lastSlot.rotation,
       lastSlot.shape,
-      params.ellipseProfileExponent,
+      lastSlot.profileExponent,
+      lastSlot.outerOffset,
     );
     nextX = lastSlot.x + lastHalfW + params.spacing + newSlotHalfW;
     nextY = lastSlot.y;
@@ -94,6 +102,7 @@ export function addCustomSlot(
     width,
     height: slotHeight,
     rotation: 0,
+    ...(shape === "ellipse" ? ellipseConfig : {}),
   };
 
   return {
@@ -177,6 +186,12 @@ export function insertCustomSlots(
     width: slot.width,
     height: slot.height,
     rotation: slot.rotation,
+    ...(slot.shape === "ellipse"
+      ? {
+          outerOffset: slot.outerOffset,
+          profileExponent: slot.profileExponent,
+        }
+      : {}),
   }));
 
   return {
