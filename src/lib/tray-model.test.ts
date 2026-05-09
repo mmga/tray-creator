@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { measurements } from "@jscad/modeling";
+import stlSerializer from "@jscad/stl-serializer";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import {
   calculateTrayDimensions,
@@ -9,6 +10,19 @@ import {
 } from "@/lib/tray-model";
 
 const { measureBoundingBox, measureVolume } = measurements;
+
+function getSerializedStlByteLength(model: ReturnType<typeof createTrayModel>) {
+  return (stlSerializer.serialize({ binary: true }, model) as BlobPart[])
+    .reduce((total, chunk) => {
+      if (typeof chunk === "string") {
+        return total + chunk.length;
+      }
+      if (chunk instanceof ArrayBuffer) {
+        return total + chunk.byteLength;
+      }
+      return total + chunk.byteLength;
+    }, 0);
+}
 
 describe("tray model", () => {
   it("derives spacing axes from unified and independent spacing settings", () => {
@@ -105,6 +119,64 @@ describe("tray model", () => {
     expect(maxX - minX).toBeCloseTo(dimensions.width, 1);
     expect(maxY - minY).toBeCloseTo(dimensions.depth, 1);
     expect(maxZ - minZ).toBeCloseTo(dimensions.height, 1);
+  });
+
+  it("auto-selects the magnet hole preset from the slot diameter instead of the stored field", () => {
+    const params = {
+      ...DEFAULT_TRAY_PARAMS,
+      rows: 1,
+      columns: 1,
+      holeDiameter: 90,
+      baseThickness: 4,
+      enableBaseHole: true as const,
+      baseHoleSize: "25" as const,
+    };
+
+    const autoResolvedModel = createTrayModel(params);
+    const legacyFieldModel = createTrayModel({
+      ...params,
+      baseHoleSize: "40" as const,
+    });
+
+    expect(measureVolume(autoResolvedModel)).toBeCloseTo(
+      measureVolume(legacyFieldModel),
+      5,
+    );
+  });
+
+  it("still cuts a magnet hole for 65mm slots when base holes are enabled", () => {
+    const params = {
+      ...DEFAULT_TRAY_PARAMS,
+      rows: 1,
+      columns: 1,
+      holeDiameter: 65,
+      baseThickness: 2.4,
+      enableBaseHole: true as const,
+      baseHoleSize: "25" as const,
+    };
+
+    const plainModel = createTrayModel({ ...params, enableBaseHole: false });
+    const baseHoleModel = createTrayModel(params);
+
+    expect(measureVolume(baseHoleModel)).toBeLessThan(measureVolume(plainModel));
+  });
+
+  it("keeps the 65mm magnet cavity in serialized STL output", () => {
+    const params = {
+      ...DEFAULT_TRAY_PARAMS,
+      rows: 1,
+      columns: 1,
+      holeDiameter: 65,
+      baseThickness: 2.4,
+      enableBaseHole: true as const,
+    };
+
+    const plainModel = createTrayModel({ ...params, enableBaseHole: false });
+    const baseHoleModel = createTrayModel(params);
+
+    expect(getSerializedStlByteLength(baseHoleModel)).toBeGreaterThan(
+      getSerializedStlByteLength(plainModel),
+    );
   });
 
   it("keeps single-row half-circle trays at the same footprint with less upper material", () => {

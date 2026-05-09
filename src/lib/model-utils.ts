@@ -1,11 +1,17 @@
 import { booleans, primitives, transforms, extrusions } from "@jscad/modeling";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
-import { RENDER_CONFIG, BASE_HOLE_CONFIG } from "@/lib/config";
+import {
+    RENDER_CONFIG,
+    BASE_HOLE_CONFIG,
+    getBaseHoleMinBottomWall,
+} from "@/lib/config";
+import type { BaseHolePresetKey } from "@/types/tray";
 
 const { subtract } = booleans;
 const { roundedRectangle, cylinder } = primitives;
 const { translate } = transforms;
 const { extrudeLinear } = extrusions;
+const BASE_HOLE_WALL_EPSILON = 1e-6;
 
 // ── 共享建模工具 ──────────────────────────
 
@@ -13,6 +19,7 @@ const { extrudeLinear } = extrusions;
 export interface SlotCenter {
     cx: number;
     cy: number;
+    baseHoleSize?: BaseHolePresetKey;
 }
 
 /**
@@ -48,36 +55,46 @@ export function createBaseBody(
  * @param tray - 当前几何体
  * @param centers - 每个凹槽的 JSCAD 中心坐标（已转换为模型坐标系）
  * @param baseThickness - 底板厚度
- * @param baseHoleSize - 磁吸孔规格 key
+ * @param fallbackBaseHoleSize - 兼容旧调用的默认磁吸孔规格 key
  * @returns 挖孔后的几何体
  */
 export function subtractBaseHoles(
     tray: Geom3,
     centers: SlotCenter[],
     baseThickness: number,
-    baseHoleSize: "25",
+    fallbackBaseHoleSize?: BaseHolePresetKey,
 ): Geom3 {
     if (centers.length === 0) return tray;
 
-    const { presets, tolerance, topWall, minBottomWall } = BASE_HOLE_CONFIG;
-    const { diameter, depth } = presets[baseHoleSize];
-    const bottomWall = baseThickness - topWall - depth;
+    const { presets, tolerance, topWall } = BASE_HOLE_CONFIG;
+    const baseHoles: Geom3[] = centers.flatMap(({ cx, cy, baseHoleSize }) => {
+        const resolvedBaseHoleSize =
+            baseHoleSize ??
+            fallbackBaseHoleSize ??
+            BASE_HOLE_CONFIG.defaultPreset;
+        const { diameter, depth } = presets[resolvedBaseHoleSize];
+        const minBottomWall = getBaseHoleMinBottomWall(resolvedBaseHoleSize);
+        const bottomWall = baseThickness - topWall - depth;
 
-    if (bottomWall < minBottomWall) return tray;
+        if (bottomWall < minBottomWall - BASE_HOLE_WALL_EPSILON) {
+            return [];
+        }
 
-    const bhRadius = (diameter + tolerance) / 2;
-    const holeCenterZ = bottomWall + depth / 2;
+        const bhRadius = (diameter + tolerance) / 2;
+        const resolvedBottomWall = Math.max(bottomWall, minBottomWall);
+        const holeCenterZ = resolvedBottomWall + depth / 2;
 
-    const baseHoles: Geom3[] = centers.map(({ cx, cy }) =>
-        translate(
+        return translate(
             [cx, cy, holeCenterZ],
             cylinder({
                 radius: bhRadius,
-                height: depth + 0.02,
+                height: depth,
                 segments: RENDER_CONFIG.cylinderSegments,
             }),
-        ),
-    );
+        );
+    });
+
+    if (baseHoles.length === 0) return tray;
 
     return subtract(tray, ...baseHoles);
 }

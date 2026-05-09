@@ -1,7 +1,11 @@
 import { booleans, primitives, transforms } from "@jscad/modeling";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { TrayParams } from "@/types/tray";
-import { RENDER_CONFIG, getSlotTolerance } from "@/lib/config";
+import {
+  RENDER_CONFIG,
+  getSlotTolerance,
+  resolveBaseHolePresetKey,
+} from "@/lib/config";
 import {
   createBaseBody,
   subtractBaseHoles,
@@ -90,6 +94,7 @@ export function createTrayModel(params: TrayParams): Geom3 {
   const { spacingX, spacingY } = getGridSpacingAxes(params);
   const { boundarySpacingX, boundarySpacingY } =
     getGridBoundarySpacingAxes(params);
+  const baseHoleSize = resolveBaseHolePresetKey(holeDiameter);
 
   // 计算总尺寸：2 * 边界间距 + (N-1) 段凹槽间距 + N 个凹槽
   const totalWidth =
@@ -144,6 +149,7 @@ export function createTrayModel(params: TrayParams): Geom3 {
           boundarySpacingY +
           holeRadius +
           row * (actualHoleDiameter + spacingY),
+        baseHoleSize,
       });
     }
   }
@@ -169,7 +175,7 @@ export function createTrayModel(params: TrayParams): Geom3 {
 
   // 5. 底板磁吸孔
   if (params.enableBaseHole || params.basePlateOnly) {
-    tray = subtractBaseHoles(tray, centers, baseThickness, params.baseHoleSize);
+    tray = subtractBaseHoles(tray, centers, baseThickness);
   }
 
   return tray;

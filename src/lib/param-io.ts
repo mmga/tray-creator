@@ -9,7 +9,7 @@ import {
   DEFAULT_TRAY_PARAMS,
   PARAM_CONFIG,
 } from "@/lib/grid-config";
-import { CUSTOM_LIMITS } from "@/lib/custom-config";
+import { CUSTOM_LAYOUT_DEFAULTS, CUSTOM_LIMITS } from "@/lib/custom-config";
 import {
   GROUP_COLORS,
   STEPPED_LAYOUT_DEFAULTS,
@@ -19,6 +19,10 @@ import {
   SIMPLE_STEPPED_LAYOUT_DEFAULTS,
   SIMPLE_STEPPED_LIMITS,
 } from "@/lib/simple-stepped-config";
+import {
+  getBaseHoleMinBaseThickness,
+  resolveBaseHolePresetKey,
+} from "@/lib/config";
 import { createGroupStructureOverrides } from "@/lib/stepped-group-params";
 import { calculateSimpleSteppedDimensions } from "@/lib/simple-stepped-layout";
 
@@ -296,8 +300,15 @@ function validateGridParams(params: TrayParams) {
   if (typeof obj.enableBaseHole !== "boolean") {
     obj.enableBaseHole = DEFAULT_TRAY_PARAMS.enableBaseHole;
   }
+  obj.baseHoleSize = resolveBaseHolePresetKey(obj.holeDiameter as number);
   if (obj.basePlateOnly) {
     obj.enableBaseHole = true;
+  }
+  if (obj.enableBaseHole) {
+    obj.baseThickness = Math.max(
+      obj.baseThickness as number,
+      getBaseHoleMinBaseThickness(obj.baseHoleSize),
+    );
   }
 }
 
@@ -386,6 +397,21 @@ function validateCustomParams(params: CustomLayoutParams) {
 
   if (!obj.boundarySpacingIndependent) {
     obj.boundarySpacing = obj.spacing;
+  }
+  if (typeof obj.enableBaseHole !== "boolean") {
+    obj.enableBaseHole = CUSTOM_LAYOUT_DEFAULTS.enableBaseHole;
+  }
+  const largestSlotSize = slots.reduce(
+    (maxSize, slot) =>
+      Math.max(maxSize, slot.width as number, slot.height as number),
+    0,
+  );
+  obj.baseHoleSize = resolveBaseHolePresetKey(largestSlotSize);
+  if (obj.enableBaseHole) {
+    obj.baseThickness = Math.max(
+      obj.baseThickness as number,
+      getBaseHoleMinBaseThickness(obj.baseHoleSize),
+    );
   }
 }
 

@@ -263,8 +263,8 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     invalidatePreview();
   }, [invalidatePreview, pushState]);
 
-  const handleGenerate = useCallback(async () => {
-    if (!trayWorkerService) return;
+  const generateCurrentPreview = useCallback(async () => {
+    if (!trayWorkerService) return null;
     setIsGenerating(true);
     try {
       const result = await generateCustomPreview(params, trayWorkerService);
@@ -275,24 +275,42 @@ export function useCustomLayout(): UseCustomLayoutReturn {
         return result.threeGeometry;
       });
       setIsPreviewStale(false);
+      return result.geometry;
     } catch (err) {
       console.error("生成失败:", err);
       toast(
         "error",
         `模型生成失败：${err instanceof Error ? err.message : "未知错误"}`,
       );
+      return null;
     } finally {
       setIsGenerating(false);
     }
   }, [params, toast]);
 
+  const handleGenerate = useCallback(async () => {
+    await generateCurrentPreview();
+  }, [generateCurrentPreview]);
+
   const handleExportSTL = useCallback(async () => {
-    if (!jscadGeomRef.current || !trayWorkerService) return;
+    if (!trayWorkerService) return;
+
+    const needsFreshPreview = isPreviewStale || !jscadGeomRef.current;
+    const geometry =
+      needsFreshPreview ? await generateCurrentPreview() : jscadGeomRef.current;
+
+    if (!geometry) {
+      if (!needsFreshPreview) {
+        toast("error", "当前没有可导出的模型，请先点击开始锻造");
+      }
+      return;
+    }
+
     try {
       await exportCustomModelFiles(
         params,
         effectiveDimensions,
-        jscadGeomRef.current,
+        geometry,
         trayWorkerService,
         browserDownloadPort,
       );
@@ -305,6 +323,8 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     }
   }, [
     effectiveDimensions,
+    generateCurrentPreview,
+    isPreviewStale,
     params,
     toast,
   ]);

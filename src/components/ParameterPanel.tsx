@@ -1,6 +1,11 @@
 "use client";
 import type { TrayParams } from "@/types/tray";
-import { BASE_HOLE_CONFIG, BASE_PRESETS, MAX_BUILD_SIZE } from "@/lib/config";
+import {
+  BASE_PRESETS,
+  MAX_BUILD_SIZE,
+  getBaseHoleMinBaseThickness,
+  resolveBaseHolePresetKey,
+} from "@/lib/config";
 import { PARAM_CONFIG } from "@/lib/grid-config";
 import {
   calculateTrayDimensions,
@@ -77,6 +82,8 @@ export default function ParameterPanel({
   );
   const selectedPresetValue =
     selectedPresetIndex >= 0 ? String(selectedPresetIndex) : undefined;
+  const resolvedBaseHoleSize = resolveBaseHolePresetKey(params.holeDiameter);
+  const minBaseThickness = getBaseHoleMinBaseThickness(resolvedBaseHoleSize);
 
   useAutoPreview(params, {
     enabled: autoPreview,
@@ -269,7 +276,7 @@ export default function ParameterPanel({
               label={PARAM_CONFIG.baseThickness.label}
               value={params.baseThickness}
               config={params.enableBaseHole
-                ? { ...PARAM_CONFIG.baseThickness, min: BASE_HOLE_CONFIG.minBaseThickness }
+                ? { ...PARAM_CONFIG.baseThickness, min: minBaseThickness }
                 : PARAM_CONFIG.baseThickness}
               onChange={(v) => updateParam("baseThickness", v)}
               unit={PARAM_CONFIG.baseThickness.unit}
@@ -295,8 +302,8 @@ export default function ParameterPanel({
       {/* 底板孔位 — 移动端默认折叠 */}
       <BaseHoleConfig<TrayParams>
         enableBaseHole={params.enableBaseHole}
-        baseHoleSize={params.baseHoleSize}
         baseThickness={params.baseThickness}
+        resolvedBaseHoleSize={resolvedBaseHoleSize}
         updateParam={updateParam}
         collapsible
         defaultOpen={false}

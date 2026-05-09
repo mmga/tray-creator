@@ -1,7 +1,13 @@
 "use client";
 
 import type { CustomLayoutParams } from "@/types/custom-tray";
-import { BASE_PRESETS, MAX_BUILD_SIZE, SHARED_LAYOUT_LIMITS } from "@/lib/config";
+import {
+  BASE_PRESETS,
+  MAX_BUILD_SIZE,
+  SHARED_LAYOUT_LIMITS,
+  getBaseHoleMinBaseThickness,
+  resolveBaseHolePresetKey,
+} from "@/lib/config";
 import {
   CUSTOM_LAYOUT_DEFAULTS,
   CUSTOM_LIMITS,
@@ -64,6 +70,12 @@ export default function CustomPanel({
   const effectiveDepth = effectiveDimensions.depth;
   const isOversized = effectiveWidth > MAX_BUILD_SIZE || effectiveDepth > MAX_BUILD_SIZE;
   const [autoPreview, setAutoPreview] = useState(false);
+  const largestSlotSize = params.slots.reduce(
+    (maxSize, slot) => Math.max(maxSize, slot.width, slot.height),
+    0,
+  );
+  const resolvedBaseHoleSize = resolveBaseHolePresetKey(largestSlotSize);
+  const minBaseThickness = getBaseHoleMinBaseThickness(resolvedBaseHoleSize);
 
   useAutoPreview(params, {
     enabled: autoPreview,
@@ -165,7 +177,9 @@ export default function CustomPanel({
             <ParamSlider
               label={SHARED_LAYOUT_LIMITS.baseThickness.label}
               value={params.baseThickness}
-              config={CUSTOM_LIMITS.baseThickness}
+              config={params.enableBaseHole
+                ? { ...CUSTOM_LIMITS.baseThickness, min: minBaseThickness }
+                : CUSTOM_LIMITS.baseThickness}
               onChange={(v) => updateParam("baseThickness", v)}
               unit={SHARED_LAYOUT_LIMITS.baseThickness.unit}
             />
@@ -190,8 +204,8 @@ export default function CustomPanel({
       {/* 底板孔位 — 移动端默认折叠 */}
       <BaseHoleConfig<CustomLayoutParams>
         enableBaseHole={params.enableBaseHole}
-        baseHoleSize={params.baseHoleSize}
         baseThickness={params.baseThickness}
+        resolvedBaseHoleSize={resolvedBaseHoleSize}
         updateParam={updateParam}
         collapsible
         defaultOpen={false}

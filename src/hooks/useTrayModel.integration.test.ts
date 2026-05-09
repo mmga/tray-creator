@@ -164,33 +164,32 @@ describe("useTrayModel", () => {
     act(() => {
       result.current.updateParam("spacing", 9);
     });
+    generateGridPreviewMock.mockRejectedValueOnce(new Error("still boom"));
     await act(async () => {
       await result.current.handleExportSTL();
     });
     expect(toastMock).toHaveBeenCalledWith(
       "error",
-      "参数已变更，请先点击开始锻造生成最新模型",
-    );
-
-    const fresh = renderHook(() => useTrayModel());
-    await act(async () => {
-      await fresh.result.current.handleExportSTL();
-    });
-    expect(toastMock).toHaveBeenCalledWith(
-      "error",
-      "当前没有可导出的模型，请先点击开始锻造",
+      "模型生成失败：still boom",
     );
   });
 
   it("exports generated geometry with the worker service and browser download port", async () => {
     const geometry = { id: "geom" } as never;
     const threeGeometry = { dispose: vi.fn() };
+    const refreshedGeometry = { id: "geom-2" } as never;
+    const refreshedThreeGeometry = { dispose: vi.fn() };
     generateGridPreviewMock.mockResolvedValueOnce({
       geometry,
       threeGeometry: threeGeometry as never,
       volume: 100,
     });
-    exportGridModelFilesMock.mockResolvedValueOnce(undefined);
+    generateGridPreviewMock.mockResolvedValueOnce({
+      geometry: refreshedGeometry,
+      threeGeometry: refreshedThreeGeometry as never,
+      volume: 101,
+    });
+    exportGridModelFilesMock.mockResolvedValue(undefined);
 
     const { result } = renderHook(() => useTrayModel());
 
@@ -205,6 +204,20 @@ describe("useTrayModel", () => {
     expect(exportGridModelFilesMock).toHaveBeenCalledWith(
       result.current.params,
       geometry,
+      trayWorkerServiceMock,
+      browserDownloadPort,
+    );
+
+    act(() => {
+      result.current.updateParam("spacing", 9);
+    });
+    await act(async () => {
+      await result.current.handleExportSTL();
+    });
+
+    expect(exportGridModelFilesMock).toHaveBeenLastCalledWith(
+      result.current.params,
+      refreshedGeometry,
       trayWorkerServiceMock,
       browserDownloadPort,
     );

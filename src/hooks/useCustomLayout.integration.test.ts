@@ -197,6 +197,7 @@ describe("useCustomLayout", () => {
     randomIdFactoryMock.createId.mockReturnValue("slot-1");
     const geometry = { id: "geom-1" } as never;
     const threeGeometry = { dispose: vi.fn() };
+    const refreshedGeometry = { id: "geom-2" } as never;
     const secondThreeGeometry = { dispose: vi.fn() };
     const deferred = createDeferred<{
       geometry: never;
@@ -252,8 +253,16 @@ describe("useCustomLayout", () => {
       result.current.updateParam("spacing", 9);
     });
     await act(async () => {
-      await result.current.handleGenerate();
+      await result.current.handleExportSTL();
     });
+
+    expect(exportCustomModelFilesMock).toHaveBeenLastCalledWith(
+      result.current.params,
+      result.current.effectiveDimensions,
+      refreshedGeometry,
+      trayWorkerServiceMock,
+      browserDownloadPort,
+    );
     expect(threeGeometry.dispose).toHaveBeenCalledTimes(1);
   });
 
@@ -287,5 +296,14 @@ describe("useCustomLayout", () => {
       await result.current.handleExportSTL();
     });
     expect(toastMock).toHaveBeenCalledWith("error", "STL 导出失败：export failed");
+
+    act(() => {
+      result.current.updateParam("spacing", 9);
+    });
+    generateCustomPreviewMock.mockRejectedValueOnce(new Error("still boom"));
+    await act(async () => {
+      await result.current.handleExportSTL();
+    });
+    expect(toastMock).toHaveBeenCalledWith("error", "模型生成失败：still boom");
   });
 });

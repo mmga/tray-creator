@@ -85,6 +85,62 @@ describe("custom tray model", () => {
     expect(maxZ - minZ).toBeCloseTo(dimensions.height, 1);
   });
 
+  it("auto-selects the magnet hole preset from the largest slot size instead of the stored field", () => {
+    const params = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      baseThickness: 4,
+      enableBaseHole: true as const,
+      baseHoleSize: "25" as const,
+      slots: [
+        {
+          id: "slot-1",
+          x: 80,
+          y: 80,
+          width: 120,
+          height: 92,
+          rotation: 0,
+          shape: "ellipse" as const,
+        },
+      ],
+    };
+
+    const autoResolvedModel = createCustomTrayModel(params);
+    const legacyFieldModel = createCustomTrayModel({
+      ...params,
+      baseHoleSize: "40" as const,
+    });
+
+    expect(measureVolume(autoResolvedModel)).toBeCloseTo(
+      measureVolume(legacyFieldModel),
+      5,
+    );
+  });
+
+  it("still cuts a magnet hole for 65mm custom slots when base holes are enabled", () => {
+    const params = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      baseThickness: 2.4,
+      enableBaseHole: true as const,
+      baseHoleSize: "25" as const,
+      slots: [
+        {
+          id: "slot-1",
+          x: 80,
+          y: 80,
+          width: 65,
+          height: 65,
+          rotation: 0,
+          shape: "circle" as const,
+        },
+      ],
+    };
+
+    const plainModel = createCustomTrayModel({ ...params, enableBaseHole: false });
+    const baseHoleModel = createCustomTrayModel(params);
+
+    expect(measureVolume(baseHoleModel)).toBeLessThan(measureVolume(plainModel));
+  });
+
   it("uses slot-level ellipse geometry instead of a global fullness parameter", () => {
     const shallowEllipse = {
       ...CUSTOM_LAYOUT_DEFAULTS,

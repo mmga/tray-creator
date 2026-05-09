@@ -1,3 +1,5 @@
+import type { BaseHolePresetKey } from "@/types/tray";
+
 export type AppMode = "grid" | "custom" | "simple-stepped" | "stepped";
 
 /** 阶梯底座分组（一组凹槽统一高度，并形成阶梯结构的一层） */
@@ -110,8 +112,8 @@ export interface CustomLayoutParams {
   cornerRadius: number;
   /** 是否启用底板磁吸孔 */
   enableBaseHole: boolean;
-  /** 底板磁吸孔规格: '25' (25x1.2mm) */
-  baseHoleSize: "25";
+  /** 兼容导入/导出保留字段；实际规格由配置自动匹配 */
+  baseHoleSize: BaseHolePresetKey;
 }
 
 /** 阶梯底座布局参数 */

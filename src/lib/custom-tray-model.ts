@@ -7,7 +7,11 @@ import {
 } from "@jscad/modeling";
 import type { Geom2, Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { CustomLayoutParams, FreeSlot } from "@/types/custom-tray";
-import { RENDER_CONFIG, getSlotOuterOffset } from "@/lib/config";
+import {
+  RENDER_CONFIG,
+  getSlotOuterOffset,
+  resolveBaseHolePresetKey,
+} from "@/lib/config";
 import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
 import {
   createBaseBody,
@@ -164,11 +168,15 @@ export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
     // 用户坐标 → JSCAD 中心坐标
     const cx = normalizedX - trayWidth / 2;
     const cy = normalizedY - trayDepth / 2;
-    centers.push({ cx, cy });
 
     const width = slot.width;
     const height = slot.height;
     const rotation = slot.rotation || 0;
+    centers.push({
+      cx,
+      cy,
+      baseHoleSize: resolveBaseHolePresetKey(Math.max(width, height)),
+    });
 
     // 2D 椭圆 → 等距外扩 → 拉伸 → 旋转 → 平移
     const holeShape2D = createOffsetSlotShape(
@@ -191,7 +199,7 @@ export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
 
   // 4. 底板磁吸孔
   if (params.enableBaseHole) {
-    tray = subtractBaseHoles(tray, centers, baseThickness, params.baseHoleSize);
+    tray = subtractBaseHoles(tray, centers, baseThickness);
   }
 
   return tray;

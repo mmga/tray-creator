@@ -1,4 +1,4 @@
-import type { BasePreset } from "@/types/tray";
+import type { BaseHolePresetKey, BasePreset } from "@/types/tray";
 
 /**
  * 共享配置：
@@ -50,14 +50,47 @@ export function getSlotOuterOffset(
 }
 
 export const BASE_HOLE_CONFIG = {
+  defaultPreset: "25" as BaseHolePresetKey,
   presets: {
-    "25": { diameter: 25, depth: 1.2 },
+    "25": { label: "标准磁片", diameter: 25, depth: 1.2, minBottomWall: 0.6 },
+    "40": { label: "大地盘磁片", diameter: 40, depth: 1.4, minBottomWall: 0.4 },
   },
+  autoSelectRules: [
+    { minSlotSize: 60, preset: "40" as BaseHolePresetKey },
+    { minSlotSize: 0, preset: "25" as BaseHolePresetKey },
+  ],
   tolerance: 0.2,
   topWall: 0.6,
-  minBottomWall: 0.6,
-  minBaseThickness: 2.4,
 } as const;
+
+export function resolveBaseHolePresetKey(
+  slotSize: number | undefined,
+): BaseHolePresetKey {
+  const normalized = typeof slotSize === "number" && Number.isFinite(slotSize)
+    ? slotSize
+    : 0;
+
+  return (
+    BASE_HOLE_CONFIG.autoSelectRules.find((rule) => normalized >= rule.minSlotSize)
+      ?.preset ?? BASE_HOLE_CONFIG.defaultPreset
+  );
+}
+
+export function getBaseHolePreset(baseHoleSize: BaseHolePresetKey) {
+  return BASE_HOLE_CONFIG.presets[baseHoleSize];
+}
+
+export function getBaseHoleMinBottomWall(baseHoleSize: BaseHolePresetKey) {
+  return BASE_HOLE_CONFIG.presets[baseHoleSize].minBottomWall;
+}
+
+export function getBaseHoleMinBaseThickness(baseHoleSize: BaseHolePresetKey) {
+  return (
+    BASE_HOLE_CONFIG.topWall +
+    BASE_HOLE_CONFIG.presets[baseHoleSize].depth +
+    getBaseHoleMinBottomWall(baseHoleSize)
+  );
+}
 
 export const BASE_PRESETS: BasePreset[] = [
   { name: "小型步兵 (25mm)", diameter: 25 },

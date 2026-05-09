@@ -1,4 +1,5 @@
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
+import { resolveBaseHolePresetKey } from "@/lib/config";
 import type { TrayParams } from "@/types/tray";
 
 function getFiniteOr(value: unknown, fallback: number) {
@@ -24,6 +25,7 @@ export function normalizeGridParams(next: TrayParams): TrayParams {
     (next.rows === 1 || next.columns === 1) &&
     Boolean(next.halfCircleSlots);
   const enableBaseHole = basePlateOnly ? true : Boolean(next.enableBaseHole);
+  const baseHoleSize = resolveBaseHolePresetKey(next.holeDiameter);
 
   return {
     ...next,
@@ -36,6 +38,7 @@ export function normalizeGridParams(next: TrayParams): TrayParams {
     halfCircleSlots,
     basePlateOnly,
     enableBaseHole,
+    baseHoleSize,
   };
 }
 

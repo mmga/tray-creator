@@ -69,9 +69,9 @@ export function useTrayModel(): UseTrayModelReturn {
     [invalidatePreview],
   );
 
-  const handleGenerate = useCallback(async () => {
+  const generateCurrentPreview = useCallback(async () => {
     if (!trayWorkerService) {
-      return;
+      return null;
     }
 
     setIsGenerating(true);
@@ -84,31 +84,43 @@ export function useTrayModel(): UseTrayModelReturn {
         return result.threeGeometry;
       });
       setIsPreviewStale(false);
+      return result.geometry;
     } catch (err) {
       console.error("生成失败:", err);
       toast(
         "error",
         `模型生成失败：${err instanceof Error ? err.message : "未知错误"}`,
       );
+      return null;
     } finally {
       setIsGenerating(false);
     }
   }, [params, toast]);
 
+  const handleGenerate = useCallback(async () => {
+    await generateCurrentPreview();
+  }, [generateCurrentPreview]);
+
   const handleExportSTL = useCallback(async () => {
-    if (isPreviewStale) {
-      toast("error", "参数已变更，请先点击开始锻造生成最新模型");
+    if (!trayWorkerService) {
       return;
     }
-    if (!jscadGeomRef.current || !trayWorkerService) {
-      toast("error", "当前没有可导出的模型，请先点击开始锻造");
+
+    const needsFreshPreview = isPreviewStale || !jscadGeomRef.current;
+    const geometry =
+      needsFreshPreview ? await generateCurrentPreview() : jscadGeomRef.current;
+
+    if (!geometry) {
+      if (!needsFreshPreview) {
+        toast("error", "当前没有可导出的模型，请先点击开始锻造");
+      }
       return;
     }
 
     try {
       await exportGridModelFiles(
         params,
-        jscadGeomRef.current,
+        geometry,
         trayWorkerService,
         browserDownloadPort,
       );
@@ -119,7 +131,7 @@ export function useTrayModel(): UseTrayModelReturn {
         `STL 导出失败：${err instanceof Error ? err.message : "未知错误"}`,
       );
     }
-  }, [isPreviewStale, params, toast]);
+  }, [generateCurrentPreview, isPreviewStale, params, toast]);
 
   return {
     params,
