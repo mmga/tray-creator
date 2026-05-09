@@ -16,8 +16,8 @@ export const ELLIPSE_PRESETS: EllipsePreset[] = [
     name: "60x35.5mm",
     width: 60,
     height: 35.5,
-    outerOffset: DEFAULT_ELLIPSE_OUTER_OFFSET,
-    profileExponent: ELLIPSE_PROFILE_EXPONENT,
+    outerOffset: 0.4,
+    profileExponent: 2.05,
   },
   {
     name: "75x43mm",
