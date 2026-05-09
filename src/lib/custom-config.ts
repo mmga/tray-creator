@@ -20,11 +20,11 @@ export const ELLIPSE_PRESETS: EllipsePreset[] = [
     profileExponent: 2.05,
   },
   {
-    name: "75x43mm",
+    name: "75x42mm",
     width: 75,
-    height: 43,
-    outerOffset: DEFAULT_ELLIPSE_OUTER_OFFSET,
-    profileExponent: ELLIPSE_PROFILE_EXPONENT,
+    height: 43.2,
+    outerOffset: 0.6,
+    profileExponent: 2.08,
   },
   {
     name: "90x52mm",
@@ -72,7 +72,7 @@ export const CUSTOM_LAYOUT_DEFAULTS: CustomLayoutParams = {
   boundarySpacingIndependent: false,
   baseThickness: 3,
   holeDepth: 3,
-  cornerRadius: 6,
+  cornerRadius: 4,
   enableBaseHole: false,
   baseHoleSize: "25",
 };

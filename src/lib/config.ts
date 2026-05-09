@@ -66,7 +66,8 @@ export const BASE_PRESETS: BasePreset[] = [
   { name: "大型 (40mm)", diameter: 40 },
   { name: "超大型 (50mm)", diameter: 50 },
   { name: "巨型 (60mm)", diameter: 60 },
-  { name: "超巨型 (65mm)", diameter: 65 },
+  { name: "狮王 (65mm)", diameter: 65 },
+  { name: "无畏 (90mm)", diameter: 90 },
 ];
 
 /** 网格 / 自定义模式共用的结构参数范围 */

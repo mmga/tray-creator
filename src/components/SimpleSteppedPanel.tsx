@@ -456,7 +456,7 @@ export default function SimpleSteppedPanel({
         )}
         <Button
           onClick={onGenerate}
-          disabled={isGenerating || isOversized}
+          disabled={isGenerating}
           className="w-full h-11 blood-red text-sm text-[#f0d8b8] font-bold tracking-wider cursor-pointer border border-[#a02020] shadow-lg shadow-[#8b1a1a30] hover:shadow-xl hover:shadow-[#8b1a1a50] hover:brightness-125 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isGenerating ? (

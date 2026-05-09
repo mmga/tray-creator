@@ -54,7 +54,7 @@ const {
     boundarySpacingIndependent: false,
     baseThickness: 3,
     holeDepth: 3,
-    cornerRadius: 6,
+    cornerRadius: 4,
     enableBaseHole: false,
     baseHoleSize: "25",
   };

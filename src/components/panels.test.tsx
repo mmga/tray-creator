@@ -992,6 +992,7 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
   it("shows disabled states when no row is active, nothing can trim, and the layout is oversized", () => {
     const params = createSimpleSteppedParams();
     const derivedLayout = deriveSimpleSteppedLayout(params, null);
+    const onGenerate = vi.fn();
 
     render(
       <SimpleSteppedPanel
@@ -1012,7 +1013,7 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
         onClearRow={vi.fn()}
         onReorderRows={vi.fn()}
         onAddSlotToRow={vi.fn()}
-        onGenerate={vi.fn()}
+        onGenerate={onGenerate}
         onExportSTL={vi.fn()}
         onTrimTray={vi.fn()}
         isGenerating={false}
@@ -1027,7 +1028,10 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
       screen.getByRole("button", { name: "Trim 到凹槽占用区域" }),
     ).toBeDisabled();
     expect(screen.getByText("超过锻造极限")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "尺寸超限" })).toBeDisabled();
+    const generateButton = screen.getByRole("button", { name: "尺寸超限" });
+    expect(generateButton).not.toBeDisabled();
+    fireEvent.click(generateButton);
+    expect(onGenerate).toHaveBeenCalledTimes(1);
   });
 
   it("renders the empty-row state and only allows creating a new row", () => {
@@ -1458,6 +1462,8 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
   });
 
   it("shows the stepped pricing formula tooltip on hover", () => {
+    const onGenerate = vi.fn();
+
     render(
       <SteppedPanel
         params={createSteppedParams({
@@ -1560,6 +1566,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
 
   it("shows fallback pricing help and generating or oversized status text", () => {
     const tooltipButtonLabel = "查看阶梯底座报价公式";
+    const onGenerate = vi.fn();
     const { rerender } = render(
       <SteppedPanel
         params={createSteppedParams()}
@@ -1568,7 +1575,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         updateParam={vi.fn()}
         setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={vi.fn()}
+        onGenerate={onGenerate}
         onExportSTL={vi.fn()}
         isGenerating={true}
         volume={0}
@@ -1629,7 +1636,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         updateParam={vi.fn()}
         setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={vi.fn()}
+        onGenerate={onGenerate}
         onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
@@ -1659,7 +1666,10 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     );
 
     expect(screen.getByText("超过锻造极限")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "尺寸超限" })).toBeDisabled();
+    const generateButton = screen.getByRole("button", { name: "尺寸超限" });
+    expect(generateButton).not.toBeDisabled();
+    fireEvent.click(generateButton);
+    expect(onGenerate).toHaveBeenCalledTimes(1);
   });
 
   it("toggles preview groups through pointer and keyboard interactions", () => {
