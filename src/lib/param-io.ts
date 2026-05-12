@@ -1,4 +1,5 @@
 import type { TrayParams } from "@/types/tray";
+import type { BaseHolePresetKey } from "@/types/tray";
 import type {
   AppMode,
   CustomLayoutParams,
@@ -305,9 +306,10 @@ function validateGridParams(params: TrayParams) {
     obj.enableBaseHole = true;
   }
   if (obj.enableBaseHole) {
+    const baseHoleSize = obj.baseHoleSize as BaseHolePresetKey;
     obj.baseThickness = Math.max(
       obj.baseThickness as number,
-      getBaseHoleMinBaseThickness(obj.baseHoleSize),
+      getBaseHoleMinBaseThickness(baseHoleSize),
     );
   }
 }
@@ -408,9 +410,10 @@ function validateCustomParams(params: CustomLayoutParams) {
   );
   obj.baseHoleSize = resolveBaseHolePresetKey(largestSlotSize);
   if (obj.enableBaseHole) {
+    const baseHoleSize = obj.baseHoleSize as BaseHolePresetKey;
     obj.baseThickness = Math.max(
       obj.baseThickness as number,
-      getBaseHoleMinBaseThickness(obj.baseHoleSize),
+      getBaseHoleMinBaseThickness(baseHoleSize),
     );
   }
 }

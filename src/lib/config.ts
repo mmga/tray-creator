@@ -52,14 +52,13 @@ export function getSlotOuterOffset(
 export const BASE_HOLE_CONFIG = {
   defaultPreset: "25" as BaseHolePresetKey,
   presets: {
-    "25": { label: "标准磁片", diameter: 25, depth: 1.2, minBottomWall: 0.6 },
-    "40": { label: "大地盘磁片", diameter: 40, depth: 1.4, minBottomWall: 0.4 },
+    "25": { label: "标准磁片", diameter: 25.2, depth: 1.2, minBottomWall: 0.6 },
+    "40": { label: "大地盘磁片", diameter: 40.4, depth: 1.4, minBottomWall: 0.4 },
   },
   autoSelectRules: [
     { minSlotSize: 60, preset: "40" as BaseHolePresetKey },
     { minSlotSize: 0, preset: "25" as BaseHolePresetKey },
   ],
-  tolerance: 0.2,
   topWall: 0.6,
 } as const;
 

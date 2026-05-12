@@ -1462,8 +1462,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
   });
 
   it("shows the stepped pricing formula tooltip on hover", () => {
-    const onGenerate = vi.fn();
-
     render(
       <SteppedPanel
         params={createSteppedParams({

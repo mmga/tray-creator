@@ -20,6 +20,9 @@ function getSerializedStlByteLength(model: ReturnType<typeof createTrayModel>) {
       if (chunk instanceof ArrayBuffer) {
         return total + chunk.byteLength;
       }
+      if (chunk instanceof Blob) {
+        return total + chunk.size;
+      }
       return total + chunk.byteLength;
     }, 0);
 }

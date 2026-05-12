@@ -66,7 +66,7 @@ export function subtractBaseHoles(
 ): Geom3 {
     if (centers.length === 0) return tray;
 
-    const { presets, tolerance, topWall } = BASE_HOLE_CONFIG;
+    const { presets, topWall } = BASE_HOLE_CONFIG;
     const baseHoles: Geom3[] = centers.flatMap(({ cx, cy, baseHoleSize }) => {
         const resolvedBaseHoleSize =
             baseHoleSize ??
@@ -80,7 +80,7 @@ export function subtractBaseHoles(
             return [];
         }
 
-        const bhRadius = (diameter + tolerance) / 2;
+        const bhRadius = diameter / 2;
         const resolvedBottomWall = Math.max(bottomWall, minBottomWall);
         const holeCenterZ = resolvedBottomWall + depth / 2;
 

@@ -62,6 +62,24 @@
 
 ## 进度记录
 
+### 2026-05-12 - 固化磁吸孔最终孔径到 preset
+- 范围：继续推进磁吸孔配置的可维护性，把“preset 名义孔径 + 全局 tolerance”收敛成“preset 直接存最终孔径”。
+- 改动摘要：
+  - 删除了 `BASE_HOLE_CONFIG` 上对磁吸孔的全局 `tolerance` 叠加逻辑。
+  - 将磁吸孔 preset 改为直接记录最终成孔尺寸：`25` 规格为 `25.2mm`，`40` 规格为 `40.4mm`。
+  - `subtractBaseHoles()` 改为直接按 preset 的 `diameter / 2` 建孔，UI 上的自动匹配文案也自然显示最终孔径。
+  - 更新了 `config` 层测试断言，保证后续不会再把最终孔径和额外容差拆成两层语义。
+- 验证命令：
+  - `pnpm exec vitest run src/lib/config.test.ts src/lib/tray-model.test.ts src/lib/custom-tray-model.test.ts`
+  - `pnpm test`
+  - `pnpm typecheck`
+  - `pnpm lint`
+- 当前判断：
+  - 磁吸孔规格现在更符合打样后的固定配置思路：面板显示值、配置值和最终建模值完全一致。
+  - 这次没有改变 25mm 规格的最终孔径，只把 40mm 规格的最终孔径放大到 `40.4mm`。
+- 下一步：
+  - 如果后续还要继续微调不同磁铁规格，直接改 preset 表即可，不需要再同时考虑名义值和公差叠加。
+
 ### 2026-05-09 - 固化椭圆 preset 几何配置
 - 范围：继续推进自定义布局 TDD，把椭圆的 `外扩量` 与 `丰满度` 从全局可调参数改为 preset 固定配置，并随每个椭圆槽实例持久化。
 - 改动摘要：
