@@ -28,7 +28,10 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
 import { calculateGridPrice, calculateWeight } from "@/lib/pricing";
 import { useAutoPreview } from "@/hooks/useAutoPreview";
-import { PanelActionSection } from "@/components/PanelActionSection";
+import {
+  PanelActionSection,
+  type PanelDraftActions,
+} from "@/components/PanelActionSection";
 
 interface ParameterPanelProps {
   params: TrayParams;
@@ -39,6 +42,7 @@ interface ParameterPanelProps {
   onExportSTL: () => void;
   isGenerating: boolean;
   volume: number;
+  draftActions?: PanelDraftActions;
 }
 
 export default function ParameterPanel({
@@ -50,6 +54,7 @@ export default function ParameterPanel({
   onExportSTL,
   isGenerating,
   volume,
+  draftActions,
 }: ParameterPanelProps) {
   const dimensions = calculateTrayDimensions(params);
   const { spacingX, spacingY } = getGridSpacingAxes(params);
@@ -386,6 +391,7 @@ export default function ParameterPanel({
         mode="grid"
         params={params}
         onImport={(p) => replaceParams(p as TrayParams)}
+        draftActions={draftActions}
       />
 
     </div>

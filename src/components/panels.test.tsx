@@ -171,25 +171,43 @@ vi.mock("@/components/PanelActionSection", () => ({
     onReset,
     onImport,
     mode,
+    draftActions,
+    showStaleNotice,
+    isGenerating,
+    isOversized,
   }: {
-    autoPreview: boolean;
-    onAutoPreviewChange: (checked: boolean) => void;
+    autoPreview?: boolean;
+    onAutoPreviewChange?: (checked: boolean) => void;
     onGenerate: () => void;
     onExportSTL: () => void;
     onReset: () => void;
     onImport: (params: unknown) => void;
     mode: string;
+    draftActions?: {
+      currentDraftId: string | null;
+      hasUnsavedChanges: boolean;
+      onSaveDraft: () => void;
+      onOpenDraftDialog: () => void;
+    };
+    showStaleNotice?: boolean;
+    isGenerating: boolean;
+    isOversized: boolean;
   }) {
     return (
       <div data-testid={`panel-actions-${mode}`}>
-        <button
-          type="button"
-          onClick={() => onAutoPreviewChange(!autoPreview)}
-        >
-          启用自动预览
-        </button>
-        <button type="button" onClick={onGenerate}>
-          开始锻造
+        {showStaleNotice ? (
+          <div>当前预览已过期，请点击“开始锻造”生成最新模型。</div>
+        ) : null}
+        {onAutoPreviewChange ? (
+          <button
+            type="button"
+            onClick={() => onAutoPreviewChange(!autoPreview)}
+          >
+            启用自动预览
+          </button>
+        ) : null}
+        <button type="button" onClick={onGenerate} disabled={isGenerating}>
+          {isGenerating ? "锻造中..." : isOversized ? "尺寸超限" : "开始锻造"}
         </button>
         <button type="button" onClick={onExportSTL}>
           导出 STL
@@ -203,6 +221,17 @@ vi.mock("@/components/PanelActionSection", () => ({
         >
           导入参数
         </button>
+        {draftActions ? (
+          <>
+            <button type="button" onClick={draftActions.onSaveDraft}>
+              {draftActions.currentDraftId ? "更新草稿" : "保存草稿"}
+            </button>
+            <button type="button" onClick={draftActions.onOpenDraftDialog}>
+              草稿列表
+            </button>
+            {draftActions.hasUnsavedChanges ? <div>有未保存修改</div> : null}
+          </>
+        ) : null}
       </div>
     );
   },

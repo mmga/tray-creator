@@ -1,48 +1,97 @@
-import type { SteppedLayoutParams } from "@/types/custom-tray";
+import { buildDraftSummary } from "@/lib/draft-summary";
+import type {
+  DraftParamsByMode,
+  DraftSummary,
+  DraftSummaryByMode,
+  GridDraftStructureMode,
+} from "@/lib/draft-summary";
 import { downloadParamFile } from "@/lib/param-io";
+import type { ExportableParams } from "@/lib/param-io";
+import type { AppMode, SteppedLayoutParams } from "@/types/custom-tray";
 
-// ═══════════════════════════════════════════
-// 类型定义
-// ═══════════════════════════════════════════
+export type DraftMode = AppMode;
 
-export type DraftMode = "stepped";
+type DraftListItemCompatibilityByMode = {
+  grid: {
+    rows: number;
+    columns: number;
+    structureMode: GridDraftStructureMode;
+    baseSizeLabel: string;
+    trayWidth: number;
+    trayDepth: number;
+  };
+  custom: {
+    slotCount: number;
+    trayWidth: number;
+    trayDepth: number;
+  };
+  "simple-stepped": {
+    rowCount: number;
+    slotCount: number;
+    trayWidth: number;
+    trayDepth: number;
+  };
+  stepped: {
+    groupCount: number;
+    slotCount: number;
+    trayWidth: number;
+    trayDepth: number;
+  };
+};
 
-export interface DraftListItem {
+export type DraftListItem<M extends DraftMode = "stepped"> = {
   id: string;
-  mode: DraftMode;
+  mode: M;
   title: string;
   createdAt: string;
   updatedAt: string;
-  slotCount: number;
-  groupCount: number;
-  trayWidth: number;
-  trayDepth: number;
-}
+  summary?: DraftSummaryByMode[M];
+} & DraftListItemCompatibilityByMode[M];
 
-export interface DraftRecord {
+export type AnyDraftListItem = {
+  [M in DraftMode]: DraftListItem<M>;
+}[DraftMode];
+
+export interface DraftRecord<M extends DraftMode = "stepped"> {
   storageVersion: 1;
-  item: DraftListItem;
+  item: DraftListItem<M>;
   paramFile: {
     version: 1;
-    mode: DraftMode;
-    params: SteppedLayoutParams;
+    mode: M;
+    params: DraftParamsByMode[M];
   };
 }
 
-// ═══════════════════════════════════════════
-// localStorage 键名
-// ═══════════════════════════════════════════
+type UnknownDraftListItem = Partial<AnyDraftListItem> & {
+  id?: unknown;
+  mode?: unknown;
+  title?: unknown;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+  summary?: unknown;
+  slotCount?: unknown;
+  groupCount?: unknown;
+  trayWidth?: unknown;
+  trayDepth?: unknown;
+  rowCount?: unknown;
+  rows?: unknown;
+  columns?: unknown;
+  structureMode?: unknown;
+  baseSizeLabel?: unknown;
+};
 
 const DRAFT_INDEX_KEY = "tray-creator:drafts:index:v1";
-const draftRecordKey = (id: string): string =>
-  `tray-creator:drafts:stepped:${id}:v1`;
+const DRAFT_MODES: DraftMode[] = [
+  "grid",
+  "custom",
+  "simple-stepped",
+  "stepped",
+];
 
-/** 单模式最大草稿数，超出时拒绝创建新草稿 */
+const draftRecordKey = (mode: DraftMode, id: string): string =>
+  `tray-creator:drafts:${mode}:${id}:v1`;
+
 export const MAX_DRAFTS_PER_MODE = 30;
-
-// ═══════════════════════════════════════════
-// localStorage 安全包装
-// ═══════════════════════════════════════════
 
 function safeGetItem(key: string): string | null {
   try {
@@ -55,9 +104,9 @@ function safeGetItem(key: string): string | null {
 function safeSetItem(key: string, value: string): void {
   try {
     localStorage.setItem(key, value);
-  } catch (e) {
+  } catch (error) {
     throw new Error(
-      `存储失败（可能超出配额）：${e instanceof Error ? e.message : String(e)}`,
+      `存储失败（可能超出配额）：${error instanceof Error ? error.message : String(error)}`,
     );
   }
 }
@@ -70,75 +119,374 @@ function safeRemoveItem(key: string): void {
   }
 }
 
-// ═══════════════════════════════════════════
-// 索引管理
-// ═══════════════════════════════════════════
+function isDraftMode(value: unknown): value is DraftMode {
+  return DRAFT_MODES.includes(value as DraftMode);
+}
 
-function readIndex(): DraftListItem[] {
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function extractCompatibilityFields(
+  summary: DraftSummary,
+): DraftListItemCompatibilityByMode[DraftMode] {
+  switch (summary.mode) {
+    case "grid":
+      return {
+        rows: summary.rows,
+        columns: summary.columns,
+        structureMode: summary.structureMode,
+        baseSizeLabel: summary.baseSizeLabel,
+        trayWidth: summary.trayWidth,
+        trayDepth: summary.trayDepth,
+      };
+    case "custom":
+      return {
+        slotCount: summary.slotCount,
+        trayWidth: summary.trayWidth,
+        trayDepth: summary.trayDepth,
+      };
+    case "simple-stepped":
+      return {
+        rowCount: summary.rowCount,
+        slotCount: summary.slotCount,
+        trayWidth: summary.trayWidth,
+        trayDepth: summary.trayDepth,
+      };
+    case "stepped":
+      return {
+        groupCount: summary.groupCount,
+        slotCount: summary.slotCount,
+        trayWidth: summary.trayWidth,
+        trayDepth: summary.trayDepth,
+      };
+    default: {
+      throw new Error(`Unsupported draft summary mode: ${String(summary)}`);
+    }
+  }
+}
+
+function normalizeSummaryFromLegacyFields(
+  item: UnknownDraftListItem,
+): DraftSummary | null {
+  if (item.mode === "stepped") {
+    if (
+      isFiniteNumber(item.slotCount) &&
+      isFiniteNumber(item.groupCount) &&
+      isFiniteNumber(item.trayWidth) &&
+      isFiniteNumber(item.trayDepth)
+    ) {
+      return {
+        mode: "stepped",
+        slotCount: item.slotCount,
+        groupCount: item.groupCount,
+        trayWidth: item.trayWidth,
+        trayDepth: item.trayDepth,
+      };
+    }
+    return null;
+  }
+
+  if (item.mode === "grid") {
+    if (
+      isFiniteNumber(item.rows) &&
+      isFiniteNumber(item.columns) &&
+      typeof item.structureMode === "string" &&
+      typeof item.baseSizeLabel === "string" &&
+      isFiniteNumber(item.trayWidth) &&
+      isFiniteNumber(item.trayDepth)
+    ) {
+      return {
+        mode: "grid",
+        rows: item.rows,
+        columns: item.columns,
+        structureMode: item.structureMode as GridDraftStructureMode,
+        baseSizeLabel: item.baseSizeLabel,
+        trayWidth: item.trayWidth,
+        trayDepth: item.trayDepth,
+      };
+    }
+    return null;
+  }
+
+  if (item.mode === "custom") {
+    if (
+      isFiniteNumber(item.slotCount) &&
+      isFiniteNumber(item.trayWidth) &&
+      isFiniteNumber(item.trayDepth)
+    ) {
+      return {
+        mode: "custom",
+        slotCount: item.slotCount,
+        trayWidth: item.trayWidth,
+        trayDepth: item.trayDepth,
+      };
+    }
+    return null;
+  }
+
+  if (item.mode === "simple-stepped") {
+    if (
+      isFiniteNumber(item.rowCount) &&
+      isFiniteNumber(item.slotCount) &&
+      isFiniteNumber(item.trayWidth) &&
+      isFiniteNumber(item.trayDepth)
+    ) {
+      return {
+        mode: "simple-stepped",
+        rowCount: item.rowCount,
+        slotCount: item.slotCount,
+        trayWidth: item.trayWidth,
+        trayDepth: item.trayDepth,
+      };
+    }
+    return null;
+  }
+
+  return null;
+}
+
+function normalizeListItem<M extends DraftMode>(
+  item: UnknownDraftListItem,
+  fallbackMode?: M,
+  fallbackParams?: DraftParamsByMode[M] | ExportableParams,
+): DraftListItem<M> | null {
+  const mode = isDraftMode(item.mode) ? item.mode : fallbackMode;
+  if (
+    !mode ||
+    typeof item.id !== "string" ||
+    typeof item.title !== "string" ||
+    typeof item.createdAt !== "string" ||
+    typeof item.updatedAt !== "string"
+  ) {
+    return null;
+  }
+
+  const summary =
+    item.summary && typeof item.summary === "object" && item.summary !== null
+      ? (item.summary as DraftSummary)
+      : normalizeSummaryFromLegacyFields(item) ??
+        (fallbackParams ? buildDraftSummary(mode, fallbackParams) : null);
+
+  if (!summary || summary.mode !== mode) {
+    return null;
+  }
+
+  return {
+    id: item.id,
+    mode: mode as M,
+    title: item.title,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+    summary: summary as DraftSummaryByMode[M],
+    ...(extractCompatibilityFields(summary as DraftSummary) as DraftListItemCompatibilityByMode[M]),
+  };
+}
+
+function readIndex(): AnyDraftListItem[] {
   const raw = safeGetItem(DRAFT_INDEX_KEY);
   if (!raw) return [];
+
   try {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed as DraftListItem[];
+    return parsed
+      .map((item) => normalizeListItem(item as UnknownDraftListItem))
+      .filter((item): item is AnyDraftListItem => item !== null);
   } catch {
     return [];
   }
 }
 
-function writeIndex(items: DraftListItem[]): void {
+function writeIndex(items: AnyDraftListItem[]): void {
   safeSetItem(DRAFT_INDEX_KEY, JSON.stringify(items));
 }
 
-// ═══════════════════════════════════════════
-// 摘要构建
-// ═══════════════════════════════════════════
-
-function buildSummary(
-  params: SteppedLayoutParams,
-): Pick<DraftListItem, "slotCount" | "groupCount" | "trayWidth" | "trayDepth"> {
+function buildListItem<M extends DraftMode>(
+  mode: M,
+  id: string,
+  title: string,
+  createdAt: string,
+  updatedAt: string,
+  params: DraftParamsByMode[M],
+): DraftListItem<M> {
+  const summary = buildDraftSummary(mode, params);
   return {
-    slotCount: params.slots.length,
-    groupCount: params.groups.length,
-    trayWidth: params.trayWidth,
-    trayDepth: params.trayDepth,
+    id,
+    mode: mode as M,
+    title,
+    createdAt,
+    updatedAt,
+    summary,
+    ...(extractCompatibilityFields(summary) as DraftListItemCompatibilityByMode[M]),
   };
 }
 
-// ═══════════════════════════════════════════
-// 公开 API
-// ═══════════════════════════════════════════
+function resolveDraftMode(id: string): DraftMode | null {
+  const indexed = readIndex().find((item) => item.id === id);
+  if (indexed) {
+    return indexed.mode;
+  }
 
-/** 列出所有指定模式的草稿，按 updatedAt 倒序 */
-export function listDrafts(mode: DraftMode): DraftListItem[] {
-  return readIndex()
-    .filter((item) => item.mode === mode)
-    .sort(
-      (a, b) =>
-        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-    );
+  for (const mode of DRAFT_MODES) {
+    if (safeGetItem(draftRecordKey(mode, id))) {
+      return mode;
+    }
+  }
+
+  return null;
 }
 
-/** 按 id 读取完整草稿记录，若不存在或损坏返回 null */
-export function getDraft(id: string): DraftRecord | null {
-  const raw = safeGetItem(draftRecordKey(id));
+function getDraftInternal<M extends DraftMode>(
+  mode: M,
+  id: string,
+): DraftRecord<M> | null {
+  const raw = safeGetItem(draftRecordKey(mode, id));
   if (!raw) return null;
+
   try {
-    const record = JSON.parse(raw) as DraftRecord;
-    if (record.storageVersion !== 1) return null;
-    return record;
+    const parsed = JSON.parse(raw) as {
+      storageVersion?: unknown;
+      item?: UnknownDraftListItem;
+      paramFile?: {
+        version?: unknown;
+        mode?: unknown;
+        params?: DraftParamsByMode[M];
+      };
+    };
+
+    if (parsed.storageVersion !== 1 || !parsed.paramFile) {
+      return null;
+    }
+
+    const recordMode = isDraftMode(parsed.paramFile.mode)
+      ? parsed.paramFile.mode
+      : mode;
+    if (recordMode !== mode || parsed.paramFile.version !== 1) {
+      return null;
+    }
+
+    const params = parsed.paramFile.params;
+    if (!params || typeof params !== "object") {
+      return null;
+    }
+
+    const item = normalizeListItem(
+      parsed.item ?? {},
+      mode,
+      params,
+    );
+
+    if (!item) {
+      return null;
+    }
+
+    return {
+      storageVersion: 1,
+      item,
+      paramFile: {
+        version: 1,
+        mode,
+        params,
+      },
+    };
   } catch {
     return null;
   }
 }
 
-/** 创建新草稿，返回草稿记录 */
+function parseCreateArgs<M extends DraftMode>(
+  title: string,
+  modeOrParams: M | SteppedLayoutParams,
+  maybeParams?: DraftParamsByMode[M],
+): { mode: M; params: DraftParamsByMode[M] } {
+  if (typeof modeOrParams === "string") {
+    return {
+      mode: modeOrParams,
+      params: maybeParams as DraftParamsByMode[M],
+    };
+  }
+
+  return {
+    mode: "stepped" as M,
+    params: modeOrParams as DraftParamsByMode[M],
+  };
+}
+
+function parseUpdateArgs<M extends DraftMode>(
+  modeOrId: M | string,
+  idOrTitle: string,
+  titleOrParams: string | DraftParamsByMode[M],
+  maybeParams?: DraftParamsByMode[M],
+) {
+  if (maybeParams !== undefined && isDraftMode(modeOrId)) {
+    return {
+      mode: modeOrId,
+      id: idOrTitle,
+      title: titleOrParams as string,
+      params: maybeParams,
+    };
+  }
+
+  const id = modeOrId;
+  return {
+    mode: (resolveDraftMode(id) ?? "stepped") as M,
+    id,
+    title: idOrTitle,
+    params: titleOrParams as DraftParamsByMode[M],
+  };
+}
+
+function parseIdArgs<M extends DraftMode>(
+  modeOrId: M | string,
+  maybeId?: string,
+): { mode: M; id: string } {
+  if (maybeId && isDraftMode(modeOrId)) {
+    return { mode: modeOrId as M, id: maybeId };
+  }
+
+  const id = modeOrId;
+  return { mode: (resolveDraftMode(id) ?? "stepped") as M, id };
+}
+
+export function listDrafts<M extends DraftMode>(mode: M): DraftListItem<M>[] {
+  return readIndex()
+    .filter((item) => item.mode === mode)
+    .sort(
+      (a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    ) as unknown as DraftListItem<M>[];
+}
+
+export function getDraft(id: string): DraftRecord<"stepped"> | null;
+export function getDraft<M extends DraftMode>(
+  mode: M,
+  id: string,
+): DraftRecord<M> | null;
+export function getDraft<M extends DraftMode>(
+  modeOrId: M | string,
+  maybeId?: string,
+): DraftRecord<M> | DraftRecord<"stepped"> | null {
+  const { mode, id } = parseIdArgs(modeOrId, maybeId);
+  return getDraftInternal(mode, id);
+}
+
 export function createDraft(
   title: string,
   params: SteppedLayoutParams,
-): DraftRecord {
-  // 数量上限检查
-  const existing = readIndex().filter((i) => i.mode === "stepped");
+): DraftRecord<"stepped">;
+export function createDraft<M extends DraftMode>(
+  title: string,
+  mode: M,
+  params: DraftParamsByMode[M],
+): DraftRecord<M>;
+export function createDraft<M extends DraftMode>(
+  title: string,
+  modeOrParams: M | SteppedLayoutParams,
+  maybeParams?: DraftParamsByMode[M],
+): DraftRecord<M> | DraftRecord<"stepped"> {
+  const { mode, params } = parseCreateArgs(title, modeOrParams, maybeParams);
+  const existing = readIndex().filter((item) => item.mode === mode);
   if (existing.length >= MAX_DRAFTS_PER_MODE) {
     throw new Error(
       `草稿数量已达上限（${MAX_DRAFTS_PER_MODE} 个），请先删除不需要的草稿`,
@@ -147,135 +495,166 @@ export function createDraft(
 
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
-  const cleanTitle = title.trim() || defaultDraftTitle();
-
-  const item: DraftListItem = {
-    id,
-    mode: "stepped",
-    title: cleanTitle,
-    createdAt: now,
-    updatedAt: now,
-    ...buildSummary(params),
-  };
-
-  const record: DraftRecord = {
+  const cleanTitle = title.trim() || defaultDraftTitle(mode);
+  const item = buildListItem(mode, id, cleanTitle, now, now, params);
+  const record: DraftRecord<M> = {
     storageVersion: 1,
     item,
-    paramFile: { version: 1, mode: "stepped", params },
+    paramFile: { version: 1, mode, params },
   };
 
-  // 事务性写入：先写记录，再写索引；任一失败则回滚
-  safeSetItem(draftRecordKey(id), JSON.stringify(record));
+  safeSetItem(draftRecordKey(mode, id), JSON.stringify(record));
   try {
     const index = readIndex();
-    index.push(item);
+    index.push(item as AnyDraftListItem);
     writeIndex(index);
-  } catch (e) {
-    // 索引写失败 → 回滚已写入的记录
-    safeRemoveItem(draftRecordKey(id));
-    throw e;
+  } catch (error) {
+    safeRemoveItem(draftRecordKey(mode, id));
+    throw error;
   }
 
   return record;
 }
 
-/** 覆盖已有草稿的参数并更新摘要，返回更新后的记录 */
 export function updateDraft(
   id: string,
   title: string,
   params: SteppedLayoutParams,
-): DraftRecord {
-  const existing = getDraft(id);
+): DraftRecord<"stepped">;
+export function updateDraft<M extends DraftMode>(
+  mode: M,
+  id: string,
+  title: string,
+  params: DraftParamsByMode[M],
+): DraftRecord<M>;
+export function updateDraft<M extends DraftMode>(
+  modeOrId: M | string,
+  idOrTitle: string,
+  titleOrParams: string | DraftParamsByMode[M],
+  maybeParams?: DraftParamsByMode[M],
+): DraftRecord<M> | DraftRecord<"stepped"> {
+  const { mode, id, title, params } = parseUpdateArgs(
+    modeOrId,
+    idOrTitle,
+    titleOrParams,
+    maybeParams,
+  );
+  const existing = getDraftInternal(mode, id);
   if (!existing) throw new Error(`草稿不存在: ${id}`);
 
   const now = new Date().toISOString();
   const cleanTitle = title.trim() || existing.item.title;
-
-  const updatedItem: DraftListItem = {
-    ...existing.item,
-    title: cleanTitle,
-    updatedAt: now,
-    ...buildSummary(params),
-  };
-
-  const updatedRecord: DraftRecord = {
-    ...existing,
+  const updatedItem = buildListItem(
+    mode,
+    id,
+    cleanTitle,
+    existing.item.createdAt,
+    now,
+    params,
+  );
+  const updatedRecord = {
+    storageVersion: 1,
     item: updatedItem,
-    paramFile: { version: 1, mode: "stepped", params },
-  };
+    paramFile: { version: 1, mode, params },
+  } as unknown as DraftRecord<M>;
 
-  // 事务性写入：先写记录，再写索引；任一失败则回滚至旧记录
-  safeSetItem(draftRecordKey(id), JSON.stringify(updatedRecord));
+  safeSetItem(draftRecordKey(mode, id), JSON.stringify(updatedRecord));
   try {
     const index = readIndex().map((item) =>
-      item.id === id ? updatedItem : item,
+      item.id === id ? (updatedItem as AnyDraftListItem) : item,
     );
     writeIndex(index);
-  } catch (e) {
-    // 索引写失败 → 回滚记录为旧版本
-    safeSetItem(draftRecordKey(id), JSON.stringify(existing));
-    throw e;
+  } catch (error) {
+    safeSetItem(draftRecordKey(mode, id), JSON.stringify(existing));
+    throw error;
   }
 
   return updatedRecord;
 }
 
-/** 只更新草稿名称，不改变 params */
-export function renameDraft(id: string, title: string): DraftRecord {
-  const existing = getDraft(id);
+export function renameDraft(id: string, title: string): DraftRecord;
+export function renameDraft<M extends DraftMode>(
+  mode: M,
+  id: string,
+  title: string,
+): DraftRecord<M>;
+export function renameDraft<M extends DraftMode>(
+  modeOrId: M | string,
+  idOrTitle: string,
+  maybeTitle?: string,
+): DraftRecord<M> | DraftRecord {
+  const hasExplicitMode = maybeTitle !== undefined && isDraftMode(modeOrId);
+  const mode = (hasExplicitMode
+    ? modeOrId
+    : resolveDraftMode(modeOrId as string) ?? "stepped") as M;
+  const id = hasExplicitMode ? idOrTitle : (modeOrId as string);
+  const title = hasExplicitMode ? maybeTitle : idOrTitle;
+  const existing = getDraftInternal(mode, id);
   if (!existing) throw new Error(`草稿不存在: ${id}`);
 
   const cleanTitle = title.trim();
   if (!cleanTitle) throw new Error("草稿名称不能为空");
 
-  const updatedItem: DraftListItem = {
+  const updatedItem = {
     ...existing.item,
     title: cleanTitle,
     updatedAt: new Date().toISOString(),
-  };
+  } as DraftListItem<M>;
+  const updatedRecord: DraftRecord<M> = { ...existing, item: updatedItem };
 
-  const updatedRecord: DraftRecord = { ...existing, item: updatedItem };
-  safeSetItem(draftRecordKey(id), JSON.stringify(updatedRecord));
-
+  safeSetItem(draftRecordKey(mode, id), JSON.stringify(updatedRecord));
   const index = readIndex().map((item) =>
-    item.id === id ? updatedItem : item,
+    item.id === id ? (updatedItem as AnyDraftListItem) : item,
   );
   writeIndex(index);
 
   return updatedRecord;
 }
 
-/** 删除草稿（同时从索引移除） */
-export function deleteDraft(id: string): void {
-  safeRemoveItem(draftRecordKey(id));
+export function deleteDraft(id: string): void;
+export function deleteDraft<M extends DraftMode>(mode: M, id: string): void;
+export function deleteDraft<M extends DraftMode>(
+  modeOrId: M | string,
+  maybeId?: string,
+): void {
+  const { mode, id } = parseIdArgs(modeOrId, maybeId);
+  safeRemoveItem(draftRecordKey(mode, id));
   const index = readIndex().filter((item) => item.id !== id);
   writeIndex(index);
 }
 
-/** 触发下载该草稿对应的 JSON 参数文件 */
-export function exportDraft(id: string): void {
-  const record = getDraft(id);
+export function exportDraft(id: string): void;
+export function exportDraft<M extends DraftMode>(mode: M, id: string): void;
+export function exportDraft<M extends DraftMode>(
+  modeOrId: M | string,
+  maybeId?: string,
+): void {
+  const { mode, id } = parseIdArgs(modeOrId, maybeId);
+  const record = getDraftInternal(mode, id);
   if (!record) throw new Error(`草稿不存在: ${id}`);
+
   const slug = record.item.title
     .replace(/[^\w\u4e00-\u9fa5-]/g, "-")
     .replace(/-{2,}/g, "-")
+    .replace(/^-+|-+$/g, "")
     .toLowerCase();
-  const filename = `stepped-draft-${slug || id.slice(0, 8)}.json`;
-  downloadParamFile("stepped", record.paramFile.params, filename);
+  const filename = `${mode}-draft-${slug || id.slice(0, 8)}.json`;
+  downloadParamFile(mode, record.paramFile.params, filename);
 }
 
-// ═══════════════════════════════════════════
-// 工具函数
-// ═══════════════════════════════════════════
-
-/** 生成默认草稿名称，格式：阶梯草稿 YYYY-MM-DD HH:mm */
-export function defaultDraftTitle(): string {
+export function defaultDraftTitle(mode: DraftMode = "stepped"): string {
   const d = new Date();
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `阶梯草稿 ${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const label = {
+    grid: "网格草稿",
+    custom: "自定义草稿",
+    "simple-stepped": "简易阶梯草稿",
+    stepped: "阶梯草稿",
+  }[mode];
+
+  return `${label} ${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-/** 格式化时间戳为可读字符串 */
 export function formatDraftTime(iso: string): string {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return iso;

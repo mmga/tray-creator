@@ -40,6 +40,46 @@ _Avoid_: Treating ellipse profile shape as a UI-only adjustment.
 The nominal size of the miniature base the slot is intended to hold.
 _Avoid_: Using base size to mean the final generated slot size.
 
+**Mode**:
+One tray editing workflow such as grid, custom, simple stepped, or stepped.
+_Avoid_: Using "feature" when the meaning is the editor mode.
+
+**Draft**:
+A named browser-stored snapshot of one mode's tray configuration that can be listed, loaded, renamed, deleted, or exported.
+_Avoid_: Mixing draft with imported file, autosave state, or cross-mode shared preset.
+
+**Manual Draft Save**:
+Draft persistence that happens only when the user explicitly saves or updates a draft.
+_Avoid_: Treating ordinary editing as implicit draft persistence.
+
+**Draft Binding**:
+The relationship between the current editor state and the draft it was last loaded from or saved into.
+_Avoid_: Clearing draft identity on every unsaved edit.
+
+**Unsaved Draft Changes**:
+Edits made after the current draft binding was established, before the user explicitly updates or saves a draft again.
+_Avoid_: Assuming a bound draft always matches the current editor state.
+
+**Draft Summary**:
+A concise, mode-specific set of fields stored with a draft list item so users can identify a draft without loading it.
+_Avoid_: Requiring the full draft payload to render the draft list.
+
+**Draft Index**:
+The browser-stored list of draft list items used to render draft lists quickly without loading each full draft record.
+_Avoid_: Treating the draft index as the full source of editable configuration data.
+
+**Draft Compatibility**:
+The requirement that existing browser-stored drafts remain usable after draft system changes.
+_Avoid_: Treating stored drafts as disposable implementation detail.
+
+**Draft Manager Dialog**:
+A reusable draft management UI that supports listing, saving, loading, renaming, deleting, and exporting drafts across modes.
+_Avoid_: Duplicating the same draft management interaction separately for each mode.
+
+**Draft Action Area**:
+The mode-local action section where draft save/open controls live alongside import, export, reset, and generate actions.
+_Avoid_: Hiding draft entry points in mode-specific one-off locations unless the interaction is materially different.
+
 ## Relationships
 
 - A **Slot Definition** includes its **Tolerance**.
@@ -56,6 +96,31 @@ _Avoid_: Using base size to mean the final generated slot size.
 - Ellipse legacy slots match only when width, height, **Ellipse Outer Offset**, and **Ellipse Profile Exponent** all match.
 - Legacy slots that do not match a definition remain valid geometry snapshots without a definition identity.
 - A slot definition display name must reflect the actual geometry values in the definition.
+- A **Draft** belongs to exactly one **Mode**.
+- Each **Mode** may have its own independent **Draft** list and storage space.
+- A **Manual Draft Save** does not imply autosave or session recovery.
+- The current editor state may keep a **Draft Binding** even when there are unsaved edits.
+- **Unsaved Draft Changes** may exist while a **Draft Binding** still exists.
+- A **Draft Summary** belongs to the same **Mode** as its **Draft**.
+- A **Draft Summary** may be mode-specific rather than globally uniform across all modes.
+- A grid **Draft Summary** may show row/column count, structure mode, base size, and resulting width/depth.
+- A custom **Draft Summary** may show slot count and resulting width/depth.
+- A simple stepped **Draft Summary** may show row count, slot count, and resulting width/depth.
+- A stepped **Draft Summary** may show group count, slot count, and resulting width/depth.
+- Draft titles may be duplicated within the same **Mode**.
+- A **Draft Index** stores **Draft Summary** entries, while full draft records store full mode parameters.
+- Draft limits may be enforced per **Mode**, not only globally.
+- **Draft Compatibility** applies to already-saved browser drafts, especially existing stepped drafts.
+- A draft record key may be mode-scoped while the **Draft Index** remains shared.
+- A **Draft Manager Dialog** may be shared across modes while rendering mode-specific summaries.
+- A **Draft Manager Dialog** may show drafts for the current **Mode** only.
+- A **Draft Action Area** should remain broadly consistent across modes.
+- Loading a different draft replaces the current **Draft Binding**.
+- Saving as a new draft replaces the current **Draft Binding** with the new draft.
+- Deleting the currently bound draft clears the current **Draft Binding**.
+- Deleting a draft should use an explicit confirmation step.
+- Resetting to default parameters clears the current **Draft Binding**.
+- Importing an external parameter file clears the current **Draft Binding**.
 - Multiple layout modes may expose different subsets of **Slot Definitions**.
 - When two modes expose the same **Slot Definition**, they must use the same geometry.
 - A **Base Size** is not enough to reproduce a slot unless its **Tolerance** and shape-specific geometry are also known.

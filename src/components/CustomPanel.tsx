@@ -31,7 +31,10 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
 import { calculateWeight, calculateCustomPrice } from "@/lib/pricing";
 import { useAutoPreview } from "@/hooks/useAutoPreview";
-import { PanelActionSection } from "@/components/PanelActionSection";
+import {
+  PanelActionSection,
+  type PanelDraftActions,
+} from "@/components/PanelActionSection";
 
 // ── Props ──────────────────────────────
 
@@ -40,11 +43,14 @@ interface CustomPanelProps {
   effectiveDimensions: { width: number; depth: number };
   updateParam: <K extends keyof CustomLayoutParams>(key: K, value: CustomLayoutParams[K]) => void;
   setParams: React.Dispatch<React.SetStateAction<CustomLayoutParams>>;
+  onResetParams?: () => void;
+  onImportParams?: (params: CustomLayoutParams) => void;
   onAddSlot: (width: number, height?: number, ellipseConfig?: EllipseSlotConfig) => void;
   onGenerate: (options?: { shouldSwitchView?: boolean }) => void;
   onExportSTL: () => void;
   isGenerating: boolean;
   volume: number;
+  draftActions?: PanelDraftActions;
 }
 
 function getEllipseSlotConfig(preset: EllipsePreset): EllipseSlotConfig {
@@ -60,11 +66,14 @@ export default function CustomPanel({
   effectiveDimensions,
   updateParam,
   setParams,
+  onResetParams,
+  onImportParams,
   onAddSlot,
   onGenerate,
   onExportSTL,
   isGenerating,
   volume,
+  draftActions,
 }: CustomPanelProps) {
   const dimensions = calculateCustomTrayDimensions(params);
   const effectiveWidth = effectiveDimensions.width;
@@ -86,12 +95,10 @@ export default function CustomPanel({
   });
 
   const handleReset = () => {
-    // Reset to defaults but keep current logic if needed
-    // For now, simpler to reload or re-init state in parent, 
-    // but here we can just reset specific params if we want.
-    // However, CustomPanelProps passes setParams which expects full object.
-    // We'll trust the parent or import default.
-    // Let's import default to be safe.
+    if (onResetParams) {
+      onResetParams();
+      return;
+    }
     setParams(CUSTOM_LAYOUT_DEFAULTS);
   };
 
@@ -287,7 +294,15 @@ export default function CustomPanel({
         isOversized={isOversized}
         mode="custom"
         params={params}
-        onImport={(p) => setParams(p as CustomLayoutParams)}
+        onImport={(p) => {
+          const nextParams = p as CustomLayoutParams;
+          if (onImportParams) {
+            onImportParams(nextParams);
+            return;
+          }
+          setParams(nextParams);
+        }}
+        draftActions={draftActions}
       />
     </div>
   );

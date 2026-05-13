@@ -9,9 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    Download,
     RotateCcw,
-    Play,
     Loader2,
     Plus,
     Wrench,
@@ -26,14 +24,12 @@ import {
     AlertTriangle,
     CircleHelp,
 } from "lucide-react";
-import { ParamIOButtons } from "@/components/ParamIOButtons";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
 import {
     getSteppedPricingBreakdown,
     type SteppedPricingBreakdown,
 } from "@/lib/pricing";
-import { BookMarked, Save } from "lucide-react";
 import { useToast } from "@/hooks/useToast";
 import { isPerfEnabled, resetPerfMetrics } from "@/lib/perf";
 import {
@@ -41,6 +37,10 @@ import {
     STEPPED_PERF_FIXTURE_SIZES,
     type SteppedPerfFixtureSize,
 } from "@/lib/stepped-perf-fixtures";
+import {
+    PanelActionSection,
+    type PanelDraftActions,
+} from "@/components/PanelActionSection";
 
 function SteppedPricingFormulaTooltip({
     breakdown,
@@ -152,6 +152,8 @@ interface SteppedPanelProps {
     isPreviewStale: boolean;
     updateParam: <K extends keyof SteppedLayoutParams>(key: K, value: SteppedLayoutParams[K]) => void;
     setParams: React.Dispatch<React.SetStateAction<SteppedLayoutParams>>;
+    onResetParams?: () => void;
+    onImportParams?: (params: SteppedLayoutParams) => void;
     onAddSlot: (width: number) => void;
     onGenerate: () => void;
     onExportSTL: () => void;
@@ -177,10 +179,10 @@ interface SteppedPanelProps {
     onGenerateOptimizationProposals: () => void;
     onApplyOptimizationProposal: (proposalId: SteppedOptimizationProposal["id"]) => void;
     onClearOptimizationProposals: () => void;
-    // 草稿管理
-    onOpenDraftDialog: () => void;
-    onSaveDraft: () => void;
-    currentDraftId: string | null;
+    draftActions?: PanelDraftActions;
+    onOpenDraftDialog?: () => void;
+    onSaveDraft?: () => void;
+    currentDraftId?: string | null;
 }
 
 export default function SteppedPanel({
@@ -189,6 +191,8 @@ export default function SteppedPanel({
     isPreviewStale,
     updateParam,
     setParams,
+    onResetParams,
+    onImportParams,
     onAddSlot,
     onGenerate,
     onExportSTL,
@@ -213,6 +217,7 @@ export default function SteppedPanel({
     onGenerateOptimizationProposals,
     onApplyOptimizationProposal,
     onClearOptimizationProposals,
+    draftActions,
     onOpenDraftDialog,
     onSaveDraft,
     currentDraftId,
@@ -284,6 +289,10 @@ export default function SteppedPanel({
     }, [onPreviewGroupChange, previewGroupId, validGroupIds]);
 
     const handleReset = () => {
+        if (onResetParams) {
+            onResetParams();
+            return;
+        }
         setParams(STEPPED_LAYOUT_DEFAULTS);
     };
 
@@ -328,6 +337,16 @@ export default function SteppedPanel({
         const sign = deltaPercent > 0 ? "+" : "";
         return `较当前 ${sign}${deltaPercent.toFixed(1)}%`;
     }, [currentArea]);
+    const resolvedDraftActions = draftActions ?? (
+        onOpenDraftDialog && onSaveDraft
+            ? {
+                currentDraftId: currentDraftId ?? null,
+                hasUnsavedChanges: false,
+                onSaveDraft,
+                onOpenDraftDialog,
+            }
+            : undefined
+    );
 
     return (
         <div className="flex flex-col gap-4 animate-fade-in">
@@ -719,11 +738,6 @@ export default function SteppedPanel({
 
             {/* 操作按钮 */}
             <div className="flex flex-col gap-2.5 pb-4">
-                {isPreviewStale && (
-                    <div className="rounded border border-[#5a4a2a] bg-[#2a2518]/90 px-3 py-2 text-xs text-[#c8a84e]">
-                        当前预览已过期，请点击“开始锻造”生成最新模型。
-                    </div>
-                )}
                 <Button
                     variant="outline"
                     onClick={onGenerateOptimizationProposals}
@@ -823,37 +837,24 @@ export default function SteppedPanel({
                         </div>
                     </div>
                 ) : null}
-                <Button
-                    onClick={onGenerate}
-                    disabled={isGenerating}
-                    className="w-full h-11 blood-red text-sm text-[#f0d8b8] font-bold tracking-wider cursor-pointer border border-[#a02020] shadow-lg shadow-[#8b1a1a30] hover:shadow-xl hover:shadow-[#8b1a1a50] hover:brightness-125 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    {isGenerating ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                        <Play className="w-4 h-4 mr-2" />
-                    )}
-                    {isGenerating ? "锻造中..." : isOversized ? "尺寸超限" : "开始锻造"}
-                </Button>
-                <Button
-                    onClick={onExportSTL}
-                    className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-sm text-[#8cb880] font-semibold tracking-wider cursor-pointer border border-[#4a6741] shadow-lg shadow-[#2a352830]"
-                >
-                    <Download className="w-4 h-4 mr-2" />
-                    导出 STL
-                </Button>
-                <Button
-                    variant="outline"
-                    onClick={handleReset}
-                    className="w-full h-11 lg:h-9 text-sm border-[#2e2a24] text-muted-foreground tracking-wider cursor-pointer hover:bg-[#1c1a16] hover:text-foreground/80 hover:border-[#3d372e]"
-                >
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    重置参数
-                </Button>
-                <ParamIOButtons
+                <PanelActionSection
+                    onGenerate={onGenerate}
+                    onExportSTL={onExportSTL}
+                    onReset={handleReset}
+                    isGenerating={isGenerating}
+                    isOversized={isOversized}
                     mode="stepped"
                     params={params}
-                    onImport={(p) => setParams(p as SteppedLayoutParams)}
+                    onImport={(p) => {
+                        const nextParams = p as SteppedLayoutParams;
+                        if (onImportParams) {
+                            onImportParams(nextParams);
+                            return;
+                        }
+                        setParams(nextParams);
+                    }}
+                    showStaleNotice={isPreviewStale}
+                    draftActions={resolvedDraftActions}
                 />
 
                 {perfEnabled && (
@@ -893,26 +894,6 @@ export default function SteppedPanel({
                         </SectionHeader>
                     </div>
                 )}
-
-                {/* 草稿保存 */}
-                <div className="flex gap-2">
-                    <Button
-                        variant="outline"
-                        onClick={onSaveDraft}
-                        className="flex-1 h-9 text-sm tracking-wider border-[#5a4a2a] text-[#c8a84e] cursor-pointer hover:bg-[#2a2518] hover:text-[#e0c870] hover:border-[#7a6a3a] transition-all duration-200"
-                    >
-                        <Save className="w-4 h-4 mr-2" />
-                        {currentDraftId ? "更新草稿" : "保存草稿"}
-                    </Button>
-                    <Button
-                        variant="outline"
-                        onClick={onOpenDraftDialog}
-                        className="flex-1 h-9 text-sm tracking-wider border-[#2e2a24] text-muted-foreground cursor-pointer hover:bg-[#1c1a16] hover:text-foreground/80 hover:border-[#3d372e] transition-all duration-200"
-                    >
-                        <BookMarked className="w-4 h-4 mr-2" />
-                        草稿列表
-                    </Button>
-                </div>
             </div>
         </div>
     );

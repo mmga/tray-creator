@@ -1,17 +1,68 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  type ReactNode,
+  type SetStateAction,
+} from "react";
 import dynamic from "next/dynamic";
 import { useTrayModel } from "@/hooks/useTrayModel";
 import { useCustomLayout } from "@/hooks/useCustomLayout";
 import { useSimpleSteppedLayout } from "@/hooks/useSimpleSteppedLayout";
 import { useSteppedLayout } from "@/hooks/useSteppedLayout";
-import { useSteppedDrafts } from "@/hooks/useSteppedDrafts";
+import { useModeDrafts } from "@/hooks/useModeDrafts";
 import { ModeTabs } from "@/components/ModeTabs";
-import { SteppedDraftDialog } from "@/components/SteppedDraftDialog";
+import { DraftManagerDialog } from "@/components/DraftManagerDialog";
 import type { AppMode } from "@/types/custom-tray";
+import type { TrayParams } from "@/types/tray";
 import { Boxes } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  CUSTOM_LAYOUT_DEFAULTS,
+} from "@/lib/custom-config";
+import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
+import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
+import type { AnyDraftListItem } from "@/lib/local-drafts";
+
+function renderDraftSummary(item: AnyDraftListItem): ReactNode {
+  switch (item.mode) {
+    case "grid":
+      return (
+        <>
+          <span>{item.rows}×{item.columns}</span>
+          <span>{item.baseSizeLabel}</span>
+          <span>{item.trayWidth.toFixed(0)}×{item.trayDepth.toFixed(0)}mm</span>
+        </>
+      );
+    case "custom":
+      return (
+        <>
+          <span>{item.slotCount} 槽</span>
+          <span>{item.trayWidth.toFixed(0)}×{item.trayDepth.toFixed(0)}mm</span>
+        </>
+      );
+    case "simple-stepped":
+      return (
+        <>
+          <span>{item.rowCount} 行</span>
+          <span>{item.slotCount} 槽</span>
+          <span>{item.trayWidth.toFixed(0)}×{item.trayDepth.toFixed(0)}mm</span>
+        </>
+      );
+    case "stepped":
+      return (
+        <>
+          <span>{item.groupCount} 组</span>
+          <span>{item.slotCount} 槽</span>
+          <span>{item.trayWidth.toFixed(0)}×{item.trayDepth.toFixed(0)}mm</span>
+        </>
+      );
+    default:
+      return null;
+  }
+}
 
 // Lazy load components
 const ParameterPanel = dynamic(() => import("@/components/ParameterPanel"), { ssr: false });
@@ -55,16 +106,6 @@ export default function Home() {
     setPreviewGroupId(null);
   }, []);
 
-  const steppedDrafts = useSteppedDrafts({
-    params: steppedModel.params,
-    setParams: steppedModel.setParams,
-    onAfterLoad: handleAfterDraftLoad,
-  });
-
-  const [draftList, setDraftList] = useState(() => steppedDrafts.getDraftList());
-  const refreshDraftList = useCallback(() => {
-    setDraftList(steppedDrafts.getDraftList());
-  }, [steppedDrafts]);
   const steppedSlots = steppedModel.params.slots;
   const setSteppedActiveGroup = steppedModel.setActiveGroup;
 
@@ -100,6 +141,155 @@ export default function Home() {
     [simpleSteppedModel.params.slots],
   );
 
+  const setGridParams = (value: SetStateAction<TrayParams>) => {
+    const nextParams =
+      typeof value === "function" ? value(gridModel.params) : value;
+    gridModel.replaceParams(nextParams);
+  };
+
+  const gridDrafts = useModeDrafts({
+    mode: "grid",
+    params: gridModel.params,
+    setParams: setGridParams,
+  });
+  const customDrafts = useModeDrafts({
+    mode: "custom",
+    params: customModel.params,
+    setParams: customModel.setParams,
+  });
+  const simpleSteppedDrafts = useModeDrafts({
+    mode: "simple-stepped",
+    params: simpleSteppedModel.params,
+    setParams: simpleSteppedModel.setParams,
+  });
+  const steppedDrafts = useModeDrafts({
+    mode: "stepped",
+    params: steppedModel.params,
+    setParams: steppedModel.setParams,
+    onAfterLoad: handleAfterDraftLoad,
+  });
+
+  const activeDraftController =
+    mode === "grid"
+      ? gridDrafts
+      : mode === "custom"
+        ? customDrafts
+        : mode === "simple-stepped"
+          ? simpleSteppedDrafts
+          : steppedDrafts;
+
+  const [, setDraftListVersion] = useState(0);
+  const refreshDraftList = useCallback(() => {
+    setDraftListVersion((version) => version + 1);
+  }, []);
+
+  const activeDraftList = (() => {
+    switch (mode) {
+      case "grid":
+        return gridDrafts.getDraftList() as AnyDraftListItem[];
+      case "custom":
+        return customDrafts.getDraftList() as AnyDraftListItem[];
+      case "simple-stepped":
+        return simpleSteppedDrafts.getDraftList() as AnyDraftListItem[];
+      case "stepped":
+        return steppedDrafts.getDraftList() as AnyDraftListItem[];
+      default:
+        return [];
+    }
+  })();
+
+  const openModeDraftDialog = useCallback(
+    (openDialog: () => void) => {
+      refreshDraftList();
+      openDialog();
+    },
+    [refreshDraftList],
+  );
+
+  const gridDraftActions = {
+    currentDraftId: gridDrafts.currentDraftId,
+    hasUnsavedChanges: gridDrafts.hasUnsavedChanges,
+    onSaveDraft: gridDrafts.saveCurrentDraft,
+    onOpenDraftDialog: () => openModeDraftDialog(gridDrafts.openDialog),
+  };
+  const customDraftActions = {
+    currentDraftId: customDrafts.currentDraftId,
+    hasUnsavedChanges: customDrafts.hasUnsavedChanges,
+    onSaveDraft: customDrafts.saveCurrentDraft,
+    onOpenDraftDialog: () => openModeDraftDialog(customDrafts.openDialog),
+  };
+  const simpleSteppedDraftActions = {
+    currentDraftId: simpleSteppedDrafts.currentDraftId,
+    hasUnsavedChanges: simpleSteppedDrafts.hasUnsavedChanges,
+    onSaveDraft: simpleSteppedDrafts.saveCurrentDraft,
+    onOpenDraftDialog: () =>
+      openModeDraftDialog(simpleSteppedDrafts.openDialog),
+  };
+  const steppedDraftActions = {
+    currentDraftId: steppedDrafts.currentDraftId,
+    hasUnsavedChanges: steppedDrafts.hasUnsavedChanges,
+    onSaveDraft: steppedDrafts.saveCurrentDraft,
+    onOpenDraftDialog: () => openModeDraftDialog(steppedDrafts.openDialog),
+  };
+
+  const handleGridReset = useCallback(() => {
+    gridModel.resetParams();
+    gridDrafts.clearDraftBinding();
+  }, [gridDrafts, gridModel]);
+
+  const handleGridImport = useCallback(
+    (params: TrayParams) => {
+      gridModel.replaceParams(params);
+      gridDrafts.clearDraftBinding();
+    },
+    [gridDrafts, gridModel],
+  );
+
+  const handleCustomReset = useCallback(() => {
+    customModel.setParams(CUSTOM_LAYOUT_DEFAULTS);
+    customDrafts.clearDraftBinding();
+  }, [customDrafts, customModel]);
+
+  const handleCustomImport = useCallback(
+    (params: typeof customModel.params) => {
+      customModel.setParams(params);
+      customDrafts.clearDraftBinding();
+    },
+    [customDrafts, customModel],
+  );
+
+  const handleSimpleSteppedReset = useCallback(() => {
+    simpleSteppedModel.setParams(SIMPLE_STEPPED_LAYOUT_DEFAULTS);
+    simpleSteppedModel.setActiveRow(null);
+    simpleSteppedDrafts.clearDraftBinding();
+  }, [simpleSteppedDrafts, simpleSteppedModel]);
+
+  const handleSimpleSteppedImport = useCallback(
+    (params: typeof simpleSteppedModel.params) => {
+      simpleSteppedModel.setParams(params);
+      simpleSteppedModel.setActiveRow(null);
+      simpleSteppedDrafts.clearDraftBinding();
+    },
+    [simpleSteppedDrafts, simpleSteppedModel],
+  );
+
+  const handleSteppedReset = useCallback(() => {
+    steppedModel.setParams(STEPPED_LAYOUT_DEFAULTS);
+    setSelectedSlotIds([]);
+    setPreviewGroupId(null);
+    steppedDrafts.clearDraftBinding();
+  }, [steppedDrafts, steppedModel]);
+
+  const handleSteppedImport = useCallback(
+    (params: typeof steppedModel.params) => {
+      steppedModel.setParams(params);
+      setSelectedSlotIds([]);
+      setPreviewGroupId(null);
+      steppedDrafts.clearDraftBinding();
+    },
+    [steppedDrafts, steppedModel],
+  );
+
   // 参数面板内容（共享于桌面和移动端）
   const renderParameterPanel = () => {
     if (mode === "grid") {
@@ -107,12 +297,13 @@ export default function Home() {
         <ParameterPanel
           params={gridModel.params}
           updateParam={gridModel.updateParam}
-          replaceParams={gridModel.replaceParams}
-          resetParams={gridModel.resetParams}
+          replaceParams={handleGridImport}
+          resetParams={handleGridReset}
           onGenerate={gridModel.handleGenerate}
           onExportSTL={gridModel.handleExportSTL}
           isGenerating={gridModel.isGenerating}
           volume={gridModel.volume}
+          draftActions={gridDraftActions}
         />
       );
     }
@@ -124,6 +315,8 @@ export default function Home() {
           activeRowId={simpleSteppedModel.activeRowId}
           effectiveDimensions={simpleSteppedModel.effectiveDimensions}
           setParams={simpleSteppedModel.setParams}
+          onResetParams={handleSimpleSteppedReset}
+          onImportParams={handleSimpleSteppedImport}
           updateParam={simpleSteppedModel.updateParam}
           onSetActiveRow={simpleSteppedModel.setActiveRow}
           onAddRow={simpleSteppedModel.addRow}
@@ -138,6 +331,7 @@ export default function Home() {
           isGenerating={simpleSteppedModel.isGenerating}
           isPreviewStale={simpleSteppedModel.isPreviewStale}
           volume={simpleSteppedModel.volume}
+          draftActions={simpleSteppedDraftActions}
         />
       );
     }
@@ -148,6 +342,8 @@ export default function Home() {
           effectiveDimensions={steppedModel.effectiveDimensions}
           isPreviewStale={steppedModel.isPreviewStale}
           setParams={steppedModel.setParams}
+          onResetParams={handleSteppedReset}
+          onImportParams={handleSteppedImport}
           updateParam={steppedModel.updateParam}
           onAddSlot={steppedModel.addSlot}
           onGenerate={steppedModel.handleGenerate}
@@ -173,9 +369,7 @@ export default function Home() {
           onGenerateOptimizationProposals={steppedModel.generateOptimizationProposals}
           onApplyOptimizationProposal={steppedModel.applyOptimizationProposal}
           onClearOptimizationProposals={steppedModel.clearOptimizationProposals}
-          onOpenDraftDialog={steppedDrafts.openDialog}
-          onSaveDraft={steppedDrafts.saveCurrentDraft}
-          currentDraftId={steppedDrafts.currentDraftId}
+          draftActions={steppedDraftActions}
         />
       );
     }
@@ -184,12 +378,15 @@ export default function Home() {
         params={customModel.params}
         effectiveDimensions={customModel.effectiveDimensions}
         setParams={customModel.setParams}
+        onResetParams={handleCustomReset}
+        onImportParams={handleCustomImport}
         updateParam={customModel.updateParam}
         onAddSlot={customModel.addSlot}
         onGenerate={customModel.handleGenerate}
         onExportSTL={customModel.handleExportSTL}
         isGenerating={customModel.isGenerating}
         volume={customModel.volume}
+        draftActions={customDraftActions}
       />
     );
   };
@@ -287,42 +484,43 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-dvh bg-background text-foreground overflow-hidden">
-      {/* 阶梯草稿弹窗 */}
-      <SteppedDraftDialog
-        open={steppedDrafts.isDialogOpen}
+      <DraftManagerDialog
+        mode={mode}
+        open={activeDraftController.isDialogOpen}
         onOpenChange={(open) => {
           if (!open) {
-            steppedDrafts.closeDialog();
+            activeDraftController.closeDialog();
             return;
           }
-          refreshDraftList();
-          steppedDrafts.openDialog();
+          openModeDraftDialog(activeDraftController.openDialog);
         }}
-        drafts={draftList}
-        currentDraftId={steppedDrafts.currentDraftId}
-        draftNameInput={steppedDrafts.draftNameInput}
-        onDraftNameInputChange={steppedDrafts.setDraftNameInput}
+        drafts={activeDraftList}
+        currentDraftId={activeDraftController.currentDraftId}
+        hasUnsavedChanges={activeDraftController.hasUnsavedChanges}
+        draftNameInput={activeDraftController.draftNameInput}
+        onDraftNameInputChange={activeDraftController.setDraftNameInput}
         onSaveAsNew={() => {
-          steppedDrafts.saveAsNewDraft();
+          activeDraftController.saveAsNewDraft();
           refreshDraftList();
         }}
         onSaveCurrent={() => {
-          steppedDrafts.saveCurrentDraft();
+          activeDraftController.saveCurrentDraft();
           refreshDraftList();
         }}
         onLoad={(id) => {
-          steppedDrafts.loadDraft(id);
+          activeDraftController.loadDraft(id);
           refreshDraftList();
         }}
         onRename={(id, title) => {
-          steppedDrafts.renameDraftItem(id, title);
+          activeDraftController.renameDraftItem(id, title);
           refreshDraftList();
         }}
         onDelete={(id) => {
-          steppedDrafts.deleteDraftItem(id);
+          activeDraftController.deleteDraftItem(id);
           refreshDraftList();
         }}
-        onExport={(id) => steppedDrafts.exportDraftItem(id)}
+        onExport={(id) => activeDraftController.exportDraftItem(id)}
+        renderSummary={renderDraftSummary}
       />
 
       {/* Header */}

@@ -14,6 +14,9 @@ const {
   customModelMock,
   simpleSteppedModelMock,
   steppedModelMock,
+  gridDraftsMock,
+  customDraftsMock,
+  simpleSteppedDraftsMock,
   steppedDraftsMock,
 } = vi.hoisted(() => {
   const gridParams: TrayParams = {
@@ -165,6 +168,60 @@ const {
       },
     },
   ];
+
+  const createDraftControllerMock = (mode: AppMode) => ({
+    isDialogOpen: mode === "stepped",
+    getDraftList: vi.fn(() => [
+      {
+        id: `${mode}-draft-1`,
+        mode,
+        title: `${mode} Draft 1`,
+        createdAt: "2025-01-01T00:00:00.000Z",
+        updatedAt: "2025-01-01T00:00:00.000Z",
+        ...(mode === "grid"
+          ? {
+              rows: 2,
+              columns: 3,
+              structureMode: "full" as const,
+              baseSizeLabel: "32mm",
+              trayWidth: 110,
+              trayDepth: 80,
+            }
+          : mode === "custom"
+            ? {
+                slotCount: 1,
+                trayWidth: 260,
+                trayDepth: 260,
+              }
+            : mode === "simple-stepped"
+              ? {
+                  rowCount: 2,
+                  slotCount: 3,
+                  trayWidth: 180,
+                  trayDepth: 150,
+                }
+              : {
+                  slotCount: 1,
+                  groupCount: 1,
+                  trayWidth: 260,
+                  trayDepth: 260,
+                }),
+      },
+    ]),
+    openDialog: vi.fn(),
+    closeDialog: vi.fn(),
+    saveCurrentDraft: vi.fn(),
+    currentDraftId: `${mode}-draft-1`,
+    draftNameInput: `${mode} Draft 1`,
+    hasUnsavedChanges: mode === "custom",
+    setDraftNameInput: vi.fn(),
+    saveAsNewDraft: vi.fn(),
+    loadDraft: vi.fn(),
+    renameDraftItem: vi.fn(),
+    deleteDraftItem: vi.fn(),
+    exportDraftItem: vi.fn(),
+    clearDraftBinding: vi.fn(),
+  });
 
   return {
     gridModelMock: {
@@ -374,31 +431,10 @@ const {
       handleGenerate: vi.fn(),
       handleExportSTL: vi.fn(),
     },
-    steppedDraftsMock: {
-      isDialogOpen: true,
-      getDraftList: vi.fn(() => [
-        {
-          id: "draft-1",
-          title: "Draft 1",
-          updatedAt: Date.UTC(2025, 0, 1),
-          slotCount: 1,
-          groupCount: 1,
-          trayWidth: 260,
-          trayDepth: 260,
-        },
-      ]),
-      openDialog: vi.fn(),
-      closeDialog: vi.fn(),
-      saveCurrentDraft: vi.fn(),
-      currentDraftId: "draft-1",
-      draftNameInput: "Draft 1",
-      setDraftNameInput: vi.fn(),
-      saveAsNewDraft: vi.fn(),
-      loadDraft: vi.fn(),
-      renameDraftItem: vi.fn(),
-      deleteDraftItem: vi.fn(),
-      exportDraftItem: vi.fn(),
-    },
+    gridDraftsMock: createDraftControllerMock("grid"),
+    customDraftsMock: createDraftControllerMock("custom"),
+    simpleSteppedDraftsMock: createDraftControllerMock("simple-stepped"),
+    steppedDraftsMock: createDraftControllerMock("stepped"),
   };
 });
 
@@ -454,8 +490,19 @@ vi.mock("@/hooks/useSimpleSteppedLayout", () => ({
   useSimpleSteppedLayout: () => simpleSteppedModelMock,
 }));
 
-vi.mock("@/hooks/useSteppedDrafts", () => ({
-  useSteppedDrafts: () => steppedDraftsMock,
+vi.mock("@/hooks/useModeDrafts", () => ({
+  useModeDrafts: ({ mode }: { mode: AppMode }) => {
+    if (mode === "grid") {
+      return gridDraftsMock;
+    }
+    if (mode === "custom") {
+      return customDraftsMock;
+    }
+    if (mode === "simple-stepped") {
+      return simpleSteppedDraftsMock;
+    }
+    return steppedDraftsMock;
+  },
 }));
 
 vi.mock("@/components/ModeTabs", () => ({
@@ -507,7 +554,7 @@ vi.mock("@/components/SteppedPanel", () => ({
   default({
     selectedSlotIds,
     previewGroupId,
-    currentDraftId,
+    draftActions,
     onPreviewGroupChange,
     optimizationProposals,
     isOptimizingLayout,
@@ -517,7 +564,12 @@ vi.mock("@/components/SteppedPanel", () => ({
   }: {
     selectedSlotIds: string[];
     previewGroupId: string | null;
-    currentDraftId: string | null;
+    draftActions?: {
+      currentDraftId: string | null;
+      hasUnsavedChanges: boolean;
+      onSaveDraft: () => void;
+      onOpenDraftDialog: () => void;
+    };
     onPreviewGroupChange: (groupId: string | null) => void;
     optimizationProposals: { id: string }[];
     isOptimizingLayout: boolean;
@@ -530,7 +582,7 @@ vi.mock("@/components/SteppedPanel", () => ({
         data-testid="stepped-panel"
         data-selected-slot-ids={selectedSlotIds.join(",")}
         data-preview-group-id={previewGroupId ?? ""}
-        data-current-draft-id={currentDraftId ?? ""}
+        data-current-draft-id={draftActions?.currentDraftId ?? ""}
         data-optimization-count={optimizationProposals.length}
         data-optimizing={String(isOptimizingLayout)}
       >
@@ -549,6 +601,16 @@ vi.mock("@/components/SteppedPanel", () => ({
         <button type="button" onClick={onClearOptimizationProposals}>
           清空优化建议
         </button>
+        {draftActions ? (
+          <>
+            <button type="button" onClick={draftActions.onSaveDraft}>
+              {draftActions.currentDraftId ? "更新草稿" : "保存草稿"}
+            </button>
+            <button type="button" onClick={draftActions.onOpenDraftDialog}>
+              草稿列表
+            </button>
+          </>
+        ) : null}
       </div>
     );
   },
@@ -634,11 +696,13 @@ vi.mock("@/components/TrayViewer", () => ({
   },
 }));
 
-vi.mock("@/components/SteppedDraftDialog", () => ({
-  SteppedDraftDialog({
+vi.mock("@/components/DraftManagerDialog", () => ({
+  DraftManagerDialog({
+    mode,
     open,
     drafts,
     currentDraftId,
+    hasUnsavedChanges,
     onOpenChange,
     onSaveAsNew,
     onSaveCurrent,
@@ -646,10 +710,13 @@ vi.mock("@/components/SteppedDraftDialog", () => ({
     onRename,
     onDelete,
     onExport,
+    renderSummary,
   }: {
+    mode: AppMode;
     open: boolean;
     drafts: Array<{ id: string }>;
     currentDraftId: string | null;
+    hasUnsavedChanges: boolean;
     onOpenChange: (open: boolean) => void;
     onSaveAsNew: () => void;
     onSaveCurrent: () => void;
@@ -657,14 +724,18 @@ vi.mock("@/components/SteppedDraftDialog", () => ({
     onRename: (id: string, title: string) => void;
     onDelete: (id: string) => void;
     onExport: (id: string) => void;
+    renderSummary: (item: { id: string }) => React.ReactNode;
   }) {
     return (
       <div
-        data-testid="stepped-draft-dialog"
+        data-testid="draft-manager-dialog"
+        data-mode={mode}
         data-open={String(open)}
         data-draft-count={drafts.length}
         data-current-draft-id={currentDraftId ?? ""}
+        data-has-unsaved={String(hasUnsavedChanges)}
       >
+        <div>{renderSummary(drafts[0] ?? { id: "empty" })}</div>
         <button type="button" onClick={() => onOpenChange(true)}>
           打开草稿弹窗
         </button>
@@ -786,15 +857,23 @@ describe("Home page", { timeout: 15000 }, () => {
     steppedModelMock.applyOptimizationProposal.mockReset();
     steppedModelMock.clearOptimizationProposals.mockReset();
     steppedModelMock.isOptimizingLayout = false;
-    steppedDraftsMock.getDraftList.mockClear();
-    steppedDraftsMock.openDialog.mockReset();
-    steppedDraftsMock.closeDialog.mockReset();
-    steppedDraftsMock.saveCurrentDraft.mockReset();
-    steppedDraftsMock.saveAsNewDraft.mockReset();
-    steppedDraftsMock.loadDraft.mockReset();
-    steppedDraftsMock.renameDraftItem.mockReset();
-    steppedDraftsMock.deleteDraftItem.mockReset();
-    steppedDraftsMock.exportDraftItem.mockReset();
+    for (const draftMock of [
+      gridDraftsMock,
+      customDraftsMock,
+      simpleSteppedDraftsMock,
+      steppedDraftsMock,
+    ]) {
+      draftMock.getDraftList.mockClear();
+      draftMock.openDialog.mockReset();
+      draftMock.closeDialog.mockReset();
+      draftMock.saveCurrentDraft.mockReset();
+      draftMock.saveAsNewDraft.mockReset();
+      draftMock.loadDraft.mockReset();
+      draftMock.renameDraftItem.mockReset();
+      draftMock.deleteDraftItem.mockReset();
+      draftMock.exportDraftItem.mockReset();
+      draftMock.clearDraftBinding.mockReset();
+    }
   });
 
   it("switches to custom 3D view and regenerates stale previews", async () => {
@@ -964,10 +1043,10 @@ describe("Home page", { timeout: 15000 }, () => {
     );
   });
 
-  it("wires stepped draft dialog actions through stepped draft hooks and refreshes the list where needed", async () => {
+  it("wires active mode draft dialog actions through the mode draft hooks and refreshes the list where needed", async () => {
     render(<Home />);
-    await screen.findByTestId("stepped-draft-dialog");
-    steppedDraftsMock.getDraftList.mockClear();
+    await screen.findByTestId("draft-manager-dialog");
+    gridDraftsMock.getDraftList.mockClear();
 
     fireEvent.click(screen.getByRole("button", { name: "打开草稿弹窗" }));
     fireEvent.click(screen.getByRole("button", { name: "草稿另存" }));
@@ -978,17 +1057,17 @@ describe("Home page", { timeout: 15000 }, () => {
     fireEvent.click(screen.getByRole("button", { name: "导出草稿" }));
     fireEvent.click(screen.getByRole("button", { name: "关闭草稿弹窗" }));
 
-    expect(steppedDraftsMock.openDialog).toHaveBeenCalledTimes(1);
-    expect(steppedDraftsMock.saveAsNewDraft).toHaveBeenCalledTimes(1);
-    expect(steppedDraftsMock.saveCurrentDraft).toHaveBeenCalledTimes(1);
-    expect(steppedDraftsMock.loadDraft).toHaveBeenCalledWith("draft-1");
-    expect(steppedDraftsMock.renameDraftItem).toHaveBeenCalledWith(
+    expect(gridDraftsMock.openDialog).toHaveBeenCalledTimes(1);
+    expect(gridDraftsMock.saveAsNewDraft).toHaveBeenCalledTimes(1);
+    expect(gridDraftsMock.saveCurrentDraft).toHaveBeenCalledTimes(1);
+    expect(gridDraftsMock.loadDraft).toHaveBeenCalledWith("draft-1");
+    expect(gridDraftsMock.renameDraftItem).toHaveBeenCalledWith(
       "draft-1",
       "Renamed",
     );
-    expect(steppedDraftsMock.deleteDraftItem).toHaveBeenCalledWith("draft-1");
-    expect(steppedDraftsMock.exportDraftItem).toHaveBeenCalledWith("draft-1");
-    expect(steppedDraftsMock.closeDialog).toHaveBeenCalledTimes(1);
-    expect(steppedDraftsMock.getDraftList).toHaveBeenCalledTimes(6);
+    expect(gridDraftsMock.deleteDraftItem).toHaveBeenCalledWith("draft-1");
+    expect(gridDraftsMock.exportDraftItem).toHaveBeenCalledWith("draft-1");
+    expect(gridDraftsMock.closeDialog).toHaveBeenCalledTimes(1);
+    expect(gridDraftsMock.getDraftList).toHaveBeenCalledTimes(6);
   });
 });

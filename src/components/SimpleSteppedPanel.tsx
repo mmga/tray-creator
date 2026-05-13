@@ -11,18 +11,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ParamIOButtons } from "@/components/ParamIOButtons";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
 import { Switch } from "@/components/ui/switch";
 import {
+  PanelActionSection,
+  type PanelDraftActions,
+} from "@/components/PanelActionSection";
+import {
   ArrowDown,
   ArrowUp,
-  Download,
-  Loader2,
-  Play,
   Plus,
-  RotateCcw,
   Rows3,
   Ruler,
   Trash2,
@@ -39,6 +38,8 @@ interface SimpleSteppedPanelProps {
     height: number;
   };
   setParams: React.Dispatch<React.SetStateAction<SimpleSteppedLayoutParams>>;
+  onResetParams?: () => void;
+  onImportParams?: (params: SimpleSteppedLayoutParams) => void;
   updateParam: <K extends keyof SimpleSteppedLayoutParams>(
     key: K,
     value: SimpleSteppedLayoutParams[K],
@@ -56,6 +57,7 @@ interface SimpleSteppedPanelProps {
   isGenerating: boolean;
   isPreviewStale: boolean;
   volume: number;
+  draftActions?: PanelDraftActions;
 }
 
 export default function SimpleSteppedPanel({
@@ -64,6 +66,8 @@ export default function SimpleSteppedPanel({
   activeRowId,
   effectiveDimensions,
   setParams,
+  onResetParams,
+  onImportParams,
   updateParam,
   onSetActiveRow,
   onAddRow,
@@ -78,6 +82,7 @@ export default function SimpleSteppedPanel({
   isGenerating,
   isPreviewStale,
   volume,
+  draftActions,
 }: SimpleSteppedPanelProps) {
   const rowDerivedById = useMemo(
     () => new Map(derivedLayout.activeRows.map((row) => [row.id, row] as const)),
@@ -97,6 +102,10 @@ export default function SimpleSteppedPanel({
   const spacingSummary = `槽距${params.spacing}mm / 边距${params.outerMarginIndependent ? params.outerMargin : params.spacing}mm`;
 
   const handleReset = () => {
+    if (onResetParams) {
+      onResetParams();
+      return;
+    }
     setParams(SIMPLE_STEPPED_LAYOUT_DEFAULTS);
     onSetActiveRow(null);
   };
@@ -448,45 +457,25 @@ export default function SimpleSteppedPanel({
 
       <div className="wh-divider" />
 
-      <div className="flex flex-col gap-2.5 pb-4">
-        {isPreviewStale && (
-          <div className="rounded border border-[#5a4a2a] bg-[#2a2518]/90 px-3 py-2 text-xs text-[#c8a84e]">
-            当前预览已过期，请点击“开始锻造”生成最新模型。
-          </div>
-        )}
-        <Button
-          onClick={onGenerate}
-          disabled={isGenerating}
-          className="w-full h-11 blood-red text-sm text-[#f0d8b8] font-bold tracking-wider cursor-pointer border border-[#a02020] shadow-lg shadow-[#8b1a1a30] hover:shadow-xl hover:shadow-[#8b1a1a50] hover:brightness-125 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isGenerating ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <Play className="w-4 h-4 mr-2" />
-          )}
-          {isGenerating ? "锻造中..." : isOversized ? "尺寸超限" : "开始锻造"}
-        </Button>
-        <Button
-          onClick={onExportSTL}
-          className="w-full h-10 bg-[#2a3528] hover:bg-[#354530] text-sm text-[#8cb880] font-semibold tracking-wider cursor-pointer border border-[#4a6741] shadow-lg shadow-[#2a352830]"
-        >
-          <Download className="w-4 h-4 mr-2" />
-          导出 STL
-        </Button>
-        <Button
-          variant="outline"
-          onClick={handleReset}
-          className="w-full h-11 lg:h-9 text-sm border-[#2e2a24] text-muted-foreground tracking-wider cursor-pointer hover:bg-[#1c1a16] hover:text-foreground/80 hover:border-[#3d372e]"
-        >
-          <RotateCcw className="w-4 h-4 mr-2" />
-          重置参数
-        </Button>
-        <ParamIOButtons
-          mode="simple-stepped"
-          params={params}
-          onImport={(p) => setParams(p as SimpleSteppedLayoutParams)}
-        />
-      </div>
+      <PanelActionSection
+        onGenerate={onGenerate}
+        onExportSTL={onExportSTL}
+        onReset={handleReset}
+        isGenerating={isGenerating}
+        isOversized={isOversized}
+        mode="simple-stepped"
+        params={params}
+        onImport={(p) => {
+          const nextParams = p as SimpleSteppedLayoutParams;
+          if (onImportParams) {
+            onImportParams(nextParams);
+            return;
+          }
+          setParams(nextParams);
+        }}
+        showStaleNotice={isPreviewStale}
+        draftActions={draftActions}
+      />
     </div>
   );
 }
