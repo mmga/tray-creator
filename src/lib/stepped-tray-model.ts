@@ -8,8 +8,9 @@ import {
 } from "@jscad/modeling";
 import type { Geom2, Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { SteppedLayoutParams, SteppedSlot } from "@/types/custom-tray";
-import { RENDER_CONFIG, getSlotOuterOffset } from "@/lib/config";
+import { RENDER_CONFIG } from "@/lib/config";
 import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
+import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import {
   generateOutlineGeom2,
   type OutlineCircle,
@@ -36,9 +37,9 @@ function getSlotBoundingHalfSize(
   height: number,
   rotation: number,
   shape: SteppedSlot["shape"],
+  offset: number,
 ) {
   const rad = (rotation * Math.PI) / 180;
-  const offset = getSlotOuterOffset(width, height, shape);
   const points = sampleSlotProfilePoints(
     width,
     height,
@@ -63,8 +64,8 @@ function createOffsetSlotShape(
   width: number,
   height: number,
   shape: SteppedSlot["shape"],
+  offset: number,
 ): Geom2 {
-  const offset = getSlotOuterOffset(width, height, shape);
   if (offset <= 0) {
     return ellipse({
       radius: [width / 2, height / 2],
@@ -104,11 +105,13 @@ function calculateEffectiveBaseplate(params: SteppedLayoutParams) {
   let maxY = -Infinity;
 
   params.slots.forEach((slot) => {
+    const profile = getFreeSlotProfileGeometry(slot);
     const { halfW, halfH } = getSlotBoundingHalfSize(
-      slot.width,
-      slot.height,
+      profile.width,
+      profile.height,
       slot.rotation,
       slot.shape,
+      profile.outerOffset,
     );
     minX = Math.min(minX, slot.x - halfW);
     maxX = Math.max(maxX, slot.x + halfW);
@@ -168,9 +171,9 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
     const cx = normalizedX - trayWidth / 2;
     const cy = normalizedY - trayDepth / 2;
     const rotation = slot.rotation || 0;
-    const offset = getSlotOuterOffset(slot.width, slot.height, slot.shape);
-    const actualW = slot.width + offset * 2;
-    const actualH = slot.height + offset * 2;
+    const profile = getFreeSlotProfileGeometry(slot);
+    const actualW = profile.width + profile.outerOffset * 2;
+    const actualH = profile.height + profile.outerOffset * 2;
     const columnHeight = Math.max(group?.bottomHeight ?? 10, 3);
     return {
       slot,
@@ -179,6 +182,7 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
       rotation,
       actualW,
       actualH,
+      profile,
       columnHeight,
       groupId: slot.groupId,
     };
@@ -201,8 +205,8 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
         d.slot.width,
         d.slot.height,
         spacing,
-        getSlotOuterOffset(d.slot.width, d.slot.height, d.slot.shape) * 2,
-        getSlotOuterOffset(d.slot.width, d.slot.height, d.slot.shape) * 2,
+        d.profile.outerOffset * 2,
+        d.profile.outerOffset * 2,
       );
       circleMap.set(d.slot.id, { id: d.slot.id, cx: d.cx, cy: d.cy, rOuter });
       slotDataMap.set(d.slot.id, d);
@@ -321,9 +325,10 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
   for (const d of slotData) {
     const clampedHoleDepth = Math.min(holeDepth, d.columnHeight);
     const holeShape = createOffsetSlotShape(
-      d.slot.width,
-      d.slot.height,
+      d.profile.width,
+      d.profile.height,
       d.slot.shape,
+      d.profile.outerOffset,
     );
     const hole3D = extrudeLinear(
       { height: clampedHoleDepth + 0.02 },

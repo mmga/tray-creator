@@ -9,10 +9,10 @@ import type { Geom2, Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { CustomLayoutParams, FreeSlot } from "@/types/custom-tray";
 import {
   RENDER_CONFIG,
-  getSlotOuterOffset,
   resolveBaseHolePresetKey,
 } from "@/lib/config";
 import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
+import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import {
   createBaseBody,
   subtractBaseHoles,
@@ -36,7 +36,7 @@ function getSlotBoundingHalfSize(
   ellipseOuterOffset?: number,
 ) {
   const rad = (rotation * Math.PI) / 180;
-  const offset = getSlotOuterOffset(width, height, shape, ellipseOuterOffset);
+  const offset = shape === "ellipse" ? ellipseOuterOffset ?? 0 : 0;
   const points = sampleSlotProfilePoints(
     width,
     height,
@@ -65,7 +65,7 @@ function createOffsetSlotShape(
   ellipseProfileExponent?: number,
   ellipseOuterOffset?: number,
 ): Geom2 {
-  const offset = getSlotOuterOffset(width, height, shape, ellipseOuterOffset);
+  const offset = shape === "ellipse" ? ellipseOuterOffset ?? 0 : 0;
   if (offset <= 0) {
     return ellipse({
       radius: [width / 2, height / 2],
@@ -108,13 +108,14 @@ function calculateEffectiveBaseplate(params: CustomLayoutParams) {
   let maxY = -Infinity;
 
   params.slots.forEach((slot) => {
+    const profile = getFreeSlotProfileGeometry(slot);
     const { halfW, halfH } = getSlotBoundingHalfSize(
-      slot.width,
-      slot.height,
+      profile.width,
+      profile.height,
       slot.rotation,
       slot.shape,
-      slot.profileExponent,
-      slot.outerOffset,
+      profile.profileExponent,
+      profile.outerOffset,
     );
     minX = Math.min(minX, slot.x - halfW);
     maxX = Math.max(maxX, slot.x + halfW);
@@ -169,8 +170,9 @@ export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
     const cx = normalizedX - trayWidth / 2;
     const cy = normalizedY - trayDepth / 2;
 
-    const width = slot.width;
-    const height = slot.height;
+    const profile = getFreeSlotProfileGeometry(slot);
+    const width = profile.width;
+    const height = profile.height;
     const rotation = slot.rotation || 0;
     centers.push({
       cx,
@@ -183,8 +185,8 @@ export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
       width,
       height,
       slot.shape,
-      slot.profileExponent,
-      slot.outerOffset,
+      profile.profileExponent,
+      profile.outerOffset,
     );
 
     const hole3D = extrudeLinear({ height: holeDepth + 0.02 }, holeShape2D);

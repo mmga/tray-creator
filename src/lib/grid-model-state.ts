@@ -1,5 +1,6 @@
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { resolveBaseHolePresetKey } from "@/lib/config";
+import { createGridSlotSnapshot } from "@/lib/slot-definitions";
 import type { TrayParams } from "@/types/tray";
 
 function getFiniteOr(value: unknown, fallback: number) {
@@ -20,6 +21,7 @@ export function normalizeGridParams(next: TrayParams): TrayParams {
     ? getFiniteOr(next.boundarySpacing, spacing)
     : spacing;
   const basePlateOnly = Boolean(next.basePlateOnly);
+  const slotSnapshot = createGridSlotSnapshot(next.holeDiameter);
   const halfCircleSlots =
     !basePlateOnly &&
     (next.rows === 1 || next.columns === 1) &&
@@ -35,6 +37,8 @@ export function normalizeGridParams(next: TrayParams): TrayParams {
     spacingY,
     boundarySpacingIndependent,
     boundarySpacing,
+    ...slotSnapshot,
+    slotDiameter: getFiniteOr(next.slotDiameter, slotSnapshot.slotDiameter),
     halfCircleSlots,
     basePlateOnly,
     enableBaseHole,
@@ -73,6 +77,15 @@ export function updateGridParam<K extends keyof TrayParams>(
       spacing: unifiedSpacing,
       spacingX: unifiedSpacing,
       spacingY: unifiedSpacing,
+    });
+  }
+
+  if (key === "holeDiameter") {
+    const holeDiameter = value as TrayParams["holeDiameter"];
+    return normalizeGridParams({
+      ...params,
+      holeDiameter,
+      ...createGridSlotSnapshot(holeDiameter),
     });
   }
 

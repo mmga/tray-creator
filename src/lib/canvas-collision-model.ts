@@ -1,7 +1,7 @@
 import { getEllipsePolygon, polygonsIntersect } from "@/lib/collision";
-import { getSlotOuterOffset } from "@/lib/config";
 import type { FreeSlot } from "@/types/custom-tray";
 import { getEllipseBoundingBox } from "./canvas-slot-geometry";
+import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 
 export interface CanvasCollisionInfo {
   boundaryReasons: string[];
@@ -31,6 +31,8 @@ type CanvasCollisionSlot = Pick<
   | "height"
   | "rotation"
   | "shape"
+  | "slotWidth"
+  | "slotHeight"
   | "outerOffset"
   | "profileExponent"
 >;
@@ -57,25 +59,20 @@ export function buildCanvasCollisionState<TSlot extends CanvasCollisionSlot>(
 
   const expandedBounds = slots
     .map((slot) => {
-      const margin =
-        spacing / 2 +
-        getSlotOuterOffset(
-          slot.width,
-          slot.height,
-          slot.shape,
-          slot.outerOffset,
-        );
+      const profile = getFreeSlotProfileGeometry(slot);
+      const margin = spacing / 2 + profile.outerOffset;
       const { halfW, halfH } = getEllipseBoundingBox(
-        slot.width,
-        slot.height,
+        profile.width,
+        profile.height,
         slot.rotation,
         slot.shape,
-        slot.profileExponent ?? ellipseProfileExponent,
-        slot.outerOffset,
+        profile.profileExponent ?? ellipseProfileExponent,
+        profile.outerOffset,
       );
 
       return {
         slot,
+        profile,
         margin,
         minX: slot.x - halfW - margin,
         maxX: slot.x + halfW + margin,
@@ -91,15 +88,16 @@ export function buildCanvasCollisionState<TSlot extends CanvasCollisionSlot>(
       return cached;
     }
 
+    const profile = getFreeSlotProfileGeometry(slot);
     const polygon = getEllipsePolygon(
       slot.x,
       slot.y,
-      slot.width,
-      slot.height,
+      profile.width,
+      profile.height,
       slot.rotation,
       margin,
       12,
-      slot.profileExponent ?? ellipseProfileExponent,
+      profile.profileExponent ?? ellipseProfileExponent,
     );
     expandedPolygons.set(slot.id, polygon);
     return polygon;

@@ -24,6 +24,14 @@ import {
   getBaseHoleMinBaseThickness,
   resolveBaseHolePresetKey,
 } from "@/lib/config";
+import {
+  createCircleSlotSnapshot,
+  createGridSlotSnapshot,
+  findEllipseSlotDefinitionByGeometry,
+  getLegacyCircleSlotDiameter,
+  DEFAULT_ELLIPSE_OUTER_OFFSET,
+  DEFAULT_ELLIPSE_PROFILE_EXPONENT,
+} from "@/lib/slot-definitions";
 import { createGroupStructureOverrides } from "@/lib/stepped-group-params";
 import { calculateSimpleSteppedDimensions } from "@/lib/simple-stepped-layout";
 
@@ -292,6 +300,12 @@ function validateGridParams(params: TrayParams) {
   if (typeof obj.basePlateOnly !== "boolean") {
     obj.basePlateOnly = false;
   }
+  const slotSnapshot = createGridSlotSnapshot(holeDiameter);
+  obj.slotDefinitionId = slotSnapshot.slotDefinitionId;
+  obj.slotDiameter =
+    typeof obj.slotDiameter === "number" && Number.isFinite(obj.slotDiameter)
+      ? obj.slotDiameter
+      : slotSnapshot.slotDiameter;
   if (obj.rows !== 1 && obj.columns !== 1) {
     obj.halfCircleSlots = false;
   }
@@ -372,17 +386,44 @@ function validateCustomParams(params: CustomLayoutParams) {
         typeof slot.outerOffset !== "number" ||
         !Number.isFinite(slot.outerOffset)
       ) {
-        delete slot.outerOffset;
+        slot.outerOffset = DEFAULT_ELLIPSE_OUTER_OFFSET;
       }
       if (
         typeof slot.profileExponent !== "number" ||
         !Number.isFinite(slot.profileExponent)
       ) {
-        delete slot.profileExponent;
+        slot.profileExponent = DEFAULT_ELLIPSE_PROFILE_EXPONENT;
       }
+      const matchedDefinition = findEllipseSlotDefinitionByGeometry({
+        width,
+        height,
+        outerOffset: slot.outerOffset as number,
+        profileExponent: slot.profileExponent as number,
+      });
+      if (matchedDefinition) {
+        slot.slotDefinitionId = matchedDefinition.id;
+      } else if (typeof slot.slotDefinitionId !== "string") {
+        delete slot.slotDefinitionId;
+      }
+      delete slot.slotWidth;
+      delete slot.slotHeight;
     } else {
       delete slot.outerOffset;
       delete slot.profileExponent;
+      const snapshot = createCircleSlotSnapshot(width);
+      if (snapshot.slotDefinitionId) {
+        slot.slotDefinitionId = snapshot.slotDefinitionId;
+      } else if (typeof slot.slotDefinitionId !== "string") {
+        delete slot.slotDefinitionId;
+      }
+      slot.slotWidth =
+        typeof slot.slotWidth === "number" && Number.isFinite(slot.slotWidth)
+          ? slot.slotWidth
+          : snapshot.slotWidth;
+      slot.slotHeight =
+        typeof slot.slotHeight === "number" && Number.isFinite(slot.slotHeight)
+          ? slot.slotHeight
+          : snapshot.slotHeight;
     }
     if (typeof slot.id !== "string" || !slot.id) {
       slot.id = crypto.randomUUID();
@@ -517,6 +558,17 @@ function validateSimpleSteppedParams(params: SimpleSteppedLayoutParams) {
         `slots[${index}].diameter: 超出合理范围 (0, ${SIMPLE_STEPPED_LIMITS.diameter.max}]`,
       );
     }
+    const snapshot = createCircleSlotSnapshot(slot.diameter as number);
+    if (snapshot.slotDefinitionId) {
+      slot.slotDefinitionId = snapshot.slotDefinitionId;
+    } else if (typeof slot.slotDefinitionId !== "string") {
+      delete slot.slotDefinitionId;
+    }
+    slot.effectiveDiameter =
+      typeof slot.effectiveDiameter === "number" &&
+      Number.isFinite(slot.effectiveDiameter)
+        ? slot.effectiveDiameter
+        : getLegacyCircleSlotDiameter(slot.diameter as number);
     if (typeof slot.x !== "number" || !Number.isFinite(slot.x)) {
       throw new Error(`slots[${index}].x: 缺少或无效（需要有限数字）`);
     }
@@ -727,6 +779,22 @@ function validateSteppedParams(params: SteppedLayoutParams) {
     if (typeof slot.id !== "string" || !slot.id) {
       slot.id = crypto.randomUUID();
     }
+    const snapshot = createCircleSlotSnapshot(width);
+    if (snapshot.slotDefinitionId) {
+      slot.slotDefinitionId = snapshot.slotDefinitionId;
+    } else if (typeof slot.slotDefinitionId !== "string") {
+      delete slot.slotDefinitionId;
+    }
+    slot.slotWidth =
+      typeof slot.slotWidth === "number" && Number.isFinite(slot.slotWidth)
+        ? slot.slotWidth
+        : snapshot.slotWidth;
+    slot.slotHeight =
+      typeof slot.slotHeight === "number" && Number.isFinite(slot.slotHeight)
+        ? slot.slotHeight
+        : snapshot.slotHeight;
+    delete slot.outerOffset;
+    delete slot.profileExponent;
     if (
       typeof slot.groupId !== "string" ||
       !groupIds.has(slot.groupId as string)

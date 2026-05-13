@@ -1,5 +1,6 @@
-import { getSlotOuterOffset, MAX_BUILD_SIZE } from "@/lib/config";
+import { MAX_BUILD_SIZE } from "@/lib/config";
 import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
+import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import { buildSteppedBridgeWarning } from "@/lib/stepped-bridge-warning";
 import { calculateSteppedEffectiveDimensions } from "@/lib/stepped-layout-math";
 import { trimSteppedBaseplate } from "@/lib/stepped-layout-slot-actions";
@@ -93,13 +94,15 @@ export interface SteppedOptimizationProposal {
 }
 
 function getSlotGeometry(slot: SteppedSlot, spacing: number): SlotGeometry {
-  const margin =
-    spacing / 2 + getSlotOuterOffset(slot.width, slot.height, slot.shape);
+  const profile = getFreeSlotProfileGeometry(slot);
+  const margin = spacing / 2 + profile.outerOffset;
   const { halfW, halfH } = getEllipseBoundingBox(
-    slot.width,
-    slot.height,
+    profile.width,
+    profile.height,
     slot.rotation,
     slot.shape,
+    profile.profileExponent,
+    profile.outerOffset,
   );
 
   return {

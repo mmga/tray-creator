@@ -1,5 +1,6 @@
 import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
 import type { LayoutExtents } from "@/lib/custom-layout-math";
+import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 
 // SteppedLayoutExtents has the same shape as LayoutExtents — re-export to
@@ -27,11 +28,14 @@ export function calculateSteppedEffectiveDimensions(
   let maxY = -Infinity;
 
   params.slots.forEach((slot) => {
+    const profile = getFreeSlotProfileGeometry(slot);
     const { halfW, halfH } = getEllipseBoundingBox(
-      slot.width,
-      slot.height,
+      profile.width,
+      profile.height,
       slot.rotation,
       slot.shape,
+      profile.profileExponent,
+      profile.outerOffset,
     );
     minX = Math.min(minX, slot.x - halfW);
     maxX = Math.max(maxX, slot.x + halfW);

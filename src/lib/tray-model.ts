@@ -3,9 +3,9 @@ import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { TrayParams } from "@/types/tray";
 import {
   RENDER_CONFIG,
-  getSlotTolerance,
   resolveBaseHolePresetKey,
 } from "@/lib/config";
+import { getLegacyCircleSlotDiameter } from "@/lib/slot-definitions";
 import {
   createBaseBody,
   subtractBaseHoles,
@@ -25,7 +25,7 @@ const { translate } = transforms;
  * - 凹槽从顶部向下挖，深度 = holeDepth，到达底板顶面
  * - 总高度 = baseThickness + holeDepth，仅底板模式下为 baseThickness
  * - 间距支持统一 / X-Y 独立：边-凹槽与凹槽-凹槽分别按轴计算
- * - 凹槽实际直径 = holeDiameter + HOLE_TOLERANCE
+ * - 凹槽实际直径 = slotDiameter 快照；旧参数缺失时按兼容规则补齐
  */
 export function getGridSpacingAxes(params: TrayParams) {
   return {
@@ -88,8 +88,11 @@ export function createTrayModel(params: TrayParams): Geom3 {
     cornerRadius,
   } = params;
 
-  // 实际凹槽直径（加公差）
-  const actualHoleDiameter = holeDiameter + getSlotTolerance(holeDiameter);
+  // 实际凹槽直径（已内置公差）
+  const actualHoleDiameter =
+    typeof params.slotDiameter === "number" && Number.isFinite(params.slotDiameter)
+      ? params.slotDiameter
+      : getLegacyCircleSlotDiameter(holeDiameter);
   const holeRadius = actualHoleDiameter / 2;
   const { spacingX, spacingY } = getGridSpacingAxes(params);
   const { boundarySpacingX, boundarySpacingY } =
@@ -192,7 +195,10 @@ export function calculateTrayDimensions(params: TrayParams) {
     baseThickness,
     holeDepth,
   } = params;
-  const actualHoleDiameter = holeDiameter + getSlotTolerance(holeDiameter);
+  const actualHoleDiameter =
+    typeof params.slotDiameter === "number" && Number.isFinite(params.slotDiameter)
+      ? params.slotDiameter
+      : getLegacyCircleSlotDiameter(holeDiameter);
   const { spacingX, spacingY } = getGridSpacingAxes(params);
   const { boundarySpacingX, boundarySpacingY } =
     getGridBoundarySpacingAxes(params);

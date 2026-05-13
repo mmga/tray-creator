@@ -1,10 +1,10 @@
 "use client";
 
 import { memo } from "react";
-import { getSlotOuterOffset } from "@/lib/config";
 import { getEllipsePolygon } from "@/lib/collision";
 import { getSlotLabelRotation } from "@/lib/canvas-slot-geometry";
 import type { CanvasCollisionState } from "@/lib/canvas-collision-model";
+import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import type { FreeSlot, SlotGroup, SteppedSlot } from "@/types/custom-tray";
 
 interface CanvasSlotLayerProps {
@@ -71,25 +71,21 @@ export const CanvasSlotLayer = memo(function CanvasSlotLayer({
   return (
     <>
       {slots.map((slot) => {
-        const slotOffset = getSlotOuterOffset(
-          slot.width,
-          slot.height,
-          slot.shape,
-          slot.outerOffset,
-        );
-        const width = slot.width + slotOffset * 2;
-        const height = slot.height + slotOffset * 2;
+        const profile = getFreeSlotProfileGeometry(slot);
+        const slotOffset = profile.outerOffset;
+        const width = profile.width + slotOffset * 2;
+        const height = profile.height + slotOffset * 2;
         const slotPath = getLocalPath(
-          slot.width,
-          slot.height,
+          profile.width,
+          profile.height,
           slotOffset,
-          slot.profileExponent,
+          profile.profileExponent,
         );
         const spacingPath = getLocalPath(
-          slot.width,
-          slot.height,
+          profile.width,
+          profile.height,
           slotOffset + spacing,
-          slot.profileExponent,
+          profile.profileExponent,
         );
         const svgY = trayDepth - slot.y;
 
@@ -163,10 +159,10 @@ export const CanvasSlotLayer = memo(function CanvasSlotLayer({
               {(isColliding || isInvolvedViaOther || isHovered || isDragging) && (
                 <path
                   d={getLocalPath(
-                    slot.width,
-                    slot.height,
+                    profile.width,
+                    profile.height,
                     Math.max(0, slotOffset - 0.5 / zoom),
-                    slot.profileExponent,
+                    profile.profileExponent,
                   )}
                   fill="none"
                   stroke={

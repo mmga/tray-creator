@@ -767,6 +767,7 @@ describe("CustomPanel", { timeout: 15000 }, () => {
       ELLIPSE_PRESETS[0].width,
       ELLIPSE_PRESETS[0].height,
       {
+        slotDefinitionId: ELLIPSE_PRESETS[0].id,
         outerOffset: ELLIPSE_PRESETS[0].outerOffset,
         profileExponent: ELLIPSE_PRESETS[0].profileExponent,
       },

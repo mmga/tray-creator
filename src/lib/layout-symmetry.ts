@@ -1,5 +1,6 @@
 import type { FreeSlot } from "@/types/custom-tray";
 import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
+import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 
 const STEP = 0.2;
 
@@ -14,6 +15,8 @@ export type SymmetryBoundsSlot = Pick<
   | "height"
   | "rotation"
   | "shape"
+  | "slotWidth"
+  | "slotHeight"
   | "outerOffset"
   | "profileExponent"
 >;
@@ -42,13 +45,14 @@ export function getSlotBounds(
   slot: SymmetryBoundsSlot,
   ellipseProfileExponent?: number,
 ) {
+  const profile = getFreeSlotProfileGeometry(slot);
   return getEllipseBoundingBox(
-    slot.width,
-    slot.height,
+    profile.width,
+    profile.height,
     slot.rotation,
     slot.shape,
-    slot.profileExponent ?? ellipseProfileExponent,
-    slot.outerOffset,
+    profile.profileExponent ?? ellipseProfileExponent,
+    profile.outerOffset,
   );
 }
 

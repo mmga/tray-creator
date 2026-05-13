@@ -40,6 +40,12 @@ export interface FreeSlot {
   shape: "circle" | "ellipse";
   width: number; // 圆形时为直径，椭圆时长轴
   height: number; // 圆形时为直径，椭圆时短轴
+  /** 创建该槽位所用的统一凹槽定义 ID；旧数据可能没有 */
+  slotDefinitionId?: string;
+  /** 最终生成的槽宽快照；圆形时为已内置公差的直径 */
+  slotWidth?: number;
+  /** 最终生成的槽高快照；圆形时为已内置公差的直径 */
+  slotHeight?: number;
   rotation: number; // 旋转角度 (度)
   /** 椭圆凹槽专属：轮廓向外等距扩张的距离 (mm) */
   outerOffset?: number;
@@ -62,6 +68,10 @@ export interface SimpleSteppedSlot {
   shape: "circle";
   /** 凹槽直径（mm） */
   diameter: number;
+  /** 创建该槽位所用的统一凹槽定义 ID；旧数据可能没有 */
+  slotDefinitionId?: string;
+  /** 最终生成的凹槽直径快照，已内置公差 */
+  effectiveDiameter?: number;
   /** 相对所属行局部坐标系的 X 偏移（mm） */
   x: number;
   /** 相对所属行中心线的 Y 偏移（mm） */

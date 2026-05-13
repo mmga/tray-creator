@@ -1,5 +1,6 @@
 import { RENDER_CONFIG, getSlotOuterOffset } from "@/lib/config";
 import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
+import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import type { FreeSlot } from "@/types/custom-tray";
 
 export interface CanvasEllipseBoundingBox {
@@ -23,6 +24,8 @@ type CanvasGeometrySlot = Pick<
   | "height"
   | "rotation"
   | "shape"
+  | "slotWidth"
+  | "slotHeight"
   | "outerOffset"
   | "profileExponent"
 >;
@@ -48,7 +51,10 @@ export function getEllipseBoundingBox(
   ellipseOuterOffset?: number,
 ): CanvasEllipseBoundingBox {
   const radians = (rotation * Math.PI) / 180;
-  const offset = getSlotOuterOffset(width, height, shape, ellipseOuterOffset);
+  const offset =
+    typeof ellipseOuterOffset === "number"
+      ? ellipseOuterOffset
+      : getSlotOuterOffset(width, height, shape);
   const points = sampleSlotProfilePoints(
     width,
     height,
@@ -92,13 +98,14 @@ export function calculateEffectiveBaseplate(
   let maxY = -Infinity;
 
   for (const slot of slots) {
+    const profile = getFreeSlotProfileGeometry(slot);
     const { halfW, halfH } = getEllipseBoundingBox(
-      slot.width,
-      slot.height,
+      profile.width,
+      profile.height,
       slot.rotation,
       slot.shape,
-      slot.profileExponent ?? ellipseProfileExponent,
-      slot.outerOffset,
+      profile.profileExponent ?? ellipseProfileExponent,
+      profile.outerOffset,
     );
     minX = Math.min(minX, slot.x - halfW);
     maxX = Math.max(maxX, slot.x + halfW);

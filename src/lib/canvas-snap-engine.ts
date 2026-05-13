@@ -1,6 +1,7 @@
 import type { FreeSlot } from "@/types/custom-tray";
 import type { CanvasGuideLine, CanvasPoint } from "./canvas-types";
 import { getEllipseBoundingBox } from "./canvas-slot-geometry";
+import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 
 const SNAP_THRESHOLD = 1.5;
 const SNAP_STEP = 0.2;
@@ -14,6 +15,8 @@ type CanvasSnapSlot = Pick<
   | "height"
   | "rotation"
   | "shape"
+  | "slotWidth"
+  | "slotHeight"
   | "outerOffset"
   | "profileExponent"
 >;
@@ -67,13 +70,14 @@ export function calculateCanvasDragSnap<TSlot extends CanvasSnapSlot>({
 
   const proposedX = roundToStep(draggingOrigin.x + totalPhysicalDeltaX);
   const proposedY = roundToStep(draggingOrigin.y + totalPhysicalDeltaY);
+  const dragProfile = getFreeSlotProfileGeometry(draggingSlot);
   const dragBounds = getEllipseBoundingBox(
-    draggingSlot.width,
-    draggingSlot.height,
+    dragProfile.width,
+    dragProfile.height,
     draggingSlot.rotation,
     draggingSlot.shape,
-    draggingSlot.profileExponent ?? ellipseProfileExponent,
-    draggingSlot.outerOffset,
+    dragProfile.profileExponent ?? ellipseProfileExponent,
+    dragProfile.outerOffset,
   );
 
   let finalX = proposedX;
@@ -108,13 +112,14 @@ export function calculateCanvasDragSnap<TSlot extends CanvasSnapSlot>({
       continue;
     }
 
+    const otherProfile = getFreeSlotProfileGeometry(other);
     const otherBounds = getEllipseBoundingBox(
-      other.width,
-      other.height,
+      otherProfile.width,
+      otherProfile.height,
       other.rotation,
       other.shape,
-      other.profileExponent ?? ellipseProfileExponent,
-      other.outerOffset,
+      otherProfile.profileExponent ?? ellipseProfileExponent,
+      otherProfile.outerOffset,
     );
 
     considerXSnap(other.x, other.x);

@@ -1,4 +1,9 @@
 import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
+import {
+  createCircleSlotSnapshot,
+  findEllipseSlotDefinitionByGeometry,
+  getFreeSlotProfileGeometry,
+} from "@/lib/slot-definitions";
 import type { LayoutExtents } from "@/lib/custom-layout-math";
 import type { IdFactory } from "@/lib/model-ports";
 import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
@@ -7,6 +12,7 @@ import type { CustomLayoutParams, FreeSlot } from "@/types/custom-tray";
 export interface EllipseSlotConfig {
   outerOffset?: number;
   profileExponent?: number;
+  slotDefinitionId?: string;
 }
 
 export interface CustomSlotUpdate {
@@ -82,13 +88,14 @@ export function addCustomSlot(
 
   if (params.slots.length > 0) {
     const lastSlot = params.slots[params.slots.length - 1];
+    const lastProfile = getFreeSlotProfileGeometry(lastSlot);
     const { halfW: lastHalfW } = getEllipseBoundingBox(
-      lastSlot.width,
-      lastSlot.height,
+      lastProfile.width,
+      lastProfile.height,
       lastSlot.rotation,
       lastSlot.shape,
-      lastSlot.profileExponent,
-      lastSlot.outerOffset,
+      lastProfile.profileExponent,
+      lastProfile.outerOffset,
     );
     nextX = lastSlot.x + lastHalfW + params.spacing + newSlotHalfW;
     nextY = lastSlot.y;
@@ -102,7 +109,19 @@ export function addCustomSlot(
     width,
     height: slotHeight,
     rotation: 0,
-    ...(shape === "ellipse" ? ellipseConfig : {}),
+    ...(shape === "circle"
+      ? createCircleSlotSnapshot(width)
+      : {
+          ...ellipseConfig,
+          slotDefinitionId:
+            ellipseConfig?.slotDefinitionId ??
+            findEllipseSlotDefinitionByGeometry({
+              width,
+              height: slotHeight,
+              outerOffset: ellipseConfig?.outerOffset ?? 0,
+              profileExponent: ellipseConfig?.profileExponent ?? 0,
+            })?.id,
+        }),
   };
 
   return {
@@ -185,6 +204,9 @@ export function insertCustomSlots(
     shape: slot.shape,
     width: slot.width,
     height: slot.height,
+    slotDefinitionId: slot.slotDefinitionId,
+    slotWidth: slot.slotWidth,
+    slotHeight: slot.slotHeight,
     rotation: slot.rotation,
     ...(slot.shape === "ellipse"
       ? {

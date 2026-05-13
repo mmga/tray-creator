@@ -1,12 +1,17 @@
 import type { TrayParams } from "@/types/tray";
 import { BASE_PRESETS, SHARED_LAYOUT_LIMITS } from "@/lib/config";
+import { createGridSlotSnapshot } from "@/lib/slot-definitions";
 
 export const DEFAULT_PRESET_INDEX = 2;
+const DEFAULT_SLOT_SNAPSHOT = createGridSlotSnapshot(
+  BASE_PRESETS[DEFAULT_PRESET_INDEX].diameter,
+);
 
 export const DEFAULT_TRAY_PARAMS: TrayParams = {
   rows: 5,
   columns: 2,
   holeDiameter: BASE_PRESETS[DEFAULT_PRESET_INDEX].diameter,
+  ...DEFAULT_SLOT_SNAPSHOT,
   spacing: 5,
   spacingIndependent: false,
   spacingX: 5,

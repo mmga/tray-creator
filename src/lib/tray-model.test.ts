@@ -81,6 +81,21 @@ describe("tray model", () => {
     expect(dimensions.height).toBe(6);
   });
 
+  it("uses the stored circular slot size snapshot for grid dimensions", () => {
+    const dimensions = calculateTrayDimensions({
+      ...DEFAULT_TRAY_PARAMS,
+      rows: 1,
+      columns: 2,
+      holeDiameter: 32,
+      slotDiameter: 33,
+      spacing: 5,
+      boundarySpacing: 5,
+    });
+
+    expect(dimensions.width).toBeCloseTo(81, 5);
+    expect(dimensions.depth).toBeCloseTo(43, 5);
+  });
+
   it("calculates base-plate-only trays with the same footprint and base height", () => {
     const dimensions = calculateTrayDimensions({
       ...DEFAULT_TRAY_PARAMS,

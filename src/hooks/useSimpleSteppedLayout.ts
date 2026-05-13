@@ -11,6 +11,7 @@ import type {
   SimpleSteppedSlot,
 } from "@/types/custom-tray";
 import { MAX_BUILD_SIZE } from "@/lib/config";
+import { createCircleSlotSnapshot } from "@/lib/slot-definitions";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import {
   calculateSimpleSteppedMinimumTraySize,
@@ -213,6 +214,10 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
         shape: "circle" as const,
         width: slot.diameter,
         height: slot.diameter,
+        slotDefinitionId: params.slots.find((item) => item.id === slot.id)
+          ?.slotDefinitionId,
+        slotWidth: slot.effectiveDiameter,
+        slotHeight: slot.effectiveDiameter,
         rotation: 0,
       })),
     );
@@ -240,6 +245,7 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
     params.outerMarginIndependent,
     params.outerMargin,
     params.spacing,
+    params.slots,
   ]);
 
   const saveSnapshot = useCallback(() => {
@@ -411,6 +417,8 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
           rowId,
           shape: "circle",
           diameter,
+          slotDefinitionId: createCircleSlotSnapshot(diameter).slotDefinitionId,
+          effectiveDiameter,
           x,
           y: 0,
         };

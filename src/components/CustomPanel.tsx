@@ -49,6 +49,7 @@ interface CustomPanelProps {
 
 function getEllipseSlotConfig(preset: EllipsePreset): EllipseSlotConfig {
   return {
+    slotDefinitionId: preset.id,
     outerOffset: preset.outerOffset,
     profileExponent: preset.profileExponent,
   };

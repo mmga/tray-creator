@@ -1,8 +1,8 @@
 import { startTransition, useCallback, useEffect, useState } from "react";
 import { Copy, FlipHorizontal, FlipVertical } from "lucide-react";
 import type { FreeSlot, SteppedSlot } from "@/types/custom-tray";
-import { getSlotOuterOffset } from "@/lib/config";
 import { getEllipsePolygon, polygonsIntersect } from "@/lib/collision";
+import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import { useToast } from "@/hooks/useToast";
 import {
   buildMirrorInsertSlots,
@@ -39,29 +39,25 @@ function buildCollisionPolygon(
     | "height"
     | "rotation"
     | "shape"
+    | "slotWidth"
+    | "slotHeight"
     | "outerOffset"
     | "profileExponent"
   >,
   spacing: number,
   ellipseProfileExponent?: number,
 ) {
-  const margin =
-    spacing / 2 +
-    getSlotOuterOffset(
-      slot.width,
-      slot.height,
-      slot.shape,
-      slot.outerOffset,
-    );
+  const profile = getFreeSlotProfileGeometry(slot);
+  const margin = spacing / 2 + profile.outerOffset;
   return getEllipsePolygon(
     slot.x,
     slot.y,
-    slot.width,
-    slot.height,
+    profile.width,
+    profile.height,
     slot.rotation,
     margin,
     12,
-    slot.profileExponent ?? ellipseProfileExponent,
+    profile.profileExponent ?? ellipseProfileExponent,
   );
 }
 

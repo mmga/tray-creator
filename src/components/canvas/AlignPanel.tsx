@@ -10,6 +10,7 @@ import {
   Rows2,
 } from "lucide-react";
 import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
+import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 
 const STEP = 0.2;
 const roundToStep = (value: number) => Math.round(value / STEP) * STEP;
@@ -28,17 +29,25 @@ interface AlignPanelProps {
 function getSlotBounds(
   slot: Pick<
     FreeSlot,
-    "width" | "height" | "rotation" | "shape" | "outerOffset" | "profileExponent"
+    | "width"
+    | "height"
+    | "slotWidth"
+    | "slotHeight"
+    | "rotation"
+    | "shape"
+    | "outerOffset"
+    | "profileExponent"
   >,
   ellipseProfileExponent?: number,
 ) {
+  const profile = getFreeSlotProfileGeometry(slot);
   return getEllipseBoundingBox(
-    slot.width,
-    slot.height,
+    profile.width,
+    profile.height,
     slot.rotation,
     slot.shape,
-    slot.profileExponent ?? ellipseProfileExponent,
-    slot.outerOffset,
+    profile.profileExponent ?? ellipseProfileExponent,
+    profile.outerOffset,
   );
 }
 

@@ -1,6 +1,10 @@
 import { getSlotOuterOffset } from "@/lib/config";
 import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
 import {
+  createCircleSlotSnapshot,
+  getFreeSlotProfileGeometry,
+} from "@/lib/slot-definitions";
+import {
   calculateSteppedEffectiveDimensions,
   type SteppedLayoutExtents,
 } from "@/lib/stepped-layout-math";
@@ -45,11 +49,14 @@ export function addSteppedSlot(
 
   if (params.slots.length > 0) {
     const lastSlot = params.slots[params.slots.length - 1];
+    const lastProfile = getFreeSlotProfileGeometry(lastSlot);
     const lastHalf = getEllipseBoundingBox(
-      lastSlot.width,
-      lastSlot.height,
+      lastProfile.width,
+      lastProfile.height,
       lastSlot.rotation,
       lastSlot.shape,
+      lastProfile.profileExponent,
+      lastProfile.outerOffset,
     );
     nextX = lastSlot.x + lastHalf.halfW + params.spacing + newSlotHalfW;
     nextY = lastSlot.y;
@@ -62,6 +69,7 @@ export function addSteppedSlot(
     shape: "circle",
     width,
     height: width,
+    ...createCircleSlotSnapshot(width),
     rotation: 0,
     groupId: params.activeGroupId,
   };
@@ -146,6 +154,9 @@ export function insertSteppedSlots(
     shape: slot.shape,
     width: slot.width,
     height: slot.height,
+    slotDefinitionId: slot.slotDefinitionId,
+    slotWidth: slot.slotWidth,
+    slotHeight: slot.slotHeight,
     rotation: slot.rotation,
     groupId: slot.groupId ?? params.activeGroupId,
   }));

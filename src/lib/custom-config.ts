@@ -1,67 +1,13 @@
 import type { CustomLayoutParams } from "@/types/custom-tray";
-import { ELLIPSE_PROFILE_EXPONENT, SHARED_LAYOUT_LIMITS } from "@/lib/config";
+import { SHARED_LAYOUT_LIMITS } from "@/lib/config";
+import {
+  ELLIPSE_SLOT_DEFINITIONS,
+  type EllipseSlotDefinition,
+} from "@/lib/slot-definitions";
 
-const DEFAULT_ELLIPSE_OUTER_OFFSET = 0.4;
+export type EllipsePreset = EllipseSlotDefinition;
 
-export interface EllipsePreset {
-  name: string;
-  width: number;
-  height: number;
-  outerOffset: number;
-  profileExponent: number;
-}
-
-export const ELLIPSE_PRESETS: EllipsePreset[] = [
-  {
-    name: "60x35.5mm",
-    width: 60,
-    height: 35.5,
-    outerOffset: 0.4,
-    profileExponent: 2.05,
-  },
-  {
-    name: "75x42mm",
-    width: 75,
-    height: 43.2,
-    outerOffset: 0.6,
-    profileExponent: 2.08,
-  },
-  {
-    name: "90x52mm",
-    width: 90,
-    height: 52,
-    outerOffset: DEFAULT_ELLIPSE_OUTER_OFFSET,
-    profileExponent: ELLIPSE_PROFILE_EXPONENT,
-  },
-  {
-    name: "105x70mm",
-    width: 105,
-    height: 70,
-    outerOffset: DEFAULT_ELLIPSE_OUTER_OFFSET,
-    profileExponent: ELLIPSE_PROFILE_EXPONENT,
-  },
-  {
-    name: "120x92mm",
-    width: 120,
-    height: 92,
-    outerOffset: DEFAULT_ELLIPSE_OUTER_OFFSET,
-    profileExponent: ELLIPSE_PROFILE_EXPONENT,
-  },
-  {
-    name: "150x95mm",
-    width: 150,
-    height: 95,
-    outerOffset: DEFAULT_ELLIPSE_OUTER_OFFSET,
-    profileExponent: ELLIPSE_PROFILE_EXPONENT,
-  },
-  {
-    name: "170x105mm",
-    width: 170,
-    height: 105,
-    outerOffset: DEFAULT_ELLIPSE_OUTER_OFFSET,
-    profileExponent: ELLIPSE_PROFILE_EXPONENT,
-  },
-];
+export const ELLIPSE_PRESETS: EllipsePreset[] = ELLIPSE_SLOT_DEFINITIONS;
 
 export const CUSTOM_LAYOUT_DEFAULTS: CustomLayoutParams = {
   trayWidth: 260,

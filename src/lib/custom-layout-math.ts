@@ -1,4 +1,5 @@
 import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
+import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import type { CustomLayoutParams } from "@/types/custom-tray";
 
 export interface LayoutExtents {
@@ -41,13 +42,14 @@ export function calculateCustomEffectiveDimensions(
   let maxY = -Infinity;
 
   params.slots.forEach((slot) => {
+    const profile = getFreeSlotProfileGeometry(slot);
     const { halfW, halfH } = getEllipseBoundingBox(
-      slot.width,
-      slot.height,
+      profile.width,
+      profile.height,
       slot.rotation,
       slot.shape,
-      slot.profileExponent,
-      slot.outerOffset,
+      profile.profileExponent,
+      profile.outerOffset,
     );
     minX = Math.min(minX, slot.x - halfW);
     maxX = Math.max(maxX, slot.x + halfW);

@@ -1,4 +1,11 @@
 import type { BaseHolePresetKey, BasePreset } from "@/types/tray";
+import {
+  CIRCLE_SLOT_DEFINITIONS,
+  DEFAULT_CIRCLE_SLOT_TOLERANCE,
+  DEFAULT_ELLIPSE_OUTER_OFFSET,
+  DEFAULT_ELLIPSE_PROFILE_EXPONENT,
+  findCircleSlotDefinitionByBaseDiameter,
+} from "@/lib/slot-definitions";
 
 /**
  * 共享配置：
@@ -9,21 +16,16 @@ import type { BaseHolePresetKey, BasePreset } from "@/types/tray";
 type SlotShape = "circle" | "ellipse";
 
 /** 默认凹槽公差 (mm)，静默追加到凹槽直径，不在 UI 中显示 */
-const DEFAULT_HOLE_TOLERANCE = 0.4;
+const DEFAULT_HOLE_TOLERANCE = DEFAULT_CIRCLE_SLOT_TOLERANCE;
 
 /** 椭圆凹槽轮廓向外等距扩张的距离 (mm) */
-export const ELLIPSE_OUTER_OFFSET = 0.4;
+export const ELLIPSE_OUTER_OFFSET = DEFAULT_ELLIPSE_OUTER_OFFSET;
 
 /**
  * 椭圆轮廓丰满度。
  * 2 = 标准椭圆；大于 2 会把中段弧线撑得更饱满，同时保持长短轴端点不变。
  */
-export const ELLIPSE_PROFILE_EXPONENT = 2.6;
-
-/** 特定直径的公差映射表 */
-const SLOT_TOLERANCE_MAP: Record<number, number> = {
-  25: 0.2,
-};
+export const ELLIPSE_PROFILE_EXPONENT = DEFAULT_ELLIPSE_PROFILE_EXPONENT;
 
 /** 根据凹槽直径获取公差 */
 export function getSlotTolerance(diameter: number, shape?: SlotShape): number {
@@ -31,8 +33,10 @@ export function getSlotTolerance(diameter: number, shape?: SlotShape): number {
     return ELLIPSE_OUTER_OFFSET * 2;
   }
 
-  const baseTolerance = SLOT_TOLERANCE_MAP[diameter] ?? DEFAULT_HOLE_TOLERANCE;
-  return baseTolerance;
+  return (
+    findCircleSlotDefinitionByBaseDiameter(diameter)?.tolerance ??
+    DEFAULT_HOLE_TOLERANCE
+  );
 }
 
 /** 获取凹槽轮廓向外等距扩张的距离。 */
@@ -91,16 +95,12 @@ export function getBaseHoleMinBaseThickness(baseHoleSize: BaseHolePresetKey) {
   );
 }
 
-export const BASE_PRESETS: BasePreset[] = [
-  { name: "小型步兵 (25mm)", diameter: 25 },
-  { name: "中型步兵 (28.5mm)", diameter: 28.5 },
-  { name: "标准步兵 (32mm)", diameter: 32 },
-  { name: "大型 (40mm)", diameter: 40 },
-  { name: "超大型 (50mm)", diameter: 50 },
-  { name: "巨型 (60mm)", diameter: 60 },
-  { name: "狮王 (65mm)", diameter: 65 },
-  { name: "无畏 (90mm)", diameter: 90 },
-];
+export const BASE_PRESETS: BasePreset[] = CIRCLE_SLOT_DEFINITIONS.map(
+  (definition) => ({
+    name: definition.name,
+    diameter: definition.baseDiameter,
+  }),
+);
 
 /** 网格 / 自定义模式共用的结构参数范围 */
 export const SHARED_LAYOUT_LIMITS = {

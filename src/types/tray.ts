@@ -10,6 +10,10 @@ export interface TrayParams {
   columns: number;
   /** 凹槽直径 (mm)，不含公差 */
   holeDiameter: number;
+  /** 创建该凹槽规格所用的统一凹槽定义 ID */
+  slotDefinitionId?: string;
+  /** 最终生成的凹槽直径 (mm)，已内置公差 */
+  slotDiameter?: number;
   /** 间距 (mm)，X/Y 未独立时作为统一间距；也是兼容旧文件的共享值 */
   spacing: number;
   /** 是否分别设置 X / Y 轴凹槽间距 */

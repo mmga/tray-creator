@@ -1,4 +1,4 @@
-import { getSlotOuterOffset } from "@/lib/config";
+import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import {
   analyzeBridgeWarning,
   getConnectivityRadius,
@@ -64,18 +64,21 @@ export function buildSteppedBridgeWarning(
     const circles: ConnectivityCircle[] = [
       ...ownSlots,
       ...(higherSlotsByGroupId.get(group.id) ?? []),
-    ].map((slot) => ({
-      id: slot.id,
-      cx: slot.x,
-      cy: slot.y,
-      rOuter: getConnectivityRadius(
-        slot.width,
-        slot.height,
-        params.spacing,
-        getSlotOuterOffset(slot.width, slot.height, slot.shape) * 2,
-        getSlotOuterOffset(slot.width, slot.height, slot.shape) * 2,
-      ),
-    }));
+    ].map((slot) => {
+      const profile = getFreeSlotProfileGeometry(slot);
+      return {
+        id: slot.id,
+        cx: slot.x,
+        cy: slot.y,
+        rOuter: getConnectivityRadius(
+          profile.width,
+          profile.height,
+          params.spacing,
+          profile.outerOffset * 2,
+          profile.outerOffset * 2,
+        ),
+      };
+    });
 
     const warning = analyzeBridgeWarning(
       circles,

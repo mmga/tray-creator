@@ -115,6 +115,8 @@ describe("param-io", () => {
     expect(parsed.halfCircleSlots).toBe(false);
     expect(parsed.basePlateOnly).toBe(false);
     expect(parsed.enableBaseHole).toBe(true);
+    expect(parsed.slotDefinitionId).toBe("circle-32");
+    expect(parsed.slotDiameter).toBeCloseTo(32.4, 5);
   });
 
   it("preserves imported half-circle slots only for single-axis grids", () => {
@@ -230,7 +232,7 @@ describe("param-io", () => {
     });
   });
 
-  it("sanitizes slot-level ellipse geometry on custom import", () => {
+  it("normalizes slot definitions and geometry snapshots on custom import", () => {
     const parsed = parseParamFileObject(
       {
         version: 1,
@@ -239,15 +241,24 @@ describe("param-io", () => {
           ...CUSTOM_LAYOUT_DEFAULTS,
           slots: [
             {
+              id: "circle-1",
+              x: 20,
+              y: 30,
+              width: 40,
+              height: 40,
+              rotation: 0,
+              shape: "circle",
+            },
+            {
               id: "ellipse-1",
               x: 40,
               y: 50,
               width: 75,
-              height: 43,
+              height: 43.2,
               rotation: 405,
               shape: "ellipse",
-              outerOffset: Number.NaN,
-              profileExponent: Number.POSITIVE_INFINITY,
+              outerOffset: 0.6,
+              profileExponent: 2.08,
             },
           ],
         },
@@ -256,11 +267,18 @@ describe("param-io", () => {
     ) as CustomLayoutParams;
 
     expect(parsed.slots[0]).toMatchObject({
+      id: "circle-1",
+      slotDefinitionId: "circle-40",
+      slotWidth: 40.4,
+      slotHeight: 40.4,
+    });
+    expect(parsed.slots[1]).toMatchObject({
       id: "ellipse-1",
       rotation: 45,
+      slotDefinitionId: "ellipse-75x43.2",
+      outerOffset: 0.6,
+      profileExponent: 2.08,
     });
-    expect("outerOffset" in parsed.slots[0]).toBe(false);
-    expect("profileExponent" in parsed.slots[0]).toBe(false);
   });
 
   it("migrates legacy stepped files with bottomHeight and bridgeRadius", () => {

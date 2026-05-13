@@ -1,4 +1,5 @@
-import { MAX_BUILD_SIZE, getSlotTolerance } from "@/lib/config";
+import { MAX_BUILD_SIZE } from "@/lib/config";
+import { getLegacyCircleSlotDiameter } from "@/lib/slot-definitions";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import type {
   SimpleSteppedLayoutParams,
@@ -155,9 +156,12 @@ function buildActiveRowSeeds(
 }
 
 export function getSimpleSteppedEffectiveDiameter(
-  slot: Pick<SimpleSteppedSlot, "diameter">,
+  slot: Pick<SimpleSteppedSlot, "diameter" | "effectiveDiameter">,
 ) {
-  return slot.diameter + getSlotTolerance(slot.diameter);
+  return typeof slot.effectiveDiameter === "number" &&
+    Number.isFinite(slot.effectiveDiameter)
+    ? slot.effectiveDiameter
+    : getLegacyCircleSlotDiameter(slot.diameter);
 }
 
 export function getSimpleSteppedMaxLocalYOffset(

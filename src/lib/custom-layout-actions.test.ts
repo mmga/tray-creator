@@ -60,6 +60,9 @@ describe("custom layout actions", () => {
       x: 100,
       y: 80,
       shape: "circle",
+      slotDefinitionId: "circle-25",
+      slotWidth: 25.2,
+      slotHeight: 25.2,
     });
     expect(withSecond.slots[1].x).toBeCloseTo(130.2, 5);
 
@@ -87,8 +90,8 @@ describe("custom layout actions", () => {
       60,
       35.5,
       {
-        outerOffset: 0.55,
-        profileExponent: 3.1,
+        outerOffset: 0.4,
+        profileExponent: 2.05,
       },
     );
 
@@ -97,8 +100,9 @@ describe("custom layout actions", () => {
       shape: "ellipse",
       width: 60,
       height: 35.5,
-      outerOffset: 0.55,
-      profileExponent: 3.1,
+      slotDefinitionId: "ellipse-60x35.5",
+      outerOffset: 0.4,
+      profileExponent: 2.05,
     });
   });
 
