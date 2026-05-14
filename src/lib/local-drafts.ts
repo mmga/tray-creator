@@ -7,7 +7,7 @@ import type {
 } from "@/lib/draft-summary";
 import { downloadParamFile } from "@/lib/param-io";
 import type { ExportableParams } from "@/lib/param-io";
-import type { AppMode, SteppedLayoutParams } from "@/types/custom-tray";
+import type { AppMode } from "@/types/custom-tray";
 
 export type DraftMode = AppMode;
 
@@ -322,21 +322,6 @@ function buildListItem<M extends DraftMode>(
   };
 }
 
-function resolveDraftMode(id: string): DraftMode | null {
-  const indexed = readIndex().find((item) => item.id === id);
-  if (indexed) {
-    return indexed.mode;
-  }
-
-  for (const mode of DRAFT_MODES) {
-    if (safeGetItem(draftRecordKey(mode, id))) {
-      return mode;
-    }
-  }
-
-  return null;
-}
-
 function getDraftInternal<M extends DraftMode>(
   mode: M,
   id: string,
@@ -395,60 +380,6 @@ function getDraftInternal<M extends DraftMode>(
   }
 }
 
-function parseCreateArgs<M extends DraftMode>(
-  title: string,
-  modeOrParams: M | SteppedLayoutParams,
-  maybeParams?: DraftParamsByMode[M],
-): { mode: M; params: DraftParamsByMode[M] } {
-  if (typeof modeOrParams === "string") {
-    return {
-      mode: modeOrParams,
-      params: maybeParams as DraftParamsByMode[M],
-    };
-  }
-
-  return {
-    mode: "stepped" as M,
-    params: modeOrParams as DraftParamsByMode[M],
-  };
-}
-
-function parseUpdateArgs<M extends DraftMode>(
-  modeOrId: M | string,
-  idOrTitle: string,
-  titleOrParams: string | DraftParamsByMode[M],
-  maybeParams?: DraftParamsByMode[M],
-) {
-  if (maybeParams !== undefined && isDraftMode(modeOrId)) {
-    return {
-      mode: modeOrId,
-      id: idOrTitle,
-      title: titleOrParams as string,
-      params: maybeParams,
-    };
-  }
-
-  const id = modeOrId;
-  return {
-    mode: (resolveDraftMode(id) ?? "stepped") as M,
-    id,
-    title: idOrTitle,
-    params: titleOrParams as DraftParamsByMode[M],
-  };
-}
-
-function parseIdArgs<M extends DraftMode>(
-  modeOrId: M | string,
-  maybeId?: string,
-): { mode: M; id: string } {
-  if (maybeId && isDraftMode(modeOrId)) {
-    return { mode: modeOrId as M, id: maybeId };
-  }
-
-  const id = modeOrId;
-  return { mode: (resolveDraftMode(id) ?? "stepped") as M, id };
-}
-
 export function listDrafts<M extends DraftMode>(mode: M): DraftListItem<M>[] {
   return readIndex()
     .filter((item) => item.mode === mode)
@@ -458,23 +389,17 @@ export function listDrafts<M extends DraftMode>(mode: M): DraftListItem<M>[] {
     ) as unknown as DraftListItem<M>[];
 }
 
-export function getDraft(id: string): DraftRecord<"stepped"> | null;
 export function getDraft<M extends DraftMode>(
   mode: M,
   id: string,
 ): DraftRecord<M> | null;
 export function getDraft<M extends DraftMode>(
-  modeOrId: M | string,
-  maybeId?: string,
-): DraftRecord<M> | DraftRecord<"stepped"> | null {
-  const { mode, id } = parseIdArgs(modeOrId, maybeId);
+  mode: M,
+  id: string,
+): DraftRecord<M> | null {
   return getDraftInternal(mode, id);
 }
 
-export function createDraft(
-  title: string,
-  params: SteppedLayoutParams,
-): DraftRecord<"stepped">;
 export function createDraft<M extends DraftMode>(
   title: string,
   mode: M,
@@ -482,10 +407,9 @@ export function createDraft<M extends DraftMode>(
 ): DraftRecord<M>;
 export function createDraft<M extends DraftMode>(
   title: string,
-  modeOrParams: M | SteppedLayoutParams,
-  maybeParams?: DraftParamsByMode[M],
-): DraftRecord<M> | DraftRecord<"stepped"> {
-  const { mode, params } = parseCreateArgs(title, modeOrParams, maybeParams);
+  mode: M,
+  params: DraftParamsByMode[M],
+): DraftRecord<M> {
   const existing = readIndex().filter((item) => item.mode === mode);
   if (existing.length >= MAX_DRAFTS_PER_MODE) {
     throw new Error(
@@ -516,11 +440,6 @@ export function createDraft<M extends DraftMode>(
   return record;
 }
 
-export function updateDraft(
-  id: string,
-  title: string,
-  params: SteppedLayoutParams,
-): DraftRecord<"stepped">;
 export function updateDraft<M extends DraftMode>(
   mode: M,
   id: string,
@@ -528,17 +447,11 @@ export function updateDraft<M extends DraftMode>(
   params: DraftParamsByMode[M],
 ): DraftRecord<M>;
 export function updateDraft<M extends DraftMode>(
-  modeOrId: M | string,
-  idOrTitle: string,
-  titleOrParams: string | DraftParamsByMode[M],
-  maybeParams?: DraftParamsByMode[M],
-): DraftRecord<M> | DraftRecord<"stepped"> {
-  const { mode, id, title, params } = parseUpdateArgs(
-    modeOrId,
-    idOrTitle,
-    titleOrParams,
-    maybeParams,
-  );
+  mode: M,
+  id: string,
+  title: string,
+  params: DraftParamsByMode[M],
+): DraftRecord<M> {
   const existing = getDraftInternal(mode, id);
   if (!existing) throw new Error(`草稿不存在: ${id}`);
 
@@ -572,23 +485,16 @@ export function updateDraft<M extends DraftMode>(
   return updatedRecord;
 }
 
-export function renameDraft(id: string, title: string): DraftRecord;
 export function renameDraft<M extends DraftMode>(
   mode: M,
   id: string,
   title: string,
 ): DraftRecord<M>;
 export function renameDraft<M extends DraftMode>(
-  modeOrId: M | string,
-  idOrTitle: string,
-  maybeTitle?: string,
-): DraftRecord<M> | DraftRecord {
-  const hasExplicitMode = maybeTitle !== undefined && isDraftMode(modeOrId);
-  const mode = (hasExplicitMode
-    ? modeOrId
-    : resolveDraftMode(modeOrId as string) ?? "stepped") as M;
-  const id = hasExplicitMode ? idOrTitle : (modeOrId as string);
-  const title = hasExplicitMode ? maybeTitle : idOrTitle;
+  mode: M,
+  id: string,
+  title: string,
+): DraftRecord<M> {
   const existing = getDraftInternal(mode, id);
   if (!existing) throw new Error(`草稿不存在: ${id}`);
 
@@ -611,25 +517,21 @@ export function renameDraft<M extends DraftMode>(
   return updatedRecord;
 }
 
-export function deleteDraft(id: string): void;
 export function deleteDraft<M extends DraftMode>(mode: M, id: string): void;
 export function deleteDraft<M extends DraftMode>(
-  modeOrId: M | string,
-  maybeId?: string,
+  mode: M,
+  id: string,
 ): void {
-  const { mode, id } = parseIdArgs(modeOrId, maybeId);
   safeRemoveItem(draftRecordKey(mode, id));
   const index = readIndex().filter((item) => item.id !== id);
   writeIndex(index);
 }
 
-export function exportDraft(id: string): void;
 export function exportDraft<M extends DraftMode>(mode: M, id: string): void;
 export function exportDraft<M extends DraftMode>(
-  modeOrId: M | string,
-  maybeId?: string,
+  mode: M,
+  id: string,
 ): void {
-  const { mode, id } = parseIdArgs(modeOrId, maybeId);
   const record = getDraftInternal(mode, id);
   if (!record) throw new Error(`草稿不存在: ${id}`);
 

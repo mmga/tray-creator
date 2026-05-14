@@ -242,7 +242,12 @@ describe("local drafts", () => {
         },
       ],
     });
-    const updated = updateDraft(initial.item.id, "更新后草稿", nextParams);
+    const updated = updateDraft(
+      "stepped",
+      initial.item.id,
+      "更新后草稿",
+      nextParams,
+    );
 
     expect(updated.item.title).toBe("更新后草稿");
     expect(updated.item.summary).toMatchObject({
@@ -252,18 +257,18 @@ describe("local drafts", () => {
     });
     expect(updated.item.updatedAt).not.toBe(initial.item.updatedAt);
 
-    const renamed = renameDraft(initial.item.id, "  Final Draft  ");
+    const renamed = renameDraft("stepped", initial.item.id, "  Final Draft  ");
     expect(renamed.item.title).toBe("Final Draft");
     expect(getDraft("stepped", initial.item.id)?.item.title).toBe("Final Draft");
 
-    exportDraft(initial.item.id);
+    exportDraft("stepped", initial.item.id);
     expect(downloadParamFileMock).toHaveBeenCalledWith(
       "stepped",
       nextParams,
       "stepped-draft-final-draft.json",
     );
 
-    deleteDraft(initial.item.id);
+    deleteDraft("stepped", initial.item.id);
     expect(getDraft("stepped", initial.item.id)).toBeNull();
     expect(listDrafts("stepped")).toEqual([]);
   });
@@ -418,6 +423,7 @@ describe("local drafts", () => {
 
     expect(() =>
       updateDraft(
+        "stepped",
         initial.item.id,
         "不会成功",
         createSteppedParams({ trayWidth: 180 }),
@@ -429,23 +435,6 @@ describe("local drafts", () => {
       (getDraft("stepped", initial.item.id)?.paramFile.params as SteppedLayoutParams)
         .trayWidth,
     ).toBe(STEPPED_LAYOUT_DEFAULTS.trayWidth);
-  });
-
-  it("supports the legacy stepped-only create and get signatures", () => {
-    vi.spyOn(crypto, "randomUUID").mockReturnValue("legacy-create");
-
-    const record = createDraft("旧签名草稿", createSteppedParams());
-
-    expect(record.item.mode).toBe("stepped");
-    expect(getDraft("legacy-create")).toEqual(record);
-    expect(getDraft("stepped", "legacy-create")).toEqual(record);
-    expect(record.item.summary).toEqual({
-      mode: "stepped",
-      groupCount: 1,
-      slotCount: 1,
-      trayWidth: STEPPED_LAYOUT_DEFAULTS.trayWidth,
-      trayDepth: STEPPED_LAYOUT_DEFAULTS.trayDepth,
-    });
   });
 
   it("uses base-plate-only as the grid summary structure mode when enabled", () => {
