@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import type * as THREE from "three";
-import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { TrayParams } from "@/types/tray";
 import { browserDownloadPort } from "@/lib/download-port";
 import {
@@ -15,7 +14,7 @@ import {
   updateGridParam,
 } from "@/lib/grid-model-state";
 import { trayWorkerService } from "@/lib/worker/worker-service";
-import { useToast } from "@/hooks/useToast";
+import { usePreviewLifecycle } from "@/hooks/usePreviewLifecycle";
 
 interface UseTrayModelReturn {
   params: TrayParams;
@@ -35,18 +34,34 @@ interface UseTrayModelReturn {
 
 export function useTrayModel(): UseTrayModelReturn {
   const [params, setParams] = useState<TrayParams>(() => resetGridParamsState());
-  const [threeGeometry, setThreeGeometry] =
-    useState<THREE.BufferGeometry | null>(null);
-  const [volume, setVolume] = useState<number>(0);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isPreviewStale, setIsPreviewStale] = useState(false);
-  const jscadGeomRef = useRef<Geom3 | null>(null);
-  const { toast } = useToast();
-
-  const invalidatePreview = useCallback(() => {
-    jscadGeomRef.current = null;
-    setIsPreviewStale(true);
-  }, []);
+  const {
+    threeGeometry,
+    volume,
+    isGenerating,
+    isPreviewStale,
+    invalidatePreview,
+    handleGenerate,
+    handleExportSTL,
+  } = usePreviewLifecycle({
+    getParams: () => params,
+    generatePreview: async (currentParams) => {
+      if (!trayWorkerService) {
+        return null;
+      }
+      return generateGridPreview(currentParams, trayWorkerService);
+    },
+    exportModel: async (currentParams, geometry) => {
+      if (!trayWorkerService) {
+        return;
+      }
+      await exportGridModelFiles(
+        currentParams,
+        geometry,
+        trayWorkerService,
+        browserDownloadPort,
+      );
+    },
+  });
 
   const replaceParams = useCallback(
     (next: TrayParams) => {
@@ -68,70 +83,6 @@ export function useTrayModel(): UseTrayModelReturn {
     },
     [invalidatePreview],
   );
-
-  const generateCurrentPreview = useCallback(async () => {
-    if (!trayWorkerService) {
-      return null;
-    }
-
-    setIsGenerating(true);
-    try {
-      const result = await generateGridPreview(params, trayWorkerService);
-      jscadGeomRef.current = result.geometry;
-      setVolume(result.volume);
-      setThreeGeometry((prev) => {
-        prev?.dispose();
-        return result.threeGeometry;
-      });
-      setIsPreviewStale(false);
-      return result.geometry;
-    } catch (err) {
-      console.error("生成失败:", err);
-      toast(
-        "error",
-        `模型生成失败：${err instanceof Error ? err.message : "未知错误"}`,
-      );
-      return null;
-    } finally {
-      setIsGenerating(false);
-    }
-  }, [params, toast]);
-
-  const handleGenerate = useCallback(async () => {
-    await generateCurrentPreview();
-  }, [generateCurrentPreview]);
-
-  const handleExportSTL = useCallback(async () => {
-    if (!trayWorkerService) {
-      return;
-    }
-
-    const needsFreshPreview = isPreviewStale || !jscadGeomRef.current;
-    const geometry =
-      needsFreshPreview ? await generateCurrentPreview() : jscadGeomRef.current;
-
-    if (!geometry) {
-      if (!needsFreshPreview) {
-        toast("error", "当前没有可导出的模型，请先点击开始锻造");
-      }
-      return;
-    }
-
-    try {
-      await exportGridModelFiles(
-        params,
-        geometry,
-        trayWorkerService,
-        browserDownloadPort,
-      );
-    } catch (err) {
-      console.error("STL导出失败:", err);
-      toast(
-        "error",
-        `STL 导出失败：${err instanceof Error ? err.message : "未知错误"}`,
-      );
-    }
-  }, [generateCurrentPreview, isPreviewStale, params, toast]);
 
   return {
     params,

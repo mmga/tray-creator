@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type * as THREE from "three";
-import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type {
   CustomLayoutParams,
   FreeSlot,
@@ -25,8 +24,8 @@ import {
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
 import { generateSimpleSteppedSTLFilename } from "@/lib/stl-export";
 import { useUndoHistory } from "@/hooks/useUndoHistory";
+import { usePreviewLifecycle } from "@/hooks/usePreviewLifecycle";
 import { trayWorkerService } from "@/lib/worker/worker-service";
-import { useToast } from "@/hooks/useToast";
 import { downloadParamFile } from "@/lib/param-io";
 
 type CanvasSlotUpdate = { id: string; x: number; y: number; rotation?: number };
@@ -103,33 +102,67 @@ function normalizeSimpleSteppedTraySize(
 }
 
 export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
-  const { toast } = useToast();
   const [params, internalSetParams] = useState<SimpleSteppedLayoutParams>(
     SIMPLE_STEPPED_LAYOUT_DEFAULTS,
   );
   const [activeRowId, setActiveRowId] = useState<string | null>(null);
-  const [threeGeometry, setThreeGeometry] =
-    useState<THREE.BufferGeometry | null>(null);
-  const [volume, setVolume] = useState(0);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isPreviewStale, setIsPreviewStale] = useState(false);
-  const jscadGeomRef = useRef<Geom3 | null>(null);
   const paramsRef = useRef(params);
-  paramsRef.current = params;
-  const paramsVersionRef = useRef(0);
+  useEffect(() => {
+    paramsRef.current = params;
+  }, [params]);
 
   const {
     pushState,
     popState,
     canUndo: canUndoFn,
   } = useUndoHistory<SimpleSteppedLayoutParams>();
+  const {
+    threeGeometry,
+    volume,
+    isGenerating,
+    isPreviewStale,
+    invalidatePreview,
+    handleGenerate,
+    handleExportSTL,
+  } = usePreviewLifecycle({
+    getParams: () => paramsRef.current,
+    generatePreview: async (currentParams) => {
+      if (!trayWorkerService) {
+        return null;
+      }
+      const result = await trayWorkerService.generateSimpleStepped(currentParams);
+      return {
+        geometry: result.geometry,
+        threeGeometry: jscadToThreeGeometry(result.geometry),
+        volume: result.volume,
+      };
+    },
+    exportModel: async (currentParams, geometry) => {
+      if (!trayWorkerService) {
+        return;
+      }
 
-  const invalidatePreview = useCallback(() => {
-    paramsVersionRef.current += 1;
-    jscadGeomRef.current = null;
-    setVolume(0);
-    setIsPreviewStale(true);
-  }, []);
+      const currentDerived = deriveSimpleSteppedLayout(currentParams);
+      const filename = generateSimpleSteppedSTLFilename(
+        Math.round(currentDerived.trayWidth),
+        Math.round(currentDerived.trayDepth),
+        currentDerived.activeRows.length,
+        currentParams.slots.length,
+      );
+      const result = await trayWorkerService.exportSTL(geometry, filename);
+      const url = URL.createObjectURL(result.blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      const jsonFilename = filename.replace(/\.stl$/i, ".json");
+      downloadParamFile("simple-stepped", currentParams, jsonFilename);
+    },
+  });
 
   const normalizeParams = useCallback((next: SimpleSteppedLayoutParams) => {
     const rebuiltRows = rebuildRowSlotIds(next.rows, next.slots);
@@ -185,19 +218,16 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
     [invalidatePreview, normalizeParams],
   );
 
-  useEffect(() => {
-    const rowIds = new Set(params.rows.map((row) => row.id));
-    setActiveRowId((prev) => {
-      if (prev && rowIds.has(prev)) {
-        return prev;
-      }
-      return params.rows[0]?.id ?? null;
-    });
-  }, [params.rows]);
+  const resolvedActiveRowId = useMemo(() => {
+    if (activeRowId && params.rows.some((row) => row.id === activeRowId)) {
+      return activeRowId;
+    }
+    return params.rows[0]?.id ?? null;
+  }, [activeRowId, params.rows]);
 
   const derivedLayout = useMemo(
-    () => deriveSimpleSteppedLayout(params, activeRowId),
-    [activeRowId, params],
+    () => deriveSimpleSteppedLayout(params, resolvedActiveRowId),
+    [params, resolvedActiveRowId],
   );
 
   const effectiveDimensions = useMemo(
@@ -575,82 +605,6 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
     [invalidatePreview, normalizeParams, pushState],
   );
 
-  const handleGenerate = useCallback(async () => {
-    if (!trayWorkerService) {
-      return;
-    }
-
-    const requestVersion = paramsVersionRef.current;
-    setIsGenerating(true);
-    try {
-      const result = await trayWorkerService.generateSimpleStepped(paramsRef.current);
-      if (requestVersion !== paramsVersionRef.current) {
-        return;
-      }
-
-      jscadGeomRef.current = result.geometry;
-      setVolume(result.volume);
-      const threeGeom = jscadToThreeGeometry(result.geometry);
-      setThreeGeometry((prev) => {
-        prev?.dispose();
-        return threeGeom;
-      });
-      setIsPreviewStale(false);
-    } catch (err) {
-      console.error("生成失败:", err);
-      toast(
-        "error",
-        `模型生成失败：${err instanceof Error ? err.message : "未知错误"}`,
-      );
-    } finally {
-      setIsGenerating(false);
-    }
-  }, [toast]);
-
-  const handleExportSTL = useCallback(async () => {
-    if (isPreviewStale) {
-      toast("error", "参数已变更，请先点击开始锻造生成最新模型");
-      return;
-    }
-    if (!jscadGeomRef.current || !trayWorkerService) {
-      toast("error", "当前没有可导出的模型，请先点击开始锻造");
-      return;
-    }
-
-    const currentParams = paramsRef.current;
-    const currentDerived = deriveSimpleSteppedLayout(currentParams);
-    const filename = generateSimpleSteppedSTLFilename(
-      Math.round(currentDerived.trayWidth),
-      Math.round(currentDerived.trayDepth),
-      currentDerived.activeRows.length,
-      currentParams.slots.length,
-    );
-
-    try {
-      const result = await trayWorkerService.exportSTL(
-        jscadGeomRef.current,
-        filename,
-      );
-      const url = URL.createObjectURL(result.blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      const jsonFilename = filename.replace(/\.stl$/i, ".json");
-      downloadParamFile("simple-stepped", currentParams, jsonFilename);
-    } catch (err) {
-      console.error("STL导出失败:", err);
-      toast(
-        "error",
-        `STL 导出失败：${err instanceof Error ? err.message : "未知错误"}`,
-      );
-    }
-  }, [isPreviewStale, toast]);
-
   const resizeTray = useCallback(
     (width: number, depth: number) => {
       internalSetParams((prev) =>
@@ -696,7 +650,7 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
     params,
     setParams,
     updateParam,
-    activeRowId,
+    activeRowId: resolvedActiveRowId,
     setActiveRow: setActiveRowId,
     addRow,
     removeRow,

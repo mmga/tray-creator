@@ -9,10 +9,9 @@ import type {
 } from "@/types/custom-tray";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import { useUndoHistory } from "@/hooks/useUndoHistory";
+import { usePreviewLifecycle } from "@/hooks/usePreviewLifecycle";
 import { trayWorkerService } from "@/lib/worker/worker-service";
-import { useToast } from "@/hooks/useToast";
 import type * as THREE from "three";
-import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
 import { useSteppedOutlinePreview } from "@/hooks/useSteppedOutlinePreview";
 import { buildSteppedBridgeWarning } from "@/lib/stepped-bridge-warning";
@@ -119,16 +118,10 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
   const [params, internalSetParams] = useState<SteppedLayoutParams>(
     STEPPED_LAYOUT_DEFAULTS,
   );
-  const [threeGeometry, setThreeGeometry] =
-    useState<THREE.BufferGeometry | null>(null);
-  const [volume, setVolume] = useState<number>(0);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [optimizationProposals, setOptimizationProposals] = useState<
     SteppedOptimizationProposal[]
   >([]);
   const [isOptimizingLayout, setIsOptimizingLayout] = useState(false);
-  const jscadGeomRef = useRef<Geom3 | null>(null);
-  const { toast } = useToast();
 
   const {
     pushState,
@@ -136,9 +129,9 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     canUndo: canUndoFn,
   } = useUndoHistory<SteppedLayoutParams>();
   const paramsRef = useRef(params);
-  paramsRef.current = params;
-  const [isPreviewStale, setIsPreviewStale] = useState(false);
-  const paramsVersionRef = useRef(0);
+  useEffect(() => {
+    paramsRef.current = params;
+  }, [params]);
   const optimizationProposalsRef = useRef(optimizationProposals);
   const optimizationRequestIdRef = useRef(0);
   const optimizationVariantRef = useRef(0);
@@ -166,15 +159,39 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
       cancelPendingOptimization();
     };
   }, [cancelPendingOptimization]);
-
-  const invalidatePreview = useCallback(() => {
-    paramsVersionRef.current += 1;
-    optimizationVariantRef.current = 0;
-    setIsPreviewStale(true);
-    jscadGeomRef.current = null;
-    setVolume(0);
-    clearOptimizationProposals();
-  }, [clearOptimizationProposals]);
+  const {
+    threeGeometry,
+    volume,
+    isGenerating,
+    isPreviewStale,
+    invalidatePreview,
+    handleGenerate,
+    handleExportSTL,
+  } = usePreviewLifecycle({
+    getParams: () => paramsRef.current,
+    generatePreview: async (currentParams) => {
+      if (!trayWorkerService) {
+        return null;
+      }
+      return generateSteppedPreview(currentParams, trayWorkerService);
+    },
+    exportModel: async (currentParams, geometry) => {
+      if (!trayWorkerService) {
+        return;
+      }
+      await exportSteppedModelFiles(
+        currentParams,
+        calculateSteppedEffectiveDimensions(currentParams),
+        geometry,
+        trayWorkerService,
+        browserDownloadPort,
+      );
+    },
+    onInvalidate: () => {
+      optimizationVariantRef.current = 0;
+      clearOptimizationProposals();
+    },
+  });
 
   const setParams = useCallback<
     React.Dispatch<React.SetStateAction<SteppedLayoutParams>>
@@ -441,67 +458,6 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     });
     invalidatePreview();
   }, [invalidatePreview, pushState]);
-
-  const handleGenerate = useCallback(async () => {
-    if (!trayWorkerService) return;
-    const requestVersion = paramsVersionRef.current;
-    setIsGenerating(true);
-    try {
-      const result = await generateSteppedPreview(
-        paramsRef.current,
-        trayWorkerService,
-      );
-      if (requestVersion !== paramsVersionRef.current) {
-        return;
-      }
-      jscadGeomRef.current = result.geometry;
-      setVolume(result.volume);
-      setThreeGeometry((prev) => {
-        prev?.dispose();
-        return result.threeGeometry;
-      });
-      setIsPreviewStale(false);
-    } catch (err) {
-      console.error("生成失败:", err);
-      toast(
-        "error",
-        `模型生成失败：${err instanceof Error ? err.message : "未知错误"}`,
-      );
-    } finally {
-      setIsGenerating(false);
-    }
-  }, [toast]);
-
-  const handleExportSTL = useCallback(async () => {
-    if (isPreviewStale) {
-      toast("error", "参数已变更，请先点击开始锻造生成最新模型");
-      return;
-    }
-    if (!jscadGeomRef.current || !trayWorkerService) {
-      toast("error", "当前没有可导出的模型，请先点击开始锻造");
-      return;
-    }
-    const currentParams = paramsRef.current;
-    try {
-      await exportSteppedModelFiles(
-        currentParams,
-        effectiveDimensions,
-        jscadGeomRef.current,
-        trayWorkerService,
-        browserDownloadPort,
-      );
-    } catch (err) {
-      console.error("STL导出失败:", err);
-      toast(
-        "error",
-        `STL 导出失败：${err instanceof Error ? err.message : "未知错误"}`,
-      );
-    }
-  }, [
-    effectiveDimensions,
-    isPreviewStale,
-    toast,
-  ]);
 
   const bridgeWarning = useMemo<BridgeWarning | null>(() => {
     return buildSteppedBridgeWarning(params);

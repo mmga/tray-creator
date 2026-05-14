@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useMemo } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import { browserDownloadPort } from "@/lib/download-port";
 import { randomIdFactory } from "@/lib/id-factory";
 import type { CustomLayoutParams } from "@/types/custom-tray";
@@ -26,11 +26,10 @@ import {
   generateCustomPreview,
 } from "@/lib/custom-layout-service";
 import { useUndoHistory } from "@/hooks/useUndoHistory";
+import { usePreviewLifecycle } from "@/hooks/usePreviewLifecycle";
 import { trayWorkerService } from "@/lib/worker/worker-service";
-import { useToast } from "@/hooks/useToast";
 import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
 import type * as THREE from "three";
-import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 
 interface UseCustomLayoutReturn {
   params: CustomLayoutParams;
@@ -85,12 +84,6 @@ export function useCustomLayout(): UseCustomLayoutReturn {
   const [params, internalSetParams] = useState<CustomLayoutParams>(
     CUSTOM_LAYOUT_DEFAULTS,
   );
-  const [threeGeometry, setThreeGeometry] =
-    useState<THREE.BufferGeometry | null>(null);
-  const [volume, setVolume] = useState<number>(0);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const jscadGeomRef = useRef<Geom3 | null>(null);
-  const { toast } = useToast();
 
   // 撤销历史
   const {
@@ -99,13 +92,38 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     canUndo: canUndoFn,
   } = useUndoHistory<CustomLayoutParams>();
   const paramsRef = useRef(params);
-  paramsRef.current = params;
-  const [isPreviewStale, setIsPreviewStale] = useState(false);
-
-  const invalidatePreview = useCallback(() => {
-    jscadGeomRef.current = null;
-    setIsPreviewStale(true);
-  }, []);
+  useEffect(() => {
+    paramsRef.current = params;
+  }, [params]);
+  const {
+    threeGeometry,
+    volume,
+    isGenerating,
+    isPreviewStale,
+    invalidatePreview,
+    handleGenerate,
+    handleExportSTL,
+  } = usePreviewLifecycle({
+    getParams: () => paramsRef.current,
+    generatePreview: async (currentParams) => {
+      if (!trayWorkerService) {
+        return null;
+      }
+      return generateCustomPreview(currentParams, trayWorkerService);
+    },
+    exportModel: async (currentParams, geometry) => {
+      if (!trayWorkerService) {
+        return;
+      }
+      await exportCustomModelFiles(
+        currentParams,
+        calculateCustomEffectiveDimensions(currentParams),
+        geometry,
+        trayWorkerService,
+        browserDownloadPort,
+      );
+    },
+  });
 
   const setParams = useCallback<
     React.Dispatch<React.SetStateAction<CustomLayoutParams>>
@@ -262,72 +280,6 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     });
     invalidatePreview();
   }, [invalidatePreview, pushState]);
-
-  const generateCurrentPreview = useCallback(async () => {
-    if (!trayWorkerService) return null;
-    setIsGenerating(true);
-    try {
-      const result = await generateCustomPreview(params, trayWorkerService);
-      jscadGeomRef.current = result.geometry;
-      setVolume(result.volume);
-      setThreeGeometry((prev) => {
-        prev?.dispose();
-        return result.threeGeometry;
-      });
-      setIsPreviewStale(false);
-      return result.geometry;
-    } catch (err) {
-      console.error("生成失败:", err);
-      toast(
-        "error",
-        `模型生成失败：${err instanceof Error ? err.message : "未知错误"}`,
-      );
-      return null;
-    } finally {
-      setIsGenerating(false);
-    }
-  }, [params, toast]);
-
-  const handleGenerate = useCallback(async () => {
-    await generateCurrentPreview();
-  }, [generateCurrentPreview]);
-
-  const handleExportSTL = useCallback(async () => {
-    if (!trayWorkerService) return;
-
-    const needsFreshPreview = isPreviewStale || !jscadGeomRef.current;
-    const geometry =
-      needsFreshPreview ? await generateCurrentPreview() : jscadGeomRef.current;
-
-    if (!geometry) {
-      if (!needsFreshPreview) {
-        toast("error", "当前没有可导出的模型，请先点击开始锻造");
-      }
-      return;
-    }
-
-    try {
-      await exportCustomModelFiles(
-        params,
-        effectiveDimensions,
-        geometry,
-        trayWorkerService,
-        browserDownloadPort,
-      );
-    } catch (err) {
-      console.error("STL导出失败:", err);
-      toast(
-        "error",
-        `STL 导出失败：${err instanceof Error ? err.message : "未知错误"}`,
-      );
-    }
-  }, [
-    effectiveDimensions,
-    generateCurrentPreview,
-    isPreviewStale,
-    params,
-    toast,
-  ]);
 
   return {
     params,
