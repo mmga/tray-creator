@@ -84,6 +84,14 @@ _Avoid_: Hiding draft entry points in mode-specific one-off locations unless the
 The mode-local orchestration layer for the active editor workflow, including parameter panel wiring, draft binding, draft actions, and reset/import side effects.
 _Avoid_: Treating the page component as the owner of every mode-specific draft and parameter-panel rule.
 
+**Mode Workspace Adapter**:
+A mode-specific adapter that implements the shared **Mode Workspace** interface for one Mode.
+_Avoid_: Putting all mode-specific workspace orchestration into one central switch.
+
+**Mode Workspace Registry**:
+The registry seam that selects the active **Mode Workspace Adapter** for the current Mode.
+_Avoid_: Making the registry own mode-specific workflow rules instead of just selecting an adapter.
+
 ## Relationships
 
 - A **Slot Definition** includes its **Tolerance**.
@@ -121,6 +129,8 @@ _Avoid_: Treating the page component as the owner of every mode-specific draft a
 - A **Draft Action Area** should remain broadly consistent across modes.
 - A **Mode Workspace** may own a **Mode**'s **Draft Binding**, **Draft Action Area** inputs, parameter panel inputs, and reset/import side effects.
 - A **Mode Workspace** should not own viewport-specific 2D/3D editing details unless those details become shared across modes.
+- A **Mode Workspace Adapter** implements the shared **Mode Workspace** interface for one **Mode**.
+- A **Mode Workspace Registry** selects the active **Mode Workspace Adapter** for the current **Mode**.
 - Loading a different draft replaces the current **Draft Binding**.
 - Saving as a new draft replaces the current **Draft Binding** with the new draft.
 - Deleting the currently bound draft clears the current **Draft Binding**.

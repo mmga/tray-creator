@@ -87,7 +87,7 @@ export default function Home() {
     },
     [simpleSteppedModel.params.slots],
   );
-  const { activeWorkspace, draftDialogProps } = useModeWorkspaces({
+  const { activeWorkspace } = useModeWorkspaces({
     mode,
     gridModel,
     customModel,
@@ -193,7 +193,7 @@ export default function Home() {
   return (
     <div className="flex flex-col h-dvh bg-background text-foreground overflow-hidden">
       <DraftManagerDialog
-        {...draftDialogProps}
+        {...activeWorkspace.draftDialogProps}
       />
 
       {/* Header */}
