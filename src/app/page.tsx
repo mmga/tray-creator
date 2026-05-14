@@ -4,71 +4,18 @@ import {
   useState,
   useEffect,
   useCallback,
-  type ReactNode,
-  type SetStateAction,
 } from "react";
 import dynamic from "next/dynamic";
 import { useTrayModel } from "@/hooks/useTrayModel";
 import { useCustomLayout } from "@/hooks/useCustomLayout";
 import { useSimpleSteppedLayout } from "@/hooks/useSimpleSteppedLayout";
 import { useSteppedLayout } from "@/hooks/useSteppedLayout";
-import { useModeDrafts } from "@/hooks/useModeDrafts";
+import { useModeWorkspaces } from "@/hooks/useModeWorkspaces";
 import { ModeTabs } from "@/components/ModeTabs";
 import { DraftManagerDialog } from "@/components/DraftManagerDialog";
 import type { AppMode } from "@/types/custom-tray";
-import type { TrayParams } from "@/types/tray";
 import { Boxes } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  CUSTOM_LAYOUT_DEFAULTS,
-} from "@/lib/custom-config";
-import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
-import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
-import type { AnyDraftListItem } from "@/lib/local-drafts";
-
-function renderDraftSummary(item: AnyDraftListItem): ReactNode {
-  switch (item.mode) {
-    case "grid":
-      return (
-        <>
-          <span>{item.rows}×{item.columns}</span>
-          <span>{item.baseSizeLabel}</span>
-          <span>{item.trayWidth.toFixed(0)}×{item.trayDepth.toFixed(0)}mm</span>
-        </>
-      );
-    case "custom":
-      return (
-        <>
-          <span>{item.slotCount} 槽</span>
-          <span>{item.trayWidth.toFixed(0)}×{item.trayDepth.toFixed(0)}mm</span>
-        </>
-      );
-    case "simple-stepped":
-      return (
-        <>
-          <span>{item.rowCount} 行</span>
-          <span>{item.slotCount} 槽</span>
-          <span>{item.trayWidth.toFixed(0)}×{item.trayDepth.toFixed(0)}mm</span>
-        </>
-      );
-    case "stepped":
-      return (
-        <>
-          <span>{item.groupCount} 组</span>
-          <span>{item.slotCount} 槽</span>
-          <span>{item.trayWidth.toFixed(0)}×{item.trayDepth.toFixed(0)}mm</span>
-        </>
-      );
-    default:
-      return null;
-  }
-}
-
-// Lazy load components
-const ParameterPanel = dynamic(() => import("@/components/ParameterPanel"), { ssr: false });
-const CustomPanel = dynamic(() => import("@/components/CustomPanel"), { ssr: false });
-const SimpleSteppedPanel = dynamic(() => import("@/components/SimpleSteppedPanel"), { ssr: false });
-const SteppedPanel = dynamic(() => import("@/components/SteppedPanel"), { ssr: false });
 const LayoutCanvas = dynamic(() => import("@/components/LayoutCanvas"), { ssr: false });
 const TrayViewer = dynamic(() => import("@/components/TrayViewer"), {
   ssr: false,
@@ -140,256 +87,17 @@ export default function Home() {
     },
     [simpleSteppedModel.params.slots],
   );
-
-  const setGridParams = (value: SetStateAction<TrayParams>) => {
-    const nextParams =
-      typeof value === "function" ? value(gridModel.params) : value;
-    gridModel.replaceParams(nextParams);
-  };
-
-  const gridDrafts = useModeDrafts({
-    mode: "grid",
-    params: gridModel.params,
-    setParams: setGridParams,
+  const { activeWorkspace, draftDialogProps } = useModeWorkspaces({
+    mode,
+    gridModel,
+    customModel,
+    simpleSteppedModel,
+    steppedModel,
+    selectedSlotIds,
+    previewGroupId,
+    onPreviewGroupChange: setPreviewGroupId,
+    onSteppedWorkspaceReset: handleAfterDraftLoad,
   });
-  const customDrafts = useModeDrafts({
-    mode: "custom",
-    params: customModel.params,
-    setParams: customModel.setParams,
-  });
-  const simpleSteppedDrafts = useModeDrafts({
-    mode: "simple-stepped",
-    params: simpleSteppedModel.params,
-    setParams: simpleSteppedModel.setParams,
-  });
-  const steppedDrafts = useModeDrafts({
-    mode: "stepped",
-    params: steppedModel.params,
-    setParams: steppedModel.setParams,
-    onAfterLoad: handleAfterDraftLoad,
-  });
-
-  const activeDraftController =
-    mode === "grid"
-      ? gridDrafts
-      : mode === "custom"
-        ? customDrafts
-        : mode === "simple-stepped"
-          ? simpleSteppedDrafts
-          : steppedDrafts;
-
-  const [, setDraftListVersion] = useState(0);
-  const refreshDraftList = useCallback(() => {
-    setDraftListVersion((version) => version + 1);
-  }, []);
-
-  const activeDraftList = (() => {
-    switch (mode) {
-      case "grid":
-        return gridDrafts.getDraftList() as AnyDraftListItem[];
-      case "custom":
-        return customDrafts.getDraftList() as AnyDraftListItem[];
-      case "simple-stepped":
-        return simpleSteppedDrafts.getDraftList() as AnyDraftListItem[];
-      case "stepped":
-        return steppedDrafts.getDraftList() as AnyDraftListItem[];
-      default:
-        return [];
-    }
-  })();
-
-  const openModeDraftDialog = useCallback(
-    (openDialog: () => void) => {
-      refreshDraftList();
-      openDialog();
-    },
-    [refreshDraftList],
-  );
-
-  const gridDraftActions = {
-    currentDraftId: gridDrafts.currentDraftId,
-    hasUnsavedChanges: gridDrafts.hasUnsavedChanges,
-    onSaveDraft: gridDrafts.saveCurrentDraft,
-    onOpenDraftDialog: () => openModeDraftDialog(gridDrafts.openDialog),
-  };
-  const customDraftActions = {
-    currentDraftId: customDrafts.currentDraftId,
-    hasUnsavedChanges: customDrafts.hasUnsavedChanges,
-    onSaveDraft: customDrafts.saveCurrentDraft,
-    onOpenDraftDialog: () => openModeDraftDialog(customDrafts.openDialog),
-  };
-  const simpleSteppedDraftActions = {
-    currentDraftId: simpleSteppedDrafts.currentDraftId,
-    hasUnsavedChanges: simpleSteppedDrafts.hasUnsavedChanges,
-    onSaveDraft: simpleSteppedDrafts.saveCurrentDraft,
-    onOpenDraftDialog: () =>
-      openModeDraftDialog(simpleSteppedDrafts.openDialog),
-  };
-  const steppedDraftActions = {
-    currentDraftId: steppedDrafts.currentDraftId,
-    hasUnsavedChanges: steppedDrafts.hasUnsavedChanges,
-    onSaveDraft: steppedDrafts.saveCurrentDraft,
-    onOpenDraftDialog: () => openModeDraftDialog(steppedDrafts.openDialog),
-  };
-
-  const handleGridReset = useCallback(() => {
-    gridModel.resetParams();
-    gridDrafts.clearDraftBinding();
-  }, [gridDrafts, gridModel]);
-
-  const handleGridImport = useCallback(
-    (params: TrayParams) => {
-      gridModel.replaceParams(params);
-      gridDrafts.clearDraftBinding();
-    },
-    [gridDrafts, gridModel],
-  );
-
-  const handleCustomReset = useCallback(() => {
-    customModel.setParams(CUSTOM_LAYOUT_DEFAULTS);
-    customDrafts.clearDraftBinding();
-  }, [customDrafts, customModel]);
-
-  const handleCustomImport = useCallback(
-    (params: typeof customModel.params) => {
-      customModel.setParams(params);
-      customDrafts.clearDraftBinding();
-    },
-    [customDrafts, customModel],
-  );
-
-  const handleSimpleSteppedReset = useCallback(() => {
-    simpleSteppedModel.setParams(SIMPLE_STEPPED_LAYOUT_DEFAULTS);
-    simpleSteppedModel.setActiveRow(null);
-    simpleSteppedDrafts.clearDraftBinding();
-  }, [simpleSteppedDrafts, simpleSteppedModel]);
-
-  const handleSimpleSteppedImport = useCallback(
-    (params: typeof simpleSteppedModel.params) => {
-      simpleSteppedModel.setParams(params);
-      simpleSteppedModel.setActiveRow(null);
-      simpleSteppedDrafts.clearDraftBinding();
-    },
-    [simpleSteppedDrafts, simpleSteppedModel],
-  );
-
-  const handleSteppedReset = useCallback(() => {
-    steppedModel.setParams(STEPPED_LAYOUT_DEFAULTS);
-    setSelectedSlotIds([]);
-    setPreviewGroupId(null);
-    steppedDrafts.clearDraftBinding();
-  }, [steppedDrafts, steppedModel]);
-
-  const handleSteppedImport = useCallback(
-    (params: typeof steppedModel.params) => {
-      steppedModel.setParams(params);
-      setSelectedSlotIds([]);
-      setPreviewGroupId(null);
-      steppedDrafts.clearDraftBinding();
-    },
-    [steppedDrafts, steppedModel],
-  );
-
-  // 参数面板内容（共享于桌面和移动端）
-  const renderParameterPanel = () => {
-    if (mode === "grid") {
-      return (
-        <ParameterPanel
-          params={gridModel.params}
-          updateParam={gridModel.updateParam}
-          replaceParams={handleGridImport}
-          resetParams={handleGridReset}
-          onGenerate={gridModel.handleGenerate}
-          onExportSTL={gridModel.handleExportSTL}
-          isGenerating={gridModel.isGenerating}
-          volume={gridModel.volume}
-          draftActions={gridDraftActions}
-        />
-      );
-    }
-    if (mode === "simple-stepped") {
-      return (
-        <SimpleSteppedPanel
-          params={simpleSteppedModel.params}
-          derivedLayout={simpleSteppedModel.derivedLayout}
-          activeRowId={simpleSteppedModel.activeRowId}
-          effectiveDimensions={simpleSteppedModel.effectiveDimensions}
-          setParams={simpleSteppedModel.setParams}
-          onResetParams={handleSimpleSteppedReset}
-          onImportParams={handleSimpleSteppedImport}
-          updateParam={simpleSteppedModel.updateParam}
-          onSetActiveRow={simpleSteppedModel.setActiveRow}
-          onAddRow={simpleSteppedModel.addRow}
-          onRemoveRow={simpleSteppedModel.removeRow}
-          onRenameRow={simpleSteppedModel.renameRow}
-          onClearRow={simpleSteppedModel.clearRow}
-          onReorderRows={simpleSteppedModel.reorderRows}
-          onAddSlotToRow={simpleSteppedModel.addSlotToRow}
-          onGenerate={simpleSteppedModel.handleGenerate}
-          onExportSTL={simpleSteppedModel.handleExportSTL}
-          onTrimTray={simpleSteppedModel.trimTray}
-          isGenerating={simpleSteppedModel.isGenerating}
-          isPreviewStale={simpleSteppedModel.isPreviewStale}
-          volume={simpleSteppedModel.volume}
-          draftActions={simpleSteppedDraftActions}
-        />
-      );
-    }
-    if (mode === "stepped") {
-      return (
-        <SteppedPanel
-          params={steppedModel.params}
-          effectiveDimensions={steppedModel.effectiveDimensions}
-          isPreviewStale={steppedModel.isPreviewStale}
-          setParams={steppedModel.setParams}
-          onResetParams={handleSteppedReset}
-          onImportParams={handleSteppedImport}
-          updateParam={steppedModel.updateParam}
-          onAddSlot={steppedModel.addSlot}
-          onGenerate={steppedModel.handleGenerate}
-          onExportSTL={steppedModel.handleExportSTL}
-          isGenerating={steppedModel.isGenerating}
-          volume={steppedModel.volume}
-          selectedSlotIds={selectedSlotIds}
-          onAddGroup={steppedModel.addGroup}
-          onRemoveGroup={steppedModel.removeGroup}
-          onUpdateGroupHeight={steppedModel.updateGroupHeight}
-          onUpdateGroupSmoothingOverride={steppedModel.updateGroupSmoothingOverride}
-          onUpdateGroupSmoothingRadius={steppedModel.updateGroupSmoothingRadius}
-          onUpdateGroupDisconnectOverride={steppedModel.updateGroupDisconnectOverride}
-          onUpdateGroupDisconnectDistance={steppedModel.updateGroupDisconnectDistance}
-          onSetActiveGroup={steppedModel.setActiveGroup}
-          onMoveSelectedSlotsToGroup={steppedModel.moveSelectedSlotsToGroup}
-          onReorderGroups={steppedModel.reorderGroups}
-          previewGroupId={previewGroupId}
-          onPreviewGroupChange={setPreviewGroupId}
-          bridgeWarning={steppedModel.bridgeWarning}
-          optimizationProposals={steppedModel.optimizationProposals}
-          isOptimizingLayout={steppedModel.isOptimizingLayout}
-          onGenerateOptimizationProposals={steppedModel.generateOptimizationProposals}
-          onApplyOptimizationProposal={steppedModel.applyOptimizationProposal}
-          onClearOptimizationProposals={steppedModel.clearOptimizationProposals}
-          draftActions={steppedDraftActions}
-        />
-      );
-    }
-    return (
-      <CustomPanel
-        params={customModel.params}
-        effectiveDimensions={customModel.effectiveDimensions}
-        setParams={customModel.setParams}
-        onResetParams={handleCustomReset}
-        onImportParams={handleCustomImport}
-        updateParam={customModel.updateParam}
-        onAddSlot={customModel.addSlot}
-        onGenerate={customModel.handleGenerate}
-        onExportSTL={customModel.handleExportSTL}
-        isGenerating={customModel.isGenerating}
-        volume={customModel.volume}
-        draftActions={customDraftActions}
-      />
-    );
-  };
 
   // 视口内容（共享于桌面和移动端）
   const renderViewport = () => {
@@ -485,42 +193,7 @@ export default function Home() {
   return (
     <div className="flex flex-col h-dvh bg-background text-foreground overflow-hidden">
       <DraftManagerDialog
-        mode={mode}
-        open={activeDraftController.isDialogOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            activeDraftController.closeDialog();
-            return;
-          }
-          openModeDraftDialog(activeDraftController.openDialog);
-        }}
-        drafts={activeDraftList}
-        currentDraftId={activeDraftController.currentDraftId}
-        hasUnsavedChanges={activeDraftController.hasUnsavedChanges}
-        draftNameInput={activeDraftController.draftNameInput}
-        onDraftNameInputChange={activeDraftController.setDraftNameInput}
-        onSaveAsNew={() => {
-          activeDraftController.saveAsNewDraft();
-          refreshDraftList();
-        }}
-        onSaveCurrent={() => {
-          activeDraftController.saveCurrentDraft();
-          refreshDraftList();
-        }}
-        onLoad={(id) => {
-          activeDraftController.loadDraft(id);
-          refreshDraftList();
-        }}
-        onRename={(id, title) => {
-          activeDraftController.renameDraftItem(id, title);
-          refreshDraftList();
-        }}
-        onDelete={(id) => {
-          activeDraftController.deleteDraftItem(id);
-          refreshDraftList();
-        }}
-        onExport={(id) => activeDraftController.exportDraftItem(id)}
-        renderSummary={renderDraftSummary}
+        {...draftDialogProps}
       />
 
       {/* Header */}
@@ -565,7 +238,7 @@ export default function Home() {
         {/* Left Panel */}
         <aside className="w-[380px] shrink-0 overflow-y-auto bg-[#0e0d0b] [scrollbar-gutter:stable] h-full">
           <div className="p-4 pb-6 h-full">
-            {renderParameterPanel()}
+            {activeWorkspace.panel}
           </div>
         </aside>
 
