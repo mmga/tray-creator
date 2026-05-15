@@ -92,6 +92,18 @@ _Avoid_: Putting all mode-specific workspace orchestration into one central swit
 The registry seam that selects the active **Mode Workspace Adapter** for the current Mode.
 _Avoid_: Making the registry own mode-specific workflow rules instead of just selecting an adapter.
 
+**Mode Viewport Workspace**:
+The mode-local orchestration layer for the active viewport workflow, including 2D/3D view selection, canvas wiring, preview wiring, and viewport-only transient state.
+_Avoid_: Treating the page component as the owner of every mode-specific viewport rule.
+
+**Mode Viewport Workspace Adapter**:
+A mode-specific adapter that implements the shared **Mode Viewport Workspace** interface for one Mode.
+_Avoid_: Putting all mode-specific viewport orchestration into one central switch.
+
+**Mode Viewport Workspace Registry**:
+The registry seam that selects the active **Mode Viewport Workspace Adapter** for the current Mode.
+_Avoid_: Making the registry own mode-specific viewport rules instead of just selecting an adapter.
+
 ## Relationships
 
 - A **Slot Definition** includes its **Tolerance**.
@@ -131,6 +143,10 @@ _Avoid_: Making the registry own mode-specific workflow rules instead of just se
 - A **Mode Workspace** should not own viewport-specific 2D/3D editing details unless those details become shared across modes.
 - A **Mode Workspace Adapter** implements the shared **Mode Workspace** interface for one **Mode**.
 - A **Mode Workspace Registry** selects the active **Mode Workspace Adapter** for the current **Mode**.
+- A **Mode Viewport Workspace** may own a **Mode**'s viewport wiring, preview-view switching, and viewport-only transient state.
+- A **Mode Viewport Workspace** should not own left-panel parameter editing or **Draft Binding** rules.
+- A **Mode Viewport Workspace Adapter** implements the shared **Mode Viewport Workspace** interface for one **Mode**.
+- A **Mode Viewport Workspace Registry** selects the active **Mode Viewport Workspace Adapter** for the current **Mode**.
 - Loading a different draft replaces the current **Draft Binding**.
 - Saving as a new draft replaces the current **Draft Binding** with the new draft.
 - Deleting the currently bound draft clears the current **Draft Binding**.

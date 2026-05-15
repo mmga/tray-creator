@@ -2,38 +2,20 @@
 
 import {
   useState,
-  useEffect,
-  useCallback,
 } from "react";
-import dynamic from "next/dynamic";
 import { useTrayModel } from "@/hooks/useTrayModel";
 import { useCustomLayout } from "@/hooks/useCustomLayout";
 import { useSimpleSteppedLayout } from "@/hooks/useSimpleSteppedLayout";
 import { useSteppedLayout } from "@/hooks/useSteppedLayout";
 import { useModeWorkspaces } from "@/hooks/useModeWorkspaces";
+import { useModeViewportWorkspaces } from "@/hooks/useModeViewportWorkspaces";
 import { ModeTabs } from "@/components/ModeTabs";
 import { DraftManagerDialog } from "@/components/DraftManagerDialog";
 import type { AppMode } from "@/types/custom-tray";
 import { Boxes } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-const LayoutCanvas = dynamic(() => import("@/components/LayoutCanvas"), { ssr: false });
-const TrayViewer = dynamic(() => import("@/components/TrayViewer"), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-full min-h-[400px] flex items-center justify-center bg-[#0a0908]">
-      <div className="flex flex-col items-center gap-3 text-muted-foreground">
-        <div className="w-8 h-8 border-2 border-muted-foreground/40 border-t-primary rounded-full animate-spin" />
-        <p className="text-sm font-mono tracking-wider">LOADING FORGE...</p>
-      </div>
-    </div>
-  ),
-});
 
 export default function Home() {
   const [mode, setMode] = useState<AppMode>("grid");
-  const [rightView, setRightView] = useState<"2d" | "3d">("2d");
-  const [selectedSlotIds, setSelectedSlotIds] = useState<string[]>([]);
-  const [previewGroupId, setPreviewGroupId] = useState<string | null>(null);
 
   // Grid Mode State
   const gridModel = useTrayModel();
@@ -47,148 +29,31 @@ export default function Home() {
   // Stepped Mode State
   const steppedModel = useSteppedLayout();
 
-  // Stepped 草稿管理
-  const handleAfterDraftLoad = useCallback(() => {
-    setSelectedSlotIds([]);
-    setPreviewGroupId(null);
-  }, []);
+  const {
+    activeViewport,
+    resetSteppedViewportState,
+    steppedSelectedSlotIds,
+    steppedPreviewGroupId,
+    setSteppedPreviewGroupId,
+  } = useModeViewportWorkspaces({
+    mode,
+    gridModel,
+    customModel,
+    simpleSteppedModel,
+    steppedModel,
+  });
 
-  const steppedSlots = steppedModel.params.slots;
-  const setSteppedActiveGroup = steppedModel.setActiveGroup;
-
-  // ── Stepped 模式：选中凹槽时自动激活所属组 ──
-  useEffect(() => {
-    if (mode === "stepped" && selectedSlotIds.length > 0) {
-      const firstSlotId = selectedSlotIds[0];
-      const slot = steppedSlots.find((s) => s.id === firstSlotId);
-      if (slot && "groupId" in slot) {
-        setSteppedActiveGroup(slot.groupId);
-      }
-    }
-  }, [selectedSlotIds, mode, setSteppedActiveGroup, steppedSlots]);
-
-  const simpleSteppedMoveScopeResolver = useCallback(
-    (draggingId: string, selectedIds: string[]) => {
-      const draggingSlot = simpleSteppedModel.params.slots.find((slot) => slot.id === draggingId);
-      if (!draggingSlot) {
-        return [];
-      }
-
-      const sameRowSelected = selectedIds.filter((id) => {
-        const slot = simpleSteppedModel.params.slots.find((candidate) => candidate.id === id);
-        return slot?.rowId === draggingSlot.rowId;
-      });
-
-      if (sameRowSelected.length > 0) {
-        return sameRowSelected;
-      }
-
-      return [draggingId];
-    },
-    [simpleSteppedModel.params.slots],
-  );
   const { activeWorkspace } = useModeWorkspaces({
     mode,
     gridModel,
     customModel,
     simpleSteppedModel,
     steppedModel,
-    selectedSlotIds,
-    previewGroupId,
-    onPreviewGroupChange: setPreviewGroupId,
-    onSteppedWorkspaceReset: handleAfterDraftLoad,
+    selectedSlotIds: steppedSelectedSlotIds,
+    previewGroupId: steppedPreviewGroupId,
+    onPreviewGroupChange: setSteppedPreviewGroupId,
+    onSteppedWorkspaceReset: resetSteppedViewportState,
   });
-
-  // 视口内容（共享于桌面和移动端）
-  const renderViewport = () => {
-    if (mode === "grid") {
-      return <TrayViewer geometry={gridModel.threeGeometry} isStale={gridModel.isPreviewStale} onRegenerate={gridModel.handleGenerate} />;
-    }
-
-    // Custom / Stepped: 2D/3D toggle
-    const model =
-      mode === "stepped"
-        ? steppedModel
-        : mode === "simple-stepped"
-          ? simpleSteppedModel
-          : customModel;
-    const canvasParams =
-      mode === "simple-stepped"
-        ? simpleSteppedModel.canvasParams
-        : mode === "stepped"
-          ? steppedModel.params
-          : customModel.params;
-    return (
-      <Tabs
-        value={rightView}
-        onValueChange={(v) => {
-          setRightView(v as "2d" | "3d");
-          if (v === "3d" && model.isPreviewStale) {
-            model.handleGenerate();
-          }
-        }}
-        className="flex-1 flex flex-col relative"
-      >
-        <div className="absolute top-3 left-5 z-20">
-          <TabsList
-            className="bg-[#1c1a16] border border-[#2e2a24]"
-            onKeyDownCapture={(event) => {
-              if (
-                event.key === "ArrowLeft" ||
-                event.key === "ArrowRight"
-              ) {
-                event.preventDefault();
-                event.stopPropagation();
-              }
-            }}
-          >
-            <TabsTrigger value="2d" className="text-xs">2D 编辑</TabsTrigger>
-            <TabsTrigger value="3d" className="text-xs">3D 预览</TabsTrigger>
-          </TabsList>
-        </div>
-
-        <div className={`absolute inset-0 m-0 p-0 transition-opacity duration-150 ${rightView === "2d" ? "opacity-100" : "pointer-events-none opacity-0"}`}>
-          <div className="w-full h-full border-t border-[#2e2a24]">
-            <LayoutCanvas
-              key={mode}
-              isActive={rightView === "2d"}
-              params={canvasParams}
-              onUpdateSlot={mode === "simple-stepped" ? simpleSteppedModel.updateSlotPosition : model.updateSlotPosition}
-              onRemoveSlot={mode === "simple-stepped" ? simpleSteppedModel.removeSlot : model.removeSlot}
-              onResizeTray={mode === "simple-stepped" ? simpleSteppedModel.resizeTray : undefined}
-              onUpdateSlotRotation={mode === "simple-stepped" ? simpleSteppedModel.updateSlotRotation : model.updateSlotRotation}
-              onUpdateMultipleSlots={mode === "simple-stepped" ? simpleSteppedModel.updateMultipleSlots : model.updateMultipleSlots}
-              onLiveUpdateMultipleSlots={mode === "simple-stepped" ? simpleSteppedModel.updateMultipleSlotsLive : model.updateMultipleSlotsLive}
-              onInsertSlots={mode === "simple-stepped" ? undefined : mode === "stepped" ? steppedModel.insertSlots : customModel.insertSlots}
-              onDuplicateSlots={mode === "simple-stepped" ? simpleSteppedModel.duplicateSlots : model.duplicateSlots}
-              onUndo={mode === "simple-stepped" ? simpleSteppedModel.undo : model.undo}
-              onSaveSnapshot={mode === "simple-stepped" ? simpleSteppedModel.saveSnapshot : model.saveSnapshot}
-              onSelectionChange={mode === "stepped" ? setSelectedSlotIds : undefined}
-              onEditInteractionChange={mode === "stepped"
-                ? (isInteracting) => {
-                  if (isInteracting) {
-                    steppedModel.pauseOutlinePreview();
-                  } else {
-                    steppedModel.resumeOutlinePreview();
-                  }
-                }
-                : undefined}
-              outlinePreview={mode === "stepped" ? steppedModel.outlinePreview : undefined}
-              focusedGroupId={mode === "stepped" ? previewGroupId : undefined}
-              rowBands={mode === "simple-stepped" ? simpleSteppedModel.derivedLayout.rowBands : undefined}
-              slotMoveScopeResolver={mode === "simple-stepped" ? simpleSteppedMoveScopeResolver : undefined}
-            />
-          </div>
-        </div>
-
-        <div className={`absolute inset-0 m-0 transition-opacity duration-150 ${rightView === "3d" ? "opacity-100" : "pointer-events-none opacity-0"}`}>
-          {rightView === "3d" && (
-            <TrayViewer geometry={model.threeGeometry} isStale={model.isPreviewStale} isGenerating={model.isGenerating} onRegenerate={model.handleGenerate} />
-          )}
-        </div>
-      </Tabs>
-    );
-  };
 
   return (
     <div className="flex flex-col h-dvh bg-background text-foreground overflow-hidden">
@@ -228,9 +93,8 @@ export default function Home() {
 
       {/* Mode Switcher */}
       <ModeTabs mode={mode} onModeChange={(m) => {
+        activeViewport.resetTransientState();
         setMode(m);
-        setSelectedSlotIds([]);
-        setPreviewGroupId(null);
       }} />
 
       {/* ===== 主布局: 左右分栏 ===== */}
@@ -249,7 +113,7 @@ export default function Home() {
 
         {/* Right Viewport */}
         <section className="flex-1 bg-[#0a0908] relative flex flex-col">
-          {renderViewport()}
+          {activeViewport.viewport}
         </section>
       </main>
     </div>
