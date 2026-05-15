@@ -619,24 +619,30 @@ vi.mock("@/components/SteppedPanel", () => ({
 vi.mock("@/components/LayoutCanvas", () => ({
   default({
     isActive,
-    focusedGroupId,
-    outlinePreview,
-    rowBands,
-    onResizeTray,
-    slotMoveScopeResolver,
-    onSelectionChange,
-    onEditInteractionChange,
+    model,
+    commands,
   }: {
     isActive?: boolean;
-    focusedGroupId?: string | null;
-    outlinePreview?: GroupOutlinePreview[] | null;
-    rowBands?: Array<{ id: string }>;
-    onResizeTray?: (width: number, depth: number) => void;
-    slotMoveScopeResolver?: (draggingId: string, selectedIds: string[]) => string[];
-    onSelectionChange?: (ids: string[]) => void;
-    onEditInteractionChange?: (isInteracting: boolean) => void;
+    model: {
+      overlays: {
+        focusedGroupId?: string | null;
+        groupOutlines?: GroupOutlinePreview[] | null;
+        rowBands?: Array<{ id: string }>;
+      };
+      interactions: {
+        slotMoveScopeResolver?: (
+          draggingId: string,
+          selectedIds: string[],
+        ) => string[];
+      };
+    };
+    commands: {
+      resizeTray?: (width: number, depth: number) => void;
+      selectionChanged?: (ids: string[]) => void;
+      editInteractionChanged?: (isInteracting: boolean) => void;
+    };
   }) {
-    const scopedDragIds = slotMoveScopeResolver?.("simple-slot-1", [
+    const scopedDragIds = model.interactions.slotMoveScopeResolver?.("simple-slot-1", [
       "simple-slot-1",
       "simple-slot-2",
       "simple-slot-3",
@@ -646,27 +652,27 @@ vi.mock("@/components/LayoutCanvas", () => ({
       <div
         data-testid="layout-canvas"
         data-active={String(Boolean(isActive))}
-        data-focused-group-id={focusedGroupId ?? ""}
-        data-outline-count={outlinePreview?.length ?? 0}
-        data-row-band-count={rowBands?.length ?? 0}
-        data-has-resize-tray={String(Boolean(onResizeTray))}
+        data-focused-group-id={model.overlays.focusedGroupId ?? ""}
+        data-outline-count={model.overlays.groupOutlines?.length ?? 0}
+        data-row-band-count={model.overlays.rowBands?.length ?? 0}
+        data-has-resize-tray={String(Boolean(commands.resizeTray))}
         data-scoped-drag-ids={scopedDragIds.join(",")}
       >
         <button
           type="button"
-          onClick={() => onSelectionChange?.(["slot-1"])}
+          onClick={() => commands.selectionChanged?.(["slot-1"])}
         >
           选择阶梯槽位
         </button>
         <button
           type="button"
-          onClick={() => onEditInteractionChange?.(true)}
+          onClick={() => commands.editInteractionChanged?.(true)}
         >
           开始编辑
         </button>
         <button
           type="button"
-          onClick={() => onEditInteractionChange?.(false)}
+          onClick={() => commands.editInteractionChanged?.(false)}
         >
           结束编辑
         </button>

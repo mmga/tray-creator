@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { useSteppedLayout } from "@/hooks/useSteppedLayout";
+import { buildSteppedLayoutEditorViewportModel } from "@/viewports/layout-editor/steppedViewportModel";
 import { ViewportTabs } from "@/viewports/shared/ViewportTabs";
 import type { ModeViewportWorkspace } from "@/viewports/types";
 
@@ -54,26 +55,30 @@ export function useSteppedViewportWorkspace({
       <LayoutCanvas
         key="stepped"
         isActive={rightView === "2d"}
-        params={model.params}
-        onUpdateSlot={model.updateSlotPosition}
-        onRemoveSlot={model.removeSlot}
-        onUpdateSlotRotation={model.updateSlotRotation}
-        onUpdateMultipleSlots={model.updateMultipleSlots}
-        onLiveUpdateMultipleSlots={model.updateMultipleSlotsLive}
-        onInsertSlots={model.insertSlots}
-        onDuplicateSlots={model.duplicateSlots}
-        onUndo={model.undo}
-        onSaveSnapshot={model.saveSnapshot}
-        onSelectionChange={setSelectedSlotIds}
-        onEditInteractionChange={(isInteracting) => {
-          if (isInteracting) {
-            model.pauseOutlinePreview();
-          } else {
-            model.resumeOutlinePreview();
-          }
+        model={buildSteppedLayoutEditorViewportModel({
+          params: model.params,
+          focusedGroupId: previewGroupId,
+          groupOutlines: model.outlinePreview,
+        })}
+        commands={{
+          updateSlotPosition: model.updateSlotPosition,
+          removeSlot: model.removeSlot,
+          updateSlotRotation: model.updateSlotRotation,
+          updateMultipleSlots: model.updateMultipleSlots,
+          liveUpdateMultipleSlots: model.updateMultipleSlotsLive,
+          insertSlots: model.insertSlots,
+          duplicateSlots: model.duplicateSlots,
+          undo: model.undo,
+          saveSnapshot: model.saveSnapshot,
+          selectionChanged: setSelectedSlotIds,
+          editInteractionChanged: (isInteracting) => {
+            if (isInteracting) {
+              model.pauseOutlinePreview();
+            } else {
+              model.resumeOutlinePreview();
+            }
+          },
         }}
-        outlinePreview={model.outlinePreview}
-        focusedGroupId={previewGroupId}
       />
     ),
     [model, previewGroupId, rightView],

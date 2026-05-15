@@ -3,6 +3,7 @@
 import { useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 import type { useCustomLayout } from "@/hooks/useCustomLayout";
+import { buildCustomLayoutEditorViewportModel } from "@/viewports/layout-editor/customViewportModel";
 import { ViewportTabs } from "@/viewports/shared/ViewportTabs";
 import type { ModeViewportWorkspace } from "@/viewports/types";
 
@@ -28,16 +29,18 @@ export function useCustomViewportWorkspace({
       <LayoutCanvas
         key="custom"
         isActive={rightView === "2d"}
-        params={model.params}
-        onUpdateSlot={model.updateSlotPosition}
-        onRemoveSlot={model.removeSlot}
-        onUpdateSlotRotation={model.updateSlotRotation}
-        onUpdateMultipleSlots={model.updateMultipleSlots}
-        onLiveUpdateMultipleSlots={model.updateMultipleSlotsLive}
-        onInsertSlots={model.insertSlots}
-        onDuplicateSlots={model.duplicateSlots}
-        onUndo={model.undo}
-        onSaveSnapshot={model.saveSnapshot}
+        model={buildCustomLayoutEditorViewportModel(model.params)}
+        commands={{
+          updateSlotPosition: model.updateSlotPosition,
+          removeSlot: model.removeSlot,
+          updateSlotRotation: model.updateSlotRotation,
+          updateMultipleSlots: model.updateMultipleSlots,
+          liveUpdateMultipleSlots: model.updateMultipleSlotsLive,
+          insertSlots: model.insertSlots,
+          duplicateSlots: model.duplicateSlots,
+          undo: model.undo,
+          saveSnapshot: model.saveSnapshot,
+        }}
       />
     ),
     [

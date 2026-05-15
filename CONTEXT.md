@@ -104,6 +104,14 @@ _Avoid_: Putting all mode-specific viewport orchestration into one central switc
 The registry seam that selects the active **Mode Viewport Workspace Adapter** for the current Mode.
 _Avoid_: Making the registry own mode-specific viewport rules instead of just selecting an adapter.
 
+**Layout Editor Viewport**:
+The canonical 2D editing view consumed by the layout canvas, including tray frame, canvas-ready slot instances, overlays, interaction capabilities, and edit commands.
+_Avoid_: Making the canvas infer mode semantics from raw Mode params.
+
+**Layout Editor Viewport Adapter**:
+A mode-specific adapter that projects Mode-local layout state into a **Layout Editor Viewport**.
+_Avoid_: Passing mode-specific canvas exceptions directly through the page or viewport shell.
+
 ## Relationships
 
 - A **Slot Definition** includes its **Tolerance**.
@@ -147,6 +155,9 @@ _Avoid_: Making the registry own mode-specific viewport rules instead of just se
 - A **Mode Viewport Workspace** should not own left-panel parameter editing or **Draft Binding** rules.
 - A **Mode Viewport Workspace Adapter** implements the shared **Mode Viewport Workspace** interface for one **Mode**.
 - A **Mode Viewport Workspace Registry** selects the active **Mode Viewport Workspace Adapter** for the current **Mode**.
+- A **Layout Editor Viewport** is the shape consumed by the layout canvas for 2D editing.
+- A **Layout Editor Viewport Adapter** projects a **Mode**'s local layout state into a **Layout Editor Viewport**.
+- A layout canvas should consume a **Layout Editor Viewport** instead of inferring **Mode** behavior from raw parameters.
 - Loading a different draft replaces the current **Draft Binding**.
 - Saving as a new draft replaces the current **Draft Binding** with the new draft.
 - Deleting the currently bound draft clears the current **Draft Binding**.

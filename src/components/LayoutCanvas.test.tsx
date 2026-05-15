@@ -5,8 +5,11 @@ import LayoutCanvas from "@/components/LayoutCanvas";
 import type {
   CustomLayoutParams,
   GroupOutlinePreview,
+  SimpleSteppedRowBand,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
+import type { CanvasSlotUpdate } from "@/lib/canvas-types";
+import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
 
 const {
   actionPanelResizeState,
@@ -319,6 +322,95 @@ function createSteppedParams(
   };
 }
 
+interface TestLayoutCanvasProps {
+  isActive?: boolean;
+  params: CustomLayoutParams | SteppedLayoutParams;
+  onUpdateSlot: (id: string, x: number, y: number) => void;
+  onRemoveSlot: (id: string) => void;
+  onResizeTray?: (width: number, depth: number) => void;
+  onUpdateSlotRotation?: (id: string, rotation: number) => void;
+  onUpdateMultipleSlots?: (updates: CanvasSlotUpdate[]) => void;
+  onLiveUpdateMultipleSlots?: (updates: CanvasSlotUpdate[]) => void;
+  onInsertSlots?: (slots: SymmetryInsertSlot[]) => void;
+  onDuplicateSlots?: (ids: string[]) => string[] | void;
+  onUndo?: () => void;
+  onSaveSnapshot?: () => void;
+  onSelectionChange?: (ids: string[]) => void;
+  onEditInteractionChange?: (isInteracting: boolean) => void;
+  outlinePreview?: GroupOutlinePreview[] | null;
+  focusedGroupId?: string | null;
+  rowBands?: SimpleSteppedRowBand[] | null;
+  slotMoveScopeResolver?: (draggingId: string, selectedIds: string[]) => string[];
+}
+
+function TestLayoutCanvas({
+  isActive,
+  params,
+  onUpdateSlot,
+  onRemoveSlot,
+  onResizeTray,
+  onUpdateSlotRotation,
+  onUpdateMultipleSlots,
+  onLiveUpdateMultipleSlots,
+  onInsertSlots,
+  onDuplicateSlots,
+  onUndo,
+  onSaveSnapshot,
+  onSelectionChange,
+  onEditInteractionChange,
+  outlinePreview,
+  focusedGroupId,
+  rowBands,
+  slotMoveScopeResolver,
+}: TestLayoutCanvasProps) {
+  const isStepped = "groups" in params;
+  const boundarySpacing =
+    "boundarySpacingIndependent" in params && params.boundarySpacingIndependent
+      ? params.boundarySpacing
+      : params.spacing;
+
+  return (
+    <LayoutCanvas
+      isActive={isActive}
+      model={{
+        trayFrame: {
+          width: params.trayWidth,
+          depth: params.trayDepth,
+          spacing: params.spacing,
+          boundarySpacing,
+          cornerRadius: "cornerRadius" in params ? params.cornerRadius : 0,
+          showEffectiveBaseplate: !isStepped && !rowBands,
+          showMaxBuildBoundary: Boolean(rowBands),
+        },
+        slots: params.slots,
+        overlays: {
+          focusedGroupId,
+          groupOutlines: outlinePreview,
+          rowBands,
+          slotGroups: isStepped ? params.groups : null,
+        },
+        interactions: {
+          slotMoveScopeResolver,
+        },
+      }}
+      commands={{
+        updateSlotPosition: onUpdateSlot,
+        removeSlot: onRemoveSlot,
+        resizeTray: onResizeTray,
+        updateSlotRotation: onUpdateSlotRotation,
+        updateMultipleSlots: onUpdateMultipleSlots,
+        liveUpdateMultipleSlots: onLiveUpdateMultipleSlots,
+        insertSlots: onInsertSlots,
+        duplicateSlots: onDuplicateSlots,
+        undo: onUndo,
+        saveSnapshot: onSaveSnapshot,
+        selectionChanged: onSelectionChange,
+        editInteractionChanged: onEditInteractionChange,
+      }}
+    />
+  );
+}
+
 describe("LayoutCanvas", { timeout: 15000 }, () => {
   beforeEach(() => {
     actionPanelResizeState.actionPanelWidth = 200;
@@ -376,7 +468,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     const onEditInteractionChange = vi.fn();
 
     const { rerender } = render(
-      <LayoutCanvas
+      <TestLayoutCanvas
         params={createCustomParams()}
         onUpdateSlot={vi.fn()}
         onRemoveSlot={vi.fn()}
@@ -406,7 +498,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     );
 
     rerender(
-      <LayoutCanvas
+      <TestLayoutCanvas
         params={createCustomParams({ slots: [] })}
         onUpdateSlot={vi.fn()}
         onRemoveSlot={vi.fn()}
@@ -427,7 +519,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
 
   it("tracks hovered slots and supports boundary spacing overrides", async () => {
     render(
-      <LayoutCanvas
+      <TestLayoutCanvas
         params={createCustomParams({
           boundarySpacingIndependent: true,
           boundarySpacing: 18,
@@ -470,7 +562,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
       .mockImplementation(() => undefined);
 
     const { rerender } = render(
-      <LayoutCanvas
+      <TestLayoutCanvas
         isActive={true}
         params={createCustomParams()}
         onUpdateSlot={vi.fn()}
@@ -486,7 +578,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     );
 
     rerender(
-      <LayoutCanvas
+      <TestLayoutCanvas
         isActive={false}
         params={createCustomParams()}
         onUpdateSlot={vi.fn()}
@@ -518,7 +610,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
 
   it("shows effective baseplate overflow for custom layouts", () => {
     render(
-      <LayoutCanvas
+      <TestLayoutCanvas
         params={createCustomParams({
           slots: [
             {
@@ -560,7 +652,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     ];
 
     render(
-      <LayoutCanvas
+      <TestLayoutCanvas
         params={createSteppedParams()}
         focusedGroupId="group-1"
         outlinePreview={outlinePreview}
@@ -597,7 +689,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     const onEditInteractionChange = vi.fn();
 
     render(
-      <LayoutCanvas
+      <TestLayoutCanvas
         params={createCustomParams({
           trayWidth: 280,
           trayDepth: 270,
@@ -677,7 +769,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     const onSaveSnapshot = vi.fn();
     const onEditInteractionChange = vi.fn();
     const { container } = render(
-      <LayoutCanvas
+      <TestLayoutCanvas
         params={createCustomParams({
           trayDepth: 160,
           slots: [
@@ -754,7 +846,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     const onSaveSnapshot = vi.fn();
     const onEditInteractionChange = vi.fn();
     const { container } = render(
-      <LayoutCanvas
+      <TestLayoutCanvas
         params={createCustomParams({
           trayWidth: 220,
           trayDepth: 150,
@@ -851,7 +943,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
   it("adds slots through ctrl marquee selection on the canvas background", async () => {
     const onSelectionChange = vi.fn();
     const { container } = render(
-      <LayoutCanvas
+      <TestLayoutCanvas
         params={createCustomParams({
           slots: [
             {
@@ -954,7 +1046,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
   it("toggles the selected slot off when ctrl-clicking it again", async () => {
     const onSelectionChange = vi.fn();
     const { container } = render(
-      <LayoutCanvas
+      <TestLayoutCanvas
         params={createCustomParams()}
         onUpdateSlot={vi.fn()}
         onRemoveSlot={vi.fn()}
@@ -1007,7 +1099,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
 
   it("routes zoom controls, keyboard hints, and action panel resize interactions", async () => {
     const { container } = render(
-      <LayoutCanvas
+      <TestLayoutCanvas
         params={createCustomParams()}
         onUpdateSlot={vi.fn()}
         onRemoveSlot={vi.fn()}
@@ -1060,7 +1152,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     actionPanelResizeState.isResizingActionPanel = true;
 
     const { container } = render(
-      <LayoutCanvas
+      <TestLayoutCanvas
         params={createCustomParams()}
         onUpdateSlot={vi.fn()}
         onRemoveSlot={vi.fn()}
@@ -1080,7 +1172,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
   it("clears the current selection when clicking the canvas background without ctrl", async () => {
     const onSelectionChange = vi.fn();
     const { container } = render(
-      <LayoutCanvas
+      <TestLayoutCanvas
         params={createCustomParams({
           slots: [
             {
@@ -1167,7 +1259,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     const onSaveSnapshot = vi.fn();
     const onEditInteractionChange = vi.fn();
     const { container } = render(
-      <LayoutCanvas
+      <TestLayoutCanvas
         params={createCustomParams({
           trayWidth: 220,
           trayDepth: 150,
@@ -1279,7 +1371,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     const onEditInteractionChange = vi.fn();
 
     render(
-      <LayoutCanvas
+      <TestLayoutCanvas
         params={createCustomParams({
           slots: [
             {
@@ -1323,7 +1415,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     const onSaveSnapshot = vi.fn();
     const onEditInteractionChange = vi.fn();
     const { container } = render(
-      <LayoutCanvas
+      <TestLayoutCanvas
         params={createCustomParams({
           slots: [
             {

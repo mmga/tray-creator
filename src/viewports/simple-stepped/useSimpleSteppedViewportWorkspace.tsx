@@ -3,6 +3,7 @@
 import { useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 import type { useSimpleSteppedLayout } from "@/hooks/useSimpleSteppedLayout";
+import { buildSimpleSteppedLayoutEditorViewportModel } from "@/viewports/layout-editor/simpleSteppedViewportModel";
 import { ViewportTabs } from "@/viewports/shared/ViewportTabs";
 import type { ModeViewportWorkspace } from "@/viewports/types";
 
@@ -49,18 +50,22 @@ export function useSimpleSteppedViewportWorkspace({
       <LayoutCanvas
         key="simple-stepped"
         isActive={rightView === "2d"}
-        params={model.canvasParams}
-        onUpdateSlot={model.updateSlotPosition}
-        onRemoveSlot={model.removeSlot}
-        onResizeTray={model.resizeTray}
-        onUpdateSlotRotation={model.updateSlotRotation}
-        onUpdateMultipleSlots={model.updateMultipleSlots}
-        onLiveUpdateMultipleSlots={model.updateMultipleSlotsLive}
-        onDuplicateSlots={model.duplicateSlots}
-        onUndo={model.undo}
-        onSaveSnapshot={model.saveSnapshot}
-        rowBands={model.derivedLayout.rowBands}
-        slotMoveScopeResolver={slotMoveScopeResolver}
+        model={buildSimpleSteppedLayoutEditorViewportModel({
+          canvasParams: model.canvasParams,
+          rowBands: model.derivedLayout.rowBands,
+          slotMoveScopeResolver,
+        })}
+        commands={{
+          updateSlotPosition: model.updateSlotPosition,
+          removeSlot: model.removeSlot,
+          resizeTray: model.resizeTray,
+          updateSlotRotation: model.updateSlotRotation,
+          updateMultipleSlots: model.updateMultipleSlots,
+          liveUpdateMultipleSlots: model.updateMultipleSlotsLive,
+          duplicateSlots: model.duplicateSlots,
+          undo: model.undo,
+          saveSnapshot: model.saveSnapshot,
+        }}
       />
     ),
     [
