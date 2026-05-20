@@ -14,6 +14,14 @@ import {
   type DraftListItem,
   type DraftMode,
 } from "@/lib/local-drafts";
+import {
+  bindDraftSession,
+  clearDraftSession,
+  createEmptyDraftSession,
+  hasUnsavedDraftChanges,
+  removeDraftSessionBinding,
+  type DraftSession,
+} from "@/lib/draft-session";
 import { parseParamFileObject, serializeParamFile } from "@/lib/param-io";
 import type { DraftParamsByMode } from "@/lib/draft-summary";
 import { useToast } from "@/hooks/useToast";
@@ -50,22 +58,24 @@ export function useModeDrafts<M extends DraftMode>({
   onAfterLoad,
 }: UseModeDraftsOptions<M>): UseModeDraftsReturn<M> {
   const { toast } = useToast();
-  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
-  const [boundSnapshot, setBoundSnapshot] = useState<string | null>(null);
+  const [draftSession, setDraftSession] = useState<DraftSession>(() =>
+    createEmptyDraftSession(),
+  );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [draftNameInput, setDraftNameInput] = useState<string>(() =>
     defaultDraftTitle(mode),
   );
+  const currentDraftId = draftSession.currentDraftId;
 
   const serializedParams = useMemo(
     () => serializeParamFile(mode, params),
     [mode, params],
   );
 
-  const hasUnsavedChanges =
-    currentDraftId !== null &&
-    boundSnapshot !== null &&
-    serializedParams !== boundSnapshot;
+  const hasUnsavedChanges = hasUnsavedDraftChanges(
+    draftSession,
+    serializedParams,
+  );
 
   const openDialog = useCallback(() => {
     setIsDialogOpen(true);
@@ -76,8 +86,7 @@ export function useModeDrafts<M extends DraftMode>({
   }, []);
 
   const clearDraftBinding = useCallback(() => {
-    setCurrentDraftId(null);
-    setBoundSnapshot(null);
+    setDraftSession(clearDraftSession());
   }, []);
 
   const getDraftList = useCallback((): DraftListItem<M>[] => {
@@ -94,7 +103,7 @@ export function useModeDrafts<M extends DraftMode>({
       const existing = getDraft(mode, currentDraftId);
       const title = existing?.item.title ?? defaultDraftTitle(mode);
       updateDraft(mode, currentDraftId, title, params);
-      setBoundSnapshot(serializedParams);
+      setDraftSession(bindDraftSession(currentDraftId, serializedParams));
       toast("success", `草稿「${title}」已更新`);
     } catch (error) {
       toast(
@@ -111,8 +120,7 @@ export function useModeDrafts<M extends DraftMode>({
 
       try {
         const record = createDraft(cleanTitle, mode, params);
-        setCurrentDraftId(record.item.id);
-        setBoundSnapshot(serializedParams);
+        setDraftSession(bindDraftSession(record.item.id, serializedParams));
         setDraftNameInput(defaultDraftTitle(mode));
         setIsDialogOpen(false);
         toast("success", `草稿「${cleanTitle}」已保存`);
@@ -141,8 +149,7 @@ export function useModeDrafts<M extends DraftMode>({
         ) as DraftParamsByMode[M];
 
         setParams(loaded);
-        setCurrentDraftId(id);
-        setBoundSnapshot(serializeParamFile(mode, loaded));
+        setDraftSession(bindDraftSession(id, serializeParamFile(mode, loaded)));
         setIsDialogOpen(false);
         onAfterLoad?.();
         toast("success", `已加载草稿「${record.item.title}」`);
@@ -177,10 +184,7 @@ export function useModeDrafts<M extends DraftMode>({
         const record = getDraft(mode, id);
         const title = record?.item.title ?? id;
         deleteDraft(mode, id);
-        if (currentDraftId === id) {
-          setCurrentDraftId(null);
-          setBoundSnapshot(null);
-        }
+        setDraftSession((session) => removeDraftSessionBinding(session, id));
         toast("success", `草稿「${title}」已删除`);
       } catch (error) {
         toast(
@@ -189,7 +193,7 @@ export function useModeDrafts<M extends DraftMode>({
         );
       }
     },
-    [currentDraftId, mode, toast],
+    [mode, toast],
   );
 
   const exportDraftItem = useCallback(
