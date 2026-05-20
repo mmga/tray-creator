@@ -1,6 +1,16 @@
 import { getSlotOuterOffset } from "@/lib/config";
 import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
 import {
+  applyFreeSlotUpdates,
+  duplicateFreeSlots,
+  insertFreeSlots,
+  removeFreeSlot,
+  trimFreeSlotBaseplate,
+  updateFreeSlotPosition,
+  updateFreeSlotRotation,
+  type FreeSlotUpdate,
+} from "@/lib/free-slot-editing";
+import {
   createCircleSlotSnapshot,
   getFreeSlotProfileGeometry,
 } from "@/lib/slot-definitions";
@@ -12,12 +22,7 @@ import type { IdFactory } from "@/lib/model-ports";
 import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
 import type { SteppedLayoutParams, SteppedSlot } from "@/types/custom-tray";
 
-export interface SteppedSlotUpdate {
-  id: string;
-  x: number;
-  y: number;
-  rotation?: number;
-}
+export type SteppedSlotUpdate = FreeSlotUpdate;
 
 export function updateSteppedLayoutParam<K extends keyof SteppedLayoutParams>(
   params: SteppedLayoutParams,
@@ -84,10 +89,7 @@ export function removeSteppedSlot(
   params: SteppedLayoutParams,
   id: string,
 ): SteppedLayoutParams {
-  return {
-    ...params,
-    slots: params.slots.filter((slot) => slot.id !== id),
-  };
+  return removeFreeSlot(params, id);
 }
 
 export function updateSteppedSlotPosition(
@@ -96,33 +98,14 @@ export function updateSteppedSlotPosition(
   x: number,
   y: number,
 ): SteppedLayoutParams {
-  return {
-    ...params,
-    slots: params.slots.map((slot) =>
-      slot.id === id ? { ...slot, x, y } : slot,
-    ),
-  };
+  return updateFreeSlotPosition(params, id, x, y);
 }
 
 export function applySteppedSlotUpdates(
   params: SteppedLayoutParams,
   updates: SteppedSlotUpdate[],
 ): SteppedLayoutParams {
-  const updatesMap = new Map(updates.map((update) => [update.id, update]));
-  return {
-    ...params,
-    slots: params.slots.map((slot) => {
-      const update = updatesMap.get(slot.id);
-      return update
-        ? {
-            ...slot,
-            x: update.x,
-            y: update.y,
-            rotation: update.rotation ?? slot.rotation,
-          }
-        : slot;
-    }),
-  };
+  return applyFreeSlotUpdates(params, updates);
 }
 
 export function updateSteppedSlotRotation(
@@ -130,12 +113,7 @@ export function updateSteppedSlotRotation(
   id: string,
   rotation: number,
 ): SteppedLayoutParams {
-  return {
-    ...params,
-    slots: params.slots.map((slot) =>
-      slot.id === id ? { ...slot, rotation } : slot,
-    ),
-  };
+  return updateFreeSlotRotation(params, id, rotation);
 }
 
 export function insertSteppedSlots(
@@ -143,28 +121,24 @@ export function insertSteppedSlots(
   idFactory: IdFactory,
   slotsToInsert: SymmetryInsertSlot[],
 ): SteppedLayoutParams {
-  if (slotsToInsert.length === 0) {
-    return params;
-  }
-
-  const newSlots: SteppedSlot[] = slotsToInsert.map((slot) => ({
-    id: idFactory.createId(),
-    x: slot.x,
-    y: slot.y,
-    shape: slot.shape,
-    width: slot.width,
-    height: slot.height,
-    slotDefinitionId: slot.slotDefinitionId,
-    slotWidth: slot.slotWidth,
-    slotHeight: slot.slotHeight,
-    rotation: slot.rotation,
-    groupId: slot.groupId ?? params.activeGroupId,
-  }));
-
-  return {
-    ...params,
-    slots: [...params.slots, ...newSlots],
-  };
+  return insertFreeSlots<SteppedSlot, SteppedLayoutParams, SymmetryInsertSlot>(
+    params,
+    idFactory,
+    slotsToInsert,
+    (slot, id) => ({
+      id,
+      x: slot.x,
+      y: slot.y,
+      shape: slot.shape,
+      width: slot.width,
+      height: slot.height,
+      slotDefinitionId: slot.slotDefinitionId,
+      slotWidth: slot.slotWidth,
+      slotHeight: slot.slotHeight,
+      rotation: slot.rotation,
+      groupId: slot.groupId ?? params.activeGroupId,
+    }),
+  );
 }
 
 export function duplicateSteppedSlots(
@@ -172,30 +146,7 @@ export function duplicateSteppedSlots(
   idFactory: IdFactory,
   ids: string[],
 ): { params: SteppedLayoutParams; newIds: string[] } {
-  const newIds = ids.map(() => idFactory.createId());
-  const newSlots = [...params.slots];
-
-  ids.forEach((id, index) => {
-    const slotToCopy = params.slots.find((slot) => slot.id === id);
-    if (!slotToCopy) {
-      return;
-    }
-
-    newSlots.push({
-      ...slotToCopy,
-      id: newIds[index],
-      x: slotToCopy.x + 10,
-      y: slotToCopy.y - 10,
-    });
-  });
-
-  return {
-    params: {
-      ...params,
-      slots: newSlots,
-    },
-    newIds,
-  };
+  return duplicateFreeSlots(params, idFactory, ids);
 }
 
 export function trimSteppedBaseplate(
@@ -204,31 +155,5 @@ export function trimSteppedBaseplate(
     params,
   ),
 ): SteppedLayoutParams {
-  if (
-    params.slots.length === 0 ||
-    effectiveDimensions.width <= 0 ||
-    effectiveDimensions.depth <= 0
-  ) {
-    return params;
-  }
-
-  const newTrayWidth = effectiveDimensions.width;
-  const newTrayDepth = effectiveDimensions.depth;
-  const oldCx = (effectiveDimensions.minX + effectiveDimensions.maxX) / 2;
-  const oldCy = (effectiveDimensions.minY + effectiveDimensions.maxY) / 2;
-  const newCx = newTrayWidth / 2;
-  const newCy = newTrayDepth / 2;
-  const dx = newCx - oldCx;
-  const dy = newCy - oldCy;
-
-  return {
-    ...params,
-    trayWidth: newTrayWidth,
-    trayDepth: newTrayDepth,
-    slots: params.slots.map((slot) => ({
-      ...slot,
-      x: slot.x + dx,
-      y: slot.y + dy,
-    })),
-  };
+  return trimFreeSlotBaseplate(params, effectiveDimensions);
 }

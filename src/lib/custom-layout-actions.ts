@@ -1,5 +1,15 @@
 import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
 import {
+  applyFreeSlotUpdates,
+  duplicateFreeSlots,
+  insertFreeSlots,
+  removeFreeSlot,
+  trimFreeSlotBaseplate,
+  updateFreeSlotPosition,
+  updateFreeSlotRotation,
+  type FreeSlotUpdate,
+} from "@/lib/free-slot-editing";
+import {
   createCircleSlotSnapshot,
   findEllipseSlotDefinitionByGeometry,
   getFreeSlotProfileGeometry,
@@ -15,12 +25,7 @@ export interface EllipseSlotConfig {
   slotDefinitionId?: string;
 }
 
-export interface CustomSlotUpdate {
-  id: string;
-  x: number;
-  y: number;
-  rotation?: number;
-}
+export type CustomSlotUpdate = FreeSlotUpdate;
 
 export function updateCustomLayoutParam<K extends keyof CustomLayoutParams>(
   params: CustomLayoutParams,
@@ -134,10 +139,7 @@ export function removeCustomSlot(
   params: CustomLayoutParams,
   id: string,
 ): CustomLayoutParams {
-  return {
-    ...params,
-    slots: params.slots.filter((slot) => slot.id !== id),
-  };
+  return removeFreeSlot(params, id);
 }
 
 export function updateCustomSlotPosition(
@@ -146,33 +148,14 @@ export function updateCustomSlotPosition(
   x: number,
   y: number,
 ): CustomLayoutParams {
-  return {
-    ...params,
-    slots: params.slots.map((slot) =>
-      slot.id === id ? { ...slot, x, y } : slot,
-    ),
-  };
+  return updateFreeSlotPosition(params, id, x, y);
 }
 
 export function applyCustomSlotUpdates(
   params: CustomLayoutParams,
   updates: CustomSlotUpdate[],
 ): CustomLayoutParams {
-  const updatesMap = new Map(updates.map((update) => [update.id, update]));
-  return {
-    ...params,
-    slots: params.slots.map((slot) => {
-      const update = updatesMap.get(slot.id);
-      return update
-        ? {
-            ...slot,
-            x: update.x,
-            y: update.y,
-            rotation: update.rotation ?? slot.rotation,
-          }
-        : slot;
-    }),
-  };
+  return applyFreeSlotUpdates(params, updates);
 }
 
 export function updateCustomSlotRotation(
@@ -180,12 +163,7 @@ export function updateCustomSlotRotation(
   id: string,
   rotation: number,
 ): CustomLayoutParams {
-  return {
-    ...params,
-    slots: params.slots.map((slot) =>
-      slot.id === id ? { ...slot, rotation } : slot,
-    ),
-  };
+  return updateFreeSlotRotation(params, id, rotation);
 }
 
 export function insertCustomSlots(
@@ -193,33 +171,29 @@ export function insertCustomSlots(
   idFactory: IdFactory,
   slotsToInsert: SymmetryInsertSlot[],
 ): CustomLayoutParams {
-  if (slotsToInsert.length === 0) {
-    return params;
-  }
-
-  const newSlots: FreeSlot[] = slotsToInsert.map((slot) => ({
-    id: idFactory.createId(),
-    x: slot.x,
-    y: slot.y,
-    shape: slot.shape,
-    width: slot.width,
-    height: slot.height,
-    slotDefinitionId: slot.slotDefinitionId,
-    slotWidth: slot.slotWidth,
-    slotHeight: slot.slotHeight,
-    rotation: slot.rotation,
-    ...(slot.shape === "ellipse"
-      ? {
-          outerOffset: slot.outerOffset,
-          profileExponent: slot.profileExponent,
-        }
-      : {}),
-  }));
-
-  return {
-    ...params,
-    slots: [...params.slots, ...newSlots],
-  };
+  return insertFreeSlots<FreeSlot, CustomLayoutParams, SymmetryInsertSlot>(
+    params,
+    idFactory,
+    slotsToInsert,
+    (slot, id) => ({
+      id,
+      x: slot.x,
+      y: slot.y,
+      shape: slot.shape,
+      width: slot.width,
+      height: slot.height,
+      slotDefinitionId: slot.slotDefinitionId,
+      slotWidth: slot.slotWidth,
+      slotHeight: slot.slotHeight,
+      rotation: slot.rotation,
+      ...(slot.shape === "ellipse"
+        ? {
+            outerOffset: slot.outerOffset,
+            profileExponent: slot.profileExponent,
+          }
+        : {}),
+    }),
+  );
 }
 
 export function duplicateCustomSlots(
@@ -227,61 +201,12 @@ export function duplicateCustomSlots(
   idFactory: IdFactory,
   ids: string[],
 ): { params: CustomLayoutParams; newIds: string[] } {
-  const newIds = ids.map(() => idFactory.createId());
-  const newSlots = [...params.slots];
-
-  ids.forEach((id, index) => {
-    const slotToCopy = params.slots.find((slot) => slot.id === id);
-    if (!slotToCopy) {
-      return;
-    }
-
-    newSlots.push({
-      ...slotToCopy,
-      id: newIds[index],
-      x: slotToCopy.x + 10,
-      y: slotToCopy.y - 10,
-    });
-  });
-
-  return {
-    params: {
-      ...params,
-      slots: newSlots,
-    },
-    newIds,
-  };
+  return duplicateFreeSlots(params, idFactory, ids);
 }
 
 export function trimCustomBaseplate(
   params: CustomLayoutParams,
   effectiveDimensions: LayoutExtents,
 ): CustomLayoutParams {
-  if (
-    params.slots.length === 0 ||
-    effectiveDimensions.width <= 0 ||
-    effectiveDimensions.depth <= 0
-  ) {
-    return params;
-  }
-
-  const newTrayWidth = effectiveDimensions.width;
-  const newTrayDepth = effectiveDimensions.depth;
-  const oldCx = (effectiveDimensions.minX + effectiveDimensions.maxX) / 2;
-  const oldCy = (effectiveDimensions.minY + effectiveDimensions.maxY) / 2;
-  const newCx = newTrayWidth / 2;
-  const newCy = newTrayDepth / 2;
-  const dx = newCx - oldCx;
-  const dy = newCy - oldCy;
-
-  return {
-    ...params,
-    trayWidth: newTrayWidth,
-    trayDepth: newTrayDepth,
-    slots: params.slots.map((slot) => ({
-      ...slot,
-      x: slot.x + dx,
-      y: slot.y + dy,
-    })),
-  };
+  return trimFreeSlotBaseplate(params, effectiveDimensions);
 }
