@@ -2,7 +2,9 @@ import type { BaseHolePresetKey, TrayParams } from "@/types/tray";
 import type {
   AppMode,
   CustomLayoutParams,
+  FreeSlot,
   SimpleSteppedLayoutParams,
+  SimpleSteppedSlot,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import { CUSTOM_LAYOUT_DEFAULTS, CUSTOM_LIMITS } from "@/lib/custom-config";
@@ -20,13 +22,10 @@ import {
 } from "@/lib/stepped-config";
 import { createGroupStructureOverrides } from "@/lib/stepped-group-params";
 import {
-  createCircleSlotSnapshot,
-  createGridSlotSnapshot,
-  findEllipseSlotDefinitionByGeometry,
-  getLegacyCircleSlotDiameter,
-  DEFAULT_ELLIPSE_OUTER_OFFSET,
-  DEFAULT_ELLIPSE_PROFILE_EXPONENT,
-} from "@/lib/slot-definitions";
+  createGridSlotSnapshotFromDefinition,
+  normalizeFreeSlotInstanceSnapshot,
+  normalizeSimpleSteppedSlotInstanceSnapshot,
+} from "@/lib/slot-instance-factory";
 
 export type NormalizableParams =
   | TrayParams
@@ -189,7 +188,7 @@ function normalizeGridParams(params: TrayParams) {
   if (typeof obj.basePlateOnly !== "boolean") {
     obj.basePlateOnly = false;
   }
-  const slotSnapshot = createGridSlotSnapshot(holeDiameter);
+  const slotSnapshot = createGridSlotSnapshotFromDefinition(holeDiameter);
   obj.slotDefinitionId = slotSnapshot.slotDefinitionId;
   obj.slotDiameter =
     typeof obj.slotDiameter === "number" && Number.isFinite(obj.slotDiameter)
@@ -269,53 +268,19 @@ function normalizeCustomParams(params: CustomLayoutParams) {
       throw new Error(`slots[${index}].height: 超出合理范围 (0, 200]`);
     }
 
-    slot.rotation = (((slot.rotation as number) % 360) + 360) % 360;
+    if (typeof slot.id !== "string" || !slot.id) {
+      slot.id = crypto.randomUUID();
+    }
+    Object.assign(
+      slot,
+      normalizeFreeSlotInstanceSnapshot(slot as unknown as FreeSlot),
+    );
     if (slot.shape === "ellipse") {
-      if (
-        typeof slot.outerOffset !== "number" ||
-        !Number.isFinite(slot.outerOffset)
-      ) {
-        slot.outerOffset = DEFAULT_ELLIPSE_OUTER_OFFSET;
-      }
-      if (
-        typeof slot.profileExponent !== "number" ||
-        !Number.isFinite(slot.profileExponent)
-      ) {
-        slot.profileExponent = DEFAULT_ELLIPSE_PROFILE_EXPONENT;
-      }
-      const matchedDefinition = findEllipseSlotDefinitionByGeometry({
-        width,
-        height,
-        outerOffset: slot.outerOffset as number,
-        profileExponent: slot.profileExponent as number,
-      });
-      if (matchedDefinition) {
-        slot.slotDefinitionId = matchedDefinition.id;
-      } else if (typeof slot.slotDefinitionId !== "string") {
-        delete slot.slotDefinitionId;
-      }
       delete slot.slotWidth;
       delete slot.slotHeight;
     } else {
       delete slot.outerOffset;
       delete slot.profileExponent;
-      const snapshot = createCircleSlotSnapshot(width);
-      if (snapshot.slotDefinitionId) {
-        slot.slotDefinitionId = snapshot.slotDefinitionId;
-      } else if (typeof slot.slotDefinitionId !== "string") {
-        delete slot.slotDefinitionId;
-      }
-      slot.slotWidth =
-        typeof slot.slotWidth === "number" && Number.isFinite(slot.slotWidth)
-          ? slot.slotWidth
-          : snapshot.slotWidth;
-      slot.slotHeight =
-        typeof slot.slotHeight === "number" && Number.isFinite(slot.slotHeight)
-          ? slot.slotHeight
-          : snapshot.slotHeight;
-    }
-    if (typeof slot.id !== "string" || !slot.id) {
-      slot.id = crypto.randomUUID();
     }
   }
 
@@ -447,23 +412,15 @@ function normalizeSimpleSteppedParams(params: SimpleSteppedLayoutParams) {
         `slots[${index}].diameter: 超出合理范围 (0, ${SIMPLE_STEPPED_LIMITS.diameter.max}]`,
       );
     }
-    const snapshot = createCircleSlotSnapshot(slot.diameter as number);
-    if (snapshot.slotDefinitionId) {
-      slot.slotDefinitionId = snapshot.slotDefinitionId;
-    } else if (typeof slot.slotDefinitionId !== "string") {
-      delete slot.slotDefinitionId;
-    }
-    slot.effectiveDiameter =
-      typeof slot.effectiveDiameter === "number" &&
-      Number.isFinite(slot.effectiveDiameter)
-        ? slot.effectiveDiameter
-        : getLegacyCircleSlotDiameter(slot.diameter as number);
     if (typeof slot.x !== "number" || !Number.isFinite(slot.x)) {
       throw new Error(`slots[${index}].x: 缺少或无效（需要有限数字）`);
     }
-    if (typeof slot.y !== "number" || !Number.isFinite(slot.y)) {
-      slot.y = 0;
-    }
+    Object.assign(
+      slot,
+      normalizeSimpleSteppedSlotInstanceSnapshot(
+        slot as unknown as SimpleSteppedSlot,
+      ),
+    );
   }
 
   clampField(obj, "firstRowHeight", SIMPLE_STEPPED_LIMITS.firstRowHeight);
@@ -681,24 +638,13 @@ function normalizeSteppedParams(params: SteppedLayoutParams) {
     if (height <= 0 || height > 200) {
       throw new Error(`slots[${index}].height: 超出合理范围 (0, 200]`);
     }
-    slot.rotation = (((slot.rotation as number) % 360) + 360) % 360;
     if (typeof slot.id !== "string" || !slot.id) {
       slot.id = crypto.randomUUID();
     }
-    const snapshot = createCircleSlotSnapshot(width);
-    if (snapshot.slotDefinitionId) {
-      slot.slotDefinitionId = snapshot.slotDefinitionId;
-    } else if (typeof slot.slotDefinitionId !== "string") {
-      delete slot.slotDefinitionId;
-    }
-    slot.slotWidth =
-      typeof slot.slotWidth === "number" && Number.isFinite(slot.slotWidth)
-        ? slot.slotWidth
-        : snapshot.slotWidth;
-    slot.slotHeight =
-      typeof slot.slotHeight === "number" && Number.isFinite(slot.slotHeight)
-        ? slot.slotHeight
-        : snapshot.slotHeight;
+    Object.assign(
+      slot,
+      normalizeFreeSlotInstanceSnapshot(slot as unknown as FreeSlot),
+    );
     delete slot.outerOffset;
     delete slot.profileExponent;
     if (

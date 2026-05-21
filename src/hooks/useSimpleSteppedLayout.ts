@@ -10,7 +10,7 @@ import type {
   SimpleSteppedSlot,
 } from "@/types/custom-tray";
 import { MAX_BUILD_SIZE } from "@/lib/config";
-import { createCircleSlotSnapshot } from "@/lib/slot-definitions";
+import { createSimpleSteppedSlotInstance } from "@/lib/slot-instance-factory";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import {
   calculateSimpleSteppedMinimumTraySize,
@@ -442,16 +442,12 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
               prev.spacing +
               effectiveDiameter / 2;
 
-        const newSlot: SimpleSteppedSlot = {
+        const newSlot = createSimpleSteppedSlotInstance({
           id: crypto.randomUUID(),
           rowId,
-          shape: "circle",
           diameter,
-          slotDefinitionId: createCircleSlotSnapshot(diameter).slotDefinitionId,
-          effectiveDiameter,
           x,
-          y: 0,
-        };
+        });
 
         return normalizeParams({
           ...prev,

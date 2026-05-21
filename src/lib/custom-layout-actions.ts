@@ -9,9 +9,8 @@ import {
   updateFreeSlotRotation,
   type FreeSlotUpdate,
 } from "@/lib/free-slot-editing";
+import { createFreeSlotInstance } from "@/lib/slot-instance-factory";
 import {
-  createCircleSlotSnapshot,
-  findEllipseSlotDefinitionByGeometry,
   getFreeSlotProfileGeometry,
 } from "@/lib/slot-definitions";
 import type { LayoutExtents } from "@/lib/custom-layout-math";
@@ -106,28 +105,14 @@ export function addCustomSlot(
     nextY = lastSlot.y;
   }
 
-  const newSlot: FreeSlot = {
+  const newSlot: FreeSlot = createFreeSlotInstance({
     id: idFactory.createId(),
     x: nextX,
     y: nextY,
-    shape,
     width,
     height: slotHeight,
-    rotation: 0,
-    ...(shape === "circle"
-      ? createCircleSlotSnapshot(width)
-      : {
-          ...ellipseConfig,
-          slotDefinitionId:
-            ellipseConfig?.slotDefinitionId ??
-            findEllipseSlotDefinitionByGeometry({
-              width,
-              height: slotHeight,
-              outerOffset: ellipseConfig?.outerOffset ?? 0,
-              profileExponent: ellipseConfig?.profileExponent ?? 0,
-            })?.id,
-        }),
-  };
+    ellipseConfig: shape === "ellipse" ? ellipseConfig : undefined,
+  });
 
   return {
     ...params,

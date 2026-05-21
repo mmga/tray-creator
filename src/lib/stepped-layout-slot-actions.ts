@@ -10,8 +10,8 @@ import {
   updateFreeSlotRotation,
   type FreeSlotUpdate,
 } from "@/lib/free-slot-editing";
+import { createSteppedSlotInstance } from "@/lib/slot-instance-factory";
 import {
-  createCircleSlotSnapshot,
   getFreeSlotProfileGeometry,
 } from "@/lib/slot-definitions";
 import {
@@ -67,17 +67,13 @@ export function addSteppedSlot(
     nextY = lastSlot.y;
   }
 
-  const newSlot: SteppedSlot = {
+  const newSlot: SteppedSlot = createSteppedSlotInstance({
     id: idFactory.createId(),
     x: nextX,
     y: nextY,
-    shape: "circle",
     width,
-    height: width,
-    ...createCircleSlotSnapshot(width),
-    rotation: 0,
     groupId: params.activeGroupId,
-  };
+  });
 
   return {
     ...params,

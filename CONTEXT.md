@@ -20,6 +20,10 @@ _Avoid_: Inferring slot identity only from width, height, or diameter.
 The generated slot geometry values copied onto a slot instance when it is created, so saved or imported trays remain reproducible even if a slot definition changes later.
 _Avoid_: Recomputing old saved slots from the latest definition without an explicit migration.
 
+**Slot Instance Factory**:
+A module that creates or normalizes slot instances from slot definitions or legacy slot geometry, and writes the slot geometry snapshot needed for reproducible model generation.
+_Avoid_: Reimplementing slot definition matching or snapshot fields separately in each mode.
+
 **Tolerance**:
 The extra clearance included in a slot definition so the generated slot fits the physical base.
 _Avoid_: Mode-specific tolerance, hidden tolerance.
@@ -119,6 +123,7 @@ _Avoid_: Passing mode-specific canvas exceptions directly through the page or vi
 - An ellipse **Slot Definition** includes base width, base height, **Ellipse Outer Offset**, and **Ellipse Profile Exponent**.
 - A **Slot Instance** is created from exactly one **Slot Definition** and records its **Slot Definition ID**.
 - A **Slot Instance** keeps a **Slot Geometry Snapshot** for reproducible generation.
+- A **Slot Instance Factory** is the shared creation seam for writing **Slot Geometry Snapshots** onto new or imported **Slot Instances**.
 - Existing **Slot Instances** do not silently change when a **Slot Definition** changes.
 - Updating an existing slot to the latest **Slot Definition** must be an explicit action.
 - Model generation uses the **Slot Geometry Snapshot**, not the **Slot Definition ID**.

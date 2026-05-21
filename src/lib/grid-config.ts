@@ -1,9 +1,9 @@
 import type { TrayParams } from "@/types/tray";
 import { BASE_PRESETS, SHARED_LAYOUT_LIMITS } from "@/lib/config";
-import { createGridSlotSnapshot } from "@/lib/slot-definitions";
+import { createGridSlotSnapshotFromDefinition } from "@/lib/slot-instance-factory";
 
 export const DEFAULT_PRESET_INDEX = 2;
-const DEFAULT_SLOT_SNAPSHOT = createGridSlotSnapshot(
+const DEFAULT_SLOT_SNAPSHOT = createGridSlotSnapshotFromDefinition(
   BASE_PRESETS[DEFAULT_PRESET_INDEX].diameter,
 );
 
