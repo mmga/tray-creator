@@ -33,6 +33,15 @@ export type NormalizableParams =
   | SimpleSteppedLayoutParams
   | SteppedLayoutParams;
 
+type ParamNormalizationStep<T extends NormalizableParams> = (params: T) => void;
+
+type ParamNormalizationPipeline<T extends NormalizableParams> = {
+  validateRequiredFields: ParamNormalizationStep<T>;
+  migrateLegacyShape: ParamNormalizationStep<T>;
+  normalizeSlotInstances: ParamNormalizationStep<T>;
+  clampAndFillDerivedFields: ParamNormalizationStep<T>;
+};
+
 function getRawSteppedSmoothingRadius(obj: Record<string, unknown>): number {
   if (
     typeof obj.smoothingRadius === "number" &&
@@ -74,27 +83,49 @@ function clampField(
   obj[key] = Math.max(config.min, Math.min(config.max, value));
 }
 
+function runParamNormalizationPipeline<T extends NormalizableParams>(
+  params: T,
+  pipeline: ParamNormalizationPipeline<T>,
+): T {
+  pipeline.validateRequiredFields(params);
+  pipeline.migrateLegacyShape(params);
+  pipeline.normalizeSlotInstances(params);
+  pipeline.clampAndFillDerivedFields(params);
+  return params;
+}
+
 export function normalizeParamsForMode(
   mode: AppMode,
   params: NormalizableParams,
 ): NormalizableParams {
   if (mode === "grid") {
-    normalizeGridParams(params as TrayParams);
-  } else if (mode === "simple-stepped") {
-    normalizeSimpleSteppedParams(params as SimpleSteppedLayoutParams);
-  } else if (mode === "stepped") {
-    normalizeSteppedParams(params as SteppedLayoutParams);
-  } else {
-    normalizeCustomParams(params as CustomLayoutParams);
+    return runParamNormalizationPipeline(
+      params as TrayParams,
+      gridParamNormalizationPipeline,
+    );
   }
-
-  return params;
+  if (mode === "simple-stepped") {
+    return runParamNormalizationPipeline(
+      params as SimpleSteppedLayoutParams,
+      simpleSteppedParamNormalizationPipeline,
+    );
+  }
+  if (mode === "stepped") {
+    return runParamNormalizationPipeline(
+      params as SteppedLayoutParams,
+      steppedParamNormalizationPipeline,
+    );
+  }
+  return runParamNormalizationPipeline(
+    params as CustomLayoutParams,
+    customParamNormalizationPipeline,
+  );
 }
 
 export function migrateCustomParamsToStepped(
   customParams: CustomLayoutParams,
 ): SteppedLayoutParams {
-  normalizeCustomParams(customParams);
+  runParamNormalizationPipeline(customParams, customParamNormalizationPipeline);
   const defaultGroupId = crypto.randomUUID();
   const steppedParams: SteppedLayoutParams = {
     trayWidth: customParams.trayWidth,
@@ -125,11 +156,44 @@ export function migrateCustomParamsToStepped(
     smoothingRadius: STEPPED_LAYOUT_DEFAULTS.smoothingRadius,
     disconnectDistance: STEPPED_LAYOUT_DEFAULTS.disconnectDistance,
   };
-  normalizeSteppedParams(steppedParams);
-  return steppedParams;
+  return runParamNormalizationPipeline(
+    steppedParams,
+    steppedParamNormalizationPipeline,
+  );
 }
 
-function normalizeGridParams(params: TrayParams) {
+const gridParamNormalizationPipeline: ParamNormalizationPipeline<TrayParams> = {
+  validateRequiredFields: validateGridRequiredFields,
+  migrateLegacyShape: migrateGridLegacyShape,
+  normalizeSlotInstances: normalizeGridSlotInstances,
+  clampAndFillDerivedFields: clampAndFillGridDerivedFields,
+};
+
+const customParamNormalizationPipeline: ParamNormalizationPipeline<CustomLayoutParams> =
+  {
+    validateRequiredFields: validateCustomRequiredFields,
+    migrateLegacyShape: migrateCustomLegacyShape,
+    normalizeSlotInstances: normalizeCustomSlotInstances,
+    clampAndFillDerivedFields: clampAndFillCustomDerivedFields,
+  };
+
+const simpleSteppedParamNormalizationPipeline: ParamNormalizationPipeline<SimpleSteppedLayoutParams> =
+  {
+    validateRequiredFields: validateSimpleSteppedRequiredFields,
+    migrateLegacyShape: migrateSimpleSteppedLegacyShape,
+    normalizeSlotInstances: normalizeSimpleSteppedSlotInstances,
+    clampAndFillDerivedFields: clampAndFillSimpleSteppedDerivedFields,
+  };
+
+const steppedParamNormalizationPipeline: ParamNormalizationPipeline<SteppedLayoutParams> =
+  {
+    validateRequiredFields: validateSteppedRequiredFields,
+    migrateLegacyShape: migrateSteppedLegacyShape,
+    normalizeSlotInstances: normalizeSteppedSlotInstances,
+    clampAndFillDerivedFields: clampAndFillSteppedDerivedFields,
+  };
+
+function validateGridRequiredFields(params: TrayParams) {
   const obj = params as unknown as Record<string, unknown>;
   for (const field of [
     "rows",
@@ -147,14 +211,10 @@ function normalizeGridParams(params: TrayParams) {
   if (holeDiameter <= 0 || holeDiameter > 200) {
     throw new Error("holeDiameter: 超出合理范围 (0, 200]");
   }
+}
 
-  clampField(obj, "columns", PARAM_CONFIG.columns);
-  clampField(obj, "rows", PARAM_CONFIG.rows);
-  clampField(obj, "spacing", PARAM_CONFIG.spacing);
-  clampField(obj, "baseThickness", PARAM_CONFIG.baseThickness);
-  clampField(obj, "holeDepth", PARAM_CONFIG.holeDepth);
-  clampField(obj, "cornerRadius", PARAM_CONFIG.cornerRadius);
-
+function migrateGridLegacyShape(params: TrayParams) {
+  const obj = params as unknown as Record<string, unknown>;
   if (typeof obj.spacingIndependent !== "boolean") {
     obj.spacingIndependent = false;
   }
@@ -164,6 +224,44 @@ function normalizeGridParams(params: TrayParams) {
   if (typeof obj.spacingY !== "number") {
     obj.spacingY = obj.spacing;
   }
+  if (typeof obj.boundarySpacing !== "number") {
+    obj.boundarySpacing = DEFAULT_TRAY_PARAMS.boundarySpacing;
+  }
+  if (typeof obj.boundarySpacingIndependent !== "boolean") {
+    obj.boundarySpacingIndependent = false;
+  }
+  if (typeof obj.halfCircleSlots !== "boolean") {
+    obj.halfCircleSlots = false;
+  }
+  if (typeof obj.basePlateOnly !== "boolean") {
+    obj.basePlateOnly = false;
+  }
+  if (typeof obj.enableBaseHole !== "boolean") {
+    obj.enableBaseHole = DEFAULT_TRAY_PARAMS.enableBaseHole;
+  }
+}
+
+function normalizeGridSlotInstances(params: TrayParams) {
+  const obj = params as unknown as Record<string, unknown>;
+  const slotSnapshot = createGridSlotSnapshotFromDefinition(
+    obj.holeDiameter as number,
+  );
+  obj.slotDefinitionId = slotSnapshot.slotDefinitionId;
+  obj.slotDiameter =
+    typeof obj.slotDiameter === "number" && Number.isFinite(obj.slotDiameter)
+      ? obj.slotDiameter
+      : slotSnapshot.slotDiameter;
+}
+
+function clampAndFillGridDerivedFields(params: TrayParams) {
+  const obj = params as unknown as Record<string, unknown>;
+  clampField(obj, "columns", PARAM_CONFIG.columns);
+  clampField(obj, "rows", PARAM_CONFIG.rows);
+  clampField(obj, "spacing", PARAM_CONFIG.spacing);
+  clampField(obj, "baseThickness", PARAM_CONFIG.baseThickness);
+  clampField(obj, "holeDepth", PARAM_CONFIG.holeDepth);
+  clampField(obj, "cornerRadius", PARAM_CONFIG.cornerRadius);
+
   clampField(obj, "spacingX", PARAM_CONFIG.spacingX);
   clampField(obj, "spacingY", PARAM_CONFIG.spacingY);
   if (!obj.spacingIndependent) {
@@ -171,37 +269,16 @@ function normalizeGridParams(params: TrayParams) {
     obj.spacingY = obj.spacing;
   }
 
-  if (typeof obj.boundarySpacing !== "number") {
-    obj.boundarySpacing = DEFAULT_TRAY_PARAMS.boundarySpacing;
-  }
-  if (typeof obj.boundarySpacingIndependent !== "boolean") {
-    obj.boundarySpacingIndependent = false;
-  }
   clampField(obj, "boundarySpacing", PARAM_CONFIG.boundarySpacing);
   if (!obj.boundarySpacingIndependent) {
     obj.boundarySpacing = obj.spacing;
   }
 
-  if (typeof obj.halfCircleSlots !== "boolean") {
-    obj.halfCircleSlots = false;
-  }
-  if (typeof obj.basePlateOnly !== "boolean") {
-    obj.basePlateOnly = false;
-  }
-  const slotSnapshot = createGridSlotSnapshotFromDefinition(holeDiameter);
-  obj.slotDefinitionId = slotSnapshot.slotDefinitionId;
-  obj.slotDiameter =
-    typeof obj.slotDiameter === "number" && Number.isFinite(obj.slotDiameter)
-      ? obj.slotDiameter
-      : slotSnapshot.slotDiameter;
   if (obj.rows !== 1 && obj.columns !== 1) {
     obj.halfCircleSlots = false;
   }
   if (obj.basePlateOnly) {
     obj.halfCircleSlots = false;
-  }
-  if (typeof obj.enableBaseHole !== "boolean") {
-    obj.enableBaseHole = DEFAULT_TRAY_PARAMS.enableBaseHole;
   }
   obj.baseHoleSize = resolveBaseHolePresetKey(obj.holeDiameter as number);
   if (obj.basePlateOnly) {
@@ -216,7 +293,7 @@ function normalizeGridParams(params: TrayParams) {
   }
 }
 
-function normalizeCustomParams(params: CustomLayoutParams) {
+function validateCustomRequiredFields(params: CustomLayoutParams) {
   const obj = params as unknown as Record<string, unknown>;
   for (const field of [
     "trayWidth",
@@ -229,12 +306,6 @@ function normalizeCustomParams(params: CustomLayoutParams) {
     requireNumber(obj, field);
   }
 
-  if (typeof obj.boundarySpacing !== "number") {
-    obj.boundarySpacing = obj.spacing;
-  }
-  if (typeof obj.boundarySpacingIndependent !== "boolean") {
-    obj.boundarySpacingIndependent = false;
-  }
   if (!Array.isArray(obj.slots)) {
     throw new Error("缺少或无效的字段: slots");
   }
@@ -267,10 +338,30 @@ function normalizeCustomParams(params: CustomLayoutParams) {
     if (height <= 0 || height > 200) {
       throw new Error(`slots[${index}].height: 超出合理范围 (0, 200]`);
     }
+  }
+}
 
+function migrateCustomLegacyShape(params: CustomLayoutParams) {
+  const obj = params as unknown as Record<string, unknown>;
+  if (typeof obj.boundarySpacing !== "number") {
+    obj.boundarySpacing = obj.spacing;
+  }
+  if (typeof obj.boundarySpacingIndependent !== "boolean") {
+    obj.boundarySpacingIndependent = false;
+  }
+
+  const slots = obj.slots as Record<string, unknown>[];
+  for (const slot of slots) {
     if (typeof slot.id !== "string" || !slot.id) {
       slot.id = crypto.randomUUID();
     }
+  }
+}
+
+function normalizeCustomSlotInstances(params: CustomLayoutParams) {
+  const obj = params as unknown as Record<string, unknown>;
+  const slots = obj.slots as Record<string, unknown>[];
+  for (const slot of slots) {
     Object.assign(
       slot,
       normalizeFreeSlotInstanceSnapshot(slot as unknown as FreeSlot),
@@ -283,7 +374,11 @@ function normalizeCustomParams(params: CustomLayoutParams) {
       delete slot.profileExponent;
     }
   }
+}
 
+function clampAndFillCustomDerivedFields(params: CustomLayoutParams) {
+  const obj = params as unknown as Record<string, unknown>;
+  const slots = obj.slots as Record<string, unknown>[];
   clampField(obj, "trayWidth", CUSTOM_LIMITS.trayWidth);
   clampField(obj, "trayDepth", CUSTOM_LIMITS.trayDepth);
   clampField(obj, "spacing", CUSTOM_LIMITS.spacing);
@@ -313,7 +408,7 @@ function normalizeCustomParams(params: CustomLayoutParams) {
   }
 }
 
-function normalizeSimpleSteppedParams(params: SimpleSteppedLayoutParams) {
+function validateSimpleSteppedRequiredFields(params: SimpleSteppedLayoutParams) {
   const obj = params as unknown as Record<string, unknown>;
 
   if (
@@ -346,6 +441,10 @@ function normalizeSimpleSteppedParams(params: SimpleSteppedLayoutParams) {
   ]) {
     requireNumber(obj, field);
   }
+}
+
+function migrateSimpleSteppedLegacyShape(params: SimpleSteppedLayoutParams) {
+  const obj = params as unknown as Record<string, unknown>;
 
   if (!Array.isArray(obj.rows)) {
     obj.rows = [];
@@ -373,16 +472,22 @@ function normalizeSimpleSteppedParams(params: SimpleSteppedLayoutParams) {
     }
   }
 
-  const rowIds = new Set(rows.map((row) => row.id as string));
   if (rows.length === 0 && slots.length > 0) {
-    const defaultRowId = crypto.randomUUID();
     rows.push({
-      id: defaultRowId,
+      id: crypto.randomUUID(),
       name: "行 1",
       slotIds: [],
     });
-    rowIds.add(defaultRowId);
   }
+}
+
+function normalizeSimpleSteppedSlotInstances(
+  params: SimpleSteppedLayoutParams,
+) {
+  const obj = params as unknown as Record<string, unknown>;
+  const rows = obj.rows as Record<string, unknown>[];
+  const slots = obj.slots as Record<string, unknown>[];
+  const rowIds = new Set(rows.map((row) => row.id as string));
 
   for (let index = 0; index < slots.length; index += 1) {
     const slot = slots[index];
@@ -422,6 +527,14 @@ function normalizeSimpleSteppedParams(params: SimpleSteppedLayoutParams) {
       ),
     );
   }
+}
+
+function clampAndFillSimpleSteppedDerivedFields(
+  params: SimpleSteppedLayoutParams,
+) {
+  const obj = params as unknown as Record<string, unknown>;
+  const rows = obj.rows as Record<string, unknown>[];
+  const slots = obj.slots as Record<string, unknown>[];
 
   clampField(obj, "firstRowHeight", SIMPLE_STEPPED_LIMITS.firstRowHeight);
   clampField(obj, "stepHeight", SIMPLE_STEPPED_LIMITS.stepHeight);
@@ -468,7 +581,7 @@ function normalizeSimpleSteppedParams(params: SimpleSteppedLayoutParams) {
   normalized.trayDepth = Math.max(fallbackDepth, dimensions.depth);
 }
 
-function normalizeSteppedParams(params: SteppedLayoutParams) {
+function validateSteppedRequiredFields(params: SteppedLayoutParams) {
   const obj = params as unknown as Record<string, unknown>;
   for (const field of ["trayWidth", "trayDepth", "spacing", "holeDepth"]) {
     requireNumber(obj, field);
@@ -476,7 +589,10 @@ function normalizeSteppedParams(params: SteppedLayoutParams) {
   if (!Array.isArray(obj.slots)) {
     throw new Error("缺少或无效的字段: slots");
   }
+}
 
+function migrateSteppedLegacyShape(params: SteppedLayoutParams) {
+  const obj = params as unknown as Record<string, unknown>;
   let slots = obj.slots as Record<string, unknown>[];
   const hasLegacyBottomHeight = slots.some(
     (slot) => typeof slot.bottomHeight === "number" && !slot.groupId,
@@ -548,8 +664,15 @@ function normalizeSteppedParams(params: SteppedLayoutParams) {
   if (!Array.isArray(obj.groups)) {
     throw new Error("缺少或无效的字段: groups");
   }
+  normalizeSteppedGroups(params);
+}
 
+function normalizeSteppedGroups(params: SteppedLayoutParams) {
+  const obj = params as unknown as Record<string, unknown>;
+  const rawSmoothingRadius = getRawSteppedSmoothingRadius(obj);
+  const rawDisconnectDistance = getRawSteppedDisconnectDistance(obj);
   const groups = obj.groups as Record<string, unknown>[];
+
   for (let index = 0; index < groups.length; index += 1) {
     const group = groups[index];
     if (!group || typeof group !== "object") {
@@ -583,23 +706,12 @@ function normalizeSteppedParams(params: SteppedLayoutParams) {
     ) {
       group.groupDisconnectDistance = rawDisconnectDistance;
     }
-    clampField(
-      group as Record<string, unknown>,
-      "bottomHeight",
-      STEPPED_LIMITS.bottomHeight,
-    );
-    clampField(
-      group as Record<string, unknown>,
-      "groupSmoothingRadius",
-      STEPPED_LIMITS.smoothingRadius,
-    );
-    clampField(
-      group as Record<string, unknown>,
-      "groupDisconnectDistance",
-      STEPPED_LIMITS.disconnectDistance,
-    );
   }
+}
 
+function normalizeSteppedSlotInstances(params: SteppedLayoutParams) {
+  const obj = params as unknown as Record<string, unknown>;
+  const slots = obj.slots as Record<string, unknown>[];
   const groupIds = new Set(
     (obj.groups as { id: string }[]).map((group) => group.id),
   );
@@ -654,6 +766,31 @@ function normalizeSteppedParams(params: SteppedLayoutParams) {
       slot.groupId = (obj.groups as { id: string }[])[0]?.id ?? "";
     }
     delete slot.bottomHeight;
+  }
+}
+
+function clampAndFillSteppedDerivedFields(params: SteppedLayoutParams) {
+  const obj = params as unknown as Record<string, unknown>;
+  const groups = obj.groups as Record<string, unknown>[];
+  const rawSmoothingRadius = getRawSteppedSmoothingRadius(obj);
+  const rawDisconnectDistance = getRawSteppedDisconnectDistance(obj);
+
+  for (const group of groups) {
+    clampField(
+      group as Record<string, unknown>,
+      "bottomHeight",
+      STEPPED_LIMITS.bottomHeight,
+    );
+    clampField(
+      group as Record<string, unknown>,
+      "groupSmoothingRadius",
+      STEPPED_LIMITS.smoothingRadius,
+    );
+    clampField(
+      group as Record<string, unknown>,
+      "groupDisconnectDistance",
+      STEPPED_LIMITS.disconnectDistance,
+    );
   }
 
   clampField(obj, "trayWidth", STEPPED_LIMITS.trayWidth);

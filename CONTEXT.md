@@ -24,6 +24,10 @@ _Avoid_: Recomputing old saved slots from the latest definition without an expli
 A module that creates or normalizes slot instances from slot definitions or legacy slot geometry, and writes the slot geometry snapshot needed for reproducible model generation.
 _Avoid_: Reimplementing slot definition matching or snapshot fields separately in each mode.
 
+**Param Normalization Pipeline**:
+A module that converts imported, legacy, or draft Mode params into current runtime params through a fixed sequence: validate required fields, migrate legacy shape, normalize Slot Instances, then clamp and fill derived fields.
+_Avoid_: Mixing parameter file wrapper parsing, browser draft storage, or UI side effects into parameter normalization.
+
 **Tolerance**:
 The extra clearance included in a slot definition so the generated slot fits the physical base.
 _Avoid_: Mode-specific tolerance, hidden tolerance.
@@ -124,6 +128,8 @@ _Avoid_: Passing mode-specific canvas exceptions directly through the page or vi
 - A **Slot Instance** is created from exactly one **Slot Definition** and records its **Slot Definition ID**.
 - A **Slot Instance** keeps a **Slot Geometry Snapshot** for reproducible generation.
 - A **Slot Instance Factory** is the shared creation seam for writing **Slot Geometry Snapshots** onto new or imported **Slot Instances**.
+- A **Param Normalization Pipeline** runs before imported or loaded params become runtime **Mode** params.
+- A **Param Normalization Pipeline** uses the **Slot Instance Factory** when it writes or repairs **Slot Geometry Snapshots**.
 - Existing **Slot Instances** do not silently change when a **Slot Definition** changes.
 - Updating an existing slot to the latest **Slot Definition** must be an explicit action.
 - Model generation uses the **Slot Geometry Snapshot**, not the **Slot Definition ID**.

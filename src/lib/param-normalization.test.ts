@@ -5,7 +5,11 @@ import {
   migrateCustomParamsToStepped,
   normalizeParamsForMode,
 } from "@/lib/param-normalization";
-import type { CustomLayoutParams, SteppedLayoutParams } from "@/types/custom-tray";
+import type {
+  CustomLayoutParams,
+  SimpleSteppedLayoutParams,
+  SteppedLayoutParams,
+} from "@/types/custom-tray";
 import type { TrayParams } from "@/types/tray";
 
 describe("param normalization", () => {
@@ -59,5 +63,86 @@ describe("param normalization", () => {
       slotWidth: 40.4,
       slotHeight: 40.4,
     });
+  });
+
+  it("normalizes simple stepped legacy rows before slot snapshots and derived size", () => {
+    const normalized = normalizeParamsForMode("simple-stepped", {
+      stepHeight: 5,
+      rowGap: 0,
+      spacing: 4,
+      outerMargin: 4,
+      holeDepth: 3,
+      rows: [],
+      slots: [
+        {
+          id: "",
+          rowId: "missing-row",
+          shape: "ellipse",
+          diameter: 40,
+          x: 12,
+          y: Number.NaN,
+        },
+      ],
+    } as unknown as SimpleSteppedLayoutParams) as SimpleSteppedLayoutParams;
+
+    expect(normalized.rows).toHaveLength(1);
+    expect(normalized.rows[0].slotIds).toEqual([normalized.slots[0].id]);
+    expect(normalized.slots[0]).toMatchObject({
+      rowId: normalized.rows[0].id,
+      shape: "circle",
+      diameter: 40,
+      slotDefinitionId: "circle-40",
+      effectiveDiameter: 40.4,
+      y: 0,
+    });
+    expect(normalized.trayWidth).toBeGreaterThan(0);
+    expect(normalized.trayDepth).toBeGreaterThan(0);
+  });
+
+  it("migrates stepped legacy groups before slot snapshots and derived clamps", () => {
+    const normalized = normalizeParamsForMode("stepped", {
+      trayWidth: 40,
+      trayDepth: 300,
+      spacing: 1,
+      holeDepth: 3,
+      bridgeRadius: 25,
+      slots: [
+        {
+          id: "",
+          x: 20,
+          y: 30,
+          shape: "ellipse",
+          width: 40,
+          height: 25,
+          rotation: -45,
+          bottomHeight: 8,
+        },
+      ],
+    } as unknown as SteppedLayoutParams) as SteppedLayoutParams;
+
+    expect(normalized.groups).toHaveLength(1);
+    expect(normalized.activeGroupId).toBe(normalized.groups[0].id);
+    expect(normalized.groups[0]).toMatchObject({
+      bottomHeight: 8,
+      groupSmoothingRadius: 25,
+    });
+    expect(normalized.slots[0]).toMatchObject({
+      shape: "circle",
+      width: 40,
+      height: 40,
+      rotation: 315,
+      groupId: normalized.groups[0].id,
+      slotDefinitionId: "circle-40",
+      slotWidth: 40.4,
+      slotHeight: 40.4,
+    });
+    expect("bottomHeight" in normalized.slots[0]).toBe(false);
+    expect("bridgeRadius" in (normalized as unknown as Record<string, unknown>)).toBe(
+      false,
+    );
+    expect(normalized.trayWidth).toBe(50);
+    expect(normalized.trayDepth).toBe(260);
+    expect(normalized.spacing).toBe(2);
+    expect(normalized.smoothingRadius).toBe(25);
   });
 });
