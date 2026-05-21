@@ -72,6 +72,20 @@ export function exportParams(mode: AppMode, params: ExportableParams) {
   downloadParamFile(mode, params);
 }
 
+function hasWrappedParamFileShape(
+  data: Record<string, unknown>,
+): data is Record<keyof ParamFile, unknown> {
+  return "version" in data || "mode" in data || "params" in data;
+}
+
+function isLegacyCustomParamObject(data: Record<string, unknown>) {
+  return (
+    Array.isArray(data.slots) &&
+    !Array.isArray(data.groups) &&
+    !Array.isArray(data.rows)
+  );
+}
+
 export function parseParamFileObject(
   data: unknown,
   expectedMode: AppMode,
@@ -84,7 +98,16 @@ export function parseParamFileObject(
     throw new Error("文件内容无效");
   }
 
-  const paramFile = data as ParamFile;
+  const rawData = data as Record<string, unknown>;
+
+  if (!hasWrappedParamFileShape(rawData)) {
+    if (expectedMode === "stepped" && isLegacyCustomParamObject(rawData)) {
+      return migrateCustomParamsToStepped(rawData as CustomLayoutParams);
+    }
+    return normalizeParamsForMode(expectedMode, rawData as ExportableParams);
+  }
+
+  const paramFile = rawData as unknown as ParamFile;
   if (paramFile.version !== CURRENT_VERSION) {
     throw new Error(`不支持的版本号: ${paramFile.version}`);
   }

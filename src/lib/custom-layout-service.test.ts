@@ -100,6 +100,8 @@ describe("custom layout service", () => {
     ).toBe("tray_custom_260x200_2slots.stl");
 
     const paramsBlob = buildCustomParamsBlob(params);
+    await expect(paramsBlob.text()).resolves.toContain('"version": 1');
+    await expect(paramsBlob.text()).resolves.toContain('"mode": "custom"');
     await expect(paramsBlob.text()).resolves.toContain('"trayWidth": 260');
 
     await exportCustomModelFiles(
@@ -123,5 +125,8 @@ describe("custom layout service", () => {
     expect(downloadPort.downloadBlob.mock.calls[1]?.[1]).toBe(
       "tray_custom_120x80_2slots.json",
     );
+    await expect(
+      downloadPort.downloadBlob.mock.calls[1]?.[0].text(),
+    ).resolves.toContain('"mode": "custom"');
   });
 });

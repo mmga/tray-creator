@@ -119,6 +119,21 @@ describe("param-io", () => {
     expect(parsed.slotDiameter).toBeCloseTo(32.4, 5);
   });
 
+  it("imports legacy raw grid exports without a wrapper", () => {
+    const parsed = parseParamFileObject(
+      {
+        ...DEFAULT_TRAY_PARAMS,
+        rows: 99,
+        columns: 99,
+      },
+      "grid",
+    ) as TrayParams;
+
+    expect(parsed.rows).toBe(6);
+    expect(parsed.columns).toBe(6);
+    expect(parsed.slotDefinitionId).toBe("circle-32");
+  });
+
   it("preserves imported half-circle slots only for single-axis grids", () => {
     const singleRow = parseParamFileObject(
       {
@@ -229,6 +244,40 @@ describe("param-io", () => {
       bottomHeight: 10,
       useGroupSmoothingRadius: false,
       useGroupDisconnectDistance: false,
+    });
+  });
+
+  it("imports legacy raw custom exports without a wrapper", () => {
+    const parsed = parseParamFileObject(
+      {
+        ...CUSTOM_LAYOUT_DEFAULTS,
+        trayWidth: 260,
+        trayDepth: 260,
+        slots: [
+          {
+            id: "slot-1",
+            x: 130,
+            y: 130,
+            shape: "circle",
+            width: 25,
+            height: 25,
+            slotDefinitionId: "circle-25",
+            slotWidth: 25.2,
+            slotHeight: 25.2,
+            rotation: 0,
+          },
+        ],
+      },
+      "custom",
+    ) as CustomLayoutParams;
+
+    expect(parsed.trayWidth).toBe(260);
+    expect(parsed.trayDepth).toBe(260);
+    expect(parsed.slots[0]).toMatchObject({
+      id: "slot-1",
+      slotDefinitionId: "circle-25",
+      slotWidth: 25.2,
+      slotHeight: 25.2,
     });
   });
 

@@ -3,6 +3,7 @@ import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { LayoutExtents } from "@/lib/custom-layout-math";
 import type { CustomWorkerPort, DownloadPort } from "@/lib/model-ports";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
+import { createParamBlob } from "@/lib/param-io";
 import { generateCustomSTLFilename } from "@/lib/stl-export";
 import type { CustomLayoutParams } from "@/types/custom-tray";
 
@@ -46,9 +47,7 @@ export function getCustomSTLFilename(
 }
 
 export function buildCustomParamsBlob(params: CustomLayoutParams): Blob {
-  return new Blob([JSON.stringify(params, null, 2)], {
-    type: "application/json",
-  });
+  return createParamBlob("custom", params);
 }
 
 export async function exportCustomModelFiles(

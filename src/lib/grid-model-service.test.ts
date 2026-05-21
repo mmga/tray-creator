@@ -55,6 +55,8 @@ describe("grid model service", () => {
 
     const paramsBlob = buildGridParamsBlob(DEFAULT_TRAY_PARAMS);
     expect(paramsBlob.type).toBe("application/json");
+    await expect(paramsBlob.text()).resolves.toContain('"version": 1');
+    await expect(paramsBlob.text()).resolves.toContain('"mode": "grid"');
     await expect(paramsBlob.text()).resolves.toContain('"rows": 5');
 
     await exportGridModelFiles(
@@ -77,8 +79,11 @@ describe("grid model service", () => {
     expect(downloadPort.downloadBlob.mock.calls[1]?.[1]).toBe(
       "tray_2x5_32mm.json",
     );
-    await expect(downloadPort.downloadBlob.mock.calls[1]?.[0].text()).resolves.toContain(
-      '"columns": 2',
-    );
+    await expect(
+      downloadPort.downloadBlob.mock.calls[1]?.[0].text(),
+    ).resolves.toContain('"mode": "grid"');
+    await expect(
+      downloadPort.downloadBlob.mock.calls[1]?.[0].text(),
+    ).resolves.toContain('"columns": 2');
   });
 });

@@ -1,6 +1,7 @@
 import type * as THREE from "three";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
+import { createParamBlob } from "@/lib/param-io";
 import type { DownloadPort, GridWorkerPort } from "@/lib/model-ports";
 import { generateSTLFilename } from "@/lib/stl-export";
 import type { TrayParams } from "@/types/tray";
@@ -29,9 +30,7 @@ export function getGridSTLFilename(params: TrayParams): string {
 }
 
 export function buildGridParamsBlob(params: TrayParams): Blob {
-  return new Blob([JSON.stringify(params, null, 2)], {
-    type: "application/json",
-  });
+  return createParamBlob("grid", params);
 }
 
 export async function exportGridModelFiles(
