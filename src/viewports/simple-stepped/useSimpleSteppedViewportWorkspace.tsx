@@ -3,6 +3,7 @@
 import { useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 import type { useSimpleSteppedLayout } from "@/hooks/useSimpleSteppedLayout";
+import { resolveSimpleSteppedSlotMoveScope } from "@/lib/simple-stepped-projection";
 import { buildSimpleSteppedLayoutEditorViewportModel } from "@/viewports/layout-editor/simpleSteppedViewportModel";
 import { ViewportTabs } from "@/viewports/shared/ViewportTabs";
 import type { ModeViewportWorkspace } from "@/viewports/types";
@@ -25,24 +26,9 @@ export function useSimpleSteppedViewportWorkspace({
   const resetTransientState = useCallback(() => {}, []);
 
   const slotMoveScopeResolver = useCallback(
-    (draggingId: string, selectedIds: string[]) => {
-      const draggingSlot = model.params.slots.find((slot) => slot.id === draggingId);
-      if (!draggingSlot) {
-        return [];
-      }
-
-      const sameRowSelected = selectedIds.filter((id) => {
-        const slot = model.params.slots.find((candidate) => candidate.id === id);
-        return slot?.rowId === draggingSlot.rowId;
-      });
-
-      if (sameRowSelected.length > 0) {
-        return sameRowSelected;
-      }
-
-      return [draggingId];
-    },
-    [model.params.slots],
+    (draggingId: string, selectedIds: string[]) =>
+      resolveSimpleSteppedSlotMoveScope(model.params, draggingId, selectedIds),
+    [model.params],
   );
 
   const canvas = useMemo(

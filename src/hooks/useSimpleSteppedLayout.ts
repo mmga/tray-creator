@@ -18,17 +18,16 @@ import {
   clampSimpleSteppedSlotUpdates,
   deriveSimpleSteppedLayout,
   getSimpleSteppedEffectiveDiameter,
+  mapSimpleSteppedCanvasUpdatesToLocal,
   type SimpleSteppedDerivedLayout,
-  type SimpleSteppedSlotUpdate,
-} from "@/lib/simple-stepped-layout";
+} from "@/lib/simple-stepped-projection";
+import type { CanvasSlotUpdate } from "@/lib/canvas-types";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
 import { generateSimpleSteppedSTLFilename } from "@/lib/stl-export";
 import { useUndoHistory } from "@/hooks/useUndoHistory";
 import { usePreviewLifecycle } from "@/hooks/usePreviewLifecycle";
 import { trayWorkerService } from "@/lib/worker/worker-service";
 import { downloadParamFile } from "@/lib/param-io";
-
-type CanvasSlotUpdate = { id: string; x: number; y: number; rotation?: number };
 
 export interface UseSimpleSteppedLayoutReturn {
   params: SimpleSteppedLayoutParams;
@@ -473,41 +472,6 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
     [invalidatePreview, normalizeParams, pushState],
   );
 
-  const mapCanvasUpdatesToLocal = useCallback(
-    (
-      current: SimpleSteppedLayoutParams,
-      updates: CanvasSlotUpdate[],
-    ): SimpleSteppedSlotUpdate[] => {
-      const derived = deriveSimpleSteppedLayout(current);
-      const rowById = new Map(
-        derived.activeRows.map((row) => [row.id, row] as const),
-      );
-      const slotById = new Map(
-        current.slots.map((slot) => [slot.id, slot] as const),
-      );
-
-      return updates
-        .map((update) => {
-          const slot = slotById.get(update.id);
-          if (!slot) {
-            return null;
-          }
-          const row = rowById.get(slot.rowId);
-          if (!row) {
-            return null;
-          }
-
-          return {
-            id: update.id,
-            x: update.x - derived.trayWidth / 2 + row.holeCenterX,
-            y: update.y - row.centerY,
-          };
-        })
-        .filter((update): update is SimpleSteppedSlotUpdate => Boolean(update));
-    },
-    [],
-  );
-
   const applyMultipleCanvasSlotUpdates = useCallback(
     (updates: CanvasSlotUpdate[], saveHistory: boolean) => {
       internalSetParams((prev) => {
@@ -517,7 +481,7 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
 
         const localUpdates = clampSimpleSteppedSlotUpdates(
           prev,
-          mapCanvasUpdatesToLocal(prev, updates),
+          mapSimpleSteppedCanvasUpdatesToLocal(prev, updates),
         );
         const updatesMap = new Map(
           localUpdates.map((update) => [update.id, update] as const),
@@ -538,7 +502,7 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
       });
       invalidatePreview();
     },
-    [invalidatePreview, mapCanvasUpdatesToLocal, normalizeParams, pushState],
+    [invalidatePreview, normalizeParams, pushState],
   );
 
   const updateSlotPosition = useCallback(
