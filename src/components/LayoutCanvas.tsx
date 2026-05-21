@@ -14,6 +14,11 @@ import {
   sanitizeCanvasSelectedIds,
   shouldApplyCanvasSelectionBox,
 } from "@/lib/canvas-selection-model";
+import {
+  buildLayoutCanvasDragUpdates,
+  calculateLayoutCanvasMinimumTrayBounds,
+  resolveLayoutCanvasDragStart,
+} from "@/lib/layout-canvas-interaction";
 import { calculateCanvasDragSnap } from "@/lib/canvas-snap-engine";
 import type {
   CanvasGuideLine,
@@ -354,23 +359,11 @@ export default function LayoutCanvas({
       : null;
 
   const minimumTrayBounds = useMemo(() => {
-    if (!rowBands || rowBands.length === 0) {
-      return {
-        width: effectiveBaseplate.width,
-        depth: effectiveBaseplate.height,
-      };
-    }
-
-    const minBandX = Math.min(...rowBands.map((band) => band.x));
-    const maxBandX = Math.max(...rowBands.map((band) => band.x + band.width));
-    const minBandY = Math.min(...rowBands.map((band) => band.y));
-    const maxBandY = Math.max(...rowBands.map((band) => band.y + band.depth));
-
-    return {
-      width: Math.max(0, maxBandX - minBandX),
-      depth: Math.max(0, maxBandY - minBandY),
-    };
-  }, [effectiveBaseplate.height, effectiveBaseplate.width, rowBands]);
+    return calculateLayoutCanvasMinimumTrayBounds({
+      rowBands,
+      effectiveBaseplate,
+    });
+  }, [effectiveBaseplate, rowBands]);
 
   const trayResizeHandleSize = 10 / zoom;
   const trayResizeHitSize = 14 / zoom;
@@ -579,20 +572,13 @@ export default function LayoutCanvas({
 
         setGuideLines(dragSnap.guides);
 
-        const draggingOrigin = dragOrigins.get(effectiveDraggingId);
-        if (!draggingOrigin) {
-          return;
-        }
-
-        const finalDeltaX = dragSnap.finalX - draggingOrigin.x;
-        const finalDeltaY = dragSnap.finalY - draggingOrigin.y;
-        const liveUpdates: CanvasSlotUpdate[] = [];
-        dragOrigins.forEach((origin, id) => {
-          liveUpdates.push({
-            id,
-            x: origin.x + finalDeltaX,
-            y: origin.y + finalDeltaY,
-          });
+        const liveUpdates = buildLayoutCanvasDragUpdates({
+          draggingId: effectiveDraggingId,
+          dragOrigins,
+          finalDraggingPosition: {
+            x: dragSnap.finalX,
+            y: dragSnap.finalY,
+          },
         });
 
         scheduleLiveUpdates(liveUpdates);
@@ -650,11 +636,14 @@ export default function LayoutCanvas({
           : nextSelection.has(slotId)
             ? nextSelection
             : new Set<string>([slotId]);
-      const scopedDragIds = slotMoveScopeResolver
-        ? slotMoveScopeResolver(slotId, Array.from(dragSelection))
-        : Array.from(dragSelection);
+      const dragStart = resolveLayoutCanvasDragStart({
+        draggingId: slotId,
+        selectedIds: Array.from(dragSelection),
+        slotById,
+        slotMoveScopeResolver,
+      });
 
-      if (scopedDragIds.length === 0) {
+      if (!dragStart) {
         setDraggingId(null);
         dragStartRef.current = null;
         editInteractionChanged?.(false);
@@ -665,17 +654,9 @@ export default function LayoutCanvas({
       editInteractionChanged?.(true);
       setDraggingId(slotId);
 
-      const origins = new Map<string, { x: number; y: number }>();
-      scopedDragIds.forEach((id) => {
-        const slot = slotById.get(id);
-        if (slot) {
-          origins.set(id, { x: slot.x, y: slot.y });
-        }
-      });
-
       dragStartRef.current = {
         mouseStart: { x: svgPoint.x, y: svgPoint.y },
-        slotOrigins: origins,
+        slotOrigins: dragStart.origins,
       };
       return;
     }
