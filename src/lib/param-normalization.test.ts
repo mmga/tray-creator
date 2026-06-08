@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
+import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
+import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import {
   migrateCustomParamsToStepped,
   normalizeParamsForMode,
@@ -13,6 +15,77 @@ import type {
 import type { TrayParams } from "@/types/tray";
 
 describe("param normalization", () => {
+  it("recognizes legacy 100mm slots across all modes", () => {
+    const grid = normalizeParamsForMode("grid", {
+      ...DEFAULT_TRAY_PARAMS,
+      holeDiameter: 100,
+      slotDefinitionId: undefined,
+      slotDiameter: undefined,
+    } as unknown as TrayParams) as TrayParams;
+    const custom = normalizeParamsForMode("custom", {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      slots: [
+        {
+          id: "custom-100",
+          x: 100,
+          y: 100,
+          shape: "circle",
+          width: 100,
+          height: 100,
+          rotation: 0,
+        },
+      ],
+    } as CustomLayoutParams) as CustomLayoutParams;
+    const simpleStepped = normalizeParamsForMode("simple-stepped", {
+      ...SIMPLE_STEPPED_LAYOUT_DEFAULTS,
+      rows: [{ id: "row-1", name: "前排", slotIds: ["simple-100"] }],
+      slots: [
+        {
+          id: "simple-100",
+          rowId: "row-1",
+          shape: "circle",
+          diameter: 100,
+          x: 0,
+          y: 0,
+        },
+      ],
+    } as SimpleSteppedLayoutParams) as SimpleSteppedLayoutParams;
+    const stepped = normalizeParamsForMode("stepped", {
+      ...STEPPED_LAYOUT_DEFAULTS,
+      slots: [
+        {
+          id: "stepped-100",
+          x: 100,
+          y: 100,
+          shape: "circle",
+          width: 100,
+          height: 100,
+          rotation: 0,
+          groupId: STEPPED_LAYOUT_DEFAULTS.activeGroupId,
+        },
+      ],
+    } as SteppedLayoutParams) as SteppedLayoutParams;
+
+    expect(grid).toMatchObject({
+      slotDefinitionId: "circle-100",
+      slotDiameter: 100.4,
+    });
+    expect(custom.slots[0]).toMatchObject({
+      slotDefinitionId: "circle-100",
+      slotWidth: 100.4,
+      slotHeight: 100.4,
+    });
+    expect(simpleStepped.slots[0]).toMatchObject({
+      slotDefinitionId: "circle-100",
+      effectiveDiameter: 100.4,
+    });
+    expect(stepped.slots[0]).toMatchObject({
+      slotDefinitionId: "circle-100",
+      slotWidth: 100.4,
+      slotHeight: 100.4,
+    });
+  });
+
   it("normalizes grid params without requiring a param file wrapper", () => {
     const normalized = normalizeParamsForMode("grid", {
       ...DEFAULT_TRAY_PARAMS,

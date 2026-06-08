@@ -258,6 +258,10 @@ import ParameterPanel from "@/components/ParameterPanel";
 import SimpleSteppedPanel from "@/components/SimpleSteppedPanel";
 import SteppedPanel from "@/components/SteppedPanel";
 
+const HUNDRED_MM_PRESET = BASE_PRESETS.find(
+  (preset) => preset.diameter === 100,
+)!;
+
 function createSteppedParams(overrides?: Partial<React.ComponentProps<typeof SteppedPanel>["params"]>) {
   return {
     ...STEPPED_LAYOUT_DEFAULTS,
@@ -385,7 +389,7 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
     );
 
     fireEvent.click(
-      screen.getByRole("button", { name: BASE_PRESETS[0].name }),
+      screen.getByRole("button", { name: HUNDRED_MM_PRESET.name }),
     );
     fireEvent.click(
       screen.getByRole("switch", {
@@ -401,7 +405,7 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
     expect(updateParam).toHaveBeenNthCalledWith(
       1,
       "holeDiameter",
-      BASE_PRESETS[0].diameter,
+      HUNDRED_MM_PRESET.diameter,
     );
     expect(updateParam).toHaveBeenNthCalledWith(
       2,
@@ -781,7 +785,7 @@ describe("CustomPanel", { timeout: 15000 }, () => {
 
     fireEvent.click(
       screen.getByRole("button", {
-        name: String(BASE_PRESETS[0].diameter),
+        name: String(HUNDRED_MM_PRESET.diameter),
       }),
     );
     fireEvent.click(
@@ -790,7 +794,7 @@ describe("CustomPanel", { timeout: 15000 }, () => {
       }),
     );
 
-    expect(onAddSlot).toHaveBeenNthCalledWith(1, BASE_PRESETS[0].diameter);
+    expect(onAddSlot).toHaveBeenNthCalledWith(1, HUNDRED_MM_PRESET.diameter);
     expect(onAddSlot).toHaveBeenNthCalledWith(
       2,
       ELLIPSE_PRESETS[0].width,
@@ -922,7 +926,11 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
     fireEvent.change(screen.getByDisplayValue("前排"), {
       target: { value: "第一排" },
     });
-    fireEvent.click(screen.getAllByRole("button", { name: /25/ })[0]!);
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: String(HUNDRED_MM_PRESET.diameter),
+      }),
+    );
     fireEvent.click(screen.getByRole("button", { name: "清空本行" }));
     fireEvent.click(screen.getByText("后排"));
     fireEvent.click(screen.getAllByTitle("下移")[0]!);
@@ -930,7 +938,10 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
     fireEvent.click(screen.getByRole("button", { name: "新建行" }));
 
     expect(onRenameRow).toHaveBeenCalledWith("row-1", "第一排");
-    expect(onAddSlotToRow).toHaveBeenCalledWith("row-1", BASE_PRESETS[0].diameter);
+    expect(onAddSlotToRow).toHaveBeenCalledWith(
+      "row-1",
+      HUNDRED_MM_PRESET.diameter,
+    );
     expect(onClearRow).toHaveBeenCalledWith("row-1");
     expect(onSetActiveRow).toHaveBeenCalledWith("row-2");
     expect(onReorderRows).toHaveBeenCalledWith(0, 1);
@@ -1468,7 +1479,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
 
     fireEvent.click(
       screen.getByRole("button", {
-        name: String(BASE_PRESETS[0].diameter),
+        name: String(HUNDRED_MM_PRESET.diameter),
       }),
     );
     fireEvent.click(
@@ -1484,7 +1495,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
       screen.getByRole("button", { name: "设置槽群断连距离:2" }),
     );
 
-    expect(onAddSlot).toHaveBeenCalledWith(BASE_PRESETS[0].diameter);
+    expect(onAddSlot).toHaveBeenCalledWith(HUNDRED_MM_PRESET.diameter);
     expect(updateParam).toHaveBeenNthCalledWith(1, "spacing", 6);
     expect(updateParam).toHaveBeenNthCalledWith(2, "holeDepth", 3.2);
     expect(updateParam).toHaveBeenNthCalledWith(3, "smoothingRadius", 15);
