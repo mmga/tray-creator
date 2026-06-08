@@ -177,12 +177,17 @@ _Avoid_: Passing mode-specific canvas exceptions directly through the page or vi
 - Importing an external parameter file clears the current **Draft Binding**.
 - Multiple layout modes may expose different subsets of **Slot Definitions**.
 - When two modes expose the same **Slot Definition**, they must use the same geometry.
+- Grid, custom, simple stepped, and stepped modes all expose the 100mm circular **Slot Definition**.
+- The 100mm circular **Slot Definition** has a 100mm **Base Size** and a 100.4mm **Final Slot Size**.
 - A **Base Size** is not enough to reproduce a slot unless its **Tolerance** and shape-specific geometry are also known.
 
 ## Example Dialogue
 
 > **Dev:** "Can grid mode and stepped mode both offer a 40mm circular slot?"
 > **Domain expert:** "Yes, and if they do, both must use the same slot definition, including the same clearance."
+>
+> **Dev:** "Does the 100mm option generate a 100mm hole?"
+> **Domain expert:** "No. It fits a 100mm base and generates a 100.4mm final slot after tolerance."
 
 ## Flagged Ambiguities
 

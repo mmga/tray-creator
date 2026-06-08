@@ -14,6 +14,10 @@ describe("slot instance factory", () => {
       slotDefinitionId: "circle-40",
       slotDiameter: 40.4,
     });
+    expect(createGridSlotSnapshotFromDefinition(100)).toEqual({
+      slotDefinitionId: "circle-100",
+      slotDiameter: 100.4,
+    });
   });
 
   it("creates free circle and ellipse slot instances with geometry snapshots", () => {

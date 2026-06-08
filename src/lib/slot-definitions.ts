@@ -36,6 +36,7 @@ export const CIRCLE_SLOT_DEFINITIONS: CircleSlotDefinition[] = [
   { id: "circle-60", shape: "circle", name: "巨型 (60mm)", baseDiameter: 60, slotDiameter: 60.4, tolerance: 0.4 },
   { id: "circle-65", shape: "circle", name: "狮王 (65mm)", baseDiameter: 65, slotDiameter: 65.4, tolerance: 0.4 },
   { id: "circle-90", shape: "circle", name: "无畏 (90mm)", baseDiameter: 90, slotDiameter: 90.4, tolerance: 0.4 },
+  { id: "circle-100", shape: "circle", name: "100mm 圆形", baseDiameter: 100, slotDiameter: 100.4, tolerance: 0.4 },
 ];
 
 export const ELLIPSE_SLOT_DEFINITIONS: EllipseSlotDefinition[] = [

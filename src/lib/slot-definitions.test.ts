@@ -21,8 +21,15 @@ describe("slot definitions", () => {
       slotDiameter: 40.4,
       tolerance: 0.4,
     });
+    expect(findCircleSlotDefinitionByBaseDiameter(100)).toMatchObject({
+      id: "circle-100",
+      name: "100mm 圆形",
+      baseDiameter: 100,
+      slotDiameter: 100.4,
+      tolerance: 0.4,
+    });
     expect(CIRCLE_SLOT_DEFINITIONS.map((definition) => definition.baseDiameter))
-      .toEqual([25, 28.5, 32, 40, 50, 60, 65, 90]);
+      .toEqual([25, 28.5, 32, 40, 50, 60, 65, 90, 100]);
   });
 
   it("creates circular snapshots from shared definitions", () => {
@@ -30,6 +37,11 @@ describe("slot definitions", () => {
       slotDefinitionId: "circle-32",
       slotWidth: 32.4,
       slotHeight: 32.4,
+    });
+    expect(createCircleSlotSnapshot(100)).toEqual({
+      slotDefinitionId: "circle-100",
+      slotWidth: 100.4,
+      slotHeight: 100.4,
     });
   });
 
