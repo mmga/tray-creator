@@ -24,13 +24,13 @@ pnpm start
 pnpm lint
 ```
 
-> 项目无测试框架配置（无 Jest/Vitest）。代码质量依赖 ESLint + TypeScript strict mode。
+> 项目使用 Vitest 进行单元与集成测试，并同时使用 ESLint + TypeScript strict mode。
 
 ## 核心架构
 
-### 三种建模模式
+### 四种建模模式
 
-项目支持三种托盘建模模式，每种模式有独立的参数类型、建模逻辑和 UI 面板：
+项目支持四种托盘建模模式，每种模式有独立的参数类型、建模逻辑和 UI 面板：
 
 1. **Grid Mode（网格模式）**
    - 类型：`TrayParams` (src/types/tray.ts)
@@ -46,7 +46,14 @@ pnpm lint
    - UI：`CustomPanel` + `LayoutCanvas` (2D 编辑器)
    - 特点：自由放置圆形/椭圆形凹槽，支持旋转
 
-3. **Stepped Mode（阶梯底座）**
+3. **Simple Stepped Mode（简易阶梯）**
+   - 类型：`SimpleSteppedLayoutParams` (src/types/custom-tray.ts)
+   - 建模：`createSimpleSteppedTrayModel()` (src/lib/simple-stepped-tray-model.ts)
+   - Hook：`useSimpleSteppedLayout()` (src/hooks/useSimpleSteppedLayout.ts)
+   - UI：`SimpleSteppedPanel` + `LayoutCanvas` (2D 编辑器)
+   - 特点：按行组织圆形凹槽，通过行顺序形成规则阶梯
+
+4. **Stepped Mode（阶梯底座）**
    - 类型：`SteppedLayoutParams` (src/types/custom-tray.ts)
    - 建模：`createSteppedTrayModel()` (src/lib/stepped-tray-model.ts)
    - Hook：`useSteppedLayout()` (src/hooks/useSteppedLayout.ts)
@@ -95,6 +102,7 @@ pnpm lint
 
 - `useTrayModel()`: Grid 模式参数、几何体、体积、价格
 - `useCustomLayout()`: Custom 模式参数、槽位管理、碰撞检测
+- `useSimpleSteppedLayout()`: Simple Stepped 模式参数、行与槽位管理
 - `useSteppedLayout()`: Stepped 模式参数、槽位管理
 
 共享 Hook：
@@ -108,8 +116,9 @@ pnpm lint
 
 - `DEFAULT_TRAY_PARAMS`: Grid 模式默认参数
 - `CUSTOM_LAYOUT_DEFAULTS`: Custom 模式默认参数
+- `SIMPLE_STEPPED_LAYOUT_DEFAULTS`: Simple Stepped 模式默认参数
 - `STEPPED_LAYOUT_DEFAULTS`: Stepped 模式默认参数
-- `BASE_PRESETS`: 底座直径预设（25mm、28.5mm、32mm、40mm、50mm、60mm）
+- `BASE_PRESETS`: 从共享圆形 Slot Definitions 派生的底座直径选项
 - `ELLIPSE_PRESETS`: 椭圆形凹槽预设
 - `PARAM_CONFIG` / `CUSTOM_LIMITS` / `STEPPED_LIMITS`: 参数范围与元数据
 - `RENDER_CONFIG`: 3D 渲染配置（细分段数、颜色、摄像机）
@@ -137,6 +146,7 @@ src/
 │   ├── canvas/           # 2D 编辑器相关组件
 │   ├── ParameterPanel.tsx    # Grid 模式参数面板
 │   ├── CustomPanel.tsx       # Custom 模式参数面板
+│   ├── SimpleSteppedPanel.tsx # Simple Stepped 模式参数面板
 │   ├── SteppedPanel.tsx      # Stepped 模式参数面板
 │   ├── LayoutCanvas.tsx      # 2D 编辑器画布
 │   ├── TrayViewer.tsx        # 3D 预览视口
@@ -145,6 +155,7 @@ src/
 ├── lib/                   # 核心逻辑
 │   ├── tray-model.ts         # Grid 模式建模
 │   ├── custom-tray-model.ts  # Custom 模式建模
+│   ├── simple-stepped-tray-model.ts # Simple Stepped 模式建模
 │   ├── stepped-tray-model.ts # Stepped 模式建模
 │   ├── model-utils.ts        # 共享建模工具
 │   ├── outline-geometry.ts   # 轮廓生成算法

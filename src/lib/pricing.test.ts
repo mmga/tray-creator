@@ -171,6 +171,16 @@ describe("pricing", () => {
         enableBaseHole: true,
       }),
     ).toBeCloseTo(9.6, 5);
+
+    expect(
+      calculateGridPrice({
+        ...DEFAULT_TRAY_PARAMS,
+        rows: 1,
+        columns: 2,
+        holeDiameter: 100,
+        enableBaseHole: false,
+      }),
+    ).toBe(4);
   });
 
   it("returns zero for non-positive volume and scales custom prices from weight", () => {
@@ -224,6 +234,22 @@ describe("pricing", () => {
     expect(breakdown.hasWideSmoothing).toBe(true);
     expect(breakdown.hasDisconnectDistance).toBe(true);
     expect(breakdown.complexityFee).toBeCloseTo(4.5, 5);
+  });
+
+  it("keeps 100mm stepped slots in the existing 60mm-plus pricing tier", () => {
+    const params: SteppedLayoutParams = {
+      ...STEPPED_LAYOUT_DEFAULTS,
+      slots: [createSlot("slot-100", 130, 130, 100, "g-1")],
+      groups: [createGroup("g-1", 10)],
+      activeGroupId: "g-1",
+      smoothingRadius: 7,
+    };
+
+    const breakdown = getSteppedPricingBreakdown(params, 150000);
+
+    expect(breakdown.slotCount40to59).toBe(0);
+    expect(breakdown.slotCount60Plus).toBe(1);
+    expect(breakdown.complexityFee).toBeCloseTo(5.65, 5);
   });
 
   it("prices stepped layouts from formula inputs and rounds the final quote", () => {

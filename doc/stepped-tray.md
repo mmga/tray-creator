@@ -6,7 +6,7 @@
 
 ## 1. 功能概述
 
-「自定义阶梯底座」是 tray-creator 的第三种建模模式，在顶部标签栏以第三个选项入口。
+「自定义阶梯底座」是 tray-creator 的第四种建模模式，在顶部标签栏以第四个选项入口。
 
 **核心概念**：每个凹槽有独立的「生长高度（bottomHeight）」，使凹槽柱体从底板向上生长到不同高度，形成阶梯状结构，适用于高度差异明显的混合模型（如骑兵配步兵、巨型模型配普通步兵）。
 
@@ -77,7 +77,7 @@
 ### 类型定义
 
 - `src/types/custom-tray.ts`
-  - `AppMode`: `"grid" | "custom" | "stepped"`
+  - `AppMode`: `"grid" | "custom" | "simple-stepped" | "stepped"`
   - `SteppedSlot`: 继承 `FreeSlot`，新增 `bottomHeight: number`
   - `SteppedLayoutParams`: 全局参数结构
 

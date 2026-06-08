@@ -11,6 +11,7 @@ describe("base hole config", () => {
     expect(resolveBaseHolePresetKey(25)).toBe("25");
     expect(resolveBaseHolePresetKey(59.9)).toBe("25");
     expect(resolveBaseHolePresetKey(60)).toBe("40");
+    expect(resolveBaseHolePresetKey(100)).toBe("40");
     expect(resolveBaseHolePresetKey(120)).toBe("40");
   });
 
