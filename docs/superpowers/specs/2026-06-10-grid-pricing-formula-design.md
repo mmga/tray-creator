@@ -17,7 +17,8 @@ The agreed migration rule for grid mode is:
 
 The migrated grid pricing baseline is:
 
-`price = 2 + 0.2 * slotCount + gridFootprintArea / 2560`
+`rawPrice = 2 + 0.2 * slotCount + gridFootprintArea / 2560`
+`price = ceil(rawPrice)`
 
 Where:
 
@@ -64,14 +65,14 @@ The grid quote inputs are:
 
 `calculateGridPrice` will be redefined to return:
 
-`2 + 0.2 * slotCount + gridFootprintArea / 2560`
+`ceil(2 + 0.2 * slotCount + gridFootprintArea / 2560)`
 
 Subject to these guards:
 
 - return `0` when `slotCount <= 0`
 - return `0` when the derived grid footprint area is non-positive
 
-The function should continue returning a numeric quote without integer rounding. The grid panel can keep rendering the quote with its existing formatting.
+The formula should keep decimal precision internally until the final quote is produced, then round the final quote upward with `Math.ceil`. The grid panel can keep its existing rendering path; it will simply show integer-valued quotes through the current formatting.
 
 ### 3. Shared dimension seam
 
@@ -92,9 +93,9 @@ Instead it will assert that:
 - zero-slot grid layouts return `0`
 - grid pricing rises with slot count when footprint is otherwise comparable
 - grid pricing rises with footprint area when slot count is held constant
-- representative `2x5` grid layouts priced as `5 columns x 2 rows` land on the shared flat-tray anchors:
-  - `25mm -> 8.0` in UI display terms
-  - `32mm -> 10.0` in UI display terms
+- representative `2x5` grid layouts priced as `5 columns x 2 rows` ceil to the shared flat-tray anchors:
+  - `25mm -> 8`
+  - `32mm -> 10`
 
 ## Task Breakdown
 
@@ -107,7 +108,7 @@ Instead it will assert that:
 
 - Run the pricing test file after the change.
 - Verify the grid panel still shows quote and estimated weight separately.
-- Spot-check representative `5x2` grid layouts for `25mm` and `32mm` against the shared flat-tray anchors.
+- Spot-check representative `5x2` grid layouts for `25mm` and `32mm` against the pre-ceil raw formula and the final ceiled anchors.
 
 ## Risks
 

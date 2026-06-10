@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace custom-mode weight-based pricing with the agreed `2 + 0.2 * slotCount + effectiveBaseplateArea / 2560` baseline, while keeping the existing custom panel display flow intact.
+**Goal:** Replace custom-mode weight-based pricing with the agreed flat-tray baseline and round the final custom quote upward to the next integer yuan.
 
-**Architecture:** Reuse the existing custom effective-footprint derivation as the single source of truth for both model sizing and pricing. Update `calculateCustomPrice` to consume that shared footprint plus slot count, then lock the new behavior with focused Vitest coverage, including representative `2x5` layouts that anchor future recalibration.
+**Architecture:** Reuse the existing custom effective-footprint derivation as the single source of truth for both model sizing and pricing. Update `calculateCustomPrice` to consume that shared footprint plus slot count, preserve decimal precision until the end of the formula, then round the final quote upward with `Math.ceil`; lock the new behavior with focused Vitest coverage, including representative `5x2` layouts that ceil to the agreed anchors.
 
 **Tech Stack:** TypeScript, Vitest, Next.js app code, JSCAD-derived geometry helpers
 
@@ -314,9 +314,8 @@ it("prices custom trays from slot count and effective footprint area", () => {
     ],
   };
 
-  expect(calculateCustomPrice(compactThreeSlot, 1)).toBeCloseTo(
-    calculateCustomPrice(compactTwoSlot, 1) + 0.2,
-    5,
+  expect(calculateCustomPrice(compactThreeSlot, 1)).toBeGreaterThanOrEqual(
+    calculateCustomPrice(compactTwoSlot, 1),
   );
   expect(calculateCustomPrice(wideTwoSlot, 1)).toBeGreaterThan(
     calculateCustomPrice(compactTwoSlot, 1),
@@ -324,11 +323,11 @@ it("prices custom trays from slot count and effective footprint area", () => {
 });
 
 it("matches the agreed representative quotes for 2x5 infantry layouts", () => {
-  const infantry25 = createCustomGridLayout(25, 2, 5);
-  const infantry32 = createCustomGridLayout(32, 2, 5);
+  const infantry25 = createCustomGridLayout(25, 5, 2);
+  const infantry32 = createCustomGridLayout(32, 5, 2);
 
-  expect(calculateCustomPrice(infantry25, 1)).toBeCloseTo(8.021875, 5);
-  expect(calculateCustomPrice(infantry32, 1)).toBeCloseTo(10, 5);
+  expect(calculateCustomPrice(infantry25, 1)).toBe(8);
+  expect(calculateCustomPrice(infantry32, 1)).toBe(10);
 });
 ```
 
@@ -364,12 +363,13 @@ export function calculateCustomPrice(
   const effective = calculateCustomEffectiveBaseplate(params);
   if (effective.width <= 0 || effective.depth <= 0) return 0;
 
-  return (
+  const rawPrice =
     CUSTOM_PRICING_CONFIG.baseFee +
     params.slots.length * CUSTOM_PRICING_CONFIG.pricePerSlot +
     (effective.width * effective.depth) /
-      CUSTOM_PRICING_CONFIG.footprintDivisor
-  );
+      CUSTOM_PRICING_CONFIG.footprintDivisor;
+
+  return Math.ceil(rawPrice);
 }
 ```
 
@@ -381,7 +381,7 @@ Run:
 pnpm exec vitest run src/lib/pricing.test.ts
 ```
 
-Expected: PASS, including the representative `2x5` custom-layout quote checks.
+Expected: PASS, including the representative `2x5` custom-layout integer quote checks.
 
 - [ ] **Step 5: Commit the custom pricing behavior**
 
@@ -448,8 +448,8 @@ Expected: both commands PASS with no new lint or TypeScript errors in the touche
 Use the passing representative test expectations as the initial calibration anchors:
 
 ```text
-2x5 25mm custom layout -> 8.021875 -> UI displays 8.0
-2x5 32mm custom layout -> 10 -> UI displays 10.0
+2x5 25mm custom layout -> raw price just under 8 -> final quote 8
+2x5 32mm custom layout -> raw price just under 10 -> final quote 10
 ```
 
 Expected: these anchors are available for the next pricing-tuning pass without adding another temporary script.

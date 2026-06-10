@@ -7,7 +7,8 @@ That pricing model no longer matches the agreed business rule for custom trays.
 
 The agreed custom pricing baseline is now:
 
-`price = 2 + 0.2 * slotCount + effectiveBaseplateArea / 2560`
+`rawPrice = 2 + 0.2 * slotCount + effectiveBaseplateArea / 2560`
+`price = ceil(rawPrice)`
 
 Where:
 
@@ -52,14 +53,14 @@ The custom quote inputs are:
 
 `calculateCustomPrice` will be redefined to return:
 
-`2 + 0.2 * slotCount + effectiveBaseplateArea / 2560`
+`ceil(2 + 0.2 * slotCount + effectiveBaseplateArea / 2560)`
 
 Subject to these guards:
 
 - return `0` when there is no printable geometry
 - treat the derived effective baseplate as the pricing footprint, not raw `trayWidth` and `trayDepth`
 
-The function should continue to return a numeric quote without rounding to an integer. The custom panel can keep rendering one decimal place as it does today.
+The formula should keep decimal precision internally until the final quote is produced, then round the final quote upward with `Math.ceil`. The custom panel can keep its current display path; it will simply show integer-valued quotes through the existing formatting.
 
 ### 3. Shared calculation seam
 
@@ -80,7 +81,7 @@ Instead it will assert that:
 - non-positive or non-printable custom geometry returns `0`
 - custom pricing rises with slot count when footprint is otherwise comparable
 - custom pricing rises with effective baseplate area when slot count is held constant
-- at least one representative layout matches the baseline formula numerically
+- representative layouts round up to the intended integer quote anchors
 
 ## Task Breakdown
 
@@ -94,7 +95,7 @@ Instead it will assert that:
 
 - Run the pricing test file after the change.
 - Verify the custom panel still shows quote and estimated weight separately.
-- Manually spot-check a few representative custom layouts after implementation and compare them against the baseline formula.
+- Manually spot-check a few representative custom layouts after implementation and compare them against the pre-ceil raw formula and the final ceiled quote.
 
 ## Risks
 

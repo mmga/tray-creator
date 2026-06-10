@@ -133,7 +133,7 @@ The number of placed slot instances in the current tray layout.
 _Avoid_: Mixing slot count with magnet-hole count or with distinct slot-size types.
 
 **Custom Quote Baseline**:
-The current custom-mode quoting rule used as the adjustable pricing baseline before later recalibration from representative layouts.
+The current custom-mode quoting rule used as the adjustable pricing baseline before later recalibration from representative layouts, with the final quote rounded up to the next integer yuan.
 _Avoid_: Treating one-off historical prices as an exact formula fit when they are only reference points.
 
 **Per-Slot Increment**:
@@ -149,7 +149,7 @@ The grid-mode tray footprint area calculated from the displayed theoretical oute
 _Avoid_: Using nominal hole diameter alone when the meaning is the printed footprint shown to the user.
 
 **Grid Quote Baseline**:
-The grid-mode quoting rule after migration, reusing the same coefficients as the custom quote baseline.
+The grid-mode quoting rule after migration, reusing the same coefficients and final upward-integer rounding rule as the custom quote baseline.
 _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom are intentionally aligned.
 
 ## Relationships
@@ -204,11 +204,11 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - In custom mode, the **Effective Baseplate** is derived from placed **Slot Instances** plus boundary spacing.
 - An **Effective Baseplate Area** belongs to exactly one **Effective Baseplate**.
 - A tray quote may use **Effective Baseplate Area** and **Slot Count** instead of model volume.
-- The current **Custom Quote Baseline** is `2 + 0.2 × Slot Count + Effective Baseplate Area / 2560`.
+- The current **Custom Quote Baseline** computes `2 + 0.2 × Slot Count + Effective Baseplate Area / 2560`, then rounds the final quote up to the next integer yuan.
 - A **Per-Slot Increment** belongs to each placed **Slot Instance** in the quote calculation.
 - Grid pricing may fully replace the **Legacy Grid Quote Ladder** with the same area-and-slot-count baseline used by custom pricing.
 - A **Grid Footprint Area** belongs to exactly one grid tray footprint derived from the displayed outer width and depth.
-- The current **Grid Quote Baseline** reuses the custom coefficients: `2 + 0.2 × Slot Count + Grid Footprint Area / 2560`.
+- The current **Grid Quote Baseline** reuses the custom coefficients and final rounding rule: compute `2 + 0.2 × Slot Count + Grid Footprint Area / 2560`, then round the final quote up to the next integer yuan.
 - Loading a different draft replaces the current **Draft Binding**.
 - Saving as a new draft replaces the current **Draft Binding** with the new draft.
 - Deleting the currently bound draft clears the current **Draft Binding**.
