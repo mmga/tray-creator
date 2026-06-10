@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
+import { createCircleSlotSnapshot } from "@/lib/slot-definitions";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import type { SlotGroup, SteppedLayoutParams } from "@/types/custom-tray";
 import {
@@ -47,6 +48,64 @@ function createSlot(
     height: width,
     rotation: 0,
     groupId,
+  };
+}
+
+function createCustomCircleSlot(
+  id: string,
+  x: number,
+  y: number,
+  baseDiameter: number,
+) {
+  return {
+    id,
+    x,
+    y,
+    width: baseDiameter,
+    height: baseDiameter,
+    rotation: 0,
+    shape: "circle" as const,
+    ...createCircleSlotSnapshot(baseDiameter),
+  };
+}
+
+function createCustomGridLayout(
+  baseDiameter: number,
+  columns: number,
+  rows: number,
+) {
+  const spacing = 5;
+  const boundarySpacing = 5;
+  const snapshot = createCircleSlotSnapshot(baseDiameter);
+  const slotDiameter = snapshot.slotWidth;
+
+  if (typeof slotDiameter !== "number") {
+    throw new Error("Expected slot diameter snapshot");
+  }
+
+  const startX = boundarySpacing + slotDiameter / 2;
+  const startY = boundarySpacing + slotDiameter / 2;
+  const slots = Array.from({ length: rows * columns }, (_, index) => {
+    const row = Math.floor(index / columns);
+    const column = index % columns;
+    return {
+      id: `slot-${index + 1}`,
+      x: startX + column * (slotDiameter + spacing),
+      y: startY + row * (slotDiameter + spacing),
+      width: baseDiameter,
+      height: baseDiameter,
+      rotation: 0,
+      shape: "circle" as const,
+      ...snapshot,
+    };
+  });
+
+  return {
+    ...CUSTOM_LAYOUT_DEFAULTS,
+    spacing,
+    boundarySpacing,
+    boundarySpacingIndependent: true,
+    slots,
   };
 }
 
@@ -173,19 +232,76 @@ describe("pricing", () => {
     ).toBeCloseTo(9.6, 5);
   });
 
-  it("returns zero for non-positive volume and scales custom prices from weight", () => {
+  it("returns zero for non-printable custom geometry and non-positive stepped/simple-stepped volume", () => {
     expect(calculateCustomPrice(CUSTOM_LAYOUT_DEFAULTS, 0)).toBe(0);
+    expect(calculateCustomPrice(CUSTOM_LAYOUT_DEFAULTS, 1)).toBe(0);
+    expect(
+      calculateCustomPrice(
+        {
+          ...CUSTOM_LAYOUT_DEFAULTS,
+          slots: [createCustomCircleSlot("slot-1", 20, 20, 25)],
+        },
+        0,
+      ),
+    ).toBe(0);
     expect(calculateSteppedPrice(STEPPED_LAYOUT_DEFAULTS, -1)).toBe(0);
     expect(
       calculateSimpleSteppedPrice(SIMPLE_STEPPED_LAYOUT_DEFAULTS, 0),
     ).toBe(0);
-    expect(calculateCustomPrice(CUSTOM_LAYOUT_DEFAULTS, 1000)).toBeCloseTo(
-      0.2976,
-      5,
-    );
     expect(
       calculateSimpleSteppedPrice(SIMPLE_STEPPED_LAYOUT_DEFAULTS, 1000),
     ).toBeCloseTo(0.2976, 5);
+  });
+
+  it("prices custom trays from slot count and effective footprint area", () => {
+    const compactTwoSlot = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      spacing: 5,
+      boundarySpacing: 5,
+      boundarySpacingIndependent: true,
+      slots: [
+        createCustomCircleSlot("slot-1", 20, 40, 25),
+        createCustomCircleSlot("slot-2", 55, 40, 25),
+      ],
+    };
+    const compactThreeSlot = {
+      ...compactTwoSlot,
+      slots: [
+        ...compactTwoSlot.slots,
+        createCustomCircleSlot("slot-3", 37.5, 40, 25),
+      ],
+    };
+    const wideTwoSlot = {
+      ...compactTwoSlot,
+      slots: [
+        createCustomCircleSlot("slot-1", 20, 40, 25),
+        createCustomCircleSlot("slot-2", 90, 40, 25),
+      ],
+    };
+
+    expect(calculateCustomPrice(compactThreeSlot, 1)).toBeCloseTo(
+      calculateCustomPrice(compactTwoSlot, 1) + 0.2,
+      5,
+    );
+    expect(calculateCustomPrice(wideTwoSlot, 1)).toBeGreaterThan(
+      calculateCustomPrice(compactTwoSlot, 1),
+    );
+  });
+
+  it("matches the agreed representative quotes for 5x2 custom infantry layouts", () => {
+    const infantry25 = createCustomGridLayout(25, 5, 2);
+    const infantry32 = createCustomGridLayout(32, 5, 2);
+
+    const infantry25Price = calculateCustomPrice(infantry25, 1);
+    const infantry32Price = calculateCustomPrice(infantry32, 1);
+
+    expect(infantry25Price).toBeCloseTo(8.021875, 5);
+    expect(infantry25Price).toBeGreaterThan(7.9);
+    expect(infantry25Price).toBeLessThan(8.1);
+    expect(infantry25Price.toFixed(1)).toBe("8.0");
+    expect(infantry32Price).toBeGreaterThan(9.9);
+    expect(infantry32Price).toBeLessThan(10.1);
+    expect(infantry32Price.toFixed(1)).toBe("10.0");
   });
 
   it("returns a zeroed stepped breakdown when no printable geometry exists", () => {

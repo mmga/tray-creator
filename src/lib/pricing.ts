@@ -5,6 +5,7 @@ import type {
   SlotGroup,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
+import { calculateCustomEffectiveBaseplate } from "@/lib/custom-tray-model";
 import { calculateSteppedEffectiveDimensions } from "@/lib/stepped-layout-math";
 import { getEffectiveGroupStructureParams } from "@/lib/stepped-group-params";
 
@@ -54,6 +55,12 @@ const STEPPED_PRICING_CONFIG = {
   complexityWideSmoothingFee: 3,
   complexityDisconnectFee: 1.5,
   wideSmoothingThreshold: 12,
+} as const;
+
+const CUSTOM_PRICING_CONFIG = {
+  baseFee: 2,
+  pricePerSlot: 0.2,
+  footprintDivisor: 2560,
 } as const;
 
 export interface SteppedPricingBreakdown {
@@ -174,9 +181,18 @@ export function calculateCustomPrice(
   params: CustomLayoutParams,
   volume: number,
 ): number {
-  if (volume <= 0) return 0;
-  const weight = calculateWeight(volume);
-  return weight * 0.4;
+  if (volume <= 0 || params.slots.length === 0) return 0;
+
+  const effective = calculateCustomEffectiveBaseplate(params);
+  const footprintArea = effective.width * effective.depth;
+
+  if (!effective.hasSlots || footprintArea <= 0) return 0;
+
+  return (
+    CUSTOM_PRICING_CONFIG.baseFee +
+    params.slots.length * CUSTOM_PRICING_CONFIG.pricePerSlot +
+    footprintArea / CUSTOM_PRICING_CONFIG.footprintDivisor
+  );
 }
 
 export function getSteppedPricingBreakdown(
