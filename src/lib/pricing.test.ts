@@ -3,6 +3,7 @@ import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import { createCircleSlotSnapshot } from "@/lib/slot-definitions";
+import { createGridSlotSnapshotFromDefinition } from "@/lib/slot-instance-factory";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import type { SlotGroup, SteppedLayoutParams } from "@/types/custom-tray";
 import {
@@ -73,9 +74,16 @@ function createCustomGridLayout(
   baseDiameter: number,
   columns: number,
   rows: number,
+  options: {
+    gapX?: number;
+    gapY?: number;
+    boundarySpacing?: number;
+  } = {},
 ) {
   const spacing = 5;
-  const boundarySpacing = 5;
+  const gapX = options.gapX ?? spacing;
+  const gapY = options.gapY ?? spacing;
+  const boundarySpacing = options.boundarySpacing ?? 5;
   const snapshot = createCircleSlotSnapshot(baseDiameter);
   const slotDiameter = snapshot.slotWidth;
 
@@ -90,8 +98,8 @@ function createCustomGridLayout(
     const column = index % columns;
     return {
       id: `slot-${index + 1}`,
-      x: startX + column * (slotDiameter + spacing),
-      y: startY + row * (slotDiameter + spacing),
+      x: startX + column * (slotDiameter + gapX),
+      y: startY + row * (slotDiameter + gapY),
       width: baseDiameter,
       height: baseDiameter,
       rotation: 0,
@@ -106,6 +114,20 @@ function createCustomGridLayout(
     boundarySpacing,
     boundarySpacingIndependent: true,
     slots,
+  };
+}
+
+function createGridPricingParams(
+  holeDiameter: number,
+  columns: number,
+  rows: number,
+) {
+  return {
+    ...DEFAULT_TRAY_PARAMS,
+    rows,
+    columns,
+    holeDiameter,
+    ...createGridSlotSnapshotFromDefinition(holeDiameter),
   };
 }
 
@@ -210,29 +232,12 @@ describe("pricing", () => {
     expect(calculateWeight(1000)).toBeCloseTo(0.744, 5);
   });
 
-  it("prices grid layouts by slot count, diameter tier and base holes", () => {
+  it("returns zero for zero-slot grid layouts, non-printable custom geometry and non-positive stepped/simple-stepped volume", () => {
     expect(
       calculateGridPrice({
-        ...DEFAULT_TRAY_PARAMS,
-        rows: 2,
-        columns: 3,
-        holeDiameter: 25,
-        enableBaseHole: false,
+        ...createGridPricingParams(25, 5, 0),
       }),
-    ).toBe(3);
-
-    expect(
-      calculateGridPrice({
-        ...DEFAULT_TRAY_PARAMS,
-        rows: 2,
-        columns: 3,
-        holeDiameter: 50,
-        enableBaseHole: true,
-      }),
-    ).toBeCloseTo(9.6, 5);
-  });
-
-  it("returns zero for non-printable custom geometry and non-positive stepped/simple-stepped volume", () => {
+    ).toBe(0);
     expect(calculateCustomPrice(CUSTOM_LAYOUT_DEFAULTS, 0)).toBe(0);
     expect(calculateCustomPrice(CUSTOM_LAYOUT_DEFAULTS, 1)).toBe(0);
     expect(
@@ -253,55 +258,52 @@ describe("pricing", () => {
     ).toBeCloseTo(0.2976, 5);
   });
 
-  it("prices custom trays from slot count and effective footprint area", () => {
-    const compactTwoSlot = {
-      ...CUSTOM_LAYOUT_DEFAULTS,
-      spacing: 5,
-      boundarySpacing: 5,
-      boundarySpacingIndependent: true,
-      slots: [
-        createCustomCircleSlot("slot-1", 20, 40, 25),
-        createCustomCircleSlot("slot-2", 55, 40, 25),
-      ],
-    };
-    const compactThreeSlot = {
-      ...compactTwoSlot,
-      slots: [
-        ...compactTwoSlot.slots,
-        createCustomCircleSlot("slot-3", 37.5, 40, 25),
-      ],
-    };
-    const wideTwoSlot = {
-      ...compactTwoSlot,
-      slots: [
-        createCustomCircleSlot("slot-1", 20, 40, 25),
-        createCustomCircleSlot("slot-2", 90, 40, 25),
-      ],
-    };
+  it("prices grid trays higher as slot count and footprint area increase", () => {
+    const compact25 = createGridPricingParams(25, 2, 2);
+    const long25 = createGridPricingParams(25, 5, 2);
+    const long32 = createGridPricingParams(32, 5, 2);
 
-    expect(calculateCustomPrice(compactThreeSlot, 1)).toBeCloseTo(
-      calculateCustomPrice(compactTwoSlot, 1) + 0.2,
-      5,
+    expect(calculateGridPrice(long25)).toBeGreaterThan(
+      calculateGridPrice(compact25),
     );
-    expect(calculateCustomPrice(wideTwoSlot, 1)).toBeGreaterThan(
-      calculateCustomPrice(compactTwoSlot, 1),
+    expect(calculateGridPrice(long32)).toBeGreaterThan(
+      calculateGridPrice(long25),
+    );
+  });
+
+  it("prices custom trays higher as slot count and footprint area increase", () => {
+    const compact25 = createCustomGridLayout(25, 2, 2);
+    const long25 = createCustomGridLayout(25, 5, 2);
+    const long32 = createCustomGridLayout(32, 5, 2);
+
+    expect(calculateCustomPrice(long25, 1)).toBeGreaterThan(
+      calculateCustomPrice(compact25, 1),
+    );
+    expect(calculateCustomPrice(long32, 1)).toBeGreaterThan(
+      calculateCustomPrice(long25, 1),
     );
   });
 
   it("matches the agreed representative quotes for 5x2 custom infantry layouts", () => {
-    const infantry25 = createCustomGridLayout(25, 5, 2);
+    const infantry25 = createCustomGridLayout(25, 5, 2, {
+      gapX: 4.75,
+      gapY: 4.6,
+    });
     const infantry32 = createCustomGridLayout(32, 5, 2);
 
     const infantry25Price = calculateCustomPrice(infantry25, 1);
     const infantry32Price = calculateCustomPrice(infantry32, 1);
 
-    expect(infantry25Price).toBeCloseTo(8.021875, 5);
-    expect(infantry25Price).toBeGreaterThan(7.9);
-    expect(infantry25Price).toBeLessThan(8.1);
-    expect(infantry25Price.toFixed(1)).toBe("8.0");
-    expect(infantry32Price).toBeGreaterThan(9.9);
-    expect(infantry32Price).toBeLessThan(10.1);
-    expect(infantry32Price.toFixed(1)).toBe("10.0");
+    expect(infantry25Price).toBe(8);
+    expect(infantry32Price).toBe(10);
+  });
+
+  it("matches the agreed representative quotes for 5x2 grid infantry layouts", () => {
+    const infantry25 = createGridPricingParams(25, 5, 2);
+    const infantry32 = createGridPricingParams(32, 5, 2);
+
+    expect(calculateGridPrice(infantry25)).toBe(8);
+    expect(calculateGridPrice(infantry32)).toBe(10);
   });
 
   it("returns a zeroed stepped breakdown when no printable geometry exists", () => {

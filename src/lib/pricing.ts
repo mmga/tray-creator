@@ -8,6 +8,7 @@ import type {
 import { calculateCustomEffectiveBaseplate } from "@/lib/custom-tray-model";
 import { calculateSteppedEffectiveDimensions } from "@/lib/stepped-layout-math";
 import { getEffectiveGroupStructureParams } from "@/lib/stepped-group-params";
+import { calculateTrayDimensions } from "@/lib/tray-model";
 
 /**
  * ============================================
@@ -15,19 +16,8 @@ import { getEffectiveGroupStructureParams } from "@/lib/stepped-group-params";
  * ============================================
  */
 
-// 阶梯孔位价格表
-function getSlotPrice(diameter: number): number {
-  if (diameter <= 25.01) return 0.5;
-  if (diameter <= 28.51) return 0.6;
-  if (diameter <= 32.01) return 0.8;
-  if (diameter <= 40.01) return 1;
-  if (diameter <= 50.01) return 1.3;
-  return 2.0; // 60mm 及以上
-}
-
 // 基础定价参数
 const PRICING_CONFIG = {
-  pricePerMagnet: 0.3, // 每个磁吸孔的附加价格 (元)
   plaCostPerKg: 60, // PLA耗材每千克价格 (元)
   plaDensity: 1.24, // PLA密度 (g/cm³)
   infillRatio: 0.6, // 3D打印有效填充率 (托盘薄件占比高，实心度约60%-70%)
@@ -62,6 +52,14 @@ const CUSTOM_PRICING_CONFIG = {
   pricePerSlot: 0.2,
   footprintDivisor: 2560,
 } as const;
+
+function calculateFlatTrayRawPrice(slotCount: number, footprintArea: number) {
+  return (
+    CUSTOM_PRICING_CONFIG.baseFee +
+    slotCount * CUSTOM_PRICING_CONFIG.pricePerSlot +
+    footprintArea / CUSTOM_PRICING_CONFIG.footprintDivisor
+  );
+}
 
 export interface SteppedPricingBreakdown {
   price: number;
@@ -162,19 +160,14 @@ export function calculateWeight(volume: number): number {
 
 /**
  * 计算网格模式的报价
- * 规则：按凹槽数量 * 该尺寸的单价计算，如果有磁吸孔则加上磁吸附加价
+ * 规则：与自定义托盘共享统一平板报价系数，最终统一向上取整
  */
 export function calculateGridPrice(params: TrayParams): number {
   const slotCount = params.rows * params.columns;
   if (slotCount === 0) return 0;
-
-  let total = slotCount * getSlotPrice(params.holeDiameter);
-
-  if (params.enableBaseHole) {
-    total += slotCount * PRICING_CONFIG.pricePerMagnet;
-  }
-
-  return total;
+  const { width, depth } = calculateTrayDimensions(params);
+  const rawPrice = calculateFlatTrayRawPrice(slotCount, width * depth);
+  return Math.ceil(rawPrice);
 }
 
 export function calculateCustomPrice(
@@ -188,11 +181,8 @@ export function calculateCustomPrice(
 
   if (!effective.hasSlots || footprintArea <= 0) return 0;
 
-  return (
-    CUSTOM_PRICING_CONFIG.baseFee +
-    params.slots.length * CUSTOM_PRICING_CONFIG.pricePerSlot +
-    footprintArea / CUSTOM_PRICING_CONFIG.footprintDivisor
-  );
+  const rawPrice = calculateFlatTrayRawPrice(params.slots.length, footprintArea);
+  return Math.ceil(rawPrice);
 }
 
 export function getSteppedPricingBreakdown(
