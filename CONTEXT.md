@@ -120,6 +120,26 @@ _Avoid_: Making the canvas infer mode semantics from raw Mode params.
 A mode-specific adapter that projects Mode-local layout state into a **Layout Editor Viewport**.
 _Avoid_: Passing mode-specific canvas exceptions directly through the page or viewport shell.
 
+**Effective Baseplate**:
+The actual baseplate footprint derived from placed slots and boundary spacing, rather than the raw tray width/depth inputs.
+_Avoid_: Using baseplate, tray size, or tray width/depth to mean the derived printable footprint in custom mode.
+
+**Effective Baseplate Area**:
+The footprint area of the **Effective Baseplate**, calculated as derived width multiplied by derived depth.
+_Avoid_: Using model volume or raw tray area when the meaning is the derived custom-mode footprint used for pricing.
+
+**Slot Count**:
+The number of placed slot instances in the current tray layout.
+_Avoid_: Mixing slot count with magnet-hole count or with distinct slot-size types.
+
+**Custom Quote Baseline**:
+The current custom-mode quoting rule used as the adjustable pricing baseline before later recalibration from representative layouts.
+_Avoid_: Treating one-off historical prices as an exact formula fit when they are only reference points.
+
+**Per-Slot Increment**:
+The fixed amount added to a custom-mode quote for each placed slot instance.
+_Avoid_: Folding this fixed increment into the area coefficient when the meaning is a separate per-slot charge.
+
 ## Relationships
 
 - A **Slot Definition** includes its **Tolerance**.
@@ -169,6 +189,11 @@ _Avoid_: Passing mode-specific canvas exceptions directly through the page or vi
 - A **Layout Editor Viewport** is the shape consumed by the layout canvas for 2D editing.
 - A **Layout Editor Viewport Adapter** projects a **Mode**'s local layout state into a **Layout Editor Viewport**.
 - A layout canvas should consume a **Layout Editor Viewport** instead of inferring **Mode** behavior from raw parameters.
+- In custom mode, the **Effective Baseplate** is derived from placed **Slot Instances** plus boundary spacing.
+- An **Effective Baseplate Area** belongs to exactly one **Effective Baseplate**.
+- A tray quote may use **Effective Baseplate Area** and **Slot Count** instead of model volume.
+- The current **Custom Quote Baseline** is `2 + 0.2 × Slot Count + Effective Baseplate Area / 2560`.
+- A **Per-Slot Increment** belongs to each placed **Slot Instance** in the quote calculation.
 - Loading a different draft replaces the current **Draft Binding**.
 - Saving as a new draft replaces the current **Draft Binding** with the new draft.
 - Deleting the currently bound draft clears the current **Draft Binding**.
@@ -187,3 +212,5 @@ _Avoid_: Passing mode-specific canvas exceptions directly through the page or vi
 ## Flagged Ambiguities
 
 - "凹槽定义" previously meant either a visible UI option or the generated hole geometry. Resolved: **Slot Definition** means the complete reusable geometry definition, including tolerance.
+- "底盘" was ambiguous between raw tray width/depth inputs and the derived printable footprint in custom mode. Resolved: use **Effective Baseplate** for the derived custom-mode footprint used in pricing.
+- Historical custom-mode prices may be used as reference points, not as an exact fitted law. Resolved: treat them as sanity checks around the **Custom Quote Baseline**, then adjust after reviewing representative layouts.
