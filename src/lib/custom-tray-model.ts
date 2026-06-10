@@ -85,7 +85,7 @@ function createOffsetSlotShape(
   return geom2.fromPoints(points);
 }
 
-function calculateEffectiveBaseplate(params: CustomLayoutParams) {
+export function calculateCustomEffectiveBaseplate(params: CustomLayoutParams) {
   const boundarySpacing = params.boundarySpacingIndependent
     ? params.boundarySpacing
     : params.spacing;
@@ -144,7 +144,7 @@ function calculateEffectiveBaseplate(params: CustomLayoutParams) {
  */
 export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
   const { slots, baseThickness, holeDepth, cornerRadius } = params;
-  const effective = calculateEffectiveBaseplate(params);
+  const effective = calculateCustomEffectiveBaseplate(params);
   const trayWidth = effective.hasSlots ? effective.width : params.trayWidth;
   const trayDepth = effective.hasSlots ? effective.depth : params.trayDepth;
   const totalHeight = baseThickness + holeDepth;
@@ -211,7 +211,7 @@ export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
  * 计算自定义托盘的边界尺寸
  */
 export function calculateCustomTrayDimensions(params: CustomLayoutParams) {
-  const effective = calculateEffectiveBaseplate(params);
+  const effective = calculateCustomEffectiveBaseplate(params);
   return {
     width: effective.hasSlots ? effective.width : params.trayWidth,
     depth: effective.hasSlots ? effective.depth : params.trayDepth,

@@ -1,12 +1,32 @@
 import { describe, expect, it } from "vitest";
 import { measurements } from "@jscad/modeling";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
+import { createCircleSlotSnapshot } from "@/lib/slot-definitions";
 import {
   calculateCustomTrayDimensions,
+  calculateCustomEffectiveBaseplate,
   createCustomTrayModel,
 } from "@/lib/custom-tray-model";
 
 const { measureBoundingBox, measureVolume } = measurements;
+
+function createCustomCircleSlot(
+  id: string,
+  x: number,
+  y: number,
+  baseDiameter: number,
+) {
+  return {
+    id,
+    x,
+    y,
+    width: baseDiameter,
+    height: baseDiameter,
+    rotation: 0,
+    shape: "circle" as const,
+    ...createCircleSlotSnapshot(baseDiameter),
+  };
+}
 
 describe("custom tray model", () => {
   it("falls back to configured tray dimensions when there are no slots", () => {
@@ -48,6 +68,34 @@ describe("custom tray model", () => {
     expect(dimensions.width).toBe(136);
     expect(dimensions.depth).toBe(56);
     expect(dimensions.height).toBe(6);
+  });
+
+  it("exports the effective custom baseplate footprint for pricing reuse", () => {
+    const params = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      spacing: 5,
+      boundarySpacing: 5,
+      boundarySpacingIndependent: true,
+      slots: [
+        createCustomCircleSlot("slot-1", 20, 40, 25),
+        createCustomCircleSlot("slot-2", 55, 40, 25),
+      ],
+    };
+
+    expect(calculateCustomEffectiveBaseplate(params)).toEqual({
+      hasSlots: true,
+      width: 71,
+      depth: 36,
+      minX: 7.4,
+      maxX: 67.6,
+      minY: 27.4,
+      maxY: 52.6,
+    });
+    expect(calculateCustomTrayDimensions(params)).toEqual({
+      width: 71,
+      depth: 36,
+      height: 6,
+    });
   });
 
   it("keeps positive volume and removes more material when enabling base holes", () => {
