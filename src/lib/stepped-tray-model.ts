@@ -4,13 +4,15 @@ import {
   transforms,
   extrusions,
   measurements,
-  geometries,
 } from "@jscad/modeling";
-import type { Geom2, Geom3 } from "@jscad/modeling/src/geometries/types";
-import type { SteppedLayoutParams, SteppedSlot } from "@/types/custom-tray";
+import type { Geom3 } from "@jscad/modeling/src/geometries/types";
+import type { SteppedLayoutParams } from "@/types/custom-tray";
 import { RENDER_CONFIG } from "@/lib/config";
-import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
+import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
+import {
+  createOffsetSlotShape,
+} from "@/lib/model-utils";
 import {
   generateOutlineGeom2,
   type OutlineCircle,
@@ -25,64 +27,11 @@ import { getEffectiveGroupStructureParams } from "@/lib/stepped-group-params";
 
 const { subtract, union } = booleans;
 const { translate, rotateZ } = transforms;
-const { ellipse, circle } = primitives;
+const { circle, ellipse } = primitives;
 const { extrudeLinear } = extrusions;
 const { measureVolume } = measurements;
-const { geom2 } = geometries;
 
 const DEG_TO_RAD = Math.PI / 180;
-
-function getSlotBoundingHalfSize(
-  width: number,
-  height: number,
-  rotation: number,
-  shape: SteppedSlot["shape"],
-  offset: number,
-) {
-  const rad = (rotation * Math.PI) / 180;
-  const points = sampleSlotProfilePoints(
-    width,
-    height,
-    shape,
-    offset,
-    RENDER_CONFIG.cylinderSegments,
-  );
-  let halfW = 0;
-  let halfH = 0;
-
-  for (const point of points) {
-    const x = point.x * Math.cos(rad) - point.y * Math.sin(rad);
-    const y = point.x * Math.sin(rad) + point.y * Math.cos(rad);
-    halfW = Math.max(halfW, Math.abs(x));
-    halfH = Math.max(halfH, Math.abs(y));
-  }
-
-  return { halfW, halfH };
-}
-
-function createOffsetSlotShape(
-  width: number,
-  height: number,
-  shape: SteppedSlot["shape"],
-  offset: number,
-): Geom2 {
-  if (offset <= 0) {
-    return ellipse({
-      radius: [width / 2, height / 2],
-      segments: RENDER_CONFIG.cylinderSegments,
-    });
-  }
-
-  const points = sampleSlotProfilePoints(
-    width,
-    height,
-    shape,
-    offset,
-    RENDER_CONFIG.cylinderSegments,
-  ).map((point): [number, number] => [point.x, point.y]);
-
-  return geom2.fromPoints(points);
-}
 
 function calculateEffectiveBaseplate(params: SteppedLayoutParams) {
   const boundarySpacing = params.spacing;
@@ -106,11 +55,13 @@ function calculateEffectiveBaseplate(params: SteppedLayoutParams) {
 
   params.slots.forEach((slot) => {
     const profile = getFreeSlotProfileGeometry(slot);
-    const { halfW, halfH } = getSlotBoundingHalfSize(
+    // 与原 getSlotBoundingHalfSize 行为一致：stepped 不传 profileExponent（使用默认值）
+    const { halfW, halfH } = getEllipseBoundingBox(
       profile.width,
       profile.height,
       slot.rotation,
       slot.shape,
+      undefined,
       profile.outerOffset,
     );
     minX = Math.min(minX, slot.x - halfW);

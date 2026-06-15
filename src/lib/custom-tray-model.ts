@@ -1,89 +1,27 @@
 import {
   booleans,
-  primitives,
   transforms,
   extrusions,
-  geometries,
 } from "@jscad/modeling";
-import type { Geom2, Geom3 } from "@jscad/modeling/src/geometries/types";
-import type { CustomLayoutParams, FreeSlot } from "@/types/custom-tray";
+import type { Geom3 } from "@jscad/modeling/src/geometries/types";
+import type { CustomLayoutParams } from "@/types/custom-tray";
 import {
-  RENDER_CONFIG,
   resolveBaseHolePresetKey,
 } from "@/lib/config";
-import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
+import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import {
   createBaseBody,
+  createOffsetSlotShape,
   subtractBaseHoles,
   type SlotCenter,
 } from "@/lib/model-utils";
 
 const { subtract } = booleans;
 const { translate, rotateZ } = transforms;
-const { ellipse } = primitives;
 const { extrudeLinear } = extrusions;
-const { geom2 } = geometries;
 
 const DEG_TO_RAD = Math.PI / 180;
-
-function getSlotBoundingHalfSize(
-  width: number,
-  height: number,
-  rotation: number,
-  shape: FreeSlot["shape"],
-  ellipseProfileExponent?: number,
-  ellipseOuterOffset?: number,
-) {
-  const rad = (rotation * Math.PI) / 180;
-  const offset = shape === "ellipse" ? ellipseOuterOffset ?? 0 : 0;
-  const points = sampleSlotProfilePoints(
-    width,
-    height,
-    shape,
-    offset,
-    RENDER_CONFIG.cylinderSegments,
-    ellipseProfileExponent,
-  );
-  let halfW = 0;
-  let halfH = 0;
-
-  for (const point of points) {
-    const x = point.x * Math.cos(rad) - point.y * Math.sin(rad);
-    const y = point.x * Math.sin(rad) + point.y * Math.cos(rad);
-    halfW = Math.max(halfW, Math.abs(x));
-    halfH = Math.max(halfH, Math.abs(y));
-  }
-
-  return { halfW, halfH };
-}
-
-function createOffsetSlotShape(
-  width: number,
-  height: number,
-  shape: FreeSlot["shape"],
-  ellipseProfileExponent?: number,
-  ellipseOuterOffset?: number,
-): Geom2 {
-  const offset = shape === "ellipse" ? ellipseOuterOffset ?? 0 : 0;
-  if (offset <= 0) {
-    return ellipse({
-      radius: [width / 2, height / 2],
-      segments: RENDER_CONFIG.cylinderSegments,
-    });
-  }
-
-  const points = sampleSlotProfilePoints(
-    width,
-    height,
-    shape,
-    offset,
-    RENDER_CONFIG.cylinderSegments,
-    ellipseProfileExponent,
-  ).map((point): [number, number] => [point.x, point.y]);
-
-  return geom2.fromPoints(points);
-}
 
 export function calculateCustomEffectiveBaseplate(params: CustomLayoutParams) {
   const boundarySpacing = params.boundarySpacingIndependent
@@ -109,7 +47,7 @@ export function calculateCustomEffectiveBaseplate(params: CustomLayoutParams) {
 
   params.slots.forEach((slot) => {
     const profile = getFreeSlotProfileGeometry(slot);
-    const { halfW, halfH } = getSlotBoundingHalfSize(
+    const { halfW, halfH } = getEllipseBoundingBox(
       profile.width,
       profile.height,
       slot.rotation,
@@ -185,8 +123,8 @@ export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
       width,
       height,
       slot.shape,
-      profile.profileExponent,
       profile.outerOffset,
+      profile.profileExponent,
     );
 
     const hole3D = extrudeLinear({ height: holeDepth + 0.02 }, holeShape2D);
