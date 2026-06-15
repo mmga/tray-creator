@@ -26,6 +26,11 @@ interface UseEditableParamsOptions<P> {
   initialState: P | (() => P);
   generatePreview: (params: P) => Promise<PreviewLifecycleResult | null>;
   exportModel: (params: P, geometry: Geom3) => Promise<void>;
+  /**
+   * 可选守卫：返回 false 时 generatePreview/exportModel 不执行
+   * （用于统一吸收"worker service 不可用则优雅降级"的重复检查）。
+   */
+  guard?: () => boolean;
   /** 可选：对 setParams/undo/外部导入的值做规范化（simple-stepped 的 normalizeParams） */
   normalize?: (params: P) => P;
   /** preview 失效时的回调（stepped 用来清优化提案） */
@@ -69,6 +74,7 @@ export function useEditableParams<P>({
   initialState,
   generatePreview,
   exportModel,
+  guard,
   normalize,
   onInvalidate,
 }: UseEditableParamsOptions<P>): UseEditableParamsReturn<P> {
@@ -85,6 +91,22 @@ export function useEditableParams<P>({
     [normalize],
   );
 
+  // 用 guard 包裹回调，统一吸收"worker 不可用则降级"的重复守卫
+  const guardedGeneratePreview = useCallback(
+    async (p: P): Promise<PreviewLifecycleResult | null> => {
+      if (guard && !guard()) return null;
+      return generatePreview(p);
+    },
+    [generatePreview, guard],
+  );
+  const guardedExportModel = useCallback(
+    async (p: P, geometry: Geom3): Promise<void> => {
+      if (guard && !guard()) return;
+      return exportModel(p, geometry);
+    },
+    [exportModel, guard],
+  );
+
   const {
     threeGeometry,
     volume,
@@ -95,8 +117,8 @@ export function useEditableParams<P>({
     handleExportSTL,
   } = usePreviewLifecycle<P>({
     getParams: () => paramsRef.current,
-    generatePreview,
-    exportModel,
+    generatePreview: guardedGeneratePreview,
+    exportModel: guardedExportModel,
     onInvalidate,
   });
 

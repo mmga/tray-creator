@@ -10,6 +10,7 @@ import type {
   SimpleSteppedSlot,
 } from "@/types/custom-tray";
 import { MAX_BUILD_SIZE } from "@/lib/config";
+import { browserDownloadPort } from "@/lib/download-port";
 import { createSimpleSteppedSlotInstance } from "@/lib/slot-instance-factory";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import {
@@ -157,11 +158,9 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
   } = useEditableParams<SimpleSteppedLayoutParams>({
     initialState: SIMPLE_STEPPED_LAYOUT_DEFAULTS,
     normalize: normalizeParams,
+    guard: () => trayWorkerService !== null,
     generatePreview: async (currentParams) => {
-      if (!trayWorkerService) {
-        return null;
-      }
-      const result = await trayWorkerService.generateSimpleStepped(currentParams);
+      const result = await trayWorkerService!.generateSimpleStepped(currentParams);
       return {
         geometry: result.geometry,
         threeGeometry: jscadToThreeGeometry(result.geometry),
@@ -169,10 +168,6 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
       };
     },
     exportModel: async (currentParams, geometry) => {
-      if (!trayWorkerService) {
-        return;
-      }
-
       const currentDerived = deriveSimpleSteppedLayout(currentParams);
       const filename = generateSimpleSteppedSTLFilename(
         Math.round(currentDerived.trayWidth),
@@ -180,15 +175,8 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
         currentDerived.activeRows.length,
         currentParams.slots.length,
       );
-      const result = await trayWorkerService.exportSTL(geometry, filename);
-      const url = URL.createObjectURL(result.blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      const result = await trayWorkerService!.exportSTL(geometry, filename);
+      browserDownloadPort.downloadBlob(result.blob, filename);
 
       const jsonFilename = filename.replace(/\.stl$/i, ".json");
       downloadParamFile("simple-stepped", currentParams, jsonFilename);

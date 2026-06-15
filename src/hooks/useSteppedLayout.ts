@@ -164,21 +164,15 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     handleExportSTL,
   } = useEditableParams<SteppedLayoutParams>({
     initialState: STEPPED_LAYOUT_DEFAULTS,
-    generatePreview: async (currentParams) => {
-      if (!trayWorkerService) {
-        return null;
-      }
-      return generateSteppedPreview(currentParams, trayWorkerService);
-    },
+    guard: () => trayWorkerService !== null,
+    generatePreview: async (currentParams) =>
+      generateSteppedPreview(currentParams, trayWorkerService!),
     exportModel: async (currentParams, geometry) => {
-      if (!trayWorkerService) {
-        return;
-      }
       await exportSteppedModelFiles(
         currentParams,
         calculateSteppedEffectiveDimensions(currentParams),
         geometry,
-        trayWorkerService,
+        trayWorkerService!,
         browserDownloadPort,
       );
     },

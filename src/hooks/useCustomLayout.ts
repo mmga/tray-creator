@@ -96,21 +96,15 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     handleExportSTL,
   } = useEditableParams<CustomLayoutParams>({
     initialState: CUSTOM_LAYOUT_DEFAULTS,
-    generatePreview: async (currentParams) => {
-      if (!trayWorkerService) {
-        return null;
-      }
-      return generateCustomPreview(currentParams, trayWorkerService);
-    },
+    guard: () => trayWorkerService !== null,
+    generatePreview: async (currentParams) =>
+      generateCustomPreview(currentParams, trayWorkerService!),
     exportModel: async (currentParams, geometry) => {
-      if (!trayWorkerService) {
-        return;
-      }
       await exportCustomModelFiles(
         currentParams,
         calculateCustomEffectiveDimensions(currentParams),
         geometry,
-        trayWorkerService,
+        trayWorkerService!,
         browserDownloadPort,
       );
     },
