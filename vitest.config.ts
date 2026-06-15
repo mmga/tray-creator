@@ -4,7 +4,7 @@ import { defineConfig } from "vitest/config";
 // 确保 React 加载 development build（含 act 等 test-utils），
 // 否则外部 shell 的 NODE_ENV=production 会让 react.act 为 undefined，
 // 触发 "@testing-library/react" 的 "React.act is not a function" 错误。
-process.env.NODE_ENV = "test";
+(process.env as Record<string, string>).NODE_ENV = "test";
 
 export default defineConfig({
   define: {
