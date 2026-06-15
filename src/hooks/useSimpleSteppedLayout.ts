@@ -11,7 +11,10 @@ import type {
 } from "@/types/custom-tray";
 import { MAX_BUILD_SIZE } from "@/lib/config";
 import { browserDownloadPort } from "@/lib/download-port";
-import { createSimpleSteppedSlotInstance } from "@/lib/slot-instance-factory";
+import {
+  createSimpleSteppedSlotInstance,
+  projectSimpleSteppedToFreeSlot,
+} from "@/lib/slot-instance-factory";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import {
   calculateSimpleSteppedMinimumTraySize,
@@ -201,20 +204,28 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
   );
 
   const canvasParams = useMemo<CustomLayoutParams>(() => {
+    const sourceSlotById = new Map(
+      params.slots.map((slot) => [slot.id, slot] as const),
+    );
     const slots: FreeSlot[] = derivedLayout.activeRows.flatMap((row) =>
-      row.slots.map((slot) => ({
-        id: slot.id,
-        x: slot.globalX,
-        y: slot.globalY,
-        shape: "circle" as const,
-        width: slot.diameter,
-        height: slot.diameter,
-        slotDefinitionId: params.slots.find((item) => item.id === slot.id)
-          ?.slotDefinitionId,
-        slotWidth: slot.effectiveDiameter,
-        slotHeight: slot.effectiveDiameter,
-        rotation: 0,
-      })),
+      row.slots.map((slot) => {
+        const source = sourceSlotById.get(slot.id);
+        if (!source) {
+          // 派生槽位无对应原始槽位时回退到手搓（理论上不应发生）
+          return {
+            id: slot.id,
+            x: slot.globalX,
+            y: slot.globalY,
+            shape: "circle" as const,
+            width: slot.diameter,
+            height: slot.diameter,
+            slotWidth: slot.effectiveDiameter,
+            slotHeight: slot.effectiveDiameter,
+            rotation: 0,
+          };
+        }
+        return projectSimpleSteppedToFreeSlot(slot, source);
+      }),
     );
 
     return {
