@@ -8,8 +8,7 @@ import type {
   GroupOutlinePreview,
 } from "@/types/custom-tray";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
-import { useUndoHistory } from "@/hooks/useUndoHistory";
-import { usePreviewLifecycle } from "@/hooks/usePreviewLifecycle";
+import { useEditableParams } from "@/hooks/useEditableParams";
 import { trayWorkerService } from "@/lib/worker/worker-service";
 import type * as THREE from "three";
 import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
@@ -115,23 +114,11 @@ export interface UseSteppedLayoutReturn {
 }
 
 export function useSteppedLayout(): UseSteppedLayoutReturn {
-  const [params, internalSetParams] = useState<SteppedLayoutParams>(
-    STEPPED_LAYOUT_DEFAULTS,
-  );
   const [optimizationProposals, setOptimizationProposals] = useState<
     SteppedOptimizationProposal[]
   >([]);
   const [isOptimizingLayout, setIsOptimizingLayout] = useState(false);
 
-  const {
-    pushState,
-    popState,
-    canUndo: canUndoFn,
-  } = useUndoHistory<SteppedLayoutParams>();
-  const paramsRef = useRef(params);
-  useEffect(() => {
-    paramsRef.current = params;
-  }, [params]);
   const optimizationProposalsRef = useRef(optimizationProposals);
   const optimizationRequestIdRef = useRef(0);
   const optimizationVariantRef = useRef(0);
@@ -159,16 +146,24 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
       cancelPendingOptimization();
     };
   }, [cancelPendingOptimization]);
+
   const {
+    params,
+    paramsRef,
+    setParams,
+    applyChange,
+    saveSnapshot,
+    undo,
+    canUndo,
+    invalidatePreview,
     threeGeometry,
     volume,
     isGenerating,
     isPreviewStale,
-    invalidatePreview,
     handleGenerate,
     handleExportSTL,
-  } = usePreviewLifecycle({
-    getParams: () => paramsRef.current,
+  } = useEditableParams<SteppedLayoutParams>({
+    initialState: STEPPED_LAYOUT_DEFAULTS,
     generatePreview: async (currentParams) => {
       if (!trayWorkerService) {
         return null;
@@ -193,22 +188,6 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     },
   });
 
-  const setParams = useCallback<
-    React.Dispatch<React.SetStateAction<SteppedLayoutParams>>
-  >(
-    (value) => {
-      internalSetParams((prev) =>
-        typeof value === "function"
-          ? (value as (prevState: SteppedLayoutParams) => SteppedLayoutParams)(
-              prev,
-            )
-          : value,
-      );
-      invalidatePreview();
-    },
-    [invalidatePreview],
-  );
-
   const calculateEffectiveDimensions = useCallback(
     (current: SteppedLayoutParams = paramsRef.current) => {
       return calculateSteppedEffectiveDimensions(current);
@@ -221,56 +200,38 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     [calculateEffectiveDimensions, params],
   );
 
-  const saveSnapshot = useCallback(() => {
-    pushState(paramsRef.current);
-  }, [pushState]);
-
-  const undo = useCallback(() => {
-    const prev = popState();
-    if (prev) {
-      internalSetParams(prev);
-      invalidatePreview();
-    }
-  }, [invalidatePreview, popState]);
-
   const updateParam = useCallback(
     <K extends keyof SteppedLayoutParams>(
       key: K,
       value: SteppedLayoutParams[K],
     ) => {
-      pushState(paramsRef.current);
-      internalSetParams((prev) => updateSteppedLayoutParam(prev, key, value));
-      invalidatePreview();
+      applyChange((prev) => updateSteppedLayoutParam(prev, key, value));
     },
-    [invalidatePreview, pushState],
+    [applyChange],
   );
 
   const addSlot = useCallback(
     (width: number) => {
-      internalSetParams((prev) => {
-        pushState(prev);
-        return addSteppedSlot(prev, randomIdFactory, width);
-      });
-      invalidatePreview();
+      applyChange((prev) => addSteppedSlot(prev, randomIdFactory, width));
     },
-    [invalidatePreview, pushState],
+    [applyChange],
   );
 
   const removeSlot = useCallback(
     (id: string) => {
-      pushState(paramsRef.current);
-      internalSetParams((prev) => removeSteppedSlot(prev, id));
-      invalidatePreview();
+      applyChange((prev) => removeSteppedSlot(prev, id));
     },
-    [invalidatePreview, pushState],
+    [applyChange],
   );
 
   const updateSlotPosition = useCallback(
     (id: string, x: number, y: number) => {
-      internalSetParams((prev) => updateSteppedSlotPosition(prev, id, x, y));
-      invalidatePreview();
+      applyChange(
+        (prev) => updateSteppedSlotPosition(prev, id, x, y),
+        { history: "live" },
+      );
     },
-    [invalidatePreview],
+    [applyChange],
   );
 
   const {
@@ -279,185 +240,144 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     resumeOutlinePreview,
   } = useSteppedOutlinePreview(params, trayWorkerService);
 
-  const applyMultipleSlotUpdates = useCallback(
-    (
-      updates: SteppedSlotUpdate[],
-      saveHistory: boolean,
-    ) => {
-      internalSetParams((prev) => {
-        if (saveHistory) {
-          pushState(prev);
-        }
-
-        return applySteppedSlotUpdates(prev, updates);
-      });
-      invalidatePreview();
-    },
-    [invalidatePreview, pushState],
-  );
-
   const updateMultipleSlots = useCallback(
     (updates: SteppedSlotUpdate[]) => {
-      applyMultipleSlotUpdates(updates, true);
+      applyChange((prev) => applySteppedSlotUpdates(prev, updates));
     },
-    [applyMultipleSlotUpdates],
+    [applyChange],
   );
 
   const updateMultipleSlotsLive = useCallback(
     (updates: SteppedSlotUpdate[]) => {
-      applyMultipleSlotUpdates(updates, false);
+      applyChange(
+        (prev) => applySteppedSlotUpdates(prev, updates),
+        { history: "live" },
+      );
     },
-    [applyMultipleSlotUpdates],
+    [applyChange],
   );
 
   const updateSlotRotation = useCallback(
     (id: string, rotation: number) => {
-      internalSetParams((prev) => updateSteppedSlotRotation(prev, id, rotation));
-      invalidatePreview();
+      applyChange(
+        (prev) => updateSteppedSlotRotation(prev, id, rotation),
+        { history: "live" },
+      );
     },
-    [invalidatePreview],
+    [applyChange],
   );
 
   const insertSlots = useCallback(
     (slotsToInsert: SymmetryInsertSlot[]) => {
       if (slotsToInsert.length === 0) return;
-
-      internalSetParams((prev) => {
-        pushState(prev);
-        return insertSteppedSlots(prev, randomIdFactory, slotsToInsert);
-      });
-      invalidatePreview();
+      applyChange((prev) =>
+        insertSteppedSlots(prev, randomIdFactory, slotsToInsert),
+      );
     },
-    [invalidatePreview, pushState],
+    [applyChange],
   );
 
   const duplicateSlots = useCallback(
     (ids: string[]): string[] => {
       const current = paramsRef.current;
-      pushState(current);
       const result = duplicateSteppedSlots(current, randomIdFactory, ids);
-      internalSetParams(result.params);
-      invalidatePreview();
+      applyChange(() => result.params, { force: true });
       return result.newIds;
     },
-    [invalidatePreview, pushState],
+    [applyChange, paramsRef],
   );
 
   const addGroup = useCallback(() => {
-    internalSetParams((prev) => {
-      pushState(prev);
-      return addSteppedGroup(prev, randomIdFactory);
-    });
-    invalidatePreview();
-  }, [invalidatePreview, pushState]);
+    applyChange((prev) => addSteppedGroup(prev, randomIdFactory));
+  }, [applyChange]);
 
   const removeGroup = useCallback(
     (groupId: string) => {
-      internalSetParams((prev) => {
-        const next = removeSteppedGroup(prev, groupId);
-        if (next === prev) {
-          return prev;
-        }
-        pushState(prev);
-        return next;
-      });
-      invalidatePreview();
+      applyChange((prev) => removeSteppedGroup(prev, groupId));
     },
-    [invalidatePreview, pushState],
+    [applyChange],
   );
 
   const updateGroupHeight = useCallback(
     (groupId: string, height: number) => {
-      pushState(paramsRef.current);
-      internalSetParams((prev) => updateSteppedGroupHeight(prev, groupId, height));
-      invalidatePreview();
+      applyChange((prev) => updateSteppedGroupHeight(prev, groupId, height));
     },
-    [invalidatePreview, pushState],
+    [applyChange],
   );
 
   const updateGroupSmoothingOverride = useCallback(
     (groupId: string, enabled: boolean) => {
-      pushState(paramsRef.current);
-      internalSetParams((prev) =>
+      applyChange((prev) =>
         updateSteppedGroupSmoothingOverride(prev, groupId, enabled),
       );
-      invalidatePreview();
     },
-    [invalidatePreview, pushState],
+    [applyChange],
   );
 
   const updateGroupSmoothingRadius = useCallback(
     (groupId: string, radius: number) => {
-      pushState(paramsRef.current);
-      internalSetParams((prev) =>
+      applyChange((prev) =>
         updateSteppedGroupSmoothingRadius(prev, groupId, radius),
       );
-      invalidatePreview();
     },
-    [invalidatePreview, pushState],
+    [applyChange],
   );
 
   const updateGroupDisconnectOverride = useCallback(
     (groupId: string, enabled: boolean) => {
-      pushState(paramsRef.current);
-      internalSetParams((prev) =>
+      applyChange((prev) =>
         updateSteppedGroupDisconnectOverride(prev, groupId, enabled),
       );
-      invalidatePreview();
     },
-    [invalidatePreview, pushState],
+    [applyChange],
   );
 
   const updateGroupDisconnectDistance = useCallback(
     (groupId: string, distance: number) => {
-      pushState(paramsRef.current);
-      internalSetParams((prev) =>
+      applyChange((prev) =>
         updateSteppedGroupDisconnectDistance(prev, groupId, distance),
       );
-      invalidatePreview();
     },
-    [invalidatePreview, pushState],
+    [applyChange],
   );
 
   const setActiveGroup = useCallback((groupId: string) => {
-    internalSetParams((prev) => setSteppedActiveGroup(prev, groupId));
-  }, []);
+    // setActiveGroup 不需要历史记录也不失效预览（仅切换活跃分组高亮）
+    applyChange(
+      (prev) => setSteppedActiveGroup(prev, groupId),
+      { history: "skip" },
+    );
+  }, [applyChange]);
 
   const moveSelectedSlotsToGroup = useCallback(
     (ids: string[], targetGroupId: string) => {
-      pushState(paramsRef.current);
-      internalSetParams((prev) =>
+      applyChange((prev) =>
         moveSteppedSlotsToGroup(prev, ids, targetGroupId),
       );
-      invalidatePreview();
     },
-    [invalidatePreview, pushState],
+    [applyChange],
   );
 
   const reorderGroups = useCallback(
     (fromIndex: number, toIndex: number) => {
-      internalSetParams((prev) => {
-        const next = reorderSteppedGroups(prev, fromIndex, toIndex);
-        if (next === prev) {
-          return prev;
-        }
-        pushState(prev);
-        return next;
-      });
+      // 特例：reorderGroups 用 clearOptimizationProposals 替代 invalidatePreview，
+      // 不通过 applyChange 以避免触发预览失效（保持原行为）
+      applyChange(
+        (prev) => reorderSteppedGroups(prev, fromIndex, toIndex),
+        { history: "skip" },
+      );
       clearOptimizationProposals();
     },
-    [clearOptimizationProposals, pushState],
+    [applyChange, clearOptimizationProposals],
   );
 
   const trimBaseplate = useCallback(() => {
-    internalSetParams((prev) => {
+    applyChange((prev) => {
       if (prev.slots.length === 0) return prev;
-      pushState(prev);
       const dims = calculateSteppedEffectiveDimensions(prev);
       return trimSteppedBaseplate(prev, dims);
     });
-    invalidatePreview();
-  }, [invalidatePreview, pushState]);
+  }, [applyChange]);
 
   const bridgeWarning = useMemo<BridgeWarning | null>(() => {
     return buildSteppedBridgeWarning(params);
@@ -499,11 +419,9 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
         return;
       }
 
-      pushState(paramsRef.current, { force: true });
-      internalSetParams(proposal.params);
-      invalidatePreview();
+      applyChange(() => proposal.params, { force: true });
     },
-    [invalidatePreview, pushState],
+    [applyChange],
   );
 
   return {
@@ -532,7 +450,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     effectiveDimensions,
     saveSnapshot,
     undo,
-    canUndo: canUndoFn(),
+    canUndo,
     threeGeometry,
     volume,
     isGenerating,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type * as THREE from "three";
 import type {
   CustomLayoutParams,
@@ -24,8 +24,7 @@ import {
 import type { CanvasSlotUpdate } from "@/lib/canvas-types";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
 import { generateSimpleSteppedSTLFilename } from "@/lib/stl-export";
-import { useUndoHistory } from "@/hooks/useUndoHistory";
-import { usePreviewLifecycle } from "@/hooks/usePreviewLifecycle";
+import { useEditableParams } from "@/hooks/useEditableParams";
 import { trayWorkerService } from "@/lib/worker/worker-service";
 import { downloadParamFile } from "@/lib/param-io";
 
@@ -101,67 +100,7 @@ function normalizeSimpleSteppedTraySize(
 }
 
 export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
-  const [params, internalSetParams] = useState<SimpleSteppedLayoutParams>(
-    SIMPLE_STEPPED_LAYOUT_DEFAULTS,
-  );
   const [activeRowId, setActiveRowId] = useState<string | null>(null);
-  const paramsRef = useRef(params);
-  useEffect(() => {
-    paramsRef.current = params;
-  }, [params]);
-
-  const {
-    pushState,
-    popState,
-    canUndo: canUndoFn,
-  } = useUndoHistory<SimpleSteppedLayoutParams>();
-  const {
-    threeGeometry,
-    volume,
-    isGenerating,
-    isPreviewStale,
-    invalidatePreview,
-    handleGenerate,
-    handleExportSTL,
-  } = usePreviewLifecycle({
-    getParams: () => paramsRef.current,
-    generatePreview: async (currentParams) => {
-      if (!trayWorkerService) {
-        return null;
-      }
-      const result = await trayWorkerService.generateSimpleStepped(currentParams);
-      return {
-        geometry: result.geometry,
-        threeGeometry: jscadToThreeGeometry(result.geometry),
-        volume: result.volume,
-      };
-    },
-    exportModel: async (currentParams, geometry) => {
-      if (!trayWorkerService) {
-        return;
-      }
-
-      const currentDerived = deriveSimpleSteppedLayout(currentParams);
-      const filename = generateSimpleSteppedSTLFilename(
-        Math.round(currentDerived.trayWidth),
-        Math.round(currentDerived.trayDepth),
-        currentDerived.activeRows.length,
-        currentParams.slots.length,
-      );
-      const result = await trayWorkerService.exportSTL(geometry, filename);
-      const url = URL.createObjectURL(result.blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      const jsonFilename = filename.replace(/\.stl$/i, ".json");
-      downloadParamFile("simple-stepped", currentParams, jsonFilename);
-    },
-  });
 
   const normalizeParams = useCallback((next: SimpleSteppedLayoutParams) => {
     const rebuiltRows = rebuildRowSlotIds(next.rows, next.slots);
@@ -201,21 +140,60 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
     };
   }, []);
 
-  const setParams = useCallback<
-    React.Dispatch<React.SetStateAction<SimpleSteppedLayoutParams>>
-  >(
-    (value) => {
-      internalSetParams((prev) =>
-        normalizeParams(
-          typeof value === "function"
-            ? (value as (prevState: SimpleSteppedLayoutParams) => SimpleSteppedLayoutParams)(prev)
-            : value,
-        ),
-      );
-      invalidatePreview();
+  const {
+    params,
+    paramsRef,
+    setParams,
+    applyChange,
+    saveSnapshot,
+    undo,
+    canUndo,
+    threeGeometry,
+    volume,
+    isGenerating,
+    isPreviewStale,
+    handleGenerate,
+    handleExportSTL,
+  } = useEditableParams<SimpleSteppedLayoutParams>({
+    initialState: SIMPLE_STEPPED_LAYOUT_DEFAULTS,
+    normalize: normalizeParams,
+    generatePreview: async (currentParams) => {
+      if (!trayWorkerService) {
+        return null;
+      }
+      const result = await trayWorkerService.generateSimpleStepped(currentParams);
+      return {
+        geometry: result.geometry,
+        threeGeometry: jscadToThreeGeometry(result.geometry),
+        volume: result.volume,
+      };
     },
-    [invalidatePreview, normalizeParams],
-  );
+    exportModel: async (currentParams, geometry) => {
+      if (!trayWorkerService) {
+        return;
+      }
+
+      const currentDerived = deriveSimpleSteppedLayout(currentParams);
+      const filename = generateSimpleSteppedSTLFilename(
+        Math.round(currentDerived.trayWidth),
+        Math.round(currentDerived.trayDepth),
+        currentDerived.activeRows.length,
+        currentParams.slots.length,
+      );
+      const result = await trayWorkerService.exportSTL(geometry, filename);
+      const url = URL.createObjectURL(result.blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      const jsonFilename = filename.replace(/\.stl$/i, ".json");
+      downloadParamFile("simple-stepped", currentParams, jsonFilename);
+    },
+  });
 
   const resolvedActiveRowId = useMemo(() => {
     if (activeRowId && params.rows.some((row) => row.id === activeRowId)) {
@@ -277,59 +255,45 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
     params.slots,
   ]);
 
-  const saveSnapshot = useCallback(() => {
-    pushState(paramsRef.current);
-  }, [pushState]);
-
-  const undo = useCallback(() => {
-    const prev = popState();
-    if (prev) {
-      internalSetParams(normalizeParams(prev));
-      invalidatePreview();
-    }
-  }, [invalidatePreview, normalizeParams, popState]);
-
   const updateParam = useCallback(
     <K extends keyof SimpleSteppedLayoutParams>(
       key: K,
       value: SimpleSteppedLayoutParams[K],
     ) => {
-      pushState(paramsRef.current);
-      internalSetParams((prev) => {
+      applyChange((prev) => {
         if (key === "spacing") {
           const nextSpacing = value as SimpleSteppedLayoutParams["spacing"];
           if (!prev.outerMarginIndependent) {
-            return normalizeParams({
+            return {
               ...prev,
               spacing: nextSpacing,
               outerMargin: nextSpacing,
-            });
+            } as SimpleSteppedLayoutParams;
           }
-          return normalizeParams({ ...prev, spacing: nextSpacing });
+          return { ...prev, spacing: nextSpacing } as SimpleSteppedLayoutParams;
         }
 
         if (key === "outerMarginIndependent") {
           const independent =
             value as SimpleSteppedLayoutParams["outerMarginIndependent"];
           if (!independent) {
-            return normalizeParams({
+            return {
               ...prev,
               outerMarginIndependent: false,
               outerMargin: prev.spacing,
-            });
+            } as SimpleSteppedLayoutParams;
           }
-          return normalizeParams({
+          return {
             ...prev,
             outerMarginIndependent: true,
             outerMargin: prev.outerMargin ?? prev.spacing,
-          });
+          } as SimpleSteppedLayoutParams;
         }
 
-        return normalizeParams({ ...prev, [key]: value });
+        return { ...prev, [key]: value } as SimpleSteppedLayoutParams;
       });
-      invalidatePreview();
     },
-    [invalidatePreview, normalizeParams, pushState],
+    [applyChange],
   );
 
   const addRow = useCallback(() => {
@@ -338,65 +302,49 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
       name: `行 ${paramsRef.current.rows.length + 1}`,
       slotIds: [],
     };
-    internalSetParams((prev) => {
-      pushState(prev);
-      return normalizeParams({
-        ...prev,
-        rows: [...prev.rows, newRow],
-      });
-    });
+    applyChange((prev) => ({
+      ...prev,
+      rows: [...prev.rows, newRow],
+    }));
     setActiveRowId(newRow.id);
-    invalidatePreview();
-  }, [invalidatePreview, normalizeParams, pushState]);
+  }, [applyChange, paramsRef]);
 
   const removeRow = useCallback(
     (rowId: string) => {
-      internalSetParams((prev) => {
-        pushState(prev);
-        return normalizeParams({
-          ...prev,
-          rows: prev.rows.filter((row) => row.id !== rowId),
-          slots: prev.slots.filter((slot) => slot.rowId !== rowId),
-        });
-      });
-      invalidatePreview();
+      applyChange((prev) => ({
+        ...prev,
+        rows: prev.rows.filter((row) => row.id !== rowId),
+        slots: prev.slots.filter((slot) => slot.rowId !== rowId),
+      }));
     },
-    [invalidatePreview, normalizeParams, pushState],
+    [applyChange],
   );
 
   const renameRow = useCallback(
     (rowId: string, name: string) => {
-      pushState(paramsRef.current);
-      internalSetParams((prev) =>
-        normalizeParams({
-          ...prev,
-          rows: prev.rows.map((row) =>
-            row.id === rowId ? { ...row, name: name.trim() || row.name } : row,
-          ),
-        }),
-      );
-      invalidatePreview();
+      applyChange((prev) => ({
+        ...prev,
+        rows: prev.rows.map((row) =>
+          row.id === rowId ? { ...row, name: name.trim() || row.name } : row,
+        ),
+      }));
     },
-    [invalidatePreview, normalizeParams, pushState],
+    [applyChange],
   );
 
   const clearRow = useCallback(
     (rowId: string) => {
-      internalSetParams((prev) => {
-        pushState(prev);
-        return normalizeParams({
-          ...prev,
-          slots: prev.slots.filter((slot) => slot.rowId !== rowId),
-        });
-      });
-      invalidatePreview();
+      applyChange((prev) => ({
+        ...prev,
+        slots: prev.slots.filter((slot) => slot.rowId !== rowId),
+      }));
     },
-    [invalidatePreview, normalizeParams, pushState],
+    [applyChange],
   );
 
   const reorderRows = useCallback(
     (fromIndex: number, toIndex: number) => {
-      internalSetParams((prev) => {
+      applyChange((prev) => {
         if (
           fromIndex < 0 ||
           fromIndex >= prev.rows.length ||
@@ -407,29 +355,23 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
           return prev;
         }
 
-        pushState(prev);
         const nextRows = [...prev.rows];
         const [moved] = nextRows.splice(fromIndex, 1);
         nextRows.splice(toIndex, 0, moved);
-        return normalizeParams({
-          ...prev,
-          rows: nextRows,
-        });
+        return { ...prev, rows: nextRows };
       });
-      invalidatePreview();
     },
-    [invalidatePreview, normalizeParams, pushState],
+    [applyChange],
   );
 
   const addSlotToRow = useCallback(
     (rowId: string, diameter: number) => {
-      internalSetParams((prev) => {
+      applyChange((prev) => {
         const rowExists = prev.rows.some((row) => row.id === rowId);
         if (!rowExists) {
           return prev;
         }
 
-        pushState(prev);
         const rowSlots = prev.slots.filter((slot) => slot.rowId === rowId);
         const effectiveDiameter = getSimpleSteppedEffectiveDiameter({ diameter });
         const x =
@@ -448,37 +390,55 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
           x,
         });
 
-        return normalizeParams({
-          ...prev,
-          slots: [...prev.slots, newSlot],
-        });
+        return { ...prev, slots: [...prev.slots, newSlot] };
       });
-      invalidatePreview();
     },
-    [invalidatePreview, normalizeParams, pushState],
+    [applyChange],
   );
 
   const removeSlot = useCallback(
     (id: string) => {
-      pushState(paramsRef.current);
-      internalSetParams((prev) =>
-        normalizeParams({
-          ...prev,
-          slots: prev.slots.filter((slot) => slot.id !== id),
-        }),
-      );
-      invalidatePreview();
+      applyChange((prev) => ({
+        ...prev,
+        slots: prev.slots.filter((slot) => slot.id !== id),
+      }));
     },
-    [invalidatePreview, normalizeParams, pushState],
+    [applyChange],
   );
 
-  const applyMultipleCanvasSlotUpdates = useCallback(
-    (updates: CanvasSlotUpdate[], saveHistory: boolean) => {
-      internalSetParams((prev) => {
-        if (saveHistory) {
-          pushState(prev);
-        }
+  const updateSlotPosition = useCallback(
+    (id: string, x: number, y: number) => {
+      applyChange(
+        (prev) => {
+          const localUpdates = clampSimpleSteppedSlotUpdates(
+            prev,
+            mapSimpleSteppedCanvasUpdatesToLocal(prev, [{ id, x, y }]),
+          );
+          const updatesMap = new Map(
+            localUpdates.map((update) => [update.id, update] as const),
+          );
+          return {
+            ...prev,
+            slots: prev.slots.map((slot) =>
+              updatesMap.has(slot.id)
+                ? {
+                    ...slot,
+                    x: updatesMap.get(slot.id)?.x ?? slot.x,
+                    y: updatesMap.get(slot.id)?.y ?? slot.y,
+                  }
+                : slot,
+            ),
+          };
+        },
+        { history: "live" },
+      );
+    },
+    [applyChange],
+  );
 
+  const updateMultipleSlots = useCallback(
+    (updates: CanvasSlotUpdate[]) => {
+      applyChange((prev) => {
         const localUpdates = clampSimpleSteppedSlotUpdates(
           prev,
           mapSimpleSteppedCanvasUpdatesToLocal(prev, updates),
@@ -486,8 +446,7 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
         const updatesMap = new Map(
           localUpdates.map((update) => [update.id, update] as const),
         );
-
-        return normalizeParams({
+        return {
           ...prev,
           slots: prev.slots.map((slot) =>
             updatesMap.has(slot.id)
@@ -498,32 +457,40 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
                 }
               : slot,
           ),
-        });
+        };
       });
-      invalidatePreview();
     },
-    [invalidatePreview, normalizeParams, pushState],
-  );
-
-  const updateSlotPosition = useCallback(
-    (id: string, x: number, y: number) => {
-      applyMultipleCanvasSlotUpdates([{ id, x, y }], false);
-    },
-    [applyMultipleCanvasSlotUpdates],
-  );
-
-  const updateMultipleSlots = useCallback(
-    (updates: CanvasSlotUpdate[]) => {
-      applyMultipleCanvasSlotUpdates(updates, true);
-    },
-    [applyMultipleCanvasSlotUpdates],
+    [applyChange],
   );
 
   const updateMultipleSlotsLive = useCallback(
     (updates: CanvasSlotUpdate[]) => {
-      applyMultipleCanvasSlotUpdates(updates, false);
+      applyChange(
+        (prev) => {
+          const localUpdates = clampSimpleSteppedSlotUpdates(
+            prev,
+            mapSimpleSteppedCanvasUpdatesToLocal(prev, updates),
+          );
+          const updatesMap = new Map(
+            localUpdates.map((update) => [update.id, update] as const),
+          );
+          return {
+            ...prev,
+            slots: prev.slots.map((slot) =>
+              updatesMap.has(slot.id)
+                ? {
+                    ...slot,
+                    x: updatesMap.get(slot.id)?.x ?? slot.x,
+                    y: updatesMap.get(slot.id)?.y ?? slot.y,
+                  }
+                : slot,
+            ),
+          };
+        },
+        { history: "live" },
+      );
     },
-    [applyMultipleCanvasSlotUpdates],
+    [applyChange],
   );
 
   const updateSlotRotation = useCallback((id: string, rotation: number) => {
@@ -542,46 +509,37 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
       }
 
       const newIds = targets.map(() => crypto.randomUUID());
-      internalSetParams((prev) => {
-        pushState(prev);
-        const nextSlots = [...prev.slots];
-
-        targets.forEach((slot, index) => {
-          nextSlots.push({
-            ...slot,
-            id: newIds[index],
-            x: slot.x + getSimpleSteppedEffectiveDiameter(slot) + prev.spacing,
+      applyChange(
+        (prev) => {
+          const nextSlots = [...prev.slots];
+          targets.forEach((slot, index) => {
+            nextSlots.push({
+              ...slot,
+              id: newIds[index],
+              x: slot.x + getSimpleSteppedEffectiveDiameter(slot) + prev.spacing,
+            });
           });
-        });
-
-        return normalizeParams({
-          ...prev,
-          slots: nextSlots,
-        });
-      });
-      invalidatePreview();
+          return { ...prev, slots: nextSlots };
+        },
+        { force: true },
+      );
       return newIds;
     },
-    [invalidatePreview, normalizeParams, pushState],
+    [applyChange, paramsRef],
   );
 
   const resizeTray = useCallback(
     (width: number, depth: number) => {
-      internalSetParams((prev) =>
-        normalizeParams({
-          ...prev,
-          trayWidth: width,
-          trayDepth: depth,
-        }),
+      applyChange(
+        (prev) => ({ ...prev, trayWidth: width, trayDepth: depth }),
+        { history: "skip" },
       );
-      invalidatePreview();
     },
-    [invalidatePreview, normalizeParams],
+    [applyChange],
   );
 
   const trimTray = useCallback(() => {
-    let didTrim = false;
-    internalSetParams((prev) => {
+    applyChange((prev) => {
       const minimumDims = calculateSimpleSteppedMinimumTraySize(prev);
       if (minimumDims.width <= 0 || minimumDims.depth <= 0) {
         return prev;
@@ -592,19 +550,13 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
       ) {
         return prev;
       }
-
-      pushState(prev);
-      didTrim = true;
-      return normalizeParams({
+      return {
         ...prev,
         trayWidth: minimumDims.width,
         trayDepth: minimumDims.depth,
-      });
+      };
     });
-    if (didTrim) {
-      invalidatePreview();
-    }
-  }, [invalidatePreview, normalizeParams, pushState]);
+  }, [applyChange]);
 
   return {
     params,
@@ -629,7 +581,7 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
     effectiveDimensions,
     saveSnapshot,
     undo,
-    canUndo: canUndoFn(),
+    canUndo,
     resizeTray,
     trimTray,
     threeGeometry,
