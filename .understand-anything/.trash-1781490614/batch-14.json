@@ -1,0 +1,200 @@
+{
+  "nodes": [
+    {
+      "id": "config:.claude/settings.json",
+      "type": "config",
+      "name": "settings.json",
+      "filePath": ".claude/settings.json",
+      "summary": "Claude 代理的项目本地设置（权限、允许/拒绝的工具等）。",
+      "tags": [
+        "config",
+        "agent",
+        "settings"
+      ],
+      "complexity": "simple",
+      "language": "json"
+    },
+    {
+      "id": "config:.understand-anything/.understandignore",
+      "type": "config",
+      "name": ".understandignore",
+      "filePath": ".understand-anything/.understandignore",
+      "summary": "understand-anything 工具的忽略规则文件（控制知识图谱扫描范围）。",
+      "tags": [
+        "config",
+        "understand-ignore"
+      ],
+      "complexity": "simple",
+      "language": "unknown"
+    },
+    {
+      "id": "config:.understand-anything/config.json",
+      "type": "config",
+      "name": "config.json",
+      "filePath": ".understand-anything/config.json",
+      "summary": "understand-anything 工具配置（输出语言等）。",
+      "tags": [
+        "config",
+        "understand"
+      ],
+      "complexity": "simple",
+      "language": "json"
+    },
+    {
+      "id": "document:docs/TDD_PROGRESS.md",
+      "type": "document",
+      "name": "TDD_PROGRESS.md",
+      "filePath": "docs/TDD_PROGRESS.md",
+      "summary": "TDD 实施进度跟踪文档（695 行），记录各模块的测试覆盖与重构进展。",
+      "tags": [
+        "docs",
+        "tdd",
+        "progress"
+      ],
+      "complexity": "complex",
+      "language": "markdown"
+    },
+    {
+      "id": "config:eslint.config.mjs",
+      "type": "config",
+      "name": "eslint.config.mjs",
+      "filePath": "eslint.config.mjs",
+      "summary": "ESLint 配置（flat config，集成 next 与项目规则）。",
+      "tags": [
+        "config",
+        "eslint",
+        "lint"
+      ],
+      "complexity": "simple",
+      "language": "javascript"
+    },
+    {
+      "id": "config:next.config.ts",
+      "type": "config",
+      "name": "next.config.ts",
+      "filePath": "next.config.ts",
+      "summary": "Next.js 配置（静态导出 output: export 等）。",
+      "tags": [
+        "config",
+        "nextjs"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "config:postcss.config.mjs",
+      "type": "config",
+      "name": "postcss.config.mjs",
+      "filePath": "postcss.config.mjs",
+      "summary": "PostCSS 配置，启用 Tailwind v4 插件。",
+      "tags": [
+        "config",
+        "postcss",
+        "tailwind"
+      ],
+      "complexity": "simple",
+      "language": "javascript"
+    },
+    {
+      "id": "file:src/app/globals.css",
+      "type": "file",
+      "name": "globals.css",
+      "filePath": "src/app/globals.css",
+      "summary": "全局样式（Tailwind v4 导入、暗色主题变量、parchment/forge 战锤主题装饰样式）。",
+      "tags": [
+        "styles",
+        "css",
+        "theme",
+        "tailwind"
+      ],
+      "complexity": "complex",
+      "language": "css"
+    },
+    {
+      "id": "file:src/lib/outline-geometry.ts.bak",
+      "type": "file",
+      "name": "outline-geometry.ts.bak",
+      "filePath": "src/lib/outline-geometry.ts.bak",
+      "summary": "outline-geometry.ts 的备份文件（轮廓几何生成的旧版本）。",
+      "tags": [
+        "backup",
+        "outline-geometry",
+        "bak"
+      ],
+      "complexity": "complex",
+      "language": "bak"
+    },
+    {
+      "id": "file:src/test/setup.ts",
+      "type": "file",
+      "name": "setup.ts",
+      "filePath": "src/test/setup.ts",
+      "summary": "Vitest 测试环境全局设置：注册 jest-dom matchers、MockWorker、MockResizeObserver、matchMedia 等 DOM/Web API 桩。",
+      "tags": [
+        "test",
+        "setup",
+        "vitest",
+        "mock"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/types/jscad.d.ts",
+      "type": "file",
+      "name": "jscad.d.ts",
+      "filePath": "src/types/jscad.d.ts",
+      "summary": "jscad 模块的 TypeScript 类型声明补充。",
+      "tags": [
+        "types",
+        "jscad",
+        "ambient"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "config:vitest.config.ts",
+      "type": "config",
+      "name": "vitest.config.ts",
+      "filePath": "vitest.config.ts",
+      "summary": "Vitest 单元测试配置（jsdom 环境、setup 文件、路径别名）。",
+      "tags": [
+        "config",
+        "vitest",
+        "test"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "config:vitest.integration.config.ts",
+      "type": "config",
+      "name": "vitest.integration.config.ts",
+      "filePath": "vitest.integration.config.ts",
+      "summary": "Vitest 集成测试配置（*.integration.test 的独立配置，更长超时）。",
+      "tags": [
+        "config",
+        "vitest",
+        "test",
+        "integration"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    }
+  ],
+  "edges": [
+    {
+      "source": "config:vitest.config.ts",
+      "target": "file:src/test/setup.ts",
+      "type": "configures",
+      "weight": 0.6
+    },
+    {
+      "source": "config:tsconfig.json",
+      "target": "config:package.json",
+      "type": "related",
+      "weight": 0.5
+    }
+  ]
+}

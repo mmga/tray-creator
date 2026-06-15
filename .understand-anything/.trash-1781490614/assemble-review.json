@@ -1,0 +1,31 @@
+{
+  "issues": [],
+  "warnings": [
+    "orphan: document:.claude/skills/debug-issue.md",
+    "orphan: document:.claude/skills/explore-codebase.md",
+    "orphan: document:.claude/skills/refactor-safely.md",
+    "orphan: document:.claude/skills/review-changes.md",
+    "orphan: config:.mcp.json",
+    "orphan: document:CLAUDE.md",
+    "orphan: document:CONTEXT.md",
+    "orphan: document:README.md",
+    "orphan: document:claude-progress.txt",
+    "orphan: config:components.json"
+  ],
+  "stats": {
+    "totalNodes": 294,
+    "totalEdges": 807,
+    "danglingEdges": 0,
+    "orphanNodes": 45,
+    "codeFilesInScan": 191,
+    "codeFilesMissingNode": 6
+  },
+  "missingCodeFileSamples": [
+    ".understand-anything/.understandignore",
+    "eslint.config.mjs",
+    "next.config.ts",
+    "postcss.config.mjs",
+    "vitest.config.ts",
+    "vitest.integration.config.ts"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "batchIndex": 13,
+  "files": [
+    {
+      "path": "docs/superpowers/specs/2026-04-09-grid-mode-maintainability-design.md",
+      "language": "markdown",
+      "sizeLines": 67,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-05-13-unified-slot-definitions-design.md",
+      "language": "markdown",
+      "sizeLines": 27,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-06-10-custom-pricing-formula-design.md",
+      "language": "markdown",
+      "sizeLines": 103,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-06-10-grid-pricing-formula-design.md",
+      "language": "markdown",
+      "sizeLines": 116,
+      "fileCategory": "docs"
+    }
+  ],
+  "batchImportData": {
+    "docs/superpowers/specs/2026-04-09-grid-mode-maintainability-design.md": [],
+    "docs/superpowers/specs/2026-05-13-unified-slot-definitions-design.md": [],
+    "docs/superpowers/specs/2026-06-10-custom-pricing-formula-design.md": [],
+    "docs/superpowers/specs/2026-06-10-grid-pricing-formula-design.md": []
+  },
+  "neighborMap": {}
+}

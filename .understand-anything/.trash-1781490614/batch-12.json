@@ -1,0 +1,65 @@
+{
+  "nodes": [
+    {
+      "id": "document:docs/superpowers/plans/2026-04-09-grid-mode-maintainability.md",
+      "type": "document",
+      "name": "2026-04-09-grid-mode-maintainability.md",
+      "filePath": "docs/superpowers/plans/2026-04-09-grid-mode-maintainability.md",
+      "summary": "网格模式可维护性改进计划。",
+      "tags": [
+        "docs",
+        "plan",
+        "grid",
+        "maintainability"
+      ],
+      "complexity": "moderate",
+      "language": "markdown"
+    },
+    {
+      "id": "document:docs/superpowers/plans/2026-05-13-multi-mode-browser-drafts.md",
+      "type": "document",
+      "name": "2026-05-13-multi-mode-browser-drafts.md",
+      "filePath": "docs/superpowers/plans/2026-05-13-multi-mode-browser-drafts.md",
+      "summary": "多模式浏览器端草稿系统的实现计划（712 行）。",
+      "tags": [
+        "docs",
+        "plan",
+        "drafts",
+        "multi-mode"
+      ],
+      "complexity": "complex",
+      "language": "markdown"
+    },
+    {
+      "id": "document:docs/superpowers/plans/2026-06-10-custom-pricing-formula.md",
+      "type": "document",
+      "name": "2026-06-10-custom-pricing-formula.md",
+      "filePath": "docs/superpowers/plans/2026-06-10-custom-pricing-formula.md",
+      "summary": "自定义模式定价公式的实现计划。",
+      "tags": [
+        "docs",
+        "plan",
+        "pricing",
+        "custom"
+      ],
+      "complexity": "complex",
+      "language": "markdown"
+    },
+    {
+      "id": "document:docs/superpowers/plans/2026-06-10-grid-pricing-formula.md",
+      "type": "document",
+      "name": "2026-06-10-grid-pricing-formula.md",
+      "filePath": "docs/superpowers/plans/2026-06-10-grid-pricing-formula.md",
+      "summary": "网格模式定价公式的实现计划。",
+      "tags": [
+        "docs",
+        "plan",
+        "pricing",
+        "grid"
+      ],
+      "complexity": "complex",
+      "language": "markdown"
+    }
+  ],
+  "edges": []
+}

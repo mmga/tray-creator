@@ -1,0 +1,416 @@
+{
+  "batchIndex": 8,
+  "files": [
+    {
+      "path": "src/lib/outline-geometry.test.ts",
+      "language": "typescript",
+      "sizeLines": 102,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/outline-geometry.ts",
+      "language": "typescript",
+      "sizeLines": 656,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/stepped-bridge-warning.test.ts",
+      "language": "typescript",
+      "sizeLines": 89,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/stepped-config.ts",
+      "language": "typescript",
+      "sizeLines": 56,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/stepped-group-params.test.ts",
+      "language": "typescript",
+      "sizeLines": 85,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/stepped-group-params.ts",
+      "language": "typescript",
+      "sizeLines": 39,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/stepped-layout-group-actions.test.ts",
+      "language": "typescript",
+      "sizeLines": 133,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/stepped-layout-group-actions.ts",
+      "language": "typescript",
+      "sizeLines": 174,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/stepped-model-service.test.ts",
+      "language": "typescript",
+      "sizeLines": 99,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/stepped-outline-preview.test.ts",
+      "language": "typescript",
+      "sizeLines": 112,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/stepped-outline-preview.ts",
+      "language": "typescript",
+      "sizeLines": 126,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/stepped-perf-fixtures.ts",
+      "language": "typescript",
+      "sizeLines": 150,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/stepped-tray-model.test.ts",
+      "language": "typescript",
+      "sizeLines": 120,
+      "fileCategory": "code"
+    }
+  ],
+  "batchImportData": {
+    "src/lib/outline-geometry.test.ts": [
+      "src/lib/outline-geometry.ts"
+    ],
+    "src/lib/outline-geometry.ts": [],
+    "src/lib/stepped-bridge-warning.test.ts": [
+      "src/lib/stepped-bridge-warning.ts",
+      "src/lib/stepped-config.ts"
+    ],
+    "src/lib/stepped-config.ts": [
+      "src/lib/stepped-group-params.ts",
+      "src/types/custom-tray.ts"
+    ],
+    "src/lib/stepped-group-params.test.ts": [
+      "src/lib/stepped-group-params.ts"
+    ],
+    "src/lib/stepped-group-params.ts": [
+      "src/types/custom-tray.ts"
+    ],
+    "src/lib/stepped-layout-group-actions.test.ts": [
+      "src/lib/model-ports.ts",
+      "src/lib/stepped-config.ts",
+      "src/lib/stepped-layout-group-actions.ts"
+    ],
+    "src/lib/stepped-layout-group-actions.ts": [
+      "src/lib/model-ports.ts",
+      "src/lib/stepped-config.ts",
+      "src/lib/stepped-group-params.ts",
+      "src/types/custom-tray.ts"
+    ],
+    "src/lib/stepped-model-service.test.ts": [
+      "src/lib/stepped-config.ts",
+      "src/lib/stepped-model-service.ts"
+    ],
+    "src/lib/stepped-outline-preview.test.ts": [
+      "src/lib/stepped-config.ts",
+      "src/lib/stepped-outline-preview.ts",
+      "src/types/custom-tray.ts"
+    ],
+    "src/lib/stepped-outline-preview.ts": [
+      "src/lib/outline-geometry.ts",
+      "src/lib/slot-definitions.ts",
+      "src/lib/stepped-connectivity.ts",
+      "src/lib/stepped-group-params.ts",
+      "src/types/custom-tray.ts"
+    ],
+    "src/lib/stepped-perf-fixtures.ts": [
+      "src/lib/stepped-config.ts",
+      "src/lib/stepped-group-params.ts",
+      "src/types/custom-tray.ts"
+    ],
+    "src/lib/stepped-tray-model.test.ts": [
+      "src/lib/stepped-config.ts",
+      "src/lib/stepped-tray-model.ts",
+      "src/types/custom-tray.ts"
+    ]
+  },
+  "neighborMap": {
+    "src/lib/outline-geometry.ts": [
+      {
+        "path": "src/lib/stepped-tray-model.ts",
+        "batchIndex": 1,
+        "symbols": [
+          "createSteppedTrayModel",
+          "calculateSteppedTrayDimensions"
+        ]
+      }
+    ],
+    "src/lib/stepped-bridge-warning.test.ts": [
+      {
+        "path": "src/lib/stepped-bridge-warning.ts",
+        "batchIndex": 6,
+        "symbols": [
+          "buildSteppedBridgeWarning"
+        ]
+      }
+    ],
+    "src/lib/stepped-config.ts": [
+      {
+        "path": "src/types/custom-tray.ts",
+        "batchIndex": 2,
+        "symbols": []
+      },
+      {
+        "path": "src/components/panels.test.tsx",
+        "batchIndex": 4,
+        "symbols": []
+      },
+      {
+        "path": "src/components/SteppedPanel.tsx",
+        "batchIndex": 4,
+        "symbols": [
+          "SteppedPanel"
+        ]
+      },
+      {
+        "path": "src/hooks/useSteppedLayout.integration.test.ts",
+        "batchIndex": 3,
+        "symbols": []
+      },
+      {
+        "path": "src/hooks/useSteppedLayout.ts",
+        "batchIndex": 5,
+        "symbols": [
+          "useSteppedLayout"
+        ]
+      },
+      {
+        "path": "src/hooks/useSteppedOutlinePreview.integration.test.ts",
+        "batchIndex": 2,
+        "symbols": []
+      },
+      {
+        "path": "src/lib/local-drafts.test.ts",
+        "batchIndex": 1,
+        "symbols": []
+      },
+      {
+        "path": "src/lib/param-io.test.ts",
+        "batchIndex": 1,
+        "symbols": []
+      },
+      {
+        "path": "src/lib/param-normalization.ts",
+        "batchIndex": 1,
+        "symbols": [
+          "normalizeParamsForMode",
+          "migrateCustomParamsToStepped"
+        ]
+      },
+      {
+        "path": "src/lib/pricing.test.ts",
+        "batchIndex": 1,
+        "symbols": []
+      },
+      {
+        "path": "src/lib/stepped-global-optimize.test.ts",
+        "batchIndex": 6,
+        "symbols": []
+      },
+      {
+        "path": "src/lib/stepped-layout-slot-actions.test.ts",
+        "batchIndex": 6,
+        "symbols": []
+      },
+      {
+        "path": "src/lib/worker/tray.worker.test.ts",
+        "batchIndex": 1,
+        "symbols": []
+      },
+      {
+        "path": "src/lib/worker/worker-service.test.ts",
+        "batchIndex": 1,
+        "symbols": []
+      },
+      {
+        "path": "src/workspaces/stepped/useSteppedWorkspace.tsx",
+        "batchIndex": 3,
+        "symbols": [
+          "useSteppedWorkspace"
+        ]
+      }
+    ],
+    "src/lib/stepped-group-params.ts": [
+      {
+        "path": "src/types/custom-tray.ts",
+        "batchIndex": 2,
+        "symbols": []
+      },
+      {
+        "path": "src/lib/param-normalization.ts",
+        "batchIndex": 1,
+        "symbols": [
+          "normalizeParamsForMode",
+          "migrateCustomParamsToStepped"
+        ]
+      },
+      {
+        "path": "src/lib/pricing.ts",
+        "batchIndex": 4,
+        "symbols": [
+          "calculateWeight",
+          "calculateGridPrice",
+          "calculateCustomPrice",
+          "getSteppedPricingBreakdown",
+          "calculateSteppedPrice",
+          "calculateSimpleSteppedPrice"
+        ]
+      },
+      {
+        "path": "src/lib/stepped-bridge-warning.ts",
+        "batchIndex": 6,
+        "symbols": [
+          "buildSteppedBridgeWarning"
+        ]
+      },
+      {
+        "path": "src/lib/stepped-tray-model.ts",
+        "batchIndex": 1,
+        "symbols": [
+          "createSteppedTrayModel",
+          "calculateSteppedTrayDimensions"
+        ]
+      }
+    ],
+    "src/lib/stepped-layout-group-actions.test.ts": [
+      {
+        "path": "src/lib/model-ports.ts",
+        "batchIndex": 6,
+        "symbols": []
+      }
+    ],
+    "src/lib/stepped-layout-group-actions.ts": [
+      {
+        "path": "src/lib/model-ports.ts",
+        "batchIndex": 6,
+        "symbols": []
+      },
+      {
+        "path": "src/types/custom-tray.ts",
+        "batchIndex": 2,
+        "symbols": []
+      },
+      {
+        "path": "src/hooks/useSteppedLayout.ts",
+        "batchIndex": 5,
+        "symbols": [
+          "useSteppedLayout"
+        ]
+      }
+    ],
+    "src/lib/stepped-model-service.test.ts": [
+      {
+        "path": "src/lib/stepped-model-service.ts",
+        "batchIndex": 6,
+        "symbols": [
+          "generateSteppedPreview",
+          "getSteppedSTLFilename",
+          "exportSteppedModelFiles"
+        ]
+      }
+    ],
+    "src/lib/stepped-outline-preview.test.ts": [
+      {
+        "path": "src/types/custom-tray.ts",
+        "batchIndex": 2,
+        "symbols": []
+      }
+    ],
+    "src/lib/stepped-outline-preview.ts": [
+      {
+        "path": "src/lib/slot-definitions.ts",
+        "batchIndex": 6,
+        "symbols": [
+          "DEFAULT_CIRCLE_SLOT_TOLERANCE",
+          "DEFAULT_ELLIPSE_OUTER_OFFSET",
+          "DEFAULT_ELLIPSE_PROFILE_EXPONENT",
+          "CIRCLE_SLOT_DEFINITIONS",
+          "ELLIPSE_SLOT_DEFINITIONS",
+          "SLOT_DEFINITIONS",
+          "findCircleSlotDefinitionByBaseDiameter",
+          "findCircleSlotDefinitionById",
+          "findEllipseSlotDefinitionByGeometry",
+          "getLegacyCircleSlotDiameter",
+          "createCircleSlotSnapshot",
+          "createGridSlotSnapshot",
+          "createEllipseSlotSnapshot",
+          "getFreeSlotProfileGeometry"
+        ]
+      },
+      {
+        "path": "src/lib/stepped-connectivity.ts",
+        "batchIndex": 6,
+        "symbols": [
+          "getConnectivityRadius",
+          "getEffectiveBridgeGap",
+          "clusterConnectivityCircles",
+          "analyzeBridgeWarning"
+        ]
+      },
+      {
+        "path": "src/types/custom-tray.ts",
+        "batchIndex": 2,
+        "symbols": []
+      },
+      {
+        "path": "src/hooks/useSteppedOutlinePreview.ts",
+        "batchIndex": 2,
+        "symbols": [
+          "useSteppedOutlinePreview"
+        ]
+      },
+      {
+        "path": "src/lib/worker/tray.worker.ts",
+        "batchIndex": 1,
+        "symbols": []
+      }
+    ],
+    "src/lib/stepped-perf-fixtures.ts": [
+      {
+        "path": "src/types/custom-tray.ts",
+        "batchIndex": 2,
+        "symbols": []
+      },
+      {
+        "path": "src/components/panels.test.tsx",
+        "batchIndex": 4,
+        "symbols": []
+      },
+      {
+        "path": "src/components/SteppedPanel.tsx",
+        "batchIndex": 4,
+        "symbols": [
+          "SteppedPanel"
+        ]
+      }
+    ],
+    "src/lib/stepped-tray-model.test.ts": [
+      {
+        "path": "src/lib/stepped-tray-model.ts",
+        "batchIndex": 1,
+        "symbols": [
+          "createSteppedTrayModel",
+          "calculateSteppedTrayDimensions"
+        ]
+      },
+      {
+        "path": "src/types/custom-tray.ts",
+        "batchIndex": 2,
+        "symbols": []
+      }
+    ]
+  }
+}

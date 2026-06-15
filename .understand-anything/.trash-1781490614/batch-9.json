@@ -1,0 +1,61 @@
+{
+  "nodes": [
+    {
+      "id": "document:.claude/skills/debug-issue.md",
+      "type": "document",
+      "name": "debug-issue.md",
+      "filePath": ".claude/skills/debug-issue.md",
+      "summary": "Claude 代理技能定义： disciplined bug 调试流程（复现→最小化→假设→插桩→修复→回归测试）。",
+      "tags": [
+        "docs",
+        "agent-skill",
+        "debug"
+      ],
+      "complexity": "simple",
+      "language": "markdown"
+    },
+    {
+      "id": "document:.claude/skills/explore-codebase.md",
+      "type": "document",
+      "name": "explore-codebase.md",
+      "filePath": ".claude/skills/explore-codebase.md",
+      "summary": "Claude 代理技能定义：只读式代码库探索指南。",
+      "tags": [
+        "docs",
+        "agent-skill",
+        "exploration"
+      ],
+      "complexity": "simple",
+      "language": "markdown"
+    },
+    {
+      "id": "document:.claude/skills/refactor-safely.md",
+      "type": "document",
+      "name": "refactor-safely.md",
+      "filePath": ".claude/skills/refactor-safely.md",
+      "summary": "Claude 代理技能定义：安全的重构流程指南。",
+      "tags": [
+        "docs",
+        "agent-skill",
+        "refactor"
+      ],
+      "complexity": "simple",
+      "language": "markdown"
+    },
+    {
+      "id": "document:.claude/skills/review-changes.md",
+      "type": "document",
+      "name": "review-changes.md",
+      "filePath": ".claude/skills/review-changes.md",
+      "summary": "Claude 代理技能定义：代码变更审查指南。",
+      "tags": [
+        "docs",
+        "agent-skill",
+        "review"
+      ],
+      "complexity": "simple",
+      "language": "markdown"
+    }
+  ],
+  "edges": []
+}

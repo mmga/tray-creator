@@ -1,0 +1,64 @@
+{
+  "nodes": [
+    {
+      "id": "document:docs/superpowers/specs/2026-04-09-grid-mode-maintainability-design.md",
+      "type": "document",
+      "name": "2026-04-09-grid-mode-maintainability-design.md",
+      "filePath": "docs/superpowers/specs/2026-04-09-grid-mode-maintainability-design.md",
+      "summary": "网格模式可维护性的设计规格。",
+      "tags": [
+        "docs",
+        "spec",
+        "grid",
+        "maintainability"
+      ],
+      "complexity": "moderate",
+      "language": "markdown"
+    },
+    {
+      "id": "document:docs/superpowers/specs/2026-05-13-unified-slot-definitions-design.md",
+      "type": "document",
+      "name": "2026-05-13-unified-slot-definitions-design.md",
+      "filePath": "docs/superpowers/specs/2026-05-13-unified-slot-definitions-design.md",
+      "summary": "统一凹槽定义的设计规格（跨模式 slot 统一）。",
+      "tags": [
+        "docs",
+        "spec",
+        "slot-definitions"
+      ],
+      "complexity": "simple",
+      "language": "markdown"
+    },
+    {
+      "id": "document:docs/superpowers/specs/2026-06-10-custom-pricing-formula-design.md",
+      "type": "document",
+      "name": "2026-06-10-custom-pricing-formula-design.md",
+      "filePath": "docs/superpowers/specs/2026-06-10-custom-pricing-formula-design.md",
+      "summary": "自定义模式定价公式的设计规格。",
+      "tags": [
+        "docs",
+        "spec",
+        "pricing",
+        "custom"
+      ],
+      "complexity": "moderate",
+      "language": "markdown"
+    },
+    {
+      "id": "document:docs/superpowers/specs/2026-06-10-grid-pricing-formula-design.md",
+      "type": "document",
+      "name": "2026-06-10-grid-pricing-formula-design.md",
+      "filePath": "docs/superpowers/specs/2026-06-10-grid-pricing-formula-design.md",
+      "summary": "网格模式定价公式的设计规格。",
+      "tags": [
+        "docs",
+        "spec",
+        "pricing",
+        "grid"
+      ],
+      "complexity": "moderate",
+      "language": "markdown"
+    }
+  ],
+  "edges": []
+}

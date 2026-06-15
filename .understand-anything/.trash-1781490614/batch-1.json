@@ -1,0 +1,1588 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/types/tray.ts",
+      "type": "file",
+      "name": "tray.ts",
+      "filePath": "src/types/tray.ts",
+      "summary": "定义网格模式（grid）托盘的核心类型：TrayParams 参数接口（行/列、凹槽直径、间距、底板厚度、磁吸孔等）与 BasePreset 底座预设。是整个 grid 模式参数体系的基础类型定义。",
+      "tags": [
+        "grid",
+        "types",
+        "tray-params",
+        "schema",
+        "model"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "languageNotes": "纯类型声明文件（interface/type），无运行时逻辑。字段注释为中文，描述每个参数的物理含义与单位 (mm)。"
+    },
+    {
+      "id": "file:src/lib/config.ts",
+      "type": "file",
+      "name": "config.ts",
+      "filePath": "src/lib/config.ts",
+      "summary": "跨模式共享配置中心：凹槽公差/椭圆外扩常量、磁吸孔（BASE_HOLE_CONFIG）预设与自动选择规则、底座预设、共用结构参数范围（SHARED_LAYOUT_LIMITS）、最大构建尺寸、渲染配置（RENDER_CONFIG）与凹槽颜色映射。是几乎所有建模与 UI 模块共享的基础配置。",
+      "tags": [
+        "config",
+        "shared",
+        "base-hole",
+        "render",
+        "slot",
+        "model"
+      ],
+      "complexity": "moderate",
+      "language": "typescript",
+      "languageNotes": "大量 as const 常量对象 + 纯函数（getSlotTolerance、resolveBaseHolePresetKey 等）。常量从 slot-definitions 模块引入以保持单一数据源。",
+      "exportedSymbols": [
+        "ELLIPSE_OUTER_OFFSET",
+        "ELLIPSE_PROFILE_EXPONENT",
+        "getSlotTolerance",
+        "getSlotOuterOffset",
+        "BASE_HOLE_CONFIG",
+        "resolveBaseHolePresetKey",
+        "getBaseHolePreset",
+        "getBaseHoleMinBottomWall",
+        "getBaseHoleMinBaseThickness",
+        "BASE_PRESETS",
+        "SHARED_LAYOUT_LIMITS",
+        "MAX_BUILD_SIZE",
+        "RENDER_CONFIG",
+        "SLOT_COLORS"
+      ]
+    },
+    {
+      "id": "function:src/lib/config.ts:resolveBaseHolePresetKey",
+      "type": "function",
+      "name": "resolveBaseHolePresetKey",
+      "filePath": "src/lib/config.ts",
+      "summary": "根据凹槽尺寸按 autoSelectRules 自动选择磁吸孔预设（≥60mm 用 \"40\"，否则 \"25\"），被各模式参数规范化逻辑广泛调用。",
+      "tags": [
+        "base-hole",
+        "config",
+        "preset",
+        "model"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/model-utils.ts",
+      "type": "file",
+      "name": "model-utils.ts",
+      "filePath": "src/lib/model-utils.ts",
+      "summary": "共享 JSCAD 建模工具：createBaseBody（圆角矩形线性拉伸生成底板）与 subtractBaseHoles（在底板中挖不穿透的磁吸孔盲孔，含最小底壁校验）。被 grid/custom 两种模式的托盘模型复用。",
+      "tags": [
+        "model",
+        "jscad",
+        "base-body",
+        "base-hole",
+        "utility",
+        "geometry"
+      ],
+      "complexity": "moderate",
+      "language": "typescript",
+      "languageNotes": "直接使用 @jscad/modeling 的 booleans/primitives/transforms/extrusions 模块构造实体几何。",
+      "exportedSymbols": [
+        "SlotCenter",
+        "createBaseBody",
+        "subtractBaseHoles"
+      ]
+    },
+    {
+      "id": "file:src/lib/tray-model.ts",
+      "type": "file",
+      "name": "tray-model.ts",
+      "filePath": "src/lib/tray-model.ts",
+      "summary": "grid 模式的核心 3D 模型生成器。createTrayModel 依据 TrayParams 构建圆角矩形底板、阵列圆柱凹槽（支持统一/X-Y 独立间距、半圆槽、纯底板模式）并挖磁吸孔，输出 JSCAD Geom3。同时提供尺寸计算与间距轴解析辅助函数。",
+      "tags": [
+        "grid",
+        "model",
+        "jscad",
+        "tray-model",
+        "geometry",
+        "core"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "languageNotes": "通过布尔减法（subtract）在实体上挖孔，使用 RENDER_CONFIG.cylinderSegments 控制圆柱细分度。兼容旧参数（slotDiameter 缺失时回退到 legacy 直径）。",
+      "exportedSymbols": [
+        "getGridSpacingAxes",
+        "getGridBoundarySpacingAxes",
+        "createTrayModel",
+        "calculateTrayDimensions"
+      ]
+    },
+    {
+      "id": "function:src/lib/tray-model.ts:createTrayModel",
+      "type": "function",
+      "name": "createTrayModel",
+      "filePath": "src/lib/tray-model.ts",
+      "summary": "grid 模式主建模算法：计算总尺寸→生成底板（含半圆槽变体）→阵列凹槽中心→布尔减法挖孔→挖磁吸孔，是 tray.worker 中 GENERATE_GRID 的核心入口。",
+      "tags": [
+        "grid",
+        "model",
+        "jscad",
+        "tray-model",
+        "core"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/custom-tray-model.ts",
+      "type": "file",
+      "name": "custom-tray-model.ts",
+      "filePath": "src/lib/custom-tray-model.ts",
+      "summary": "custom 模式的 3D 模型生成器。createCustomTrayModel 依据自由放置的 FreeSlot 集合（圆形/椭圆，可旋转）计算有效底板包围盒、生成等距外扩凹槽形状（拉伸+旋转+平移）并做布尔减法，输出 JSCAD Geom3。同时提供有效底板与边界尺寸计算。",
+      "tags": [
+        "custom",
+        "model",
+        "jscad",
+        "tray-model",
+        "geometry",
+        "core"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "languageNotes": "处理用户坐标系↔JSCAD 中心坐标系的转换。椭圆凹槽通过 sampleSlotProfilePoints 采样点构造自定义形状，支持 profileExponent/outerOffset。",
+      "exportedSymbols": [
+        "calculateCustomEffectiveBaseplate",
+        "createCustomTrayModel",
+        "calculateCustomTrayDimensions"
+      ]
+    },
+    {
+      "id": "file:src/lib/stepped-tray-model.ts",
+      "type": "file",
+      "name": "stepped-tray-model.ts",
+      "filePath": "src/lib/stepped-tray-model.ts",
+      "summary": "stepped（阶梯）模式的 3D 模型生成器。createSteppedTrayModel 按 SlotGroup 分组独立生成实体，将更高组凹槽纳入低组的平滑轮廓上下文以实现平滑过渡，挖除低组正上方的让位空间，最后合并并挖凹槽孔洞，输出 JSCAD Geom3。是该批中最复杂的建模算法。",
+      "tags": [
+        "stepped",
+        "model",
+        "jscad",
+        "tray-model",
+        "geometry",
+        "core"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "languageNotes": "依赖 outline-geometry（轮廓平滑）、stepped-connectivity（连通性聚类）、stepped-group-params（分组结构参数）。使用 measureVolume 做轮廓有效性校验。",
+      "exportedSymbols": [
+        "createSteppedTrayModel",
+        "calculateSteppedTrayDimensions"
+      ]
+    },
+    {
+      "id": "file:src/lib/simple-stepped-tray-model.ts",
+      "type": "file",
+      "name": "simple-stepped-tray-model.ts",
+      "filePath": "src/lib/simple-stepped-tray-model.ts",
+      "summary": "simple-stepped（简易阶梯）模式的 3D 模型生成器。createSimpleSteppedTrayModel 基于整体矩形底板，每行在其矩形带上逐行抬高 stepHeight，并从各行顶部向下挖圆柱凹槽。同时提供尺寸与体积计算。",
+      "tags": [
+        "simple-stepped",
+        "model",
+        "jscad",
+        "tray-model",
+        "geometry",
+        "core"
+      ],
+      "complexity": "moderate",
+      "language": "typescript",
+      "languageNotes": "阶梯层保持矩形（不做外圆角）以避免短行拉伸后视觉缩窄。使用 measureVolume 输出体积。",
+      "exportedSymbols": [
+        "createSimpleSteppedTrayModel",
+        "calculateSimpleSteppedTrayDimensions",
+        "calculateSimpleSteppedTrayVolume"
+      ]
+    },
+    {
+      "id": "file:src/lib/simple-stepped-layout.ts",
+      "type": "file",
+      "name": "simple-stepped-layout.ts",
+      "filePath": "src/lib/simple-stepped-layout.ts",
+      "summary": "simple-stepped 模式的布局计算核心。deriveSimpleSteppedLayout 把参数（行/凹槽）解析为带坐标、尺寸、高度、行带(rowBand)的派生布局，提供最小托盘尺寸、有效直径、凹槽拖拽范围 clamp 等函数。是模型、画布、投影模块共同的布局数据源。",
+      "tags": [
+        "simple-stepped",
+        "layout",
+        "core",
+        "geometry",
+        "model"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "languageNotes": "纯计算无副作用。用 buildActiveRowSeeds 预计算每行凹槽的左右边界，再聚合为派生行结构。使用 isFiniteNumber 做防御性校验。",
+      "exportedSymbols": [
+        "SimpleSteppedSlotUpdate",
+        "SimpleSteppedDerivedSlot",
+        "SimpleSteppedDerivedRow",
+        "SimpleSteppedDerivedLayout",
+        "getSimpleSteppedEffectiveDiameter",
+        "getSimpleSteppedMaxLocalYOffset",
+        "calculateSimpleSteppedMinimumTraySize",
+        "deriveSimpleSteppedLayout",
+        "calculateSimpleSteppedDimensions",
+        "buildSimpleSteppedRowBands",
+        "clampSimpleSteppedSlotUpdates"
+      ]
+    },
+    {
+      "id": "file:src/lib/simple-stepped-projection.ts",
+      "type": "file",
+      "name": "simple-stepped-projection.ts",
+      "filePath": "src/lib/simple-stepped-projection.ts",
+      "summary": "simple-stepped 模式的画布坐标投影层。把画布坐标的槽位更新映射回行局部坐标，并解析拖拽时的同组移动范围。以 barrel（桶文件）形式重新导出 simple-stepped-layout 的全部公开符号。",
+      "tags": [
+        "simple-stepped",
+        "projection",
+        "barrel",
+        "canvas",
+        "layout"
+      ],
+      "complexity": "moderate",
+      "language": "typescript",
+      "languageNotes": "barrel 模式：`export { ... } from`。承担画布↔布局坐标的双向换算。",
+      "exportedSymbols": [
+        "buildSimpleSteppedRowBands",
+        "calculateSimpleSteppedDimensions",
+        "calculateSimpleSteppedMinimumTraySize",
+        "clampSimpleSteppedSlotUpdates",
+        "deriveSimpleSteppedLayout",
+        "getSimpleSteppedEffectiveDiameter",
+        "getSimpleSteppedMaxLocalYOffset",
+        "mapSimpleSteppedCanvasUpdatesToLocal",
+        "resolveSimpleSteppedSlotMoveScope"
+      ]
+    },
+    {
+      "id": "file:src/lib/slot-profile-geometry.ts",
+      "type": "file",
+      "name": "slot-profile-geometry.ts",
+      "filePath": "src/lib/slot-profile-geometry.ts",
+      "summary": "凹槽轮廓几何采样：sampleSlotProfilePoints 按给定的宽/高/形状（圆/椭圆）、等距外扩 offset 与 profileExponent 沿法线方向采样轮廓点。是 custom/stepped 模式生成椭圆凹槽形状的底层几何工具。",
+      "tags": [
+        "slot",
+        "geometry",
+        "ellipse",
+        "sampling",
+        "model"
+      ],
+      "complexity": "moderate",
+      "language": "typescript",
+      "languageNotes": "使用 superellipse（超椭圆）方程 `pow(abs(cos), 2/exponent)` 控制椭圆丰满度，并沿外法线方向施加 offset。"
+    },
+    {
+      "id": "function:src/lib/slot-profile-geometry.ts:sampleSlotProfilePoints",
+      "type": "function",
+      "name": "sampleSlotProfilePoints",
+      "filePath": "src/lib/slot-profile-geometry.ts",
+      "summary": "凹槽轮廓点采样算法：用超椭圆参数方程生成点列，并按 offset 沿外法线等距扩张，供 custom/stepped 建模与碰撞检测使用。",
+      "tags": [
+        "slot",
+        "geometry",
+        "ellipse",
+        "sampling",
+        "model"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/slot-instance-factory.ts",
+      "type": "file",
+      "name": "slot-instance-factory.ts",
+      "filePath": "src/lib/slot-instance-factory.ts",
+      "summary": "凹槽实例工厂：为各模式创建与规范化槽位实例——grid 快照、自由圆形/椭圆 FreeSlot、stepped 圆形槽、simple-stepped 槽。负责匹配槽位定义 ID、规整旋转角、补全椭圆 profileExponent/outerOffset 等快照字段。",
+      "tags": [
+        "slot",
+        "factory",
+        "model",
+        "snapshot",
+        "core"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "languageNotes": "大量依赖 slot-definitions 的查找函数（findEllipseSlotDefinitionByGeometry、createCircleSlotSnapshot）。normalize*Snapshot 函数用于参数导入时补齐缺失字段。",
+      "exportedSymbols": [
+        "EllipseSlotInstanceConfig",
+        "CreateFreeSlotInstanceOptions",
+        "CreateSteppedSlotInstanceOptions",
+        "CreateSimpleSteppedSlotInstanceOptions",
+        "createGridSlotSnapshotFromDefinition",
+        "createFreeSlotInstance",
+        "createSteppedSlotInstance",
+        "createSimpleSteppedSlotInstance",
+        "normalizeFreeSlotInstanceSnapshot",
+        "normalizeSimpleSteppedSlotInstanceSnapshot"
+      ]
+    },
+    {
+      "id": "file:src/lib/param-normalization.ts",
+      "type": "file",
+      "name": "param-normalization.ts",
+      "filePath": "src/lib/param-normalization.ts",
+      "summary": "参数规范化管线：normalizeParamsForMode 按 grid/custom/simple-stepped/stepped 四模式分发到各自的规范化管线（校验必填→迁移旧版形状→规范化槽位实例→clamp 派生字段）。还提供 custom→stepped 的迁移函数。是参数导入/序列化的核心校验层。",
+      "tags": [
+        "param-normalization",
+        "validation",
+        "config",
+        "core",
+        "model"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "languageNotes": "采用 ParamNormalizationPipeline 四步管线模式。大量使用 `as unknown as Record<string, unknown>` 做可变字段操作。处理 legacy 字段（如 stepped 的 bridgeRadius→smoothingRadius、bottomHeight→groups 迁移）。",
+      "exportedSymbols": [
+        "NormalizableParams",
+        "normalizeParamsForMode",
+        "migrateCustomParamsToStepped"
+      ]
+    },
+    {
+      "id": "file:src/lib/grid-config.ts",
+      "type": "file",
+      "name": "grid-config.ts",
+      "filePath": "src/lib/grid-config.ts",
+      "summary": "grid 模式配置：DEFAULT_TRAY_PARAMS 默认参数（基于第 3 个底座预设）、PARAM_CONFIG 行列/间距/厚度等参数范围。是 grid 工作区与参数面板的默认值与边界来源。",
+      "tags": [
+        "grid",
+        "config",
+        "tray-params",
+        "defaults"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "languageNotes": "用 createGridSlotSnapshotFromDefinition 在模块加载时预计算默认槽位快照。",
+      "exportedSymbols": [
+        "DEFAULT_PRESET_INDEX",
+        "DEFAULT_TRAY_PARAMS",
+        "PARAM_CONFIG"
+      ]
+    },
+    {
+      "id": "file:src/lib/custom-config.ts",
+      "type": "file",
+      "name": "custom-config.ts",
+      "filePath": "src/lib/custom-config.ts",
+      "summary": "custom 模式配置：CUSTOM_LAYOUT_DEFAULTS 默认布局参数、CUSTOM_LIMITS 参数范围、ELLIPSE_PRESETS 椭圆预设（来自 slot-definitions）。",
+      "tags": [
+        "custom",
+        "config",
+        "defaults",
+        "ellipse"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "languageNotes": "复用 SHARED_LAYOUT_LIMITS 的共用范围（baseThickness/holeDepth/cornerRadius）。",
+      "exportedSymbols": [
+        "EllipsePreset",
+        "ELLIPSE_PRESETS",
+        "CUSTOM_LAYOUT_DEFAULTS",
+        "CUSTOM_LIMITS"
+      ]
+    },
+    {
+      "id": "file:src/lib/simple-stepped-config.ts",
+      "type": "file",
+      "name": "simple-stepped-config.ts",
+      "filePath": "src/lib/simple-stepped-config.ts",
+      "summary": "simple-stepped 模式配置：SIMPLE_STEPPED_LAYOUT_DEFAULTS 默认参数（首排高度、阶梯步进、行间距、凹槽直径范围等）与 SIMPLE_STEPPED_LIMITS 参数范围。",
+      "tags": [
+        "simple-stepped",
+        "config",
+        "defaults"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "languageNotes": "定义了一个 120mm 的空托盘默认尺寸 SIMPLE_STEPPED_EMPTY_SIZE。",
+      "exportedSymbols": [
+        "SIMPLE_STEPPED_LAYOUT_DEFAULTS",
+        "SIMPLE_STEPPED_LIMITS"
+      ]
+    },
+    {
+      "id": "file:src/lib/grid-model-state.ts",
+      "type": "file",
+      "name": "grid-model-state.ts",
+      "filePath": "src/lib/grid-model-state.ts",
+      "summary": "grid 模式参数状态管理：normalizeGridParams 规整参数（间距/边界/磁吸孔/半圆槽联动）、updateGridParam 处理联动字段更新（spacingIndependent、holeDiameter、basePlateOnly 等）、reset/replace 辅助。",
+      "tags": [
+        "grid",
+        "state",
+        "param-normalization",
+        "model"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "languageNotes": "updateGridParam 对多个联动字段做特殊分支处理，每个分支都经 normalizeGridParams 收口。",
+      "exportedSymbols": [
+        "normalizeGridParams",
+        "replaceGridParams",
+        "resetGridParams",
+        "updateGridParam"
+      ]
+    },
+    {
+      "id": "file:src/components/TrayViewer.tsx",
+      "type": "file",
+      "name": "TrayViewer.tsx",
+      "filePath": "src/components/TrayViewer.tsx",
+      "summary": "3D 视口组件：用 react-three-fiber + three.js 渲染传入的 BufferGeometry 托盘模型，包含自动相机适配（CameraAutoFit）、WebGL 上下文丢失恢复、多光源布光、生成中进度条与锻造风（FORGE VIEW）装饰边框。点击可触发重新生成。",
+      "tags": [
+        "viewport",
+        "three",
+        "react",
+        "ui",
+        "component",
+        "canvas"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "languageNotes": "R3F 声明式 3D：Canvas 内含 TrayMesh（mesh + EdgesGeometry 线框）、OrbitControls、多个 directionalLight。useMemo/useEffect 管理几何体副作用。"
+    },
+    {
+      "id": "file:src/lib/worker/tray.worker.ts",
+      "type": "file",
+      "name": "tray.worker.ts",
+      "filePath": "src/lib/worker/tray.worker.ts",
+      "summary": "Web Worker：在后台线程执行托盘模型生成（grid/custom/stepped/simple-stepped）、阶梯轮廓预览生成与 STL 导出。通过 postMessage 双向通信，返回几何体+体积或 STL Blob。避免主线程阻塞。",
+      "tags": [
+        "worker",
+        "jscad",
+        "stl-export",
+        "core",
+        "model"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "languageNotes": "使用 @jscad/stl-serializer 序列化 STL，@jscad/modeling measureVolume 计算体积。定义了 WorkerRequest/WorkerResponse 判别联合类型。self.onmessage 是 worker 入口。",
+      "exportedSymbols": [
+        "WorkerRequest",
+        "WorkerResponse"
+      ]
+    },
+    {
+      "id": "file:src/components/TrayViewer.test.tsx",
+      "type": "file",
+      "name": "TrayViewer.test.tsx",
+      "filePath": "src/components/TrayViewer.test.tsx",
+      "summary": "TrayViewer 组件的单元测试。通过 vi.mock 模拟 react-three-fiber/three 的 Canvas 与 WebGL 环境，验证几何体渲染、相机适配、WebGL 上下文丢失恢复、生成中进度条与点击重新生成等行为。",
+      "tags": [
+        "test",
+        "viewport",
+        "three",
+        "component"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "languageNotes": "使用 vitest + @testing-library/react。vi.hoisted + vi.mock 隔离 R3F 依赖。"
+    },
+    {
+      "id": "file:src/hooks/useSimpleSteppedLayout.integration.test.ts",
+      "type": "file",
+      "name": "useSimpleSteppedLayout.integration.test.ts",
+      "filePath": "src/hooks/useSimpleSteppedLayout.integration.test.ts",
+      "summary": "useSimpleSteppedLayout hook 的集成测试。mock worker 服务与 toast，验证 simple-stepped 工作区 hook 的模型生成、STL 导出、参数文件下载、几何体转换等完整交互流程。",
+      "tags": [
+        "test",
+        "simple-stepped",
+        "hook",
+        "integration"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "languageNotes": "vitest + @testing-library/react renderHook。vi.mock 隔离 worker-service、param-io、jscad-to-three。"
+    },
+    {
+      "id": "file:src/lib/config.test.ts",
+      "type": "file",
+      "name": "config.test.ts",
+      "filePath": "src/lib/config.test.ts",
+      "summary": "config.ts 磁吸孔配置的单元测试：验证 resolveBaseHolePresetKey 按尺寸自动选择预设、getBaseHolePreset 预设值、最小底壁与最小底板厚度的推导。",
+      "tags": [
+        "test",
+        "config",
+        "base-hole"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/custom-layout-math.test.ts",
+      "type": "file",
+      "name": "custom-layout-math.test.ts",
+      "filePath": "src/lib/custom-layout-math.test.ts",
+      "summary": "custom-layout-math 的单元测试：验证 resolveCustomBoundarySpacing 边界间距解析与 calculateCustomEffectiveDimensions 有效尺寸计算。",
+      "tags": [
+        "test",
+        "custom",
+        "layout",
+        "geometry"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/custom-tray-model.test.ts",
+      "type": "file",
+      "name": "custom-tray-model.test.ts",
+      "filePath": "src/lib/custom-tray-model.test.ts",
+      "summary": "custom-tray-model 的单元测试：用 @jscad measureBoundingBox/measureVolume 验证 createCustomTrayModel 生成的几何体尺寸、包围盒、有效底板计算与磁吸孔行为。",
+      "tags": [
+        "test",
+        "custom",
+        "model",
+        "jscad"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "languageNotes": "直接调用 JSCAD 测量函数做几何断言。"
+    },
+    {
+      "id": "file:src/lib/grid-model-state.test.ts",
+      "type": "file",
+      "name": "grid-model-state.test.ts",
+      "filePath": "src/lib/grid-model-state.test.ts",
+      "summary": "grid-model-state 的单元测试：验证 normalizeGridParams 边界间距跟随/独立、updateGridParam 的联动字段（spacingIndependent、holeDiameter、basePlateOnly、halfCircleSlots）更新行为。",
+      "tags": [
+        "test",
+        "grid",
+        "state",
+        "param-normalization"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/local-drafts.test.ts",
+      "type": "file",
+      "name": "local-drafts.test.ts",
+      "filePath": "src/lib/local-drafts.test.ts",
+      "summary": "local-drafts 的单元测试：验证草稿的增删改查、重命名、导出、标题格式化、按模式限制数量（MAX_DRAFTS_PER_MODE）等本地草稿管理行为。mock 了 param-io 的下载函数。",
+      "tags": [
+        "test",
+        "local-drafts",
+        "storage"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/param-io.test.ts",
+      "type": "file",
+      "name": "param-io.test.ts",
+      "filePath": "src/lib/param-io.test.ts",
+      "summary": "param-io 的单元测试：覆盖 buildParamFile/serializeParamFile/createParamBlob/downloadParamFile/parseParamFileObject/importParams 全流程，验证四种模式的参数文件构建、序列化、Blob 生成、数值四舍五入与导入解析。",
+      "tags": [
+        "test",
+        "param-io",
+        "serialization",
+        "import-export"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/param-normalization.test.ts",
+      "type": "file",
+      "name": "param-normalization.test.ts",
+      "filePath": "src/lib/param-normalization.test.ts",
+      "summary": "param-normalization 的单元测试：验证 normalizeParamsForMode 对四种模式的参数规范化（必填校验、旧版迁移、槽位实例规范化、clamp）以及 migrateCustomParamsToStepped 的迁移行为。",
+      "tags": [
+        "test",
+        "param-normalization",
+        "validation"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/pricing.test.ts",
+      "type": "file",
+      "name": "pricing.test.ts",
+      "filePath": "src/lib/pricing.test.ts",
+      "summary": "pricing 的单元测试：验证 calculateWeight、calculateGridPrice、calculateCustomPrice、calculateSteppedPrice、calculateSimpleSteppedPrice 与 getSteppedPricingBreakdown 在各模式下的重量与价格计算。",
+      "tags": [
+        "test",
+        "pricing",
+        "model"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/simple-stepped-layout.test.ts",
+      "type": "file",
+      "name": "simple-stepped-layout.test.ts",
+      "filePath": "src/lib/simple-stepped-layout.test.ts",
+      "summary": "simple-stepped-layout 的单元测试：验证 deriveSimpleSteppedLayout、calculateSimpleSteppedDimensions/MinimumTraySize、buildSimpleSteppedRowBands、getSimpleSteppedEffectiveDiameter、clampSimpleSteppedSlotUpdates 等布局计算函数。",
+      "tags": [
+        "test",
+        "simple-stepped",
+        "layout",
+        "geometry"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/simple-stepped-projection.test.ts",
+      "type": "file",
+      "name": "simple-stepped-projection.test.ts",
+      "filePath": "src/lib/simple-stepped-projection.test.ts",
+      "summary": "simple-stepped-projection 的单元测试：验证 mapSimpleSteppedCanvasUpdatesToLocal（画布→行局部坐标映射）与 resolveSimpleSteppedSlotMoveScope（拖拽同组移动范围解析）。",
+      "tags": [
+        "test",
+        "simple-stepped",
+        "projection",
+        "canvas"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/simple-stepped-tray-model.test.ts",
+      "type": "file",
+      "name": "simple-stepped-tray-model.test.ts",
+      "filePath": "src/lib/simple-stepped-tray-model.test.ts",
+      "summary": "simple-stepped-tray-model 的单元测试：验证 calculateSimpleSteppedTrayDimensions 与 calculateSimpleSteppedTrayVolume 在多行阶梯布局下的尺寸与体积计算。",
+      "tags": [
+        "test",
+        "simple-stepped",
+        "model",
+        "jscad"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/slot-instance-factory.test.ts",
+      "type": "file",
+      "name": "slot-instance-factory.test.ts",
+      "filePath": "src/lib/slot-instance-factory.test.ts",
+      "summary": "slot-instance-factory 的单元测试：验证 createGridSlotSnapshotFromDefinition、createFreeSlotInstance（圆形/椭圆）、createSteppedSlotInstance、createSimpleSteppedSlotInstance 以及各 normalize*Snapshot 函数的快照与补全行为。",
+      "tags": [
+        "test",
+        "slot",
+        "factory",
+        "snapshot"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/tray-model.test.ts",
+      "type": "file",
+      "name": "tray-model.test.ts",
+      "filePath": "src/lib/tray-model.test.ts",
+      "summary": "tray-model 的单元测试：用 @jscad measureBoundingBox/measureVolume 与 stlSerializer 验证 createTrayModel 生成的网格托盘几何体尺寸、体积、间距轴解析与 STL 序列化字节长度。",
+      "tags": [
+        "test",
+        "grid",
+        "model",
+        "jscad",
+        "stl-export"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/worker/tray.worker.test.ts",
+      "type": "file",
+      "name": "tray.worker.test.ts",
+      "filePath": "src/lib/worker/tray.worker.test.ts",
+      "summary": "tray.worker 的单元测试：vi.mock 全部建模函数与 STL 序列化，验证 worker 消息分发对四种生成请求、阶梯轮廓预览、STL 导出与错误处理的 postMessage 响应。",
+      "tags": [
+        "test",
+        "worker",
+        "jscad",
+        "stl-export"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "languageNotes": "通过 vi.mock 替换全部建模依赖，直接测试 self.onmessage 分发逻辑。"
+    },
+    {
+      "id": "file:src/lib/worker/worker-service.test.ts",
+      "type": "file",
+      "name": "worker-service.test.ts",
+      "filePath": "src/lib/worker/worker-service.test.ts",
+      "summary": "worker-service 的单元测试：用 FakeWorker（stubGlobal Worker）验证 trayWorkerService 的请求投递、成功响应解析、错误处理与 worker 生命周期。",
+      "tags": [
+        "test",
+        "worker",
+        "service"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "languageNotes": "自建 FakeWorker 类模拟 Worker 构造与消息收发。"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/lib/config.ts",
+      "target": "function:src/lib/config.ts:resolveBaseHolePresetKey",
+      "type": "contains",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/tray-model.ts",
+      "target": "function:src/lib/tray-model.ts:createTrayModel",
+      "type": "contains",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/slot-profile-geometry.ts",
+      "target": "function:src/lib/slot-profile-geometry.ts:sampleSlotProfilePoints",
+      "type": "contains",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/TrayViewer.test.tsx",
+      "target": "file:src/components/TrayViewer.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/TrayViewer.tsx",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSimpleSteppedLayout.integration.test.ts",
+      "target": "file:src/hooks/useSimpleSteppedLayout.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSimpleSteppedLayout.integration.test.ts",
+      "target": "file:src/lib/simple-stepped-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/config.test.ts",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/config.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/config.ts",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-config.ts",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-config.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-config.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-math.test.ts",
+      "target": "file:src/lib/custom-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-math.test.ts",
+      "target": "file:src/lib/custom-layout-math.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-tray-model.test.ts",
+      "target": "file:src/lib/custom-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-tray-model.test.ts",
+      "target": "file:src/lib/custom-tray-model.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-tray-model.test.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-tray-model.ts",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-tray-model.ts",
+      "target": "file:src/lib/model-utils.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-tray-model.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-tray-model.ts",
+      "target": "file:src/lib/slot-profile-geometry.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-tray-model.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/grid-config.ts",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/grid-config.ts",
+      "target": "file:src/lib/slot-instance-factory.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/grid-config.ts",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/grid-model-state.test.ts",
+      "target": "file:src/lib/grid-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/grid-model-state.test.ts",
+      "target": "file:src/lib/grid-model-state.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/grid-model-state.ts",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/grid-model-state.ts",
+      "target": "file:src/lib/grid-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/grid-model-state.ts",
+      "target": "file:src/lib/slot-instance-factory.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/grid-model-state.ts",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/local-drafts.test.ts",
+      "target": "file:src/lib/custom-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/local-drafts.test.ts",
+      "target": "file:src/lib/grid-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/local-drafts.test.ts",
+      "target": "file:src/lib/local-drafts.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/local-drafts.test.ts",
+      "target": "file:src/lib/simple-stepped-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/local-drafts.test.ts",
+      "target": "file:src/lib/stepped-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/local-drafts.test.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/local-drafts.test.ts",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/model-utils.ts",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/model-utils.ts",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/param-io.test.ts",
+      "target": "file:src/lib/custom-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/param-io.test.ts",
+      "target": "file:src/lib/grid-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/param-io.test.ts",
+      "target": "file:src/lib/param-io.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/param-io.test.ts",
+      "target": "file:src/lib/simple-stepped-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/param-io.test.ts",
+      "target": "file:src/lib/simple-stepped-layout.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/param-io.test.ts",
+      "target": "file:src/lib/stepped-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/param-io.test.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/param-io.test.ts",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/param-normalization.test.ts",
+      "target": "file:src/lib/custom-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/param-normalization.test.ts",
+      "target": "file:src/lib/grid-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/param-normalization.test.ts",
+      "target": "file:src/lib/param-normalization.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/param-normalization.test.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/param-normalization.test.ts",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/param-normalization.ts",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/param-normalization.ts",
+      "target": "file:src/lib/custom-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/param-normalization.ts",
+      "target": "file:src/lib/grid-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/param-normalization.ts",
+      "target": "file:src/lib/simple-stepped-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/param-normalization.ts",
+      "target": "file:src/lib/simple-stepped-layout.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/param-normalization.ts",
+      "target": "file:src/lib/slot-instance-factory.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/param-normalization.ts",
+      "target": "file:src/lib/stepped-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/param-normalization.ts",
+      "target": "file:src/lib/stepped-group-params.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/param-normalization.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/param-normalization.ts",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/pricing.test.ts",
+      "target": "file:src/lib/custom-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/pricing.test.ts",
+      "target": "file:src/lib/grid-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/pricing.test.ts",
+      "target": "file:src/lib/pricing.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/pricing.test.ts",
+      "target": "file:src/lib/simple-stepped-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/pricing.test.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/pricing.test.ts",
+      "target": "file:src/lib/slot-instance-factory.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/pricing.test.ts",
+      "target": "file:src/lib/stepped-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/pricing.test.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/simple-stepped-config.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/simple-stepped-layout.test.ts",
+      "target": "file:src/lib/simple-stepped-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/simple-stepped-layout.test.ts",
+      "target": "file:src/lib/simple-stepped-layout.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/simple-stepped-layout.test.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/simple-stepped-layout.ts",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/simple-stepped-layout.ts",
+      "target": "file:src/lib/simple-stepped-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/simple-stepped-layout.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/simple-stepped-layout.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/simple-stepped-projection.test.ts",
+      "target": "file:src/lib/simple-stepped-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/simple-stepped-projection.test.ts",
+      "target": "file:src/lib/simple-stepped-projection.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/simple-stepped-projection.test.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/simple-stepped-projection.ts",
+      "target": "file:src/lib/canvas-types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/simple-stepped-projection.ts",
+      "target": "file:src/lib/simple-stepped-layout.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/simple-stepped-projection.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/simple-stepped-tray-model.test.ts",
+      "target": "file:src/lib/simple-stepped-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/simple-stepped-tray-model.test.ts",
+      "target": "file:src/lib/simple-stepped-tray-model.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/simple-stepped-tray-model.ts",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/simple-stepped-tray-model.ts",
+      "target": "file:src/lib/model-utils.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/simple-stepped-tray-model.ts",
+      "target": "file:src/lib/simple-stepped-layout.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/simple-stepped-tray-model.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/slot-instance-factory.test.ts",
+      "target": "file:src/lib/slot-instance-factory.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/slot-instance-factory.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/slot-instance-factory.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/slot-instance-factory.ts",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/slot-profile-geometry.ts",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/slot-profile-geometry.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "file:src/lib/outline-geometry.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "file:src/lib/slot-profile-geometry.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "file:src/lib/stepped-connectivity.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "file:src/lib/stepped-group-params.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/tray-model.test.ts",
+      "target": "file:src/lib/grid-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/tray-model.test.ts",
+      "target": "file:src/lib/tray-model.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/tray-model.ts",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/tray-model.ts",
+      "target": "file:src/lib/model-utils.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/tray-model.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/tray-model.ts",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/worker/tray.worker.test.ts",
+      "target": "file:src/lib/custom-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/worker/tray.worker.test.ts",
+      "target": "file:src/lib/grid-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/worker/tray.worker.test.ts",
+      "target": "file:src/lib/stepped-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/worker/tray.worker.ts",
+      "target": "file:src/lib/custom-tray-model.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/worker/tray.worker.ts",
+      "target": "file:src/lib/simple-stepped-tray-model.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/worker/tray.worker.ts",
+      "target": "file:src/lib/stepped-outline-preview.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/worker/tray.worker.ts",
+      "target": "file:src/lib/stepped-tray-model.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/worker/tray.worker.ts",
+      "target": "file:src/lib/tray-model.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/worker/tray.worker.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/worker/tray.worker.ts",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/worker/worker-service.test.ts",
+      "target": "file:src/lib/custom-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/worker/worker-service.test.ts",
+      "target": "file:src/lib/grid-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/worker/worker-service.test.ts",
+      "target": "file:src/lib/simple-stepped-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/worker/worker-service.test.ts",
+      "target": "file:src/lib/stepped-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/worker/worker-service.test.ts",
+      "target": "file:src/lib/worker/tray.worker.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/TrayViewer.tsx",
+      "target": "file:src/components/TrayViewer.test.tsx",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/config.ts",
+      "target": "file:src/lib/config.test.ts",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/custom-tray-model.ts",
+      "target": "file:src/lib/custom-tray-model.test.ts",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/grid-model-state.ts",
+      "target": "file:src/lib/grid-model-state.test.ts",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/param-normalization.ts",
+      "target": "file:src/lib/param-normalization.test.ts",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/simple-stepped-layout.ts",
+      "target": "file:src/lib/simple-stepped-layout.test.ts",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/simple-stepped-projection.ts",
+      "target": "file:src/lib/simple-stepped-projection.test.ts",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/simple-stepped-tray-model.ts",
+      "target": "file:src/lib/simple-stepped-tray-model.test.ts",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/slot-instance-factory.ts",
+      "target": "file:src/lib/slot-instance-factory.test.ts",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/tray-model.ts",
+      "target": "file:src/lib/tray-model.test.ts",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/worker/tray.worker.ts",
+      "target": "file:src/lib/worker/tray.worker.test.ts",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "function:src/lib/tray-model.ts:createTrayModel",
+      "target": "function:src/lib/config.ts:resolveBaseHolePresetKey",
+      "type": "calls",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/lib/tray-model.ts:createTrayModel",
+      "target": "function:src/lib/slot-profile-geometry.ts:sampleSlotProfilePoints",
+      "type": "related",
+      "weight": 0.4
+    },
+    {
+      "source": "file:src/lib/worker/tray.worker.ts",
+      "target": "function:src/lib/tray-model.ts:createTrayModel",
+      "type": "calls",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/tray-model.ts",
+      "target": "file:src/lib/custom-tray-model.ts",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/tray-model.ts",
+      "target": "file:src/lib/simple-stepped-tray-model.ts",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/tray-model.ts",
+      "target": "file:src/lib/stepped-tray-model.ts",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/custom-tray-model.ts",
+      "target": "file:src/lib/stepped-tray-model.ts",
+      "type": "related",
+      "weight": 0.5
+    }
+  ]
+}
