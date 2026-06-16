@@ -6,25 +6,32 @@ import type {
   CustomLayoutParams,
   FreeSlot,
   SimpleSteppedLayoutParams,
-  SimpleSteppedRow,
-  SimpleSteppedSlot,
 } from "@/types/custom-tray";
-import { MAX_BUILD_SIZE } from "@/lib/config";
 import { browserDownloadPort } from "@/lib/download-port";
 import {
-  createSimpleSteppedSlotInstance,
   projectSimpleSteppedToFreeSlot,
 } from "@/lib/slot-instance-factory";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import {
-  calculateSimpleSteppedMinimumTraySize,
   calculateSimpleSteppedDimensions,
-  clampSimpleSteppedSlotUpdates,
   deriveSimpleSteppedLayout,
-  getSimpleSteppedEffectiveDiameter,
-  mapSimpleSteppedCanvasUpdatesToLocal,
+  normalizeSimpleSteppedParams,
   type SimpleSteppedDerivedLayout,
 } from "@/lib/simple-stepped-projection";
+import {
+  addSimpleSteppedRow,
+  clearSimpleSteppedRow,
+  removeSimpleSteppedRow,
+  renameSimpleSteppedRow,
+  reorderSimpleSteppedRows,
+} from "@/lib/simple-stepped-row-actions";
+import {
+  addSimpleSteppedSlotToRow,
+  applySimpleSteppedSlotUpdates,
+  duplicateSimpleSteppedSlots,
+  removeSimpleSteppedSlot,
+  trimSimpleSteppedBaseplate,
+} from "@/lib/simple-stepped-slot-actions";
 import type { CanvasSlotUpdate } from "@/lib/canvas-types";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
 import { generateSimpleSteppedSTLFilename } from "@/lib/stl-export";
@@ -73,76 +80,8 @@ export interface UseSimpleSteppedLayoutReturn {
   handleExportSTL: () => void;
 }
 
-function rebuildRowSlotIds(
-  rows: SimpleSteppedRow[],
-  slots: SimpleSteppedSlot[],
-): SimpleSteppedRow[] {
-  return rows.map((row) => ({
-    ...row,
-    slotIds: slots.filter((slot) => slot.rowId === row.id).map((slot) => slot.id),
-  }));
-}
-
-function normalizeSimpleSteppedTraySize(
-  requestedSize: number,
-  minimumSize: number,
-  fallbackSize: number,
-) {
-  const safeRequestedSize =
-    Number.isFinite(requestedSize) && requestedSize > 0
-      ? requestedSize
-      : fallbackSize;
-
-  if (minimumSize > MAX_BUILD_SIZE) {
-    return Math.max(safeRequestedSize, minimumSize);
-  }
-
-  return Math.min(
-    Math.max(safeRequestedSize, minimumSize),
-    MAX_BUILD_SIZE,
-  );
-}
-
 export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
   const [activeRowId, setActiveRowId] = useState<string | null>(null);
-
-  const normalizeParams = useCallback((next: SimpleSteppedLayoutParams) => {
-    const rebuiltRows = rebuildRowSlotIds(next.rows, next.slots);
-    const normalizedSlots = next.slots.map((slot) => ({
-      ...slot,
-      y: Number.isFinite(slot.y) ? slot.y : 0,
-    }));
-    const withRowIds = {
-      ...next,
-      rows: rebuiltRows,
-      slots: normalizedSlots,
-      outerMarginIndependent: Boolean(next.outerMarginIndependent),
-      outerMargin: next.outerMarginIndependent ? next.outerMargin : next.spacing,
-    };
-    const minimumDims = calculateSimpleSteppedMinimumTraySize(withRowIds);
-    const fallbackWidth =
-      Number.isFinite(withRowIds.trayWidth) && withRowIds.trayWidth > 0
-        ? withRowIds.trayWidth
-        : SIMPLE_STEPPED_LAYOUT_DEFAULTS.trayWidth;
-    const fallbackDepth =
-      Number.isFinite(withRowIds.trayDepth) && withRowIds.trayDepth > 0
-        ? withRowIds.trayDepth
-        : SIMPLE_STEPPED_LAYOUT_DEFAULTS.trayDepth;
-
-    return {
-      ...withRowIds,
-      trayWidth: normalizeSimpleSteppedTraySize(
-        withRowIds.trayWidth,
-        minimumDims.width,
-        fallbackWidth,
-      ),
-      trayDepth: normalizeSimpleSteppedTraySize(
-        withRowIds.trayDepth,
-        minimumDims.depth,
-        fallbackDepth,
-      ),
-    };
-  }, []);
 
   const {
     params,
@@ -160,10 +99,13 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
     handleExportSTL,
   } = useEditableParams<SimpleSteppedLayoutParams>({
     initialState: SIMPLE_STEPPED_LAYOUT_DEFAULTS,
-    normalize: normalizeParams,
+    normalize: normalizeSimpleSteppedParams,
     guard: () => trayWorkerService !== null,
     generatePreview: async (currentParams) => {
       const result = await trayWorkerService!.generateSimpleStepped(currentParams);
+      if (!result) {
+        return null;
+      }
       return {
         geometry: result.geometry,
         threeGeometry: jscadToThreeGeometry(result.geometry),
@@ -296,111 +238,51 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
   );
 
   const addRow = useCallback(() => {
-    const newRow: SimpleSteppedRow = {
-      id: crypto.randomUUID(),
-      name: `行 ${paramsRef.current.rows.length + 1}`,
-      slotIds: [],
-    };
-    applyChange((prev) => ({
-      ...prev,
-      rows: [...prev.rows, newRow],
-    }));
-    setActiveRowId(newRow.id);
-  }, [applyChange, paramsRef]);
+    const rowId = crypto.randomUUID();
+    applyChange((prev) => addSimpleSteppedRow(prev, rowId));
+    setActiveRowId(rowId);
+  }, [applyChange]);
 
   const removeRow = useCallback(
     (rowId: string) => {
-      applyChange((prev) => ({
-        ...prev,
-        rows: prev.rows.filter((row) => row.id !== rowId),
-        slots: prev.slots.filter((slot) => slot.rowId !== rowId),
-      }));
+      applyChange((prev) => removeSimpleSteppedRow(prev, rowId));
     },
     [applyChange],
   );
 
   const renameRow = useCallback(
     (rowId: string, name: string) => {
-      applyChange((prev) => ({
-        ...prev,
-        rows: prev.rows.map((row) =>
-          row.id === rowId ? { ...row, name: name.trim() || row.name } : row,
-        ),
-      }));
+      applyChange((prev) => renameSimpleSteppedRow(prev, rowId, name));
     },
     [applyChange],
   );
 
   const clearRow = useCallback(
     (rowId: string) => {
-      applyChange((prev) => ({
-        ...prev,
-        slots: prev.slots.filter((slot) => slot.rowId !== rowId),
-      }));
+      applyChange((prev) => clearSimpleSteppedRow(prev, rowId));
     },
     [applyChange],
   );
 
   const reorderRows = useCallback(
     (fromIndex: number, toIndex: number) => {
-      applyChange((prev) => {
-        if (
-          fromIndex < 0 ||
-          fromIndex >= prev.rows.length ||
-          toIndex < 0 ||
-          toIndex >= prev.rows.length ||
-          fromIndex === toIndex
-        ) {
-          return prev;
-        }
-
-        const nextRows = [...prev.rows];
-        const [moved] = nextRows.splice(fromIndex, 1);
-        nextRows.splice(toIndex, 0, moved);
-        return { ...prev, rows: nextRows };
-      });
+      applyChange((prev) => reorderSimpleSteppedRows(prev, fromIndex, toIndex));
     },
     [applyChange],
   );
 
   const addSlotToRow = useCallback(
     (rowId: string, diameter: number) => {
-      applyChange((prev) => {
-        const rowExists = prev.rows.some((row) => row.id === rowId);
-        if (!rowExists) {
-          return prev;
-        }
-
-        const rowSlots = prev.slots.filter((slot) => slot.rowId === rowId);
-        const effectiveDiameter = getSimpleSteppedEffectiveDiameter({ diameter });
-        const x =
-          rowSlots.length === 0
-            ? 0
-            : Math.max(
-                ...rowSlots.map((slot) => slot.x + getSimpleSteppedEffectiveDiameter(slot) / 2),
-              ) +
-              prev.spacing +
-              effectiveDiameter / 2;
-
-        const newSlot = createSimpleSteppedSlotInstance({
-          id: crypto.randomUUID(),
-          rowId,
-          diameter,
-          x,
-        });
-
-        return { ...prev, slots: [...prev.slots, newSlot] };
-      });
+      applyChange((prev) =>
+        addSimpleSteppedSlotToRow(prev, crypto.randomUUID(), rowId, diameter),
+      );
     },
     [applyChange],
   );
 
   const removeSlot = useCallback(
     (id: string) => {
-      applyChange((prev) => ({
-        ...prev,
-        slots: prev.slots.filter((slot) => slot.id !== id),
-      }));
+      applyChange((prev) => removeSimpleSteppedSlot(prev, id));
     },
     [applyChange],
   );
@@ -408,27 +290,7 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
   const updateSlotPosition = useCallback(
     (id: string, x: number, y: number) => {
       applyChange(
-        (prev) => {
-          const localUpdates = clampSimpleSteppedSlotUpdates(
-            prev,
-            mapSimpleSteppedCanvasUpdatesToLocal(prev, [{ id, x, y }]),
-          );
-          const updatesMap = new Map(
-            localUpdates.map((update) => [update.id, update] as const),
-          );
-          return {
-            ...prev,
-            slots: prev.slots.map((slot) =>
-              updatesMap.has(slot.id)
-                ? {
-                    ...slot,
-                    x: updatesMap.get(slot.id)?.x ?? slot.x,
-                    y: updatesMap.get(slot.id)?.y ?? slot.y,
-                  }
-                : slot,
-            ),
-          };
-        },
+        (prev) => applySimpleSteppedSlotUpdates(prev, [{ id, x, y }]),
         { history: "live" },
       );
     },
@@ -437,27 +299,7 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
 
   const updateMultipleSlots = useCallback(
     (updates: CanvasSlotUpdate[]) => {
-      applyChange((prev) => {
-        const localUpdates = clampSimpleSteppedSlotUpdates(
-          prev,
-          mapSimpleSteppedCanvasUpdatesToLocal(prev, updates),
-        );
-        const updatesMap = new Map(
-          localUpdates.map((update) => [update.id, update] as const),
-        );
-        return {
-          ...prev,
-          slots: prev.slots.map((slot) =>
-            updatesMap.has(slot.id)
-              ? {
-                  ...slot,
-                  x: updatesMap.get(slot.id)?.x ?? slot.x,
-                  y: updatesMap.get(slot.id)?.y ?? slot.y,
-                }
-              : slot,
-          ),
-        };
-      });
+      applyChange((prev) => applySimpleSteppedSlotUpdates(prev, updates));
     },
     [applyChange],
   );
@@ -465,27 +307,7 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
   const updateMultipleSlotsLive = useCallback(
     (updates: CanvasSlotUpdate[]) => {
       applyChange(
-        (prev) => {
-          const localUpdates = clampSimpleSteppedSlotUpdates(
-            prev,
-            mapSimpleSteppedCanvasUpdatesToLocal(prev, updates),
-          );
-          const updatesMap = new Map(
-            localUpdates.map((update) => [update.id, update] as const),
-          );
-          return {
-            ...prev,
-            slots: prev.slots.map((slot) =>
-              updatesMap.has(slot.id)
-                ? {
-                    ...slot,
-                    x: updatesMap.get(slot.id)?.x ?? slot.x,
-                    y: updatesMap.get(slot.id)?.y ?? slot.y,
-                  }
-                : slot,
-            ),
-          };
-        },
+        (prev) => applySimpleSteppedSlotUpdates(prev, updates),
         { history: "live" },
       );
     },
@@ -500,26 +322,14 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
 
   const duplicateSlots = useCallback(
     (ids: string[]) => {
-      const current = paramsRef.current;
-      const idSet = new Set(ids);
-      const targets = current.slots.filter((slot) => idSet.has(slot.id));
+      const targets = paramsRef.current.slots.filter((slot) => ids.includes(slot.id));
       if (targets.length === 0) {
         return [];
       }
 
       const newIds = targets.map(() => crypto.randomUUID());
       applyChange(
-        (prev) => {
-          const nextSlots = [...prev.slots];
-          targets.forEach((slot, index) => {
-            nextSlots.push({
-              ...slot,
-              id: newIds[index],
-              x: slot.x + getSimpleSteppedEffectiveDiameter(slot) + prev.spacing,
-            });
-          });
-          return { ...prev, slots: nextSlots };
-        },
+        (prev) => duplicateSimpleSteppedSlots(prev, ids, newIds),
         { force: true },
       );
       return newIds;
@@ -538,23 +348,7 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
   );
 
   const trimTray = useCallback(() => {
-    applyChange((prev) => {
-      const minimumDims = calculateSimpleSteppedMinimumTraySize(prev);
-      if (minimumDims.width <= 0 || minimumDims.depth <= 0) {
-        return prev;
-      }
-      if (
-        Math.abs(prev.trayWidth - minimumDims.width) < 0.001 &&
-        Math.abs(prev.trayDepth - minimumDims.depth) < 0.001
-      ) {
-        return prev;
-      }
-      return {
-        ...prev,
-        trayWidth: minimumDims.width,
-        trayDepth: minimumDims.depth,
-      };
-    });
+    applyChange((prev) => trimSimpleSteppedBaseplate(prev));
   }, [applyChange]);
 
   return {
