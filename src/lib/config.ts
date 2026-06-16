@@ -112,6 +112,11 @@ export const SHARED_LAYOUT_LIMITS = {
 /** 最大构建尺寸 (mm)，超过此值会警告 */
 export const MAX_BUILD_SIZE = 260;
 
+/** 判断给定宽/深是否超出最大构建尺寸 */
+export function isOversized(width: number, depth: number): boolean {
+  return width > MAX_BUILD_SIZE || depth > MAX_BUILD_SIZE;
+}
+
 export const RENDER_CONFIG = {
   cylinderSegments: 64,
   cornerSegments: 32,

@@ -3,7 +3,11 @@
 import { useMemo } from "react";
 import type { SimpleSteppedLayoutParams } from "@/types/custom-tray";
 import type { SimpleSteppedDerivedLayout } from "@/lib/simple-stepped-layout";
-import { BASE_PRESETS, MAX_BUILD_SIZE } from "@/lib/config";
+import {
+  BASE_PRESETS,
+  MAX_BUILD_SIZE,
+  isOversized as isOversizedFn,
+} from "@/lib/config";
 import {
   SIMPLE_STEPPED_LAYOUT_DEFAULTS,
   SIMPLE_STEPPED_LIMITS,
@@ -14,6 +18,8 @@ import { Label } from "@/components/ui/label";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
 import { Switch } from "@/components/ui/switch";
+import { StatsCard } from "@/components/StatsCard";
+import { IndependentSpacingToggle } from "@/components/IndependentSpacingToggle";
 import {
   PanelActionSection,
   type PanelDraftActions,
@@ -92,9 +98,10 @@ export default function SimpleSteppedPanel({
     () => params.rows.find((row) => row.id === activeRowId) ?? null,
     [activeRowId, params.rows],
   );
-  const isOversized =
-    effectiveDimensions.width > MAX_BUILD_SIZE ||
-    effectiveDimensions.depth > MAX_BUILD_SIZE;
+  const oversized = isOversizedFn(
+    effectiveDimensions.width,
+    effectiveDimensions.depth,
+  );
   const canTrim =
     derivedLayout.activeRows.length > 0 &&
     (derivedLayout.trayWidth - derivedLayout.minimumTrayWidth > 0.001 ||
@@ -326,26 +333,15 @@ export default function SimpleSteppedPanel({
               onChange={(v) => updateParam("spacing", v)}
               unit={SIMPLE_STEPPED_LIMITS.spacing.unit}
             />
-            <div className="flex items-center justify-between rounded border border-[#2e2a24] bg-[#1c1a16] p-3">
-              <Label htmlFor="simple-stepped-outer-margin-independent" className="text-sm cursor-pointer text-[#f0d8b8]">
-                边界间距独立调整
-              </Label>
-              <Switch
-                id="simple-stepped-outer-margin-independent"
-                checked={params.outerMarginIndependent}
-                onCheckedChange={(checked) => updateParam("outerMarginIndependent", checked)}
-                className="data-[state=checked]:bg-[#8cb880]"
-              />
-            </div>
-            {params.outerMarginIndependent && (
-              <ParamSlider
-                label={SIMPLE_STEPPED_LIMITS.outerMargin.label}
-                value={params.outerMargin}
-                config={SIMPLE_STEPPED_LIMITS.outerMargin}
-                onChange={(v) => updateParam("outerMargin", v)}
-                unit={SIMPLE_STEPPED_LIMITS.outerMargin.unit}
-              />
-            )}
+            <IndependentSpacingToggle
+              htmlId="simple-stepped-outer-margin-independent"
+              independent={params.outerMarginIndependent}
+              onIndependentChange={(checked) => updateParam("outerMarginIndependent", checked)}
+              value={params.outerMargin}
+              config={SIMPLE_STEPPED_LIMITS.outerMargin}
+              onValueChange={(v) => updateParam("outerMargin", v)}
+              sliderLabel={SIMPLE_STEPPED_LIMITS.outerMargin.label}
+            />
             <ParamSlider
               label={SIMPLE_STEPPED_LIMITS.holeDepth.label}
               value={params.holeDepth}
@@ -364,96 +360,45 @@ export default function SimpleSteppedPanel({
         </SectionHeader>
       </div>
 
-      <div className={`iron-panel rounded-sm p-4 transition-all duration-300 ${isOversized ? "border-[#8b1a1a] animate-forge-pulse" : ""}`}>
-        <SectionHeader
-          icon={Ruler}
-          title="统计信息"
-          collapsible
-          defaultOpen={false}
-          summary={`${params.rows.length}行 / ${params.slots.length}槽 / ${effectiveDimensions.width.toFixed(0)}×${effectiveDimensions.depth.toFixed(0)}mm`}
-        >
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-              <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
-                <span className="text-[10px] text-muted-foreground block">行数 / 有效行</span>
-                <span className="text-lg font-mono font-bold text-primary">
-                  {params.rows.length} / {derivedLayout.activeRows.length}
-                </span>
-              </div>
-              <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
-                <span className="text-[10px] text-muted-foreground block">报价 & 耗材参考</span>
-                <div className="flex flex-col items-center mt-0.5">
-                  <span className="text-sm font-mono font-bold text-[#eab308]">
-                    ¥{calculateSimpleSteppedPrice(params, volume).toFixed(1)}
-                  </span>
-                  {volume > 0 ? (
-                    <span className="text-[9px] text-muted-foreground">
-                      估重: {calculateWeight(volume).toFixed(1)}g
-                    </span>
-                  ) : (
-                    <span className="text-[9px] text-muted-foreground">
-                      {isGenerating ? "图纸生成中..." : ""}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { label: "长度", value: effectiveDimensions.width, warn: effectiveDimensions.width > MAX_BUILD_SIZE },
-                { label: "深度", value: effectiveDimensions.depth, warn: effectiveDimensions.depth > MAX_BUILD_SIZE },
-                { label: "高度", value: effectiveDimensions.height, warn: false },
-              ].map(({ label, value, warn }) => (
-                <div
-                  key={label}
-                  className={`relative text-center p-2.5 transition-colors duration-200 ${
-                    warn
-                      ? "bg-[#8b1a1a15] border border-[#8b1a1a50]"
-                      : "bg-[#1c1a16] border border-[#2e2a24]"
-                  }`}
-                >
-                  <p className="text-[11px] text-muted-foreground/60 mb-0.5">{label}</p>
-                  <p className={`text-sm font-mono font-semibold tabular-nums ${warn ? "text-[#c04040]" : "text-foreground"}`}>
-                    {value.toFixed(1)}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground/40 font-mono">mm</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
-                <span className="text-[10px] text-muted-foreground block">最小底板</span>
-                <span className="text-sm font-mono font-semibold text-foreground">
-                  {derivedLayout.minimumTrayWidth.toFixed(1)} × {derivedLayout.minimumTrayDepth.toFixed(1)} mm
-                </span>
-              </div>
-              <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
-                <span className="text-[10px] text-muted-foreground block">当前打印边框</span>
-                <span className="text-sm font-mono font-semibold text-primary">
-                  {derivedLayout.trayWidth.toFixed(1)} × {derivedLayout.trayDepth.toFixed(1)} mm
-                </span>
-              </div>
-            </div>
-
-            <Button
-              variant="outline"
-              disabled={!canTrim}
-              onClick={onTrimTray}
-              className="w-full h-9 text-xs border-[#4a6741] text-[#8cb880] hover:bg-[#1c1a16] hover:text-[#a6d39d] disabled:opacity-40"
-            >
-              Trim 到凹槽占用区域
-            </Button>
-
-            {isOversized && (
-              <div className="flex items-center justify-center gap-1.5 text-xs text-[#c04040] animate-fade-in">
-                <span>超过锻造极限</span>
-              </div>
-            )}
+      <StatsCard
+        summary={`${params.rows.length}行 / ${params.slots.length}槽 / ${effectiveDimensions.width.toFixed(0)}×${effectiveDimensions.depth.toFixed(0)}mm`}
+        slotCount={`${params.rows.length} / ${derivedLayout.activeRows.length}`}
+        slotCountLabel="行数 / 有效行"
+        price={`¥${calculateSimpleSteppedPrice(params, volume).toFixed(1)}`}
+        weightLabel={`估重: ${calculateWeight(volume).toFixed(1)}g`}
+        weightVisible={volume > 0}
+        weightGeneratingText={isGenerating ? "图纸生成中..." : ""}
+        oversized={oversized}
+        dimensions={[
+          { label: "长度", value: effectiveDimensions.width, warn: effectiveDimensions.width > MAX_BUILD_SIZE },
+          { label: "深度", value: effectiveDimensions.depth, warn: effectiveDimensions.depth > MAX_BUILD_SIZE },
+          { label: "高度", value: effectiveDimensions.height, warn: false },
+        ]}
+      >
+        <div className="grid grid-cols-2 gap-2">
+          <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
+            <span className="text-[10px] text-muted-foreground block">最小底板</span>
+            <span className="text-sm font-mono font-semibold text-foreground">
+              {derivedLayout.minimumTrayWidth.toFixed(1)} × {derivedLayout.minimumTrayDepth.toFixed(1)} mm
+            </span>
           </div>
-        </SectionHeader>
-      </div>
+          <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
+            <span className="text-[10px] text-muted-foreground block">当前打印边框</span>
+            <span className="text-sm font-mono font-semibold text-primary">
+              {derivedLayout.trayWidth.toFixed(1)} × {derivedLayout.trayDepth.toFixed(1)} mm
+            </span>
+          </div>
+        </div>
+
+        <Button
+          variant="outline"
+          disabled={!canTrim}
+          onClick={onTrimTray}
+          className="w-full h-9 text-xs border-[#4a6741] text-[#8cb880] hover:bg-[#1c1a16] hover:text-[#a6d39d] disabled:opacity-40"
+        >
+          Trim 到凹槽占用区域
+        </Button>
+      </StatsCard>
 
       <div className="wh-divider" />
 
@@ -462,7 +407,7 @@ export default function SimpleSteppedPanel({
         onExportSTL={onExportSTL}
         onReset={handleReset}
         isGenerating={isGenerating}
-        isOversized={isOversized}
+        isOversized={oversized}
         mode="simple-stepped"
         params={params}
         onImport={(p) => {

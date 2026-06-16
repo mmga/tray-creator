@@ -1057,7 +1057,7 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
     expect(
       screen.getByRole("button", { name: "Trim 到凹槽占用区域" }),
     ).toBeDisabled();
-    expect(screen.getByText("超过锻造极限")).toBeInTheDocument();
+    expect(screen.getByText(/超过锻造极限/)).toBeInTheDocument();
     const generateButton = screen.getByRole("button", { name: "尺寸超限" });
     expect(generateButton).not.toBeDisabled();
     fireEvent.click(generateButton);
