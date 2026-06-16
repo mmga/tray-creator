@@ -5,12 +5,12 @@ import {
   useCallback,
   useDeferredValue,
   useEffect,
-  useRef,
   useState,
 } from "react";
 import { recordPerfSample } from "@/lib/perf";
 import { buildSteppedOutlinePreview } from "@/lib/stepped-outline-preview";
 import type { SteppedOutlinePreviewPort } from "@/lib/model-ports";
+import { useRequestSequence } from "@/hooks/useRequestSequence";
 import type {
   GroupOutlinePreview,
   SteppedLayoutParams,
@@ -36,7 +36,7 @@ export function useSteppedOutlinePreview(
   );
   const [outlinePreview, setOutlinePreview] =
     useState<GroupOutlinePreview[] | null>(null);
-  const outlinePreviewRequestSeqRef = useRef(0);
+  const { nextSeq, isStale } = useRequestSequence();
 
   const pauseOutlinePreview = useCallback(() => {
     setFrozenOutlinePreviewParams(params);
@@ -49,8 +49,7 @@ export function useSteppedOutlinePreview(
   }, []);
 
   useEffect(() => {
-    const requestSeq = outlinePreviewRequestSeqRef.current + 1;
-    outlinePreviewRequestSeqRef.current = requestSeq;
+    const seq = nextSeq();
     if (
       deferredOutlineParams.slots.length === 0 ||
       deferredOutlineParams.groups.length === 0
@@ -63,7 +62,7 @@ export function useSteppedOutlinePreview(
 
     let isCancelled = false;
     const applyOutlinePreview = (nextPreview: GroupOutlinePreview[] | null) => {
-      if (isCancelled || outlinePreviewRequestSeqRef.current !== requestSeq) {
+      if (isCancelled || isStale(seq)) {
         return;
       }
 
@@ -94,7 +93,7 @@ export function useSteppedOutlinePreview(
         }
         applyOutlinePreview(nextPreview);
       } catch (err) {
-        if (isCancelled || outlinePreviewRequestSeqRef.current !== requestSeq) {
+        if (isCancelled || isStale(seq)) {
           return;
         }
 
@@ -107,7 +106,7 @@ export function useSteppedOutlinePreview(
     return () => {
       isCancelled = true;
     };
-  }, [deferredOutlineParams, previewPort]);
+  }, [deferredOutlineParams, previewPort, isStale, nextSeq]);
 
   return {
     outlinePreview,

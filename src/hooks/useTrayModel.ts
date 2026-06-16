@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useCallback } from "react";
 import type * as THREE from "three";
 import type { TrayParams } from "@/types/tray";
 import { browserDownloadPort } from "@/lib/download-port";
@@ -14,7 +14,7 @@ import {
   updateGridParam,
 } from "@/lib/grid-model-state";
 import { trayWorkerService } from "@/lib/worker/worker-service";
-import { usePreviewLifecycle } from "@/hooks/usePreviewLifecycle";
+import { useEditableParams } from "@/hooks/useEditableParams";
 
 interface UseTrayModelReturn {
   params: TrayParams;
@@ -33,56 +33,48 @@ interface UseTrayModelReturn {
 }
 
 export function useTrayModel(): UseTrayModelReturn {
-  const [params, setParams] = useState<TrayParams>(() => resetGridParamsState());
   const {
+    params,
+    setParams,
     threeGeometry,
     volume,
     isGenerating,
     isPreviewStale,
-    invalidatePreview,
     handleGenerate,
     handleExportSTL,
-  } = usePreviewLifecycle({
-    getParams: () => params,
-    generatePreview: async (currentParams) => {
-      if (!trayWorkerService) {
-        return null;
-      }
-      return generateGridPreview(currentParams, trayWorkerService);
-    },
+  } = useEditableParams<TrayParams>({
+    initialState: () => resetGridParamsState(),
+    guard: () => trayWorkerService !== null,
+    generatePreview: async (currentParams) =>
+      generateGridPreview(currentParams, trayWorkerService!),
     exportModel: async (currentParams, geometry) => {
-      if (!trayWorkerService) {
-        return;
-      }
       await exportGridModelFiles(
         currentParams,
         geometry,
-        trayWorkerService,
+        trayWorkerService!,
         browserDownloadPort,
       );
     },
   });
 
+  // grid 模式无 undo，所有操作用 history: "skip"
+  const updateParam = useCallback(
+    <K extends keyof TrayParams>(key: K, value: TrayParams[K]) => {
+      setParams((prev) => updateGridParam(prev, key, value));
+    },
+    [setParams],
+  );
+
   const replaceParams = useCallback(
     (next: TrayParams) => {
       setParams(replaceGridParamsState(next));
-      invalidatePreview();
     },
-    [invalidatePreview],
+    [setParams],
   );
 
   const resetParams = useCallback(() => {
     setParams(resetGridParamsState());
-    invalidatePreview();
-  }, [invalidatePreview]);
-
-  const updateParam = useCallback(
-    <K extends keyof TrayParams>(key: K, value: TrayParams[K]) => {
-      setParams((prev) => updateGridParam(prev, key, value));
-      invalidatePreview();
-    },
-    [invalidatePreview],
-  );
+  }, [setParams]);
 
   return {
     params,
