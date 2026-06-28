@@ -200,4 +200,136 @@ describe("stepped tray model", { timeout: 15000 }, () => {
     expect(parts.map((part) => part.label)).toEqual(["左组", "右组"]);
     expect(parts.map((part) => part.toHeight)).toEqual([10, 10]);
   });
+
+  it("does not let same-height horizontal groups cut each other's slot holes", () => {
+    const parts = createSteppedSplitParts({
+      ...createParams(),
+      spacing: 12,
+      groups: [
+        {
+          ...STEPPED_LAYOUT_DEFAULTS.groups[0],
+          id: "left",
+          name: "左组",
+          bottomHeight: 10,
+        },
+        {
+          ...STEPPED_LAYOUT_DEFAULTS.groups[0],
+          id: "right",
+          name: "右组",
+          color: "#3b82f6",
+          bottomHeight: 10,
+        },
+      ],
+      slots: [
+        {
+          id: "slot-left",
+          groupId: "left",
+          x: -18,
+          y: 0,
+          width: 30,
+          height: 30,
+          rotation: 0,
+          shape: "circle",
+        },
+        {
+          id: "slot-right",
+          groupId: "right",
+          x: 18,
+          y: 0,
+          width: 30,
+          height: 30,
+          rotation: 0,
+          shape: "circle",
+        },
+      ],
+    }, {
+      enabled: false,
+      interfaceGrooveDepth: 0,
+    });
+
+    expect(parts.map((part) => part.label)).toEqual(["左组", "右组"]);
+    const leftVolume = measureVolume(parts[0].geometry);
+    const rightVolume = measureVolume(parts[1].geometry);
+    expect(leftVolume).toBeGreaterThan(0);
+    expect(rightVolume).toBeGreaterThan(0);
+    expect(Math.abs(leftVolume - rightVolume) / leftVolume).toBeLessThan(0.03);
+  });
+
+  it("splits a higher group's assembly groove across same-height support groups", () => {
+    const params: SteppedLayoutParams = {
+      ...createParams(),
+      spacing: 12,
+      groups: [
+        {
+          ...STEPPED_LAYOUT_DEFAULTS.groups[0],
+          id: "left",
+          name: "左组",
+          bottomHeight: 6,
+        },
+        {
+          ...STEPPED_LAYOUT_DEFAULTS.groups[0],
+          id: "right",
+          name: "右组",
+          color: "#3b82f6",
+          bottomHeight: 6,
+        },
+        {
+          ...STEPPED_LAYOUT_DEFAULTS.groups[0],
+          id: "high",
+          name: "高组",
+          color: "#22c55e",
+          bottomHeight: 14,
+        },
+      ],
+      slots: [
+        {
+          id: "slot-left",
+          groupId: "left",
+          x: -25,
+          y: 0,
+          width: 30,
+          height: 30,
+          rotation: 0,
+          shape: "circle",
+        },
+        {
+          id: "slot-right",
+          groupId: "right",
+          x: 25,
+          y: 0,
+          width: 30,
+          height: 30,
+          rotation: 0,
+          shape: "circle",
+        },
+        {
+          id: "slot-high",
+          groupId: "high",
+          x: 0,
+          y: 0,
+          width: 32,
+          height: 32,
+          rotation: 0,
+          shape: "circle",
+        },
+      ],
+    };
+    const groovedParts = createSteppedSplitParts(params, { enabled: false });
+    const plainParts = createSteppedSplitParts(params, {
+      enabled: false,
+      interfaceGrooveDepth: 0,
+    });
+    const leftReduction =
+      measureVolume(plainParts[0].geometry) -
+      measureVolume(groovedParts[0].geometry);
+    const rightReduction =
+      measureVolume(plainParts[1].geometry) -
+      measureVolume(groovedParts[1].geometry);
+
+    expect(leftReduction).toBeGreaterThan(0);
+    expect(rightReduction).toBeGreaterThan(0);
+    expect(Math.abs(leftReduction - rightReduction) / leftReduction).toBeLessThan(
+      0.08,
+    );
+  });
 });

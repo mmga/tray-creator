@@ -23,9 +23,9 @@ import {
 } from "@/lib/stepped-connectivity";
 import { getEffectiveGroupStructureParams } from "@/lib/stepped-group-params";
 
-const { subtract, union } = booleans;
+const { intersect, subtract, union } = booleans;
 const { translate, rotateZ } = transforms;
-const { ellipse, circle } = primitives;
+const { cuboid, ellipse, circle } = primitives;
 const { extrudeLinear } = extrusions;
 const { measureVolume } = measurements;
 const { geom2 } = geometries;
@@ -420,6 +420,87 @@ function buildSteppedGroupSolids(params: SteppedLayoutParams) {
   };
 }
 
+function getGroupCenter(slotData: NormalizedSlotData[]) {
+  const totals = slotData.reduce(
+    (acc, slot) => ({
+      x: acc.x + slot.cx,
+      y: acc.y + slot.cy,
+    }),
+    { x: 0, y: 0 },
+  );
+  const count = Math.max(slotData.length, 1);
+  return {
+    x: totals.x / count,
+    y: totals.y / count,
+  };
+}
+
+function buildSameHeightPartitionMap(
+  groupSolids: ReturnType<typeof buildSteppedGroupSolids>["groupSolids"],
+  trayWidth: number,
+  trayDepth: number,
+) {
+  const partitions = new Map<string, Geom3>();
+  const groupsByHeight = new Map<number, typeof groupSolids>();
+  const maxHeight =
+    groupSolids.length > 0
+      ? Math.max(...groupSolids.map((group) => group.columnHeight))
+      : 0;
+  const margin = 100;
+
+  for (const groupSolid of groupSolids) {
+    const bucket = groupsByHeight.get(groupSolid.columnHeight) ?? [];
+    bucket.push(groupSolid);
+    groupsByHeight.set(groupSolid.columnHeight, bucket);
+  }
+
+  for (const heightGroup of groupsByHeight.values()) {
+    if (heightGroup.length < 2) continue;
+
+    const entries = heightGroup.map((groupSolid) => ({
+      groupSolid,
+      center: getGroupCenter(groupSolid.slotData),
+    }));
+    const xSpread =
+      Math.max(...entries.map((entry) => entry.center.x)) -
+      Math.min(...entries.map((entry) => entry.center.x));
+    const ySpread =
+      Math.max(...entries.map((entry) => entry.center.y)) -
+      Math.min(...entries.map((entry) => entry.center.y));
+    const axis = xSpread >= ySpread ? "x" : "y";
+    const sorted = entries.sort((a, b) => a.center[axis] - b.center[axis]);
+
+    for (let index = 0; index < sorted.length; index += 1) {
+      const previousBoundary =
+        index === 0
+          ? (axis === "x" ? -trayWidth / 2 : -trayDepth / 2) - margin
+          : (sorted[index - 1].center[axis] + sorted[index].center[axis]) / 2;
+      const nextBoundary =
+        index === sorted.length - 1
+          ? (axis === "x" ? trayWidth / 2 : trayDepth / 2) + margin
+          : (sorted[index].center[axis] + sorted[index + 1].center[axis]) / 2;
+      const width =
+        axis === "x" ? nextBoundary - previousBoundary : trayWidth + margin * 2;
+      const depth =
+        axis === "y" ? nextBoundary - previousBoundary : trayDepth + margin * 2;
+      const centerX =
+        axis === "x" ? (previousBoundary + nextBoundary) / 2 : 0;
+      const centerY =
+        axis === "y" ? (previousBoundary + nextBoundary) / 2 : 0;
+
+      partitions.set(
+        sorted[index].groupSolid.group.id,
+        cuboid({
+          size: [width, depth, maxHeight + margin * 2],
+          center: [centerX, centerY, maxHeight / 2],
+        }),
+      );
+    }
+  }
+
+  return partitions;
+}
+
 function buildGroupFootprintCutter(
   params: SteppedLayoutParams,
   groupSolid: {
@@ -500,14 +581,18 @@ export function createSteppedSplitParts(
   };
   const connectorRadius =
     (connectorConfig.diameter + connectorConfig.clearance) / 2;
-  const { slotData, groupSolids } = buildSteppedGroupSolids(params);
+  const { trayWidth, trayDepth, groupSolids } = buildSteppedGroupSolids(params);
   const orderedGroupSolids = [...groupSolids].sort(
     (a, b) => a.columnHeight - b.columnHeight,
   );
   const parts: SteppedSplitPart[] = [];
   const claimedSolids: Geom3[] = [];
-  const holes = buildSteppedSlotHoles(slotData, params.holeDepth);
   const connectorMap = new Map<string, { x: number; y: number }[]>();
+  const sameHeightPartitions = buildSameHeightPartitionMap(
+    groupSolids,
+    trayWidth,
+    trayDepth,
+  );
 
   if (connectorConfig.enabled) {
     for (
@@ -543,9 +628,14 @@ export function createSteppedSplitParts(
   }
 
   for (const [index, groupSolid] of orderedGroupSolids.entries()) {
-    let part = holes.length > 0
-      ? subtract(groupSolid.solid, ...holes)
+    const partition = sameHeightPartitions.get(groupSolid.group.id);
+    const partitionedSolid = partition
+      ? intersect(groupSolid.solid, partition)
       : groupSolid.solid;
+    const holes = buildSteppedSlotHoles(groupSolid.slotData, params.holeDepth);
+    let part = holes.length > 0
+      ? subtract(partitionedSolid, ...holes)
+      : partitionedSolid;
     if (claimedSolids.length > 0) {
       part = subtract(part, ...claimedSolids);
     }
