@@ -765,6 +765,77 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     expect(onEditInteractionChange).toHaveBeenCalledWith(true);
   });
 
+  it("requires selecting a slot before dragging it", async () => {
+    const { container } = render(
+      <TestLayoutCanvas
+        params={createCustomParams()}
+        onUpdateSlot={vi.fn()}
+        onRemoveSlot={vi.fn()}
+      />,
+    );
+
+    const svg = container.querySelector("svg");
+    expect(svg).not.toBeNull();
+
+    fireEvent.pointerDown(screen.getByTestId("canvas-slot-slot-1"), {
+      pointerId: 3,
+      pointerType: "mouse",
+      clientX: 100,
+      clientY: 120,
+    });
+    fireEvent.pointerMove(svg!, {
+      pointerId: 3,
+      pointerType: "mouse",
+      clientX: 130,
+      clientY: 150,
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("canvas-slot-layer")).toHaveAttribute(
+        "data-selected-ids",
+        "slot-1",
+      );
+    });
+    expect(calculateCanvasDragSnapMock).not.toHaveBeenCalled();
+    expect(scheduleLiveUpdatesMock).not.toHaveBeenCalled();
+
+    fireEvent.pointerUp(svg!, {
+      pointerId: 3,
+      pointerType: "mouse",
+    });
+    flushScheduledLiveUpdatesMock.mockClear();
+
+    calculateCanvasDragSnapMock.mockReturnValue({
+      finalX: 130,
+      finalY: 150,
+      guides: [],
+    });
+
+    fireEvent.pointerDown(screen.getByTestId("canvas-slot-slot-1"), {
+      pointerId: 4,
+      pointerType: "mouse",
+      clientX: 100,
+      clientY: 120,
+    });
+    fireEvent.pointerMove(svg!, {
+      pointerId: 4,
+      pointerType: "mouse",
+      clientX: 130,
+      clientY: 150,
+    });
+
+    await waitFor(() => {
+      expect(calculateCanvasDragSnapMock).toHaveBeenCalledTimes(1);
+    });
+    expect(scheduleLiveUpdatesMock).toHaveBeenCalledWith([
+      {
+        id: "slot-1",
+        x: 130,
+        y: 150,
+      },
+    ]);
+  });
+
   it("schedules snapped live rotation updates while rotating a slot", async () => {
     const onSaveSnapshot = vi.fn();
     const onEditInteractionChange = vi.fn();
@@ -1463,6 +1534,19 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     });
     expect(onSaveSnapshot).toHaveBeenCalledTimes(1);
 
+    fireEvent.pointerUp(svg!, {
+      pointerId: 1,
+      pointerType: "touch",
+    });
+    flushScheduledLiveUpdatesMock.mockClear();
+
+    fireEvent.pointerDown(screen.getByTestId("canvas-slot-slot-1"), {
+      pointerId: 1,
+      pointerType: "touch",
+      clientX: 100,
+      clientY: 140,
+    });
+
     fireEvent.pointerDown(screen.getByTestId("canvas-slot-slot-2"), {
       pointerId: 2,
       pointerType: "touch",
@@ -1470,7 +1554,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
       clientY: 140,
     });
 
-    expect(onSaveSnapshot).toHaveBeenCalledTimes(1);
+    expect(onSaveSnapshot).toHaveBeenCalledTimes(2);
     expect(screen.getByTestId("canvas-slot-layer")).toHaveAttribute(
       "data-selected-ids",
       "slot-1",

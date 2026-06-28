@@ -122,6 +122,7 @@ export default function LayoutCanvas({
   const dragStartRef = useRef<{
     mouseStart: { x: number; y: number };
     slotOrigins: Map<string, { x: number; y: number }>;
+    canMove: boolean;
   } | null>(null);
   const trayResizeRef = useRef<{
     mode: "right" | "bottom" | "corner";
@@ -550,7 +551,11 @@ export default function LayoutCanvas({
         return;
       }
 
-      if (effectiveDraggingId && !isRotating && dragStartRef.current) {
+      if (
+        effectiveDraggingId &&
+        !isRotating &&
+        dragStartRef.current?.canMove
+      ) {
         const svgPoint = getSvgPointFromClient(event.clientX, event.clientY);
         if (!svgPoint) {
           return;
@@ -611,6 +616,7 @@ export default function LayoutCanvas({
     }
 
     if (slotId) {
+      const wasAlreadySelected = effectiveSelectedIds.has(slotId);
       let nextSelection = new Set<string>(effectiveSelectedIds);
 
       if (isCtrl) {
@@ -657,6 +663,7 @@ export default function LayoutCanvas({
       dragStartRef.current = {
         mouseStart: { x: svgPoint.x, y: svgPoint.y },
         slotOrigins: dragStart.origins,
+        canMove: !isCtrl && wasAlreadySelected,
       };
       return;
     }
