@@ -34,6 +34,11 @@ const SPLIT_PART_COLORS = [
   "#c87f96",
 ];
 
+const MODEL_ROTATION = new THREE.Euler(-Math.PI / 2, 0, 0);
+const MODEL_ROTATION_MATRIX = new THREE.Matrix4().makeRotationFromEuler(
+  MODEL_ROTATION,
+);
+
 function TrayMesh({
   geometry,
   color = RENDER_CONFIG.modelColor,
@@ -56,7 +61,7 @@ function TrayMesh({
   }, [geometry]);
 
   return (
-    <group rotation={[-Math.PI / 2, 0, 0]} position={position}>
+    <group rotation={MODEL_ROTATION} position={position}>
       <mesh ref={meshRef} geometry={geometry} castShadow receiveShadow>
         <meshStandardMaterial
           color={color}
@@ -75,7 +80,8 @@ function TrayMesh({
 function getSplitPartOffset(index: number, count: number): [number, number, number] {
   if (count <= 1) return [0, 0, 0];
   const centeredIndex = index - (count - 1) / 2;
-  return [centeredIndex * 42, 0, 0];
+  const verticalStagger = index % 2 === 0 ? -16 : 16;
+  return [centeredIndex * 42, verticalStagger, 0];
 }
 
 /**
@@ -99,7 +105,10 @@ function CameraAutoFit({
       if (!box) continue;
       const offset = item.offset ?? [0, 0, 0];
       sceneBox.union(
-        box.clone().translate(new THREE.Vector3(offset[0], offset[1], offset[2])),
+        box
+          .clone()
+          .applyMatrix4(MODEL_ROTATION_MATRIX)
+          .translate(new THREE.Vector3(offset[0], offset[1], offset[2])),
       );
     }
 
@@ -109,8 +118,7 @@ function CameraAutoFit({
 
     const fov = (camera as THREE.PerspectiveCamera).fov;
     const fovRad = (fov * Math.PI) / 180;
-    // 模型绕 X 旋转了 -90°，考虑边界球在旋转后的中心
-    const center = sphere.center.clone().applyAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
+    const center = sphere.center;
     const distance = (sphere.radius / Math.sin(fovRad / 2)) * 0.8;
 
     // 从 45° 仰角观察
