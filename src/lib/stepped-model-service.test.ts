@@ -117,7 +117,6 @@ describe("stepped model service", () => {
             fromHeight: 0,
             toHeight: 10,
             geometry: partGeometry,
-            connectorCount: 2,
           },
         ],
       }),
@@ -167,7 +166,7 @@ describe("stepped model service", () => {
       "tray_stepped_split_100x90_0slots_manifest.json",
     );
     await expect(downloadPort.downloadBlob.mock.calls[1]?.[0].text()).resolves.toContain(
-      '"connectorCount": 2',
+      "装配浅槽",
     );
     expect(downloadPort.downloadBlob.mock.calls[2]?.[1]).toBe(
       "tray_stepped_split_100x90_0slots_params.json",
@@ -189,7 +188,6 @@ describe("stepped model service", () => {
             fromHeight: 0,
             toHeight: 3,
             geometry: partGeometry,
-            connectorCount: 2,
           },
         ],
       }),
@@ -207,7 +205,6 @@ describe("stepped model service", () => {
         fromHeight: 0,
         toHeight: 3,
         threeGeometry,
-        connectorCount: 2,
       },
     ]);
     expect(workerPort.generateSteppedSplitParts).toHaveBeenCalledWith(

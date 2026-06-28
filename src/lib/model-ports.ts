@@ -18,7 +18,6 @@ export interface SteppedSplitPartResult {
   fromHeight: number;
   toHeight: number;
   geometry: Geom3;
-  connectorCount: number;
 }
 
 export interface IdFactory {

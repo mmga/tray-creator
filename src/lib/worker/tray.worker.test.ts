@@ -166,7 +166,6 @@ describe("tray worker", () => {
         fromHeight: 0,
         toHeight: 3,
         geometry: { id: "split-geom" },
-        connectorCount: 2,
       },
     ];
     createSteppedSplitParts.mockReturnValue(parts);

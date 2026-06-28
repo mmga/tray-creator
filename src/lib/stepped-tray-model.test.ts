@@ -140,7 +140,7 @@ describe("stepped tray model", { timeout: 15000 }, () => {
     expect(deepVolume).toBeLessThan(shallowVolume);
   });
 
-  it("creates one split part per group with connector sockets", () => {
+  it("creates one split part per group", () => {
     const parts = createSteppedSplitParts(createParams());
 
     expect(parts).toHaveLength(2);
@@ -156,12 +156,12 @@ describe("stepped tray model", { timeout: 15000 }, () => {
       fromHeight: 0,
       toHeight: 12,
     });
-    expect(parts[0].connectorCount).toBeGreaterThan(0);
     expect(measureVolume(parts[0].geometry)).toBeGreaterThan(0);
     expect(measureVolume(parts[1].geometry)).toBeGreaterThan(0);
   });
 
-  it("keeps connector sockets from breaking through the lowest part bottom", () => {
+  it("keeps each split part bottom solid without connector piercings", () => {
+    // 回归测试：移除接触面圆柱形插销后，较高零件的底面不应再被插销孔穿透。
     const parts = createSteppedSplitParts({
       ...createParams(),
       spacing: 12,
@@ -204,10 +204,11 @@ describe("stepped tray model", { timeout: 15000 }, () => {
       ],
     });
 
-    expect(parts[0].connectorCount).toBeGreaterThan(0);
-    expect(
-      hasBottomCylinderWallNear(parts[0].geometry, { x: 0, y: 0 }, 2.5),
-    ).toBe(false);
+    for (const part of parts) {
+      expect(
+        hasBottomCylinderWallNear(part.geometry, { x: 0, y: 0 }, 2.5),
+      ).toBe(false);
+    }
   });
 
   it("cuts assembly grooves at different-height group interfaces", () => {
@@ -313,7 +314,6 @@ describe("stepped tray model", { timeout: 15000 }, () => {
         },
       ],
     }, {
-      enabled: false,
       interfaceGrooveDepth: 0,
     });
 
@@ -384,9 +384,8 @@ describe("stepped tray model", { timeout: 15000 }, () => {
         },
       ],
     };
-    const groovedParts = createSteppedSplitParts(params, { enabled: false });
+    const groovedParts = createSteppedSplitParts(params);
     const plainParts = createSteppedSplitParts(params, {
-      enabled: false,
       interfaceGrooveDepth: 0,
     });
     const leftReduction =

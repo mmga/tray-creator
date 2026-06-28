@@ -11,7 +11,6 @@ export interface TrayViewerSplitPart {
   index: number;
   label: string;
   toHeight: number;
-  connectorCount: number;
   threeGeometry: THREE.BufferGeometry;
 }
 
@@ -358,9 +357,6 @@ export default function TrayViewer({
                 <span className="min-w-0 flex-1 truncate">{part.label}</span>
                 <span className="font-mono text-foreground/80">
                   {part.toHeight}mm
-                </span>
-                <span className="font-mono text-[#c8a84e]">
-                  {part.connectorCount}孔
                 </span>
               </div>
             ))}

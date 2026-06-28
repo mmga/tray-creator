@@ -233,7 +233,6 @@ describe("TrayViewer", { timeout: 15000 }, () => {
             index: 0,
             label: "低组",
             toHeight: 3,
-            connectorCount: 2,
             threeGeometry: splitGeometry,
           },
         ]}
@@ -245,7 +244,6 @@ describe("TrayViewer", { timeout: 15000 }, () => {
     expect(screen.getByText("拆件预览")).toBeInTheDocument();
     expect(screen.getByText("低组")).toBeInTheDocument();
     expect(screen.getByText("3mm")).toBeInTheDocument();
-    expect(screen.getByText("2孔")).toBeInTheDocument();
 
     const distanceSlider = screen.getByLabelText("爆炸视图间距");
     expect(distanceSlider).toHaveValue("42");

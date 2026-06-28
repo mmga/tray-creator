@@ -32,14 +32,15 @@ const { geom2 } = geometries;
 
 const DEG_TO_RAD = Math.PI / 180;
 const SPLIT_EPSILON = 0.02;
-const CONNECTOR_MIN_BACKING_THICKNESS = 1;
 
-export interface SteppedSplitConnectorOptions {
-  enabled?: boolean;
-  diameter?: number;
-  clearance?: number;
-  depth?: number;
-  maxPerInterface?: number;
+/**
+ * 拆件装配浅槽选项。
+ *
+ * 仅控制不同高度分组交接面上的装配浅槽（用于上下对位）。
+ * 历史上与圆柱形定位插销（connector socket）共用选项类型；插销已移除，
+ * 故装配浅槽独立成类。浅槽开在高度交接面上方，不会穿透零件底面。
+ */
+export interface SteppedSplitGrooveOptions {
   interfaceGrooveDepth?: number;
 }
 
@@ -50,15 +51,9 @@ export interface SteppedSplitPart {
   fromHeight: number;
   toHeight: number;
   geometry: Geom3;
-  connectorCount: number;
 }
 
-const DEFAULT_SPLIT_CONNECTORS: Required<SteppedSplitConnectorOptions> = {
-  enabled: true,
-  diameter: 3,
-  clearance: 0.2,
-  depth: 3,
-  maxPerInterface: 4,
+const DEFAULT_SPLIT_GROOVE: Required<SteppedSplitGrooveOptions> = {
   interfaceGrooveDepth: 2,
 };
 
@@ -203,65 +198,6 @@ function buildNormalizedSlotData(params: SteppedLayoutParams) {
     trayDepth,
     slots,
   };
-}
-
-function buildConnectorCylinder(
-  radius: number,
-  depth: number,
-  z: number,
-): Geom3 {
-  return translate(
-    [0, 0, z],
-    extrudeLinear(
-      { height: depth },
-      circle({ radius, segments: RENDER_CONFIG.cylinderSegments }),
-    ),
-  );
-}
-
-function getConnectorSocketDepth(requestedDepth: number, partHeight: number) {
-  return Math.min(
-    requestedDepth,
-    Math.max(0, partHeight - CONNECTOR_MIN_BACKING_THICKNESS),
-  );
-}
-
-function selectGroupConnectorPositions(
-  leftSlotData: NormalizedSlotData[],
-  rightSlotData: NormalizedSlotData[],
-  radius: number,
-  maxCount: number,
-) {
-  if (maxCount <= 0) return [];
-
-  const candidates: { x: number; y: number; distance: number }[] = [];
-  for (const left of leftSlotData) {
-    for (const right of rightSlotData) {
-      const dx = right.cx - left.cx;
-      const dy = right.cy - left.cy;
-      candidates.push({
-        x: (left.cx + right.cx) / 2,
-        y: (left.cy + right.cy) / 2,
-        distance: Math.hypot(dx, dy),
-      });
-    }
-  }
-
-  const selected: { x: number; y: number }[] = [];
-  const minimumSpacing = Math.max(radius * 4, 8);
-  for (const candidate of candidates.sort((a, b) => a.distance - b.distance)) {
-    if (selected.length >= maxCount) break;
-    const isFarEnough = selected.every((existing) => {
-      const dx = existing.x - candidate.x;
-      const dy = existing.y - candidate.y;
-      return Math.hypot(dx, dy) >= minimumSpacing;
-    });
-    if (isFarEnough) {
-      selected.push({ x: candidate.x, y: candidate.y });
-    }
-  }
-
-  return selected;
 }
 
 function buildSlotDataSolid(
@@ -577,73 +513,27 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
 
 export function createSteppedSplitParts(
   params: SteppedLayoutParams,
-  connectorOptions: SteppedSplitConnectorOptions = {},
+  grooveOptions: SteppedSplitGrooveOptions = {},
 ): SteppedSplitPart[] {
   if (params.slots.length === 0 || params.groups.length === 0) {
     return [];
   }
 
-  const connectorConfig = {
-    ...DEFAULT_SPLIT_CONNECTORS,
-    ...connectorOptions,
+  const grooveConfig = {
+    ...DEFAULT_SPLIT_GROOVE,
+    ...grooveOptions,
   };
-  const connectorRadius =
-    (connectorConfig.diameter + connectorConfig.clearance) / 2;
   const { trayWidth, trayDepth, groupSolids } = buildSteppedGroupSolids(params);
   const orderedGroupSolids = [...groupSolids].sort(
     (a, b) => a.columnHeight - b.columnHeight,
   );
   const parts: SteppedSplitPart[] = [];
   const claimedSolids: Geom3[] = [];
-  const connectorMap = new Map<
-    string,
-    { x: number; y: number; side: "top" | "bottom" }[]
-  >();
   const sameHeightPartitions = buildSameHeightPartitionMap(
     groupSolids,
     trayWidth,
     trayDepth,
   );
-
-  if (connectorConfig.enabled) {
-    for (
-      let leftIndex = 0;
-      leftIndex < orderedGroupSolids.length;
-      leftIndex += 1
-    ) {
-      for (
-        let rightIndex = leftIndex + 1;
-        rightIndex < orderedGroupSolids.length;
-        rightIndex += 1
-      ) {
-        const left = orderedGroupSolids[leftIndex];
-        const right = orderedGroupSolids[rightIndex];
-        if (left.columnHeight === right.columnHeight) {
-          continue;
-        }
-
-        const positions = selectGroupConnectorPositions(
-          left.slotData,
-          right.slotData,
-          connectorRadius,
-          connectorConfig.maxPerInterface,
-        );
-        if (positions.length === 0) continue;
-
-        connectorMap.set(left.group.id, [
-          ...(connectorMap.get(left.group.id) ?? []),
-          ...positions.map((position) => ({ ...position, side: "top" as const })),
-        ]);
-        connectorMap.set(right.group.id, [
-          ...(connectorMap.get(right.group.id) ?? []),
-          ...positions.map((position) => ({
-            ...position,
-            side: "bottom" as const,
-          })),
-        ]);
-      }
-    }
-  }
 
   for (const [index, groupSolid] of orderedGroupSolids.entries()) {
     const partition = sameHeightPartitions.get(groupSolid.group.id);
@@ -667,7 +557,7 @@ export function createSteppedSplitParts(
 
     const grooveCutters: Geom3[] = [];
     const interfaceGrooveDepth = Math.max(
-      connectorConfig.interfaceGrooveDepth,
+      grooveConfig.interfaceGrooveDepth,
       0,
     );
     if (interfaceGrooveDepth > 0) {
@@ -711,36 +601,6 @@ export function createSteppedSplitParts(
       part = subtract(part, ...grooveCutters);
     }
 
-    let connectorCount = 0;
-    const connectorPositions = connectorMap.get(groupSolid.group.id) ?? [];
-    if (connectorPositions.length > 0) {
-      const socketDepth = getConnectorSocketDepth(
-        connectorConfig.depth,
-        groupSolid.columnHeight,
-      );
-      const sockets =
-        socketDepth > 0
-          ? connectorPositions.map((position) => {
-              const z =
-                position.side === "top"
-                  ? groupSolid.columnHeight - socketDepth
-                  : -SPLIT_EPSILON;
-              return translate(
-                [position.x, position.y, z],
-                buildConnectorCylinder(
-                  connectorRadius,
-                  socketDepth + SPLIT_EPSILON,
-                  0,
-                ),
-              );
-            })
-          : [];
-      if (sockets.length > 0) {
-        part = subtract(part, ...sockets);
-      }
-      connectorCount += sockets.length;
-    }
-
     if (measureVolume(part) > 0.001) {
       const safeGroupId = groupSolid.group.id.replace(/[^a-zA-Z0-9_-]+/g, "_");
       const filenameLabel = `part_${String(index + 1).padStart(2, "0")}_${safeGroupId}`;
@@ -751,7 +611,6 @@ export function createSteppedSplitParts(
         fromHeight: 0,
         toHeight: groupSolid.columnHeight,
         geometry: part,
-        connectorCount,
       });
     }
   }

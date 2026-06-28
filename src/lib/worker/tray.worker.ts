@@ -75,7 +75,6 @@ export type WorkerResponse =
         fromHeight: number;
         toHeight: number;
         geometry: Geom3;
-        connectorCount: number;
       }[];
     }
   | { type: "EXPORT_SUCCESS"; requestId: string; blob: Blob; filename: string }

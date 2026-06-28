@@ -117,16 +117,12 @@ export async function exportSteppedSplitPartFiles(
   const manifest = {
     mode: "stepped-split-parts",
     generatedAt: new Date().toISOString(),
-    connector: {
-      type: "round-socket",
-      note: "相邻分组使用同坐标圆孔，并在上下高度交接处生成 2mm 装配浅槽。",
-    },
+    note: "相邻分组在上下高度交接处生成装配浅槽，便于对位拼装。",
     parts: parts.map((part) => ({
       file: `${baseFilename}_${part.filenameLabel}.stl`,
       label: part.label,
       fromHeight: part.fromHeight,
       toHeight: part.toHeight,
-      connectorCount: part.connectorCount,
     })),
   };
   downloadPort.downloadBlob(

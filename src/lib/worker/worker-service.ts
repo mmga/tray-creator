@@ -155,7 +155,6 @@ class TrayWorkerService {
       fromHeight: number;
       toHeight: number;
       geometry: Geom3;
-      connectorCount: number;
     }[];
   }> {
     const requestId = generateRequestId();

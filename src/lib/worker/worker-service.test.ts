@@ -152,7 +152,6 @@ describe("worker service", () => {
           fromHeight: 0,
           toHeight: 3,
           geometry: { id: "split-geom" } as never,
-          connectorCount: 2,
         },
       ],
     });
@@ -165,7 +164,6 @@ describe("worker service", () => {
           fromHeight: 0,
           toHeight: 3,
           geometry: { id: "split-geom" },
-          connectorCount: 2,
         },
       ],
     });
