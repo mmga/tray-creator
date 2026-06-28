@@ -55,6 +55,8 @@ const ACTION_PANEL_DEFAULT_WIDTH =
   304 - EDIT_SIDEBAR_RAIL_WIDTH - ACTION_PANEL_RESIZER_WIDTH;
 const ACTION_PANEL_TAB_RAIL_WIDTH = EDIT_SIDEBAR_RAIL_WIDTH;
 const HEIGHT_GROUP_PROTECTION_MM = 1;
+const SYMMETRY_HIGHLIGHT_DURATION_MS = 5000;
+const EMPTY_SET: ReadonlySet<string> = new Set();
 
 interface LayoutCanvasProps {
   isActive?: boolean;
@@ -112,6 +114,12 @@ export default function LayoutCanvas({
   );
   const [guideLines, setGuideLines] = useState<CanvasGuideLine[]>([]);
   const [isResizingTray, setIsResizingTray] = useState(false);
+  const [symmetryHighlightIds, setSymmetryHighlightIds] = useState<
+    ReadonlySet<string>
+  >(EMPTY_SET);
+  const symmetryHighlightTimerRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
 
   const svgRef = useRef<SVGSVGElement>(null);
   const parentRef = useRef<HTMLDivElement>(null);
@@ -260,6 +268,7 @@ export default function LayoutCanvas({
   }, [heightBySlotId, spacing]);
   const selectedIdsRef = useRef<Set<string>>(effectiveSelectedIds);
   const slotsRef = useRef(slots);
+  const lastNotifiedSelectedIdsRef = useRef<string[]>([]);
 
   useEffect(() => {
     selectedIdsRef.current = effectiveSelectedIds;
@@ -272,7 +281,18 @@ export default function LayoutCanvas({
       return;
     }
 
-    selectionChanged?.(Array.from(effectiveSelectedIds));
+    const nextIds = Array.from(effectiveSelectedIds);
+    const previousIds = lastNotifiedSelectedIdsRef.current;
+    const didSelectionChange =
+      nextIds.length !== previousIds.length ||
+      nextIds.some((id, index) => id !== previousIds[index]);
+
+    if (!didSelectionChange) {
+      return;
+    }
+
+    lastNotifiedSelectedIdsRef.current = nextIds;
+    selectionChanged?.(nextIds);
   }, [effectiveSelectedIds, isActive, selectionChanged, selectedIds]);
 
   const handleUpdateSlots = useCallback(
@@ -292,6 +312,28 @@ export default function LayoutCanvas({
     },
     [saveSnapshot, updateMultipleSlots, updateSlotPosition, updateSlotRotation],
   );
+
+  const handleSymmetryUnmatched = useCallback((unmatchedIds: string[]) => {
+    if (unmatchedIds.length === 0) {
+      return;
+    }
+    setSymmetryHighlightIds(new Set(unmatchedIds));
+    if (symmetryHighlightTimerRef.current) {
+      clearTimeout(symmetryHighlightTimerRef.current);
+    }
+    symmetryHighlightTimerRef.current = setTimeout(() => {
+      setSymmetryHighlightIds(EMPTY_SET);
+      symmetryHighlightTimerRef.current = null;
+    }, SYMMETRY_HIGHLIGHT_DURATION_MS);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (symmetryHighlightTimerRef.current) {
+        clearTimeout(symmetryHighlightTimerRef.current);
+      }
+    };
+  }, []);
 
   const applyLiveUpdates = useCallback(
     (updates: CanvasSlotUpdate[]) => {
@@ -531,11 +573,11 @@ export default function LayoutCanvas({
 
         const nextWidth = Math.max(
           trayResizeRef.current.minWidth,
-          Math.min(MAX_BUILD_SIZE, svgPoint.x),
+          svgPoint.x,
         );
         const nextDepth = Math.max(
           trayResizeRef.current.minDepth,
-          Math.min(MAX_BUILD_SIZE, svgPoint.y),
+          svgPoint.y,
         );
 
         if (trayResizeRef.current.mode === "right") {
@@ -915,6 +957,7 @@ export default function LayoutCanvas({
             steppedGroupMetaById={steppedGroupMetaById}
             collisionState={collisionState}
             isSpacePressed={isSpacePressed}
+            symmetryHighlightIds={symmetryHighlightIds}
             onSlotPointerDown={handlePointerDown}
             onSlotPointerEnter={setHoveredId}
             onSlotPointerLeave={() => setHoveredId(null)}
@@ -997,6 +1040,7 @@ export default function LayoutCanvas({
           slots={slots as Array<FreeSlot | SteppedSlot>}
           onUpdateSlots={handleUpdateSlots}
           onInsertSlots={insertSlots}
+          onSymmetryUnmatched={handleSymmetryUnmatched}
           spacing={spacing}
           trayWidth={trayWidth}
           trayDepth={trayDepth}

@@ -28,8 +28,8 @@ export const DEFAULT_TRAY_PARAMS: TrayParams = {
 };
 
 export const PARAM_CONFIG = {
-  columns: { label: "列数", min: 1, max: 6, step: 1, unit: "个" },
-  rows: { label: "行数", min: 1, max: 6, step: 1, unit: "个" },
+  columns: { label: "列数", min: 1, max: 30, step: 1, unit: "个" },
+  rows: { label: "行数", min: 1, max: 30, step: 1, unit: "个" },
   spacing: { label: "凹槽间距", min: 0, max: 10, step: 1, unit: "mm" },
   spacingX: { label: "X 轴凹槽间距", min: 0, max: 10, step: 0.1, unit: "mm" },
   spacingY: { label: "Y 轴凹槽间距", min: 0, max: 10, step: 0.1, unit: "mm" },

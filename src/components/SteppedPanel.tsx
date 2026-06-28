@@ -727,7 +727,7 @@ export default function SteppedPanel({
                         </div>
                         {isOversized && (
                             <div className="flex items-center justify-center gap-1.5 text-xs text-[#c04040] animate-fade-in">
-                                <span>超过锻造极限</span>
+                                <span>超过常规打印尺寸，仍可继续建模</span>
                             </div>
                         )}
                         <div className="text-[11px] text-muted-foreground/80 text-center pt-1">

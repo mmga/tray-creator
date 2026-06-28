@@ -19,6 +19,8 @@ interface CanvasSlotLayerProps {
   steppedGroupMetaById: ReadonlyMap<string, SlotGroup> | null;
   collisionState: CanvasCollisionState<FreeSlot | SteppedSlot>;
   isSpacePressed: boolean;
+  /** 对称检查未配对的槽位 id（父层用 5s 定时器清空，这里只负责渲染闪烁边框） */
+  symmetryHighlightIds?: ReadonlySet<string>;
   ellipseProfileExponent?: number;
   onSlotPointerDown: (event: React.PointerEvent, slotId: string) => void;
   onSlotPointerEnter: (slotId: string) => void;
@@ -41,6 +43,7 @@ export const CanvasSlotLayer = memo(function CanvasSlotLayer({
   steppedGroupMetaById,
   collisionState,
   isSpacePressed,
+  symmetryHighlightIds,
   ellipseProfileExponent,
   onSlotPointerDown,
   onSlotPointerEnter,
@@ -102,6 +105,9 @@ export const CanvasSlotLayer = memo(function CanvasSlotLayer({
         const isHovered = hoveredId === slot.id;
         const isDragging = draggingId === slot.id;
         const isSelected = selectedIds.has(slot.id);
+        const isSymmetryHighlight = Boolean(
+          symmetryHighlightIds && symmetryHighlightIds.has(slot.id),
+        );
         const baseColor = isSelected ? "#f97316" : "#eab308";
         const bottomHeightLabelColor = "#86efac";
 
@@ -172,6 +178,29 @@ export const CanvasSlotLayer = memo(function CanvasSlotLayer({
                   strokeOpacity={0.8}
                   pointerEvents="none"
                 />
+              )}
+
+              {isSymmetryHighlight && (
+                <path
+                  data-symmetry-highlight="true"
+                  d={getLocalPath(
+                    profile.width,
+                    profile.height,
+                    Math.max(0, slotOffset - 0.5 / zoom),
+                    profile.profileExponent,
+                  )}
+                  fill="none"
+                  stroke="#f43f5e"
+                  strokeWidth={1 / zoom}
+                  pointerEvents="none"
+                >
+                  <animate
+                    attributeName="stroke-opacity"
+                    values="0.25;1;0.25"
+                    dur="0.8s"
+                    repeatCount="indefinite"
+                  />
+                </path>
               )}
 
               <path

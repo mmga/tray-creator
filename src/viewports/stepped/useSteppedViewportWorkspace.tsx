@@ -45,7 +45,7 @@ export function useSteppedViewportWorkspace({
 
     const firstSlotId = selectedSlotIds[0];
     const slot = model.params.slots.find((candidate) => candidate.id === firstSlotId);
-    if (slot && "groupId" in slot) {
+    if (slot && "groupId" in slot && slot.groupId !== model.params.activeGroupId) {
       model.setActiveGroup(slot.groupId);
     }
   }, [model, selectedSlotIds]);

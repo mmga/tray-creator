@@ -978,8 +978,12 @@ describe("Home page", { timeout: 15000 }, () => {
 
     fireEvent.click(screen.getByRole("button", { name: "选择阶梯槽位" }));
     await waitFor(() => {
-      expect(steppedModelMock.setActiveGroup).toHaveBeenCalledWith("group-1");
+      expect(screen.getByTestId("stepped-panel")).toHaveAttribute(
+        "data-selected-slot-ids",
+        "slot-1",
+      );
     });
+    expect(steppedModelMock.setActiveGroup).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole("button", { name: "开始编辑" }));
     fireEvent.click(screen.getByRole("button", { name: "结束编辑" }));

@@ -87,7 +87,7 @@ export function PanelActionSection({
         ) : (
           <Play className="w-4 h-4 mr-2" />
         )}
-        {isGenerating ? "锻造中..." : isOversized ? "尺寸超限" : "开始锻造"}
+        {isGenerating ? "锻造中..." : "开始锻造"}
       </Button>
 
       <Button

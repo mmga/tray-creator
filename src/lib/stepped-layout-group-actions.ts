@@ -127,6 +127,13 @@ export function setSteppedActiveGroup(
   params: SteppedLayoutParams,
   groupId: string,
 ): SteppedLayoutParams {
+  if (
+    params.activeGroupId === groupId ||
+    !params.groups.some((group) => group.id === groupId)
+  ) {
+    return params;
+  }
+
   return {
     ...params,
     activeGroupId: groupId,

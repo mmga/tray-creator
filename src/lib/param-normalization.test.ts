@@ -214,7 +214,7 @@ describe("param normalization", () => {
       false,
     );
     expect(normalized.trayWidth).toBe(50);
-    expect(normalized.trayDepth).toBe(260);
+    expect(normalized.trayDepth).toBe(300);
     expect(normalized.spacing).toBe(2);
     expect(normalized.smoothingRadius).toBe(25);
   });

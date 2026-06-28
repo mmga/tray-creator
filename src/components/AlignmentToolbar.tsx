@@ -13,6 +13,7 @@ interface AlignmentToolbarProps {
   unselectedSlots?: Array<FreeSlot | SteppedSlot>;
   onUpdateSlots: (updates: Update[]) => void;
   onInsertSlots?: (slots: SymmetryInsertSlot[]) => void;
+  onSymmetryUnmatched?: (unmatchedIds: string[]) => void;
   enableCopyPreview: boolean;
   spacing: number;
   trayWidth: number;
@@ -30,6 +31,7 @@ export default function AlignmentToolbar({
   unselectedSlots,
   onUpdateSlots,
   onInsertSlots,
+  onSymmetryUnmatched,
   enableCopyPreview,
   spacing,
   trayWidth,
@@ -71,6 +73,7 @@ export default function AlignmentToolbar({
           unselectedSlots={unselected}
           onUpdateSlots={onUpdateSlots}
           onInsertSlots={onInsertSlots}
+          onSymmetryUnmatched={onSymmetryUnmatched}
           enableCopyPreview={enableCopyPreview}
           spacing={spacing}
           trayWidth={trayWidth}

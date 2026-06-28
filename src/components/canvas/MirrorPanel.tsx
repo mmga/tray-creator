@@ -1,5 +1,5 @@
 import { startTransition, useCallback, useEffect, useState } from "react";
-import { Copy, FlipHorizontal, FlipVertical } from "lucide-react";
+import { Copy, FlipHorizontal, FlipVertical, SearchCheck } from "lucide-react";
 import type { FreeSlot, SteppedSlot } from "@/types/custom-tray";
 import { getEllipsePolygon, polygonsIntersect } from "@/lib/collision";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/useToast";
 import {
   buildMirrorInsertSlots,
   buildMirrorMoveUpdates,
+  checkLayoutSymmetry,
   countOutOfBoundsSlots,
   type SymmetryInsertSlot,
   type SymmetryMode,
@@ -23,6 +24,8 @@ interface MirrorPanelProps {
   unselectedSlots: Array<FreeSlot | SteppedSlot>;
   onUpdateSlots: (updates: SlotUpdate[]) => void;
   onInsertSlots?: (slots: SymmetryInsertSlot[]) => void;
+  /** 对称检查发现未配对槽位时回调，传入未对称槽位 id；用于画布闪烁高亮 */
+  onSymmetryUnmatched?: (unmatchedIds: string[]) => void;
   enableCopyPreview: boolean;
   spacing: number;
   trayWidth: number;
@@ -101,6 +104,7 @@ export default function MirrorPanel({
   unselectedSlots,
   onUpdateSlots,
   onInsertSlots,
+  onSymmetryUnmatched,
   enableCopyPreview,
   spacing,
   trayWidth,
@@ -294,8 +298,53 @@ export default function MirrorPanel({
   const previewX = formatCopyPreview("左右", copyPreviews.mirrorX);
   const previewY = formatCopyPreview("上下", copyPreviews.mirrorY);
 
+  const handleCheckSymmetry = (mode: SymmetryMode) => {
+    const label = mode === "mirror-x" ? "左右" : "上下";
+    if (allSlots.length === 0) {
+      toast("info", `当前画布没有槽位，无法检查${label}对称。`);
+      return;
+    }
+
+    const result = checkLayoutSymmetry(
+      allSlots,
+      trayWidth,
+      trayDepth,
+      "tray",
+      mode,
+    );
+
+    if (result.symmetric) {
+      toast(
+        "success",
+        `检查通过：当前布局关于托盘中心轴${label}对称（${result.matchedPairCount} 组配对）。`,
+      );
+      return;
+    }
+
+    toast(
+      "info",
+      `${result.unmatchedIds.length} 个槽位未形成${label}对称，请调整或补充对应槽位。`,
+    );
+    onSymmetryUnmatched?.(result.unmatchedIds);
+  };
+
   return (
     <div className="space-y-4">
+      <section className="border border-[#312a21] bg-[#17130f] p-3">
+        <div className="mb-3">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#d6c6a5]">对称检查</div>
+          <div className="mt-1 text-[10px] text-muted-foreground/70">以托盘中心轴为基准，检查全部槽位是否已形成对称布局。</div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <button className={actionBtnClass} onClick={() => handleCheckSymmetry("mirror-x")}>
+            <SearchCheck size={15} /> 左右对称
+          </button>
+          <button className={actionBtnClass} onClick={() => handleCheckSymmetry("mirror-y")}>
+            <SearchCheck size={15} /> 上下对称
+          </button>
+        </div>
+      </section>
+
       <section className="border border-[#312a21] bg-[#17130f] p-3">
         <div className="mb-3">
           <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#d6c6a5]">镜像移动</div>

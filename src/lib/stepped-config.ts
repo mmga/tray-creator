@@ -1,4 +1,5 @@
 import type { SlotGroup, SteppedLayoutParams } from "@/types/custom-tray";
+import { MAX_TRAY_SIZE } from "@/lib/config";
 import { createGroupStructureOverrides } from "@/lib/stepped-group-params";
 
 export const GROUP_COLORS = [
@@ -40,8 +41,8 @@ export const STEPPED_LAYOUT_DEFAULTS: SteppedLayoutParams = {
 };
 
 export const STEPPED_LIMITS = {
-  trayWidth: { label: "宽度", min: 50, max: 260, step: 1, unit: "mm" },
-  trayDepth: { label: "深度", min: 50, max: 260, step: 1, unit: "mm" },
+  trayWidth: { label: "宽度", min: 50, max: MAX_TRAY_SIZE, step: 1, unit: "mm" },
+  trayDepth: { label: "深度", min: 50, max: MAX_TRAY_SIZE, step: 1, unit: "mm" },
   spacing: { label: "凹槽间距", min: 2, max: 20, step: 1, unit: "mm" },
   holeDepth: { label: "凹槽深度", min: 0.2, max: 20, step: 0.2, unit: "mm" },
   bottomHeight: { label: "圆柱高度", min: 3, max: 100, step: 1, unit: "mm" },

@@ -104,8 +104,8 @@ describe("param-io", () => {
 
     const parsed = parseParamFileObject(gridFile, "grid") as TrayParams;
 
-    expect(parsed.columns).toBe(6);
-    expect(parsed.rows).toBe(6);
+    expect(parsed.columns).toBe(30);
+    expect(parsed.rows).toBe(30);
     expect(parsed.spacing).toBe(10);
     expect(parsed.baseThickness).toBe(4);
     expect(parsed.holeDepth).toBe(4);
@@ -129,8 +129,8 @@ describe("param-io", () => {
       "grid",
     ) as TrayParams;
 
-    expect(parsed.rows).toBe(6);
-    expect(parsed.columns).toBe(6);
+    expect(parsed.rows).toBe(30);
+    expect(parsed.columns).toBe(30);
     expect(parsed.slotDefinitionId).toBe("circle-32");
   });
 
@@ -370,7 +370,7 @@ describe("param-io", () => {
       "stepped",
     ) as SteppedLayoutParams;
 
-    expect(parsed.trayWidth).toBe(260);
+    expect(parsed.trayWidth).toBe(500);
     expect(parsed.trayDepth).toBe(50);
     expect(parsed.spacing).toBe(20);
     expect(parsed.holeDepth).toBe(20);

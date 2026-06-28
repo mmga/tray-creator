@@ -490,6 +490,19 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     await waitFor(() => {
       expect(onSelectionChange).toHaveBeenLastCalledWith(["slot-1"]);
     });
+    onSelectionChange.mockClear();
+    rerender(
+      <TestLayoutCanvas
+        params={createCustomParams()}
+        onUpdateSlot={vi.fn()}
+        onRemoveSlot={vi.fn()}
+        onSelectionChange={onSelectionChange}
+        onSaveSnapshot={onSaveSnapshot}
+        onEditInteractionChange={onEditInteractionChange}
+      />,
+    );
+    expect(onSelectionChange).not.toHaveBeenCalled();
+
     expect(onSaveSnapshot).toHaveBeenCalledTimes(1);
     expect(onEditInteractionChange).toHaveBeenCalledWith(true);
     expect(screen.getByTestId("canvas-slot-layer")).toHaveAttribute(
@@ -1071,6 +1084,68 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
       );
     });
     expect(onEditInteractionChange).toHaveBeenLastCalledWith(false);
+  });
+
+  it("allows simple stepped tray resizing beyond the print boundary", async () => {
+    const onResizeTray = vi.fn();
+    const { container } = render(
+      <TestLayoutCanvas
+        params={createCustomParams({
+          trayWidth: 280,
+          trayDepth: 270,
+          slots: [
+            {
+              id: "slot-1",
+              x: 72,
+              y: 48,
+              shape: "circle",
+              width: 25,
+              height: 25,
+              rotation: 0,
+            },
+          ],
+        })}
+        rowBands={[
+          {
+            id: "row-1",
+            name: "前排",
+            x: 0,
+            y: 0,
+            width: 180,
+            depth: 60,
+            topHeight: 5,
+            isActive: true,
+          },
+        ]}
+        onResizeTray={onResizeTray}
+        onUpdateSlot={vi.fn()}
+        onRemoveSlot={vi.fn()}
+      />,
+    );
+
+    const svg = container.querySelector("svg");
+    const rightHandle = container.querySelector<SVGRectElement>(
+      'rect[style*="cursor: ew-resize"]',
+    );
+    expect(svg).not.toBeNull();
+    expect(rightHandle).not.toBeNull();
+
+    fireEvent.pointerDown(rightHandle!, {
+      pointerId: 10,
+      pointerType: "mouse",
+      clientX: 280,
+      clientY: 40,
+    });
+    fireEvent.pointerMove(svg!, {
+      pointerId: 10,
+      pointerType: "mouse",
+      clientX: 340,
+      clientY: 40,
+    });
+
+    await waitFor(() => {
+      expect(onResizeTray).toHaveBeenCalledWith(340, 270);
+    });
   });
 
   it("adds slots through ctrl marquee selection on the canvas background", async () => {

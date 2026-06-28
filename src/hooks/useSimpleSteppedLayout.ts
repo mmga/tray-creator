@@ -9,7 +9,7 @@ import type {
   SimpleSteppedRow,
   SimpleSteppedSlot,
 } from "@/types/custom-tray";
-import { MAX_BUILD_SIZE } from "@/lib/config";
+import { MAX_TRAY_SIZE } from "@/lib/config";
 import { createSimpleSteppedSlotInstance } from "@/lib/slot-instance-factory";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import {
@@ -90,13 +90,9 @@ function normalizeSimpleSteppedTraySize(
       ? requestedSize
       : fallbackSize;
 
-  if (minimumSize > MAX_BUILD_SIZE) {
-    return Math.max(safeRequestedSize, minimumSize);
-  }
-
   return Math.min(
     Math.max(safeRequestedSize, minimumSize),
-    MAX_BUILD_SIZE,
+    MAX_TRAY_SIZE,
   );
 }
 

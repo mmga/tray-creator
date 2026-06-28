@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useMemo } from "react";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,7 +22,19 @@ export function ParamSlider({
     unit = "mm",
 }: ParamSliderProps) {
     // 防御 undefined：确保 input/slider 始终为受控状态
-    const safeValue = value ?? config.min;
+    const safeValue = Number.isFinite(value) ? value : config.min;
+    const effectiveMin = Math.min(config.min, safeValue);
+    const effectiveMax = Math.max(config.max, safeValue);
+    const sliderValue = useMemo(() => [safeValue], [safeValue]);
+    const handleValueChange = useCallback(
+        (nextValue: number) => {
+            if (nextValue !== safeValue) {
+                onChange(nextValue);
+            }
+        },
+        [onChange, safeValue],
+    );
+
     return (
         <div className="space-y-2 group">
             <div className="flex items-center justify-between">
@@ -32,13 +45,13 @@ export function ParamSlider({
                     <Input
                         type="number"
                         value={safeValue}
-                        min={config.min}
-                        max={config.max}
+                        min={effectiveMin}
+                        max={effectiveMax}
                         step={config.step}
                         onChange={(e) => {
                             const v = parseFloat(e.target.value);
-                            if (!isNaN(v) && v >= config.min && v <= config.max) {
-                                onChange(v);
+                            if (!isNaN(v) && v >= effectiveMin && v <= effectiveMax) {
+                                handleValueChange(v);
                             }
                         }}
                         className="w-18 h-9 lg:h-7 text-right text-sm font-mono bg-[#1c1a16] border-[#2e2a24] text-foreground focus:border-primary/50 focus:ring-primary/20 transition-colors duration-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -47,11 +60,11 @@ export function ParamSlider({
                 </div>
             </div>
             <Slider
-                value={[safeValue]}
-                min={config.min}
-                max={config.max}
+                value={sliderValue}
+                min={effectiveMin}
+                max={effectiveMax}
                 step={config.step}
-                onValueChange={([v]) => onChange(v)}
+                onValueChange={([v]) => handleValueChange(v)}
                 className="py-1"
             />
         </div>

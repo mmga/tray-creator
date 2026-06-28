@@ -112,6 +112,9 @@ export const SHARED_LAYOUT_LIMITS = {
 /** 最大构建尺寸 (mm)，超过此值会警告 */
 export const MAX_BUILD_SIZE = 260;
 
+/** 参数输入允许的最大托盘尺寸；打印尺寸只作为提示，不阻断建模。 */
+export const MAX_TRAY_SIZE = 5000;
+
 export const RENDER_CONFIG = {
   cylinderSegments: 64,
   cornerSegments: 32,

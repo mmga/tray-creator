@@ -207,7 +207,7 @@ vi.mock("@/components/PanelActionSection", () => ({
           </button>
         ) : null}
         <button type="button" onClick={onGenerate} disabled={isGenerating}>
-          {isGenerating ? "锻造中..." : isOversized ? "尺寸超限" : "开始锻造"}
+          {isGenerating ? "锻造中..." : "开始锻造"}
         </button>
         <button type="button" onClick={onExportSTL}>
           导出 STL
@@ -478,7 +478,7 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
       />,
     );
 
-    expect(screen.getByText("超过锻造极限 (260×260mm)")).toBeInTheDocument();
+    expect(screen.getByText("超过常规打印尺寸 (260×260mm)，仍可继续建模")).toBeInTheDocument();
     expect(screen.getByText("PLA估重: 0.7g")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "启用自动预览" }));
@@ -491,7 +491,7 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
       }),
       expect.objectContaining({
         enabled: true,
-        isBlocked: true,
+        isBlocked: false,
         isGenerating: false,
       }),
     );
@@ -1068,8 +1068,8 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
     expect(
       screen.getByRole("button", { name: "Trim 到凹槽占用区域" }),
     ).toBeDisabled();
-    expect(screen.getByText("超过锻造极限")).toBeInTheDocument();
-    const generateButton = screen.getByRole("button", { name: "尺寸超限" });
+    expect(screen.getByText("超过常规打印尺寸，仍可继续建模")).toBeInTheDocument();
+    const generateButton = screen.getByRole("button", { name: "开始锻造" });
     expect(generateButton).not.toBeDisabled();
     fireEvent.click(generateButton);
     expect(onGenerate).toHaveBeenCalledTimes(1);
@@ -1704,8 +1704,8 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
       />,
     );
 
-    expect(screen.getByText("超过锻造极限")).toBeInTheDocument();
-    const generateButton = screen.getByRole("button", { name: "尺寸超限" });
+    expect(screen.getByText("超过常规打印尺寸，仍可继续建模")).toBeInTheDocument();
+    const generateButton = screen.getByRole("button", { name: "开始锻造" });
     expect(generateButton).not.toBeDisabled();
     fireEvent.click(generateButton);
     expect(onGenerate).toHaveBeenCalledTimes(1);

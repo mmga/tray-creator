@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildMirrorInsertSlots,
   buildMirrorMoveUpdates,
+  checkLayoutSymmetry,
   countOutOfBoundsSlots,
   getSelectionBounds,
   getSlotBounds,
@@ -110,5 +111,67 @@ describe("layout symmetry", () => {
     ];
 
     expect(countOutOfBoundsSlots(slots, trayWidth, trayDepth)).toBe(2);
+  });
+
+  it("reports mirror-x symmetry when slots are paired across the tray center", () => {
+    const slots = [
+      { ...baseSlot, id: "a", x: 20, rotation: 0 },
+      { ...baseSlot, id: "b", x: 80, rotation: 180 },
+    ];
+
+    const result = checkLayoutSymmetry(slots, trayWidth, trayDepth, "tray", "mirror-x");
+
+    expect(result.symmetric).toBe(true);
+    expect(result.unmatchedIds).toEqual([]);
+    expect(result.matchedPairCount).toBe(1);
+  });
+
+  it("reports unmatched slots when symmetry is broken", () => {
+    const slots = [
+      { ...baseSlot, id: "a", x: 20, rotation: 0 },
+      { ...baseSlot, id: "b", x: 80, rotation: 180 },
+      { ...baseSlot, id: "c", x: 30, rotation: 0 },
+    ];
+
+    const result = checkLayoutSymmetry(slots, trayWidth, trayDepth, "tray", "mirror-x");
+
+    expect(result.symmetric).toBe(false);
+    expect(result.unmatchedIds).toContain("c");
+    expect(result.matchedPairCount).toBe(1);
+  });
+
+  it("treats a slot lying exactly on the mirror axis as self-symmetric", () => {
+    const slots = [
+      { ...baseSlot, id: "axis", x: 50, rotation: 0 },
+    ];
+
+    const result = checkLayoutSymmetry(slots, trayWidth, trayDepth, "tray", "mirror-x");
+
+    expect(result.symmetric).toBe(true);
+    expect(result.unmatchedIds).toEqual([]);
+    expect(result.matchedPairCount).toBe(0);
+  });
+
+  it("checks mirror-y against the tray's vertical center", () => {
+    const slots = [
+      { ...baseSlot, id: "a", x: 20, y: 20, rotation: 0 },
+      { ...baseSlot, id: "b", x: 20, y: 60, rotation: 0 },
+    ];
+
+    const result = checkLayoutSymmetry(slots, trayWidth, trayDepth, "tray", "mirror-y");
+
+    expect(result.symmetric).toBe(true);
+    expect(result.matchedPairCount).toBe(1);
+  });
+
+  it("ignores rotation for circle slots since it is visually identical", () => {
+    const slots = [
+      { ...baseSlot, id: "a", shape: "circle" as const, width: 20, height: 20, x: 20, rotation: 0 },
+      { ...baseSlot, id: "b", shape: "circle" as const, width: 20, height: 20, x: 80, rotation: 0 },
+    ];
+
+    const result = checkLayoutSymmetry(slots, trayWidth, trayDepth, "tray", "mirror-x");
+
+    expect(result.symmetric).toBe(true);
   });
 });

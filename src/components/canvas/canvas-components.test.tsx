@@ -295,6 +295,101 @@ describe("MirrorPanel", { timeout: 15000 }, () => {
       expect.stringContaining("与现有槽位重合"),
     );
   });
+
+  it("checks symmetry and reports a symmetric layout", () => {
+    const selectedSlots: FreeSlot[] = [
+      {
+        id: "slot-1",
+        x: 20,
+        y: 50,
+        shape: "circle",
+        width: 20,
+        height: 20,
+        rotation: 0,
+      },
+      {
+        id: "slot-2",
+        x: 80,
+        y: 50,
+        shape: "circle",
+        width: 20,
+        height: 20,
+        rotation: 0,
+      },
+    ];
+
+    const onSymmetryUnmatched = vi.fn();
+    render(
+      <MirrorPanel
+        allSlots={selectedSlots}
+        selectedSlots={selectedSlots}
+        unselectedSlots={[]}
+        onUpdateSlots={vi.fn()}
+        onSymmetryUnmatched={onSymmetryUnmatched}
+        enableCopyPreview={false}
+        spacing={4}
+        trayWidth={100}
+        trayDepth={100}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /左右对称/ }));
+
+    expect(toastMock).toHaveBeenCalledWith(
+      "success",
+      expect.stringContaining("左右对称"),
+    );
+    expect(onSymmetryUnmatched).not.toHaveBeenCalled();
+  });
+
+  it("checks symmetry and warns about unmatched slots", () => {
+    const selectedSlots: FreeSlot[] = [
+      {
+        id: "slot-1",
+        x: 20,
+        y: 50,
+        shape: "circle",
+        width: 20,
+        height: 20,
+        rotation: 0,
+      },
+      {
+        id: "slot-2",
+        x: 30,
+        y: 50,
+        shape: "circle",
+        width: 20,
+        height: 20,
+        rotation: 0,
+      },
+    ];
+
+    const onSymmetryUnmatched = vi.fn();
+    render(
+      <MirrorPanel
+        allSlots={selectedSlots}
+        selectedSlots={selectedSlots}
+        unselectedSlots={[]}
+        onUpdateSlots={vi.fn()}
+        onSymmetryUnmatched={onSymmetryUnmatched}
+        enableCopyPreview={false}
+        spacing={4}
+        trayWidth={100}
+        trayDepth={100}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /左右对称/ }));
+
+    expect(toastMock).toHaveBeenCalledWith(
+      "info",
+      expect.stringContaining("2 个槽位未形成左右对称"),
+    );
+    expect(onSymmetryUnmatched).toHaveBeenCalledWith([
+      "slot-1",
+      "slot-2",
+    ]);
+  });
 });
 
 describe("AlignPanel", { timeout: 15000 }, () => {
@@ -483,6 +578,68 @@ describe("CanvasSlotLayer", { timeout: 15000 }, () => {
       expect.anything(),
       slot,
     );
+  });
+
+  it("renders a flashing border for symmetry-highlighted slot ids", () => {
+    const slot = createSteppedSlot();
+    const collisionState = buildCanvasCollisionState([slot], 5);
+
+    const { container } = render(
+      <svg>
+        <CanvasSlotLayer
+          slots={[slot]}
+          trayDepth={100}
+          spacing={5}
+          zoom={1}
+          selectedIds={new Set()}
+          hoveredId={null}
+          draggingId={null}
+          steppedGroupMetaById={null}
+          collisionState={collisionState}
+          isSpacePressed={false}
+          symmetryHighlightIds={new Set([slot.id])}
+          onSlotPointerDown={vi.fn()}
+          onSlotPointerEnter={vi.fn()}
+          onSlotPointerLeave={vi.fn()}
+          onSlotRotatePointerDown={vi.fn()}
+        />
+      </svg>,
+    );
+
+    const highlight = container.querySelector('[data-symmetry-highlight="true"]');
+    expect(highlight).not.toBeNull();
+    expect(highlight?.querySelector("animate")).not.toBeNull();
+  });
+
+  it("does not render symmetry highlight when id is not in the set", () => {
+    const slot = createSteppedSlot();
+    const collisionState = buildCanvasCollisionState([slot], 5);
+
+    const { container } = render(
+      <svg>
+        <CanvasSlotLayer
+          slots={[slot]}
+          trayDepth={100}
+          spacing={5}
+          zoom={1}
+          selectedIds={new Set()}
+          hoveredId={null}
+          draggingId={null}
+          steppedGroupMetaById={null}
+          collisionState={collisionState}
+          isSpacePressed={false}
+          symmetryHighlightIds={new Set(["some-other-id"])}
+          onSlotPointerDown={vi.fn()}
+          onSlotPointerEnter={vi.fn()}
+          onSlotPointerLeave={vi.fn()}
+          onSlotRotatePointerDown={vi.fn()}
+        />
+      </svg>,
+    );
+
+    expect(
+      container.querySelector('[data-symmetry-highlight="true"]'),
+    ).toBeNull();
   });
 });
 

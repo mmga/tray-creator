@@ -93,7 +93,7 @@ export default function ParameterPanel({
   useAutoPreview(params, {
     enabled: autoPreview,
     isGenerating,
-    isBlocked: isOversized,
+    isBlocked: false,
     onGenerate: () => onGenerate({ shouldSwitchView: false }),
   });
 
@@ -369,7 +369,7 @@ export default function ParameterPanel({
                 <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
                   <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm-.75 3.75a.75.75 0 011.5 0v4a.75.75 0 01-1.5 0v-4zM8 12a1 1 0 100-2 1 1 0 000 2z" />
                 </svg>
-                <span>超过锻造极限 ({MAX_BUILD_SIZE}×{MAX_BUILD_SIZE}mm)</span>
+                <span>超过常规打印尺寸 ({MAX_BUILD_SIZE}×{MAX_BUILD_SIZE}mm)，仍可继续建模</span>
               </div>
             )}
           </div>

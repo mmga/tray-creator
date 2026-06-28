@@ -130,4 +130,11 @@ describe("stepped group actions", () => {
     ]);
     expect(reorderSteppedGroups(moved, -1, 0)).toBe(moved);
   });
+
+  it("does not replace params when activating the current or a missing group", () => {
+    const params = createParams();
+
+    expect(setSteppedActiveGroup(params, params.activeGroupId)).toBe(params);
+    expect(setSteppedActiveGroup(params, "missing-group")).toBe(params);
+  });
 });
