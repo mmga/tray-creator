@@ -206,7 +206,7 @@ describe("TrayViewer", { timeout: 15000 }, () => {
         makeDefault: true,
         enableDamping: true,
         minDistance: 10,
-        maxDistance: 300,
+        maxDistance: 900,
       }),
     );
   });

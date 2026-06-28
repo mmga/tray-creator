@@ -84,9 +84,7 @@ function getSplitPartOffset(
 ): [number, number, number] {
   if (count <= 1) return [0, 0, 0];
   const centeredIndex = index - (count - 1) / 2;
-  const verticalStagger =
-    index % 2 === 0 ? -explosionDistance * 0.38 : explosionDistance * 0.38;
-  return [centeredIndex * explosionDistance, verticalStagger, 0];
+  return [0, centeredIndex * explosionDistance, 0];
 }
 
 /**
@@ -436,7 +434,7 @@ export default function TrayViewer({
           enableDamping
           dampingFactor={0.1}
           minDistance={10}
-          maxDistance={300}
+          maxDistance={900}
           maxPolarAngle={Math.PI / 1.5}
         />
       </Canvas>
