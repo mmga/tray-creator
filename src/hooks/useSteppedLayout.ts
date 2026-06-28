@@ -10,6 +10,7 @@ import type {
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import { useUndoHistory } from "@/hooks/useUndoHistory";
 import { usePreviewLifecycle } from "@/hooks/usePreviewLifecycle";
+import { useToast } from "@/hooks/useToast";
 import { trayWorkerService } from "@/lib/worker/worker-service";
 import type * as THREE from "three";
 import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
@@ -44,6 +45,7 @@ import {
   calculateSteppedEffectiveDimensions,
 } from "@/lib/stepped-layout-math";
 import {
+  exportSteppedSplitPartFiles,
   exportSteppedModelFiles,
   generateSteppedPreview,
 } from "@/lib/stepped-model-service";
@@ -110,11 +112,13 @@ export interface UseSteppedLayoutReturn {
   resumeOutlinePreview: () => void;
   handleGenerate: () => void;
   handleExportSTL: () => void;
+  handleExportSplitParts: () => void;
   // 2D 分组轮廓预览
   outlinePreview: GroupOutlinePreview[] | null;
 }
 
 export function useSteppedLayout(): UseSteppedLayoutReturn {
+  const { toast } = useToast();
   const [params, internalSetParams] = useState<SteppedLayoutParams>(
     STEPPED_LAYOUT_DEFAULTS,
   );
@@ -192,6 +196,35 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
       clearOptimizationProposals();
     },
   });
+
+  const handleExportSplitParts = useCallback(async () => {
+    if (!trayWorkerService) {
+      toast("error", "当前环境无法使用后台建模服务");
+      return;
+    }
+
+    const currentParams = paramsRef.current;
+    if (currentParams.groups.length < 2) {
+      toast("error", "至少需要两个分组才能导出分件");
+      return;
+    }
+
+    try {
+      await exportSteppedSplitPartFiles(
+        currentParams,
+        calculateSteppedEffectiveDimensions(currentParams),
+        trayWorkerService,
+        browserDownloadPort,
+      );
+      toast("success", "分件 STL、定位孔清单和参数文件已导出");
+    } catch (err) {
+      console.error("分件导出失败:", err);
+      toast(
+        "error",
+        `分件导出失败：${err instanceof Error ? err.message : "未知错误"}`,
+      );
+    }
+  }, [toast]);
 
   const setParams = useCallback<
     React.Dispatch<React.SetStateAction<SteppedLayoutParams>>
@@ -547,6 +580,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     resumeOutlinePreview,
     handleGenerate,
     handleExportSTL,
+    handleExportSplitParts,
     outlinePreview,
   };
 }

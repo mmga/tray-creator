@@ -11,7 +11,9 @@ vi.mock("@/lib/jscad-to-three", () => ({
 
 import {
   exportSteppedModelFiles,
+  exportSteppedSplitPartFiles,
   generateSteppedPreview,
+  getSteppedSplitBaseFilename,
   getSteppedSTLFilename,
 } from "@/lib/stepped-model-service";
 
@@ -22,6 +24,7 @@ describe("stepped model service", () => {
     const workerPort = {
       generateStepped: vi.fn().mockResolvedValue({ geometry, volume: 789 }),
       generateSteppedOutlinePreview: vi.fn(),
+      generateSteppedSplitParts: vi.fn(),
       exportSTL: vi.fn(),
     };
     jscadToThreeGeometryMock.mockReturnValue(threeGeometry);
@@ -44,6 +47,7 @@ describe("stepped model service", () => {
     const workerPort = {
       generateStepped: vi.fn(),
       generateSteppedOutlinePreview: vi.fn(),
+      generateSteppedSplitParts: vi.fn(),
       exportSTL: vi.fn().mockResolvedValue({
         blob: stlBlob,
         filename: "tray_stepped_100x90_0slots.stl",
@@ -94,6 +98,78 @@ describe("stepped model service", () => {
     );
     await expect(downloadPort.downloadBlob.mock.calls[1]?.[0].text()).resolves.toContain(
       '"mode": "stepped"',
+    );
+  });
+
+  it("exports split part stls with a manifest and params file", async () => {
+    const partGeometry = { id: "part-geom" } as never;
+    const stlBlob = new Blob(["part-stl"], { type: "application/sla" });
+    const workerPort = {
+      generateStepped: vi.fn(),
+      generateSteppedOutlinePreview: vi.fn(),
+      generateSteppedSplitParts: vi.fn().mockResolvedValue({
+        parts: [
+          {
+            index: 0,
+            filenameLabel: "part_01_0-10mm",
+            label: "组 1",
+            fromHeight: 0,
+            toHeight: 10,
+            geometry: partGeometry,
+            connectorCount: 2,
+          },
+        ],
+      }),
+      exportSTL: vi.fn().mockResolvedValue({
+        blob: stlBlob,
+        filename: "tray_stepped_split_100x90_0slots_part_01_0-10mm.stl",
+      }),
+    };
+    const downloadPort = {
+      downloadBlob: vi.fn(),
+    };
+
+    expect(
+      getSteppedSplitBaseFilename(STEPPED_LAYOUT_DEFAULTS, {
+        width: 100,
+        depth: 90,
+        minX: 0,
+        maxX: 0,
+        minY: 0,
+        maxY: 0,
+      }),
+    ).toBe("tray_stepped_split_100x90_0slots");
+
+    await exportSteppedSplitPartFiles(
+      STEPPED_LAYOUT_DEFAULTS,
+      {
+        width: 100,
+        depth: 90,
+        minX: 0,
+        maxX: 0,
+        minY: 0,
+        maxY: 0,
+      },
+      workerPort,
+      downloadPort,
+    );
+
+    expect(workerPort.generateSteppedSplitParts).toHaveBeenCalledWith(
+      STEPPED_LAYOUT_DEFAULTS,
+    );
+    expect(workerPort.exportSTL).toHaveBeenCalledWith(
+      partGeometry,
+      "tray_stepped_split_100x90_0slots_part_01_0-10mm.stl",
+    );
+    expect(downloadPort.downloadBlob).toHaveBeenCalledTimes(3);
+    expect(downloadPort.downloadBlob.mock.calls[1]?.[1]).toBe(
+      "tray_stepped_split_100x90_0slots_manifest.json",
+    );
+    await expect(downloadPort.downloadBlob.mock.calls[1]?.[0].text()).resolves.toContain(
+      '"connectorCount": 2',
+    );
+    expect(downloadPort.downloadBlob.mock.calls[2]?.[1]).toBe(
+      "tray_stepped_split_100x90_0slots_params.json",
     );
   });
 });

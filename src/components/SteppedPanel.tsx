@@ -23,6 +23,7 @@ import {
     Eye,
     AlertTriangle,
     CircleHelp,
+    Download,
 } from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
@@ -157,6 +158,7 @@ interface SteppedPanelProps {
     onAddSlot: (width: number) => void;
     onGenerate: () => void;
     onExportSTL: () => void;
+    onExportSplitParts?: () => void;
     isGenerating: boolean;
     volume: number;
     selectedSlotIds: string[];
@@ -196,6 +198,7 @@ export default function SteppedPanel({
     onAddSlot,
     onGenerate,
     onExportSTL,
+    onExportSplitParts,
     isGenerating,
     volume,
     selectedSlotIds,
@@ -856,6 +859,15 @@ export default function SteppedPanel({
                     showStaleNotice={isPreviewStale}
                     draftActions={resolvedDraftActions}
                 />
+                <Button
+                    variant="outline"
+                    onClick={() => onExportSplitParts?.()}
+                    disabled={!onExportSplitParts || params.groups.length < 2 || params.slots.length === 0}
+                    className="w-full h-10 border-[#4a6741] text-[#8cb880] hover:bg-[#20301d] hover:text-[#a8d39a] hover:border-[#5f8054] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    <Download className="w-4 h-4 mr-2" />
+                    导出分件 STL
+                </Button>
 
                 {perfEnabled && (
                     <div className="iron-panel rounded-sm p-3">

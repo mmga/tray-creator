@@ -1,7 +1,10 @@
 import { createTrayModel } from "../tray-model";
 import { createCustomTrayModel } from "../custom-tray-model";
 import { createSimpleSteppedTrayModel } from "../simple-stepped-tray-model";
-import { createSteppedTrayModel } from "../stepped-tray-model";
+import {
+  createSteppedSplitParts,
+  createSteppedTrayModel,
+} from "../stepped-tray-model";
 import { buildSteppedOutlinePreview } from "../stepped-outline-preview";
 import stlSerializer from "@jscad/stl-serializer";
 import { measureVolume } from "@jscad/modeling/src/measurements";
@@ -38,6 +41,11 @@ export type WorkerRequest =
       params: SteppedLayoutParams;
     }
   | {
+      type: "GENERATE_STEPPED_SPLIT_PARTS";
+      requestId: string;
+      params: SteppedLayoutParams;
+    }
+  | {
       type: "EXPORT_STL";
       requestId: string;
       geometry: Geom3;
@@ -56,6 +64,19 @@ export type WorkerResponse =
       requestId: string;
       outlinePreview: GroupOutlinePreview[] | null;
       durationMs: number;
+    }
+  | {
+      type: "STEPPED_SPLIT_PARTS_SUCCESS";
+      requestId: string;
+      parts: {
+        index: number;
+        filenameLabel: string;
+        label: string;
+        fromHeight: number;
+        toHeight: number;
+        geometry: Geom3;
+        connectorCount: number;
+      }[];
     }
   | { type: "EXPORT_SUCCESS"; requestId: string; blob: Blob; filename: string }
   | { type: "ERROR"; requestId: string; message: string };
@@ -130,6 +151,13 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
         requestId,
         outlinePreview,
         durationMs: performance.now() - startedAt,
+      });
+    } else if (req.type === "GENERATE_STEPPED_SPLIT_PARTS") {
+      const parts = createSteppedSplitParts(req.params);
+      self.postMessage({
+        type: "STEPPED_SPLIT_PARTS_SUCCESS",
+        requestId,
+        parts,
       });
     } else if (req.type === "EXPORT_STL") {
       const rawData = stlSerializer.serialize({ binary: true }, req.geometry);

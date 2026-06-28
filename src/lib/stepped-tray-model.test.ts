@@ -4,6 +4,7 @@ import type { SteppedLayoutParams } from "@/types/custom-tray";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import {
   calculateSteppedTrayDimensions,
+  createSteppedSplitParts,
   createSteppedTrayModel,
 } from "@/lib/stepped-tray-model";
 
@@ -116,5 +117,87 @@ describe("stepped tray model", { timeout: 15000 }, () => {
     expect(shallowVolume).toBeGreaterThan(0);
     expect(deepVolume).toBeGreaterThan(0);
     expect(deepVolume).toBeLessThan(shallowVolume);
+  });
+
+  it("creates one split part per group with connector sockets", () => {
+    const parts = createSteppedSplitParts(createParams());
+
+    expect(parts).toHaveLength(2);
+    expect(parts[0]).toMatchObject({
+      filenameLabel: "part_01_low",
+      label: "低组",
+      fromHeight: 0,
+      toHeight: 3,
+    });
+    expect(parts[1]).toMatchObject({
+      filenameLabel: "part_02_high",
+      label: "高组",
+      fromHeight: 0,
+      toHeight: 12,
+    });
+    expect(parts[0].connectorCount).toBeGreaterThan(0);
+    expect(measureVolume(parts[0].geometry)).toBeGreaterThan(0);
+    expect(measureVolume(parts[1].geometry)).toBeGreaterThan(0);
+  });
+
+  it("cuts assembly grooves at different-height group interfaces", () => {
+    const groovedParts = createSteppedSplitParts(createParams());
+    const plainParts = createSteppedSplitParts(createParams(), {
+      interfaceGrooveDepth: 0,
+    });
+
+    expect(groovedParts).toHaveLength(plainParts.length);
+    expect(measureVolume(groovedParts[0].geometry)).toBeLessThan(
+      measureVolume(plainParts[0].geometry),
+    );
+    expect(measureVolume(groovedParts[1].geometry)).toBeLessThan(
+      measureVolume(plainParts[1].geometry),
+    );
+  });
+
+  it("keeps same-height groups as separate split parts", () => {
+    const parts = createSteppedSplitParts({
+      ...createParams(),
+      groups: [
+        {
+          ...STEPPED_LAYOUT_DEFAULTS.groups[0],
+          id: "left",
+          name: "左组",
+          bottomHeight: 10,
+        },
+        {
+          ...STEPPED_LAYOUT_DEFAULTS.groups[0],
+          id: "right",
+          name: "右组",
+          color: "#3b82f6",
+          bottomHeight: 10,
+        },
+      ],
+      slots: [
+        {
+          id: "slot-left",
+          groupId: "left",
+          x: -35,
+          y: 0,
+          width: 25,
+          height: 25,
+          rotation: 0,
+          shape: "circle",
+        },
+        {
+          id: "slot-right",
+          groupId: "right",
+          x: 35,
+          y: 0,
+          width: 25,
+          height: 25,
+          rotation: 0,
+          shape: "circle",
+        },
+      ],
+    });
+
+    expect(parts.map((part) => part.label)).toEqual(["左组", "右组"]);
+    expect(parts.map((part) => part.toHeight)).toEqual([10, 10]);
   });
 });

@@ -53,4 +53,17 @@ export interface SteppedWorkerPort
   generateStepped: (
     params: SteppedLayoutParams,
   ) => Promise<{ geometry: Geom3; volume: number }>;
+  generateSteppedSplitParts: (
+    params: SteppedLayoutParams,
+  ) => Promise<{
+    parts: {
+      index: number;
+      filenameLabel: string;
+      label: string;
+      fromHeight: number;
+      toHeight: number;
+      geometry: Geom3;
+      connectorCount: number;
+    }[];
+  }>;
 }

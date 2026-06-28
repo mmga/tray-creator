@@ -58,3 +58,68 @@ export async function exportSteppedModelFiles(
   const jsonFilename = stlFilename.replace(/\.stl$/i, ".json");
   downloadPort.downloadBlob(createParamBlob("stepped", params), jsonFilename);
 }
+
+export function getSteppedSplitBaseFilename(
+  params: SteppedLayoutParams,
+  effectiveDimensions: SteppedLayoutExtents,
+): string {
+  const exportWidth =
+    effectiveDimensions.width > 0
+      ? effectiveDimensions.width
+      : params.trayWidth;
+  const exportDepth =
+    effectiveDimensions.depth > 0
+      ? effectiveDimensions.depth
+      : params.trayDepth;
+
+  return `tray_stepped_split_${exportWidth}x${exportDepth}_${params.slots.length}slots`;
+}
+
+export async function exportSteppedSplitPartFiles(
+  params: SteppedLayoutParams,
+  effectiveDimensions: SteppedLayoutExtents,
+  workerPort: SteppedWorkerPort,
+  downloadPort: DownloadPort,
+): Promise<void> {
+  const { parts } = await workerPort.generateSteppedSplitParts(params);
+  if (parts.length === 0) {
+    throw new Error("当前模型没有可导出的分件");
+  }
+
+  const baseFilename = getSteppedSplitBaseFilename(params, effectiveDimensions);
+
+  for (const part of parts) {
+    const stlResult = await workerPort.exportSTL(
+      part.geometry,
+      `${baseFilename}_${part.filenameLabel}.stl`,
+    );
+    downloadPort.downloadBlob(stlResult.blob, stlResult.filename);
+  }
+
+  const manifest = {
+    mode: "stepped-split-parts",
+    generatedAt: new Date().toISOString(),
+    connector: {
+      type: "round-socket",
+      note: "相邻分组使用同坐标圆孔，并在上下高度交接处生成 2mm 装配浅槽。",
+    },
+    parts: parts.map((part) => ({
+      file: `${baseFilename}_${part.filenameLabel}.stl`,
+      label: part.label,
+      fromHeight: part.fromHeight,
+      toHeight: part.toHeight,
+      connectorCount: part.connectorCount,
+    })),
+  };
+  downloadPort.downloadBlob(
+    new Blob([JSON.stringify(manifest, null, 2)], {
+      type: "application/json",
+    }),
+    `${baseFilename}_manifest.json`,
+  );
+
+  downloadPort.downloadBlob(
+    createParamBlob("stepped", params),
+    `${baseFilename}_params.json`,
+  );
+}

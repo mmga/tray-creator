@@ -60,6 +60,7 @@ export function useSteppedWorkspace({
         onAddSlot={model.addSlot}
         onGenerate={model.handleGenerate}
         onExportSTL={model.handleExportSTL}
+        onExportSplitParts={model.handleExportSplitParts}
         isGenerating={model.isGenerating}
         volume={model.volume}
         selectedSlotIds={selectedSlotIds}
@@ -95,6 +96,7 @@ export function useSteppedWorkspace({
       model.effectiveDimensions,
       model.generateOptimizationProposals,
       model.handleExportSTL,
+      model.handleExportSplitParts,
       model.handleGenerate,
       model.isGenerating,
       model.isOptimizingLayout,
