@@ -32,6 +32,7 @@ const { geom2 } = geometries;
 
 const DEG_TO_RAD = Math.PI / 180;
 const SPLIT_EPSILON = 0.02;
+const CONNECTOR_MIN_BACKING_THICKNESS = 1;
 
 export interface SteppedSplitConnectorOptions {
   enabled?: boolean;
@@ -215,6 +216,13 @@ function buildConnectorCylinder(
       { height: depth },
       circle({ radius, segments: RENDER_CONFIG.cylinderSegments }),
     ),
+  );
+}
+
+function getConnectorSocketDepth(requestedDepth: number, partHeight: number) {
+  return Math.min(
+    requestedDepth,
+    Math.max(0, partHeight - CONNECTOR_MIN_BACKING_THICKNESS),
   );
 }
 
@@ -587,7 +595,10 @@ export function createSteppedSplitParts(
   );
   const parts: SteppedSplitPart[] = [];
   const claimedSolids: Geom3[] = [];
-  const connectorMap = new Map<string, { x: number; y: number }[]>();
+  const connectorMap = new Map<
+    string,
+    { x: number; y: number; side: "top" | "bottom" }[]
+  >();
   const sameHeightPartitions = buildSameHeightPartitionMap(
     groupSolids,
     trayWidth,
@@ -607,6 +618,10 @@ export function createSteppedSplitParts(
       ) {
         const left = orderedGroupSolids[leftIndex];
         const right = orderedGroupSolids[rightIndex];
+        if (left.columnHeight === right.columnHeight) {
+          continue;
+        }
+
         const positions = selectGroupConnectorPositions(
           left.slotData,
           right.slotData,
@@ -617,11 +632,14 @@ export function createSteppedSplitParts(
 
         connectorMap.set(left.group.id, [
           ...(connectorMap.get(left.group.id) ?? []),
-          ...positions,
+          ...positions.map((position) => ({ ...position, side: "top" as const })),
         ]);
         connectorMap.set(right.group.id, [
           ...(connectorMap.get(right.group.id) ?? []),
-          ...positions,
+          ...positions.map((position) => ({
+            ...position,
+            side: "bottom" as const,
+          })),
         ]);
       }
     }
@@ -637,7 +655,11 @@ export function createSteppedSplitParts(
       ? subtract(partitionedSolid, ...holes)
       : partitionedSolid;
     if (claimedSolids.length > 0) {
-      part = subtract(part, ...claimedSolids);
+      const claimedCutters = claimedSolids.flatMap((solid) => [
+        solid,
+        translate([0, 0, SPLIT_EPSILON], solid),
+      ]);
+      part = subtract(part, ...claimedCutters);
     }
 
     const assignedPart = part;
@@ -692,22 +714,31 @@ export function createSteppedSplitParts(
     let connectorCount = 0;
     const connectorPositions = connectorMap.get(groupSolid.group.id) ?? [];
     if (connectorPositions.length > 0) {
-      const socketDepth = Math.min(
+      const socketDepth = getConnectorSocketDepth(
         connectorConfig.depth,
         groupSolid.columnHeight,
       );
-      const sockets = connectorPositions.map((position) =>
-        translate(
-          [position.x, position.y, -SPLIT_EPSILON],
-          buildConnectorCylinder(
-            connectorRadius,
-            socketDepth + SPLIT_EPSILON,
-            0,
-          ),
-        ),
-      );
-      part = subtract(part, ...sockets);
-      connectorCount += connectorPositions.length;
+      const sockets =
+        socketDepth > 0
+          ? connectorPositions.map((position) => {
+              const z =
+                position.side === "top"
+                  ? groupSolid.columnHeight - socketDepth
+                  : -SPLIT_EPSILON;
+              return translate(
+                [position.x, position.y, z],
+                buildConnectorCylinder(
+                  connectorRadius,
+                  socketDepth + SPLIT_EPSILON,
+                  0,
+                ),
+              );
+            })
+          : [];
+      if (sockets.length > 0) {
+        part = subtract(part, ...sockets);
+      }
+      connectorCount += sockets.length;
     }
 
     if (measureVolume(part) > 0.001) {

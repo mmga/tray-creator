@@ -10,6 +10,27 @@ import {
 
 const { measureBoundingBox, measureVolume } = measurements;
 
+function hasBottomCylinderWallNear(
+  geometry: { polygons: { vertices: number[][] }[] },
+  center: { x: number; y: number },
+  radius: number,
+) {
+  return geometry.polygons.some((polygon) => {
+    const zValues = polygon.vertices.map((vertex) => vertex[2] ?? 0);
+    const minZ = Math.min(...zValues);
+    const maxZ = Math.max(...zValues);
+    if (Math.abs(minZ) > 0.001 || maxZ < 0.2) {
+      return false;
+    }
+
+    return polygon.vertices.every((vertex) => {
+      const dx = (vertex[0] ?? 0) - center.x;
+      const dy = (vertex[1] ?? 0) - center.y;
+      return Math.hypot(dx, dy) <= radius;
+    });
+  });
+}
+
 function createParams(): SteppedLayoutParams {
   return {
     ...STEPPED_LAYOUT_DEFAULTS,
@@ -138,6 +159,55 @@ describe("stepped tray model", { timeout: 15000 }, () => {
     expect(parts[0].connectorCount).toBeGreaterThan(0);
     expect(measureVolume(parts[0].geometry)).toBeGreaterThan(0);
     expect(measureVolume(parts[1].geometry)).toBeGreaterThan(0);
+  });
+
+  it("keeps connector sockets from breaking through the lowest part bottom", () => {
+    const parts = createSteppedSplitParts({
+      ...createParams(),
+      spacing: 12,
+      groups: [
+        {
+          ...STEPPED_LAYOUT_DEFAULTS.groups[0],
+          id: "low",
+          name: "低组",
+          bottomHeight: 3,
+        },
+        {
+          ...STEPPED_LAYOUT_DEFAULTS.groups[0],
+          id: "high",
+          name: "高组",
+          color: "#3b82f6",
+          bottomHeight: 12,
+        },
+      ],
+      slots: [
+        {
+          id: "slot-low",
+          groupId: "low",
+          x: -25,
+          y: 0,
+          width: 25,
+          height: 25,
+          rotation: 0,
+          shape: "circle",
+        },
+        {
+          id: "slot-high",
+          groupId: "high",
+          x: 25,
+          y: 0,
+          width: 25,
+          height: 25,
+          rotation: 0,
+          shape: "circle",
+        },
+      ],
+    });
+
+    expect(parts[0].connectorCount).toBeGreaterThan(0);
+    expect(
+      hasBottomCylinderWallNear(parts[0].geometry, { x: 0, y: 0 }, 2.5),
+    ).toBe(false);
   });
 
   it("cuts assembly grooves at different-height group interfaces", () => {
