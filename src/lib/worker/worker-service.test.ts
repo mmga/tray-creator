@@ -132,6 +132,43 @@ describe("worker service", () => {
       outlinePreview: null,
       durationMs: 9,
     });
+
+    const splitPartsPromise = service.generateSteppedSplitParts(
+      STEPPED_LAYOUT_DEFAULTS,
+    );
+    const splitPartsRequest = worker.postMessage.mock.calls[4]?.[0] as {
+      requestId: string;
+      type: string;
+    };
+    expect(splitPartsRequest.type).toBe("GENERATE_STEPPED_SPLIT_PARTS");
+    worker.emit({
+      type: "STEPPED_SPLIT_PARTS_SUCCESS",
+      requestId: splitPartsRequest.requestId,
+      parts: [
+        {
+          index: 0,
+          filenameLabel: "part_01_low",
+          label: "低组",
+          fromHeight: 0,
+          toHeight: 3,
+          geometry: { id: "split-geom" } as never,
+          connectorCount: 2,
+        },
+      ],
+    });
+    await expect(splitPartsPromise).resolves.toEqual({
+      parts: [
+        {
+          index: 0,
+          filenameLabel: "part_01_low",
+          label: "低组",
+          fromHeight: 0,
+          toHeight: 3,
+          geometry: { id: "split-geom" },
+          connectorCount: 2,
+        },
+      ],
+    });
   });
 
   it("exports STL blobs and rejects worker errors", async () => {

@@ -180,6 +180,43 @@ describe("TrayViewer", { timeout: 15000 }, () => {
     );
   });
 
+  it("requests and displays split-part preview data", () => {
+    const onGenerateSplitPreview = vi.fn();
+    const splitGeometry = createGeometry();
+    const { rerender } = render(
+      <TrayViewer
+        geometry={createGeometry()}
+        splitParts={null}
+        onGenerateSplitPreview={onGenerateSplitPreview}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /拆件/ }));
+    expect(onGenerateSplitPreview).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <TrayViewer
+        geometry={createGeometry()}
+        splitParts={[
+          {
+            index: 0,
+            label: "低组",
+            toHeight: 3,
+            connectorCount: 2,
+            threeGeometry: splitGeometry,
+          },
+        ]}
+        onGenerateSplitPreview={onGenerateSplitPreview}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /拆件/ }));
+    expect(screen.getByText("拆件预览")).toBeInTheDocument();
+    expect(screen.getByText("低组")).toBeInTheDocument();
+    expect(screen.getByText("3mm")).toBeInTheDocument();
+    expect(screen.getByText("2孔")).toBeInTheDocument();
+  });
+
   it("prevents default on context loss and removes listeners on unmount", () => {
     const { unmount } = render(
       <TrayViewer

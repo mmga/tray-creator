@@ -91,9 +91,12 @@ export function useSteppedViewportWorkspace({
         onRightViewChange={onRightViewChange}
         canvas={canvas}
         threeGeometry={model.threeGeometry}
+        splitParts={model.splitPreviewParts}
+        isGeneratingSplitPreview={model.isGeneratingSplitPreview}
         isPreviewStale={model.isPreviewStale}
         isGenerating={model.isGenerating}
         onGenerate={model.handleGenerate}
+        onGenerateSplitPreview={model.handleGenerateSplitPreview}
       />
     ),
     [canvas, model, onRightViewChange, rightView],

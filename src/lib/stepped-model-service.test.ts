@@ -12,6 +12,7 @@ vi.mock("@/lib/jscad-to-three", () => ({
 import {
   exportSteppedModelFiles,
   exportSteppedSplitPartFiles,
+  generateSteppedSplitPreview,
   generateSteppedPreview,
   getSteppedSplitBaseFilename,
   getSteppedSTLFilename,
@@ -171,5 +172,47 @@ describe("stepped model service", () => {
     expect(downloadPort.downloadBlob.mock.calls[2]?.[1]).toBe(
       "tray_stepped_split_100x90_0slots_params.json",
     );
+  });
+
+  it("builds split preview geometries through the worker port", async () => {
+    const partGeometry = { id: "part-geom" } as never;
+    const threeGeometry = { id: "three-part" };
+    const workerPort = {
+      generateStepped: vi.fn(),
+      generateSteppedOutlinePreview: vi.fn(),
+      generateSteppedSplitParts: vi.fn().mockResolvedValue({
+        parts: [
+          {
+            index: 0,
+            filenameLabel: "part_01_low",
+            label: "低组",
+            fromHeight: 0,
+            toHeight: 3,
+            geometry: partGeometry,
+            connectorCount: 2,
+          },
+        ],
+      }),
+      exportSTL: vi.fn(),
+    };
+    jscadToThreeGeometryMock.mockReturnValue(threeGeometry);
+
+    await expect(
+      generateSteppedSplitPreview(STEPPED_LAYOUT_DEFAULTS, workerPort),
+    ).resolves.toEqual([
+      {
+        index: 0,
+        filenameLabel: "part_01_low",
+        label: "低组",
+        fromHeight: 0,
+        toHeight: 3,
+        threeGeometry,
+        connectorCount: 2,
+      },
+    ]);
+    expect(workerPort.generateSteppedSplitParts).toHaveBeenCalledWith(
+      STEPPED_LAYOUT_DEFAULTS,
+    );
+    expect(jscadToThreeGeometryMock).toHaveBeenCalledWith(partGeometry);
   });
 });

@@ -20,9 +20,12 @@ interface ViewportTabsProps {
   onRightViewChange: (next: "2d" | "3d") => void;
   canvas: React.ReactNode;
   threeGeometry: React.ComponentProps<typeof TrayViewer>["geometry"];
+  splitParts?: React.ComponentProps<typeof TrayViewer>["splitParts"];
+  isGeneratingSplitPreview?: boolean;
   isPreviewStale: boolean;
   isGenerating?: boolean;
   onGenerate: () => void;
+  onGenerateSplitPreview?: () => void;
 }
 
 export function ViewportTabs({
@@ -30,9 +33,12 @@ export function ViewportTabs({
   onRightViewChange,
   canvas,
   threeGeometry,
+  splitParts,
+  isGeneratingSplitPreview,
   isPreviewStale,
   isGenerating,
   onGenerate,
+  onGenerateSplitPreview,
 }: ViewportTabsProps) {
   return (
     <Tabs
@@ -81,9 +87,12 @@ export function ViewportTabs({
         {rightView === "3d" ? (
           <TrayViewer
             geometry={threeGeometry}
+            splitParts={splitParts}
             isStale={isPreviewStale}
             isGenerating={isGenerating}
+            isGeneratingSplitPreview={isGeneratingSplitPreview}
             onRegenerate={onGenerate}
+            onGenerateSplitPreview={onGenerateSplitPreview}
           />
         ) : null}
       </div>

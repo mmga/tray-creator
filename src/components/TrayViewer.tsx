@@ -3,17 +3,46 @@
 import { useRef, useEffect, useCallback, useMemo, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
+import { Layers, Loader2 } from "lucide-react";
 import * as THREE from "three";
 import { RENDER_CONFIG } from "@/lib/config";
+
+export interface TrayViewerSplitPart {
+  index: number;
+  label: string;
+  toHeight: number;
+  connectorCount: number;
+  threeGeometry: THREE.BufferGeometry;
+}
 
 interface TrayViewerProps {
   geometry: THREE.BufferGeometry | null;
   isStale?: boolean;
   isGenerating?: boolean;
   onRegenerate?: () => void;
+  splitParts?: TrayViewerSplitPart[] | null;
+  isGeneratingSplitPreview?: boolean;
+  onGenerateSplitPreview?: () => void;
 }
 
-function TrayMesh({ geometry }: { geometry: THREE.BufferGeometry }) {
+const SPLIT_PART_COLORS = [
+  "#c8a84e",
+  "#8cb880",
+  "#7fb0c8",
+  "#c88f6a",
+  "#b38cc8",
+  "#c87f96",
+];
+
+function TrayMesh({
+  geometry,
+  color = RENDER_CONFIG.modelColor,
+  position = [0, 0, 0],
+}: {
+  geometry: THREE.BufferGeometry;
+  color?: string;
+  position?: [number, number, number];
+}) {
   const meshRef = useRef<THREE.Mesh>(null);
 
   const edgesGeometry = useMemo(() => {
@@ -27,10 +56,10 @@ function TrayMesh({ geometry }: { geometry: THREE.BufferGeometry }) {
   }, [geometry]);
 
   return (
-    <group rotation={[-Math.PI / 2, 0, 0]}>
+    <group rotation={[-Math.PI / 2, 0, 0]} position={position}>
       <mesh ref={meshRef} geometry={geometry} castShadow receiveShadow>
         <meshStandardMaterial
-          color={RENDER_CONFIG.modelColor}
+          color={color}
           metalness={0.15}
           roughness={0.75}
           side={THREE.DoubleSide}
@@ -43,19 +72,40 @@ function TrayMesh({ geometry }: { geometry: THREE.BufferGeometry }) {
   );
 }
 
+function getSplitPartOffset(index: number, count: number): [number, number, number] {
+  if (count <= 1) return [0, 0, 0];
+  const centeredIndex = index - (count - 1) / 2;
+  return [centeredIndex * 42, 0, 0];
+}
+
 /**
  * 几何体变化时自动调整摄像机距离，保证模型完整可见
  */
-function CameraAutoFit({ geometry }: { geometry: THREE.BufferGeometry }) {
+function CameraAutoFit({
+  items,
+}: {
+  items: { geometry: THREE.BufferGeometry; offset?: [number, number, number] }[];
+}) {
   const { camera, controls } = useThree();
   const hasFittedRef = useRef(false);
 
   useEffect(() => {
     if (hasFittedRef.current) return;
 
-    if (!geometry.boundingSphere) geometry.computeBoundingSphere();
-    const sphere = geometry.boundingSphere;
-    if (!sphere) return;
+    const sceneBox = new THREE.Box3();
+    for (const item of items) {
+      if (!item.geometry.boundingBox) item.geometry.computeBoundingBox();
+      const box = item.geometry.boundingBox;
+      if (!box) continue;
+      const offset = item.offset ?? [0, 0, 0];
+      sceneBox.union(
+        box.clone().translate(new THREE.Vector3(offset[0], offset[1], offset[2])),
+      );
+    }
+
+    if (sceneBox.isEmpty()) return;
+
+    const sphere = sceneBox.getBoundingSphere(new THREE.Sphere());
 
     const fov = (camera as THREE.PerspectiveCamera).fov;
     const fovRad = (fov * Math.PI) / 180;
@@ -79,7 +129,7 @@ function CameraAutoFit({ geometry }: { geometry: THREE.BufferGeometry }) {
     }
 
     hasFittedRef.current = true;
-  }, [geometry, camera, controls]);
+  }, [items, camera, controls]);
 
   return null;
 }
@@ -114,8 +164,27 @@ function ContextLostHandler() {
   return null;
 }
 
-export default function TrayViewer({ geometry, isStale, isGenerating, onRegenerate }: TrayViewerProps) {
+export default function TrayViewer({
+  geometry,
+  isStale,
+  isGenerating,
+  onRegenerate,
+  splitParts,
+  isGeneratingSplitPreview,
+  onGenerateSplitPreview,
+}: TrayViewerProps) {
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [viewerMode, setViewerMode] = useState<"solid" | "split">("solid");
+  const canShowSplitPreview = Boolean(splitParts && splitParts.length > 0);
+  const showSplitPreview = viewerMode === "split" && canShowSplitPreview;
+  const splitFitItems = useMemo(
+    () =>
+      splitParts?.map((part, index) => ({
+        geometry: part.threeGeometry,
+        offset: getSplitPartOffset(index, splitParts.length),
+      })) ?? [],
+    [splitParts],
+  );
 
   useEffect(() => {
     let frameId: number | null = null;
@@ -184,6 +253,74 @@ export default function TrayViewer({ geometry, isStale, isGenerating, onRegenera
         <span className="text-[9px] font-mono text-primary/40 tracking-[0.4em] uppercase">FORGE VIEW</span>
       </div>
 
+      <div className="absolute top-3 right-5 z-20 flex items-center gap-2 rounded border border-[#2e2a24] bg-[#12110e]/95 px-2 py-1 shadow-lg shadow-black/30">
+        <button
+          type="button"
+          onClick={() => setViewerMode("solid")}
+          className={`h-7 rounded-sm px-2 text-[11px] transition-colors ${
+            viewerMode === "solid"
+              ? "bg-[#2a3528] text-[#a8d39a]"
+              : "text-muted-foreground hover:bg-[#1c1a16] hover:text-foreground"
+          }`}
+        >
+          整件
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setViewerMode("split");
+            if (!canShowSplitPreview && !isGeneratingSplitPreview) {
+              onGenerateSplitPreview?.();
+            }
+          }}
+          disabled={!onGenerateSplitPreview && !canShowSplitPreview}
+          className={`inline-flex h-7 items-center gap-1 rounded-sm px-2 text-[11px] transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+            viewerMode === "split"
+              ? "bg-[#2a3528] text-[#a8d39a]"
+              : "text-muted-foreground hover:bg-[#1c1a16] hover:text-foreground"
+          }`}
+        >
+          {isGeneratingSplitPreview ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <Layers className="h-3 w-3" />
+          )}
+          拆件
+        </button>
+      </div>
+
+      {showSplitPreview ? (
+        <div className="absolute bottom-5 left-5 z-20 max-w-[260px] rounded border border-[#2e2a24] bg-[#12110e]/95 p-2 shadow-lg shadow-black/30">
+          <div className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold tracking-wide text-[#f3dfb6]">
+            <Layers className="h-3 w-3 text-[#c8a84e]" />
+            拆件预览
+          </div>
+          <div className="space-y-1">
+            {splitParts!.map((part, index) => (
+              <div
+                key={`${part.index}-${part.label}`}
+                className="flex items-center gap-2 text-[10px] text-muted-foreground"
+              >
+                <span
+                  className="h-2 w-2 shrink-0 rounded-sm"
+                  style={{
+                    background:
+                      SPLIT_PART_COLORS[index % SPLIT_PART_COLORS.length],
+                  }}
+                />
+                <span className="min-w-0 flex-1 truncate">{part.label}</span>
+                <span className="font-mono text-foreground/80">
+                  {part.toHeight}mm
+                </span>
+                <span className="font-mono text-[#c8a84e]">
+                  {part.connectorCount}孔
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       <Canvas
         camera={{
           position: RENDER_CONFIG.camera.position as [number, number, number],
@@ -218,12 +355,27 @@ export default function TrayViewer({ geometry, isStale, isGenerating, onRegenera
         <directionalLight position={[-20, 20, -60]} intensity={0.2} color="#ccddff" />
 
         {/* 托盘模型 */}
-        {geometry && (
+        {showSplitPreview ? (
+          <>
+            {splitParts!.map((part, index) => (
+              <TrayMesh
+                key={`${part.index}-${part.label}`}
+                geometry={part.threeGeometry}
+                color={SPLIT_PART_COLORS[index % SPLIT_PART_COLORS.length]}
+                position={getSplitPartOffset(index, splitParts!.length)}
+              />
+            ))}
+            <CameraAutoFit
+              key={`split-${splitParts!.map((part) => part.threeGeometry.uuid).join("-")}`}
+              items={splitFitItems}
+            />
+          </>
+        ) : geometry ? (
           <>
             <TrayMesh geometry={geometry} />
-            <CameraAutoFit geometry={geometry} />
+            <CameraAutoFit key={`solid-${geometry.uuid}`} items={[{ geometry }]} />
           </>
-        )}
+        ) : null}
 
         {/* 交互控制 */}
         <OrbitControls

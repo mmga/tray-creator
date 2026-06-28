@@ -3,6 +3,7 @@ import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import { createParamBlob } from "@/lib/param-io";
 import type {
   DownloadPort,
+  SteppedSplitPartResult,
   SteppedWorkerPort,
 } from "@/lib/model-ports";
 import type { SteppedLayoutExtents } from "@/lib/stepped-layout-math";
@@ -13,6 +14,11 @@ export interface SteppedPreviewResult {
   geometry: Geom3;
   threeGeometry: THREE.BufferGeometry;
   volume: number;
+}
+
+export interface SteppedSplitPreviewPart
+  extends Omit<SteppedSplitPartResult, "geometry"> {
+  threeGeometry: THREE.BufferGeometry;
 }
 
 export async function generateSteppedPreview(
@@ -57,6 +63,18 @@ export async function exportSteppedModelFiles(
 
   const jsonFilename = stlFilename.replace(/\.stl$/i, ".json");
   downloadPort.downloadBlob(createParamBlob("stepped", params), jsonFilename);
+}
+
+export async function generateSteppedSplitPreview(
+  params: SteppedLayoutParams,
+  workerPort: SteppedWorkerPort,
+): Promise<SteppedSplitPreviewPart[]> {
+  const { parts } = await workerPort.generateSteppedSplitParts(params);
+
+  return parts.map(({ geometry, ...part }) => ({
+    ...part,
+    threeGeometry: jscadToThreeGeometry(geometry),
+  }));
 }
 
 export function getSteppedSplitBaseFilename(

@@ -47,7 +47,9 @@ import {
 import {
   exportSteppedSplitPartFiles,
   exportSteppedModelFiles,
+  generateSteppedSplitPreview,
   generateSteppedPreview,
+  type SteppedSplitPreviewPart,
 } from "@/lib/stepped-model-service";
 import {
   generateSteppedOptimizationProposals,
@@ -99,8 +101,10 @@ export interface UseSteppedLayoutReturn {
   canUndo: boolean;
   // 3D 相关
   threeGeometry: THREE.BufferGeometry | null;
+  splitPreviewParts: SteppedSplitPreviewPart[] | null;
   volume: number;
   isGenerating: boolean;
+  isGeneratingSplitPreview: boolean;
   isPreviewStale: boolean;
   bridgeWarning: BridgeWarning | null;
   optimizationProposals: SteppedOptimizationProposal[];
@@ -111,6 +115,8 @@ export interface UseSteppedLayoutReturn {
   pauseOutlinePreview: () => void;
   resumeOutlinePreview: () => void;
   handleGenerate: () => void;
+  handleGenerateSplitPreview: () => void;
+  clearSplitPreview: () => void;
   handleExportSTL: () => void;
   handleExportSplitParts: () => void;
   // 2D 分组轮廓预览
@@ -126,6 +132,11 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     SteppedOptimizationProposal[]
   >([]);
   const [isOptimizingLayout, setIsOptimizingLayout] = useState(false);
+  const [splitPreviewParts, setSplitPreviewParts] = useState<
+    SteppedSplitPreviewPart[] | null
+  >(null);
+  const [isGeneratingSplitPreview, setIsGeneratingSplitPreview] =
+    useState(false);
 
   const {
     pushState,
@@ -158,11 +169,19 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     setIsOptimizingLayout(false);
   }, [cancelPendingOptimization]);
 
+  const clearSplitPreview = useCallback(() => {
+    setSplitPreviewParts((prev) => {
+      prev?.forEach((part) => part.threeGeometry.dispose());
+      return null;
+    });
+  }, []);
+
   useEffect(() => {
     return () => {
       cancelPendingOptimization();
+      splitPreviewParts?.forEach((part) => part.threeGeometry.dispose());
     };
-  }, [cancelPendingOptimization]);
+  }, [cancelPendingOptimization, splitPreviewParts]);
   const {
     threeGeometry,
     volume,
@@ -194,8 +213,42 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     onInvalidate: () => {
       optimizationVariantRef.current = 0;
       clearOptimizationProposals();
+      clearSplitPreview();
     },
   });
+
+  const handleGenerateSplitPreview = useCallback(async () => {
+    if (!trayWorkerService) {
+      toast("error", "当前环境无法使用后台建模服务");
+      return;
+    }
+
+    const currentParams = paramsRef.current;
+    if (currentParams.groups.length < 2) {
+      toast("error", "至少需要两个分组才能预览拆件");
+      return;
+    }
+
+    setIsGeneratingSplitPreview(true);
+    try {
+      const parts = await generateSteppedSplitPreview(
+        currentParams,
+        trayWorkerService,
+      );
+      setSplitPreviewParts((prev) => {
+        prev?.forEach((part) => part.threeGeometry.dispose());
+        return parts;
+      });
+    } catch (err) {
+      console.error("拆件预览生成失败:", err);
+      toast(
+        "error",
+        `拆件预览失败：${err instanceof Error ? err.message : "未知错误"}`,
+      );
+    } finally {
+      setIsGeneratingSplitPreview(false);
+    }
+  }, [toast]);
 
   const handleExportSplitParts = useCallback(async () => {
     if (!trayWorkerService) {
@@ -567,8 +620,10 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     undo,
     canUndo: canUndoFn(),
     threeGeometry,
+    splitPreviewParts,
     volume,
     isGenerating,
+    isGeneratingSplitPreview,
     isPreviewStale,
     bridgeWarning,
     optimizationProposals,
@@ -579,6 +634,8 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     pauseOutlinePreview,
     resumeOutlinePreview,
     handleGenerate,
+    handleGenerateSplitPreview,
+    clearSplitPreview,
     handleExportSTL,
     handleExportSplitParts,
     outlinePreview,
