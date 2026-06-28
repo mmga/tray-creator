@@ -31,6 +31,16 @@ export function useSimpleSteppedViewportWorkspace({
     [model.params],
   );
 
+  const slotHeightById = useMemo(
+    () =>
+      Object.fromEntries(
+        model.derivedLayout.activeRows.flatMap((row) =>
+          row.slots.map((slot) => [slot.id, row.topHeight] as const),
+        ),
+      ),
+    [model.derivedLayout.activeRows],
+  );
+
   const canvas = useMemo(
     () => (
       <LayoutCanvas
@@ -39,6 +49,7 @@ export function useSimpleSteppedViewportWorkspace({
         model={buildSimpleSteppedLayoutEditorViewportModel({
           canvasParams: model.canvasParams,
           rowBands: model.derivedLayout.rowBands,
+          slotHeightById,
           slotMoveScopeResolver,
         })}
         commands={{
@@ -67,6 +78,7 @@ export function useSimpleSteppedViewportWorkspace({
       model.updateSlotPosition,
       model.updateSlotRotation,
       rightView,
+      slotHeightById,
       slotMoveScopeResolver,
     ],
   );

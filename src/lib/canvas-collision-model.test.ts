@@ -57,4 +57,39 @@ describe("canvas collision model", () => {
     expect(Array.from(state.involvedIds)).toEqual(["slot-1", "slot-2"]);
     expect(state.slotById.get("slot-3")?.x).toBe(120);
   });
+
+  it("supports wider pair spacing for protected height-group boundaries", () => {
+    const slots = [
+      {
+        id: "low",
+        x: 30,
+        y: 30,
+        width: 25,
+        height: 25,
+        rotation: 0,
+        shape: "circle",
+      },
+      {
+        id: "high",
+        x: 60.5,
+        y: 30,
+        width: 25,
+        height: 25,
+        rotation: 0,
+        shape: "circle",
+      },
+    ] as const;
+
+    expect(buildCanvasCollisionState(slots, 5).collisionErrorCount).toBe(0);
+
+    const protectedState = buildCanvasCollisionState(slots, 5, undefined, {
+      maxSpacing: 6,
+      getPairSpacing: () => 6,
+    });
+
+    expect(protectedState.collisionErrorCount).toBe(1);
+    expect(protectedState.collisionMap.get("low")?.overlapIds).toEqual([
+      "high",
+    ]);
+  });
 });

@@ -30,6 +30,7 @@ export interface LayoutEditorViewportModel {
     slotGroups?: SlotGroup[] | null;
   };
   interactions: {
+    slotHeightById?: Record<string, number>;
     slotMoveScopeResolver?: (
       draggingId: string,
       selectedIds: string[],

@@ -4,10 +4,12 @@ import type { LayoutEditorViewportModel } from "@/viewports/layout-editor/types"
 export function buildSimpleSteppedLayoutEditorViewportModel({
   canvasParams,
   rowBands,
+  slotHeightById,
   slotMoveScopeResolver,
 }: {
   canvasParams: CustomLayoutParams;
   rowBands: SimpleSteppedRowBand[];
+  slotHeightById?: Record<string, number>;
   slotMoveScopeResolver: (draggingId: string, selectedIds: string[]) => string[];
 }): LayoutEditorViewportModel {
   return {
@@ -27,6 +29,7 @@ export function buildSimpleSteppedLayoutEditorViewportModel({
       rowBands,
     },
     interactions: {
+      slotHeightById,
       slotMoveScopeResolver,
     },
   };

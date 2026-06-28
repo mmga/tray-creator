@@ -22,6 +22,11 @@ export interface CanvasCollisionState<TSlot extends { id: string }> {
   slotById: Map<string, TSlot>;
 }
 
+export interface CanvasCollisionSpacingOptions<TSlot> {
+  maxSpacing?: number;
+  getPairSpacing?: (left: TSlot, right: TSlot, baseSpacing: number) => number;
+}
+
 type CanvasCollisionSlot = Pick<
   FreeSlot,
   | "id"
@@ -41,6 +46,7 @@ export function buildCanvasCollisionState<TSlot extends CanvasCollisionSlot>(
   slots: ReadonlyArray<TSlot>,
   spacing: number,
   ellipseProfileExponent?: number,
+  spacingOptions?: CanvasCollisionSpacingOptions<TSlot>,
 ): CanvasCollisionState<TSlot> {
   const collisionMap = new Map<string, CanvasCollisionInfo>();
   const involvedIds = new Set<string>();
@@ -60,7 +66,8 @@ export function buildCanvasCollisionState<TSlot extends CanvasCollisionSlot>(
   const expandedBounds = slots
     .map((slot) => {
       const profile = getFreeSlotProfileGeometry(slot);
-      const margin = spacing / 2 + profile.outerOffset;
+      const broadPhaseSpacing = spacingOptions?.maxSpacing ?? spacing;
+      const margin = broadPhaseSpacing / 2 + profile.outerOffset;
       const { halfW, halfH } = getEllipseBoundingBox(
         profile.width,
         profile.height,
@@ -83,7 +90,8 @@ export function buildCanvasCollisionState<TSlot extends CanvasCollisionSlot>(
     .sort((a, b) => a.minX - b.minX);
   const expandedPolygons = new Map<string, ReturnType<typeof getEllipsePolygon>>();
   const getExpandedPolygon = (slot: TSlot, margin: number) => {
-    const cached = expandedPolygons.get(slot.id);
+    const cacheKey = `${slot.id}:${margin}`;
+    const cached = expandedPolygons.get(cacheKey);
     if (cached) {
       return cached;
     }
@@ -99,7 +107,7 @@ export function buildCanvasCollisionState<TSlot extends CanvasCollisionSlot>(
       12,
       profile.profileExponent ?? ellipseProfileExponent,
     );
-    expandedPolygons.set(slot.id, polygon);
+    expandedPolygons.set(cacheKey, polygon);
     return polygon;
   };
 
@@ -124,8 +132,17 @@ export function buildCanvasCollisionState<TSlot extends CanvasCollisionSlot>(
         continue;
       }
 
-      const currentPolygon = getExpandedPolygon(current.slot, current.margin);
-      const otherPolygon = getExpandedPolygon(other.slot, other.margin);
+      const pairSpacing =
+        spacingOptions?.getPairSpacing?.(current.slot, other.slot, spacing) ??
+        spacing;
+      const currentPolygon = getExpandedPolygon(
+        current.slot,
+        pairSpacing / 2 + current.profile.outerOffset,
+      );
+      const otherPolygon = getExpandedPolygon(
+        other.slot,
+        pairSpacing / 2 + other.profile.outerOffset,
+      );
       if (!polygonsIntersect(currentPolygon, otherPolygon)) {
         continue;
       }

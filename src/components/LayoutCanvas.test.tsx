@@ -683,6 +683,68 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     );
   });
 
+  it("adds a protection gap between slots from different stepped heights", () => {
+    render(
+      <TestLayoutCanvas
+        params={createSteppedParams({
+          spacing: 5,
+          groups: [
+            {
+              id: "low",
+              name: "低层",
+              color: "#22c55e",
+              bottomHeight: 8,
+              useGroupSmoothingRadius: false,
+              groupSmoothingRadius: 60,
+              useGroupDisconnectDistance: false,
+              groupDisconnectDistance: 0,
+            },
+            {
+              id: "high",
+              name: "高层",
+              color: "#38bdf8",
+              bottomHeight: 16,
+              useGroupSmoothingRadius: false,
+              groupSmoothingRadius: 60,
+              useGroupDisconnectDistance: false,
+              groupDisconnectDistance: 0,
+            },
+          ],
+          activeGroupId: "low",
+          slots: [
+            {
+              id: "low-slot",
+              x: 100,
+              y: 120,
+              shape: "circle",
+              width: 25,
+              height: 25,
+              rotation: 0,
+              groupId: "low",
+            },
+            {
+              id: "high-slot",
+              x: 130.5,
+              y: 120,
+              shape: "circle",
+              width: 25,
+              height: 25,
+              rotation: 0,
+              groupId: "high",
+            },
+          ],
+        })}
+        onUpdateSlot={vi.fn()}
+        onRemoveSlot={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("canvas-status-bar")).toHaveAttribute(
+      "data-collision-count",
+      "1",
+    );
+  });
+
   it("uses simple stepped row bands to switch overflow semantics and drag scoping", async () => {
     const slotMoveScopeResolver = vi.fn(() => ["slot-1"]);
     const onSaveSnapshot = vi.fn();

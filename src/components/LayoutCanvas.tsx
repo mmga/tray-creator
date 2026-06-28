@@ -54,6 +54,7 @@ const ACTION_PANEL_MAX_WIDTH =
 const ACTION_PANEL_DEFAULT_WIDTH =
   304 - EDIT_SIDEBAR_RAIL_WIDTH - ACTION_PANEL_RESIZER_WIDTH;
 const ACTION_PANEL_TAB_RAIL_WIDTH = EDIT_SIDEBAR_RAIL_WIDTH;
+const HEIGHT_GROUP_PROTECTION_MM = 1;
 
 interface LayoutCanvasProps {
   isActive?: boolean;
@@ -89,7 +90,7 @@ export default function LayoutCanvas({
       rowBands,
       slotGroups,
     },
-    interactions: { slotMoveScopeResolver },
+    interactions: { slotHeightById, slotMoveScopeResolver },
   } = model;
   const {
     width: trayWidth,
@@ -211,6 +212,52 @@ export default function LayoutCanvas({
 
     return new Map(slotGroups.map((group) => [group.id, group] as const));
   }, [slotGroups]);
+  const heightBySlotId = useMemo(() => {
+    const result = new Map<string, number>();
+
+    if (slotHeightById) {
+      Object.entries(slotHeightById).forEach(([slotId, height]) => {
+        if (Number.isFinite(height)) {
+          result.set(slotId, height);
+        }
+      });
+    }
+
+    if (steppedGroupMetaById) {
+      slots.forEach((slot) => {
+        if ("groupId" in slot) {
+          const groupHeight = steppedGroupMetaById.get(slot.groupId)?.bottomHeight;
+          if (typeof groupHeight === "number" && Number.isFinite(groupHeight)) {
+            result.set(slot.id, groupHeight);
+          }
+        }
+      });
+    }
+
+    return result.size > 0 ? result : null;
+  }, [slotHeightById, slots, steppedGroupMetaById]);
+  const heightGroupSpacingOptions = useMemo(() => {
+    if (!heightBySlotId) {
+      return undefined;
+    }
+
+    return {
+      maxSpacing: spacing + HEIGHT_GROUP_PROTECTION_MM,
+      getPairSpacing: (
+        left: FreeSlot | SteppedSlot,
+        right: FreeSlot | SteppedSlot,
+        baseSpacing: number,
+      ) => {
+        const leftHeight = heightBySlotId.get(left.id);
+        const rightHeight = heightBySlotId.get(right.id);
+        return leftHeight !== undefined &&
+          rightHeight !== undefined &&
+          leftHeight !== rightHeight
+          ? baseSpacing + HEIGHT_GROUP_PROTECTION_MM
+          : baseSpacing;
+      },
+    };
+  }, [heightBySlotId, spacing]);
   const selectedIdsRef = useRef<Set<string>>(effectiveSelectedIds);
   const slotsRef = useRef(slots);
 
@@ -321,9 +368,14 @@ export default function LayoutCanvas({
   const collisionState = useMemo(
     () =>
       measurePerf("canvas.collision", () =>
-        buildCanvasCollisionState(slots, spacing),
+        buildCanvasCollisionState(
+          slots,
+          spacing,
+          undefined,
+          heightGroupSpacingOptions,
+        ),
       ),
-    [slots, spacing],
+    [heightGroupSpacingOptions, slots, spacing],
   );
 
   const effectiveBaseplate = useMemo(
