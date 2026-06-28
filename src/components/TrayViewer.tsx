@@ -77,11 +77,16 @@ function TrayMesh({
   );
 }
 
-function getSplitPartOffset(index: number, count: number): [number, number, number] {
+function getSplitPartOffset(
+  index: number,
+  count: number,
+  explosionDistance: number,
+): [number, number, number] {
   if (count <= 1) return [0, 0, 0];
   const centeredIndex = index - (count - 1) / 2;
-  const verticalStagger = index % 2 === 0 ? -16 : 16;
-  return [centeredIndex * 42, verticalStagger, 0];
+  const verticalStagger =
+    index % 2 === 0 ? -explosionDistance * 0.38 : explosionDistance * 0.38;
+  return [centeredIndex * explosionDistance, verticalStagger, 0];
 }
 
 /**
@@ -183,29 +188,34 @@ export default function TrayViewer({
 }: TrayViewerProps) {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [viewerMode, setViewerMode] = useState<"solid" | "split">("solid");
+  const [explosionDistance, setExplosionDistance] = useState(42);
+  const isLoadingPreview = Boolean(isGenerating || isGeneratingSplitPreview);
   const canShowSplitPreview = Boolean(splitParts && splitParts.length > 0);
   const showSplitPreview = viewerMode === "split" && canShowSplitPreview;
   const splitFitItems = useMemo(
     () =>
       splitParts?.map((part, index) => ({
         geometry: part.threeGeometry,
-        offset: getSplitPartOffset(index, splitParts.length),
+        offset: getSplitPartOffset(index, splitParts.length, explosionDistance),
       })) ?? [],
-    [splitParts],
+    [explosionDistance, splitParts],
   );
 
   useEffect(() => {
     let frameId: number | null = null;
     let intervalId: number | null = null;
 
-    if (isGenerating) {
+    if (isLoadingPreview) {
       const startTime = Date.now();
+      const expectedDuration = isGeneratingSplitPreview && !isGenerating
+        ? 9000
+        : 15000;
       frameId = window.requestAnimationFrame(() => {
         setLoadingProgress(0);
 
         const updateProgress = () => {
           const elapsed = Date.now() - startTime;
-          setLoadingProgress(Math.min(elapsed / 15000, 0.85));
+          setLoadingProgress(Math.min(elapsed / expectedDuration, 0.85));
         };
 
         updateProgress();
@@ -225,7 +235,7 @@ export default function TrayViewer({
         window.clearInterval(intervalId);
       }
     };
-  }, [isGenerating]);
+  }, [isGenerating, isGeneratingSplitPreview, isLoadingPreview]);
 
   return (
     <div
@@ -238,11 +248,16 @@ export default function TrayViewer({
       }}
     >
       {/* Loading bar */}
-      {isGenerating && (
+      {isLoadingPreview && (
         <div className="absolute top-0 left-0 right-0 z-30 h-0.5 bg-[#2a2518]">
           <div
-            className="h-full bg-[#c8a84e] transition-[width] duration-200 ease-out"
-            style={{ width: `${loadingProgress * 100}%` }}
+            className="h-full transition-[width] duration-200 ease-out"
+            style={{
+              width: `${loadingProgress * 100}%`,
+              backgroundColor: isGeneratingSplitPreview && !isGenerating
+                ? "#8cb880"
+                : "#c8a84e",
+            }}
           />
         </div>
       )}
@@ -264,7 +279,10 @@ export default function TrayViewer({
       <div className="absolute top-3 right-5 z-20 flex items-center gap-2 rounded border border-[#2e2a24] bg-[#12110e]/95 px-2 py-1 shadow-lg shadow-black/30">
         <button
           type="button"
-          onClick={() => setViewerMode("solid")}
+          onClick={(event) => {
+            event.stopPropagation();
+            setViewerMode("solid");
+          }}
           className={`h-7 rounded-sm px-2 text-[11px] transition-colors ${
             viewerMode === "solid"
               ? "bg-[#2a3528] text-[#a8d39a]"
@@ -275,7 +293,8 @@ export default function TrayViewer({
         </button>
         <button
           type="button"
-          onClick={() => {
+          onClick={(event) => {
+            event.stopPropagation();
             setViewerMode("split");
             if (!canShowSplitPreview && !isGeneratingSplitPreview) {
               onGenerateSplitPreview?.();
@@ -295,6 +314,28 @@ export default function TrayViewer({
           )}
           拆件
         </button>
+        {viewerMode === "split" ? (
+          <label className="flex h-7 items-center gap-2 border-l border-[#2e2a24] pl-2 text-[10px] text-muted-foreground">
+            <span>间距</span>
+            <input
+              aria-label="爆炸视图间距"
+              type="range"
+              min={24}
+              max={96}
+              step={4}
+              value={explosionDistance}
+              onClick={(event) => event.stopPropagation()}
+              onPointerDown={(event) => event.stopPropagation()}
+              onChange={(event) =>
+                setExplosionDistance(Number(event.currentTarget.value))
+              }
+              className="h-1 w-24 accent-[#8cb880]"
+            />
+            <span className="w-6 text-right font-mono text-[#8cb880]">
+              {explosionDistance}
+            </span>
+          </label>
+        ) : null}
       </div>
 
       {showSplitPreview ? (
@@ -370,11 +411,15 @@ export default function TrayViewer({
                 key={`${part.index}-${part.label}`}
                 geometry={part.threeGeometry}
                 color={SPLIT_PART_COLORS[index % SPLIT_PART_COLORS.length]}
-                position={getSplitPartOffset(index, splitParts!.length)}
+                position={getSplitPartOffset(
+                  index,
+                  splitParts!.length,
+                  explosionDistance,
+                )}
               />
             ))}
             <CameraAutoFit
-              key={`split-${splitParts!.map((part) => part.threeGeometry.uuid).join("-")}`}
+              key={`split-${explosionDistance}-${splitParts!.map((part) => part.threeGeometry.uuid).join("-")}`}
               items={splitFitItems}
             />
           </>

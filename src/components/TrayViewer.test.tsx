@@ -147,6 +147,37 @@ describe("TrayViewer", { timeout: 15000 }, () => {
     vi.useRealTimers();
   });
 
+  it("shows progress while generating split preview", () => {
+    vi.useFakeTimers();
+    const requestAnimationFrameSpy = vi
+      .spyOn(window, "requestAnimationFrame")
+      .mockImplementation((callback: FrameRequestCallback) => {
+        callback(0);
+        return 1;
+      });
+    const cancelAnimationFrameSpy = vi
+      .spyOn(window, "cancelAnimationFrame")
+      .mockImplementation(() => undefined);
+
+    const { container } = render(
+      <TrayViewer geometry={null} isGeneratingSplitPreview={true} />,
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    const progressBar = container.querySelector(
+      'div[style*="width:"]',
+    ) as HTMLDivElement | null;
+    expect(progressBar).not.toBeNull();
+    expect(Number.parseFloat(progressBar!.style.width)).toBeGreaterThan(0);
+
+    requestAnimationFrameSpy.mockRestore();
+    cancelAnimationFrameSpy.mockRestore();
+    vi.useRealTimers();
+  });
+
   it("fits the camera and wires context listeners when geometry is available", () => {
     render(
       <TrayViewer
@@ -215,6 +246,12 @@ describe("TrayViewer", { timeout: 15000 }, () => {
     expect(screen.getByText("低组")).toBeInTheDocument();
     expect(screen.getByText("3mm")).toBeInTheDocument();
     expect(screen.getByText("2孔")).toBeInTheDocument();
+
+    const distanceSlider = screen.getByLabelText("爆炸视图间距");
+    expect(distanceSlider).toHaveValue("42");
+    fireEvent.change(distanceSlider, { target: { value: "76" } });
+    expect(distanceSlider).toHaveValue("76");
+    expect(screen.getByText("76")).toBeInTheDocument();
   });
 
   it("prevents default on context loss and removes listeners on unmount", () => {
