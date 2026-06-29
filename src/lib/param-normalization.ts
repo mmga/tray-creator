@@ -20,6 +20,7 @@ import {
   STEPPED_LAYOUT_DEFAULTS,
   STEPPED_LIMITS,
 } from "@/lib/stepped-config";
+import { applySteppedBaseHoleDerivedFields } from "@/lib/stepped-base-hole";
 import { createGroupStructureOverrides } from "@/lib/stepped-group-params";
 import {
   createGridSlotSnapshotFromDefinition,
@@ -155,6 +156,8 @@ export function migrateCustomParamsToStepped(
     holeDepth: customParams.holeDepth || 3,
     smoothingRadius: STEPPED_LAYOUT_DEFAULTS.smoothingRadius,
     disconnectDistance: STEPPED_LAYOUT_DEFAULTS.disconnectDistance,
+    enableBaseHole: customParams.enableBaseHole,
+    baseHoleSize: customParams.baseHoleSize,
   };
   return runParamNormalizationPipeline(
     steppedParams,
@@ -826,4 +829,7 @@ function clampAndFillSteppedDerivedFields(params: SteppedLayoutParams) {
     obj.disconnectDistance = rawDisconnectDistance;
   }
   clampField(obj, "disconnectDistance", STEPPED_LIMITS.disconnectDistance);
+
+  const normalized = applySteppedBaseHoleDerivedFields(params);
+  Object.assign(params, normalized);
 }

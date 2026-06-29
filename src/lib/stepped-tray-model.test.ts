@@ -105,6 +105,52 @@ function createParams(): SteppedLayoutParams {
   };
 }
 
+function createMagnetParams(): SteppedLayoutParams {
+  return {
+    ...STEPPED_LAYOUT_DEFAULTS,
+    enableBaseHole: true,
+    groups: [
+      {
+        ...STEPPED_LAYOUT_DEFAULTS.groups[0],
+        id: "low",
+        name: "低组",
+        bottomHeight: 8,
+      },
+      {
+        ...STEPPED_LAYOUT_DEFAULTS.groups[0],
+        id: "high",
+        name: "高组",
+        color: "#3b82f6",
+        bottomHeight: 11,
+      },
+    ],
+    activeGroupId: "low",
+    holeDepth: 3,
+    slots: [
+      {
+        id: "slot-low",
+        groupId: "low",
+        x: -18,
+        y: 0,
+        width: 40,
+        height: 40,
+        rotation: 0,
+        shape: "circle",
+      },
+      {
+        id: "slot-high",
+        groupId: "high",
+        x: 18,
+        y: 0,
+        width: 60,
+        height: 60,
+        rotation: 0,
+        shape: "circle",
+      },
+    ],
+  };
+}
+
 describe("stepped tray model", { timeout: 15000 }, () => {
   it("returns a thin placeholder body when slots or groups are missing", () => {
     const model = createSteppedTrayModel({
@@ -168,6 +214,16 @@ describe("stepped tray model", { timeout: 15000 }, () => {
     expect(deepVolume).toBeLessThan(shallowVolume);
   });
 
+  it("cuts base magnetic holes using each group's available support thickness", () => {
+    const plainModel = createSteppedTrayModel({
+      ...createMagnetParams(),
+      enableBaseHole: false,
+    });
+    const magnetModel = createSteppedTrayModel(createMagnetParams());
+
+    expect(measureVolume(magnetModel)).toBeLessThan(measureVolume(plainModel));
+  });
+
   it("creates one split part per group", () => {
     const parts = createSteppedSplitParts(createParams());
 
@@ -186,6 +242,22 @@ describe("stepped tray model", { timeout: 15000 }, () => {
     });
     expect(measureVolume(parts[0].geometry)).toBeGreaterThan(0);
     expect(measureVolume(parts[1].geometry)).toBeGreaterThan(0);
+  });
+
+  it("keeps magnetic holes on bottom-most stepped split parts only", () => {
+    const plainParts = createSteppedSplitParts({
+      ...createMagnetParams(),
+      enableBaseHole: false,
+    });
+    const magnetParts = createSteppedSplitParts(createMagnetParams());
+
+    expect(measureVolume(magnetParts[0].geometry)).toBeLessThan(
+      measureVolume(plainParts[0].geometry),
+    );
+    expect(measureVolume(magnetParts[1].geometry)).toBeCloseTo(
+      measureVolume(plainParts[1].geometry),
+      5,
+    );
   });
 
   it("merges different-height groups into one split part when configured", () => {
@@ -280,7 +352,7 @@ describe("stepped tray model", { timeout: 15000 }, () => {
   });
 
   it("removes intermediate split part residue below the assembly groove", () => {
-    const params = (steppedSplitFragmentFixture as {
+    const params = (steppedSplitFragmentFixture as unknown as {
       params: SteppedLayoutParams;
     }).params;
     const middlePart = createSteppedSplitParts(params).find(
@@ -293,7 +365,7 @@ describe("stepped tray model", { timeout: 15000 }, () => {
   });
 
   it("removes lower-island residue from merged different-height split parts", () => {
-    const params = (steppedMergedSplitFragmentFixture as {
+    const params = (steppedMergedSplitFragmentFixture as unknown as {
       params: SteppedLayoutParams;
     }).params;
     const mergedPart = createSteppedSplitParts(params).find(
@@ -306,7 +378,7 @@ describe("stepped tray model", { timeout: 15000 }, () => {
   });
 
   it("does not leave duplicate groove fragments on the lowest merged-support top", () => {
-    const params = (steppedMergedSplitFragmentFixture as {
+    const params = (steppedMergedSplitFragmentFixture as unknown as {
       params: SteppedLayoutParams;
     }).params;
     const lowPart = createSteppedSplitParts(params).find(

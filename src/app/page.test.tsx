@@ -136,6 +136,8 @@ const {
     holeDepth: 3,
     smoothingRadius: 60,
     disconnectDistance: 0,
+    enableBaseHole: false,
+    baseHoleSize: "25",
   };
 
   const outlinePreview: GroupOutlinePreview[] = [

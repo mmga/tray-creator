@@ -1558,6 +1558,53 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     expect(updateParam).toHaveBeenNthCalledWith(4, "disconnectDistance", 3);
   });
 
+  it("routes stepped magnetic base-hole mode toggles", () => {
+    const updateParam = vi.fn();
+
+    render(
+      <SteppedPanel
+        params={createSteppedParams()}
+        effectiveDimensions={{ width: 120, depth: 140 }}
+        isPreviewStale={false}
+        updateParam={updateParam}
+        setParams={vi.fn()}
+        onAddSlot={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+        selectedSlotIds={[]}
+        onAddGroup={vi.fn()}
+        onRemoveGroup={vi.fn()}
+        onUpdateGroupHeight={vi.fn()}
+        onUpdateGroupSmoothingOverride={vi.fn()}
+        onUpdateGroupSmoothingRadius={vi.fn()}
+        onUpdateGroupDisconnectOverride={vi.fn()}
+        onUpdateGroupDisconnectDistance={vi.fn()}
+        onSetActiveGroup={vi.fn()}
+        onMoveSelectedSlotsToGroup={vi.fn()}
+        onReorderGroups={vi.fn()}
+        previewGroupId={null}
+        onPreviewGroupChange={vi.fn()}
+        bridgeWarning={null}
+        optimizationProposals={[]}
+        isOptimizingLayout={false}
+        onGenerateOptimizationProposals={vi.fn()}
+        onApplyOptimizationProposal={vi.fn()}
+        onClearOptimizationProposals={vi.fn()}
+        onOpenDraftDialog={vi.fn()}
+        onSaveDraft={vi.fn()}
+        currentDraftId={null}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "磁吸孔" }));
+    fireEvent.click(screen.getByRole("button", { name: "普通托盘" }));
+
+    expect(updateParam).toHaveBeenNthCalledWith(1, "enableBaseHole", true);
+    expect(updateParam).toHaveBeenNthCalledWith(2, "enableBaseHole", false);
+  });
+
   it("shows the stepped pricing formula tooltip on hover", () => {
     render(
       <SteppedPanel

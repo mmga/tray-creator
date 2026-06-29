@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
+import { getBaseHoleMinBaseThickness } from "@/lib/config";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
@@ -136,6 +137,8 @@ describe("param normalization", () => {
       slotWidth: 40.4,
       slotHeight: 40.4,
     });
+    expect(migrated.enableBaseHole).toBe(customParams.enableBaseHole);
+    expect(migrated.baseHoleSize).toBe("25");
   });
 
   it("normalizes simple stepped legacy rows before slot snapshots and derived size", () => {
@@ -252,5 +255,40 @@ describe("param normalization", () => {
     expect(normalized.groups[0].splitPartGroupId).toBe("high");
     expect(normalized.groups[1].splitPartGroupId).toBeUndefined();
     expect(normalized.groups[2].splitPartGroupId).toBeUndefined();
+  });
+
+  it("fills stepped base hole defaults and raises group height for magnetic holes", () => {
+    const normalized = normalizeParamsForMode("stepped", {
+      ...STEPPED_LAYOUT_DEFAULTS,
+      holeDepth: 4,
+      enableBaseHole: true,
+      baseHoleSize: "25",
+      groups: [
+        {
+          ...STEPPED_LAYOUT_DEFAULTS.groups[0],
+          id: "group-1",
+          bottomHeight: 5,
+        },
+      ],
+      activeGroupId: "group-1",
+      slots: [
+        {
+          id: "slot-1",
+          x: 100,
+          y: 120,
+          shape: "circle",
+          width: 60,
+          height: 60,
+          rotation: 0,
+          groupId: "group-1",
+        },
+      ],
+    } as SteppedLayoutParams) as SteppedLayoutParams;
+
+    expect(normalized.baseHoleSize).toBe("40");
+    expect(normalized.groups[0].bottomHeight).toBeCloseTo(
+      4 + getBaseHoleMinBaseThickness("40"),
+      5,
+    );
   });
 });

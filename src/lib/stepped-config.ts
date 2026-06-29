@@ -38,6 +38,8 @@ export const STEPPED_LAYOUT_DEFAULTS: SteppedLayoutParams = {
   holeDepth: 3,
   smoothingRadius: STEPPED_DEFAULT_SMOOTHING_RADIUS,
   disconnectDistance: STEPPED_DEFAULT_DISCONNECT_DISTANCE,
+  enableBaseHole: false,
+  baseHoleSize: "25",
 };
 
 export const STEPPED_LIMITS = {

@@ -8,9 +8,16 @@ import {
 } from "@jscad/modeling";
 import type { Geom2, Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { SteppedLayoutParams, SteppedSlot } from "@/types/custom-tray";
-import { RENDER_CONFIG } from "@/lib/config";
+import {
+  RENDER_CONFIG,
+  resolveBaseHolePresetKey,
+} from "@/lib/config";
 import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
+import {
+  subtractBaseHoles,
+  type SlotCenter,
+} from "@/lib/model-utils";
 import {
   generateOutlineGeom2,
   type OutlineCircle,
@@ -300,6 +307,23 @@ function buildSteppedSlotHoles(
   }
 
   return holes;
+}
+
+function buildSteppedBaseHoleCenters(
+  slotData: NormalizedSlotData[],
+  holeDepth: number,
+): SlotCenter[] {
+  return slotData.map((d) => {
+    const clampedHoleDepth = Math.min(holeDepth, d.columnHeight);
+    return {
+      cx: d.cx,
+      cy: d.cy,
+      baseHoleSize: resolveBaseHolePresetKey(
+        Math.max(d.profile.width, d.profile.height),
+      ),
+      baseThickness: Math.max(d.columnHeight - clampedHoleDepth, 0),
+    };
+  });
 }
 
 function buildSteppedGroupSolids(params: SteppedLayoutParams) {
@@ -706,8 +730,14 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
       : union(...groupSolids.map((part) => part.solid));
 
   const holes = buildSteppedSlotHoles(slotData, holeDepth);
+  const baseHoleCenters = buildSteppedBaseHoleCenters(slotData, holeDepth);
 
-  return holes.length > 0 ? subtract(solid, ...holes) : solid;
+  let tray = holes.length > 0 ? subtract(solid, ...holes) : solid;
+  if (params.enableBaseHole) {
+    tray = subtractBaseHoles(tray, baseHoleCenters, 0, params.baseHoleSize);
+  }
+
+  return tray;
 }
 
 export function createSteppedSplitParts(
@@ -767,6 +797,10 @@ export function createSteppedSplitParts(
       maxColumnHeight,
     );
     const holes = buildSteppedSlotHoles(splitUnit.slotData, params.holeDepth);
+    const baseHoleCenters = buildSteppedBaseHoleCenters(
+      splitUnit.slotData,
+      params.holeDepth,
+    );
     let part = holes.length > 0
       ? subtract(clippedSolid, ...holes)
       : clippedSolid;
@@ -787,6 +821,13 @@ export function createSteppedSplitParts(
       grooveConfig.interfaceGrooveDepth,
       0,
     );
+    if (params.enableBaseHole) {
+      const splitUnitBaseHeight =
+        baseHeightBySplitUnitKey.get(splitUnit.key) ?? 0;
+      if (splitUnitBaseHeight <= 0) {
+        part = subtractBaseHoles(part, baseHoleCenters, 0, params.baseHoleSize);
+      }
+    }
     if (interfaceGrooveDepth > 0) {
       const splitUnitHeights = new Set(
         splitUnit.groupSolids.map((groupSolid) => groupSolid.columnHeight),

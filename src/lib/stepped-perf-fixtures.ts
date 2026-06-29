@@ -146,5 +146,7 @@ export function buildSteppedPerfFixture(
     holeDepth: config.holeDepth,
     smoothingRadius: config.smoothingRadius,
     disconnectDistance: config.disconnectDistance,
+    enableBaseHole: false,
+    baseHoleSize: "25",
   };
 }

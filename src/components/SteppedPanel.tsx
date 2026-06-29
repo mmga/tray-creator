@@ -3,8 +3,17 @@
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 import type { BridgeWarning } from "@/lib/stepped-connectivity";
 import type { SteppedOptimizationProposal } from "@/lib/stepped-global-optimize";
-import { BASE_PRESETS, MAX_BUILD_SIZE } from "@/lib/config";
+import {
+    BASE_PRESETS,
+    getBaseHoleMinBaseThickness,
+    getBaseHolePreset,
+    MAX_BUILD_SIZE,
+} from "@/lib/config";
 import { STEPPED_LIMITS, STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
+import {
+    getSteppedGroupMinBottomHeight,
+    getSteppedGroupResolvedBaseHoleSize,
+} from "@/lib/stepped-base-hole";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -30,6 +39,7 @@ import {
     Eye,
     AlertTriangle,
     CircleHelp,
+    Circle,
     Download,
 } from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
@@ -269,6 +279,28 @@ export default function SteppedPanel({
         () => params.groups.find((group) => group.id === params.activeGroupId) ?? null,
         [params.activeGroupId, params.groups],
     );
+    const activeGroupBaseHoleSize = useMemo(
+        () => activeGroup
+            ? getSteppedGroupResolvedBaseHoleSize(params, activeGroup.id)
+            : params.baseHoleSize,
+        [activeGroup, params],
+    );
+    const activeGroupBaseHolePreset = useMemo(
+        () => getBaseHolePreset(activeGroupBaseHoleSize),
+        [activeGroupBaseHoleSize],
+    );
+    const activeGroupMinBottomHeight = useMemo(
+        () => activeGroup
+            ? getSteppedGroupMinBottomHeight(params, activeGroup.id)
+            : STEPPED_LIMITS.bottomHeight.min,
+        [activeGroup, params],
+    );
+    const activeGroupSupportThickness = useMemo(
+        () => activeGroup
+            ? Math.max(activeGroup.bottomHeight - params.holeDepth, 0)
+            : 0,
+        [activeGroup, params.holeDepth],
+    );
     const perfEnabled = useMemo(() => isPerfEnabled(), []);
     const steppedPricing = useMemo(
         () => getSteppedPricingBreakdown(params, volume),
@@ -466,7 +498,12 @@ export default function SteppedPanel({
                                                 <ParamSlider
                                                     label={STEPPED_LIMITS.bottomHeight.label}
                                                     value={group.bottomHeight}
-                                                    config={STEPPED_LIMITS.bottomHeight}
+                                                    config={{
+                                                        ...STEPPED_LIMITS.bottomHeight,
+                                                        min: params.enableBaseHole
+                                                            ? getSteppedGroupMinBottomHeight(params, group.id)
+                                                            : STEPPED_LIMITS.bottomHeight.min,
+                                                    }}
                                                     onChange={(v) => onUpdateGroupHeight(group.id, v)}
                                                     unit={STEPPED_LIMITS.bottomHeight.unit}
                                                 />
@@ -641,6 +678,85 @@ export default function SteppedPanel({
                                 </Button>
                             ))}
                         </div>
+                    </div>
+                </SectionHeader>
+            </div>
+
+            <div className="iron-panel rounded-sm p-4">
+                <SectionHeader icon={Circle} title="底板孔位" collapsible defaultOpen={false}
+                    summary={params.enableBaseHole ? "磁吸孔 按各组最大槽径自动匹配" : "普通托盘"}>
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                onClick={() => updateParam("enableBaseHole", false)}
+                                className={`px-3 py-2 text-xs font-bold tracking-wider uppercase border transition-all duration-200 cursor-pointer ${
+                                    !params.enableBaseHole
+                                        ? "bg-primary/15 text-primary border-primary/50 shadow-inner"
+                                        : "bg-[#1c1a16] text-muted-foreground border-[#2e2a24] hover:border-[#3d372e]"
+                                }`}
+                            >
+                                普通托盘
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => updateParam("enableBaseHole", true)}
+                                className={`px-3 py-2 text-xs font-bold tracking-wider uppercase border transition-all duration-200 cursor-pointer ${
+                                    params.enableBaseHole
+                                        ? "bg-primary/15 text-primary border-primary/50 shadow-inner"
+                                        : "bg-[#1c1a16] text-muted-foreground border-[#2e2a24] hover:border-[#3d372e]"
+                                }`}
+                            >
+                                磁吸孔
+                            </button>
+                        </div>
+
+                        {params.enableBaseHole ? (
+                            <div className="space-y-3">
+                                <div className="rounded border border-dashed border-[#3d372e] px-3 py-2 text-[11px] text-muted-foreground/70">
+                                    各组会按本组最大槽径自动匹配磁吸孔规格，并自动抬高圆柱高度以保留足够底厚。
+                                </div>
+
+                                <div className="space-y-1.5 text-[11px] font-mono text-muted-foreground/70 bg-[#1c1a16] border border-[#2e2a24] p-2.5">
+                                    <div className="flex justify-between">
+                                        <span>当前组</span>
+                                        <span className="text-foreground/80">
+                                            {activeGroup?.name ?? "未选择"}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>自动规格</span>
+                                        <span className="text-foreground/80">
+                                            {activeGroupBaseHolePreset.label}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>磁铁孔</span>
+                                        <span className="text-foreground/80">
+                                            ⌀{activeGroupBaseHolePreset.diameter}mm × {activeGroupBaseHolePreset.depth}mm
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>当前支撑厚度</span>
+                                        <span className="text-foreground/80">
+                                            {activeGroupSupportThickness.toFixed(1)}mm
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>当前组最小圆柱高度</span>
+                                        <span className="text-foreground/80">
+                                            {activeGroupMinBottomHeight.toFixed(1)}mm
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>最小支撑厚度</span>
+                                        <span className="text-foreground/80">
+                                            {getBaseHoleMinBaseThickness(activeGroupBaseHoleSize).toFixed(1)}mm
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : null}
                     </div>
                 </SectionHeader>
             </div>

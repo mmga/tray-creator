@@ -245,6 +245,42 @@ describe("useSteppedLayout", () => {
     );
   });
 
+  it("raises stepped group height when magnetic base holes are enabled", () => {
+    const { result } = renderHook(() => useSteppedLayout());
+
+    act(() => {
+      result.current.setParams({
+        ...STEPPED_LAYOUT_DEFAULTS,
+        holeDepth: 4,
+        groups: [
+          {
+            ...STEPPED_LAYOUT_DEFAULTS.groups[0],
+            id: "group-1",
+            bottomHeight: 5,
+          },
+        ],
+        activeGroupId: "group-1",
+        slots: [
+          {
+            id: "slot-1",
+            x: 100,
+            y: 120,
+            shape: "circle",
+            width: 60,
+            height: 60,
+            rotation: 0,
+            groupId: "group-1",
+          },
+        ],
+        enableBaseHole: true,
+        baseHoleSize: "25",
+      });
+    });
+
+    expect(result.current.params.baseHoleSize).toBe("40");
+    expect(result.current.params.groups[0].bottomHeight).toBeGreaterThan(5);
+  });
+
   it("supports snapshots, undo, batch updates, and group reordering", () => {
     vi.useFakeTimers();
     randomIdFactoryMock.createId

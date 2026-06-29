@@ -20,6 +20,7 @@ export interface SlotCenter {
     cx: number;
     cy: number;
     baseHoleSize?: BaseHolePresetKey;
+    baseThickness?: number;
 }
 
 /**
@@ -67,14 +68,20 @@ export function subtractBaseHoles(
     if (centers.length === 0) return tray;
 
     const { presets, topWall } = BASE_HOLE_CONFIG;
-    const baseHoles: Geom3[] = centers.flatMap(({ cx, cy, baseHoleSize }) => {
+    const baseHoles: Geom3[] = centers.flatMap(({
+        cx,
+        cy,
+        baseHoleSize,
+        baseThickness: centerBaseThickness,
+    }) => {
         const resolvedBaseHoleSize =
             baseHoleSize ??
             fallbackBaseHoleSize ??
             BASE_HOLE_CONFIG.defaultPreset;
         const { diameter, depth } = presets[resolvedBaseHoleSize];
         const minBottomWall = getBaseHoleMinBottomWall(resolvedBaseHoleSize);
-        const bottomWall = baseThickness - topWall - depth;
+        const effectiveBaseThickness = centerBaseThickness ?? baseThickness;
+        const bottomWall = effectiveBaseThickness - topWall - depth;
 
         if (bottomWall < minBottomWall - BASE_HOLE_WALL_EPSILON) {
             return [];

@@ -148,6 +148,10 @@ export interface SteppedLayoutParams {
   smoothingRadius: number;
   /** 为 0 时沿用平滑半径的自然桥接行为；大于 0 时按显式边缘距离阈值断开槽群 */
   disconnectDistance: number;
+  /** 是否启用底板磁吸孔 */
+  enableBaseHole: boolean;
+  /** 兼容导入/导出保留字段；实际规格由配置自动匹配 */
+  baseHoleSize: BaseHolePresetKey;
   /** 调试开关：输出面朝向/体积日志（仅开发调试） */
   debugOrientation?: boolean;
 }
