@@ -826,11 +826,10 @@ export function createSteppedSplitParts(
           interfaceGrooveDepth,
           otherBaseHeight - splitUnitBaseHeight,
         );
-        const anchorGroupIds = new Set(
+        const supportGroupIds = new Set(
           otherSplitUnit.groupSolids
-            .filter((groupSolid) =>
-              groupSolid.group.id === otherSplitUnit.key ||
-              groupSolid.columnHeight === otherSplitUnit.maxHeight
+            .filter(
+              (groupSolid) => groupSolid.columnHeight === otherSplitUnit.minHeight,
             )
             .map((groupSolid) => groupSolid.group.id),
         );
@@ -840,8 +839,8 @@ export function createSteppedSplitParts(
           lowPocketDepth + SPLIT_EPSILON,
           otherBaseHeight - lowPocketDepth,
           otherBaseHeight,
-          false,
-          anchorGroupIds,
+          true,
+          supportGroupIds,
         );
         if (lowPocket) {
           grooveCutters.push(lowPocket);
