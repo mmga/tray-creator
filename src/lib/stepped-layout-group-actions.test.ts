@@ -10,6 +10,7 @@ import {
   updateSteppedGroupDisconnectDistance,
   updateSteppedGroupDisconnectOverride,
   updateSteppedGroupHeight,
+  updateSteppedGroupSplitPartTarget,
   updateSteppedGroupSmoothingOverride,
   updateSteppedGroupSmoothingRadius,
 } from "@/lib/stepped-layout-group-actions";
@@ -84,10 +85,23 @@ describe("stepped group actions", () => {
     const singleGroup = removeSteppedGroup(STEPPED_LAYOUT_DEFAULTS, "missing");
     expect(singleGroup).toBe(STEPPED_LAYOUT_DEFAULTS);
 
-    const removed = removeSteppedGroup(createParams(), "group-2");
+    const removed = removeSteppedGroup(
+      {
+        ...createParams(),
+        groups: [
+          {
+            ...createParams().groups[0],
+            splitPartGroupId: "group-2",
+          },
+          createParams().groups[1],
+        ],
+      },
+      "group-2",
+    );
     expect(removed.groups.map((group) => group.id)).toEqual([
       STEPPED_LAYOUT_DEFAULTS.groups[0].id,
     ]);
+    expect(removed.groups[0].splitPartGroupId).toBeUndefined();
     expect(removed.slots.map((slot) => slot.id)).toEqual(["slot-1"]);
     expect(removed.activeGroupId).toBe(STEPPED_LAYOUT_DEFAULTS.groups[0].id);
   });
@@ -136,5 +150,28 @@ describe("stepped group actions", () => {
 
     expect(setSteppedActiveGroup(params, params.activeGroupId)).toBe(params);
     expect(setSteppedActiveGroup(params, "missing-group")).toBe(params);
+  });
+
+  it("updates split part merge targets and clears invalid targets", () => {
+    const params = createParams();
+    const merged = updateSteppedGroupSplitPartTarget(
+      params,
+      STEPPED_LAYOUT_DEFAULTS.groups[0].id,
+      "group-2",
+    );
+    const clearedSelf = updateSteppedGroupSplitPartTarget(
+      merged,
+      "group-2",
+      "group-2",
+    );
+    const clearedMissing = updateSteppedGroupSplitPartTarget(
+      merged,
+      STEPPED_LAYOUT_DEFAULTS.groups[0].id,
+      "missing",
+    );
+
+    expect(merged.groups[0].splitPartGroupId).toBe("group-2");
+    expect(clearedSelf.groups[1].splitPartGroupId).toBeUndefined();
+    expect(clearedMissing.groups[0].splitPartGroupId).toBeUndefined();
   });
 });

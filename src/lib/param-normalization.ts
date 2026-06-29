@@ -614,6 +614,7 @@ function migrateSteppedLegacyShape(params: SteppedLayoutParams) {
         groupSmoothingRadius: number;
         useGroupDisconnectDistance: boolean;
         groupDisconnectDistance: number;
+        splitPartGroupId?: string;
       }
     >();
     const migratedSlots = slots.map((slot) => {
@@ -705,6 +706,17 @@ function normalizeSteppedGroups(params: SteppedLayoutParams) {
       !Number.isFinite(group.groupDisconnectDistance)
     ) {
       group.groupDisconnectDistance = rawDisconnectDistance;
+    }
+  }
+
+  const groupIds = new Set(groups.map((group) => group.id as string));
+  for (const group of groups) {
+    if (
+      typeof group.splitPartGroupId !== "string" ||
+      group.splitPartGroupId === group.id ||
+      !groupIds.has(group.splitPartGroupId)
+    ) {
+      delete group.splitPartGroupId;
     }
   }
 }

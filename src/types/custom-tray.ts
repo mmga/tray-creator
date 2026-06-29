@@ -17,6 +17,8 @@ export interface SlotGroup {
   useGroupDisconnectDistance: boolean;
   /** 该组缓存的断链距离值；仅在开启独立设置时生效 */
   groupDisconnectDistance: number;
+  /** 拆件导出时并入的目标分组；为空时该组单独拆件 */
+  splitPartGroupId?: string;
 }
 
 /** 分组轮廓预览（供 2D 编辑器逐组渲染） */

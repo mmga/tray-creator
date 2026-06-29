@@ -1374,6 +1374,62 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     expect(onSetActiveGroup).not.toHaveBeenCalled();
   });
 
+  it("routes stepped split part merge target changes", () => {
+    const onUpdateGroupSplitPartTarget = vi.fn();
+
+    render(
+      <SteppedPanel
+        params={createSteppedParams()}
+        effectiveDimensions={{ width: 120, depth: 140 }}
+        isPreviewStale={false}
+        updateParam={vi.fn()}
+        setParams={vi.fn()}
+        onAddSlot={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+        selectedSlotIds={[]}
+        onAddGroup={vi.fn()}
+        onRemoveGroup={vi.fn()}
+        onUpdateGroupHeight={vi.fn()}
+        onUpdateGroupSmoothingOverride={vi.fn()}
+        onUpdateGroupSmoothingRadius={vi.fn()}
+        onUpdateGroupDisconnectOverride={vi.fn()}
+        onUpdateGroupDisconnectDistance={vi.fn()}
+        onUpdateGroupSplitPartTarget={onUpdateGroupSplitPartTarget}
+        onSetActiveGroup={vi.fn()}
+        onMoveSelectedSlotsToGroup={vi.fn()}
+        onReorderGroups={vi.fn()}
+        previewGroupId={null}
+        onPreviewGroupChange={vi.fn()}
+        bridgeWarning={null}
+        optimizationProposals={[]}
+        isOptimizingLayout={false}
+        onGenerateOptimizationProposals={vi.fn()}
+        onApplyOptimizationProposal={vi.fn()}
+        onClearOptimizationProposals={vi.fn()}
+        onOpenDraftDialog={vi.fn()}
+        onSaveDraft={vi.fn()}
+        currentDraftId={null}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "并入 组 2 (16mm)" }));
+    fireEvent.click(screen.getByRole("button", { name: "单独导出" }));
+
+    expect(onUpdateGroupSplitPartTarget).toHaveBeenNthCalledWith(
+      1,
+      "group-1",
+      "group-2",
+    );
+    expect(onUpdateGroupSplitPartTarget).toHaveBeenNthCalledWith(
+      2,
+      "group-1",
+      null,
+    );
+  });
+
   it("routes stepped panel actions for add group, moving slots, reset, and import", () => {
     const setParams = vi.fn();
     const onAddGroup = vi.fn();

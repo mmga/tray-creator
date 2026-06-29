@@ -26,6 +26,7 @@ import {
   updateSteppedGroupDisconnectDistance,
   updateSteppedGroupDisconnectOverride,
   updateSteppedGroupHeight,
+  updateSteppedGroupSplitPartTarget,
   updateSteppedGroupSmoothingOverride,
   updateSteppedGroupSmoothingRadius,
 } from "@/lib/stepped-layout-group-actions";
@@ -84,6 +85,10 @@ export interface UseSteppedLayoutReturn {
   updateGroupSmoothingRadius: (groupId: string, radius: number) => void;
   updateGroupDisconnectOverride: (groupId: string, enabled: boolean) => void;
   updateGroupDisconnectDistance: (groupId: string, distance: number) => void;
+  updateGroupSplitPartTarget: (
+    groupId: string,
+    targetGroupId: string | null,
+  ) => void;
   setActiveGroup: (groupId: string) => void;
   moveSelectedSlotsToGroup: (ids: string[], targetGroupId: string) => void;
   reorderGroups: (fromIndex: number, toIndex: number) => void;
@@ -505,6 +510,17 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     [invalidatePreview, pushState],
   );
 
+  const updateGroupSplitPartTarget = useCallback(
+    (groupId: string, targetGroupId: string | null) => {
+      pushState(paramsRef.current);
+      internalSetParams((prev) =>
+        updateSteppedGroupSplitPartTarget(prev, groupId, targetGroupId),
+      );
+      invalidatePreview();
+    },
+    [invalidatePreview, pushState],
+  );
+
   const setActiveGroup = useCallback((groupId: string) => {
     internalSetParams((prev) => setSteppedActiveGroup(prev, groupId));
   }, []);
@@ -612,6 +628,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     updateGroupSmoothingRadius,
     updateGroupDisconnectOverride,
     updateGroupDisconnectDistance,
+    updateGroupSplitPartTarget,
     setActiveGroup,
     moveSelectedSlotsToGroup,
     reorderGroups,

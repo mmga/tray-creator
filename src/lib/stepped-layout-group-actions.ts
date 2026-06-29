@@ -37,7 +37,13 @@ export function removeSteppedGroup(
     return params;
   }
 
-  const nextGroups = params.groups.filter((group) => group.id !== groupId);
+  const nextGroups = params.groups
+    .filter((group) => group.id !== groupId)
+    .map((group) =>
+      group.splitPartGroupId === groupId
+        ? { ...group, splitPartGroupId: undefined }
+        : group,
+    );
   const nextSlots = params.slots.filter((slot) => slot.groupId !== groupId);
   const nextActiveGroupId =
     params.activeGroupId === groupId
@@ -118,6 +124,28 @@ export function updateSteppedGroupDisconnectDistance(
     groups: params.groups.map((group) =>
       group.id === groupId
         ? { ...group, groupDisconnectDistance: distance }
+        : group,
+    ),
+  };
+}
+
+export function updateSteppedGroupSplitPartTarget(
+  params: SteppedLayoutParams,
+  groupId: string,
+  targetGroupId: string | null,
+): SteppedLayoutParams {
+  const validTargetId =
+    targetGroupId &&
+    targetGroupId !== groupId &&
+    params.groups.some((group) => group.id === targetGroupId)
+      ? targetGroupId
+      : undefined;
+
+  return {
+    ...params,
+    groups: params.groups.map((group) =>
+      group.id === groupId
+        ? { ...group, splitPartGroupId: validTargetId }
         : group,
     ),
   };

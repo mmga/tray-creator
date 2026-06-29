@@ -157,6 +157,14 @@ function calculateEffectiveBaseplate(params: SteppedLayoutParams) {
 
 type NormalizedSlotData = ReturnType<typeof buildNormalizedSlotData>["slots"][number];
 
+type SteppedGroupSolid = {
+  group: SteppedLayoutParams["groups"][number];
+  solid: Geom3;
+  columnHeight: number;
+  slotData: NormalizedSlotData[];
+  footprintSlotData: NormalizedSlotData[];
+};
+
 function buildNormalizedSlotData(params: SteppedLayoutParams) {
   const effective = calculateEffectiveBaseplate(params);
   const trayWidth = effective.hasSlots ? effective.width : params.trayWidth;
@@ -298,12 +306,7 @@ function buildSteppedGroupSolids(params: SteppedLayoutParams) {
   const { groups, spacing } = params;
   const { trayWidth, trayDepth, slots: slotData } =
     buildNormalizedSlotData(params);
-  const groupSolids: {
-    group: SteppedLayoutParams["groups"][number];
-    solid: Geom3;
-    columnHeight: number;
-    slotData: NormalizedSlotData[];
-  }[] = [];
+  const groupSolids: SteppedGroupSolid[] = [];
 
   for (const group of groups) {
     const ownSlotData = slotData.filter((d) => d.groupId === group.id);
@@ -318,8 +321,10 @@ function buildSteppedGroupSolids(params: SteppedLayoutParams) {
       return otherGroup && Math.max(otherGroup.bottomHeight, 3) > columnHeight;
     });
 
+    const footprintSlotData = [...ownSlotData, ...contextSlotData];
+
     let groupSolid = buildSlotDataSolid(
-      [...ownSlotData, ...contextSlotData],
+      footprintSlotData,
       spacing,
       columnHeight,
       effectiveParams,
@@ -353,6 +358,7 @@ function buildSteppedGroupSolids(params: SteppedLayoutParams) {
       solid: groupSolid,
       columnHeight,
       slotData: ownSlotData,
+      footprintSlotData,
     });
   }
 
@@ -380,9 +386,10 @@ function getGroupCenter(slotData: NormalizedSlotData[]) {
 }
 
 function buildSameHeightPartitionMap(
-  groupSolids: ReturnType<typeof buildSteppedGroupSolids>["groupSolids"],
+  groupSolids: SteppedGroupSolid[],
   trayWidth: number,
   trayDepth: number,
+  splitUnitKeyByGroupId: Map<string, string> = new Map(),
 ) {
   const partitions = new Map<string, Geom3>();
   const groupsByHeight = new Map<number, typeof groupSolids>();
@@ -401,10 +408,29 @@ function buildSameHeightPartitionMap(
   for (const heightGroup of groupsByHeight.values()) {
     if (heightGroup.length < 2) continue;
 
-    const entries = heightGroup.map((groupSolid) => ({
-      groupSolid,
-      center: getGroupCenter(groupSolid.slotData),
+    const entriesBySplitUnit = new Map<
+      string,
+      { groupSolids: SteppedGroupSolid[]; slotData: NormalizedSlotData[] }
+    >();
+
+    for (const groupSolid of heightGroup) {
+      const splitUnitKey =
+        splitUnitKeyByGroupId.get(groupSolid.group.id) ?? groupSolid.group.id;
+      const entry = entriesBySplitUnit.get(splitUnitKey) ?? {
+        groupSolids: [],
+        slotData: [],
+      };
+      entry.groupSolids.push(groupSolid);
+      entry.slotData.push(...groupSolid.slotData);
+      entriesBySplitUnit.set(splitUnitKey, entry);
+    }
+
+    const entries = [...entriesBySplitUnit.values()].map((entry) => ({
+      ...entry,
+      center: getGroupCenter(entry.slotData),
     }));
+    if (entries.length < 2) continue;
+
     const xSpread =
       Math.max(...entries.map((entry) => entry.center.x)) -
       Math.min(...entries.map((entry) => entry.center.x));
@@ -432,13 +458,17 @@ function buildSameHeightPartitionMap(
       const centerY =
         axis === "y" ? (previousBoundary + nextBoundary) / 2 : 0;
 
-      partitions.set(
-        sorted[index].groupSolid.group.id,
-        cuboid({
-          size: [width, depth, maxHeight + margin * 2],
-          center: [centerX, centerY, maxHeight / 2],
-        }),
-      );
+      const partition = cuboid({
+        size: [width, depth, maxHeight + margin * 2],
+        center: [centerX, centerY, maxHeight / 2],
+      });
+
+      for (const groupSolid of sorted[index].groupSolids) {
+        partitions.set(
+          groupSolid.group.id,
+          partition,
+        );
+      }
     }
   }
 
@@ -450,23 +480,192 @@ function buildGroupFootprintCutter(
   groupSolid: {
     group: SteppedLayoutParams["groups"][number];
     slotData: NormalizedSlotData[];
+    footprintSlotData?: NormalizedSlotData[];
   },
   depth: number,
   zBase: number,
+  useContextFootprint = true,
 ): Geom3 | null {
   if (depth <= 0 || groupSolid.slotData.length === 0) {
     return null;
   }
 
+  const cutterSlotData =
+    useContextFootprint
+      ? groupSolid.footprintSlotData ?? groupSolid.slotData
+      : groupSolid.slotData;
+
   return translate(
     [0, 0, zBase],
     buildSlotDataSolid(
-      groupSolid.slotData,
+      cutterSlotData,
       params.spacing,
       depth,
       getEffectiveGroupStructureParams(groupSolid.group, params),
     ),
   );
+}
+
+function buildSplitUnitKeyByGroupId(groupSolids: SteppedGroupSolid[]) {
+  const groupIds = new Set(groupSolids.map((groupSolid) => groupSolid.group.id));
+  const parentByGroupId = new Map<string, string>();
+
+  for (const groupId of groupIds) {
+    parentByGroupId.set(groupId, groupId);
+  }
+
+  const find = (groupId: string): string => {
+    const parent = parentByGroupId.get(groupId) ?? groupId;
+    if (parent === groupId) {
+      return parent;
+    }
+    const root = find(parent);
+    parentByGroupId.set(groupId, root);
+    return root;
+  };
+
+  const union = (left: string, right: string) => {
+    const leftRoot = find(left);
+    const rightRoot = find(right);
+    if (leftRoot !== rightRoot) {
+      parentByGroupId.set(leftRoot, rightRoot);
+    }
+  };
+
+  for (const groupSolid of groupSolids) {
+    const targetGroupId = groupSolid.group.splitPartGroupId;
+    if (targetGroupId && groupIds.has(targetGroupId)) {
+      union(groupSolid.group.id, targetGroupId);
+    }
+  }
+
+  const keyByGroupId = new Map<string, string>();
+  for (const groupId of groupIds) {
+    keyByGroupId.set(groupId, find(groupId));
+  }
+  return keyByGroupId;
+}
+
+function buildSplitUnits(
+  orderedGroupSolids: SteppedGroupSolid[],
+  splitUnitKeyByGroupId: Map<string, string>,
+) {
+  const unitsByKey = new Map<string, SteppedGroupSolid[]>();
+
+  for (const groupSolid of orderedGroupSolids) {
+    const key = splitUnitKeyByGroupId.get(groupSolid.group.id) ?? groupSolid.group.id;
+    const unit = unitsByKey.get(key) ?? [];
+    unit.push(groupSolid);
+    unitsByKey.set(key, unit);
+  }
+
+  return [...unitsByKey.entries()]
+    .map(([key, groupSolids]) => {
+      const sortedGroupSolids = [...groupSolids].sort(
+        (a, b) => a.columnHeight - b.columnHeight,
+      );
+      return {
+        key,
+        groupSolids: sortedGroupSolids,
+        minHeight: sortedGroupSolids[0]?.columnHeight ?? 0,
+        maxHeight: Math.max(
+          ...sortedGroupSolids.map((groupSolid) => groupSolid.columnHeight),
+        ),
+        slotData: sortedGroupSolids.flatMap((groupSolid) => groupSolid.slotData),
+      };
+    })
+    .sort((a, b) => a.minHeight - b.minHeight || a.maxHeight - b.maxHeight);
+}
+
+type SteppedSplitUnit = ReturnType<typeof buildSplitUnits>[number];
+
+function buildSplitUnitFootprintCutter(
+  params: SteppedLayoutParams,
+  splitUnit: SteppedSplitUnit,
+  depth: number,
+  zBase: number,
+  interfaceHeight: number,
+  useContextFootprint: boolean,
+  allowedGroupIds?: Set<string>,
+): Geom3 | null {
+  if (depth <= 0) {
+    return null;
+  }
+
+  const cutters = splitUnit.groupSolids
+    .filter((groupSolid) => {
+      if (groupSolid.columnHeight <= interfaceHeight) {
+        return false;
+      }
+      if (!allowedGroupIds) {
+        return true;
+      }
+      return allowedGroupIds.has(groupSolid.group.id);
+    })
+    .map((groupSolid) =>
+      buildGroupFootprintCutter(
+        params,
+        groupSolid,
+        depth,
+        zBase,
+        useContextFootprint,
+      ),
+    )
+    .filter((cutter): cutter is Geom3 => cutter !== null);
+
+  if (cutters.length === 0) {
+    return null;
+  }
+
+  return cutters.length === 1 ? cutters[0] : union(...cutters);
+}
+
+function getSplitUnitExternalBaseHeight(
+  splitUnit: SteppedSplitUnit,
+  orderedGroupSolids: SteppedGroupSolid[],
+  splitUnitKeyByGroupId: Map<string, string>,
+) {
+  const lowerHeights = orderedGroupSolids
+    .filter((groupSolid) => {
+      const key =
+        splitUnitKeyByGroupId.get(groupSolid.group.id) ?? groupSolid.group.id;
+      return key !== splitUnit.key && groupSolid.columnHeight < splitUnit.minHeight;
+    })
+    .map((groupSolid) => groupSolid.columnHeight);
+
+  return lowerHeights.length > 0 ? Math.max(...lowerHeights) : 0;
+}
+
+function clipSolidBelowHeight(
+  solid: Geom3,
+  baseHeight: number,
+  trayWidth: number,
+  trayDepth: number,
+  maxHeight: number,
+) {
+  if (baseHeight <= 0) {
+    return solid;
+  }
+
+  const margin = 200;
+  const clipHeight = Math.max(maxHeight - baseHeight + margin, margin);
+  return intersect(
+    solid,
+    cuboid({
+      size: [trayWidth + margin * 2, trayDepth + margin * 2, clipHeight],
+      center: [0, 0, baseHeight + clipHeight / 2],
+    }),
+  );
+}
+
+function buildSplitPartLabel(groupSolids: SteppedGroupSolid[]) {
+  return groupSolids.map((groupSolid) => groupSolid.group.name).join(" + ");
+}
+
+function buildSplitPartIdLabel(groupSolids: SteppedGroupSolid[]) {
+  return groupSolids
+    .map((groupSolid) => groupSolid.group.id.replace(/[^a-zA-Z0-9_-]+/g, "_"))
+    .join("_");
 }
 
 /**
@@ -529,21 +728,48 @@ export function createSteppedSplitParts(
   );
   const parts: SteppedSplitPart[] = [];
   const claimedSolids: Geom3[] = [];
+  const splitUnitKeyByGroupId = buildSplitUnitKeyByGroupId(groupSolids);
   const sameHeightPartitions = buildSameHeightPartitionMap(
     groupSolids,
     trayWidth,
     trayDepth,
+    splitUnitKeyByGroupId,
   );
-
-  for (const [index, groupSolid] of orderedGroupSolids.entries()) {
-    const partition = sameHeightPartitions.get(groupSolid.group.id);
-    const partitionedSolid = partition
-      ? intersect(groupSolid.solid, partition)
-      : groupSolid.solid;
-    const holes = buildSteppedSlotHoles(groupSolid.slotData, params.holeDepth);
+  const splitUnits = buildSplitUnits(orderedGroupSolids, splitUnitKeyByGroupId);
+  const baseHeightBySplitUnitKey = new Map(
+    splitUnits.map((splitUnit) => [
+      splitUnit.key,
+      getSplitUnitExternalBaseHeight(
+        splitUnit,
+        orderedGroupSolids,
+        splitUnitKeyByGroupId,
+      ),
+    ]),
+  );
+  const maxColumnHeight =
+    orderedGroupSolids.length > 0
+      ? Math.max(...orderedGroupSolids.map((groupSolid) => groupSolid.columnHeight))
+      : 0;
+  for (const [index, splitUnit] of splitUnits.entries()) {
+    const partitionedSolids = splitUnit.groupSolids.map((groupSolid) => {
+      const partition = sameHeightPartitions.get(groupSolid.group.id);
+      return partition ? intersect(groupSolid.solid, partition) : groupSolid.solid;
+    });
+    const partitionedSolid =
+      partitionedSolids.length === 1
+        ? partitionedSolids[0]
+        : union(...partitionedSolids);
+    const clippedSolid = clipSolidBelowHeight(
+      partitionedSolid,
+      baseHeightBySplitUnitKey.get(splitUnit.key) ?? 0,
+      trayWidth,
+      trayDepth,
+      maxColumnHeight,
+    );
+    const holes = buildSteppedSlotHoles(splitUnit.slotData, params.holeDepth);
     let part = holes.length > 0
-      ? subtract(partitionedSolid, ...holes)
-      : partitionedSolid;
+      ? subtract(clippedSolid, ...holes)
+      : clippedSolid;
     if (claimedSolids.length > 0) {
       const claimedCutters = claimedSolids.flatMap((solid) => [
         solid,
@@ -561,39 +787,64 @@ export function createSteppedSplitParts(
       0,
     );
     if (interfaceGrooveDepth > 0) {
-      for (const otherGroupSolid of orderedGroupSolids) {
-        if (otherGroupSolid.group.id === groupSolid.group.id) continue;
+      const splitUnitHeights = new Set(
+        splitUnit.groupSolids.map((groupSolid) => groupSolid.columnHeight),
+      );
+      const splitUnitBaseHeight =
+        baseHeightBySplitUnitKey.get(splitUnit.key) ?? 0;
 
-        if (otherGroupSolid.columnHeight > groupSolid.columnHeight) {
-          const lowPocketDepth = Math.min(
-            interfaceGrooveDepth,
-            groupSolid.columnHeight,
-          );
-          const lowPocket = buildGroupFootprintCutter(
-            params,
-            otherGroupSolid,
-            lowPocketDepth + SPLIT_EPSILON,
-            groupSolid.columnHeight - lowPocketDepth,
-          );
-          if (lowPocket) {
-            grooveCutters.push(lowPocket);
-          }
+      if (splitUnitBaseHeight > 0) {
+        const upperPocketDepth = Math.min(
+          interfaceGrooveDepth,
+          splitUnit.maxHeight - splitUnitBaseHeight,
+        );
+        const upperPocket = buildSplitUnitFootprintCutter(
+          params,
+          splitUnit,
+          upperPocketDepth + SPLIT_EPSILON,
+          splitUnitBaseHeight,
+          splitUnitBaseHeight,
+          true,
+        );
+        if (upperPocket) {
+          grooveCutters.push(upperPocket);
+        }
+      }
+
+      for (const otherSplitUnit of splitUnits) {
+        if (otherSplitUnit.key === splitUnit.key) {
+          continue;
         }
 
-        if (otherGroupSolid.columnHeight < groupSolid.columnHeight) {
-          const upperPocketDepth = Math.min(
-            interfaceGrooveDepth,
-            groupSolid.columnHeight - otherGroupSolid.columnHeight,
-          );
-          const upperPocket = buildGroupFootprintCutter(
-            params,
-            groupSolid,
-            upperPocketDepth + SPLIT_EPSILON,
-            otherGroupSolid.columnHeight,
-          );
-          if (upperPocket) {
-            grooveCutters.push(upperPocket);
-          }
+        const otherBaseHeight =
+          baseHeightBySplitUnitKey.get(otherSplitUnit.key) ?? 0;
+        if (!splitUnitHeights.has(otherBaseHeight)) {
+          continue;
+        }
+
+        const lowPocketDepth = Math.min(
+          interfaceGrooveDepth,
+          otherBaseHeight - splitUnitBaseHeight,
+        );
+        const anchorGroupIds = new Set(
+          otherSplitUnit.groupSolids
+            .filter((groupSolid) =>
+              groupSolid.group.id === otherSplitUnit.key ||
+              groupSolid.columnHeight === otherSplitUnit.maxHeight
+            )
+            .map((groupSolid) => groupSolid.group.id),
+        );
+        const lowPocket = buildSplitUnitFootprintCutter(
+          params,
+          otherSplitUnit,
+          lowPocketDepth + SPLIT_EPSILON,
+          otherBaseHeight - lowPocketDepth,
+          otherBaseHeight,
+          false,
+          anchorGroupIds,
+        );
+        if (lowPocket) {
+          grooveCutters.push(lowPocket);
         }
       }
     }
@@ -602,14 +853,14 @@ export function createSteppedSplitParts(
     }
 
     if (measureVolume(part) > 0.001) {
-      const safeGroupId = groupSolid.group.id.replace(/[^a-zA-Z0-9_-]+/g, "_");
+      const safeGroupId = buildSplitPartIdLabel(splitUnit.groupSolids);
       const filenameLabel = `part_${String(index + 1).padStart(2, "0")}_${safeGroupId}`;
       parts.push({
         index,
         filenameLabel,
-        label: groupSolid.group.name,
+        label: buildSplitPartLabel(splitUnit.groupSolids),
         fromHeight: 0,
-        toHeight: groupSolid.columnHeight,
+        toHeight: splitUnit.maxHeight,
         geometry: part,
       });
     }

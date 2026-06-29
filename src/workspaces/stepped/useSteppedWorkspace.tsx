@@ -71,6 +71,7 @@ export function useSteppedWorkspace({
         onUpdateGroupSmoothingRadius={model.updateGroupSmoothingRadius}
         onUpdateGroupDisconnectOverride={model.updateGroupDisconnectOverride}
         onUpdateGroupDisconnectDistance={model.updateGroupDisconnectDistance}
+        onUpdateGroupSplitPartTarget={model.updateGroupSplitPartTarget}
         onSetActiveGroup={model.setActiveGroup}
         onMoveSelectedSlotsToGroup={model.moveSelectedSlotsToGroup}
         onReorderGroups={model.reorderGroups}
@@ -110,6 +111,7 @@ export function useSteppedWorkspace({
       model.setParams,
       model.updateGroupDisconnectDistance,
       model.updateGroupDisconnectOverride,
+      model.updateGroupSplitPartTarget,
       model.updateGroupHeight,
       model.updateGroupSmoothingOverride,
       model.updateGroupSmoothingRadius,

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { measurements } from "@jscad/modeling";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
+import steppedMergedSplitFragmentFixture from "@/lib/fixtures/tray-stepped-merged-split-fragments.json";
+import steppedSplitFragmentFixture from "@/lib/fixtures/tray-stepped-split-fragments.json";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import {
   calculateSteppedTrayDimensions,
@@ -29,6 +31,32 @@ function hasBottomCylinderWallNear(
       return Math.hypot(dx, dy) <= radius;
     });
   });
+}
+
+function polygonArea2d(polygon: { vertices: number[][] }) {
+  let area = 0;
+  for (let i = 0; i < polygon.vertices.length; i += 1) {
+    const current = polygon.vertices[i];
+    const next = polygon.vertices[(i + 1) % polygon.vertices.length];
+    area += (current[0] ?? 0) * (next[1] ?? 0);
+    area -= (next[0] ?? 0) * (current[1] ?? 0);
+  }
+  return Math.abs(area) / 2;
+}
+
+function countSmallHorizontalTopFaces(
+  geometry: { polygons: { vertices: number[][] }[] },
+  z: number,
+) {
+  return geometry.polygons.filter((polygon) => {
+    if (polygon.vertices.length < 3) {
+      return false;
+    }
+    const onPlane = polygon.vertices.every(
+      (vertex) => Math.abs((vertex[2] ?? 0) - z) < 0.001,
+    );
+    return onPlane && polygonArea2d(polygon) < 5;
+  }).length;
 }
 
 function createParams(): SteppedLayoutParams {
@@ -160,6 +188,28 @@ describe("stepped tray model", { timeout: 15000 }, () => {
     expect(measureVolume(parts[1].geometry)).toBeGreaterThan(0);
   });
 
+  it("merges different-height groups into one split part when configured", () => {
+    const parts = createSteppedSplitParts({
+      ...createParams(),
+      groups: [
+        {
+          ...createParams().groups[0],
+          splitPartGroupId: "high",
+        },
+        createParams().groups[1],
+      ],
+    });
+
+    expect(parts).toHaveLength(1);
+    expect(parts[0]).toMatchObject({
+      filenameLabel: "part_01_low_high",
+      label: "低组 + 高组",
+      fromHeight: 0,
+      toHeight: 12,
+    });
+    expect(measureVolume(parts[0].geometry)).toBeGreaterThan(0);
+  });
+
   it("keeps each split part bottom solid without connector piercings", () => {
     // 回归测试：移除接触面圆柱形插销后，较高零件的底面不应再被插销孔穿透。
     const parts = createSteppedSplitParts({
@@ -224,6 +274,44 @@ describe("stepped tray model", { timeout: 15000 }, () => {
     expect(measureVolume(groovedParts[1].geometry)).toBeLessThan(
       measureVolume(plainParts[1].geometry),
     );
+  });
+
+  it("removes intermediate split part residue below the assembly groove", () => {
+    const params = (steppedSplitFragmentFixture as {
+      params: SteppedLayoutParams;
+    }).params;
+    const middlePart = createSteppedSplitParts(params).find(
+      (part) => part.label === "组 2",
+    );
+
+    expect(middlePart).toBeDefined();
+    const [[, , minZ]] = measureBoundingBox(middlePart!.geometry);
+    expect(minZ).toBeGreaterThanOrEqual(11.9);
+  });
+
+  it("removes lower-island residue from merged different-height split parts", () => {
+    const params = (steppedMergedSplitFragmentFixture as {
+      params: SteppedLayoutParams;
+    }).params;
+    const mergedPart = createSteppedSplitParts(params).find(
+      (part) => part.label === "组 4 + 组 2",
+    );
+
+    expect(mergedPart).toBeDefined();
+    const [[, , minZ]] = measureBoundingBox(mergedPart!.geometry);
+    expect(minZ).toBeGreaterThanOrEqual(11.9);
+  });
+
+  it("does not leave duplicate groove fragments on the lowest merged-support top", () => {
+    const params = (steppedMergedSplitFragmentFixture as {
+      params: SteppedLayoutParams;
+    }).params;
+    const lowPart = createSteppedSplitParts(params).find(
+      (part) => part.label === "组 1",
+    );
+
+    expect(lowPart).toBeDefined();
+    expect(countSmallHorizontalTopFaces(lowPart!.geometry, 10)).toBeLessThan(900);
   });
 
   it("keeps same-height groups as separate split parts", () => {

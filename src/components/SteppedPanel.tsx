@@ -7,6 +7,13 @@ import { BASE_PRESETS, MAX_BUILD_SIZE } from "@/lib/config";
 import { STEPPED_LIMITS, STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
     RotateCcw,
@@ -170,6 +177,7 @@ interface SteppedPanelProps {
     onUpdateGroupSmoothingRadius: (groupId: string, radius: number) => void;
     onUpdateGroupDisconnectOverride: (groupId: string, enabled: boolean) => void;
     onUpdateGroupDisconnectDistance: (groupId: string, distance: number) => void;
+    onUpdateGroupSplitPartTarget?: (groupId: string, targetGroupId: string | null) => void;
     onSetActiveGroup: (groupId: string) => void;
     onMoveSelectedSlotsToGroup: (ids: string[], targetGroupId: string) => void;
     onReorderGroups: (fromIndex: number, toIndex: number) => void;
@@ -209,6 +217,7 @@ export default function SteppedPanel({
     onUpdateGroupSmoothingRadius,
     onUpdateGroupDisconnectOverride,
     onUpdateGroupDisconnectDistance,
+    onUpdateGroupSplitPartTarget = () => undefined,
     onSetActiveGroup,
     onMoveSelectedSlotsToGroup,
     onReorderGroups,
@@ -516,6 +525,43 @@ export default function SteppedPanel({
                                                             unit={STEPPED_LIMITS.disconnectDistance.unit}
                                                         />
                                                     ) : null}
+                                                </div>
+                                                <div className="rounded border border-[#2e2a24] bg-[#171511] px-2.5 py-2 space-y-2">
+                                                    <div>
+                                                        <div className="text-[11px] font-medium text-foreground/90">拆件归并</div>
+                                                        <div className="text-[10px] text-muted-foreground">
+                                                            可将不同高度的组导出为同一个分件 STL
+                                                        </div>
+                                                    </div>
+                                                    <Select
+                                                        value={group.splitPartGroupId ?? "__solo__"}
+                                                        onValueChange={(value) =>
+                                                            onUpdateGroupSplitPartTarget(
+                                                                group.id,
+                                                                value === "__solo__" ? null : value,
+                                                            )
+                                                        }
+                                                    >
+                                                        <SelectTrigger
+                                                            size="sm"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            onPointerDown={(e) => e.stopPropagation()}
+                                                            className="w-full border-[#2e2a24] bg-[#0f0e0c] text-xs"
+                                                            aria-label={`${group.name} 拆件归并目标`}
+                                                        >
+                                                            <SelectValue placeholder="单独导出" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="__solo__">单独导出</SelectItem>
+                                                            {params.groups
+                                                                .filter((targetGroup) => targetGroup.id !== group.id)
+                                                                .map((targetGroup) => (
+                                                                    <SelectItem key={targetGroup.id} value={targetGroup.id}>
+                                                                        并入 {targetGroup.name} ({targetGroup.bottomHeight}mm)
+                                                                    </SelectItem>
+                                                                ))}
+                                                        </SelectContent>
+                                                    </Select>
                                                 </div>
                                             </div>
                                         ) : (

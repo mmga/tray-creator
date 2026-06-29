@@ -199,6 +199,7 @@ describe("param normalization", () => {
       bottomHeight: 8,
       groupSmoothingRadius: 25,
     });
+    expect(normalized.groups[0].splitPartGroupId).toBeUndefined();
     expect(normalized.slots[0]).toMatchObject({
       shape: "circle",
       width: 40,
@@ -217,5 +218,39 @@ describe("param normalization", () => {
     expect(normalized.trayDepth).toBe(300);
     expect(normalized.spacing).toBe(2);
     expect(normalized.smoothingRadius).toBe(25);
+  });
+
+  it("preserves valid stepped split part group targets and drops invalid ones", () => {
+    const normalized = normalizeParamsForMode("stepped", {
+      ...STEPPED_LAYOUT_DEFAULTS,
+      groups: [
+        {
+          ...STEPPED_LAYOUT_DEFAULTS.groups[0],
+          id: "low",
+          name: "低组",
+          bottomHeight: 10,
+          splitPartGroupId: "high",
+        },
+        {
+          ...STEPPED_LAYOUT_DEFAULTS.groups[0],
+          id: "high",
+          name: "高组",
+          bottomHeight: 20,
+          splitPartGroupId: "high",
+        },
+        {
+          ...STEPPED_LAYOUT_DEFAULTS.groups[0],
+          id: "mid",
+          name: "中组",
+          bottomHeight: 15,
+          splitPartGroupId: "missing",
+        },
+      ],
+      activeGroupId: "low",
+    } as SteppedLayoutParams) as SteppedLayoutParams;
+
+    expect(normalized.groups[0].splitPartGroupId).toBe("high");
+    expect(normalized.groups[1].splitPartGroupId).toBeUndefined();
+    expect(normalized.groups[2].splitPartGroupId).toBeUndefined();
   });
 });
