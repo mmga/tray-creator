@@ -317,9 +317,9 @@ export default function TrayViewer({
             <input
               aria-label="爆炸视图间距"
               type="range"
-              min={24}
+              min={0}
               max={96}
-              step={4}
+              step={2}
               value={explosionDistance}
               onClick={(event) => event.stopPropagation()}
               onPointerDown={(event) => event.stopPropagation()}

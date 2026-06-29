@@ -250,6 +250,9 @@ describe("TrayViewer", { timeout: 15000 }, () => {
     fireEvent.change(distanceSlider, { target: { value: "76" } });
     expect(distanceSlider).toHaveValue("76");
     expect(screen.getByText("76")).toBeInTheDocument();
+    fireEvent.change(distanceSlider, { target: { value: "0" } });
+    expect(distanceSlider).toHaveValue("0");
+    expect(screen.getByText("0")).toBeInTheDocument();
   });
 
   it("prevents default on context loss and removes listeners on unmount", () => {
