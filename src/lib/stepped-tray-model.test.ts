@@ -261,7 +261,7 @@ describe("stepped tray model", { timeout: 15000 }, () => {
     }
   });
 
-  it("cuts assembly grooves at different-height group interfaces", () => {
+  it("creates female grooves below and male tenons above different-height interfaces", () => {
     const groovedParts = createSteppedSplitParts(createParams());
     const plainParts = createSteppedSplitParts(createParams(), {
       interfaceGrooveDepth: 0,
@@ -271,9 +271,12 @@ describe("stepped tray model", { timeout: 15000 }, () => {
     expect(measureVolume(groovedParts[0].geometry)).toBeLessThan(
       measureVolume(plainParts[0].geometry),
     );
-    expect(measureVolume(groovedParts[1].geometry)).toBeLessThan(
+    expect(measureVolume(groovedParts[1].geometry)).toBeGreaterThan(
       measureVolume(plainParts[1].geometry),
     );
+    const [[, , groovedHighMinZ]] = measureBoundingBox(groovedParts[1].geometry);
+    const [[, , plainHighMinZ]] = measureBoundingBox(plainParts[1].geometry);
+    expect(groovedHighMinZ).toBeLessThan(plainHighMinZ);
   });
 
   it("removes intermediate split part residue below the assembly groove", () => {
@@ -286,7 +289,7 @@ describe("stepped tray model", { timeout: 15000 }, () => {
 
     expect(middlePart).toBeDefined();
     const [[, , minZ]] = measureBoundingBox(middlePart!.geometry);
-    expect(minZ).toBeGreaterThanOrEqual(11.9);
+    expect(minZ).toBeGreaterThanOrEqual(7.9);
   });
 
   it("removes lower-island residue from merged different-height split parts", () => {
@@ -299,7 +302,7 @@ describe("stepped tray model", { timeout: 15000 }, () => {
 
     expect(mergedPart).toBeDefined();
     const [[, , minZ]] = measureBoundingBox(mergedPart!.geometry);
-    expect(minZ).toBeGreaterThanOrEqual(11.9);
+    expect(minZ).toBeGreaterThanOrEqual(7.9);
   });
 
   it("does not leave duplicate groove fragments on the lowest merged-support top", () => {
@@ -482,11 +485,18 @@ describe("stepped tray model", { timeout: 15000 }, () => {
     const rightReduction =
       measureVolume(plainParts[1].geometry) -
       measureVolume(groovedParts[1].geometry);
+    const highIncrease =
+      measureVolume(groovedParts[2].geometry) -
+      measureVolume(plainParts[2].geometry);
+    const [[, , groovedHighMinZ]] = measureBoundingBox(groovedParts[2].geometry);
+    const [[, , plainHighMinZ]] = measureBoundingBox(plainParts[2].geometry);
 
     expect(leftReduction).toBeGreaterThan(0);
     expect(rightReduction).toBeGreaterThan(0);
     expect(Math.abs(leftReduction - rightReduction) / leftReduction).toBeLessThan(
       0.08,
     );
+    expect(highIncrease).toBeGreaterThan(0);
+    expect(groovedHighMinZ).toBeLessThan(plainHighMinZ);
   });
 });

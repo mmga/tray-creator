@@ -117,7 +117,7 @@ export async function exportSteppedSplitPartFiles(
   const manifest = {
     mode: "stepped-split-parts",
     generatedAt: new Date().toISOString(),
-    note: "相邻分组在上下高度交接处生成装配浅槽，便于对位拼装。",
+    note: "相邻分组在上下高度交接处生成公母装配槽，便于对位拼装。",
     parts: parts.map((part) => ({
       file: `${baseFilename}_${part.filenameLabel}.stl`,
       label: part.label,

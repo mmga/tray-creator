@@ -166,7 +166,7 @@ describe("stepped model service", () => {
       "tray_stepped_split_100x90_0slots_manifest.json",
     );
     await expect(downloadPort.downloadBlob.mock.calls[1]?.[0].text()).resolves.toContain(
-      "装配浅槽",
+      "公母装配槽",
     );
     expect(downloadPort.downloadBlob.mock.calls[2]?.[1]).toBe(
       "tray_stepped_split_100x90_0slots_params.json",

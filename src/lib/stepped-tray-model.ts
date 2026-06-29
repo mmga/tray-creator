@@ -782,6 +782,7 @@ export function createSteppedSplitParts(
     claimedSolids.push(assignedPart);
 
     const grooveCutters: Geom3[] = [];
+    const grooveAdditions: Geom3[] = [];
     const interfaceGrooveDepth = Math.max(
       grooveConfig.interfaceGrooveDepth,
       0,
@@ -794,20 +795,28 @@ export function createSteppedSplitParts(
         baseHeightBySplitUnitKey.get(splitUnit.key) ?? 0;
 
       if (splitUnitBaseHeight > 0) {
-        const upperPocketDepth = Math.min(
+        const upperTenonDepth = Math.min(
           interfaceGrooveDepth,
           splitUnit.maxHeight - splitUnitBaseHeight,
         );
-        const upperPocket = buildSplitUnitFootprintCutter(
+        const supportGroupIds = new Set(
+          splitUnit.groupSolids
+            .filter(
+              (groupSolid) => groupSolid.columnHeight === splitUnit.minHeight,
+            )
+            .map((groupSolid) => groupSolid.group.id),
+        );
+        const upperTenon = buildSplitUnitFootprintCutter(
           params,
           splitUnit,
-          upperPocketDepth + SPLIT_EPSILON,
-          splitUnitBaseHeight,
+          upperTenonDepth + SPLIT_EPSILON,
+          splitUnitBaseHeight - upperTenonDepth,
           splitUnitBaseHeight,
           true,
+          supportGroupIds,
         );
-        if (upperPocket) {
-          grooveCutters.push(upperPocket);
+        if (upperTenon) {
+          grooveAdditions.push(upperTenon);
         }
       }
 
@@ -849,6 +858,9 @@ export function createSteppedSplitParts(
     }
     if (grooveCutters.length > 0) {
       part = subtract(part, ...grooveCutters);
+    }
+    if (grooveAdditions.length > 0) {
+      part = union(part, ...grooveAdditions);
     }
 
     if (measureVolume(part) > 0.001) {
