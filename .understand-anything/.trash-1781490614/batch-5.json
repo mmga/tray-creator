@@ -1,0 +1,904 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/components/AlignmentToolbar.tsx",
+      "type": "file",
+      "name": "AlignmentToolbar",
+      "filePath": "src/components/AlignmentToolbar.tsx",
+      "summary": "对齐工具栏容器组件，将「对齐」(AlignPanel) 与「镜像」(MirrorPanel) 两个子面板封装为可切换的标签页，并复用 EditSidebar 的标签布局壳。根据选中槽位集合派生出 selected / unselected 列表后向下传递。",
+      "tags": [
+        "canvas",
+        "component",
+        "ui",
+        "align",
+        "mirror",
+        "toolbar"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/components/canvas/AlignPanel.tsx",
+      "type": "file",
+      "name": "AlignPanel",
+      "filePath": "src/components/canvas/AlignPanel.tsx",
+      "summary": "对齐面板：提供凹槽的边缘对齐（左/中/右/上/中/下）与自动排布（一排/一列）操作。基于 getEllipseBoundingBox 计算每个槽位旋转后的外接矩形半宽半高，再按 0.2mm 步长四舍五入，生成批量位置更新回调。",
+      "tags": [
+        "canvas",
+        "component",
+        "ui",
+        "align",
+        "geometry",
+        "slot"
+      ],
+      "complexity": "moderate",
+      "language": "typescript",
+      "exportedSymbols": [
+        "AlignPanel"
+      ]
+    },
+    {
+      "id": "file:src/components/canvas/CanvasOverlayLayer.tsx",
+      "type": "file",
+      "name": "CanvasOverlayLayer",
+      "filePath": "src/components/canvas/CanvasOverlayLayer.tsx",
+      "summary": "SVG 画布覆盖层组件（memo 化），负责渲染托盘外框虚线、有效底板矩形、对称轴辅助线、碰撞连线（间距冲突红色虚线）、对齐辅助参考线以及阶梯式分组的轮廓预览路径。所有描边宽度按 zoom 缩放以保持视觉一致。",
+      "tags": [
+        "canvas",
+        "component",
+        "svg",
+        "overlay",
+        "collision",
+        "outline"
+      ],
+      "complexity": "moderate",
+      "language": "typescript",
+      "exportedSymbols": [
+        "CanvasOverlayLayer"
+      ]
+    },
+    {
+      "id": "file:src/components/canvas/CanvasSlotLayer.tsx",
+      "type": "file",
+      "name": "CanvasSlotLayer",
+      "filePath": "src/components/canvas/CanvasSlotLayer.tsx",
+      "summary": "SVG 画布槽位层组件（memo 化），渲染每个 FreeSlot/SteppedSlot 的填充路径、间距虚线轮廓、碰撞高亮、选中态旋转手柄以及尺寸文字标签。通过 collisionState 区分边界冲突、重叠冲突与牵连槽位，分别用不同描边颜色与透明度表达。",
+      "tags": [
+        "canvas",
+        "component",
+        "svg",
+        "slot",
+        "collision",
+        "interaction"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "exportedSymbols": [
+        "CanvasSlotLayer"
+      ]
+    },
+    {
+      "id": "file:src/components/canvas/MirrorPanel.tsx",
+      "type": "file",
+      "name": "MirrorPanel",
+      "filePath": "src/components/canvas/MirrorPanel.tsx",
+      "summary": "镜像操作面板：支持以托盘中心轴翻转选中槽位（镜像移动）与生成对称副本（镜像复制）。镜像复制时自动按几何重合与间距冲突（SAT 多边形相交）过滤无效副本，并通过预检标签与 toast 提示越界/冲突数量。内部用 startTransition 做低优先级预检计算。",
+      "tags": [
+        "canvas",
+        "component",
+        "ui",
+        "mirror",
+        "collision",
+        "symmetry"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "exportedSymbols": [
+        "MirrorPanel"
+      ]
+    },
+    {
+      "id": "file:src/components/canvas/canvas-components.test.tsx",
+      "type": "file",
+      "name": "canvas-components.test",
+      "filePath": "src/components/canvas/canvas-components.test.tsx",
+      "summary": "React Testing Library 测试文件，覆盖 MirrorPanel（镜像移动/复制、预检标签、冲突过滤）、AlignPanel（禁用态、六向对齐、行列排布）、CanvasSlotLayer（选中阶梯槽的标签与旋转手柄、指针事件转发）、CanvasOverlayLayer（有效底板、对称轴、碰撞连线、轮廓路径渲染）四个画布组件。",
+      "tags": [
+        "test",
+        "canvas",
+        "component",
+        "mirror",
+        "align",
+        "vitest"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/hooks/useSteppedLayout.ts",
+      "type": "file",
+      "name": "useSteppedLayout",
+      "filePath": "src/hooks/useSteppedLayout.ts",
+      "summary": "阶梯式（stepped）布局的核心 React hook，是整个 stepped 模式状态管理的入口。统一封装参数更新、槽位增删移动旋转、插入/复制/裁剪、分组管理（增删、高度、平滑、断开距离、激活、迁移、重排）、撤销历史、3D 预览生成/导出、桥接警告、全局优化提案生成与应用、以及 2D 分组轮廓预览。所有写操作都自动 push 历史快照并 invalidate 预览。",
+      "tags": [
+        "stepped",
+        "hook",
+        "state-management",
+        "preview",
+        "undo",
+        "workspace"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "exportedSymbols": [
+        "useSteppedLayout",
+        "UseSteppedLayoutReturn"
+      ]
+    },
+    {
+      "id": "function:src/hooks/useSteppedLayout.ts:useSteppedLayout",
+      "type": "function",
+      "name": "useSteppedLayout",
+      "filePath": "src/hooks/useSteppedLayout.ts",
+      "summary": "阶梯式布局的主 hook，返回 params、所有槽位/分组/参数操作函数、有效尺寸、撤销栈、3D 几何与体积、预览状态、桥接警告、优化提案集以及轮廓预览。内部通过 useUndoHistory 管理快照、usePreviewLifecycle 驱动 worker 预览、useSteppedOutlinePreview 驱动轮廓预览，并用 ref + requestId 机制安全取消异步优化计算。",
+      "tags": [
+        "stepped",
+        "hook",
+        "state-management",
+        "preview",
+        "undo"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/canvas-collision-model.ts",
+      "type": "file",
+      "name": "canvas-collision-model",
+      "filePath": "src/lib/canvas-collision-model.ts",
+      "summary": "画布碰撞模型：buildCanvasCollisionState 接收槽位数组与间距，先用旋转后的外接包围盒做宽相位裁剪（按 minX 排序后提前 break），再对候选对用 SAT 多边形相交做窄相位检测，产出碰撞计数、per-slot 冲突信息（overlapIds/boundaryReasons）、牵连 id 集合与连接对列表，供画布层渲染红色连线使用。多边形采用缓存复用避免重复采样。",
+      "tags": [
+        "canvas",
+        "collision",
+        "model",
+        "geometry",
+        "sat",
+        "slot"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "exportedSymbols": [
+        "buildCanvasCollisionState",
+        "CanvasCollisionState",
+        "CanvasCollisionInfo",
+        "CanvasConnectorPair"
+      ]
+    },
+    {
+      "id": "file:src/lib/canvas-collision-model.test.ts",
+      "type": "file",
+      "name": "canvas-collision-model.test",
+      "filePath": "src/lib/canvas-collision-model.test.ts",
+      "summary": "canvas-collision-model 的单元测试：验证空槽位返回空状态，以及三个圆形槽位（其中两个重叠）能正确产出 collisionErrorCount、overlapIds 双向映射、connectorPairs 与 involvedIds。",
+      "tags": [
+        "test",
+        "collision",
+        "canvas",
+        "vitest"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "file",
+      "name": "canvas-slot-geometry",
+      "filePath": "src/lib/canvas-slot-geometry.ts",
+      "summary": "画布槽位几何计算库：normalizeDisplayAngle 将角度归一化到 [-180,180)，getSlotLabelRotation 保证文字标签可读朝向，getEllipseBoundingBox 通过采样轮廓点并旋转求极值得到椭圆/圆形槽位旋转后的轴对齐外接半宽半高（含公差/外偏），calculateEffectiveBaseplate 计算所有槽位外包矩形并转换为画布坐标的有效底板尺寸。",
+      "tags": [
+        "canvas",
+        "geometry",
+        "model",
+        "slot",
+        "baseplate"
+      ],
+      "complexity": "moderate",
+      "language": "typescript",
+      "exportedSymbols": [
+        "getEllipseBoundingBox",
+        "calculateEffectiveBaseplate",
+        "getSlotLabelRotation",
+        "normalizeDisplayAngle",
+        "CanvasEllipseBoundingBox",
+        "CanvasEffectiveBaseplate"
+      ]
+    },
+    {
+      "id": "file:src/lib/canvas-slot-geometry.test.ts",
+      "type": "file",
+      "name": "canvas-slot-geometry.test",
+      "filePath": "src/lib/canvas-slot-geometry.test.ts",
+      "summary": "canvas-slot-geometry 的单元测试：验证角度归一化与标签旋转、不同形状/公差/外偏下 getEllipseBoundingBox 的旋转外接盒数值，以及 calculateEffectiveBaseplate 在空槽位与含旋转椭圆槽位下的坐标转换与边界膨胀行为。",
+      "tags": [
+        "test",
+        "geometry",
+        "canvas",
+        "vitest"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/canvas-snap-engine.ts",
+      "type": "file",
+      "name": "canvas-snap-engine",
+      "filePath": "src/lib/canvas-snap-engine.ts",
+      "summary": "画布拖拽吸附引擎：calculateCanvasDragSnap 根据鼠标位移计算候选落点，按 0.2mm 步长量化，再在 1.5mm 阈值内寻找与其它槽位中心/左右边、上下边以及托盘中心最近的吸附目标，返回最终落点与辅助参考线（guides）。供 LayoutCanvas 拖拽时提供磁吸反馈。",
+      "tags": [
+        "canvas",
+        "snap",
+        "engine",
+        "geometry",
+        "drag"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "exportedSymbols": [
+        "calculateCanvasDragSnap",
+        "CanvasDragSnapResult"
+      ]
+    },
+    {
+      "id": "file:src/lib/canvas-snap-engine.test.ts",
+      "type": "file",
+      "name": "canvas-snap-engine.test",
+      "filePath": "src/lib/canvas-snap-engine.test.ts",
+      "summary": "canvas-snap-engine 的单元测试：验证缺失拖拽槽位/原点时返回 null，拖拽时能吸附到其它槽位中心与托盘中心并生成参考线，以及吸附到对齐边缘并在超出阈值时跳过的行为。",
+      "tags": [
+        "test",
+        "snap",
+        "canvas",
+        "vitest"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/collision.ts",
+      "type": "file",
+      "name": "collision",
+      "filePath": "src/lib/collision.ts",
+      "summary": "底层碰撞检测库：getEllipsePolygon 生成椭圆/圆形（含旋转与 margin 外扩）的近似多边形顶点，使用预分配缓冲池（4 个 16 点缓冲）避免拖拽时频繁 GC；polygonsIntersect 基于分离轴定理（SAT）判定两个凸多边形是否相交，带 1e-6 epsilon 容忍相切边。是画布碰撞检测与镜像冲突检测的公共基础。",
+      "tags": [
+        "collision",
+        "geometry",
+        "model",
+        "sat",
+        "performance"
+      ],
+      "complexity": "moderate",
+      "language": "typescript",
+      "exportedSymbols": [
+        "getEllipsePolygon",
+        "polygonsIntersect"
+      ],
+      "languageNotes": "使用对象池（polygonPool）预分配多边形缓冲以减少拖拽时的 GC 压力，是性能敏感的热路径优化。"
+    },
+    {
+      "id": "file:src/lib/collision.test.ts",
+      "type": "file",
+      "name": "collision.test",
+      "filePath": "src/lib/collision.test.ts",
+      "summary": "collision 的单元测试：验证 getEllipsePolygon 按指定步数生成顶点及其坐标，polygonsIntersect 能区分重叠、相切（视为不相交）与远离，以及旋转与 margin 外扩对最大半径的影响。",
+      "tags": [
+        "test",
+        "collision",
+        "geometry",
+        "vitest"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/custom-layout-actions.ts",
+      "type": "file",
+      "name": "custom-layout-actions",
+      "filePath": "src/lib/custom-layout-actions.ts",
+      "summary": "custom（自由）布局的纯函数操作集合，是 useCustomLayout hook 的领域逻辑层。涵盖参数更新（spacing 与 boundarySpacing 联动/独立切换）、添加槽位（自动落位到上一槽位右侧并带椭圆预设几何）、删除/移动/旋转/批量更新/插入/复制/裁剪底板。插入与复制复用 free-slot-editing 的通用实现。",
+      "tags": [
+        "custom",
+        "model",
+        "slot",
+        "actions",
+        "layout"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "exportedSymbols": [
+        "updateCustomLayoutParam",
+        "addCustomSlot",
+        "removeCustomSlot",
+        "updateCustomSlotPosition",
+        "applyCustomSlotUpdates",
+        "updateCustomSlotRotation",
+        "insertCustomSlots",
+        "duplicateCustomSlots",
+        "trimCustomBaseplate",
+        "EllipseSlotConfig"
+      ]
+    },
+    {
+      "id": "file:src/lib/custom-layout-actions.test.ts",
+      "type": "file",
+      "name": "custom-layout-actions.test",
+      "filePath": "src/lib/custom-layout-actions.test.ts",
+      "summary": "custom-layout-actions 的单元测试：验证 spacing 与 boundarySpacing 的同步/独立切换、添加/删除/移动/旋转/批量更新槽位、椭圆预设几何写入 slot 实例、插入/复制生成新 id，以及裁剪底板后槽位重新居中的坐标。",
+      "tags": [
+        "test",
+        "custom",
+        "actions",
+        "slot",
+        "vitest"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/custom-layout-math.ts",
+      "type": "file",
+      "name": "custom-layout-math",
+      "filePath": "src/lib/custom-layout-math.ts",
+      "summary": "custom 布局的尺寸计算库：resolveCustomBoundarySpacing 根据 boundarySpacingIndependent 决定使用独立边界间距还是复用 spacing；calculateCustomEffectiveDimensions 遍历所有槽位，用旋转外接盒（含公差/外偏）求并集，再加上边界间距得到向上取整的有效宽深与极值坐标 LayoutExtents。",
+      "tags": [
+        "custom",
+        "geometry",
+        "model",
+        "baseplate",
+        "layout"
+      ],
+      "complexity": "moderate",
+      "language": "typescript",
+      "exportedSymbols": [
+        "calculateCustomEffectiveDimensions",
+        "resolveCustomBoundarySpacing",
+        "LayoutExtents"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/components/AlignmentToolbar.tsx",
+      "target": "file:src/components/canvas/AlignPanel.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/AlignmentToolbar.tsx",
+      "target": "file:src/components/canvas/EditSidebar.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/AlignmentToolbar.tsx",
+      "target": "file:src/components/canvas/MirrorPanel.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/AlignmentToolbar.tsx",
+      "target": "file:src/lib/layout-symmetry.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/AlignmentToolbar.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/AlignPanel.tsx",
+      "target": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/AlignPanel.tsx",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/AlignPanel.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/CanvasOverlayLayer.tsx",
+      "target": "file:src/lib/canvas-collision-model.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/CanvasOverlayLayer.tsx",
+      "target": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/CanvasOverlayLayer.tsx",
+      "target": "file:src/lib/canvas-types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/CanvasOverlayLayer.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/CanvasSlotLayer.tsx",
+      "target": "file:src/lib/canvas-collision-model.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/CanvasSlotLayer.tsx",
+      "target": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/CanvasSlotLayer.tsx",
+      "target": "file:src/lib/collision.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/CanvasSlotLayer.tsx",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/CanvasSlotLayer.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/MirrorPanel.tsx",
+      "target": "file:src/hooks/useToast.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/MirrorPanel.tsx",
+      "target": "file:src/lib/collision.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/MirrorPanel.tsx",
+      "target": "file:src/lib/layout-symmetry.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/MirrorPanel.tsx",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/MirrorPanel.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/canvas-components.test.tsx",
+      "target": "file:src/components/canvas/AlignPanel.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/canvas-components.test.tsx",
+      "target": "file:src/components/canvas/CanvasOverlayLayer.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/canvas-components.test.tsx",
+      "target": "file:src/components/canvas/CanvasSlotLayer.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/canvas-components.test.tsx",
+      "target": "file:src/components/canvas/MirrorPanel.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/canvas-components.test.tsx",
+      "target": "file:src/lib/canvas-collision-model.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/canvas-components.test.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedLayout.ts",
+      "target": "file:src/hooks/usePreviewLifecycle.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedLayout.ts",
+      "target": "file:src/hooks/useSteppedOutlinePreview.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedLayout.ts",
+      "target": "file:src/hooks/useUndoHistory.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedLayout.ts",
+      "target": "file:src/lib/download-port.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedLayout.ts",
+      "target": "file:src/lib/id-factory.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedLayout.ts",
+      "target": "file:src/lib/layout-symmetry.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedLayout.ts",
+      "target": "file:src/lib/stepped-bridge-warning.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedLayout.ts",
+      "target": "file:src/lib/stepped-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedLayout.ts",
+      "target": "file:src/lib/stepped-connectivity.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedLayout.ts",
+      "target": "file:src/lib/stepped-global-optimize.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedLayout.ts",
+      "target": "file:src/lib/stepped-layout-group-actions.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedLayout.ts",
+      "target": "file:src/lib/stepped-layout-math.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedLayout.ts",
+      "target": "file:src/lib/stepped-layout-slot-actions.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedLayout.ts",
+      "target": "file:src/lib/stepped-model-service.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedLayout.ts",
+      "target": "file:src/lib/worker/worker-service.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedLayout.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-collision-model.test.ts",
+      "target": "file:src/lib/canvas-collision-model.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-collision-model.ts",
+      "target": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-collision-model.ts",
+      "target": "file:src/lib/collision.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-collision-model.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-collision-model.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-slot-geometry.test.ts",
+      "target": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-slot-geometry.ts",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-slot-geometry.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-slot-geometry.ts",
+      "target": "file:src/lib/slot-profile-geometry.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-slot-geometry.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-snap-engine.test.ts",
+      "target": "file:src/lib/canvas-snap-engine.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-snap-engine.ts",
+      "target": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-snap-engine.ts",
+      "target": "file:src/lib/canvas-types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-snap-engine.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-snap-engine.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/collision.test.ts",
+      "target": "file:src/lib/collision.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/collision.ts",
+      "target": "file:src/lib/slot-profile-geometry.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.test.ts",
+      "target": "file:src/lib/custom-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.test.ts",
+      "target": "file:src/lib/custom-layout-actions.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.test.ts",
+      "target": "file:src/lib/model-ports.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "file:src/lib/custom-layout-math.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "file:src/lib/free-slot-editing.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "file:src/lib/layout-symmetry.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "file:src/lib/model-ports.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "file:src/lib/slot-instance-factory.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-math.ts",
+      "target": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-math.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-math.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedLayout.ts",
+      "target": "function:src/hooks/useSteppedLayout.ts:useSteppedLayout",
+      "type": "contains",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/lib/canvas-collision-model.test.ts",
+      "target": "file:src/lib/canvas-collision-model.ts",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/canvas-slot-geometry.test.ts",
+      "target": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/canvas-snap-engine.test.ts",
+      "target": "file:src/lib/canvas-snap-engine.ts",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/collision.test.ts",
+      "target": "file:src/lib/collision.ts",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.test.ts",
+      "target": "file:src/lib/custom-layout-actions.ts",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/canvas/canvas-components.test.tsx",
+      "target": "file:src/components/canvas/MirrorPanel.tsx",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/canvas/canvas-components.test.tsx",
+      "target": "file:src/components/canvas/AlignPanel.tsx",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/canvas/canvas-components.test.tsx",
+      "target": "file:src/components/canvas/CanvasSlotLayer.tsx",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/canvas/canvas-components.test.tsx",
+      "target": "file:src/components/canvas/CanvasOverlayLayer.tsx",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/canvas-collision-model.ts",
+      "target": "file:src/lib/collision.ts",
+      "type": "calls",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/canvas/MirrorPanel.tsx",
+      "target": "file:src/lib/collision.ts",
+      "type": "calls",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "file:src/lib/custom-layout-math.ts",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/canvas-collision-model.ts",
+      "target": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "related",
+      "weight": 0.5
+    }
+  ]
+}

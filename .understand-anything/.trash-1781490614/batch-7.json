@@ -1,0 +1,328 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/components/DraftManagerDialog.test.tsx",
+      "type": "file",
+      "name": "DraftManagerDialog.test.tsx",
+      "filePath": "src/components/DraftManagerDialog.test.tsx",
+      "summary": "草稿管理弹窗组件的单元测试。通过 mock dialog 和 local-drafts 模块，验证弹窗能渲染模式标题、当前绑定、未保存标记及模式专属摘要，并覆盖保存/加载/重命名/导出/删除等操作路由以及草稿数量达上限的禁用态。",
+      "tags": ["test", "draft", "dialog", "ui", "react", "vitest"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/DraftManagerDialog.tsx",
+      "type": "file",
+      "name": "DraftManagerDialog.tsx",
+      "filePath": "src/components/DraftManagerDialog.tsx",
+      "summary": "通用草稿管理弹窗组件，泛型化支持 grid/custom/simple-stepped/stepped 四种模式。提供另存新草稿、覆盖当前、加载、重命名、导出、删除等操作，并通过 renderSummary 回调让各模式自定义摘要展示，同时显示草稿数量上限与临近上限的提示。",
+      "tags": ["draft", "dialog", "ui", "react", "component", "modes"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/components/DraftManagerDialog.tsx:DraftManagerDialog",
+      "type": "function",
+      "name": "DraftManagerDialog",
+      "filePath": "src/components/DraftManagerDialog.tsx",
+      "summary": "草稿管理弹窗的主组件函数。根据当前草稿绑定与未保存状态渲染保存区，遍历草稿列表生成 DraftItemRow，并处理上限/临近上限的提示与禁用逻辑。",
+      "tags": ["draft", "dialog", "component", "react"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/DraftManagerDialog.tsx:DraftItemRow",
+      "type": "function",
+      "name": "DraftItemRow",
+      "filePath": "src/components/DraftManagerDialog.tsx",
+      "summary": "单个草稿条目行组件，内部管理重命名编辑态与删除确认态，向父组件透传加载、重命名、导出、删除回调。",
+      "tags": ["draft", "row", "component", "react"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/ui/dialog.tsx",
+      "type": "file",
+      "name": "dialog.tsx",
+      "filePath": "src/components/ui/dialog.tsx",
+      "summary": "基于 radix-ui Dialog primitive 封装的弹窗 UI 组件集合，导出 Dialog、DialogContent、DialogHeader、DialogTitle 等。融合项目深色主题样式（背景 #111008、边框 #2e2a24）与 cinzel 字体标题，作为 barrel 供业务弹窗复用。",
+      "tags": ["ui", "dialog", "radix", "barrel", "react", "design-system"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/hooks/useModeDrafts.ts",
+      "type": "file",
+      "name": "useModeDrafts.ts",
+      "filePath": "src/hooks/useModeDrafts.ts",
+      "summary": "按模式管理本地草稿生命周期的 React hook。封装草稿会话绑定、未保存变更检测、序列化快照比较，以及保存/另存/加载/重命名/删除/导出等操作，每个操作均通过 useToast 反馈成功或失败提示。",
+      "tags": ["hook", "draft", "react", "persistence", "session"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/hooks/useModeDrafts.ts:useModeDrafts",
+      "type": "function",
+      "name": "useModeDrafts",
+      "filePath": "src/hooks/useModeDrafts.ts",
+      "summary": "核心 hook 工厂函数，维护 draftSession 状态与草稿名称输入，通过 serializeParamFile 生成快照并比较未保存变更，向外暴露完整的草稿 CRUD 与弹窗开关接口。",
+      "tags": ["hook", "draft", "react", "session"],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/lib/custom-layout-service.test.ts",
+      "type": "file",
+      "name": "custom-layout-service.test.ts",
+      "filePath": "src/lib/custom-layout-service.test.ts",
+      "summary": "自定义布局模型服务的单元测试。验证 generateCustomPreview 通过 worker port 生成预览并转换为 three 几何体，以及导出时优先使用有效尺寸生成文件名并同步导出 STL 与 JSON。",
+      "tags": ["test", "custom", "model-service", "export", "vitest"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/custom-layout-service.ts",
+      "type": "file",
+      "name": "custom-layout-service.ts",
+      "filePath": "src/lib/custom-layout-service.ts",
+      "summary": "自定义布局模式的模型服务层。提供预览生成（调用 worker port 并用 jscadToThreeGeometry 转换）、STL 文件名生成（优先采用 effectiveDimensions）、参数 Blob 构建以及 STL+JSON 双文件导出。",
+      "tags": ["custom", "model-service", "export", "stl", "jscad"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/custom-layout-service.ts:exportCustomModelFiles",
+      "type": "function",
+      "name": "exportCustomModelFiles",
+      "filePath": "src/lib/custom-layout-service.ts",
+      "summary": "导出自定义模式的 STL 与参数 JSON 文件。先调用 worker 导出 STL，再以同名 .json 下载参数 Blob。",
+      "tags": ["custom", "export", "stl", "json"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/draft-session.test.ts",
+      "type": "file",
+      "name": "draft-session.test.ts",
+      "filePath": "src/lib/draft-session.test.ts",
+      "summary": "草稿会话纯函数模块的单元测试。验证空会话创建、绑定快照、未保存变更检测，以及重置/导入或当前草稿被删除时会话解绑的行为。",
+      "tags": ["test", "draft", "session", "vitest"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/draft-session.ts",
+      "type": "file",
+      "name": "draft-session.ts",
+      "filePath": "src/lib/draft-session.ts",
+      "summary": "草稿会话的纯函数工具模块，无副作用。定义 DraftSession 结构（当前草稿 ID + 绑定快照），提供创建空会话、绑定、清除、按删除 ID 解绑、以及通过序列化快照比较检测未保存变更等函数。",
+      "tags": ["draft", "session", "persistence", "pure-function"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/draft-summary.ts",
+      "type": "file",
+      "name": "draft-summary.ts",
+      "filePath": "src/lib/draft-summary.ts",
+      "summary": "按模式构建草稿摘要的工具模块。定义 DraftSummary 联合类型与 DraftParamsByMode 映射，为 grid/custom/simple-stepped/stepped 各模式计算行列数、槽数、托盘尺寸等可读摘要，供本地草稿索引展示。",
+      "tags": ["draft", "summary", "modes", "types", "pure-function"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/draft-summary.ts:buildDraftSummary",
+      "type": "function",
+      "name": "buildDraftSummary",
+      "filePath": "src/lib/draft-summary.ts",
+      "summary": "根据模式分发到对应的摘要构建函数，对未知模式触发 never 断言错误。是各模式草稿摘要的统一入口。",
+      "tags": ["draft", "summary", "dispatcher", "modes"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/grid-model-service.test.ts",
+      "type": "file",
+      "name": "grid-model-service.test.ts",
+      "filePath": "src/lib/grid-model-service.test.ts",
+      "summary": "网格模式模型服务的单元测试。验证 generateGridPreview 调用 worker 生成几何体并转换为 three BufferGeometry，并检查 STL 文件名生成与 STL+JSON 双文件导出流程。",
+      "tags": ["test", "grid", "model-service", "export", "vitest"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/grid-model-service.ts",
+      "type": "file",
+      "name": "grid-model-service.ts",
+      "filePath": "src/lib/grid-model-service.ts",
+      "summary": "网格模式的模型服务层。提供预览生成（调用 worker port + jscadToThreeGeometry 转换）、STL 文件名生成、参数 Blob 构建以及 STL+JSON 双文件导出，结构与 custom-layout-service 对称。",
+      "tags": ["grid", "model-service", "export", "stl", "jscad"],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/grid-model-service.ts:exportGridModelFiles",
+      "type": "function",
+      "name": "exportGridModelFiles",
+      "filePath": "src/lib/grid-model-service.ts",
+      "summary": "导出网格模式的 STL 与参数 JSON 文件。先调用 worker 导出 STL，再以同名 .json 下载参数 Blob。",
+      "tags": ["grid", "export", "stl", "json"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/jscad-to-three.test.ts",
+      "type": "file",
+      "name": "jscad-to-three.test.ts",
+      "filePath": "src/lib/jscad-to-three.test.ts",
+      "summary": "jscad 转 three BufferGeometry 转换器的单元测试。使用 jscad cuboid 基元，验证输出为非索引 BufferGeometry，含正确的 position/normal 属性、36 顶点、包围盒范围及单位化面法线。",
+      "tags": ["test", "jscad", "three", "geometry", "vitest"],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/jscad-to-three.ts",
+      "type": "file",
+      "name": "jscad-to-three.ts",
+      "filePath": "src/lib/jscad-to-three.ts",
+      "summary": "将 jscad geom3 几何体转换为 three.js BufferGeometry 的核心渲染适配器。提取多边形、做 2D 投影后用 ShapeUtils 三角化，计算 flat shading 面法线并保证三角形绕序与法线一致，预分配复用向量以避免循环内临时对象分配。",
+      "tags": ["jscad", "three", "geometry", "triangulation", "renderer"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/jscad-to-three.ts:jscadToThreeGeometry",
+      "type": "function",
+      "name": "jscadToThreeGeometry",
+      "filePath": "src/lib/jscad-to-three.ts",
+      "summary": "核心转换函数。两遍处理多边形：第一遍统计三角形数量以预分配 Float32Array，第二遍填充 position 与 normal 属性，确保每顶点携带归一化面法线。",
+      "tags": ["jscad", "three", "geometry", "conversion"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/local-drafts.ts",
+      "type": "file",
+      "name": "local-drafts.ts",
+      "filePath": "src/lib/local-drafts.ts",
+      "summary": "基于 localStorage 的本地草稿持久化核心模块。维护版本化的草稿索引与单条记录存储，支持四种模式的创建/读取/更新/重命名/删除/导出，含容错读取、配额保护、索引与记录一致性回滚，以及旧版字段兼容迁移逻辑。",
+      "tags": ["draft", "persistence", "localStorage", "crud", "migration"],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/lib/local-drafts.ts:createDraft",
+      "type": "function",
+      "name": "createDraft",
+      "filePath": "src/lib/local-drafts.ts",
+      "summary": "创建新草稿记录。校验模式上限（MAX_DRAFTS_PER_MODE），生成 UUID、构建列表项与 paramFile，写入记录后再更新索引，失败时回滚删除记录。",
+      "tags": ["draft", "create", "persistence", "localStorage"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/local-drafts.ts:getDraftInternal",
+      "type": "function",
+      "name": "getDraftInternal",
+      "filePath": "src/lib/local-drafts.ts",
+      "summary": "内部读取单条草稿记录。校验 storageVersion、paramFile.version 与模式一致性，并调用 normalizeListItem 容错重建列表项（含旧版字段回退）。",
+      "tags": ["draft", "read", "persistence", "validation"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/local-drafts.ts:normalizeListItem",
+      "type": "function",
+      "name": "normalizeListItem",
+      "filePath": "src/lib/local-drafts.ts",
+      "summary": "将未知结构的草稿列表项规范化为强类型 DraftListItem。优先采用 summary 字段，否则从旧版兼容字段重建，或在有 fallbackParams 时实时构建摘要。",
+      "tags": ["draft", "normalization", "migration", "validation"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/param-io.ts",
+      "type": "file",
+      "name": "param-io.ts",
+      "filePath": "src/lib/param-io.ts",
+      "summary": "参数文件序列化与导入导出模块。定义带版本号的 ParamFile 结构，提供序列化（含精度截断）、Blob 生成、浏览器下载、以及解析（含 legacy custom→stepped 迁移、模式不匹配校验与 normalizeParamsForMode 归一化）。",
+      "tags": ["param-io", "serialization", "import-export", "migration", "json"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/param-io.ts:parseParamFileObject",
+      "type": "function",
+      "name": "parseParamFileObject",
+      "filePath": "src/lib/param-io.ts",
+      "summary": "解析参数文件对象的核心函数。区分裸参数与包装 ParamFile 两种形态，处理 legacy custom→stepped 迁移、版本校验、模式不匹配错误，并最终归一化为目标模式参数。",
+      "tags": ["param-io", "parsing", "migration", "validation"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/stl-export.test.ts",
+      "type": "file",
+      "name": "stl-export.test.ts",
+      "filePath": "src/lib/stl-export.test.ts",
+      "summary": "STL 导出模块的单元测试。mock stl-serializer 后验证 exportToSTL 序列化几何体、触发下载并延迟释放 blob URL，以及 grid/custom/simple-stepped 三种文件名生成函数的稳定性。",
+      "tags": ["test", "stl", "export", "filename", "vitest"],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/stl-export.ts",
+      "type": "file",
+      "name": "stl-export.ts",
+      "filePath": "src/lib/stl-export.ts",
+      "summary": "STL 导出与文件名生成的底层工具模块。exportToSTL 调用 jscad stl-serializer 序列化为二进制并通过浏览器下载，1 秒后释放 blob URL；并提供 grid/custom/simple-stepped 三种模式的稳定文件名生成函数。",
+      "tags": ["stl", "export", "jscad", "download", "filename"],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    { "source": "file:src/components/DraftManagerDialog.test.tsx", "target": "file:src/components/DraftManagerDialog.tsx", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/components/DraftManagerDialog.tsx", "target": "file:src/components/ui/button.tsx", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/components/DraftManagerDialog.tsx", "target": "file:src/components/ui/dialog.tsx", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/components/DraftManagerDialog.tsx", "target": "file:src/components/ui/input.tsx", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/components/DraftManagerDialog.tsx", "target": "file:src/lib/local-drafts.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/components/DraftManagerDialog.tsx", "target": "file:src/types/custom-tray.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/components/ui/dialog.tsx", "target": "file:src/lib/utils.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/hooks/useModeDrafts.ts", "target": "file:src/hooks/useToast.tsx", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/hooks/useModeDrafts.ts", "target": "file:src/lib/draft-session.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/hooks/useModeDrafts.ts", "target": "file:src/lib/draft-summary.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/hooks/useModeDrafts.ts", "target": "file:src/lib/local-drafts.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/hooks/useModeDrafts.ts", "target": "file:src/lib/param-io.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/custom-layout-service.test.ts", "target": "file:src/lib/custom-config.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/custom-layout-service.test.ts", "target": "file:src/lib/custom-layout-service.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/custom-layout-service.ts", "target": "file:src/lib/custom-layout-math.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/custom-layout-service.ts", "target": "file:src/lib/jscad-to-three.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/custom-layout-service.ts", "target": "file:src/lib/model-ports.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/custom-layout-service.ts", "target": "file:src/lib/param-io.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/custom-layout-service.ts", "target": "file:src/lib/stl-export.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/custom-layout-service.ts", "target": "file:src/types/custom-tray.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/draft-session.test.ts", "target": "file:src/lib/draft-session.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/draft-summary.ts", "target": "file:src/lib/param-io.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/draft-summary.ts", "target": "file:src/lib/simple-stepped-layout.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/draft-summary.ts", "target": "file:src/lib/tray-model.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/draft-summary.ts", "target": "file:src/types/custom-tray.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/draft-summary.ts", "target": "file:src/types/tray.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/grid-model-service.test.ts", "target": "file:src/lib/grid-config.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/grid-model-service.test.ts", "target": "file:src/lib/grid-model-service.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/grid-model-service.ts", "target": "file:src/lib/jscad-to-three.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/grid-model-service.ts", "target": "file:src/lib/model-ports.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/grid-model-service.ts", "target": "file:src/lib/param-io.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/grid-model-service.ts", "target": "file:src/lib/stl-export.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/grid-model-service.ts", "target": "file:src/types/tray.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/jscad-to-three.test.ts", "target": "file:src/lib/jscad-to-three.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/local-drafts.ts", "target": "file:src/lib/draft-summary.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/local-drafts.ts", "target": "file:src/lib/param-io.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/local-drafts.ts", "target": "file:src/types/custom-tray.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/param-io.ts", "target": "file:src/lib/param-normalization.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/param-io.ts", "target": "file:src/types/custom-tray.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/param-io.ts", "target": "file:src/types/tray.ts", "type": "imports", "weight": 0.7 },
+    { "source": "file:src/lib/stl-export.test.ts", "target": "file:src/lib/stl-export.ts", "type": "imports", "weight": 0.7 },
+
+    { "source": "file:src/components/DraftManagerDialog.tsx", "target": "file:src/components/DraftManagerDialog.test.tsx", "type": "tested_by", "weight": 0.5 },
+    { "source": "file:src/lib/custom-layout-service.ts", "target": "file:src/lib/custom-layout-service.test.ts", "type": "tested_by", "weight": 0.5 },
+    { "source": "file:src/lib/draft-session.ts", "target": "file:src/lib/draft-session.test.ts", "type": "tested_by", "weight": 0.5 },
+    { "source": "file:src/lib/grid-model-service.ts", "target": "file:src/lib/grid-model-service.test.ts", "type": "tested_by", "weight": 0.5 },
+    { "source": "file:src/lib/jscad-to-three.ts", "target": "file:src/lib/jscad-to-three.test.ts", "type": "tested_by", "weight": 0.5 },
+    { "source": "file:src/lib/stl-export.ts", "target": "file:src/lib/stl-export.test.ts", "type": "tested_by", "weight": 0.5 },
+
+    { "source": "file:src/components/DraftManagerDialog.tsx", "target": "function:src/components/DraftManagerDialog.tsx:DraftManagerDialog", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/components/DraftManagerDialog.tsx", "target": "function:src/components/DraftManagerDialog.tsx:DraftItemRow", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/hooks/useModeDrafts.ts", "target": "function:src/hooks/useModeDrafts.ts:useModeDrafts", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/lib/custom-layout-service.ts", "target": "function:src/lib/custom-layout-service.ts:exportCustomModelFiles", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/lib/draft-summary.ts", "target": "function:src/lib/draft-summary.ts:buildDraftSummary", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/lib/grid-model-service.ts", "target": "function:src/lib/grid-model-service.ts:exportGridModelFiles", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/lib/jscad-to-three.ts", "target": "function:src/lib/jscad-to-three.ts:jscadToThreeGeometry", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/lib/local-drafts.ts", "target": "function:src/lib/local-drafts.ts:createDraft", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/lib/local-drafts.ts", "target": "function:src/lib/local-drafts.ts:getDraftInternal", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/lib/local-drafts.ts", "target": "function:src/lib/local-drafts.ts:normalizeListItem", "type": "contains", "weight": 1.0 },
+    { "source": "file:src/lib/param-io.ts", "target": "function:src/lib/param-io.ts:parseParamFileObject", "type": "contains", "weight": 1.0 },
+
+    { "source": "function:src/components/DraftManagerDialog.tsx:DraftManagerDialog", "target": "function:src/components/DraftManagerDialog.tsx:DraftItemRow", "type": "calls", "weight": 0.8 },
+    { "source": "function:src/hooks/useModeDrafts.ts:useModeDrafts", "target": "function:src/lib/local-drafts.ts:createDraft", "type": "calls", "weight": 0.8 },
+    { "source": "function:src/lib/local-drafts.ts:createDraft", "target": "function:src/lib/local-drafts.ts:getDraftInternal", "type": "calls", "weight": 0.8 },
+    { "source": "function:src/lib/local-drafts.ts:getDraftInternal", "target": "function:src/lib/local-drafts.ts:normalizeListItem", "type": "calls", "weight": 0.8 },
+    { "source": "function:src/lib/local-drafts.ts:normalizeListItem", "target": "function:src/lib/draft-summary.ts:buildDraftSummary", "type": "calls", "weight": 0.8 },
+    { "source": "function:src/lib/custom-layout-service.ts:exportCustomModelFiles", "target": "function:src/lib/jscad-to-three.ts:jscadToThreeGeometry", "type": "related", "weight": 0.5 },
+
+    { "source": "file:src/lib/custom-layout-service.ts", "target": "file:src/lib/grid-model-service.ts", "type": "related", "weight": 0.5 },
+    { "source": "file:src/hooks/useModeDrafts.ts", "target": "file:src/components/DraftManagerDialog.tsx", "type": "related", "weight": 0.5 }
+  ]
+}

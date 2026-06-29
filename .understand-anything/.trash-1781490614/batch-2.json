@@ -1,0 +1,1159 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/components/LayoutCanvas.tsx",
+      "type": "file",
+      "name": "LayoutCanvas",
+      "filePath": "src/components/LayoutCanvas.tsx",
+      "language": "typescript",
+      "summary": "2D 布局编辑器的核心画布组件，基于 SVG 渲染托盘、凹槽、参考线和叠加层。统一处理拖拽移动、旋转、框选、托盘缩放、缩放平移以及键盘快捷键等全部交互逻辑，是 grid/custom/simple-stepped/stepped 四种模式共享的可视化编辑入口。",
+      "tags": [
+        "canvas",
+        "layout-editor",
+        "viewport",
+        "component",
+        "svg",
+        "interaction"
+      ],
+      "complexity": "complex",
+      "exportedSymbols": [
+        "LayoutCanvas"
+      ]
+    },
+    {
+      "id": "function:src/components/LayoutCanvas.tsx:LayoutCanvas",
+      "type": "function",
+      "name": "LayoutCanvas",
+      "filePath": "src/components/LayoutCanvas.tsx",
+      "summary": "默认导出的画布组件，组合 zoom/keyboard/live-update 等 hooks，处理 pointer/touch/wheel 事件，将拖拽/旋转/框选结果通过 commands 回调驱动上层布局状态。",
+      "tags": [
+        "canvas",
+        "component",
+        "interaction",
+        "viewport"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/lib/canvas-types.ts",
+      "type": "file",
+      "name": "canvas-types",
+      "filePath": "src/lib/canvas-types.ts",
+      "language": "typescript",
+      "summary": "画布交互层的共享类型定义，包含 CanvasPoint、CanvasSelectionBox、CanvasSlotUpdate、CanvasGuideLine 等画布交互数据结构。",
+      "tags": [
+        "canvas",
+        "types",
+        "model"
+      ],
+      "complexity": "simple",
+      "exportedSymbols": [
+        "CanvasPoint",
+        "CanvasSelectionBox",
+        "CanvasSlotUpdate",
+        "CanvasGuideLine"
+      ]
+    },
+    {
+      "id": "file:src/lib/canvas-selection-model.ts",
+      "type": "file",
+      "name": "canvas-selection-model",
+      "filePath": "src/lib/canvas-selection-model.ts",
+      "language": "typescript",
+      "summary": "画布选中状态纯函数集合，负责过滤已失效的选中 ID、计算框选矩形、判断是否应应用框选以及收集框选区域内的凹槽。",
+      "tags": [
+        "canvas",
+        "selection",
+        "model",
+        "pure-function"
+      ],
+      "complexity": "simple",
+      "exportedSymbols": [
+        "sanitizeCanvasSelectedIds",
+        "getCanvasSelectionBoxRect",
+        "shouldApplyCanvasSelectionBox",
+        "collectCanvasSelection",
+        "CanvasSelectionRect"
+      ]
+    },
+    {
+      "id": "file:src/lib/layout-canvas-interaction.ts",
+      "type": "file",
+      "name": "layout-canvas-interaction",
+      "filePath": "src/lib/layout-canvas-interaction.ts",
+      "language": "typescript",
+      "summary": "画布拖拽交互的纯函数逻辑，解析拖拽起点与作用域、根据拖拽位移计算多槽位实时更新，以及推导简易阶梯行带的最小托盘边界。",
+      "tags": [
+        "canvas",
+        "interaction",
+        "drag",
+        "model"
+      ],
+      "complexity": "moderate",
+      "exportedSymbols": [
+        "resolveLayoutCanvasDragStart",
+        "buildLayoutCanvasDragUpdates",
+        "calculateLayoutCanvasMinimumTrayBounds",
+        "LayoutCanvasDragStart"
+      ]
+    },
+    {
+      "id": "file:src/lib/perf.ts",
+      "type": "file",
+      "name": "perf",
+      "filePath": "src/lib/perf.ts",
+      "language": "typescript",
+      "summary": "前端性能埋点模块，通过 localStorage 和 URL 参数开关控制，使用 requestAnimationFrame 批量通知监听者，记录画布指针移动、碰撞检测、阶梯轮廓等关键路径的耗时统计。",
+      "tags": [
+        "perf",
+        "observability",
+        "hook",
+        "model"
+      ],
+      "complexity": "moderate",
+      "exportedSymbols": [
+        "measurePerf",
+        "recordPerfSample",
+        "isPerfEnabled",
+        "subscribePerfMetrics",
+        "getPerfMetricsSnapshot",
+        "resetPerfMetrics",
+        "PerfMetricName",
+        "PerfMetricsSnapshot"
+      ]
+    },
+    {
+      "id": "file:src/types/custom-tray.ts",
+      "type": "file",
+      "name": "custom-tray-types",
+      "filePath": "src/types/custom-tray.ts",
+      "language": "typescript",
+      "summary": "自定义/阶梯/简易阶梯三种布局模式的核心领域类型定义，包含 FreeSlot、SteppedSlot、SlotGroup、CustomLayoutParams、SteppedLayoutParams、SimpleSteppedLayoutParams 等贯穿整个应用的数据模型。",
+      "tags": [
+        "types",
+        "domain-model",
+        "custom",
+        "stepped",
+        "simple-stepped"
+      ],
+      "complexity": "moderate",
+      "exportedSymbols": [
+        "AppMode",
+        "SlotGroup",
+        "GroupOutlinePreview",
+        "FreeSlot",
+        "SteppedSlot",
+        "SimpleSteppedSlot",
+        "SimpleSteppedRow",
+        "SimpleSteppedRowBand",
+        "CustomLayoutParams",
+        "SteppedLayoutParams",
+        "SimpleSteppedLayoutParams"
+      ]
+    },
+    {
+      "id": "file:src/hooks/useActionPanelResize.ts",
+      "type": "file",
+      "name": "useActionPanelResize",
+      "filePath": "src/hooks/useActionPanelResize.ts",
+      "language": "typescript",
+      "summary": "画布右侧操作面板的拖拽调整大小 hook，监听全局 pointer 事件在 min/max 范围内计算宽度，并在失焦或页面隐藏时自动停止拖拽、恢复 body 样式。",
+      "tags": [
+        "hook",
+        "canvas",
+        "ui",
+        "resize"
+      ],
+      "complexity": "moderate",
+      "exportedSymbols": [
+        "useActionPanelResize"
+      ]
+    },
+    {
+      "id": "file:src/hooks/useCanvasKeyboard.ts",
+      "type": "file",
+      "name": "useCanvasKeyboard",
+      "filePath": "src/hooks/useCanvasKeyboard.ts",
+      "language": "typescript",
+      "summary": "画布键盘事件 hook，处理 Delete/Backspace 删除、Ctrl+Z 撤销、Ctrl+C/V 复制粘贴、方向键微调、Space 平移、Esc 取消、? 快捷键提示等交互，使用 useEffectEvent 保证回调始终读取最新状态。",
+      "tags": [
+        "hook",
+        "canvas",
+        "keyboard",
+        "interaction"
+      ],
+      "complexity": "moderate",
+      "exportedSymbols": [
+        "useCanvasKeyboard"
+      ]
+    },
+    {
+      "id": "file:src/hooks/useCanvasZoom.ts",
+      "type": "file",
+      "name": "useCanvasZoom",
+      "filePath": "src/hooks/useCanvasZoom.ts",
+      "language": "typescript",
+      "summary": "画布缩放和平移 hook，支持鼠标滚轮缩放、Space+拖拽平移、双指触摸缩放与平移，计算 SVG viewBox 并将其钳制在 0.5x~5x 缩放范围内。",
+      "tags": [
+        "hook",
+        "canvas",
+        "zoom",
+        "pan",
+        "touch"
+      ],
+      "complexity": "moderate",
+      "exportedSymbols": [
+        "useCanvasZoom"
+      ]
+    },
+    {
+      "id": "file:src/hooks/useLiveSlotUpdates.ts",
+      "type": "file",
+      "name": "useLiveSlotUpdates",
+      "filePath": "src/hooks/useLiveSlotUpdates.ts",
+      "language": "typescript",
+      "summary": "拖拽/旋转过程中的凹槽实时更新批处理 hook，使用 requestAnimationFrame 合并连续的更新请求，仅保留最新一帧数据，并提供 flush 方法在交互结束时立即提交。",
+      "tags": [
+        "hook",
+        "canvas",
+        "raf",
+        "performance",
+        "drag"
+      ],
+      "complexity": "moderate",
+      "exportedSymbols": [
+        "useLiveSlotUpdates"
+      ]
+    },
+    {
+      "id": "file:src/hooks/useSteppedOutlinePreview.ts",
+      "type": "file",
+      "name": "useSteppedOutlinePreview",
+      "filePath": "src/hooks/useSteppedOutlinePreview.ts",
+      "language": "typescript",
+      "summary": "阶梯式布局的分组轮廓预览 hook，使用 useDeferredValue 降级计算优先级，通过可选的 previewPort 支持在 worker 中异步生成轮廓，并通过请求序号防止竞态、记录性能采样。",
+      "tags": [
+        "hook",
+        "stepped",
+        "outline-preview",
+        "concurrent",
+        "viewport"
+      ],
+      "complexity": "complex",
+      "exportedSymbols": [
+        "useSteppedOutlinePreview"
+      ]
+    },
+    {
+      "id": "file:src/components/canvas/CanvasStatusBar.tsx",
+      "type": "file",
+      "name": "CanvasStatusBar",
+      "filePath": "src/components/canvas/CanvasStatusBar.tsx",
+      "language": "typescript",
+      "summary": "画布底部状态栏组件，显示托盘尺寸、缩放比例、碰撞错误数、选中槽位坐标尺寸信息，并通过 useSyncExternalStore 订阅性能指标在开启时展示 last/avg/max 耗时。",
+      "tags": [
+        "canvas",
+        "component",
+        "status-bar",
+        "ui",
+        "perf"
+      ],
+      "complexity": "simple",
+      "exportedSymbols": [
+        "CanvasStatusBar"
+      ]
+    },
+    {
+      "id": "file:src/components/canvas/CanvasZoomControls.tsx",
+      "type": "file",
+      "name": "CanvasZoomControls",
+      "filePath": "src/components/canvas/CanvasZoomControls.tsx",
+      "language": "typescript",
+      "summary": "画布右下角浮动控件，提供重置视图和打开快捷键帮助两个按钮，在移动端使用 44px 最小可点击区域。",
+      "tags": [
+        "canvas",
+        "component",
+        "ui",
+        "controls"
+      ],
+      "complexity": "simple",
+      "exportedSymbols": [
+        "CanvasZoomControls"
+      ]
+    },
+    {
+      "id": "file:src/components/canvas/EditSidebar.tsx",
+      "type": "file",
+      "name": "EditSidebar",
+      "filePath": "src/components/canvas/EditSidebar.tsx",
+      "language": "typescript",
+      "summary": "画布右侧编辑面板的标签栏骨架组件，以竖排图标导航切换不同编辑标签页内容，并导出 EDIT_SIDEBAR_RAIL_WIDTH 常量供布局计算使用。",
+      "tags": [
+        "canvas",
+        "component",
+        "sidebar",
+        "ui"
+      ],
+      "complexity": "moderate",
+      "exportedSymbols": [
+        "EditSidebar",
+        "EditSidebarTab",
+        "EDIT_SIDEBAR_RAIL_WIDTH"
+      ]
+    },
+    {
+      "id": "file:src/components/canvas/KeyboardHintsOverlay.tsx",
+      "type": "file",
+      "name": "KeyboardHintsOverlay",
+      "filePath": "src/components/canvas/KeyboardHintsOverlay.tsx",
+      "language": "typescript",
+      "summary": "快捷键帮助浮层组件，以模态弹窗形式展示 Delete、Ctrl+Z、方向键、Space、滚轮、Esc、框选等画布快捷键说明，点击外部或按 ? 关闭。",
+      "tags": [
+        "canvas",
+        "component",
+        "overlay",
+        "ui",
+        "help"
+      ],
+      "complexity": "simple",
+      "exportedSymbols": [
+        "KeyboardHintsOverlay"
+      ]
+    },
+    {
+      "id": "file:src/viewports/layout-editor/types.ts",
+      "type": "file",
+      "name": "layout-editor-viewport-types",
+      "filePath": "src/viewports/layout-editor/types.ts",
+      "language": "typescript",
+      "summary": "布局编辑器 viewport 层的接口定义，定义 LayoutEditorViewportModel（画布渲染数据）和 LayoutEditorViewportCommands（画布操作回调），是各布局模式向 LayoutCanvas 提供数据的统一契约。",
+      "tags": [
+        "viewport",
+        "layout-editor",
+        "types",
+        "interface"
+      ],
+      "complexity": "simple",
+      "exportedSymbols": [
+        "LayoutEditorSlot",
+        "LayoutEditorViewportModel",
+        "LayoutEditorViewportCommands"
+      ]
+    },
+    {
+      "id": "file:src/viewports/layout-editor/customViewportModel.ts",
+      "type": "file",
+      "name": "customViewportModel",
+      "filePath": "src/viewports/layout-editor/customViewportModel.ts",
+      "language": "typescript",
+      "summary": "将 CustomLayoutParams 转换为 LayoutEditorViewportModel 的工厂函数，为自定义模式构建画布渲染所需的托盘框架、凹槽列表和覆盖层配置。",
+      "tags": [
+        "viewport",
+        "layout-editor",
+        "custom",
+        "model",
+        "adapter"
+      ],
+      "complexity": "simple",
+      "exportedSymbols": [
+        "buildCustomLayoutEditorViewportModel"
+      ]
+    },
+    {
+      "id": "file:src/viewports/layout-editor/simpleSteppedViewportModel.ts",
+      "type": "file",
+      "name": "simpleSteppedViewportModel",
+      "filePath": "src/viewports/layout-editor/simpleSteppedViewportModel.ts",
+      "language": "typescript",
+      "summary": "将简易阶梯模式的画布参数转换为 LayoutEditorViewportModel 的工厂函数，注入行带覆盖层和槽位移动作用域解析器，开启最大打印边界显示。",
+      "tags": [
+        "viewport",
+        "layout-editor",
+        "simple-stepped",
+        "model",
+        "adapter"
+      ],
+      "complexity": "simple",
+      "exportedSymbols": [
+        "buildSimpleSteppedLayoutEditorViewportModel"
+      ]
+    },
+    {
+      "id": "file:src/viewports/layout-editor/steppedViewportModel.ts",
+      "type": "file",
+      "name": "steppedViewportModel",
+      "filePath": "src/viewports/layout-editor/steppedViewportModel.ts",
+      "language": "typescript",
+      "summary": "将阶梯式布局参数转换为 LayoutEditorViewportModel 的工厂函数，注入聚焦分组 ID、分组轮廓预览和分组元数据，供画布渲染阶梯分层结构。",
+      "tags": [
+        "viewport",
+        "layout-editor",
+        "stepped",
+        "model",
+        "adapter"
+      ],
+      "complexity": "simple",
+      "exportedSymbols": [
+        "buildSteppedLayoutEditorViewportModel"
+      ]
+    },
+    {
+      "id": "file:src/app/page.test.tsx",
+      "type": "file",
+      "name": "page.test",
+      "filePath": "src/app/page.test.tsx",
+      "language": "typescript",
+      "summary": "首页 Home 组件的集成测试，使用 vi.mock 模拟各布局模式的 model 和 drafts，验证四种模式（grid/custom/simple-stepped/stepped）下的页面渲染、模式切换和草稿管理等行为。",
+      "tags": [
+        "test",
+        "page",
+        "integration",
+        "ui"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/components/LayoutCanvas.test.tsx",
+      "type": "file",
+      "name": "LayoutCanvas.test",
+      "filePath": "src/components/LayoutCanvas.test.tsx",
+      "language": "typescript",
+      "summary": "LayoutCanvas 画布组件的测试套件，通过 vi.mock 隔离 zoom/keyboard/snap/live-update 等 hooks，覆盖拖拽、旋转、框选、缩放、键盘操作、对齐工具栏交互等场景。",
+      "tags": [
+        "test",
+        "canvas",
+        "component",
+        "interaction"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/components/alignment-sidebar.test.tsx",
+      "type": "file",
+      "name": "alignment-sidebar.test",
+      "filePath": "src/components/alignment-sidebar.test.tsx",
+      "language": "typescript",
+      "summary": "对齐工具栏 AlignmentToolbar 和编辑侧栏 EditSidebar 的集成测试，验证标签页切换、对齐面板和镜像面板的选中状态传递等行为。",
+      "tags": [
+        "test",
+        "canvas",
+        "sidebar",
+        "alignment"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/canvas/AlignPanel.test.tsx",
+      "type": "file",
+      "name": "AlignPanel.test",
+      "filePath": "src/components/canvas/AlignPanel.test.tsx",
+      "language": "typescript",
+      "summary": "对齐面板 AlignPanel 组件的单元测试，验证左对齐、居中排一排等对齐操作以及选中少于两个槽位时按钮禁用的行为。",
+      "tags": [
+        "test",
+        "canvas",
+        "alignment",
+        "component"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/hooks/useActionPanelResize.test.ts",
+      "type": "file",
+      "name": "useActionPanelResize.test",
+      "filePath": "src/hooks/useActionPanelResize.test.ts",
+      "language": "typescript",
+      "summary": "useActionPanelResize hook 的测试，验证拖拽调整宽度时在 min/max 范围内钳制、pointerup 后恢复 body 样式，以及 pointercancel/页面隐藏时停止拖拽。",
+      "tags": [
+        "test",
+        "hook",
+        "resize"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/hooks/useCanvasKeyboard.test.ts",
+      "type": "file",
+      "name": "useCanvasKeyboard.test",
+      "filePath": "src/hooks/useCanvasKeyboard.test.ts",
+      "language": "typescript",
+      "summary": "useCanvasKeyboard hook 的测试，模拟键盘事件验证方向键微调、删除、撤销、复制粘贴、Space 平移、Esc 取消选择等快捷键行为。",
+      "tags": [
+        "test",
+        "hook",
+        "keyboard",
+        "canvas"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/hooks/useCanvasZoom.test.ts",
+      "type": "file",
+      "name": "useCanvasZoom.test",
+      "filePath": "src/hooks/useCanvasZoom.test.ts",
+      "language": "typescript",
+      "summary": "useCanvasZoom hook 的测试，验证缩放钳制、viewBox 计算、平移、重置以及双指触摸缩放与平移手势的行为。",
+      "tags": [
+        "test",
+        "hook",
+        "zoom",
+        "canvas",
+        "touch"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/hooks/useLiveSlotUpdates.test.ts",
+      "type": "file",
+      "name": "useLiveSlotUpdates.test",
+      "filePath": "src/hooks/useLiveSlotUpdates.test.ts",
+      "language": "typescript",
+      "summary": "useLiveSlotUpdates hook 的测试，验证连续调度合并为单个 animation frame 且只保留最新数据、flush 立即提交并取消已调度帧的行为。",
+      "tags": [
+        "test",
+        "hook",
+        "raf",
+        "performance"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/hooks/useSteppedOutlinePreview.integration.test.ts",
+      "type": "file",
+      "name": "useSteppedOutlinePreview.integration.test",
+      "filePath": "src/hooks/useSteppedOutlinePreview.integration.test.ts",
+      "language": "typescript",
+      "summary": "useSteppedOutlinePreview hook 的集成测试，mock 性能采样和轮廓构建函数，验证暂停/恢复预览、空数据清空、previewPort 异步路径以及竞态保护等行为。",
+      "tags": [
+        "test",
+        "hook",
+        "stepped",
+        "outline-preview",
+        "integration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/canvas-selection-model.test.ts",
+      "type": "file",
+      "name": "canvas-selection-model.test",
+      "filePath": "src/lib/canvas-selection-model.test.ts",
+      "language": "typescript",
+      "summary": "画布选中模型的单元测试，验证 sanitizeCanvasSelectedIds 过滤失效 ID、getCanvasSelectionBoxRect 矩形计算和 collectCanvasSelection 框选收集逻辑。",
+      "tags": [
+        "test",
+        "canvas",
+        "selection",
+        "pure-function"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/layout-canvas-interaction.test.ts",
+      "type": "file",
+      "name": "layout-canvas-interaction.test",
+      "filePath": "src/lib/layout-canvas-interaction.test.ts",
+      "language": "typescript",
+      "summary": "画布拖拽交互纯函数的单元测试，验证 resolveLayoutCanvasDragStart 作用域解析、buildLayoutCanvasDragUpdates 多槽位移计算和 calculateLayoutCanvasMinimumTrayBounds 最小边界推导。",
+      "tags": [
+        "test",
+        "canvas",
+        "interaction",
+        "drag",
+        "pure-function"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/hooks/useCanvasZoom.ts:useCanvasZoom",
+      "type": "function",
+      "name": "useCanvasZoom",
+      "filePath": "src/hooks/useCanvasZoom.ts",
+      "summary": "画布缩放平移 hook，管理 zoom/pan/viewBox 状态，支持滚轮缩放、Space 拖拽平移和双指触摸手势。",
+      "tags": [
+        "hook",
+        "canvas",
+        "zoom",
+        "pan"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/hooks/useCanvasKeyboard.ts:useCanvasKeyboard",
+      "type": "function",
+      "name": "useCanvasKeyboard",
+      "filePath": "src/hooks/useCanvasKeyboard.ts",
+      "summary": "画布键盘事件 hook，处理删除、撤销、复制粘贴、方向键微调、Space 平移等快捷键交互。",
+      "tags": [
+        "hook",
+        "canvas",
+        "keyboard"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/hooks/useLiveSlotUpdates.ts:useLiveSlotUpdates",
+      "type": "function",
+      "name": "useLiveSlotUpdates",
+      "filePath": "src/hooks/useLiveSlotUpdates.ts",
+      "summary": "拖拽实时更新批处理 hook，使用 requestAnimationFrame 合并连续更新请求，仅保留最新一帧数据。",
+      "tags": [
+        "hook",
+        "canvas",
+        "raf",
+        "drag"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/hooks/useActionPanelResize.ts:useActionPanelResize",
+      "type": "function",
+      "name": "useActionPanelResize",
+      "filePath": "src/hooks/useActionPanelResize.ts",
+      "summary": "操作面板拖拽调整大小 hook，监听全局 pointer 事件在 min/max 范围内计算宽度，失焦或页面隐藏时自动停止。",
+      "tags": [
+        "hook",
+        "canvas",
+        "ui",
+        "resize"
+      ],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "function:src/components/LayoutCanvas.tsx:LayoutCanvas",
+      "type": "contains",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/components/AlignmentToolbar.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/components/canvas/CanvasOverlayLayer.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/components/canvas/CanvasSlotLayer.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/components/canvas/CanvasStatusBar.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/components/canvas/CanvasZoomControls.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/components/canvas/EditSidebar.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/components/canvas/KeyboardHintsOverlay.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/hooks/useActionPanelResize.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/hooks/useCanvasKeyboard.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/hooks/useCanvasZoom.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/hooks/useLiveSlotUpdates.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/lib/canvas-collision-model.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/lib/canvas-selection-model.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/lib/canvas-snap-engine.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/lib/canvas-types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/lib/layout-canvas-interaction.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/lib/layout-symmetry.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/lib/perf.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/viewports/layout-editor/types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/CanvasStatusBar.tsx",
+      "target": "file:src/lib/perf.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/CanvasStatusBar.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useCanvasKeyboard.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useLiveSlotUpdates.ts",
+      "target": "file:src/lib/canvas-types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedOutlinePreview.ts",
+      "target": "file:src/lib/model-ports.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedOutlinePreview.ts",
+      "target": "file:src/lib/perf.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedOutlinePreview.ts",
+      "target": "file:src/lib/stepped-outline-preview.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedOutlinePreview.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-selection-model.ts",
+      "target": "file:src/lib/canvas-types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-selection-model.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/layout-canvas-interaction.ts",
+      "target": "file:src/lib/canvas-types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/layout-canvas-interaction.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/layout-canvas-interaction.ts",
+      "target": "file:src/viewports/layout-editor/types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/types/custom-tray.ts",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/layout-editor/types.ts",
+      "target": "file:src/lib/canvas-types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/layout-editor/types.ts",
+      "target": "file:src/lib/layout-symmetry.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/layout-editor/types.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/layout-editor/customViewportModel.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/layout-editor/customViewportModel.ts",
+      "target": "file:src/viewports/layout-editor/types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/layout-editor/simpleSteppedViewportModel.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/layout-editor/simpleSteppedViewportModel.ts",
+      "target": "file:src/viewports/layout-editor/types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/layout-editor/steppedViewportModel.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/layout-editor/steppedViewportModel.ts",
+      "target": "file:src/viewports/layout-editor/types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/page.test.tsx",
+      "target": "file:src/app/page.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/page.test.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/page.test.tsx",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.test.tsx",
+      "target": "file:src/components/LayoutCanvas.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.test.tsx",
+      "target": "file:src/lib/canvas-types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.test.tsx",
+      "target": "file:src/lib/layout-symmetry.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.test.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/alignment-sidebar.test.tsx",
+      "target": "file:src/components/AlignmentToolbar.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/alignment-sidebar.test.tsx",
+      "target": "file:src/components/canvas/EditSidebar.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/alignment-sidebar.test.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/AlignPanel.test.tsx",
+      "target": "file:src/components/canvas/AlignPanel.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/AlignPanel.test.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useActionPanelResize.test.ts",
+      "target": "file:src/hooks/useActionPanelResize.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useCanvasKeyboard.test.ts",
+      "target": "file:src/hooks/useCanvasKeyboard.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useCanvasKeyboard.test.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useCanvasZoom.test.ts",
+      "target": "file:src/hooks/useCanvasZoom.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useLiveSlotUpdates.test.ts",
+      "target": "file:src/hooks/useLiveSlotUpdates.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useLiveSlotUpdates.test.ts",
+      "target": "file:src/lib/canvas-types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedOutlinePreview.integration.test.ts",
+      "target": "file:src/hooks/useSteppedOutlinePreview.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedOutlinePreview.integration.test.ts",
+      "target": "file:src/lib/stepped-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedOutlinePreview.integration.test.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-selection-model.test.ts",
+      "target": "file:src/lib/canvas-selection-model.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/layout-canvas-interaction.test.ts",
+      "target": "file:src/lib/layout-canvas-interaction.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/layout-canvas-interaction.test.ts",
+      "target": "file:src/viewports/layout-editor/types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/components/LayoutCanvas.test.tsx",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/hooks/useActionPanelResize.ts",
+      "target": "file:src/hooks/useActionPanelResize.test.ts",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/hooks/useCanvasKeyboard.ts",
+      "target": "file:src/hooks/useCanvasKeyboard.test.ts",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/hooks/useCanvasZoom.ts",
+      "target": "file:src/hooks/useCanvasZoom.test.ts",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/hooks/useLiveSlotUpdates.ts",
+      "target": "file:src/hooks/useLiveSlotUpdates.test.ts",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/hooks/useSteppedOutlinePreview.ts",
+      "target": "file:src/hooks/useSteppedOutlinePreview.integration.test.ts",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/canvas-selection-model.ts",
+      "target": "file:src/lib/canvas-selection-model.test.ts",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/layout-canvas-interaction.ts",
+      "target": "file:src/lib/layout-canvas-interaction.test.ts",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/viewports/layout-editor/customViewportModel.ts",
+      "target": "file:src/viewports/layout-editor/steppedViewportModel.ts",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/viewports/layout-editor/customViewportModel.ts",
+      "target": "file:src/viewports/layout-editor/simpleSteppedViewportModel.ts",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/viewports/layout-editor/steppedViewportModel.ts",
+      "target": "file:src/viewports/layout-editor/simpleSteppedViewportModel.ts",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "function:src/components/LayoutCanvas.tsx:LayoutCanvas",
+      "target": "function:src/hooks/useCanvasZoom.ts:useCanvasZoom",
+      "type": "calls",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/components/LayoutCanvas.tsx:LayoutCanvas",
+      "target": "function:src/hooks/useCanvasKeyboard.ts:useCanvasKeyboard",
+      "type": "calls",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/components/LayoutCanvas.tsx:LayoutCanvas",
+      "target": "function:src/hooks/useLiveSlotUpdates.ts:useLiveSlotUpdates",
+      "type": "calls",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/components/LayoutCanvas.tsx:LayoutCanvas",
+      "target": "function:src/hooks/useActionPanelResize.ts:useActionPanelResize",
+      "type": "calls",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/hooks/useCanvasZoom.ts",
+      "target": "function:src/hooks/useCanvasZoom.ts:useCanvasZoom",
+      "type": "contains",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/hooks/useCanvasKeyboard.ts",
+      "target": "function:src/hooks/useCanvasKeyboard.ts:useCanvasKeyboard",
+      "type": "contains",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/hooks/useLiveSlotUpdates.ts",
+      "target": "function:src/hooks/useLiveSlotUpdates.ts:useLiveSlotUpdates",
+      "type": "contains",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/hooks/useActionPanelResize.ts",
+      "target": "function:src/hooks/useActionPanelResize.ts:useActionPanelResize",
+      "type": "contains",
+      "weight": 1.0
+    }
+  ]
+}

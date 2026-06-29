@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import { useCallback, useMemo } from "react";
 import { browserDownloadPort } from "@/lib/download-port";
 import { randomIdFactory } from "@/lib/id-factory";
 import type { CustomLayoutParams } from "@/types/custom-tray";
@@ -25,8 +25,7 @@ import {
   exportCustomModelFiles,
   generateCustomPreview,
 } from "@/lib/custom-layout-service";
-import { useUndoHistory } from "@/hooks/useUndoHistory";
-import { usePreviewLifecycle } from "@/hooks/usePreviewLifecycle";
+import { useEditableParams } from "@/hooks/useEditableParams";
 import { trayWorkerService } from "@/lib/worker/worker-service";
 import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
 import type * as THREE from "three";
@@ -81,65 +80,35 @@ interface UseCustomLayoutReturn {
 }
 
 export function useCustomLayout(): UseCustomLayoutReturn {
-  const [params, internalSetParams] = useState<CustomLayoutParams>(
-    CUSTOM_LAYOUT_DEFAULTS,
-  );
-
-  // 撤销历史
   const {
-    pushState,
-    popState,
-    canUndo: canUndoFn,
-  } = useUndoHistory<CustomLayoutParams>();
-  const paramsRef = useRef(params);
-  useEffect(() => {
-    paramsRef.current = params;
-  }, [params]);
-  const {
+    params,
+    paramsRef,
+    setParams,
+    applyChange,
+    saveSnapshot,
+    undo,
+    canUndo,
     threeGeometry,
     volume,
     isGenerating,
     isPreviewStale,
-    invalidatePreview,
     handleGenerate,
     handleExportSTL,
-  } = usePreviewLifecycle({
-    getParams: () => paramsRef.current,
-    generatePreview: async (currentParams) => {
-      if (!trayWorkerService) {
-        return null;
-      }
-      return generateCustomPreview(currentParams, trayWorkerService);
-    },
+  } = useEditableParams<CustomLayoutParams>({
+    initialState: CUSTOM_LAYOUT_DEFAULTS,
+    guard: () => trayWorkerService !== null,
+    generatePreview: async (currentParams) =>
+      generateCustomPreview(currentParams, trayWorkerService!),
     exportModel: async (currentParams, geometry) => {
-      if (!trayWorkerService) {
-        return;
-      }
       await exportCustomModelFiles(
         currentParams,
         calculateCustomEffectiveDimensions(currentParams),
         geometry,
-        trayWorkerService,
+        trayWorkerService!,
         browserDownloadPort,
       );
     },
   });
-
-  const setParams = useCallback<
-    React.Dispatch<React.SetStateAction<CustomLayoutParams>>
-  >(
-    (value) => {
-      internalSetParams((prev) =>
-        typeof value === "function"
-          ? (value as (prevState: CustomLayoutParams) => CustomLayoutParams)(
-              prev,
-            )
-          : value,
-      );
-      invalidatePreview();
-    },
-    [invalidatePreview],
-  );
 
   const calculateEffectiveDimensions = useCallback(
     (current: CustomLayoutParams = paramsRef.current) => {
@@ -153,133 +122,96 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     [calculateEffectiveDimensions, params],
   );
 
-  /** 手动保存快照（供拖拽开始时调用） */
-  const saveSnapshot = useCallback(() => {
-    pushState(paramsRef.current);
-  }, [pushState]);
-
-  /** 撤销到上一步 */
-  const undo = useCallback(() => {
-    const prev = popState();
-    if (prev) {
-      internalSetParams(prev);
-      invalidatePreview();
-    }
-  }, [invalidatePreview, popState]);
-
   const updateParam = useCallback(
     <K extends keyof CustomLayoutParams>(
       key: K,
       value: CustomLayoutParams[K],
     ) => {
-      pushState(paramsRef.current);
-      internalSetParams((prev) => updateCustomLayoutParam(prev, key, value));
-      invalidatePreview();
+      applyChange((prev) => updateCustomLayoutParam(prev, key, value));
     },
-    [invalidatePreview, pushState],
+    [applyChange],
   );
 
   const addSlot = useCallback(
     (width: number, height?: number, ellipseConfig?: EllipseSlotConfig) => {
-      internalSetParams((prev) => {
-        pushState(prev);
-        return addCustomSlot(
-          prev,
-          randomIdFactory,
-          width,
-          height,
-          ellipseConfig,
-        );
-      });
-      invalidatePreview();
+      applyChange((prev) =>
+        addCustomSlot(prev, randomIdFactory, width, height, ellipseConfig),
+      );
     },
-    [invalidatePreview, pushState],
+    [applyChange],
   );
 
   const removeSlot = useCallback(
     (id: string) => {
-      pushState(paramsRef.current);
-      internalSetParams((prev) => removeCustomSlot(prev, id));
-      invalidatePreview();
+      applyChange((prev) => removeCustomSlot(prev, id));
     },
-    [invalidatePreview, pushState],
+    [applyChange],
   );
 
-  const updateSlotPosition = useCallback((id: string, x: number, y: number) => {
-    internalSetParams((prev) => updateCustomSlotPosition(prev, id, x, y));
-    invalidatePreview();
-  }, [invalidatePreview]);
-
-  const applyMultipleSlotUpdates = useCallback(
-    (
-      updates: CustomSlotUpdate[],
-      saveHistory: boolean,
-    ) => {
-      internalSetParams((prev) => {
-        if (saveHistory) {
-          pushState(prev);
-        }
-
-        return applyCustomSlotUpdates(prev, updates);
-      });
-      invalidatePreview();
+  const updateSlotPosition = useCallback(
+    (id: string, x: number, y: number) => {
+      applyChange(
+        (prev) => updateCustomSlotPosition(prev, id, x, y),
+        { history: "live" },
+      );
     },
-    [invalidatePreview, pushState],
+    [applyChange],
   );
 
   const updateMultipleSlots = useCallback(
     (updates: CustomSlotUpdate[]) => {
-      applyMultipleSlotUpdates(updates, true);
+      applyChange((prev) => applyCustomSlotUpdates(prev, updates));
     },
-    [applyMultipleSlotUpdates],
+    [applyChange],
   );
 
   const updateMultipleSlotsLive = useCallback(
     (updates: CustomSlotUpdate[]) => {
-      applyMultipleSlotUpdates(updates, false);
+      applyChange(
+        (prev) => applyCustomSlotUpdates(prev, updates),
+        { history: "live" },
+      );
     },
-    [applyMultipleSlotUpdates],
+    [applyChange],
   );
 
-  const updateSlotRotation = useCallback((id: string, rotation: number) => {
-    internalSetParams((prev) => updateCustomSlotRotation(prev, id, rotation));
-    invalidatePreview();
-  }, [invalidatePreview]);
+  const updateSlotRotation = useCallback(
+    (id: string, rotation: number) => {
+      applyChange(
+        (prev) => updateCustomSlotRotation(prev, id, rotation),
+        { history: "live" },
+      );
+    },
+    [applyChange],
+  );
 
   const insertSlots = useCallback(
     (slotsToInsert: SymmetryInsertSlot[]) => {
       if (slotsToInsert.length === 0) return;
-
-      internalSetParams((prev) => {
-        pushState(prev);
-        return insertCustomSlots(prev, randomIdFactory, slotsToInsert);
-      });
-      invalidatePreview();
+      applyChange((prev) =>
+        insertCustomSlots(prev, randomIdFactory, slotsToInsert),
+      );
     },
-    [invalidatePreview, pushState],
+    [applyChange],
   );
 
   const duplicateSlots = useCallback(
     (ids: string[]): string[] => {
       const current = paramsRef.current;
-      pushState(current);
       const result = duplicateCustomSlots(current, randomIdFactory, ids);
-      internalSetParams(result.params);
-      invalidatePreview();
+      applyChange(() => result.params, { force: true });
       return result.newIds;
     },
-    [invalidatePreview, pushState],
+    [applyChange, paramsRef],
   );
 
   const trimBaseplate = useCallback(() => {
-    internalSetParams((prev) => {
+    applyChange((prev) => {
       if (prev.slots.length === 0) return prev;
-      pushState(prev);
       const dims = calculateCustomEffectiveDimensions(prev);
       return trimCustomBaseplate(prev, dims);
     });
-    invalidatePreview();
-  }, [invalidatePreview, pushState]);
+  }, [applyChange]);
 
   return {
     params,
@@ -298,7 +230,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     effectiveDimensions,
     saveSnapshot,
     undo,
-    canUndo: canUndoFn(),
+    canUndo,
     threeGeometry,
     volume,
     isGenerating,

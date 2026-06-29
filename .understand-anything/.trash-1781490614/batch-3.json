@@ -1,0 +1,1392 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/app/page.tsx",
+      "type": "file",
+      "name": "page.tsx",
+      "filePath": "src/app/page.tsx",
+      "summary": "应用根页面组件（\"战锤托盘生成器\"）。聚合 grid/custom/simple-stepped/stepped 四种模式的状态 hook（useTrayModel/useCustomLayout/useSimpleSteppedLayout/useSteppedLayout），通过 useModeViewportWorkspaces 与 useModeWorkspaces 分发当前模式的视口与工作区，渲染顶部标题栏、模式切换标签、左侧参数面板与右侧 3D 视口。",
+      "tags": [
+        "entry",
+        "page",
+        "orchestration",
+        "ui"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/components/ModeTabs.test.tsx",
+      "type": "file",
+      "name": "ModeTabs.test.tsx",
+      "filePath": "src/components/ModeTabs.test.tsx",
+      "summary": "ModeTabs 组件的单元测试，验证模式切换与回调行为。",
+      "tags": [
+        "test",
+        "ui",
+        "mode-switcher"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/components/ModeTabs.tsx",
+      "type": "file",
+      "name": "ModeTabs.tsx",
+      "filePath": "src/components/ModeTabs.tsx",
+      "summary": "模式切换标签组件，在 grid/custom/simple-stepped/stepped 四种布局模式间切换，切换时重置当前视口的瞬态状态。",
+      "tags": [
+        "ui",
+        "component",
+        "mode-switcher",
+        "tabs"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/components/ui/tabs.tsx",
+      "type": "file",
+      "name": "tabs.tsx",
+      "filePath": "src/components/ui/tabs.tsx",
+      "summary": "基于 radix-ui Tabs 原语的 shadcn/ui 标签组件（barrel 导出），供 ModeTabs 等需要分页切换的 UI 使用。",
+      "tags": [
+        "ui",
+        "primitive",
+        "radix",
+        "tabs"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/hooks/useCustomLayout.integration.test.ts",
+      "type": "file",
+      "name": "useCustomLayout.integration.test.tsx",
+      "filePath": "src/hooks/useCustomLayout.integration.test.ts",
+      "summary": "useCustomLayout hook 的集成测试，覆盖槽位增删、拖拽更新、撤销与导出等端到端流程。",
+      "tags": [
+        "test",
+        "custom",
+        "integration"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/hooks/useCustomLayout.ts",
+      "type": "file",
+      "name": "useCustomLayout.ts",
+      "filePath": "src/hooks/useCustomLayout.ts",
+      "summary": "自定义（custom）模式的主状态 hook。管理 CustomLayoutParams 与自由槽位（FreeSlot）集合，提供增删/拖拽/旋转/复制槽位、自动避让、尺寸推导、预览生成与 STL 导出，集成撤销历史与草稿。",
+      "tags": [
+        "custom",
+        "hook",
+        "slot-editing",
+        "orchestration"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/hooks/useModeViewportWorkspaces.tsx",
+      "type": "file",
+      "name": "useModeViewportWorkspaces.tsx",
+      "filePath": "src/hooks/useModeViewportWorkspaces.tsx",
+      "summary": "根据当前模式分发对应视口工作区 hook（grid/custom/simple-stepped/stepped viewport），返回当前模式的 LayoutCanvas 视口模型与选中状态、瞬态状态重置等。",
+      "tags": [
+        "viewport",
+        "hook",
+        "dispatch",
+        "orchestration"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/hooks/useModeWorkspaces.tsx",
+      "type": "file",
+      "name": "useModeWorkspaces.tsx",
+      "filePath": "src/hooks/useModeWorkspaces.tsx",
+      "summary": "根据当前模式分发对应参数面板工作区 hook（grid/custom/simple-stepped/stepped workspace），返回当前模式的左侧参数面板与草稿对话框属性。",
+      "tags": [
+        "workspace",
+        "hook",
+        "dispatch",
+        "orchestration"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/hooks/usePreviewLifecycle.ts",
+      "type": "file",
+      "name": "usePreviewLifecycle.ts",
+      "filePath": "src/hooks/usePreviewLifecycle.ts",
+      "summary": "通用预览生命周期 hook（泛型）。封装参数变更 → 失效标记 → 异步生成预览（含竞态保护）→ STL 导出的完整流程，被各模式 model hook 复用。",
+      "tags": [
+        "hook",
+        "preview-lifecycle",
+        "shared"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/hooks/useSimpleSteppedLayout.ts",
+      "type": "file",
+      "name": "useSimpleSteppedLayout.ts",
+      "filePath": "src/hooks/useSimpleSteppedLayout.ts",
+      "summary": "简易阶梯式（simple-stepped）模式的主状态 hook（642 行）。以行为单位组织阶梯槽位，提供行的增删/重排与槽位的位置/旋转变更，通过 simple-stepped-projection 推导布局，复用 useUndoHistory 与 usePreviewLifecycle 管理撤销与预览。",
+      "tags": [
+        "simple-stepped",
+        "hook",
+        "orchestration"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/hooks/useSteppedLayout.integration.test.ts",
+      "type": "file",
+      "name": "useSteppedLayout.integration.test.ts",
+      "filePath": "src/hooks/useSteppedLayout.integration.test.ts",
+      "summary": "useSteppedLayout hook 的集成测试，覆盖分组、槽位操作、连接性分析与预览生命周期。",
+      "tags": [
+        "test",
+        "stepped",
+        "integration"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/hooks/useTrayModel.integration.test.ts",
+      "type": "file",
+      "name": "useTrayModel.integration.test.ts",
+      "filePath": "src/hooks/useTrayModel.integration.test.ts",
+      "summary": "useTrayModel hook 的集成测试，验证参数变更、预览刷新与导出流程。",
+      "tags": [
+        "test",
+        "grid",
+        "integration"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/hooks/useTrayModel.ts",
+      "type": "file",
+      "name": "useTrayModel.ts",
+      "filePath": "src/hooks/useTrayModel.ts",
+      "summary": "网格（grid）模式的主状态 hook。管理 TrayParams（行列、凹槽直径、间距、底板厚度、磁吸孔等），监听参数变化触发 worker 预览生成，提供参数更新与 STL 导出。",
+      "tags": [
+        "grid",
+        "hook",
+        "model",
+        "orchestration"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/hooks/useUndoHistory.test.ts",
+      "type": "file",
+      "name": "useUndoHistory.test.ts",
+      "filePath": "src/hooks/useUndoHistory.test.ts",
+      "summary": "useUndoHistory hook 的单元测试，覆盖入栈、撤销与合并窗口行为。",
+      "tags": [
+        "test",
+        "undo"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/hooks/useUndoHistory.ts",
+      "type": "file",
+      "name": "useUndoHistory.ts",
+      "filePath": "src/hooks/useUndoHistory.ts",
+      "summary": "通用撤销历史 hook。维护状态快照栈（上限 50），内置 500ms 连续操作合并窗口以避免拖拽产生大量重复快照，被各模式 model hook 复用。",
+      "tags": [
+        "hook",
+        "undo",
+        "shared"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/download-port.test.ts",
+      "type": "file",
+      "name": "download-port.test.ts",
+      "filePath": "src/lib/download-port.test.ts",
+      "summary": "download-port 的单元测试。",
+      "tags": [
+        "test",
+        "io",
+        "download"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/download-port.ts",
+      "type": "file",
+      "name": "download-port.ts",
+      "filePath": "src/lib/download-port.ts",
+      "summary": "浏览器下载端口适配器，将 Blob 以指定文件名触发下载（hexagonal DownloadPort 的具体实现）。",
+      "tags": [
+        "port",
+        "io",
+        "download",
+        "adapter"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/worker/worker-service.ts",
+      "type": "file",
+      "name": "worker-service.ts",
+      "filePath": "src/lib/worker/worker-service.ts",
+      "summary": "Web Worker 服务层（单例 TrayWorkerService）。封装 tray.worker 的 Promise 化调用，按 requestId 路由响应，提供四种模式的几何生成、STL 序列化与阶梯轮廓预览。",
+      "tags": [
+        "worker",
+        "service",
+        "jscad",
+        "stl-export"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/viewports/custom/useCustomViewportWorkspace.tsx",
+      "type": "file",
+      "name": "useCustomViewportWorkspace.tsx",
+      "filePath": "src/viewports/custom/useCustomViewportWorkspace.tsx",
+      "summary": "custom 模式的视口工作区 hook，将 CustomLayoutParams 适配为 LayoutCanvas 的视口模型（槽位坐标/选中/操作命令）。",
+      "tags": [
+        "viewport",
+        "custom",
+        "hook",
+        "adapter"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/viewports/grid/useGridViewportWorkspace.tsx",
+      "type": "file",
+      "name": "useGridViewportWorkspace.tsx",
+      "filePath": "src/viewports/grid/useGridViewportWorkspace.tsx",
+      "summary": "grid 模式的视口工作区 hook，将 TrayParams 适配为 LayoutCanvas 的只读网格视口模型。",
+      "tags": [
+        "viewport",
+        "grid",
+        "hook",
+        "adapter"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/viewports/shared/ViewportTabs.tsx",
+      "type": "file",
+      "name": "ViewportTabs.tsx",
+      "filePath": "src/viewports/shared/ViewportTabs.tsx",
+      "summary": "视口内子视图切换标签组件（如 2D 编辑/3D 预览切换），被各模式视口共享复用。",
+      "tags": [
+        "ui",
+        "component",
+        "viewport",
+        "tabs",
+        "shared"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/viewports/simple-stepped/useSimpleSteppedViewportWorkspace.tsx",
+      "type": "file",
+      "name": "useSimpleSteppedViewportWorkspace.tsx",
+      "filePath": "src/viewports/simple-stepped/useSimpleSteppedViewportWorkspace.tsx",
+      "summary": "simple-stepped 模式的视口工作区 hook，将简易阶梯布局适配为 LayoutCanvas 视口模型。",
+      "tags": [
+        "viewport",
+        "simple-stepped",
+        "hook",
+        "adapter"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/viewports/stepped/useSteppedViewportWorkspace.tsx",
+      "type": "file",
+      "name": "useSteppedViewportWorkspace.tsx",
+      "filePath": "src/viewports/stepped/useSteppedViewportWorkspace.tsx",
+      "summary": "stepped 模式的视口工作区 hook，将分组阶梯布局（含分组高亮、预览组）适配为 LayoutCanvas 视口模型。",
+      "tags": [
+        "viewport",
+        "stepped",
+        "hook",
+        "adapter"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/viewports/types.ts",
+      "type": "file",
+      "name": "types.ts",
+      "filePath": "src/viewports/types.ts",
+      "summary": "视口工作区相关共享类型定义。",
+      "tags": [
+        "viewport",
+        "types"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/workspaces/custom/useCustomWorkspace.tsx",
+      "type": "file",
+      "name": "useCustomWorkspace.tsx",
+      "filePath": "src/workspaces/custom/useCustomWorkspace.tsx",
+      "summary": "custom 模式的参数面板工作区 hook，组合 CustomPanel 与草稿支持，返回面板与草稿对话框属性。",
+      "tags": [
+        "workspace",
+        "custom",
+        "hook",
+        "panel"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/workspaces/grid/useGridWorkspace.tsx",
+      "type": "file",
+      "name": "useGridWorkspace.tsx",
+      "filePath": "src/workspaces/grid/useGridWorkspace.tsx",
+      "summary": "grid 模式的参数面板工作区 hook，组合 ParameterPanel 与草稿支持。",
+      "tags": [
+        "workspace",
+        "grid",
+        "hook",
+        "panel"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/workspaces/shared.tsx",
+      "type": "file",
+      "name": "shared.tsx",
+      "filePath": "src/workspaces/shared.tsx",
+      "summary": "工作区共享逻辑。useWorkspaceDraftSupport 统一接入草稿系统（加载/保存/删除/恢复），renderDraftSummary 按模式渲染草稿摘要，被四种模式 workspace 复用。",
+      "tags": [
+        "workspace",
+        "shared",
+        "drafts",
+        "hook"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/workspaces/simple-stepped/useSimpleSteppedWorkspace.tsx",
+      "type": "file",
+      "name": "useSimpleSteppedWorkspace.tsx",
+      "filePath": "src/workspaces/simple-stepped/useSimpleSteppedWorkspace.tsx",
+      "summary": "simple-stepped 模式的参数面板工作区 hook，组合 SimpleSteppedPanel 与草稿支持。",
+      "tags": [
+        "workspace",
+        "simple-stepped",
+        "hook",
+        "panel"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/workspaces/stepped/useSteppedWorkspace.tsx",
+      "type": "file",
+      "name": "useSteppedWorkspace.tsx",
+      "filePath": "src/workspaces/stepped/useSteppedWorkspace.tsx",
+      "summary": "stepped 模式的参数面板工作区 hook，组合 SteppedPanel、分组选择与草稿支持。",
+      "tags": [
+        "workspace",
+        "stepped",
+        "hook",
+        "panel"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/workspaces/types.ts",
+      "type": "file",
+      "name": "types.ts",
+      "filePath": "src/workspaces/types.ts",
+      "summary": "工作区共享类型定义（ModeWorkspace 接口）。",
+      "tags": [
+        "workspace",
+        "types"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/app/page.tsx:Home",
+      "type": "function",
+      "name": "Home",
+      "filePath": "src/app/page.tsx",
+      "summary": "应用根组件，聚合四种模式状态并按当前模式分发视口与工作区。",
+      "tags": [
+        "entry",
+        "page",
+        "orchestration"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/hooks/useSimpleSteppedLayout.ts:useSimpleSteppedLayout",
+      "type": "function",
+      "name": "useSimpleSteppedLayout",
+      "filePath": "src/hooks/useSimpleSteppedLayout.ts",
+      "summary": "简易阶梯式模式的主状态 hook，以行为单位管理阶梯槽位并协调预览/撤销。",
+      "tags": [
+        "simple-stepped",
+        "hook",
+        "orchestration"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/hooks/useCustomLayout.ts:useCustomLayout",
+      "type": "function",
+      "name": "useCustomLayout",
+      "filePath": "src/hooks/useCustomLayout.ts",
+      "summary": "自定义模式的主状态 hook，管理自由槽位集合与全部编辑操作。",
+      "tags": [
+        "custom",
+        "hook",
+        "orchestration"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:src/hooks/usePreviewLifecycle.ts:usePreviewLifecycle",
+      "type": "function",
+      "name": "usePreviewLifecycle",
+      "filePath": "src/hooks/usePreviewLifecycle.ts",
+      "summary": "通用预览生命周期 hook（泛型），封装失效→异步生成→导出流程与竞态保护。",
+      "tags": [
+        "hook",
+        "preview-lifecycle",
+        "shared"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/hooks/useUndoHistory.ts:useUndoHistory",
+      "type": "function",
+      "name": "useUndoHistory",
+      "filePath": "src/hooks/useUndoHistory.ts",
+      "summary": "通用撤销历史 hook，带连续操作合并窗口。",
+      "tags": [
+        "hook",
+        "undo",
+        "shared"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "class:src/lib/worker/worker-service.ts:TrayWorkerService",
+      "type": "class",
+      "name": "TrayWorkerService",
+      "filePath": "src/lib/worker/worker-service.ts",
+      "summary": "Web Worker 单例服务，Promise 化路由四种模式的几何生成与 STL 导出请求。",
+      "tags": [
+        "worker",
+        "service",
+        "jscad",
+        "singleton"
+      ],
+      "complexity": "complex"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/app/page.tsx",
+      "target": "file:src/components/DraftManagerDialog.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/page.tsx",
+      "target": "file:src/components/ModeTabs.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/page.tsx",
+      "target": "file:src/hooks/useCustomLayout.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/page.tsx",
+      "target": "file:src/hooks/useModeViewportWorkspaces.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/page.tsx",
+      "target": "file:src/hooks/useModeWorkspaces.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/page.tsx",
+      "target": "file:src/hooks/useSimpleSteppedLayout.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/page.tsx",
+      "target": "file:src/hooks/useSteppedLayout.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/page.tsx",
+      "target": "file:src/hooks/useTrayModel.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/app/page.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ModeTabs.test.tsx",
+      "target": "file:src/components/ModeTabs.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ModeTabs.tsx",
+      "target": "file:src/components/ui/tabs.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ModeTabs.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ui/tabs.tsx",
+      "target": "file:src/lib/utils.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useCustomLayout.integration.test.ts",
+      "target": "file:src/hooks/useCustomLayout.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useCustomLayout.integration.test.ts",
+      "target": "file:src/lib/custom-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useCustomLayout.integration.test.ts",
+      "target": "file:src/lib/download-port.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useCustomLayout.ts",
+      "target": "file:src/hooks/usePreviewLifecycle.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useCustomLayout.ts",
+      "target": "file:src/hooks/useUndoHistory.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useCustomLayout.ts",
+      "target": "file:src/lib/custom-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useCustomLayout.ts",
+      "target": "file:src/lib/custom-layout-actions.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useCustomLayout.ts",
+      "target": "file:src/lib/custom-layout-math.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useCustomLayout.ts",
+      "target": "file:src/lib/custom-layout-service.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useCustomLayout.ts",
+      "target": "file:src/lib/download-port.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useCustomLayout.ts",
+      "target": "file:src/lib/id-factory.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useCustomLayout.ts",
+      "target": "file:src/lib/layout-symmetry.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useCustomLayout.ts",
+      "target": "file:src/lib/worker/worker-service.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useCustomLayout.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useModeViewportWorkspaces.tsx",
+      "target": "file:src/hooks/useCustomLayout.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useModeViewportWorkspaces.tsx",
+      "target": "file:src/hooks/useSimpleSteppedLayout.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useModeViewportWorkspaces.tsx",
+      "target": "file:src/hooks/useSteppedLayout.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useModeViewportWorkspaces.tsx",
+      "target": "file:src/hooks/useTrayModel.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useModeViewportWorkspaces.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useModeViewportWorkspaces.tsx",
+      "target": "file:src/viewports/custom/useCustomViewportWorkspace.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useModeViewportWorkspaces.tsx",
+      "target": "file:src/viewports/grid/useGridViewportWorkspace.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useModeViewportWorkspaces.tsx",
+      "target": "file:src/viewports/simple-stepped/useSimpleSteppedViewportWorkspace.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useModeViewportWorkspaces.tsx",
+      "target": "file:src/viewports/stepped/useSteppedViewportWorkspace.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useModeViewportWorkspaces.tsx",
+      "target": "file:src/viewports/types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useModeWorkspaces.tsx",
+      "target": "file:src/hooks/useCustomLayout.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useModeWorkspaces.tsx",
+      "target": "file:src/hooks/useSimpleSteppedLayout.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useModeWorkspaces.tsx",
+      "target": "file:src/hooks/useSteppedLayout.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useModeWorkspaces.tsx",
+      "target": "file:src/hooks/useTrayModel.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useModeWorkspaces.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useModeWorkspaces.tsx",
+      "target": "file:src/workspaces/custom/useCustomWorkspace.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useModeWorkspaces.tsx",
+      "target": "file:src/workspaces/grid/useGridWorkspace.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useModeWorkspaces.tsx",
+      "target": "file:src/workspaces/simple-stepped/useSimpleSteppedWorkspace.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useModeWorkspaces.tsx",
+      "target": "file:src/workspaces/stepped/useSteppedWorkspace.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useModeWorkspaces.tsx",
+      "target": "file:src/workspaces/types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/usePreviewLifecycle.ts",
+      "target": "file:src/hooks/useToast.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSimpleSteppedLayout.ts",
+      "target": "file:src/hooks/usePreviewLifecycle.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSimpleSteppedLayout.ts",
+      "target": "file:src/hooks/useUndoHistory.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSimpleSteppedLayout.ts",
+      "target": "file:src/lib/canvas-types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSimpleSteppedLayout.ts",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSimpleSteppedLayout.ts",
+      "target": "file:src/lib/jscad-to-three.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSimpleSteppedLayout.ts",
+      "target": "file:src/lib/param-io.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSimpleSteppedLayout.ts",
+      "target": "file:src/lib/simple-stepped-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSimpleSteppedLayout.ts",
+      "target": "file:src/lib/simple-stepped-projection.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSimpleSteppedLayout.ts",
+      "target": "file:src/lib/slot-instance-factory.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSimpleSteppedLayout.ts",
+      "target": "file:src/lib/stl-export.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSimpleSteppedLayout.ts",
+      "target": "file:src/lib/worker/worker-service.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSimpleSteppedLayout.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedLayout.integration.test.ts",
+      "target": "file:src/hooks/useSteppedLayout.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedLayout.integration.test.ts",
+      "target": "file:src/lib/download-port.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedLayout.integration.test.ts",
+      "target": "file:src/lib/stepped-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedLayout.integration.test.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useTrayModel.integration.test.ts",
+      "target": "file:src/hooks/useTrayModel.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useTrayModel.integration.test.ts",
+      "target": "file:src/lib/download-port.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useTrayModel.integration.test.ts",
+      "target": "file:src/lib/grid-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useTrayModel.ts",
+      "target": "file:src/hooks/usePreviewLifecycle.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useTrayModel.ts",
+      "target": "file:src/lib/download-port.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useTrayModel.ts",
+      "target": "file:src/lib/grid-model-service.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useTrayModel.ts",
+      "target": "file:src/lib/grid-model-state.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useTrayModel.ts",
+      "target": "file:src/lib/worker/worker-service.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useTrayModel.ts",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useUndoHistory.test.ts",
+      "target": "file:src/hooks/useUndoHistory.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/download-port.test.ts",
+      "target": "file:src/lib/download-port.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/download-port.ts",
+      "target": "file:src/lib/model-ports.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/worker/worker-service.ts",
+      "target": "file:src/lib/worker/tray.worker.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/worker/worker-service.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/worker/worker-service.ts",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/custom/useCustomViewportWorkspace.tsx",
+      "target": "file:src/hooks/useCustomLayout.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/custom/useCustomViewportWorkspace.tsx",
+      "target": "file:src/viewports/layout-editor/customViewportModel.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/custom/useCustomViewportWorkspace.tsx",
+      "target": "file:src/viewports/shared/ViewportTabs.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/custom/useCustomViewportWorkspace.tsx",
+      "target": "file:src/viewports/types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/grid/useGridViewportWorkspace.tsx",
+      "target": "file:src/hooks/useTrayModel.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/grid/useGridViewportWorkspace.tsx",
+      "target": "file:src/viewports/types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/shared/ViewportTabs.tsx",
+      "target": "file:src/components/ui/tabs.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/simple-stepped/useSimpleSteppedViewportWorkspace.tsx",
+      "target": "file:src/hooks/useSimpleSteppedLayout.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/simple-stepped/useSimpleSteppedViewportWorkspace.tsx",
+      "target": "file:src/lib/simple-stepped-projection.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/simple-stepped/useSimpleSteppedViewportWorkspace.tsx",
+      "target": "file:src/viewports/layout-editor/simpleSteppedViewportModel.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/simple-stepped/useSimpleSteppedViewportWorkspace.tsx",
+      "target": "file:src/viewports/shared/ViewportTabs.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/simple-stepped/useSimpleSteppedViewportWorkspace.tsx",
+      "target": "file:src/viewports/types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/stepped/useSteppedViewportWorkspace.tsx",
+      "target": "file:src/hooks/useSteppedLayout.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/stepped/useSteppedViewportWorkspace.tsx",
+      "target": "file:src/viewports/layout-editor/steppedViewportModel.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/stepped/useSteppedViewportWorkspace.tsx",
+      "target": "file:src/viewports/shared/ViewportTabs.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/stepped/useSteppedViewportWorkspace.tsx",
+      "target": "file:src/viewports/types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/types.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/workspaces/custom/useCustomWorkspace.tsx",
+      "target": "file:src/hooks/useCustomLayout.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/workspaces/custom/useCustomWorkspace.tsx",
+      "target": "file:src/lib/custom-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/workspaces/custom/useCustomWorkspace.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/workspaces/custom/useCustomWorkspace.tsx",
+      "target": "file:src/workspaces/shared.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/workspaces/custom/useCustomWorkspace.tsx",
+      "target": "file:src/workspaces/types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/workspaces/grid/useGridWorkspace.tsx",
+      "target": "file:src/hooks/useTrayModel.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/workspaces/grid/useGridWorkspace.tsx",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/workspaces/grid/useGridWorkspace.tsx",
+      "target": "file:src/workspaces/shared.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/workspaces/grid/useGridWorkspace.tsx",
+      "target": "file:src/workspaces/types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/workspaces/shared.tsx",
+      "target": "file:src/components/DraftManagerDialog.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/workspaces/shared.tsx",
+      "target": "file:src/components/PanelActionSection.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/workspaces/shared.tsx",
+      "target": "file:src/hooks/useModeDrafts.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/workspaces/shared.tsx",
+      "target": "file:src/lib/local-drafts.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/workspaces/simple-stepped/useSimpleSteppedWorkspace.tsx",
+      "target": "file:src/hooks/useSimpleSteppedLayout.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/workspaces/simple-stepped/useSimpleSteppedWorkspace.tsx",
+      "target": "file:src/lib/simple-stepped-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/workspaces/simple-stepped/useSimpleSteppedWorkspace.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/workspaces/simple-stepped/useSimpleSteppedWorkspace.tsx",
+      "target": "file:src/workspaces/shared.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/workspaces/simple-stepped/useSimpleSteppedWorkspace.tsx",
+      "target": "file:src/workspaces/types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/workspaces/stepped/useSteppedWorkspace.tsx",
+      "target": "file:src/hooks/useSteppedLayout.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/workspaces/stepped/useSteppedWorkspace.tsx",
+      "target": "file:src/lib/stepped-config.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/workspaces/stepped/useSteppedWorkspace.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/workspaces/stepped/useSteppedWorkspace.tsx",
+      "target": "file:src/workspaces/shared.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/workspaces/stepped/useSteppedWorkspace.tsx",
+      "target": "file:src/workspaces/types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/workspaces/types.ts",
+      "target": "file:src/components/DraftManagerDialog.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/workspaces/types.ts",
+      "target": "file:src/lib/local-drafts.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/workspaces/types.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ModeTabs.tsx",
+      "target": "file:src/components/ModeTabs.test.tsx",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/hooks/useUndoHistory.ts",
+      "target": "file:src/hooks/useUndoHistory.test.ts",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/download-port.ts",
+      "target": "file:src/lib/download-port.test.ts",
+      "type": "tested_by",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/app/page.tsx",
+      "target": "function:src/app/page.tsx:Home",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:src/hooks/useSimpleSteppedLayout.ts",
+      "target": "function:src/hooks/useSimpleSteppedLayout.ts:useSimpleSteppedLayout",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:src/hooks/useCustomLayout.ts",
+      "target": "function:src/hooks/useCustomLayout.ts:useCustomLayout",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:src/hooks/usePreviewLifecycle.ts",
+      "target": "function:src/hooks/usePreviewLifecycle.ts:usePreviewLifecycle",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:src/hooks/useUndoHistory.ts",
+      "target": "function:src/hooks/useUndoHistory.ts:useUndoHistory",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/worker/worker-service.ts",
+      "target": "class:src/lib/worker/worker-service.ts:TrayWorkerService",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:src/viewports/custom/useCustomViewportWorkspace.tsx",
+      "target": "file:src/viewports/grid/useGridViewportWorkspace.tsx",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/viewports/custom/useCustomViewportWorkspace.tsx",
+      "target": "file:src/viewports/simple-stepped/useSimpleSteppedViewportWorkspace.tsx",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/viewports/custom/useCustomViewportWorkspace.tsx",
+      "target": "file:src/viewports/stepped/useSteppedViewportWorkspace.tsx",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/viewports/simple-stepped/useSimpleSteppedViewportWorkspace.tsx",
+      "target": "file:src/viewports/stepped/useSteppedViewportWorkspace.tsx",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/workspaces/custom/useCustomWorkspace.tsx",
+      "target": "file:src/workspaces/grid/useGridWorkspace.tsx",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/workspaces/custom/useCustomWorkspace.tsx",
+      "target": "file:src/workspaces/simple-stepped/useSimpleSteppedWorkspace.tsx",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/workspaces/custom/useCustomWorkspace.tsx",
+      "target": "file:src/workspaces/stepped/useSteppedWorkspace.tsx",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/hooks/useCustomLayout.ts",
+      "target": "file:src/hooks/useSimpleSteppedLayout.ts",
+      "type": "related",
+      "weight": 0.5
+    },
+    {
+      "source": "function:src/app/page.tsx:Home",
+      "target": "function:src/hooks/useSimpleSteppedLayout.ts:useSimpleSteppedLayout",
+      "type": "calls",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/app/page.tsx:Home",
+      "target": "function:src/hooks/useCustomLayout.ts:useCustomLayout",
+      "type": "calls",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/hooks/useSimpleSteppedLayout.ts:useSimpleSteppedLayout",
+      "target": "function:src/hooks/usePreviewLifecycle.ts:usePreviewLifecycle",
+      "type": "calls",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/hooks/useSimpleSteppedLayout.ts:useSimpleSteppedLayout",
+      "target": "function:src/hooks/useUndoHistory.ts:useUndoHistory",
+      "type": "calls",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/hooks/useCustomLayout.ts:useCustomLayout",
+      "target": "function:src/hooks/usePreviewLifecycle.ts:usePreviewLifecycle",
+      "type": "calls",
+      "weight": 0.8
+    },
+    {
+      "source": "function:src/hooks/useCustomLayout.ts:useCustomLayout",
+      "target": "function:src/hooks/useUndoHistory.ts:useUndoHistory",
+      "type": "calls",
+      "weight": 0.8
+    }
+  ]
+}

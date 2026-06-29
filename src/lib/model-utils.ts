@@ -1,16 +1,19 @@
-import { booleans, primitives, transforms, extrusions } from "@jscad/modeling";
-import type { Geom3 } from "@jscad/modeling/src/geometries/types";
+import { booleans, primitives, transforms, extrusions, geometries } from "@jscad/modeling";
+import type { Geom2, Geom3 } from "@jscad/modeling/src/geometries/types";
 import {
     RENDER_CONFIG,
     BASE_HOLE_CONFIG,
     getBaseHoleMinBottomWall,
 } from "@/lib/config";
+import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
 import type { BaseHolePresetKey } from "@/types/tray";
+import type { FreeSlot } from "@/types/custom-tray";
 
 const { subtract } = booleans;
-const { roundedRectangle, cylinder } = primitives;
+const { roundedRectangle, cylinder, ellipse } = primitives;
 const { translate } = transforms;
 const { extrudeLinear } = extrusions;
+const { geom2 } = geometries;
 const BASE_HOLE_WALL_EPSILON = 1e-6;
 
 // ── 共享建模工具 ──────────────────────────
@@ -104,4 +107,38 @@ export function subtractBaseHoles(
     if (baseHoles.length === 0) return tray;
 
     return subtract(tray, ...baseHoles);
+}
+
+/**
+ * 生成带等距外扩的 2D 槽形（Geom2）
+ *
+ * - offset <= 0 时直接用标准椭圆
+ * - offset > 0 时采样带外扩的轮廓点，用于椭圆 superellipse 外扩
+ *
+ * 抽取自 custom-tray-model / stepped-tray-model 的重复实现，作为共享建模原语。
+ */
+export function createOffsetSlotShape(
+    width: number,
+    height: number,
+    shape: FreeSlot["shape"],
+    offset: number,
+    ellipseProfileExponent?: number,
+): Geom2 {
+    if (offset <= 0) {
+        return ellipse({
+            radius: [width / 2, height / 2],
+            segments: RENDER_CONFIG.cylinderSegments,
+        });
+    }
+
+    const points = sampleSlotProfilePoints(
+        width,
+        height,
+        shape,
+        offset,
+        RENDER_CONFIG.cylinderSegments,
+        ellipseProfileExponent,
+    ).map((point): [number, number] => [point.x, point.y]);
+
+    return geom2.fromPoints(points);
 }

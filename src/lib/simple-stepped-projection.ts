@@ -3,7 +3,13 @@ import {
   deriveSimpleSteppedLayout,
   type SimpleSteppedSlotUpdate,
 } from "@/lib/simple-stepped-layout";
-import type { SimpleSteppedLayoutParams } from "@/types/custom-tray";
+import type {
+  SimpleSteppedLayoutParams,
+  SimpleSteppedRow,
+  SimpleSteppedSlot,
+} from "@/types/custom-tray";
+import { MAX_BUILD_SIZE } from "@/lib/config";
+import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 
 export {
   buildSimpleSteppedRowBands,
@@ -18,6 +24,81 @@ export {
   type SimpleSteppedDerivedSlot,
   type SimpleSteppedSlotUpdate,
 } from "@/lib/simple-stepped-layout";
+import { calculateSimpleSteppedMinimumTraySize } from "@/lib/simple-stepped-layout";
+
+export function normalizeSimpleSteppedTraySize(
+  requestedSize: number,
+  minimumSize: number,
+  fallbackSize: number,
+) {
+  const safeRequestedSize =
+    Number.isFinite(requestedSize) && requestedSize > 0
+      ? requestedSize
+      : fallbackSize;
+
+  if (minimumSize > MAX_BUILD_SIZE) {
+    return Math.max(safeRequestedSize, minimumSize);
+  }
+
+  return Math.min(
+    Math.max(safeRequestedSize, minimumSize),
+    MAX_BUILD_SIZE,
+  );
+}
+
+function rebuildRowSlotIds(
+  rows: SimpleSteppedRow[],
+  slots: SimpleSteppedSlot[],
+): SimpleSteppedRow[] {
+  return rows.map((row) => ({
+    ...row,
+    slotIds: slots.filter((slot) => slot.rowId === row.id).map((slot) => slot.id),
+  }));
+}
+
+/**
+ * 规范化 simple-stepped 参数：重建 row.slotIds、归一化 slot.y、
+ * 同步 outerMargin、clamp tray 尺寸到 [最小尺寸, MAX_BUILD_SIZE]。
+ */
+export function normalizeSimpleSteppedParams(
+  next: SimpleSteppedLayoutParams,
+): SimpleSteppedLayoutParams {
+  const rebuiltRows = rebuildRowSlotIds(next.rows, next.slots);
+  const normalizedSlots = next.slots.map((slot) => ({
+    ...slot,
+    y: Number.isFinite(slot.y) ? slot.y : 0,
+  }));
+  const withRowIds: SimpleSteppedLayoutParams = {
+    ...next,
+    rows: rebuiltRows,
+    slots: normalizedSlots,
+    outerMarginIndependent: Boolean(next.outerMarginIndependent),
+    outerMargin: next.outerMarginIndependent ? next.outerMargin : next.spacing,
+  };
+  const minimumDims = calculateSimpleSteppedMinimumTraySize(withRowIds);
+  const fallbackWidth =
+    Number.isFinite(withRowIds.trayWidth) && withRowIds.trayWidth > 0
+      ? withRowIds.trayWidth
+      : SIMPLE_STEPPED_LAYOUT_DEFAULTS.trayWidth;
+  const fallbackDepth =
+    Number.isFinite(withRowIds.trayDepth) && withRowIds.trayDepth > 0
+      ? withRowIds.trayDepth
+      : SIMPLE_STEPPED_LAYOUT_DEFAULTS.trayDepth;
+
+  return {
+    ...withRowIds,
+    trayWidth: normalizeSimpleSteppedTraySize(
+      withRowIds.trayWidth,
+      minimumDims.width,
+      fallbackWidth,
+    ),
+    trayDepth: normalizeSimpleSteppedTraySize(
+      withRowIds.trayDepth,
+      minimumDims.depth,
+      fallbackDepth,
+    ),
+  };
+}
 
 export function mapSimpleSteppedCanvasUpdatesToLocal(
   params: SimpleSteppedLayoutParams,

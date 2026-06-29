@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import type * as THREE from "three";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import { useToast } from "@/hooks/useToast";
+import { useRequestSequence } from "@/hooks/useRequestSequence";
 
 export interface PreviewLifecycleResult {
   geometry: Geom3;
@@ -41,18 +42,18 @@ export function usePreviewLifecycle<P>({
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPreviewStale, setIsPreviewStale] = useState(false);
   const geometryRef = useRef<Geom3 | null>(null);
-  const requestVersionRef = useRef(0);
+  const { nextSeq, isStale } = useRequestSequence();
 
   const invalidatePreview = useCallback(() => {
-    requestVersionRef.current += 1;
+    nextSeq();
     geometryRef.current = null;
     setVolume(0);
     setIsPreviewStale(true);
     onInvalidate?.();
-  }, [onInvalidate]);
+  }, [nextSeq, onInvalidate]);
 
   const generateCurrentPreview = useCallback(async (): Promise<Geom3 | null> => {
-    const requestVersion = requestVersionRef.current;
+    const seq = nextSeq();
     setIsGenerating(true);
     try {
       const result = await generatePreview(getParams());
@@ -60,7 +61,7 @@ export function usePreviewLifecycle<P>({
         return null;
       }
 
-      if (requestVersion !== requestVersionRef.current) {
+      if (isStale(seq)) {
         result.threeGeometry.dispose();
         return null;
       }
@@ -83,7 +84,7 @@ export function usePreviewLifecycle<P>({
     } finally {
       setIsGenerating(false);
     }
-  }, [generatePreview, getParams, toast]);
+  }, [generatePreview, getParams, isStale, nextSeq, toast]);
 
   const handleGenerate = useCallback(async () => {
     await generateCurrentPreview();

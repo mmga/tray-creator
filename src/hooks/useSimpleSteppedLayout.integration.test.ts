@@ -10,7 +10,7 @@ const {
 } = vi.hoisted(() => ({
   toastMock: vi.fn(),
   trayWorkerServiceMock: {
-    generateSimpleStepped: vi.fn(),
+    generateSimpleStepped: vi.fn().mockResolvedValue(null),
     exportSTL: vi.fn(),
   },
   downloadParamFileMock: vi.fn(),

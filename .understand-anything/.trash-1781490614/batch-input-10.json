@@ -1,0 +1,85 @@
+{
+  "batchIndex": 10,
+  "files": [
+    {
+      "path": ".mcp.json",
+      "language": "json",
+      "sizeLines": 12,
+      "fileCategory": "config"
+    },
+    {
+      "path": "CLAUDE.md",
+      "language": "markdown",
+      "sizeLines": 219,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "CONTEXT.md",
+      "language": "markdown",
+      "sizeLines": 233,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "README.md",
+      "language": "markdown",
+      "sizeLines": 36,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "claude-progress.txt",
+      "language": "txt",
+      "sizeLines": 74,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "components.json",
+      "language": "json",
+      "sizeLines": 23,
+      "fileCategory": "config"
+    },
+    {
+      "path": "copilot-session-f86083c1-8fbe-49be-87ab-c69cf7e83a83.md",
+      "language": "markdown",
+      "sizeLines": 191,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "feature_list.json",
+      "language": "json",
+      "sizeLines": 1122,
+      "fileCategory": "config"
+    },
+    {
+      "path": "lint_output.txt",
+      "language": "txt",
+      "sizeLines": 10657,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "package.json",
+      "language": "json",
+      "sizeLines": 51,
+      "fileCategory": "config"
+    },
+    {
+      "path": "tsconfig.json",
+      "language": "json",
+      "sizeLines": 34,
+      "fileCategory": "config"
+    }
+  ],
+  "batchImportData": {
+    ".mcp.json": [],
+    "CLAUDE.md": [],
+    "CONTEXT.md": [],
+    "README.md": [],
+    "claude-progress.txt": [],
+    "components.json": [],
+    "copilot-session-f86083c1-8fbe-49be-87ab-c69cf7e83a83.md": [],
+    "feature_list.json": [],
+    "lint_output.txt": [],
+    "package.json": [],
+    "tsconfig.json": []
+  },
+  "neighborMap": {}
+}

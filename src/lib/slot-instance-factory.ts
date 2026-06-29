@@ -230,3 +230,43 @@ export function normalizeSimpleSteppedSlotInstanceSnapshot(
         : getLegacyCircleSlotDiameter(slot.diameter),
   };
 }
+
+/**
+ * 把 simple-stepped 的派生槽位投影为 FreeSlot（供 custom LayoutCanvas 渲染）。
+ *
+ * 这是 Slot Instance Factory 的投影 seam：simple-stepped 模式把槽位投影成
+ * FreeSlot 以复用 custom 的画布，snapshot 字段（slotWidth/slotHeight/
+ * slotDefinitionId）由工厂统一写入，避免调用方手搓字面量。
+ *
+ * slotDefinitionId 优先取原始 SimpleSteppedSlot 上已有的（保持身份一致），
+ * 否则按 diameter 从定义表匹配。
+ */
+export function projectSimpleSteppedToFreeSlot(
+  derived: {
+    id: string;
+    globalX: number;
+    globalY: number;
+    diameter: number;
+    rotation: number;
+  },
+  source: SimpleSteppedSlot,
+): FreeSlot {
+  const snapshot = createCircleSlotSnapshot(derived.diameter);
+  const slotDefinitionId =
+    typeof source.slotDefinitionId === "string"
+      ? source.slotDefinitionId
+      : snapshot.slotDefinitionId;
+
+  return {
+    id: derived.id,
+    x: derived.globalX,
+    y: derived.globalY,
+    shape: "circle",
+    width: derived.diameter,
+    height: derived.diameter,
+    rotation: normalizeRotation(derived.rotation),
+    ...(slotDefinitionId ? { slotDefinitionId } : {}),
+    slotWidth: snapshot.slotWidth,
+    slotHeight: snapshot.slotHeight,
+  };
+}

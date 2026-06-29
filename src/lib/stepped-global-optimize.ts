@@ -1,17 +1,40 @@
+/**
+ * 阶梯式布局优化的候选搜索编排 + 外部 API。
+ *
+ * 分层后，本文件聚焦"组内候选生成 → 组间笛卡尔积搜索 → 种子选择"的编排：
+ * - 槽位几何/排序工具 → stepped-optimize-slot-geometry.ts
+ * - 行装箱引擎       → stepped-optimize-shelf-packer.ts
+ * - 候选评估/比较    → stepped-optimize-evaluator.ts
+ * - 策略配置（魔数） → stepped-optimize-config.ts
+ */
 import { MAX_BUILD_SIZE } from "@/lib/config";
-import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
-import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import { buildSteppedBridgeWarning } from "@/lib/stepped-bridge-warning";
 import { calculateSteppedEffectiveDimensions } from "@/lib/stepped-layout-math";
 import { trimSteppedBaseplate } from "@/lib/stepped-layout-slot-actions";
 import type { SteppedLayoutParams, SteppedSlot } from "@/types/custom-tray";
-
-const SEARCH_STEP = 0.05;
-const SYMMETRY_TOLERANCE = 0.05;
-const TARGET_WIDTH_TO_DEPTH_RATIO = 5 / 2;
-const ASPECT_RATIO_TOLERANCE = 0.02;
-const GROUP_CANDIDATE_LIMIT = 5;
-const OVERALL_CANDIDATE_LIMIT = 24;
+import {
+  CANDIDATE_WIDTH_FACTORS,
+  GROUP_CANDIDATE_LIMIT,
+  OVERALL_CANDIDATE_LIMIT,
+} from "@/lib/stepped-optimize-config";
+import {
+  compareCompactCandidateEvaluations,
+  evaluateCompactCandidate,
+  serializeSlots,
+  type CompactCandidateEvaluation,
+} from "@/lib/stepped-optimize-evaluator";
+import {
+  buildAlternatingOrder,
+  getSlotGeometry,
+  getTargetShelfWidth,
+  normalizeSlotsToOrigin,
+  roundPosition,
+  roundToStep,
+  sortSlotsByEffectiveSize,
+} from "@/lib/stepped-optimize-slot-geometry";
+import {
+  packSlotsIntoShelves,
+} from "@/lib/stepped-optimize-shelf-packer";
 
 type ProposalKind = "compact";
 type GroupAlignment = "center" | "top" | "bottom";
@@ -21,44 +44,6 @@ interface ProposalSeed {
   label: string;
   description: string;
   slots: SteppedSlot[];
-}
-
-interface SlotGeometry {
-  halfW: number;
-  halfH: number;
-  effectiveHalfW: number;
-  effectiveHalfH: number;
-}
-
-interface RowSlotEntry {
-  slot: SteppedSlot;
-  geometry: SlotGeometry;
-  effectiveWidth: number;
-  effectiveHeight: number;
-}
-
-interface RowLayout {
-  entries: RowSlotEntry[];
-  width: number;
-  height: number;
-  symmetryPenalty: number;
-}
-
-interface PackedLayout {
-  slots: SteppedSlot[];
-  symmetryPenalty: number;
-  rowCount: number;
-}
-
-interface CompactCandidateEvaluation {
-  width: number;
-  depth: number;
-  area: number;
-  maxSide: number;
-  symmetryPenalty: number;
-  aspectPenalty: number;
-  widthToDepthRatio: number;
-  rowCount: number;
 }
 
 interface CompactCandidate {
@@ -91,369 +76,6 @@ export interface SteppedOptimizationProposal {
   description: string;
   params: SteppedLayoutParams;
   metrics: SteppedOptimizationMetrics;
-}
-
-function getSlotGeometry(slot: SteppedSlot, spacing: number): SlotGeometry {
-  const profile = getFreeSlotProfileGeometry(slot);
-  const margin = spacing / 2 + profile.outerOffset;
-  const { halfW, halfH } = getEllipseBoundingBox(
-    profile.width,
-    profile.height,
-    slot.rotation,
-    slot.shape,
-    profile.profileExponent,
-    profile.outerOffset,
-  );
-
-  return {
-    halfW,
-    halfH,
-    effectiveHalfW: halfW + margin,
-    effectiveHalfH: halfH + margin,
-  };
-}
-
-function roundToStep(value: number): number {
-  return Number((Math.round(value / SEARCH_STEP) * SEARCH_STEP).toFixed(3));
-}
-
-function roundPosition(value: number): number {
-  return Number(value.toFixed(3));
-}
-
-function normalizeSlotsToOrigin(
-  slots: SteppedSlot[],
-  spacing: number,
-): SteppedSlot[] {
-  if (slots.length === 0) {
-    return slots;
-  }
-
-  let minLeft = Infinity;
-  let minBottom = Infinity;
-  const geometryById = new Map(
-    slots.map((slot) => [slot.id, getSlotGeometry(slot, spacing)] as const),
-  );
-
-  slots.forEach((slot) => {
-    const geometry = geometryById.get(slot.id);
-    if (!geometry) {
-      return;
-    }
-
-    minLeft = Math.min(minLeft, slot.x - geometry.halfW);
-    minBottom = Math.min(minBottom, slot.y - geometry.halfH);
-  });
-
-  return slots.map((slot) => ({
-    ...slot,
-    x: roundPosition(slot.x - minLeft),
-    y: roundPosition(slot.y - minBottom),
-  }));
-}
-
-function sortSlotsByEffectiveSize(
-  slots: SteppedSlot[],
-  spacing: number,
-): SteppedSlot[] {
-  const originalIndex = new Map(slots.map((slot, index) => [slot.id, index]));
-
-  return [...slots].sort((left, right) => {
-    const leftGeometry = getSlotGeometry(left, spacing);
-    const rightGeometry = getSlotGeometry(right, spacing);
-    const leftSize = Math.max(leftGeometry.effectiveHalfW, leftGeometry.effectiveHalfH);
-    const rightSize = Math.max(
-      rightGeometry.effectiveHalfW,
-      rightGeometry.effectiveHalfH,
-    );
-
-    if (rightSize !== leftSize) {
-      return rightSize - leftSize;
-    }
-
-    return (originalIndex.get(left.id) ?? 0) - (originalIndex.get(right.id) ?? 0);
-  });
-}
-
-function buildAlternatingOrder(slots: SteppedSlot[]): SteppedSlot[] {
-  const alternating: SteppedSlot[] = [];
-  let leftIndex = 0;
-  let rightIndex = slots.length - 1;
-
-  while (leftIndex <= rightIndex) {
-    alternating.push(slots[leftIndex]!);
-    leftIndex += 1;
-
-    if (leftIndex <= rightIndex) {
-      alternating.push(slots[rightIndex]!);
-      rightIndex -= 1;
-    }
-  }
-
-  return alternating;
-}
-
-function getTargetShelfWidth(slots: SteppedSlot[], spacing: number): number {
-  if (slots.length === 0) {
-    return 0;
-  }
-
-  let totalArea = 0;
-  let maxWidth = 0;
-
-  slots.forEach((slot) => {
-    const geometry = getSlotGeometry(slot, spacing);
-    const width = geometry.effectiveHalfW * 2;
-    const height = geometry.effectiveHalfH * 2;
-    totalArea += width * height;
-    maxWidth = Math.max(maxWidth, width);
-  });
-
-  return roundToStep(
-    Math.max(maxWidth, Math.sqrt(totalArea * TARGET_WIDTH_TO_DEPTH_RATIO)),
-  );
-}
-
-function toRowSlotEntry(slot: SteppedSlot, spacing: number): RowSlotEntry {
-  const geometry = getSlotGeometry(slot, spacing);
-
-  return {
-    slot,
-    geometry,
-    effectiveWidth: geometry.effectiveHalfW * 2,
-    effectiveHeight: geometry.effectiveHalfH * 2,
-  };
-}
-
-function arrangeRowSymmetrically(entries: RowSlotEntry[]): RowLayout {
-  if (entries.length === 0) {
-    return {
-      entries: [],
-      width: 0,
-      height: 0,
-      symmetryPenalty: 0,
-    };
-  }
-
-  const ordered = [...entries];
-  const hasCenterEntry = ordered.length % 2 === 1;
-  const centerEntry = hasCenterEntry ? ordered.shift() ?? null : null;
-  const leftEntries: RowSlotEntry[] = [];
-  const rightEntries: RowSlotEntry[] = [];
-  let leftWidth = 0;
-  let rightWidth = 0;
-  let pairMismatchPenalty = 0;
-
-  for (let index = 0; index < ordered.length; index += 2) {
-    const first = ordered[index];
-    const second = ordered[index + 1];
-
-    if (!first) {
-      continue;
-    }
-
-    if (!second) {
-      if (leftWidth <= rightWidth) {
-        leftEntries.push(first);
-        leftWidth += first.effectiveWidth;
-      } else {
-        rightEntries.push(first);
-        rightWidth += first.effectiveWidth;
-      }
-      continue;
-    }
-
-    if (leftWidth <= rightWidth) {
-      leftEntries.push(first);
-      rightEntries.push(second);
-      leftWidth += first.effectiveWidth;
-      rightWidth += second.effectiveWidth;
-    } else {
-      leftEntries.push(second);
-      rightEntries.push(first);
-      leftWidth += second.effectiveWidth;
-      rightWidth += first.effectiveWidth;
-    }
-
-    pairMismatchPenalty += Math.abs(first.effectiveWidth - second.effectiveWidth);
-  }
-
-  const rowEntries = centerEntry
-    ? [...leftEntries].reverse().concat(centerEntry, rightEntries)
-    : [...leftEntries].reverse().concat(rightEntries);
-
-  return {
-    entries: rowEntries,
-    width: entries.reduce((sum, entry) => sum + entry.effectiveWidth, 0),
-    height: Math.max(...entries.map((entry) => entry.effectiveHeight)),
-    symmetryPenalty: roundPosition(
-      Math.abs(leftWidth - rightWidth) + pairMismatchPenalty,
-    ),
-  };
-}
-
-function packSlotsIntoShelves(
-  slots: SteppedSlot[],
-  spacing: number,
-  targetWidth: number,
-  startY: number = 0,
-): PackedLayout {
-  const rows: RowSlotEntry[][] = [];
-  let currentRow: RowSlotEntry[] = [];
-  let currentWidth = 0;
-
-  slots.forEach((slot) => {
-    const entry = toRowSlotEntry(slot, spacing);
-
-    if (
-      currentRow.length > 0 &&
-      currentWidth + entry.effectiveWidth > targetWidth + 1e-6
-    ) {
-      rows.push(currentRow);
-      currentRow = [];
-      currentWidth = 0;
-    }
-
-    currentRow.push(entry);
-    currentWidth += entry.effectiveWidth;
-  });
-
-  if (currentRow.length > 0) {
-    rows.push(currentRow);
-  }
-
-  const packed: SteppedSlot[] = [];
-  let cursorY = startY;
-  let symmetryPenalty = 0;
-
-  rows.map(arrangeRowSymmetrically).forEach((row) => {
-    let cursorX = (targetWidth - row.width) / 2;
-    const rowCenterY = cursorY + row.height / 2;
-
-    row.entries.forEach((entry) => {
-      packed.push({
-        ...entry.slot,
-        x: roundPosition(cursorX + entry.effectiveWidth / 2),
-        y: roundPosition(rowCenterY),
-      });
-      cursorX += entry.effectiveWidth;
-    });
-
-    cursorY += row.height;
-    symmetryPenalty += row.symmetryPenalty;
-  });
-
-  return {
-    slots: packed,
-    symmetryPenalty: roundPosition(symmetryPenalty),
-    rowCount: rows.length,
-  };
-}
-
-function evaluateCompactCandidate(
-  params: SteppedLayoutParams,
-  slots: SteppedSlot[],
-  symmetryPenalty: number,
-  rowCount: number,
-): CompactCandidateEvaluation {
-  const dims = calculateSteppedEffectiveDimensions({
-    ...params,
-    slots,
-  });
-  const widthToDepthRatio =
-    dims.depth <= 0 ? Number.POSITIVE_INFINITY : dims.width / dims.depth;
-  const aspectPenalty = Number(
-    (
-      Math.abs(widthToDepthRatio - TARGET_WIDTH_TO_DEPTH_RATIO) /
-      TARGET_WIDTH_TO_DEPTH_RATIO
-    ).toFixed(3),
-  );
-
-  return {
-    width: dims.width,
-    depth: dims.depth,
-    area: dims.width * dims.depth,
-    maxSide: Math.max(dims.width, dims.depth),
-    symmetryPenalty,
-    aspectPenalty,
-    widthToDepthRatio,
-    rowCount,
-  };
-}
-
-function compareCompactCandidateEvaluations(
-  current: CompactCandidateEvaluation,
-  best: CompactCandidateEvaluation,
-): number {
-  const currentIsHorizontal = current.width > current.depth;
-  const bestIsHorizontal = best.width > best.depth;
-  if (currentIsHorizontal !== bestIsHorizontal) {
-    return currentIsHorizontal ? -1 : 1;
-  }
-
-  if (
-    current.aspectPenalty <
-    best.aspectPenalty - 0.15
-  ) {
-    return -1;
-  }
-
-  if (
-    current.aspectPenalty >
-    best.aspectPenalty + 0.15
-  ) {
-    return 1;
-  }
-
-  if (
-    current.symmetryPenalty <
-    best.symmetryPenalty - SYMMETRY_TOLERANCE
-  ) {
-    return -1;
-  }
-
-  if (
-    current.symmetryPenalty >
-    best.symmetryPenalty + SYMMETRY_TOLERANCE
-  ) {
-    return 1;
-  }
-
-  if (
-    current.aspectPenalty <
-    best.aspectPenalty - ASPECT_RATIO_TOLERANCE
-  ) {
-    return -1;
-  }
-
-  if (
-    current.aspectPenalty >
-    best.aspectPenalty + ASPECT_RATIO_TOLERANCE
-  ) {
-    return 1;
-  }
-
-  if (current.area !== best.area) {
-    return current.area - best.area;
-  }
-
-  if (current.maxSide !== best.maxSide) {
-    return current.maxSide - best.maxSide;
-  }
-
-  if (current.rowCount !== best.rowCount) {
-    return current.rowCount - best.rowCount;
-  }
-
-  return 0;
-}
-
-function serializeSlots(slots: SteppedSlot[]): string {
-  return slots
-    .slice()
-    .sort((left, right) => left.id.localeCompare(right.id))
-    .map((slot) => `${slot.id}:${slot.x.toFixed(3)}:${slot.y.toFixed(3)}`)
-    .join("|");
 }
 
 function resolveAlignmentOffset(
@@ -490,7 +112,7 @@ function buildGroupCompactCandidates(
   );
   const candidateWidths = Array.from(
     new Set(
-      [0.8, 0.9, 1, 1.1, 1.2, 1.35, 1.5].map((factor) =>
+      CANDIDATE_WIDTH_FACTORS.map((factor) =>
         roundToStep(Math.max(baseWidth * factor, maxSlotWidth)),
       ),
     ),

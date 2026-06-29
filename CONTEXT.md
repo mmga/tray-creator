@@ -120,6 +120,38 @@ _Avoid_: Making the canvas infer mode semantics from raw Mode params.
 A mode-specific adapter that projects Mode-local layout state into a **Layout Editor Viewport**.
 _Avoid_: Passing mode-specific canvas exceptions directly through the page or viewport shell.
 
+**Effective Baseplate**:
+The actual baseplate footprint derived from placed slots and boundary spacing, rather than the raw tray width/depth inputs.
+_Avoid_: Using baseplate, tray size, or tray width/depth to mean the derived printable footprint in custom mode.
+
+**Effective Baseplate Area**:
+The footprint area of the **Effective Baseplate**, calculated as derived width multiplied by derived depth.
+_Avoid_: Using model volume or raw tray area when the meaning is the derived custom-mode footprint used for pricing.
+
+**Slot Count**:
+The number of placed slot instances in the current tray layout.
+_Avoid_: Mixing slot count with magnet-hole count or with distinct slot-size types.
+
+**Custom Quote Baseline**:
+The current custom-mode quoting rule used as the adjustable pricing baseline before later recalibration from representative layouts, with the final quote rounded up to the next integer yuan.
+_Avoid_: Treating one-off historical prices as an exact formula fit when they are only reference points.
+
+**Per-Slot Increment**:
+The fixed amount added to a custom-mode quote for each placed slot instance.
+_Avoid_: Folding this fixed increment into the area coefficient when the meaning is a separate per-slot charge.
+
+**Legacy Grid Quote Ladder**:
+The previous grid-mode quoting rule that priced trays from slot-diameter tiers plus optional magnet-hole surcharges.
+_Avoid_: Mixing the retired grid ladder with the newer area-and-slot-count baseline once grid pricing is migrated.
+
+**Grid Footprint Area**:
+The grid-mode tray footprint area calculated from the displayed theoretical outer width and depth, including actual slot size, spacing, and boundary spacing.
+_Avoid_: Using nominal hole diameter alone when the meaning is the printed footprint shown to the user.
+
+**Grid Quote Baseline**:
+The grid-mode quoting rule after migration, reusing the same coefficients and final upward-integer rounding rule as the custom quote baseline.
+_Avoid_: Maintaining a separate grid-only coefficient set when grid and custom are intentionally aligned.
+
 ## Relationships
 
 - A **Slot Definition** includes its **Tolerance**.
@@ -169,6 +201,14 @@ _Avoid_: Passing mode-specific canvas exceptions directly through the page or vi
 - A **Layout Editor Viewport** is the shape consumed by the layout canvas for 2D editing.
 - A **Layout Editor Viewport Adapter** projects a **Mode**'s local layout state into a **Layout Editor Viewport**.
 - A layout canvas should consume a **Layout Editor Viewport** instead of inferring **Mode** behavior from raw parameters.
+- In custom mode, the **Effective Baseplate** is derived from placed **Slot Instances** plus boundary spacing.
+- An **Effective Baseplate Area** belongs to exactly one **Effective Baseplate**.
+- A tray quote may use **Effective Baseplate Area** and **Slot Count** instead of model volume.
+- The current **Custom Quote Baseline** computes `2 + 0.2 × Slot Count + Effective Baseplate Area / 2560`, then rounds the final quote up to the next integer yuan.
+- A **Per-Slot Increment** belongs to each placed **Slot Instance** in the quote calculation.
+- Grid pricing may fully replace the **Legacy Grid Quote Ladder** with the same area-and-slot-count baseline used by custom pricing.
+- A **Grid Footprint Area** belongs to exactly one grid tray footprint derived from the displayed outer width and depth.
+- The current **Grid Quote Baseline** reuses the custom coefficients and final rounding rule: compute `2 + 0.2 × Slot Count + Grid Footprint Area / 2560`, then round the final quote up to the next integer yuan.
 - Loading a different draft replaces the current **Draft Binding**.
 - Saving as a new draft replaces the current **Draft Binding** with the new draft.
 - Deleting the currently bound draft clears the current **Draft Binding**.
@@ -192,3 +232,7 @@ _Avoid_: Passing mode-specific canvas exceptions directly through the page or vi
 ## Flagged Ambiguities
 
 - "凹槽定义" previously meant either a visible UI option or the generated hole geometry. Resolved: **Slot Definition** means the complete reusable geometry definition, including tolerance.
+- "底盘" was ambiguous between raw tray width/depth inputs and the derived printable footprint in custom mode. Resolved: use **Effective Baseplate** for the derived custom-mode footprint used in pricing.
+- Historical custom-mode prices may be used as reference points, not as an exact fitted law. Resolved: treat them as sanity checks around the **Custom Quote Baseline**, then adjust after reviewing representative layouts.
+- Grid mode previously mixed a diameter-tier quote ladder with a newer area-based custom quote baseline. Resolved: when grid pricing migrates, it fully replaces the old ladder rather than combining both rules.
+- Grid-mode "面积" could have meant nominal hole layout size or the displayed outer dimensions. Resolved: use **Grid Footprint Area**, derived from the displayed width and depth, for migrated grid pricing.
