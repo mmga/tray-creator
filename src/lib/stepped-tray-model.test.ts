@@ -311,7 +311,7 @@ describe("stepped tray model", { timeout: 15000 }, () => {
     );
 
     expect(lowPart).toBeDefined();
-    expect(countSmallHorizontalTopFaces(lowPart!.geometry, 10)).toBeLessThan(900);
+    expect(countSmallHorizontalTopFaces(lowPart!.geometry, 10)).toBeLessThan(700);
   });
 
   it("keeps same-height groups as separate split parts", () => {

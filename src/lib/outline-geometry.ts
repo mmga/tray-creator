@@ -22,8 +22,8 @@ const MORPH_TANGENCY_OUTER_TOLERANCE = MORPH_EPSILON_MAX * 2;
 const MORPH_TANGENCY_INNER_TOLERANCE = 0.01;
 
 // 多边形逼近圆弧的最大弦距容差 (mm)
-// 0.02mm 远低于 FDM 打印精度 (±0.2mm) 和视觉辨识阈值
-const ARC_TOLERANCE = 0.02;
+// 0.1mm 低于常见 FDM 打印公差，同时避免布尔运算后生成不可见的极薄顶面条带。
+const ARC_TOLERANCE = 0.1;
 
 /**
  * 根据最大膨胀半径和弦距容差，计算 JSCAD circle 所需的自适应 segments 数。
