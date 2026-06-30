@@ -18,6 +18,6 @@ export function useSteppedCadWorkspace(
   return useSteppedWorkspace({
     ...options,
     mode: "stepped-cad",
-    enableSplitExport: false,
+    enableSplitExport: true,
   });
 }

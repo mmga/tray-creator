@@ -136,8 +136,15 @@ export interface SteppedCadLayerFeature {
   footprint: Geom2;
 }
 
+export interface SteppedCadGroupFeature {
+  groupId: string;
+  columnHeight: number;
+  footprint: Geom2;
+}
+
 export interface SteppedCadSlotHoleFeature {
   id: string;
+  groupId: string;
   cx: number;
   cy: number;
   rotation: number;
@@ -147,6 +154,7 @@ export interface SteppedCadSlotHoleFeature {
 }
 
 export interface SteppedCadBaseHoleFeature {
+  groupId: string;
   cx: number;
   cy: number;
   baseHoleSize: ReturnType<typeof resolveBaseHolePresetKey>;
@@ -157,6 +165,7 @@ export interface SteppedCadFeatureGraph {
   trayWidth: number;
   trayDepth: number;
   maxHeight: number;
+  groups: SteppedCadGroupFeature[];
   layers: SteppedCadLayerFeature[];
   slotHoles: SteppedCadSlotHoleFeature[];
   baseHoles: SteppedCadBaseHoleFeature[];
@@ -284,13 +293,14 @@ export function buildSteppedCadFeatureGraph(
       trayWidth,
       trayDepth,
       maxHeight: 0,
+      groups: [],
       layers: [],
       slotHoles: [],
       baseHoles: [],
     };
   }
 
-  const groupFootprints = params.groups
+  const groups = params.groups
     .map((group) => {
       const ownSlots = slots.filter((slot) => slot.groupId === group.id);
       if (ownSlots.length === 0) {
@@ -330,7 +340,7 @@ export function buildSteppedCadFeatureGraph(
       } => item !== null,
     );
 
-  const heights = [...new Set(groupFootprints.map((item) => item.columnHeight))]
+  const heights = [...new Set(groups.map((item) => item.columnHeight))]
     .filter((height) => height > 0)
     .sort((left, right) => left - right);
 
@@ -338,7 +348,7 @@ export function buildSteppedCadFeatureGraph(
   const layers: SteppedCadLayerFeature[] = [];
 
   for (const height of heights) {
-    const activeFootprints = groupFootprints.filter(
+    const activeFootprints = groups.filter(
       (item) => item.columnHeight >= height,
     );
     if (activeFootprints.length === 0 || height <= previousHeight) {
@@ -364,6 +374,7 @@ export function buildSteppedCadFeatureGraph(
     const clampedDepth = Math.min(params.holeDepth, slot.columnHeight);
     return {
       id: slot.slot.id,
+      groupId: slot.groupId,
       cx: slot.cx,
       cy: slot.cy,
       rotation: slot.rotation,
@@ -381,6 +392,7 @@ export function buildSteppedCadFeatureGraph(
   const baseHoles: SteppedCadBaseHoleFeature[] = slots.map((slot) => {
     const clampedDepth = Math.min(params.holeDepth, slot.columnHeight);
     return {
+      groupId: slot.groupId,
       cx: slot.cx,
       cy: slot.cy,
       baseHoleSize: resolveBaseHolePresetKey(
@@ -396,6 +408,7 @@ export function buildSteppedCadFeatureGraph(
     trayWidth,
     trayDepth,
     maxHeight,
+    groups,
     layers,
     slotHoles,
     baseHoles,

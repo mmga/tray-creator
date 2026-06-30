@@ -1,7 +1,10 @@
 import { createTrayModel } from "../tray-model";
 import { createCustomTrayModel } from "../custom-tray-model";
 import { createSimpleSteppedTrayModel } from "../simple-stepped-tray-model";
-import { createSteppedCadTrayModel } from "../stepped-cad-tray-model";
+import {
+  createSteppedCadSplitParts,
+  createSteppedCadTrayModel,
+} from "../stepped-cad-tray-model";
 import {
   createSteppedSplitParts,
   createSteppedTrayModel,
@@ -33,6 +36,11 @@ export type WorkerRequest =
     }
   | {
       type: "GENERATE_STEPPED_CAD";
+      requestId: string;
+      params: SteppedLayoutParams;
+    }
+  | {
+      type: "GENERATE_STEPPED_CAD_SPLIT_PARTS";
       requestId: string;
       params: SteppedLayoutParams;
     }
@@ -147,6 +155,13 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
         requestId,
         geometry,
         volumeInfo: volume,
+      });
+    } else if (req.type === "GENERATE_STEPPED_CAD_SPLIT_PARTS") {
+      const parts = createSteppedCadSplitParts(req.params);
+      self.postMessage({
+        type: "STEPPED_SPLIT_PARTS_SUCCESS",
+        requestId,
+        parts,
       });
     } else if (req.type === "GENERATE_SIMPLE_STEPPED") {
       const geometry = createSimpleSteppedTrayModel(req.params);

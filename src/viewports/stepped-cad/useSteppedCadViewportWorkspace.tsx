@@ -15,6 +15,6 @@ export function useSteppedCadViewportWorkspace(
   return useSteppedViewportWorkspace({
     ...options,
     mode: "stepped-cad",
-    supportsSplitPreview: false,
+    supportsSplitPreview: true,
   });
 }

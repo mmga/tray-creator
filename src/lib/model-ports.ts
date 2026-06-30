@@ -73,4 +73,7 @@ export interface SteppedCadWorkerPort
   generateSteppedCad: (
     params: SteppedLayoutParams,
   ) => Promise<{ geometry: Geom3; volume: number }>;
+  generateSteppedCadSplitParts: (
+    params: SteppedLayoutParams,
+  ) => Promise<{ parts: SteppedSplitPartResult[] }>;
 }

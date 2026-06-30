@@ -8,6 +8,7 @@ const createCustomTrayModel = vi.fn();
 const createSimpleSteppedTrayModel = vi.fn();
 const createSteppedTrayModel = vi.fn();
 const createSteppedCadTrayModel = vi.fn();
+const createSteppedCadSplitParts = vi.fn();
 const createSteppedSplitParts = vi.fn();
 const buildSteppedOutlinePreview = vi.fn();
 const serialize = vi.fn();
@@ -26,6 +27,7 @@ vi.mock("../simple-stepped-tray-model", () => ({
 }));
 
 vi.mock("../stepped-cad-tray-model", () => ({
+  createSteppedCadSplitParts,
   createSteppedCadTrayModel,
 }));
 
@@ -214,6 +216,38 @@ describe("tray worker", () => {
     expect(workerSelf.postMessage).toHaveBeenCalledWith({
       type: "STEPPED_SPLIT_PARTS_SUCCESS",
       requestId: "req-split",
+      parts,
+    });
+  });
+
+  it("posts stepped cad split parts for split preview requests", async () => {
+    const workerSelf = await loadWorkerModule();
+    const parts = [
+      {
+        index: 0,
+        filenameLabel: "part_01_cad_low",
+        label: "低组",
+        fromHeight: 0,
+        toHeight: 10,
+        geometry: { id: "cad-split-geom" },
+      },
+    ];
+    createSteppedCadSplitParts.mockReturnValue(parts);
+
+    await workerSelf.onmessage?.({
+      data: {
+        type: "GENERATE_STEPPED_CAD_SPLIT_PARTS",
+        requestId: "req-cad-split",
+        params: STEPPED_LAYOUT_DEFAULTS,
+      },
+    } as MessageEvent);
+
+    expect(createSteppedCadSplitParts).toHaveBeenCalledWith(
+      STEPPED_LAYOUT_DEFAULTS,
+    );
+    expect(workerSelf.postMessage).toHaveBeenCalledWith({
+      type: "STEPPED_SPLIT_PARTS_SUCCESS",
+      requestId: "req-cad-split",
       parts,
     });
   });

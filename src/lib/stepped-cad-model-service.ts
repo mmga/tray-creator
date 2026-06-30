@@ -3,6 +3,7 @@ import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import { createParamBlob } from "@/lib/param-io";
 import type {
   DownloadPort,
+  SteppedSplitPartResult,
   SteppedCadWorkerPort,
 } from "@/lib/model-ports";
 import type { SteppedLayoutExtents } from "@/lib/stepped-layout-math";
@@ -13,6 +14,11 @@ export interface SteppedCadPreviewResult {
   geometry: Geom3;
   threeGeometry: THREE.BufferGeometry;
   volume: number;
+}
+
+export interface SteppedCadSplitPreviewPart
+  extends Omit<SteppedSplitPartResult, "geometry"> {
+  threeGeometry: THREE.BufferGeometry;
 }
 
 export async function generateSteppedCadPreview(
@@ -44,6 +50,34 @@ export function getSteppedCadSTLFilename(
   return `tray_stepped_cad_${exportWidth}x${exportDepth}_${params.slots.length}slots.stl`;
 }
 
+export async function generateSteppedCadSplitPreview(
+  params: SteppedLayoutParams,
+  workerPort: SteppedCadWorkerPort,
+): Promise<SteppedCadSplitPreviewPart[]> {
+  const { parts } = await workerPort.generateSteppedCadSplitParts(params);
+
+  return parts.map(({ geometry, ...part }) => ({
+    ...part,
+    threeGeometry: jscadToThreeGeometry(geometry),
+  }));
+}
+
+export function getSteppedCadSplitBaseFilename(
+  params: SteppedLayoutParams,
+  effectiveDimensions: SteppedLayoutExtents,
+): string {
+  const exportWidth =
+    effectiveDimensions.width > 0
+      ? effectiveDimensions.width
+      : params.trayWidth;
+  const exportDepth =
+    effectiveDimensions.depth > 0
+      ? effectiveDimensions.depth
+      : params.trayDepth;
+
+  return `tray_stepped_cad_split_${exportWidth}x${exportDepth}_${params.slots.length}slots`;
+}
+
 export async function exportSteppedCadModelFiles(
   params: SteppedLayoutParams,
   effectiveDimensions: SteppedLayoutExtents,
@@ -57,4 +91,49 @@ export async function exportSteppedCadModelFiles(
 
   const jsonFilename = stlFilename.replace(/\.stl$/i, ".json");
   downloadPort.downloadBlob(createParamBlob("stepped", params), jsonFilename);
+}
+
+export async function exportSteppedCadSplitPartFiles(
+  params: SteppedLayoutParams,
+  effectiveDimensions: SteppedLayoutExtents,
+  workerPort: SteppedCadWorkerPort,
+  downloadPort: DownloadPort,
+): Promise<void> {
+  const { parts } = await workerPort.generateSteppedCadSplitParts(params);
+  if (parts.length === 0) {
+    throw new Error("当前模型没有可导出的分件");
+  }
+
+  const baseFilename = getSteppedCadSplitBaseFilename(params, effectiveDimensions);
+
+  for (const part of parts) {
+    const stlResult = await workerPort.exportSTL(
+      part.geometry,
+      `${baseFilename}_${part.filenameLabel}.stl`,
+    );
+    downloadPort.downloadBlob(stlResult.blob, stlResult.filename);
+  }
+
+  const manifest = {
+    mode: "stepped-cad-split-parts",
+    generatedAt: new Date().toISOString(),
+    note: "CAD 阶梯模式拆件，按统一 feature graph 生成平接口分件。",
+    parts: parts.map((part) => ({
+      file: `${baseFilename}_${part.filenameLabel}.stl`,
+      label: part.label,
+      fromHeight: part.fromHeight,
+      toHeight: part.toHeight,
+    })),
+  };
+  downloadPort.downloadBlob(
+    new Blob([JSON.stringify(manifest, null, 2)], {
+      type: "application/json",
+    }),
+    `${baseFilename}_manifest.json`,
+  );
+
+  downloadPort.downloadBlob(
+    createParamBlob("stepped", params),
+    `${baseFilename}_params.json`,
+  );
 }
