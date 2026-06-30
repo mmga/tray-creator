@@ -16,13 +16,14 @@ import generalizeModule from "@jscad/modeling/src/operations/modifiers/generaliz
 
 const { intersect, subtract, union } = booleans;
 const { extrudeLinear } = extrusions;
-const { geom2, geom3 } = geometries;
+const { geom3 } = geometries;
 const { measureBoundingBox, measureVolume } = measurements;
 const { ellipse, rectangle } = primitives;
 const { rotateZ, translate } = transforms;
 
 const DEG_TO_RAD = Math.PI / 180;
 const FEATURE_EPSILON = 0.02;
+const LAYER_OVERLAP = 0.1;
 const PARTITION_MARGIN = 100;
 const DEFAULT_INTERFACE_GROOVE_DEPTH = 2;
 const DEFAULT_INTERFACE_GROOVE_INSET = 1;
@@ -47,8 +48,7 @@ export function createSteppedCadTrayModel(
     return createEmptyGeom();
   }
 
-  const solids = graph.groups.map((group) => buildGroupSolid(group));
-  const baseSolid = solids.length === 1 ? solids[0] : union(...solids);
+  const baseSolid = buildBaseSolid(graph);
 
   const slotHoles = graph.slotHoles.map((slotHole) =>
     translate(
@@ -63,20 +63,22 @@ export function createSteppedCadTrayModel(
     )
   );
 
-  let tray = slotHoles.length > 0
-    ? subtract(baseSolid, ...slotHoles)
-    : baseSolid;
-
+  let tray = baseSolid;
   if (params.enableBaseHole) {
     tray = subtractBaseHoles(tray, graph.baseHoles, 0, params.baseHoleSize);
+  }
+  if (slotHoles.length > 0) {
+    tray = subtract(tray, ...slotHoles);
   }
 
   return orientPositiveVolume(cleanupIfBeneficial(tray));
 }
 
-type SteppedCadGroupFeature = ReturnType<typeof buildSteppedCadFeatureGraph>["groups"][number];
-type SteppedCadSlotHoleFeature = ReturnType<typeof buildSteppedCadFeatureGraph>["slotHoles"][number];
-type SteppedCadBaseHoleFeature = ReturnType<typeof buildSteppedCadFeatureGraph>["baseHoles"][number];
+type SteppedCadFeatureGraph = ReturnType<typeof buildSteppedCadFeatureGraph>;
+type SteppedCadGroupFeature = SteppedCadFeatureGraph["groups"][number];
+type SteppedCadLayerFeature = SteppedCadFeatureGraph["layers"][number];
+type SteppedCadSlotHoleFeature = SteppedCadFeatureGraph["slotHoles"][number];
+type SteppedCadBaseHoleFeature = SteppedCadFeatureGraph["baseHoles"][number];
 
 type SteppedCadSplitUnit = {
   key: string;
@@ -102,8 +104,47 @@ type InterfacePocket = {
   footprint: Geom2;
 };
 
+function buildLayerSolid(layer: SteppedCadLayerFeature): Geom3 {
+  const fromHeight =
+    layer.fromHeight > 0 ? layer.fromHeight - LAYER_OVERLAP : 0;
+  const solid = translate(
+    [0, 0, fromHeight],
+    extrudeLinear(
+      { height: layer.toHeight - fromHeight },
+      layer.footprint,
+    ),
+  );
+
+  return orientPositiveVolume(solid);
+}
+
 function buildGroupSolid(group: SteppedCadGroupFeature): Geom3 {
-  return extrudeLinear({ height: group.columnHeight }, group.footprint);
+  const solid = extrudeLinear(
+    { height: group.columnHeight },
+    group.footprint,
+  );
+
+  return orientPositiveVolume(solid);
+}
+
+function buildBaseSolid(graph: SteppedCadFeatureGraph): Geom3 {
+  const layerSolids = graph.layers.map((layer) => buildLayerSolid(layer));
+  const layeredBase =
+    layerSolids.length === 1 ? layerSolids[0] : union(...layerSolids);
+  const layerVolume = layerSolids.reduce(
+    (total, solid) => total + Math.abs(measureVolume(solid)),
+    0,
+  );
+  const assembledVolume = Math.abs(measureVolume(layeredBase));
+
+  // Adjacent height-band unions can collapse on near-tangent outlines; this
+  // fallback is geometrically equivalent for the current feature graph.
+  if (layerVolume > 0 && assembledVolume < layerVolume * 0.5) {
+    const groupSolids = graph.groups.map((group) => buildGroupSolid(group));
+    return groupSolids.length === 1 ? groupSolids[0] : union(...groupSolids);
+  }
+
+  return layeredBase;
 }
 
 function getSlotCenter(slotHoles: SteppedCadSlotHoleFeature[]) {
@@ -290,11 +331,16 @@ function buildSplitPartIdLabel(groups: SteppedCadGroupFeature[]) {
     .join("_");
 }
 
-function cleanupSplitPartMesh(part: Geom3, simplify = true) {
+function cleanupSplitPartMesh(
+  part: Geom3,
+  simplify = true,
+  triangulate = false,
+) {
   return generalize(
     {
       snap: true,
       simplify,
+      triangulate,
     },
     part,
   ) as Geom3;
@@ -303,9 +349,16 @@ function cleanupSplitPartMesh(part: Geom3, simplify = true) {
 function cleanupIfBeneficial(part: Geom3) {
   const [[, , originalMinZ], [, , originalMaxZ]] = measureBoundingBox(part);
 
-  for (const simplify of [true, false]) {
+  const cleanupOptions = [
+    { simplify: true, triangulate: true },
+    { simplify: true, triangulate: false },
+    { simplify: false, triangulate: true },
+    { simplify: false, triangulate: false },
+  ];
+
+  for (const { simplify, triangulate } of cleanupOptions) {
     try {
-      const cleaned = cleanupSplitPartMesh(part, simplify);
+      const cleaned = cleanupSplitPartMesh(part, simplify, triangulate);
       const [[, , cleanedMinZ], [, , cleanedMaxZ]] = measureBoundingBox(cleaned);
       const keepsZExtents =
         cleanedMinZ <= originalMinZ + FEATURE_EPSILON &&
@@ -593,7 +646,7 @@ export function createSteppedCadSplitParts(
     const slotHoles = splitUnit.slotHoles.map(buildSlotHoleSolid);
     let part = slotHoles.length > 0 ? subtract(body, ...slotHoles) : body;
 
-    if (params.enableBaseHole && splitUnitBaseHeight <= 0) {
+    if (params.enableBaseHole) {
       part = subtractBaseHoles(part, splitUnit.baseHoles, 0, params.baseHoleSize);
     }
 

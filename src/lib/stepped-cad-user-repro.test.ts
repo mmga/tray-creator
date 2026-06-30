@@ -8,7 +8,10 @@ import {
 import type { Geom2, Geom3 } from "@jscad/modeling/src/geometries/types";
 import { measureBoundingBox } from "@jscad/modeling/src/measurements";
 import traySteppedCadUserReproFixture from "@/lib/fixtures/tray-stepped-cad-user-repro.json";
-import { createSteppedCadSplitParts } from "@/lib/stepped-cad-tray-model";
+import {
+  createSteppedCadSplitParts,
+  createSteppedCadTrayModel,
+} from "@/lib/stepped-cad-tray-model";
 import { insetGeom2 } from "@/lib/outline-geometry";
 import { buildSteppedCadFeatureGraph } from "@/lib/stepped-cad-feature-graph";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
@@ -183,6 +186,20 @@ function findMergedPart(grooveDepth: number) {
 }
 
 describe("stepped cad user repro", { timeout: 15000 }, () => {
+  it("keeps the complex CAD main tray convertible when magnetic holes are enabled", () => {
+    const plainModel = createSteppedCadTrayModel({
+      ...USER_REPRO_PARAMS,
+      enableBaseHole: false,
+    });
+    const magnetModel = createSteppedCadTrayModel({
+      ...USER_REPRO_PARAMS,
+      enableBaseHole: true,
+    });
+
+    expect(measureVolume(magnetModel)).toBeLessThan(measureVolume(plainModel));
+    expect(() => jscadToThreeGeometry(magnetModel)).not.toThrow();
+  });
+
   it("converts split parts from the user repro without closed-geometry errors", () => {
     const parts = createSteppedCadSplitParts(USER_REPRO_PARAMS);
 

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { measureVolume } from "@jscad/modeling/src/measurements";
+import { BASE_HOLE_CONFIG } from "@/lib/config";
+import { buildSteppedCadFeatureGraph } from "@/lib/stepped-cad-feature-graph";
 import {
   createSteppedCadSplitParts,
   createSteppedCadTrayModel,
@@ -65,10 +67,96 @@ function createParams(): SteppedLayoutParams {
   };
 }
 
+function countCavityWallFacesNear(
+  geometry: { polygons: { vertices: number[][] }[] },
+  center: { x: number; y: number },
+  radius: number,
+  zMin: number,
+  zMax: number,
+) {
+  return geometry.polygons.filter((polygon) => {
+    const zValues = polygon.vertices.map((vertex) => vertex[2] ?? 0);
+    const polygonMinZ = Math.min(...zValues);
+    const polygonMaxZ = Math.max(...zValues);
+    if (
+      polygonMaxZ - polygonMinZ < 0.5 ||
+      polygonMinZ < zMin - 0.05 ||
+      polygonMaxZ > zMax + 0.05
+    ) {
+      return false;
+    }
+
+    return polygon.vertices.every((vertex) => {
+      const dx = (vertex[0] ?? 0) - center.x;
+      const dy = (vertex[1] ?? 0) - center.y;
+      return Math.abs(Math.hypot(dx, dy) - radius) < 0.2;
+    });
+  }).length;
+}
+
+function expectPartHasBaseHoleCavity(
+  geometry: { polygons: { vertices: number[][] }[] },
+  baseHole: ReturnType<typeof buildSteppedCadFeatureGraph>["baseHoles"][number],
+) {
+  const preset = BASE_HOLE_CONFIG.presets[baseHole.baseHoleSize];
+  const zMin =
+    baseHole.baseThickness - BASE_HOLE_CONFIG.topWall - preset.depth;
+  const zMax = zMin + preset.depth;
+
+  expect(
+    countCavityWallFacesNear(
+      geometry,
+      { x: baseHole.cx, y: baseHole.cy },
+      preset.diameter / 2,
+      zMin,
+      zMax,
+    ),
+  ).toBeGreaterThan(0);
+}
+
 describe("stepped cad tray model", () => {
   it("builds a non-empty main tray", () => {
     const geometry = createSteppedCadTrayModel(createParams());
     expect(measureVolume(geometry)).toBeGreaterThan(0);
+  });
+
+  it("cuts magnetic base holes from the layered CAD main tray", () => {
+    const baseParams = createParams();
+    const params = {
+      ...baseParams,
+      groups: [
+        {
+          ...baseParams.groups[0],
+          bottomHeight: 8,
+        },
+        {
+          ...baseParams.groups[1],
+          bottomHeight: 12,
+        },
+      ],
+      slots: [
+        {
+          ...baseParams.slots[0],
+          width: 40,
+          height: 40,
+        },
+        {
+          ...baseParams.slots[1],
+          width: 60,
+          height: 60,
+        },
+      ],
+    };
+    const plainModel = createSteppedCadTrayModel({
+      ...params,
+      enableBaseHole: false,
+    });
+    const magnetModel = createSteppedCadTrayModel({
+      ...params,
+      enableBaseHole: true,
+    });
+
+    expect(measureVolume(magnetModel)).toBeLessThan(measureVolume(plainModel));
   });
 
   it("builds one split part per isolated split unit", () => {
@@ -77,6 +165,45 @@ describe("stepped cad tray model", () => {
     expect(parts.map((part) => part.label)).toEqual(["低层", "高层"]);
     expect(parts.map((part) => part.fromHeight)).toEqual([0, 10]);
     expect(parts.map((part) => part.toHeight)).toEqual([10, 20]);
+  });
+
+  it("cuts CAD magnetic cavities in every split part that owns slots", () => {
+    const params = {
+      ...createParams(),
+      slots: createParams().slots.map((slot) => ({
+        ...slot,
+        width: slot.id === "slot-high" ? 60 : 40,
+        height: slot.id === "slot-high" ? 60 : 40,
+      })),
+    };
+    const graph = buildSteppedCadFeatureGraph(params);
+    const lowBaseHole = graph.baseHoles.find((hole) => hole.groupId === "group-low");
+    const highBaseHole = graph.baseHoles.find((hole) => hole.groupId === "group-high");
+    const plainParts = createSteppedCadSplitParts({
+      ...params,
+      enableBaseHole: false,
+    });
+    const magnetParts = createSteppedCadSplitParts({
+      ...params,
+      enableBaseHole: true,
+    });
+
+    expect(lowBaseHole).toBeDefined();
+    expect(highBaseHole).toBeDefined();
+    expect(measureVolume(magnetParts[0].geometry)).toBeLessThan(
+      measureVolume(plainParts[0].geometry),
+    );
+    expect(measureVolume(magnetParts[1].geometry)).toBeLessThan(
+      measureVolume(plainParts[1].geometry),
+    );
+    expectPartHasBaseHoleCavity(
+      magnetParts[0].geometry as unknown as { polygons: { vertices: number[][] }[] },
+      lowBaseHole!,
+    );
+    expectPartHasBaseHoleCavity(
+      magnetParts[1].geometry as unknown as { polygons: { vertices: number[][] }[] },
+      highBaseHole!,
+    );
   });
 
   it("builds inset assembly pockets on lower parts and 2mm tenons on upper parts", () => {

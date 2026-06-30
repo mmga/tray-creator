@@ -52,6 +52,10 @@ _Avoid_: Using base size to mean the final generated slot size.
 One tray editing workflow such as grid, custom, simple stepped, or stepped.
 _Avoid_: Using "feature" when the meaning is the editor mode.
 
+**CAD Stepped Construction**:
+The CAD stepped-mode modeling contract where each height band is generated from its own 2D sketch and then extruded before cuts are applied.
+_Avoid_: Treating CAD stepped mode as an arbitrary union of per-group solids.
+
 **Draft**:
 A named browser-stored snapshot of one mode's tray configuration that can be listed, loaded, renamed, deleted, or exported.
 _Avoid_: Mixing draft with imported file, autosave state, or cross-mode shared preset.
@@ -220,6 +224,8 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - Grid, custom, simple stepped, and stepped modes all expose the 100mm circular **Slot Definition**.
 - The 100mm circular **Slot Definition** has a 100mm **Base Size** and a 100.4mm **Final Slot Size**.
 - A **Base Size** is not enough to reproduce a slot unless its **Tolerance** and shape-specific geometry are also known.
+- **CAD Stepped Construction** builds one extruded body per height band.
+- **CAD Stepped Construction** applies slot holes and magnetic base holes after the stepped height bands are assembled.
 
 ## Example Dialogue
 
@@ -228,6 +234,9 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 >
 > **Dev:** "Does the 100mm option generate a 100mm hole?"
 > **Domain expert:** "No. It fits a 100mm base and generates a 100.4mm final slot after tolerance."
+>
+> **Dev:** "Can CAD stepped mode generate each group as a full-height solid and union them?"
+> **Domain expert:** "No. CAD stepped mode should generate the sketch for each height band, extrude that band, then apply the holes."
 
 ## Flagged Ambiguities
 
@@ -236,3 +245,4 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - Historical custom-mode prices may be used as reference points, not as an exact fitted law. Resolved: treat them as sanity checks around the **Custom Quote Baseline**, then adjust after reviewing representative layouts.
 - Grid mode previously mixed a diameter-tier quote ladder with a newer area-based custom quote baseline. Resolved: when grid pricing migrates, it fully replaces the old ladder rather than combining both rules.
 - Grid-mode "面积" could have meant nominal hole layout size or the displayed outer dimensions. Resolved: use **Grid Footprint Area**, derived from the displayed width and depth, for migrated grid pricing.
+- "CAD 阶梯模式生成" could mean either per-group solid union or band-by-band CAD construction. Resolved: use **CAD Stepped Construction**, which generates each height band from a sketch before extrusion.
