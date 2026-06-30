@@ -174,7 +174,6 @@ vi.mock("@/components/PanelActionSection", () => ({
     draftActions,
     showStaleNotice,
     isGenerating,
-    isOversized,
   }: {
     autoPreview?: boolean;
     onAutoPreviewChange?: (checked: boolean) => void;
@@ -1561,6 +1560,71 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     expect(updateParam).toHaveBeenNthCalledWith(3, "splitGrooveDepth", 2.2);
     expect(updateParam).toHaveBeenNthCalledWith(4, "smoothingRadius", 15);
     expect(updateParam).toHaveBeenNthCalledWith(5, "disconnectDistance", 3);
+  });
+
+  it("routes CAD split recess and locator toggles", () => {
+    const updateParam = vi.fn();
+
+    render(
+      <SteppedPanel
+        params={createSteppedParams({
+          enableSplitRecess: false,
+          enableSplitLocators: false,
+        })}
+        mode="stepped-cad"
+        effectiveDimensions={{ width: 120, depth: 140 }}
+        isPreviewStale={false}
+        updateParam={updateParam}
+        setParams={vi.fn()}
+        onAddSlot={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+        selectedSlotIds={[]}
+        onAddGroup={vi.fn()}
+        onRemoveGroup={vi.fn()}
+        onUpdateGroupHeight={vi.fn()}
+        onUpdateGroupSmoothingOverride={vi.fn()}
+        onUpdateGroupSmoothingRadius={vi.fn()}
+        onUpdateGroupDisconnectOverride={vi.fn()}
+        onUpdateGroupDisconnectDistance={vi.fn()}
+        onSetActiveGroup={vi.fn()}
+        onMoveSelectedSlotsToGroup={vi.fn()}
+        onReorderGroups={vi.fn()}
+        previewGroupId={null}
+        onPreviewGroupChange={vi.fn()}
+        bridgeWarning={null}
+        optimizationProposals={[]}
+        isOptimizingLayout={false}
+        onGenerateOptimizationProposals={vi.fn()}
+        onApplyOptimizationProposal={vi.fn()}
+        onClearOptimizationProposals={vi.fn()}
+        onOpenDraftDialog={vi.fn()}
+        onSaveDraft={vi.fn()}
+        currentDraftId={null}
+      />,
+    );
+
+    expect(screen.getByText("轮廓浅槽")).toBeInTheDocument();
+    expect(screen.getByText("定位柱")).toBeInTheDocument();
+
+    const recessSwitch = screen
+      .getByText("轮廓浅槽")
+      .closest("label")
+      ?.querySelector('[role="switch"]');
+    const locatorSwitch = screen
+      .getByText("定位柱")
+      .closest("label")
+      ?.querySelector('[role="switch"]');
+    expect(recessSwitch).not.toBeNull();
+    expect(locatorSwitch).not.toBeNull();
+
+    fireEvent.click(recessSwitch!);
+    fireEvent.click(locatorSwitch!);
+
+    expect(updateParam).toHaveBeenNthCalledWith(1, "enableSplitRecess", true);
+    expect(updateParam).toHaveBeenNthCalledWith(2, "enableSplitLocators", true);
   });
 
   it("routes stepped magnetic base-hole mode toggles", () => {

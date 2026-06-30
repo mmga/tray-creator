@@ -13,7 +13,6 @@ import { buildSteppedCadFeatureGraph } from "@/lib/stepped-cad-feature-graph";
 import { insetGeom2 } from "@/lib/outline-geometry";
 import type {
   SteppedLayoutParams,
-  SteppedSplitAssemblyMode,
 } from "@/types/custom-tray";
 import generalizeModule from "@jscad/modeling/src/operations/modifiers/generalize";
 
@@ -37,7 +36,7 @@ const LOCATOR_MAX_HEIGHT = 1.8;
 const LOCATOR_TAPER_STEPS = 6;
 const LOCATOR_MAX_COUNT = 6;
 const LOCATOR_MIN_SPACING = 14;
-const LOCATOR_RECESS_DEPTH = 0.8;
+const LOCATOR_RECESS_DEPTH = 2;
 const MIN_VALID_VOLUME = 0.001;
 const generalize = generalizeModule as unknown as (
   options: { snap?: boolean; simplify?: boolean; triangulate?: boolean },
@@ -471,10 +470,15 @@ function buildSupportFootprint(
 
 function resolveSplitAssemblyMode(
   params: SteppedLayoutParams,
-): SteppedSplitAssemblyMode {
-  return params.splitAssemblyMode === "locator-recess"
-    ? "locator-recess"
-    : "profile-tenon";
+) {
+  return {
+    enableRecess:
+      params.enableSplitRecess === true ||
+      params.splitAssemblyMode === "locator-recess",
+    enableLocators:
+      params.enableSplitLocators === true ||
+      params.splitAssemblyMode === "locator-recess",
+  };
 }
 
 function buildUnifiedSplitUnitBaseFootprint(
@@ -879,7 +883,7 @@ function buildSplitUnitBody(
   splitUnits: SteppedCadSplitUnit[],
   partitions: Map<string, SteppedCadPartition>,
   grooveDepth: number,
-  assemblyMode: SteppedSplitAssemblyMode,
+  assemblyFeatures: ReturnType<typeof resolveSplitAssemblyMode>,
 ) {
   const baseHeight = getSplitUnitExternalBaseHeight(splitUnit, splitUnits);
   const interfaceDepth = Math.max(grooveDepth, 0);
@@ -908,7 +912,7 @@ function buildSplitUnitBody(
     return body;
   }
 
-  if (assemblyMode === "profile-tenon") {
+  if (!assemblyFeatures.enableRecess && !assemblyFeatures.enableLocators) {
     const pockets = buildInterfacePocketMap(
       splitUnit,
       splitUnits,
@@ -953,13 +957,15 @@ function buildSplitUnitBody(
     return body;
   }
 
-  const recesses = buildInterfaceRecessMap(
-    splitUnit,
-    splitUnits,
-    partitions,
-    baseHeight,
-    interfaceDepth,
-  );
+  const recesses = assemblyFeatures.enableRecess
+    ? buildInterfaceRecessMap(
+        splitUnit,
+        splitUnits,
+        partitions,
+        baseHeight,
+        interfaceDepth,
+      )
+    : [];
   const recessSolids = recesses
     .map((recess) =>
       buildSolidFromFootprint(
@@ -973,13 +979,15 @@ function buildSplitUnitBody(
     body = subtract(body, ...recessSolids) as Geom3;
   }
 
-  const locators = buildInterfaceLocatorMap(
-    splitUnit,
-    splitUnits,
-    partitions,
-    baseHeight,
-    interfaceDepth,
-  );
+  const locators = assemblyFeatures.enableLocators
+    ? buildInterfaceLocatorMap(
+        splitUnit,
+        splitUnits,
+        partitions,
+        baseHeight,
+        interfaceDepth,
+      )
+    : [];
   const pinSolids = locators
     .flatMap((locator) =>
       locator.points.map((point) => {
@@ -997,17 +1005,40 @@ function buildSplitUnitBody(
     body = union(body, ...pinSolids) as Geom3;
   }
 
-  if (baseHeight > 0) {
+  const upperTabDepth = assemblyFeatures.enableRecess && baseHeight > 0
+    ? Math.min(
+        LOCATOR_RECESS_DEPTH,
+        interfaceDepth,
+        splitUnit.maxHeight - baseHeight,
+      )
+    : 0;
+
+  if (upperTabDepth > 0) {
+    const supportFootprint = buildSupportFootprint(splitUnit, partitions);
+    const tab = supportFootprint
+      ? buildSolidFromFootprint(
+          supportFootprint,
+          baseHeight - upperTabDepth,
+          baseHeight + FEATURE_EPSILON,
+        )
+      : null;
+    if (tab) {
+      body = union(body, tab);
+    }
+  }
+
+  if (assemblyFeatures.enableLocators && baseHeight > 0) {
     const socketDepth = getLocatorFeatureDepth(
       interfaceDepth,
       splitUnit.maxHeight - baseHeight,
     );
+    const socketBaseHeight = baseHeight - upperTabDepth - FEATURE_EPSILON;
     const socketSolids = socketDepth > 0
       ? selectInterfaceLocatorPoints(splitUnit)
           .flatMap((point) =>
             buildLocatorBandSolids(
               point,
-              baseHeight - FEATURE_EPSILON,
+              socketBaseHeight,
               socketDepth,
               LOCATOR_CLEARANCE,
             )

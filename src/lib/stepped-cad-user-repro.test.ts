@@ -311,20 +311,19 @@ describe("stepped cad user repro", { timeout: 15000 }, () => {
   it("builds printable locator recess assembly features when selected", () => {
     const plainParts = createSteppedCadSplitParts({
       ...USER_REPRO_PARAMS,
-      splitAssemblyMode: "locator-recess",
+      enableSplitRecess: true,
+      enableSplitLocators: true,
       splitGrooveDepth: 0,
     });
     const groovedParts = createSteppedCadSplitParts({
       ...USER_REPRO_PARAMS,
-      splitAssemblyMode: "locator-recess",
+      enableSplitRecess: true,
+      enableSplitLocators: true,
       splitGrooveDepth: 2,
     });
 
     expect(plainParts).toHaveLength(groovedParts.length);
 
-    const lowestPlainPart = [...plainParts].sort(
-      (left, right) => left.fromHeight - right.fromHeight,
-    )[0];
     const lowestGroovedPart = [...groovedParts].sort(
       (left, right) => left.fromHeight - right.fromHeight,
     )[0];
@@ -335,19 +334,16 @@ describe("stepped cad user repro", { timeout: 15000 }, () => {
       (left, right) => right.toHeight - left.toHeight,
     )[0];
 
-    const [, [, , plainLowMaxZ]] = measureBoundingBox(lowestPlainPart.geometry);
-    const [, [, , groovedLowMaxZ]] = measureBoundingBox(lowestGroovedPart.geometry);
     const [[, , plainHighMinZ]] = measureBoundingBox(highestPlainPart.geometry);
     const [[, , groovedHighMinZ]] = measureBoundingBox(highestGroovedPart.geometry);
 
-    expect(groovedLowMaxZ).toBeGreaterThan(plainLowMaxZ);
-    expect(groovedHighMinZ).toBeCloseTo(plainHighMinZ, 3);
+    expect(groovedHighMinZ).toBeLessThan(plainHighMinZ - 1.5);
     expect(
       countHorizontalFacesNear(
         lowestGroovedPart.geometry as unknown as {
           polygons: { vertices: number[][] }[];
         },
-        9.2,
+        8,
       ),
     ).toBeGreaterThan(0);
   });

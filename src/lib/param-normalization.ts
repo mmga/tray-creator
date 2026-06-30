@@ -5,7 +5,6 @@ import type {
   FreeSlot,
   SimpleSteppedLayoutParams,
   SimpleSteppedSlot,
-  SteppedSplitAssemblyMode,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import { CUSTOM_LAYOUT_DEFAULTS, CUSTOM_LIMITS } from "@/lib/custom-config";
@@ -84,12 +83,18 @@ function getRawSteppedSplitGrooveDepth(obj: Record<string, unknown>): number {
   return STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth;
 }
 
-function getRawSteppedSplitAssemblyMode(
-  obj: Record<string, unknown>,
-): SteppedSplitAssemblyMode {
-  return obj.splitAssemblyMode === "locator-recess"
-    ? "locator-recess"
-    : (STEPPED_LAYOUT_DEFAULTS.splitAssemblyMode ?? "profile-tenon");
+function getRawSteppedSplitRecessEnabled(obj: Record<string, unknown>) {
+  if (typeof obj.enableSplitRecess === "boolean") {
+    return obj.enableSplitRecess;
+  }
+  return obj.splitAssemblyMode === "locator-recess";
+}
+
+function getRawSteppedSplitLocatorsEnabled(obj: Record<string, unknown>) {
+  if (typeof obj.enableSplitLocators === "boolean") {
+    return obj.enableSplitLocators;
+  }
+  return obj.splitAssemblyMode === "locator-recess";
 }
 
 function requireNumber(obj: Record<string, unknown>, key: string) {
@@ -180,7 +185,8 @@ export function migrateCustomParamsToStepped(
     spacing: customParams.spacing,
     holeDepth: customParams.holeDepth || 3,
     splitGrooveDepth: STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth,
-    splitAssemblyMode: STEPPED_LAYOUT_DEFAULTS.splitAssemblyMode,
+    enableSplitRecess: STEPPED_LAYOUT_DEFAULTS.enableSplitRecess,
+    enableSplitLocators: STEPPED_LAYOUT_DEFAULTS.enableSplitLocators,
     smoothingRadius: STEPPED_LAYOUT_DEFAULTS.smoothingRadius,
     disconnectDistance: STEPPED_LAYOUT_DEFAULTS.disconnectDistance,
     enableBaseHole: customParams.enableBaseHole,
@@ -817,7 +823,8 @@ function clampAndFillSteppedDerivedFields(params: SteppedLayoutParams) {
   const rawSmoothingRadius = getRawSteppedSmoothingRadius(obj);
   const rawDisconnectDistance = getRawSteppedDisconnectDistance(obj);
   const rawSplitGrooveDepth = getRawSteppedSplitGrooveDepth(obj);
-  const rawSplitAssemblyMode = getRawSteppedSplitAssemblyMode(obj);
+  const rawSplitRecessEnabled = getRawSteppedSplitRecessEnabled(obj);
+  const rawSplitLocatorsEnabled = getRawSteppedSplitLocatorsEnabled(obj);
 
   for (const group of groups) {
     clampField(
@@ -848,7 +855,9 @@ function clampAndFillSteppedDerivedFields(params: SteppedLayoutParams) {
     obj.splitGrooveDepth = rawSplitGrooveDepth;
   }
   clampField(obj, "splitGrooveDepth", STEPPED_LIMITS.splitGrooveDepth);
-  obj.splitAssemblyMode = rawSplitAssemblyMode;
+  obj.enableSplitRecess = rawSplitRecessEnabled;
+  obj.enableSplitLocators = rawSplitLocatorsEnabled;
+  delete obj.splitAssemblyMode;
 
   if (
     typeof obj.smoothingRadius !== "number" ||

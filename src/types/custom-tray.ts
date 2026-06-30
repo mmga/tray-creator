@@ -133,10 +133,6 @@ export interface CustomLayoutParams {
   baseHoleSize: BaseHolePresetKey;
 }
 
-export type SteppedSplitAssemblyMode =
-  | "profile-tenon"
-  | "locator-recess";
-
 /** 阶梯底座布局参数 */
 export interface SteppedLayoutParams {
   /** 托盘宽度 (mm) */
@@ -155,8 +151,12 @@ export interface SteppedLayoutParams {
   holeDepth: number;
   /** 拆件装配槽深度 (mm)；0 表示不生成公母装配槽 */
   splitGrooveDepth: number;
-  /** 拆件装配方式 */
-  splitAssemblyMode?: SteppedSplitAssemblyMode;
+  /** CAD 拆件时在下方实体生成上方实体轮廓浅槽 */
+  enableSplitRecess?: boolean;
+  /** CAD 拆件时生成定位柱和定位窝 */
+  enableSplitLocators?: boolean;
+  /** 旧字段：导入时兼容旧的装配方式选项 */
+  splitAssemblyMode?: "profile-tenon" | "locator-recess";
   /** 平滑半径 (mm)，控制底座轮廓的圆滑程度 */
   smoothingRadius: number;
   /** 为 0 时沿用平滑半径的自然桥接行为；大于 0 时按显式边缘距离阈值断开槽群 */

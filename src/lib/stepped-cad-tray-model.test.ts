@@ -237,11 +237,11 @@ describe("stepped cad tray model", () => {
     expect(groovedHighMinZ).toBeLessThan(plainHighMinZ);
   });
 
-  it("builds printable locator pins, outline recesses, and sockets when selected", () => {
+  it("builds printable locator pins when selected", () => {
     const baseParams = createParams();
     const params = {
       ...baseParams,
-      splitAssemblyMode: "locator-recess" as const,
+      enableSplitLocators: true,
       slots: [
         ...baseParams.slots,
         {
@@ -273,12 +273,43 @@ describe("stepped cad tray model", () => {
 
     expect(groovedLowMaxZ).toBeGreaterThan(plainLowMaxZ);
     expect(groovedHighMinZ).toBeCloseTo(plainHighMinZ, 3);
+  });
+
+  it("builds matching 2mm outline recesses and upper tabs when selected", () => {
+    const baseParams = createParams();
+    const params = {
+      ...baseParams,
+      enableSplitRecess: true,
+      slots: [
+        ...baseParams.slots,
+        {
+          id: "slot-high-2",
+          x: 160,
+          y: 150,
+          shape: "circle" as const,
+          width: 25,
+          height: 25,
+          rotation: 0,
+          groupId: "group-high",
+        },
+      ],
+    };
+    const plainParts = createSteppedCadSplitParts(params, 0);
+    const groovedParts = createSteppedCadSplitParts(params, 2);
+
+    expect(plainParts).toHaveLength(2);
+    expect(groovedParts).toHaveLength(2);
+
+    const [[, , plainHighMinZ]] = measureBoundingBox(plainParts[1].geometry);
+    const [[, , groovedHighMinZ]] = measureBoundingBox(groovedParts[1].geometry);
+
+    expect(groovedHighMinZ).toBeLessThan(plainHighMinZ - 1.5);
     expect(
       countHorizontalFacesNear(
         groovedParts[0].geometry as unknown as {
           polygons: { vertices: number[][] }[];
         },
-        9.2,
+        8,
       ),
     ).toBeGreaterThan(0);
   });

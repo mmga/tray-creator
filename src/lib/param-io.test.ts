@@ -402,6 +402,27 @@ describe("param-io", () => {
     expect("bottomHeight" in parsed.slots[0]).toBe(false);
   });
 
+  it("migrates legacy CAD locator-recess assembly mode into split feature toggles", () => {
+    const legacySteppedParams = { ...STEPPED_LAYOUT_DEFAULTS };
+    delete legacySteppedParams.enableSplitRecess;
+    delete legacySteppedParams.enableSplitLocators;
+    const parsed = parseParamFileObject(
+      {
+        version: 1,
+        mode: "stepped",
+        params: {
+          ...legacySteppedParams,
+          splitAssemblyMode: "locator-recess",
+        },
+      },
+      "stepped-cad",
+    ) as SteppedLayoutParams;
+
+    expect(parsed.enableSplitRecess).toBe(true);
+    expect(parsed.enableSplitLocators).toBe(true);
+    expect(parsed.splitAssemblyMode).toBeUndefined();
+  });
+
   it("normalizes simple stepped files and rebuilds row membership", () => {
     const parsed = parseParamFileObject(
       {
