@@ -326,7 +326,9 @@ function orientPositiveVolume(geometry: Geom3) {
 }
 
 function isEmptyGeom2(geometry: Geom2 | null | undefined) {
-  return !geometry || geom2.toOutlines(geometry).length === 0;
+  const sides = (geometry as Geom2 & { sides?: unknown[] } | null | undefined)
+    ?.sides;
+  return !geometry || !Array.isArray(sides) || sides.length === 0;
 }
 
 function unionGeom2Parts(parts: Geom2[]) {
@@ -343,10 +345,14 @@ function buildSolidFromFootprint(
     return null;
   }
 
-  return translate(
-    [0, 0, fromHeight],
-    extrudeLinear({ height }, footprint),
-  );
+  try {
+    return translate(
+      [0, 0, fromHeight],
+      extrudeLinear({ height }, footprint),
+    );
+  } catch {
+    return null;
+  }
 }
 
 function getPartitionedGroupFootprints(
@@ -387,11 +393,35 @@ function buildSupportFootprint(
   return unionGeom2Parts(footprints);
 }
 
-function buildSlotHoleFootprint(slotHole: SteppedCadSlotHoleFeature) {
+function buildUnifiedSplitUnitBaseFootprint(
+  splitUnit: SteppedCadSplitUnit,
+  partitions: Map<string, SteppedCadPartition>,
+) {
+  return buildSupportFootprint(splitUnit, partitions);
+}
+
+function insetInterfaceFootprint(footprint: Geom2) {
+  try {
+    return insetGeom2(
+      footprint,
+      DEFAULT_INTERFACE_GROOVE_INSET,
+    ) ?? footprint;
+  } catch {
+    return footprint;
+  }
+}
+
+function buildSlotHoleSolid(slotHole: SteppedCadSlotHoleFeature) {
   return translate(
-    [slotHole.cx, slotHole.cy],
-    rotateZ(slotHole.rotation * DEG_TO_RAD, slotHole.profile),
-  ) as Geom2;
+    [slotHole.cx, slotHole.cy, slotHole.topHeight - slotHole.depth],
+    rotateZ(
+      slotHole.rotation * DEG_TO_RAD,
+      extrudeLinear(
+        { height: slotHole.depth + FEATURE_EPSILON },
+        slotHole.profile,
+      ),
+    ),
+  );
 }
 
 function buildInterfacePocketMap(
@@ -419,25 +449,15 @@ function buildInterfacePocketMap(
       continue;
     }
 
-    const supportGroupIds = new Set(
-      otherSplitUnit.groups
-        .filter((group) => group.columnHeight === otherSplitUnit.minHeight)
-        .map((group) => group.groupId),
-    );
-    const supportFootprint = buildSupportFootprint(
+    const supportFootprint = buildUnifiedSplitUnitBaseFootprint(
       otherSplitUnit,
       partitions,
-      supportGroupIds,
     );
     if (!supportFootprint) {
       continue;
     }
 
-    const pocketFootprint =
-      insetGeom2(
-        supportFootprint,
-        DEFAULT_INTERFACE_GROOVE_INSET,
-      ) ?? supportFootprint;
+    const pocketFootprint = insetInterfaceFootprint(supportFootprint);
     const existing = pockets.get(otherBaseHeight);
 
     pockets.set(
@@ -474,6 +494,20 @@ function buildSplitUnitBody(
     return null;
   }
 
+  const bodySolids = groupFootprints
+    .filter((entry) => entry.group.columnHeight > baseHeight)
+    .map((entry) =>
+      buildSolidFromFootprint(
+        entry.footprint,
+        baseHeight,
+        entry.group.columnHeight,
+      )
+    )
+    .filter((item): item is Geom3 => item !== null);
+  if (bodySolids.length === 0) {
+    return null;
+  }
+
   const pockets =
     interfaceDepth > 0
       ? buildInterfacePocketMap(
@@ -484,118 +518,42 @@ function buildSplitUnitBody(
           interfaceDepth,
         )
       : [];
-
-  const heightBreaks = new Set<number>([
-    baseHeight,
-    ...groupFootprints.map((entry) => entry.group.columnHeight),
-  ]);
-  for (const pocket of pockets) {
-    heightBreaks.add(Math.max(baseHeight, pocket.interfaceHeight - pocket.depth));
-    heightBreaks.add(pocket.interfaceHeight);
-  }
-  for (const slotHole of splitUnit.slotHoles) {
-    heightBreaks.add(Math.max(baseHeight, slotHole.topHeight - slotHole.depth));
-    heightBreaks.add(slotHole.topHeight);
-  }
-
-  const sortedBreaks = [...heightBreaks]
-    .filter((height) => height >= baseHeight)
-    .sort((left, right) => left - right);
-  const bodyBands: Geom3[] = [];
-
-  for (let index = 0; index < sortedBreaks.length - 1; index += 1) {
-    const fromHeight = sortedBreaks[index];
-    const toHeight = sortedBreaks[index + 1];
-    if (toHeight <= fromHeight) {
-      continue;
-    }
-
-    const activeFootprints = groupFootprints
-      .filter((entry) => entry.group.columnHeight >= toHeight)
-      .map((entry) => entry.footprint);
-    if (activeFootprints.length === 0) {
-      continue;
-    }
-
-    let bandFootprint = unionGeom2Parts(activeFootprints);
-    const applicablePockets = pockets.filter(
-      (pocket) =>
-        fromHeight >= pocket.interfaceHeight - pocket.depth &&
-        toHeight <= pocket.interfaceHeight,
-    );
-    if (applicablePockets.length > 0) {
-      bandFootprint = subtract(
-        bandFootprint,
-        ...applicablePockets.map((pocket) => pocket.footprint),
-      ) as Geom2;
-      if (isEmptyGeom2(bandFootprint)) {
-        continue;
-      }
-    }
-
-    const applicableSlotHoles = splitUnit.slotHoles
-      .filter(
-        (slotHole) =>
-          slotHole.topHeight > fromHeight &&
-          slotHole.topHeight - slotHole.depth < toHeight,
+  let body = bodySolids.length === 1 ? bodySolids[0] : union(...bodySolids);
+  const pocketSolids = pockets
+    .map((pocket) =>
+      buildSolidFromFootprint(
+        pocket.footprint,
+        Math.max(baseHeight, pocket.interfaceHeight - pocket.depth),
+        pocket.interfaceHeight + FEATURE_EPSILON,
       )
-      .map(buildSlotHoleFootprint);
-    if (applicableSlotHoles.length > 0) {
-      bandFootprint = subtract(
-        bandFootprint,
-        ...applicableSlotHoles,
-      ) as Geom2;
-      if (isEmptyGeom2(bandFootprint)) {
-        continue;
-      }
-    }
-
-    const band = buildSolidFromFootprint(
-      bandFootprint,
-      index === 0 ? fromHeight : fromHeight - FEATURE_EPSILON,
-      toHeight,
-    );
-    if (band) {
-      bodyBands.push(band);
-    }
+    )
+    .filter((item): item is Geom3 => item !== null);
+  if (pocketSolids.length > 0) {
+    body = subtract(body, ...pocketSolids) as Geom3;
   }
 
   if (interfaceDepth > 0 && baseHeight > 0) {
     const tenonDepth = Math.min(interfaceDepth, splitUnit.maxHeight - baseHeight);
     if (tenonDepth > 0) {
-      const supportGroupIds = new Set(
-        splitUnit.groups
-          .filter((group) => group.columnHeight === splitUnit.minHeight)
-          .map((group) => group.groupId),
-      );
-      const supportFootprint = buildSupportFootprint(
+      const supportFootprint = buildUnifiedSplitUnitBaseFootprint(
         splitUnit,
         partitions,
-        supportGroupIds,
       );
       if (supportFootprint) {
-        const tenonFootprint =
-          insetGeom2(
-            supportFootprint,
-            DEFAULT_INTERFACE_GROOVE_INSET,
-          ) ?? supportFootprint;
+        const tenonFootprint = insetInterfaceFootprint(supportFootprint);
         const tenon = buildSolidFromFootprint(
           tenonFootprint,
           baseHeight - tenonDepth,
           baseHeight + FEATURE_EPSILON,
         );
         if (tenon) {
-          bodyBands.push(tenon);
+          body = union(body, tenon);
         }
       }
     }
   }
 
-  if (bodyBands.length === 0) {
-    return null;
-  }
-
-  return bodyBands.length === 1 ? bodyBands[0] : union(...bodyBands);
+  return body;
 }
 
 export function createSteppedCadSplitParts(
@@ -632,7 +590,8 @@ export function createSteppedCadSplitParts(
       return [];
     }
 
-    let part = body;
+    const slotHoles = splitUnit.slotHoles.map(buildSlotHoleSolid);
+    let part = slotHoles.length > 0 ? subtract(body, ...slotHoles) : body;
 
     if (params.enableBaseHole && splitUnitBaseHeight <= 0) {
       part = subtractBaseHoles(part, splitUnit.baseHoles, 0, params.baseHoleSize);

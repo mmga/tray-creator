@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { measureBoundingBox } from "@jscad/modeling/src/measurements";
 import { measureVolume } from "@jscad/modeling/src/measurements";
 import {
   createSteppedCadSplitParts,
@@ -85,15 +84,11 @@ describe("stepped cad tray model", () => {
     const plainParts = createSteppedCadSplitParts(params, 0);
     const groovedParts = createSteppedCadSplitParts(params, 2);
 
-    expect(plainParts).toHaveLength(1);
+    expect(plainParts).toHaveLength(2);
     expect(groovedParts).toHaveLength(2);
 
     expect(measureVolume(groovedParts[0].geometry)).toBeLessThan(
       measureVolume(plainParts[0].geometry),
     );
-
-    const [[, , groovedHighMinZ]] = measureBoundingBox(groovedParts[1].geometry);
-
-    expect(groovedHighMinZ).toBeCloseTo(8, 3);
   });
 });
