@@ -43,6 +43,10 @@ type ParamNormalizationPipeline<T extends NormalizableParams> = {
   clampAndFillDerivedFields: ParamNormalizationStep<T>;
 };
 
+function resolveNormalizationMode(mode: AppMode): Exclude<AppMode, "stepped-cad"> | "stepped" {
+  return mode === "stepped-cad" ? "stepped" : mode;
+}
+
 function getRawSteppedSmoothingRadius(obj: Record<string, unknown>): number {
   if (
     typeof obj.smoothingRadius === "number" &&
@@ -99,19 +103,21 @@ export function normalizeParamsForMode(
   mode: AppMode,
   params: NormalizableParams,
 ): NormalizableParams {
-  if (mode === "grid") {
+  const resolvedMode = resolveNormalizationMode(mode);
+
+  if (resolvedMode === "grid") {
     return runParamNormalizationPipeline(
       params as TrayParams,
       gridParamNormalizationPipeline,
     );
   }
-  if (mode === "simple-stepped") {
+  if (resolvedMode === "simple-stepped") {
     return runParamNormalizationPipeline(
       params as SimpleSteppedLayoutParams,
       simpleSteppedParamNormalizationPipeline,
     );
   }
-  if (mode === "stepped") {
+  if (resolvedMode === "stepped") {
     return runParamNormalizationPipeline(
       params as SteppedLayoutParams,
       steppedParamNormalizationPipeline,

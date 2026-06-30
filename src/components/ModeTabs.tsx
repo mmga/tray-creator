@@ -1,7 +1,7 @@
 "use client";
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Grid3X3, MousePointer2, Rows3, Layers } from "lucide-react";
+import { Grid3X3, MousePointer2, Rows3, Layers, Cuboid } from "lucide-react";
 import type { AppMode } from "@/types/custom-tray";
 
 interface ModeTabsProps {
@@ -17,7 +17,7 @@ export function ModeTabs({ mode, onModeChange }: ModeTabsProps) {
         onValueChange={(v) => onModeChange(v as AppMode)}
         className="w-full"
       >
-        <TabsList className="grid w-full max-w-[820px] grid-cols-4 bg-[#1c1a16] border border-[#2e2a24]">
+        <TabsList className="grid w-full max-w-[1040px] grid-cols-5 bg-[#1c1a16] border border-[#2e2a24]">
           <TabsTrigger
             value="grid"
             className="data-[state=active]:bg-[#2e2a24] data-[state=active]:text-primary text-muted-foreground transition-all duration-200"
@@ -45,6 +45,13 @@ export function ModeTabs({ mode, onModeChange }: ModeTabsProps) {
           >
             <Layers className="w-4 h-4 mr-2" />
             <span className="tracking-wider text-xs font-bold uppercase">自定义阶梯底座</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="stepped-cad"
+            className="data-[state=active]:bg-[#2e2a24] data-[state=active]:text-primary text-muted-foreground transition-all duration-200"
+          >
+            <Cuboid className="w-4 h-4 mr-2" />
+            <span className="tracking-wider text-xs font-bold uppercase">CAD 阶梯底座</span>
           </TabsTrigger>
         </TabsList>
       </Tabs>

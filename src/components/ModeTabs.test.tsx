@@ -64,15 +64,21 @@ describe("ModeTabs", { timeout: 15000 }, () => {
     const steppedButton = screen.getByRole("button", {
       name: /自定义阶梯底座/,
     });
+    const steppedCadButton = screen.getByRole("button", {
+      name: /CAD 阶梯底座/,
+    });
 
     expect(gridButton).toHaveAttribute("data-state", "active");
     expect(customButton).toHaveAttribute("data-state", "inactive");
     expect(steppedButton).toHaveAttribute("data-state", "inactive");
+    expect(steppedCadButton).toHaveAttribute("data-state", "inactive");
 
     fireEvent.click(customButton);
     fireEvent.click(steppedButton);
+    fireEvent.click(steppedCadButton);
 
     expect(onModeChange).toHaveBeenNthCalledWith(1, "custom");
     expect(onModeChange).toHaveBeenNthCalledWith(2, "stepped");
+    expect(onModeChange).toHaveBeenNthCalledWith(3, "stepped-cad");
   });
 });

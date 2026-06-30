@@ -14,6 +14,7 @@ const {
   customModelMock,
   simpleSteppedModelMock,
   steppedModelMock,
+  steppedCadModelMock,
   gridDraftsMock,
   customDraftsMock,
   simpleSteppedDraftsMock,
@@ -301,6 +302,54 @@ const {
       clearOptimizationProposals: vi.fn(),
       threeGeometry: { id: "stepped-geometry" },
     },
+    steppedCadModelMock: {
+      params: steppedParams,
+      effectiveDimensions: { width: 152, depth: 162 },
+      isPreviewStale: true,
+      setParams: vi.fn(),
+      updateParam: vi.fn(),
+      addSlot: vi.fn(),
+      handleGenerate: vi.fn(),
+      handleExportSTL: vi.fn(),
+      handleGenerateSplitPreview: vi.fn(),
+      handleExportSplitParts: vi.fn(),
+      isGenerating: false,
+      isGeneratingSplitPreview: false,
+      volume: 58,
+      addGroup: vi.fn(),
+      removeGroup: vi.fn(),
+      updateGroupHeight: vi.fn(),
+      updateGroupSmoothingOverride: vi.fn(),
+      updateGroupSmoothingRadius: vi.fn(),
+      updateGroupDisconnectOverride: vi.fn(),
+      updateGroupDisconnectDistance: vi.fn(),
+      updateGroupSplitPartTarget: vi.fn(),
+      setActiveGroup: vi.fn(),
+      moveSelectedSlotsToGroup: vi.fn(),
+      reorderGroups: vi.fn(),
+      bridgeWarning: null,
+      updateSlotPosition: vi.fn(),
+      removeSlot: vi.fn(),
+      updateSlotRotation: vi.fn(),
+      updateMultipleSlots: vi.fn(),
+      updateMultipleSlotsLive: vi.fn(),
+      insertSlots: vi.fn(),
+      duplicateSlots: vi.fn(),
+      undo: vi.fn(),
+      saveSnapshot: vi.fn(),
+      outlinePreview,
+      pauseOutlinePreview: vi.fn(),
+      resumeOutlinePreview: vi.fn(),
+      optimizationProposals,
+      isOptimizingLayout: false,
+      generateOptimizationProposals: vi.fn(),
+      applyOptimizationProposal: vi.fn(),
+      clearOptimizationProposals: vi.fn(),
+      clearSplitPreview: vi.fn(),
+      threeGeometry: { id: "stepped-cad-geometry" },
+      splitPreviewParts: null,
+      canUndo: true,
+    },
     simpleSteppedModelMock: {
       params: {
         trayWidth: 180,
@@ -488,6 +537,10 @@ vi.mock("@/hooks/useSteppedLayout", () => ({
   useSteppedLayout: () => steppedModelMock,
 }));
 
+vi.mock("@/hooks/useSteppedCadLayout", () => ({
+  useSteppedCadLayout: () => steppedCadModelMock,
+}));
+
 vi.mock("@/hooks/useSimpleSteppedLayout", () => ({
   useSimpleSteppedLayout: () => simpleSteppedModelMock,
 }));
@@ -528,6 +581,9 @@ vi.mock("@/components/ModeTabs", () => ({
         </button>
         <button type="button" onClick={() => onModeChange("stepped")}>
           切到阶梯
+        </button>
+        <button type="button" onClick={() => onModeChange("stepped-cad")}>
+          切到 CAD 阶梯
         </button>
       </div>
     );
@@ -858,13 +914,21 @@ describe("Home page", { timeout: 15000 }, () => {
     customModelMock.handleGenerate.mockReset();
     simpleSteppedModelMock.handleGenerate.mockReset();
     steppedModelMock.handleGenerate.mockReset();
+    steppedCadModelMock.handleGenerate.mockReset();
     steppedModelMock.setActiveGroup.mockReset();
+    steppedCadModelMock.setActiveGroup.mockReset();
     steppedModelMock.pauseOutlinePreview.mockReset();
     steppedModelMock.resumeOutlinePreview.mockReset();
+    steppedCadModelMock.pauseOutlinePreview.mockReset();
+    steppedCadModelMock.resumeOutlinePreview.mockReset();
     steppedModelMock.generateOptimizationProposals.mockReset();
     steppedModelMock.applyOptimizationProposal.mockReset();
     steppedModelMock.clearOptimizationProposals.mockReset();
+    steppedCadModelMock.generateOptimizationProposals.mockReset();
+    steppedCadModelMock.applyOptimizationProposal.mockReset();
+    steppedCadModelMock.clearOptimizationProposals.mockReset();
     steppedModelMock.isOptimizingLayout = false;
+    steppedCadModelMock.isOptimizingLayout = false;
     for (const draftMock of [
       gridDraftsMock,
       customDraftsMock,
@@ -1052,6 +1116,23 @@ describe("Home page", { timeout: 15000 }, () => {
     );
     expect(steppedModelMock.clearOptimizationProposals).toHaveBeenCalledTimes(
       1,
+    );
+  });
+
+  it("wires stepped cad mode through the stepped panel and 3D regenerate flow", async () => {
+    render(<Home />);
+
+    fireEvent.click(screen.getByRole("button", { name: "切到 CAD 阶梯" }));
+    await screen.findByTestId("stepped-panel");
+
+    fireEvent.click(screen.getByRole("button", { name: "3D 预览" }));
+
+    await waitFor(() => {
+      expect(steppedCadModelMock.handleGenerate).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.getByTestId("tray-viewer")).toHaveAttribute(
+      "data-geometry-id",
+      "stepped-cad-geometry",
     );
   });
 

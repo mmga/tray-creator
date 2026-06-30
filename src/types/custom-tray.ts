@@ -1,6 +1,11 @@
 import type { BaseHolePresetKey } from "@/types/tray";
 
-export type AppMode = "grid" | "custom" | "simple-stepped" | "stepped";
+export type AppMode =
+  | "grid"
+  | "custom"
+  | "simple-stepped"
+  | "stepped"
+  | "stepped-cad";
 
 /** 阶梯底座分组（一组凹槽统一高度，并形成阶梯结构的一层） */
 export interface SlotGroup {

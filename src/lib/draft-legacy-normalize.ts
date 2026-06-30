@@ -15,9 +15,8 @@ import type {
   GridDraftStructureMode,
 } from "@/lib/draft-summary";
 import type { ExportableParams } from "@/lib/param-io";
-import type { AppMode } from "@/types/custom-tray";
 
-export type DraftMode = AppMode;
+export type DraftMode = "grid" | "custom" | "simple-stepped" | "stepped";
 
 export type DraftListItemCompatibilityByMode = {
   grid: {

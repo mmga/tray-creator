@@ -2,19 +2,22 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import type { useSteppedLayout } from "@/hooks/useSteppedLayout";
+import type { UseSteppedLayoutReturn } from "@/hooks/useSteppedLayout";
 import { buildSteppedLayoutEditorViewportModel } from "@/viewports/layout-editor/steppedViewportModel";
 import { ViewportTabs } from "@/viewports/shared/ViewportTabs";
 import type { ModeViewportWorkspace } from "@/viewports/types";
+import type { AppMode } from "@/types/custom-tray";
 
 const LayoutCanvas = dynamic(() => import("@/components/LayoutCanvas"), {
   ssr: false,
 });
 
 interface UseSteppedViewportWorkspaceOptions {
-  model: ReturnType<typeof useSteppedLayout>;
+  model: UseSteppedLayoutReturn;
   rightView: "2d" | "3d";
   onRightViewChange: (next: "2d" | "3d") => void;
+  mode?: Extract<AppMode, "stepped" | "stepped-cad">;
+  supportsSplitPreview?: boolean;
 }
 
 interface UseSteppedViewportWorkspaceReturn {
@@ -29,6 +32,8 @@ export function useSteppedViewportWorkspace({
   model,
   rightView,
   onRightViewChange,
+  mode = "stepped",
+  supportsSplitPreview = true,
 }: UseSteppedViewportWorkspaceOptions): UseSteppedViewportWorkspaceReturn {
   const [selectedSlotIds, setSelectedSlotIds] = useState<string[]>([]);
   const [previewGroupId, setPreviewGroupId] = useState<string | null>(null);
@@ -53,7 +58,7 @@ export function useSteppedViewportWorkspace({
   const canvas = useMemo(
     () => (
       <LayoutCanvas
-        key="stepped"
+        key={mode}
         isActive={rightView === "2d"}
         model={buildSteppedLayoutEditorViewportModel({
           params: model.params,
@@ -81,7 +86,7 @@ export function useSteppedViewportWorkspace({
         }}
       />
     ),
-    [model, previewGroupId, rightView],
+    [mode, model, previewGroupId, rightView],
   );
 
   const viewport = useMemo(
@@ -96,15 +101,17 @@ export function useSteppedViewportWorkspace({
         isPreviewStale={model.isPreviewStale}
         isGenerating={model.isGenerating}
         onGenerate={model.handleGenerate}
-        onGenerateSplitPreview={model.handleGenerateSplitPreview}
+        onGenerateSplitPreview={supportsSplitPreview
+          ? model.handleGenerateSplitPreview
+          : undefined}
       />
     ),
-    [canvas, model, onRightViewChange, rightView],
+    [canvas, model, onRightViewChange, rightView, supportsSplitPreview],
   );
 
   return {
     workspace: {
-      mode: "stepped",
+      mode,
       viewport,
       resetTransientState: resetSteppedViewportState,
     },

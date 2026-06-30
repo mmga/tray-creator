@@ -7,6 +7,7 @@ const createTrayModel = vi.fn();
 const createCustomTrayModel = vi.fn();
 const createSimpleSteppedTrayModel = vi.fn();
 const createSteppedTrayModel = vi.fn();
+const createSteppedCadTrayModel = vi.fn();
 const createSteppedSplitParts = vi.fn();
 const buildSteppedOutlinePreview = vi.fn();
 const serialize = vi.fn();
@@ -22,6 +23,10 @@ vi.mock("../custom-tray-model", () => ({
 
 vi.mock("../simple-stepped-tray-model", () => ({
   createSimpleSteppedTrayModel,
+}));
+
+vi.mock("../stepped-cad-tray-model", () => ({
+  createSteppedCadTrayModel,
 }));
 
 vi.mock("../stepped-tray-model", () => ({
@@ -127,6 +132,31 @@ describe("tray worker", () => {
       requestId: "req-stepped",
       geometry,
       volumeInfo: 88,
+    });
+  });
+
+  it("posts generation success for stepped cad requests", async () => {
+    const workerSelf = await loadWorkerModule();
+    const geometry = { id: "stepped-cad-geom" };
+    createSteppedCadTrayModel.mockReturnValue(geometry);
+    measureVolume.mockReturnValue(66);
+
+    await workerSelf.onmessage?.({
+      data: {
+        type: "GENERATE_STEPPED_CAD",
+        requestId: "req-stepped-cad",
+        params: STEPPED_LAYOUT_DEFAULTS,
+      },
+    } as MessageEvent);
+
+    expect(createSteppedCadTrayModel).toHaveBeenCalledWith(
+      STEPPED_LAYOUT_DEFAULTS,
+    );
+    expect(workerSelf.postMessage).toHaveBeenCalledWith({
+      type: "GENERATION_SUCCESS",
+      requestId: "req-stepped-cad",
+      geometry,
+      volumeInfo: 66,
     });
   });
 

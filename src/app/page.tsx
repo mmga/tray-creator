@@ -7,6 +7,7 @@ import { useTrayModel } from "@/hooks/useTrayModel";
 import { useCustomLayout } from "@/hooks/useCustomLayout";
 import { useSimpleSteppedLayout } from "@/hooks/useSimpleSteppedLayout";
 import { useSteppedLayout } from "@/hooks/useSteppedLayout";
+import { useSteppedCadLayout } from "@/hooks/useSteppedCadLayout";
 import { useModeWorkspaces } from "@/hooks/useModeWorkspaces";
 import { useModeViewportWorkspaces } from "@/hooks/useModeViewportWorkspaces";
 import { ModeTabs } from "@/components/ModeTabs";
@@ -28,6 +29,7 @@ export default function Home() {
 
   // Stepped Mode State
   const steppedModel = useSteppedLayout();
+  const steppedCadModel = useSteppedCadLayout();
 
   const {
     activeViewport,
@@ -41,6 +43,7 @@ export default function Home() {
     customModel,
     simpleSteppedModel,
     steppedModel,
+    steppedCadModel,
   });
 
   const { activeWorkspace } = useModeWorkspaces({
@@ -49,6 +52,7 @@ export default function Home() {
     customModel,
     simpleSteppedModel,
     steppedModel,
+    steppedCadModel,
     selectedSlotIds: steppedSelectedSlotIds,
     previewGroupId: steppedPreviewGroupId,
     onPreviewGroupChange: setSteppedPreviewGroupId,

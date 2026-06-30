@@ -1,13 +1,12 @@
 import { calculateSimpleSteppedDimensions } from "@/lib/simple-stepped-layout";
 import { calculateTrayDimensions } from "@/lib/tray-model";
-import type { ExportableParams } from "@/lib/param-io";
 import type {
-  AppMode,
   CustomLayoutParams,
   SimpleSteppedLayoutParams,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import type { TrayParams } from "@/types/tray";
+import type { ExportableParams } from "@/lib/param-io";
 
 export type GridDraftStructureMode =
   | "full"
@@ -122,7 +121,7 @@ function buildSteppedDraftSummary(
   };
 }
 
-export function buildDraftSummary<M extends AppMode>(
+export function buildDraftSummary<M extends keyof DraftParamsByMode>(
   mode: M,
   params: DraftParamsByMode[M] | ExportableParams,
 ): DraftSummaryByMode[M] {

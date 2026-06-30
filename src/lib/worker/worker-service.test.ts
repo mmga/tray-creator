@@ -58,7 +58,7 @@ describe("worker service", () => {
     await expect(promise).resolves.toEqual({ geometry, volume: 321 });
   });
 
-  it("routes custom, simple stepped, stepped, and outline preview requests to their response shapes", async () => {
+  it("routes custom, simple stepped, stepped, stepped cad, and outline preview requests to their response shapes", async () => {
     const { trayWorkerService } = await import("@/lib/worker/worker-service");
     const service = trayWorkerService!;
     const worker = FakeWorker.instances[0];
@@ -115,9 +115,26 @@ describe("worker service", () => {
       volume: 222,
     });
 
+    const steppedCadPromise = service.generateSteppedCad(STEPPED_LAYOUT_DEFAULTS);
+    const steppedCadRequest = worker.postMessage.mock.calls[3]?.[0] as {
+      requestId: string;
+      type: string;
+    };
+    expect(steppedCadRequest.type).toBe("GENERATE_STEPPED_CAD");
+    worker.emit({
+      type: "GENERATION_SUCCESS",
+      requestId: steppedCadRequest.requestId,
+      geometry: { id: "stepped-cad-geom" } as never,
+      volumeInfo: 205,
+    });
+    await expect(steppedCadPromise).resolves.toEqual({
+      geometry: { id: "stepped-cad-geom" },
+      volume: 205,
+    });
+
     const previewPromise =
       service.generateSteppedOutlinePreview(STEPPED_LAYOUT_DEFAULTS);
-    const previewRequest = worker.postMessage.mock.calls[3]?.[0] as {
+    const previewRequest = worker.postMessage.mock.calls[4]?.[0] as {
       requestId: string;
       type: string;
     };
@@ -136,7 +153,7 @@ describe("worker service", () => {
     const splitPartsPromise = service.generateSteppedSplitParts(
       STEPPED_LAYOUT_DEFAULTS,
     );
-    const splitPartsRequest = worker.postMessage.mock.calls[4]?.[0] as {
+    const splitPartsRequest = worker.postMessage.mock.calls[5]?.[0] as {
       requestId: string;
       type: string;
     };

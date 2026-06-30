@@ -4,11 +4,13 @@ import { useMemo } from "react";
 import type { useCustomLayout } from "@/hooks/useCustomLayout";
 import type { useSimpleSteppedLayout } from "@/hooks/useSimpleSteppedLayout";
 import type { useSteppedLayout } from "@/hooks/useSteppedLayout";
+import type { useSteppedCadLayout } from "@/hooks/useSteppedCadLayout";
 import type { useTrayModel } from "@/hooks/useTrayModel";
 import { useCustomWorkspace } from "@/workspaces/custom/useCustomWorkspace";
 import { useGridWorkspace } from "@/workspaces/grid/useGridWorkspace";
 import { useSimpleSteppedWorkspace } from "@/workspaces/simple-stepped/useSimpleSteppedWorkspace";
 import { useSteppedWorkspace } from "@/workspaces/stepped/useSteppedWorkspace";
+import { useSteppedCadWorkspace } from "@/workspaces/stepped-cad/useSteppedCadWorkspace";
 import type { ModeWorkspace } from "@/workspaces/types";
 import type { AppMode } from "@/types/custom-tray";
 
@@ -18,6 +20,7 @@ interface UseModeWorkspacesOptions {
   customModel: ReturnType<typeof useCustomLayout>;
   simpleSteppedModel: ReturnType<typeof useSimpleSteppedLayout>;
   steppedModel: ReturnType<typeof useSteppedLayout>;
+  steppedCadModel: ReturnType<typeof useSteppedCadLayout>;
   selectedSlotIds: string[];
   previewGroupId: string | null;
   onPreviewGroupChange: (groupId: string | null) => void;
@@ -34,6 +37,7 @@ export function useModeWorkspaces({
   customModel,
   simpleSteppedModel,
   steppedModel,
+  steppedCadModel,
   selectedSlotIds,
   previewGroupId,
   onPreviewGroupChange,
@@ -55,6 +59,13 @@ export function useModeWorkspaces({
     onPreviewGroupChange,
     onWorkspaceReset: onSteppedWorkspaceReset,
   });
+  const steppedCadWorkspace = useSteppedCadWorkspace({
+    model: steppedCadModel,
+    selectedSlotIds,
+    previewGroupId,
+    onPreviewGroupChange,
+    onWorkspaceReset: onSteppedWorkspaceReset,
+  });
 
   const activeWorkspace = useMemo<ModeWorkspace>(() => {
     switch (mode) {
@@ -66,6 +77,8 @@ export function useModeWorkspaces({
         return simpleSteppedWorkspace;
       case "stepped":
         return steppedWorkspace;
+      case "stepped-cad":
+        return steppedCadWorkspace;
       default: {
         const unreachableMode: never = mode;
         throw new Error(`Unsupported workspace mode: ${String(unreachableMode)}`);
@@ -77,6 +90,7 @@ export function useModeWorkspaces({
     mode,
     simpleSteppedWorkspace,
     steppedWorkspace,
+    steppedCadWorkspace,
   ]);
 
   return {

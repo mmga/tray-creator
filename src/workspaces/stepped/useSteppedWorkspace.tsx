@@ -5,19 +5,22 @@ import dynamic from "next/dynamic";
 import { useWorkspaceDraftSupport } from "@/workspaces/shared";
 import type { ModeWorkspace } from "@/workspaces/types";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
+import type { AppMode } from "@/types/custom-tray";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
-import type { useSteppedLayout } from "@/hooks/useSteppedLayout";
+import type { UseSteppedLayoutReturn } from "@/hooks/useSteppedLayout";
 
 const SteppedPanel = dynamic(() => import("@/components/SteppedPanel"), {
   ssr: false,
 });
 
 interface UseSteppedWorkspaceOptions {
-  model: ReturnType<typeof useSteppedLayout>;
+  model: UseSteppedLayoutReturn;
   selectedSlotIds: string[];
   previewGroupId: string | null;
   onPreviewGroupChange: (groupId: string | null) => void;
   onWorkspaceReset: () => void;
+  mode?: Extract<AppMode, "stepped" | "stepped-cad">;
+  enableSplitExport?: boolean;
 }
 
 export function useSteppedWorkspace({
@@ -26,6 +29,8 @@ export function useSteppedWorkspace({
   previewGroupId,
   onPreviewGroupChange,
   onWorkspaceReset,
+  mode = "stepped",
+  enableSplitExport = true,
 }: UseSteppedWorkspaceOptions): ModeWorkspace {
   const { draftActions, draftDialogProps, clearDraftBinding } =
     useWorkspaceDraftSupport({
@@ -60,7 +65,7 @@ export function useSteppedWorkspace({
         onAddSlot={model.addSlot}
         onGenerate={model.handleGenerate}
         onExportSTL={model.handleExportSTL}
-        onExportSplitParts={model.handleExportSplitParts}
+        onExportSplitParts={enableSplitExport ? model.handleExportSplitParts : undefined}
         isGenerating={model.isGenerating}
         volume={model.volume}
         selectedSlotIds={selectedSlotIds}
@@ -117,6 +122,7 @@ export function useSteppedWorkspace({
       model.updateGroupSmoothingRadius,
       model.updateParam,
       model.volume,
+      enableSplitExport,
       onPreviewGroupChange,
       previewGroupId,
       resetWorkspace,
@@ -125,7 +131,7 @@ export function useSteppedWorkspace({
   );
 
   return {
-    mode: "stepped",
+    mode,
     panel,
     draftDialogProps,
     commands: {

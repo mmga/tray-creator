@@ -188,6 +188,7 @@ export default function TrayViewer({
   const [explosionDistance, setExplosionDistance] = useState(42);
   const isLoadingPreview = Boolean(isGenerating || isGeneratingSplitPreview);
   const canShowSplitPreview = Boolean(splitParts && splitParts.length > 0);
+  const hasSplitMode = Boolean(onGenerateSplitPreview || canShowSplitPreview);
   const showSplitPreview = viewerMode === "split" && canShowSplitPreview;
   const splitFitItems = useMemo(
     () =>
@@ -288,30 +289,32 @@ export default function TrayViewer({
         >
           整件
         </button>
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            setViewerMode("split");
-            if (!canShowSplitPreview && !isGeneratingSplitPreview) {
-              onGenerateSplitPreview?.();
-            }
-          }}
-          disabled={!onGenerateSplitPreview && !canShowSplitPreview}
-          className={`inline-flex h-7 items-center gap-1 rounded-sm px-2 text-[11px] transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-            viewerMode === "split"
-              ? "bg-[#2a3528] text-[#a8d39a]"
-              : "text-muted-foreground hover:bg-[#1c1a16] hover:text-foreground"
-          }`}
-        >
-          {isGeneratingSplitPreview ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : (
-            <Layers className="h-3 w-3" />
-          )}
-          拆件
-        </button>
-        {viewerMode === "split" ? (
+        {hasSplitMode ? (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              setViewerMode("split");
+              if (!canShowSplitPreview && !isGeneratingSplitPreview) {
+                onGenerateSplitPreview?.();
+              }
+            }}
+            disabled={!onGenerateSplitPreview && !canShowSplitPreview}
+            className={`inline-flex h-7 items-center gap-1 rounded-sm px-2 text-[11px] transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+              viewerMode === "split"
+                ? "bg-[#2a3528] text-[#a8d39a]"
+                : "text-muted-foreground hover:bg-[#1c1a16] hover:text-foreground"
+            }`}
+          >
+            {isGeneratingSplitPreview ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Layers className="h-3 w-3" />
+            )}
+            拆件
+          </button>
+        ) : null}
+        {viewerMode === "split" && hasSplitMode ? (
           <label className="flex h-7 items-center gap-2 border-l border-[#2e2a24] pl-2 text-[10px] text-muted-foreground">
             <span>间距</span>
             <input
