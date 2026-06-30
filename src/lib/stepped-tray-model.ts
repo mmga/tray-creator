@@ -7,6 +7,7 @@ import {
   geometries,
 } from "@jscad/modeling";
 import type { Geom2, Geom3 } from "@jscad/modeling/src/geometries/types";
+import generalizeModule from "@jscad/modeling/src/operations/modifiers/generalize";
 import type { SteppedLayoutParams, SteppedSlot } from "@/types/custom-tray";
 import {
   RENDER_CONFIG,
@@ -36,6 +37,10 @@ const { cuboid, ellipse, circle } = primitives;
 const { extrudeLinear } = extrusions;
 const { measureVolume } = measurements;
 const { geom2 } = geometries;
+const generalize = generalizeModule as unknown as (
+  options: { snap?: boolean; simplify?: boolean; triangulate?: boolean },
+  geometry: Geom3,
+) => Geom3;
 
 const DEG_TO_RAD = Math.PI / 180;
 const SPLIT_EPSILON = 0.02;
@@ -692,6 +697,16 @@ function buildSplitPartIdLabel(groupSolids: SteppedGroupSolid[]) {
     .join("_");
 }
 
+function cleanupSplitPartMesh(part: Geom3) {
+  return generalize(
+    {
+      snap: true,
+      simplify: true,
+    },
+    part,
+  ) as Geom3;
+}
+
 /**
  * 根据阶梯底座参数生成托盘 3D 模型（按组独立实体 + 纳入更高组为平滑连接上下文）
  *
@@ -903,6 +918,7 @@ export function createSteppedSplitParts(
     if (grooveAdditions.length > 0) {
       part = union(part, ...grooveAdditions);
     }
+    part = cleanupSplitPartMesh(part);
 
     if (measureVolume(part) > 0.001) {
       const safeGroupId = buildSplitPartIdLabel(splitUnit.groupSolids);
