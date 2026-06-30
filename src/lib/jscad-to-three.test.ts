@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { primitives } from "@jscad/modeling";
 import * as THREE from "three";
+import steppedSplitFragmentFixture from "@/lib/fixtures/tray-stepped-split-fragments.json";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
+import { createSteppedCadSplitParts } from "@/lib/stepped-cad-tray-model";
+import type { SteppedLayoutParams } from "@/types/custom-tray";
 
 const { cuboid } = primitives;
 
@@ -36,6 +39,17 @@ describe("jscad to three geometry", () => {
       );
 
       expect(normal.length()).toBeCloseTo(1, 5);
+    }
+  });
+
+  it("converts cad split parts from stepped fixture without null polygon vertices", () => {
+    const parts = createSteppedCadSplitParts(
+      steppedSplitFragmentFixture.params as SteppedLayoutParams,
+    );
+
+    expect(parts.length).toBeGreaterThan(0);
+    for (const part of parts) {
+      expect(() => jscadToThreeGeometry(part.geometry)).not.toThrow();
     }
   });
 });

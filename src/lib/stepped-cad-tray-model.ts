@@ -24,6 +24,7 @@ const DEG_TO_RAD = Math.PI / 180;
 const FEATURE_EPSILON = 0.02;
 const PARTITION_MARGIN = 100;
 const DEFAULT_INTERFACE_GROOVE_DEPTH = 2;
+const MIN_VALID_VOLUME = 0.001;
 const generalize = generalizeModule as unknown as (
   options: { snap?: boolean; simplify?: boolean; triangulate?: boolean },
   geometry: Geom3,
@@ -68,10 +69,7 @@ export function createSteppedCadTrayModel(
     tray = subtractBaseHoles(tray, graph.baseHoles, 0, params.baseHoleSize);
   }
 
-  const cleanedTray = cleanupSplitPartMesh(tray);
-  const candidate =
-    Math.abs(measureVolume(cleanedTray)) > 0.001 ? cleanedTray : tray;
-  return orientPositiveVolume(candidate);
+  return orientPositiveVolume(cleanupIfBeneficial(tray));
 }
 
 type SteppedCadGroupFeature = ReturnType<typeof buildSteppedCadFeatureGraph>["groups"][number];
@@ -296,19 +294,28 @@ function buildSplitPartIdLabel(groups: SteppedCadGroupFeature[]) {
     .join("_");
 }
 
-function cleanupSplitPartMesh(part: Geom3) {
+function cleanupSplitPartMesh(part: Geom3, simplify = true) {
   return generalize(
     {
       snap: true,
-      simplify: true,
+      simplify,
     },
     part,
   ) as Geom3;
 }
 
 function cleanupIfBeneficial(part: Geom3) {
-  const cleaned = cleanupSplitPartMesh(part);
-  return Math.abs(measureVolume(cleaned)) > 0.001 ? cleaned : part;
+  for (const simplify of [true, false]) {
+    try {
+      const cleaned = cleanupSplitPartMesh(part, simplify);
+      if (Math.abs(measureVolume(cleaned)) > MIN_VALID_VOLUME) {
+        return cleaned;
+      }
+    } catch {
+      continue;
+    }
+  }
+  return part;
 }
 
 function orientPositiveVolume(geometry: Geom3) {
@@ -513,7 +520,7 @@ export function createSteppedCadSplitParts(
       part = union(part, ...grooveAdditions);
     }
 
-    if (Math.abs(measureVolume(part)) <= 0.001) {
+    if (Math.abs(measureVolume(part)) <= MIN_VALID_VOLUME) {
       return [];
     }
     part = orientPositiveVolume(cleanupIfBeneficial(part));
