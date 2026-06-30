@@ -221,6 +221,9 @@ describe("param normalization", () => {
     expect(normalized.trayDepth).toBe(300);
     expect(normalized.spacing).toBe(2);
     expect(normalized.smoothingRadius).toBe(25);
+    expect(normalized.splitGrooveDepth).toBe(
+      STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth,
+    );
   });
 
   it("preserves valid stepped split part group targets and drops invalid ones", () => {
@@ -289,6 +292,24 @@ describe("param normalization", () => {
     expect(normalized.groups[0].bottomHeight).toBeCloseTo(
       4 + getBaseHoleMinBaseThickness("40"),
       5,
+    );
+  });
+
+  it("clamps stepped split groove depth and fills the default when missing", () => {
+    const normalized = normalizeParamsForMode("stepped", {
+      ...STEPPED_LAYOUT_DEFAULTS,
+      splitGrooveDepth: 99,
+    } as SteppedLayoutParams) as SteppedLayoutParams;
+
+    expect(normalized.splitGrooveDepth).toBe(10);
+
+    const defaulted = normalizeParamsForMode("stepped", {
+      ...STEPPED_LAYOUT_DEFAULTS,
+      splitGrooveDepth: undefined,
+    } as unknown as SteppedLayoutParams) as SteppedLayoutParams;
+
+    expect(defaulted.splitGrooveDepth).toBe(
+      STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth,
     );
   });
 });

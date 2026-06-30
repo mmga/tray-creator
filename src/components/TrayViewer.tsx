@@ -416,7 +416,7 @@ export default function TrayViewer({
               />
             ))}
             <CameraAutoFit
-              key={`split-${explosionDistance}-${splitParts!.map((part) => part.threeGeometry.uuid).join("-")}`}
+              key={`split-${splitParts!.map((part) => part.threeGeometry.uuid).join("-")}`}
               items={splitFitItems}
             />
           </>

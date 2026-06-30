@@ -374,6 +374,9 @@ describe("param-io", () => {
     expect(parsed.trayDepth).toBe(50);
     expect(parsed.spacing).toBe(20);
     expect(parsed.holeDepth).toBe(20);
+    expect(parsed.splitGrooveDepth).toBe(
+      STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth,
+    );
     expect(parsed.smoothingRadius).toBe(150);
     expect(parsed.disconnectDistance).toBe(
       STEPPED_LAYOUT_DEFAULTS.disconnectDistance,

@@ -144,6 +144,7 @@ export function buildSteppedPerfFixture(
     activeGroupId: groups[0]?.id ?? "",
     spacing: config.spacing,
     holeDepth: config.holeDepth,
+    splitGrooveDepth: 2,
     smoothingRadius: config.smoothingRadius,
     disconnectDistance: config.disconnectDistance,
     enableBaseHole: false,

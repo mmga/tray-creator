@@ -6,24 +6,26 @@ import {
   primitives,
   transforms,
 } from "@jscad/modeling";
-import type { Geom3 } from "@jscad/modeling/src/geometries/types";
+import type { Geom2, Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { SteppedSplitPartResult } from "@/lib/model-ports";
 import { subtractBaseHoles } from "@/lib/model-utils";
 import { buildSteppedCadFeatureGraph } from "@/lib/stepped-cad-feature-graph";
+import { insetGeom2 } from "@/lib/outline-geometry";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 import generalizeModule from "@jscad/modeling/src/operations/modifiers/generalize";
 
 const { intersect, subtract, union } = booleans;
 const { extrudeLinear } = extrusions;
-const { geom3 } = geometries;
-const { measureVolume } = measurements;
-const { circle, cuboid, ellipse } = primitives;
+const { geom2, geom3 } = geometries;
+const { measureBoundingBox, measureVolume } = measurements;
+const { ellipse, rectangle } = primitives;
 const { rotateZ, translate } = transforms;
 
 const DEG_TO_RAD = Math.PI / 180;
 const FEATURE_EPSILON = 0.02;
 const PARTITION_MARGIN = 100;
 const DEFAULT_INTERFACE_GROOVE_DEPTH = 2;
+const DEFAULT_INTERFACE_GROOVE_INSET = 1;
 const MIN_VALID_VOLUME = 0.001;
 const generalize = generalizeModule as unknown as (
   options: { snap?: boolean; simplify?: boolean; triangulate?: boolean },
@@ -83,6 +85,21 @@ type SteppedCadSplitUnit = {
   baseHoles: SteppedCadBaseHoleFeature[];
   minHeight: number;
   maxHeight: number;
+};
+
+type SteppedCadPartition = {
+  footprint: Geom2;
+};
+
+type PartitionedGroupFootprint = {
+  group: SteppedCadGroupFeature;
+  footprint: Geom2;
+};
+
+type InterfacePocket = {
+  interfaceHeight: number;
+  depth: number;
+  footprint: Geom2;
 };
 
 function buildGroupSolid(group: SteppedCadGroupFeature): Geom3 {
@@ -189,10 +206,8 @@ function buildSameHeightPartitionMap(
   trayWidth: number,
   trayDepth: number,
 ) {
-  const partitions = new Map<string, Geom3>();
+  const partitions = new Map<string, SteppedCadPartition>();
   const unitsByHeight = new Map<number, SteppedCadSplitUnit[]>();
-  const maxHeight =
-    units.length > 0 ? Math.max(...units.map((unit) => unit.maxHeight)) : 0;
 
   for (const unit of units) {
     const bucket = unitsByHeight.get(unit.minHeight) ?? [];
@@ -240,10 +255,12 @@ function buildSameHeightPartitionMap(
 
       partitions.set(
         sorted[index].unit.key,
-        cuboid({
-          size: [width, depth, maxHeight + PARTITION_MARGIN * 2],
-          center: [centerX, centerY, maxHeight / 2],
-        }),
+        {
+          footprint: rectangle({
+            size: [width, depth],
+            center: [centerX, centerY],
+          }),
+        },
       );
     }
   }
@@ -260,27 +277,6 @@ function getSplitUnitExternalBaseHeight(
     .map((unit) => unit.maxHeight);
 
   return lowerHeights.length > 0 ? Math.max(...lowerHeights) : 0;
-}
-
-function clipSolidBelowHeight(
-  solid: Geom3,
-  baseHeight: number,
-  trayWidth: number,
-  trayDepth: number,
-  maxHeight: number,
-) {
-  if (baseHeight <= 0) {
-    return solid;
-  }
-
-  const clipHeight = Math.max(maxHeight - baseHeight + PARTITION_MARGIN, PARTITION_MARGIN);
-  return intersect(
-    solid,
-    cuboid({
-      size: [trayWidth + PARTITION_MARGIN * 2, trayDepth + PARTITION_MARGIN * 2, clipHeight],
-      center: [0, 0, baseHeight + clipHeight / 2],
-    }),
-  );
 }
 
 function buildSplitPartLabel(groups: SteppedCadGroupFeature[], params: SteppedLayoutParams) {
@@ -305,10 +301,17 @@ function cleanupSplitPartMesh(part: Geom3, simplify = true) {
 }
 
 function cleanupIfBeneficial(part: Geom3) {
+  const [[, , originalMinZ], [, , originalMaxZ]] = measureBoundingBox(part);
+
   for (const simplify of [true, false]) {
     try {
       const cleaned = cleanupSplitPartMesh(part, simplify);
-      if (Math.abs(measureVolume(cleaned)) > MIN_VALID_VOLUME) {
+      const [[, , cleanedMinZ], [, , cleanedMaxZ]] = measureBoundingBox(cleaned);
+      const keepsZExtents =
+        cleanedMinZ <= originalMinZ + FEATURE_EPSILON &&
+        cleanedMaxZ >= originalMaxZ - FEATURE_EPSILON;
+
+      if (keepsZExtents && Math.abs(measureVolume(cleaned)) > MIN_VALID_VOLUME) {
         return cleaned;
       }
     } catch {
@@ -322,72 +325,282 @@ function orientPositiveVolume(geometry: Geom3) {
   return measureVolume(geometry) < 0 ? geom3.invert(geometry) : geometry;
 }
 
-function getSupportGroups(
-  splitUnit: SteppedCadSplitUnit,
-  allowedGroupIds?: Set<string>,
-) {
-  return splitUnit.groups.filter((group) => {
-    if (!allowedGroupIds) {
-      return true;
-    }
-    return allowedGroupIds.has(group.groupId);
-  });
+function isEmptyGeom2(geometry: Geom2 | null | undefined) {
+  return !geometry || geom2.toOutlines(geometry).length === 0;
 }
 
-function getSupportSlotHoles(
-  splitUnit: SteppedCadSplitUnit,
-  allowedGroupIds?: Set<string>,
-) {
-  return splitUnit.slotHoles.filter((slotHole) => {
-    if (!allowedGroupIds) {
-      return true;
-    }
-    return allowedGroupIds.has(slotHole.groupId);
-  });
+function unionGeom2Parts(parts: Geom2[]) {
+  return parts.length === 1 ? parts[0] : (union(...parts) as Geom2);
 }
 
-function buildWholeFaceMateFeature(
-  splitUnit: SteppedCadSplitUnit,
-  depth: number,
-  zBase: number,
-  allowedGroupIds?: Set<string>,
+function buildSolidFromFootprint(
+  footprint: Geom2,
+  fromHeight: number,
+  toHeight: number,
 ) {
-  if (depth <= 0) {
+  const height = toHeight - fromHeight;
+  if (height <= 0 || isEmptyGeom2(footprint)) {
     return null;
   }
-
-  const supportGroups = getSupportGroups(splitUnit, allowedGroupIds);
-  const supportSlotHoles = getSupportSlotHoles(splitUnit, allowedGroupIds);
-  if (supportGroups.length === 0) {
-    return null;
-  }
-
-  const footprint = supportSlotHoles.length > 0
-    ? supportSlotHoles.map((slotHole) =>
-        translate(
-          [slotHole.cx, slotHole.cy],
-          circle({
-            radius: slotHole.connectorRadius,
-            segments: 48,
-          }),
-        )
-      )
-    : supportGroups.map((group) => group.footprint);
-
-  const mergedFootprint =
-    footprint.length === 1
-      ? footprint[0]
-      : union(...footprint);
 
   return translate(
-    [0, 0, zBase],
-    extrudeLinear({ height: depth }, mergedFootprint),
+    [0, 0, fromHeight],
+    extrudeLinear({ height }, footprint),
   );
+}
+
+function getPartitionedGroupFootprints(
+  splitUnit: SteppedCadSplitUnit,
+  partitions: Map<string, SteppedCadPartition>,
+) {
+  const partition = partitions.get(splitUnit.key);
+  return splitUnit.groups
+    .map<PartitionedGroupFootprint | null>((group) => {
+      const clipped = partition
+        ? (intersect(group.footprint, partition.footprint) as Geom2)
+        : group.footprint;
+      return isEmptyGeom2(clipped)
+        ? null
+        : {
+            group,
+            footprint: clipped,
+          };
+    })
+    .filter((item): item is PartitionedGroupFootprint => item !== null);
+}
+
+function buildSupportFootprint(
+  splitUnit: SteppedCadSplitUnit,
+  partitions: Map<string, SteppedCadPartition>,
+  allowedGroupIds?: Set<string>,
+) {
+  const footprints = getPartitionedGroupFootprints(splitUnit, partitions)
+    .filter((entry) =>
+      allowedGroupIds ? allowedGroupIds.has(entry.group.groupId) : true,
+    )
+    .map((entry) => entry.footprint);
+
+  if (footprints.length === 0) {
+    return null;
+  }
+
+  return unionGeom2Parts(footprints);
+}
+
+function buildSlotHoleFootprint(slotHole: SteppedCadSlotHoleFeature) {
+  return translate(
+    [slotHole.cx, slotHole.cy],
+    rotateZ(slotHole.rotation * DEG_TO_RAD, slotHole.profile),
+  ) as Geom2;
+}
+
+function buildInterfacePocketMap(
+  splitUnit: SteppedCadSplitUnit,
+  splitUnits: SteppedCadSplitUnit[],
+  partitions: Map<string, SteppedCadPartition>,
+  baseHeight: number,
+  grooveDepth: number,
+) {
+  const pockets = new Map<number, InterfacePocket>();
+  const splitUnitHeights = new Set(splitUnit.groups.map((group) => group.columnHeight));
+
+  for (const otherSplitUnit of splitUnits) {
+    if (otherSplitUnit.key === splitUnit.key) {
+      continue;
+    }
+
+    const otherBaseHeight = getSplitUnitExternalBaseHeight(otherSplitUnit, splitUnits);
+    if (!splitUnitHeights.has(otherBaseHeight)) {
+      continue;
+    }
+
+    const depth = Math.min(grooveDepth, otherBaseHeight - baseHeight);
+    if (depth <= 0) {
+      continue;
+    }
+
+    const supportGroupIds = new Set(
+      otherSplitUnit.groups
+        .filter((group) => group.columnHeight === otherSplitUnit.minHeight)
+        .map((group) => group.groupId),
+    );
+    const supportFootprint = buildSupportFootprint(
+      otherSplitUnit,
+      partitions,
+      supportGroupIds,
+    );
+    if (!supportFootprint) {
+      continue;
+    }
+
+    const pocketFootprint =
+      insetGeom2(
+        supportFootprint,
+        DEFAULT_INTERFACE_GROOVE_INSET,
+      ) ?? supportFootprint;
+    const existing = pockets.get(otherBaseHeight);
+
+    pockets.set(
+      otherBaseHeight,
+      existing
+        ? {
+            interfaceHeight: otherBaseHeight,
+            depth: Math.max(existing.depth, depth),
+            footprint: unionGeom2Parts([existing.footprint, pocketFootprint]),
+          }
+        : {
+            interfaceHeight: otherBaseHeight,
+            depth,
+            footprint: pocketFootprint,
+          },
+    );
+  }
+
+  return [...pockets.values()].sort(
+    (left, right) => left.interfaceHeight - right.interfaceHeight,
+  );
+}
+
+function buildSplitUnitBody(
+  splitUnit: SteppedCadSplitUnit,
+  splitUnits: SteppedCadSplitUnit[],
+  partitions: Map<string, SteppedCadPartition>,
+  grooveDepth: number,
+) {
+  const baseHeight = getSplitUnitExternalBaseHeight(splitUnit, splitUnits);
+  const interfaceDepth = Math.max(grooveDepth, 0);
+  const groupFootprints = getPartitionedGroupFootprints(splitUnit, partitions);
+  if (groupFootprints.length === 0) {
+    return null;
+  }
+
+  const pockets =
+    interfaceDepth > 0
+      ? buildInterfacePocketMap(
+          splitUnit,
+          splitUnits,
+          partitions,
+          baseHeight,
+          interfaceDepth,
+        )
+      : [];
+
+  const heightBreaks = new Set<number>([
+    baseHeight,
+    ...groupFootprints.map((entry) => entry.group.columnHeight),
+  ]);
+  for (const pocket of pockets) {
+    heightBreaks.add(Math.max(baseHeight, pocket.interfaceHeight - pocket.depth));
+    heightBreaks.add(pocket.interfaceHeight);
+  }
+  for (const slotHole of splitUnit.slotHoles) {
+    heightBreaks.add(Math.max(baseHeight, slotHole.topHeight - slotHole.depth));
+    heightBreaks.add(slotHole.topHeight);
+  }
+
+  const sortedBreaks = [...heightBreaks]
+    .filter((height) => height >= baseHeight)
+    .sort((left, right) => left - right);
+  const bodyBands: Geom3[] = [];
+
+  for (let index = 0; index < sortedBreaks.length - 1; index += 1) {
+    const fromHeight = sortedBreaks[index];
+    const toHeight = sortedBreaks[index + 1];
+    if (toHeight <= fromHeight) {
+      continue;
+    }
+
+    const activeFootprints = groupFootprints
+      .filter((entry) => entry.group.columnHeight >= toHeight)
+      .map((entry) => entry.footprint);
+    if (activeFootprints.length === 0) {
+      continue;
+    }
+
+    let bandFootprint = unionGeom2Parts(activeFootprints);
+    const applicablePockets = pockets.filter(
+      (pocket) =>
+        fromHeight >= pocket.interfaceHeight - pocket.depth &&
+        toHeight <= pocket.interfaceHeight,
+    );
+    if (applicablePockets.length > 0) {
+      bandFootprint = subtract(
+        bandFootprint,
+        ...applicablePockets.map((pocket) => pocket.footprint),
+      ) as Geom2;
+      if (isEmptyGeom2(bandFootprint)) {
+        continue;
+      }
+    }
+
+    const applicableSlotHoles = splitUnit.slotHoles
+      .filter(
+        (slotHole) =>
+          slotHole.topHeight > fromHeight &&
+          slotHole.topHeight - slotHole.depth < toHeight,
+      )
+      .map(buildSlotHoleFootprint);
+    if (applicableSlotHoles.length > 0) {
+      bandFootprint = subtract(
+        bandFootprint,
+        ...applicableSlotHoles,
+      ) as Geom2;
+      if (isEmptyGeom2(bandFootprint)) {
+        continue;
+      }
+    }
+
+    const band = buildSolidFromFootprint(
+      bandFootprint,
+      index === 0 ? fromHeight : fromHeight - FEATURE_EPSILON,
+      toHeight,
+    );
+    if (band) {
+      bodyBands.push(band);
+    }
+  }
+
+  if (interfaceDepth > 0 && baseHeight > 0) {
+    const tenonDepth = Math.min(interfaceDepth, splitUnit.maxHeight - baseHeight);
+    if (tenonDepth > 0) {
+      const supportGroupIds = new Set(
+        splitUnit.groups
+          .filter((group) => group.columnHeight === splitUnit.minHeight)
+          .map((group) => group.groupId),
+      );
+      const supportFootprint = buildSupportFootprint(
+        splitUnit,
+        partitions,
+        supportGroupIds,
+      );
+      if (supportFootprint) {
+        const tenonFootprint =
+          insetGeom2(
+            supportFootprint,
+            DEFAULT_INTERFACE_GROOVE_INSET,
+          ) ?? supportFootprint;
+        const tenon = buildSolidFromFootprint(
+          tenonFootprint,
+          baseHeight - tenonDepth,
+          baseHeight + FEATURE_EPSILON,
+        );
+        if (tenon) {
+          bodyBands.push(tenon);
+        }
+      }
+    }
+  }
+
+  if (bodyBands.length === 0) {
+    return null;
+  }
+
+  return bodyBands.length === 1 ? bodyBands[0] : union(...bodyBands);
 }
 
 export function createSteppedCadSplitParts(
   params: SteppedLayoutParams,
-  grooveDepth = DEFAULT_INTERFACE_GROOVE_DEPTH,
+  grooveDepth = params.splitGrooveDepth ?? DEFAULT_INTERFACE_GROOVE_DEPTH,
 ): SteppedSplitPartResult[] {
   const graph = buildSteppedCadFeatureGraph(params);
   if (graph.groups.length === 0) {
@@ -406,132 +619,36 @@ export function createSteppedCadSplitParts(
     graph.trayWidth,
     graph.trayDepth,
   );
-  const maxHeight =
-    splitUnits.length > 0 ? Math.max(...splitUnits.map((unit) => unit.maxHeight)) : 0;
-  const claimedSolids: Geom3[] = [];
 
   return splitUnits.flatMap((splitUnit, index) => {
-    const groupSolids = splitUnit.groups.map((group) => {
-      const solid = buildGroupSolid(group);
-      const partition = partitions.get(splitUnit.key);
-      return partition ? intersect(solid, partition) : solid;
-    });
-    if (groupSolids.length === 0) {
+    const splitUnitBaseHeight = getSplitUnitExternalBaseHeight(splitUnit, splitUnits);
+    const body = buildSplitUnitBody(
+      splitUnit,
+      splitUnits,
+      partitions,
+      grooveDepth,
+    );
+    if (!body) {
       return [];
     }
 
-    const splitUnitBaseHeight = getSplitUnitExternalBaseHeight(splitUnit, splitUnits);
-    const unionedSolid = groupSolids.length === 1 ? groupSolids[0] : union(...groupSolids);
-    const clippedSolid = clipSolidBelowHeight(
-      unionedSolid,
-      splitUnitBaseHeight,
-      graph.trayWidth,
-      graph.trayDepth,
-      maxHeight,
-    );
-
-    const slotHoles = splitUnit.slotHoles.map((slotHole) =>
-      translate(
-        [slotHole.cx, slotHole.cy, slotHole.topHeight - slotHole.depth],
-        rotateZ(
-          slotHole.rotation * DEG_TO_RAD,
-          extrudeLinear(
-            { height: slotHole.depth + FEATURE_EPSILON },
-            slotHole.profile,
-          ),
-        ),
-      ),
-    );
-
-    let part = slotHoles.length > 0 ? subtract(clippedSolid, ...slotHoles) : clippedSolid;
-
-    if (claimedSolids.length > 0) {
-      const claimedCutters = claimedSolids.flatMap((solid) => [
-        solid,
-        translate([0, 0, FEATURE_EPSILON], solid),
-      ]);
-      part = subtract(part, ...claimedCutters);
-    }
+    let part = body;
 
     if (params.enableBaseHole && splitUnitBaseHeight <= 0) {
       part = subtractBaseHoles(part, splitUnit.baseHoles, 0, params.baseHoleSize);
     }
 
-    const grooveCutters: Geom3[] = [];
-    const grooveAdditions: Geom3[] = [];
-    const interfaceDepth = Math.max(grooveDepth, 0);
-    if (interfaceDepth > 0 && splitUnitBaseHeight > 0) {
-      const upperTenonDepth = Math.min(
-        interfaceDepth,
-        splitUnit.maxHeight - splitUnitBaseHeight,
-      );
-      const supportGroupIds = new Set(
-        splitUnit.groups
-          .filter((group) => group.columnHeight === splitUnit.minHeight)
-          .map((group) => group.groupId),
-      );
-      const upperTenon = buildWholeFaceMateFeature(
-        splitUnit,
-        upperTenonDepth + FEATURE_EPSILON,
-        splitUnitBaseHeight - upperTenonDepth,
-        supportGroupIds,
-      );
-      if (upperTenon) {
-        grooveAdditions.push(upperTenon);
-      }
-    }
-
-    if (interfaceDepth > 0) {
-      const splitUnitHeights = new Set(splitUnit.groups.map((group) => group.columnHeight));
-      for (const otherSplitUnit of splitUnits) {
-        if (otherSplitUnit.key === splitUnit.key) {
-          continue;
-        }
-        const otherBaseHeight = getSplitUnitExternalBaseHeight(otherSplitUnit, splitUnits);
-        if (!splitUnitHeights.has(otherBaseHeight)) {
-          continue;
-        }
-
-        const lowPocketDepth = Math.min(interfaceDepth, otherBaseHeight - splitUnitBaseHeight);
-        if (lowPocketDepth <= 0) {
-          continue;
-        }
-        const supportGroupIds = new Set(
-          otherSplitUnit.groups
-            .filter((group) => group.columnHeight === otherSplitUnit.minHeight)
-            .map((group) => group.groupId),
-        );
-        const lowPocket = buildWholeFaceMateFeature(
-          otherSplitUnit,
-          lowPocketDepth + FEATURE_EPSILON,
-          otherBaseHeight - lowPocketDepth,
-          supportGroupIds,
-        );
-        if (lowPocket) {
-          grooveCutters.push(lowPocket);
-        }
-      }
-    }
-
-    if (grooveCutters.length > 0) {
-      part = subtract(part, ...grooveCutters);
-    }
-    if (grooveAdditions.length > 0) {
-      part = union(part, ...grooveAdditions);
-    }
-
+    part = orientPositiveVolume(cleanupIfBeneficial(part));
     if (Math.abs(measureVolume(part)) <= MIN_VALID_VOLUME) {
       return [];
     }
-    part = orientPositiveVolume(cleanupIfBeneficial(part));
 
-    claimedSolids.push(part);
     const filenameLabel = `part_${String(index + 1).padStart(2, "0")}_${buildSplitPartIdLabel(splitUnit.groups)}`;
     return [{
       index,
       filenameLabel,
       label: buildSplitPartLabel(splitUnit.groups, params),
-      fromHeight: 0,
+      fromHeight: splitUnitBaseHeight,
       toHeight: splitUnit.maxHeight,
       geometry: part,
     }];

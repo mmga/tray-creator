@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { measureBoundingBox } from "@jscad/modeling/src/measurements";
 import { measureVolume } from "@jscad/modeling/src/measurements";
 import {
   createSteppedCadSplitParts,
@@ -57,6 +58,7 @@ function createParams(): SteppedLayoutParams {
     activeGroupId: "group-low",
     spacing: 5,
     holeDepth: 3,
+    splitGrooveDepth: 2,
     smoothingRadius: 60,
     disconnectDistance: 0,
     enableBaseHole: false,
@@ -74,6 +76,24 @@ describe("stepped cad tray model", () => {
     const parts = createSteppedCadSplitParts(createParams());
     expect(parts).toHaveLength(2);
     expect(parts.map((part) => part.label)).toEqual(["低层", "高层"]);
+    expect(parts.map((part) => part.fromHeight)).toEqual([0, 10]);
     expect(parts.map((part) => part.toHeight)).toEqual([10, 20]);
+  });
+
+  it("builds inset assembly pockets on lower parts and 2mm tenons on upper parts", () => {
+    const params = createParams();
+    const plainParts = createSteppedCadSplitParts(params, 0);
+    const groovedParts = createSteppedCadSplitParts(params, 2);
+
+    expect(plainParts).toHaveLength(1);
+    expect(groovedParts).toHaveLength(2);
+
+    expect(measureVolume(groovedParts[0].geometry)).toBeLessThan(
+      measureVolume(plainParts[0].geometry),
+    );
+
+    const [[, , groovedHighMinZ]] = measureBoundingBox(groovedParts[1].geometry);
+
+    expect(groovedHighMinZ).toBeCloseTo(8, 3);
   });
 });

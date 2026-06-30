@@ -149,6 +149,8 @@ export interface SteppedLayoutParams {
   spacing: number;
   /** 凹槽深度 (mm)，全局固定，从柱顶向下挖的深度 */
   holeDepth: number;
+  /** 拆件装配槽深度 (mm)；0 表示不生成公母装配槽 */
+  splitGrooveDepth: number;
   /** 平滑半径 (mm)，控制底座轮廓的圆滑程度 */
   smoothingRadius: number;
   /** 为 0 时沿用平滑半径的自然桥接行为；大于 0 时按显式边缘距离阈值断开槽群 */

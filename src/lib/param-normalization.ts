@@ -73,6 +73,16 @@ function getRawSteppedDisconnectDistance(obj: Record<string, unknown>): number {
   return STEPPED_LAYOUT_DEFAULTS.disconnectDistance;
 }
 
+function getRawSteppedSplitGrooveDepth(obj: Record<string, unknown>): number {
+  if (
+    typeof obj.splitGrooveDepth === "number" &&
+    Number.isFinite(obj.splitGrooveDepth)
+  ) {
+    return obj.splitGrooveDepth;
+  }
+  return STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth;
+}
+
 function requireNumber(obj: Record<string, unknown>, key: string) {
   if (typeof obj[key] !== "number") {
     throw new Error(`缺少或无效的字段: ${key}`);
@@ -160,6 +170,7 @@ export function migrateCustomParamsToStepped(
     activeGroupId: defaultGroupId,
     spacing: customParams.spacing,
     holeDepth: customParams.holeDepth || 3,
+    splitGrooveDepth: STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth,
     smoothingRadius: STEPPED_LAYOUT_DEFAULTS.smoothingRadius,
     disconnectDistance: STEPPED_LAYOUT_DEFAULTS.disconnectDistance,
     enableBaseHole: customParams.enableBaseHole,
@@ -795,6 +806,7 @@ function clampAndFillSteppedDerivedFields(params: SteppedLayoutParams) {
   const groups = obj.groups as Record<string, unknown>[];
   const rawSmoothingRadius = getRawSteppedSmoothingRadius(obj);
   const rawDisconnectDistance = getRawSteppedDisconnectDistance(obj);
+  const rawSplitGrooveDepth = getRawSteppedSplitGrooveDepth(obj);
 
   for (const group of groups) {
     clampField(
@@ -818,6 +830,13 @@ function clampAndFillSteppedDerivedFields(params: SteppedLayoutParams) {
   clampField(obj, "trayDepth", STEPPED_LIMITS.trayDepth);
   clampField(obj, "spacing", STEPPED_LIMITS.spacing);
   clampField(obj, "holeDepth", STEPPED_LIMITS.holeDepth);
+  if (
+    typeof obj.splitGrooveDepth !== "number" ||
+    !Number.isFinite(obj.splitGrooveDepth)
+  ) {
+    obj.splitGrooveDepth = rawSplitGrooveDepth;
+  }
+  clampField(obj, "splitGrooveDepth", STEPPED_LIMITS.splitGrooveDepth);
 
   if (
     typeof obj.smoothingRadius !== "number" ||

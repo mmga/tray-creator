@@ -661,7 +661,7 @@ export default function SteppedPanel({
             {/* 结构参数 */}
             <div className="iron-panel rounded-sm p-4">
                 <SectionHeader icon={Wrench} title="结构参数" collapsible defaultOpen={false}
-                    summary={`槽距${params.spacing}mm / 凹槽深度${params.holeDepth}mm / 断连${params.disconnectDistance}mm`}>
+                    summary={`槽距${params.spacing}mm / 凹槽深度${params.holeDepth}mm / 装配槽${params.splitGrooveDepth}mm / 断连${params.disconnectDistance}mm`}>
                     <div className="space-y-4">
                         <ParamSlider
                             label={STEPPED_LIMITS.spacing.label}
@@ -676,6 +676,13 @@ export default function SteppedPanel({
                             config={STEPPED_LIMITS.holeDepth}
                             onChange={(v) => updateParam("holeDepth", v)}
                             unit={STEPPED_LIMITS.holeDepth.unit}
+                        />
+                        <ParamSlider
+                            label={STEPPED_LIMITS.splitGrooveDepth.label}
+                            value={params.splitGrooveDepth}
+                            config={STEPPED_LIMITS.splitGrooveDepth}
+                            onChange={(v) => updateParam("splitGrooveDepth", v)}
+                            unit={STEPPED_LIMITS.splitGrooveDepth.unit}
                         />
                         <ParamSlider
                             label={STEPPED_LIMITS.smoothingRadius.label}

@@ -807,6 +807,7 @@ export function createSteppedSplitParts(
 
   const grooveConfig = {
     ...DEFAULT_SPLIT_GROOVE,
+    interfaceGrooveDepth: params.splitGrooveDepth,
     ...grooveOptions,
   };
   const { trayWidth, trayDepth, groupSolids } = buildSteppedGroupSolids(params);

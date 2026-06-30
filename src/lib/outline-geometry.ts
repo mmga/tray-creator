@@ -477,6 +477,40 @@ export function generateOutlineGeom2(
   return geom2.fromPoints(snapped);
 }
 
+export function insetGeom2(
+  geometry: Geom2,
+  distance: number,
+  arcSegments: number = 64,
+): Geom2 | null {
+  if (distance <= 0) {
+    return geometry;
+  }
+
+  const outlines = geom2.toOutlines(geometry);
+  if (outlines.length === 0) {
+    return null;
+  }
+
+  const insetParts = outlines
+    .map((outline) => {
+      const ccwOutline =
+        signedPolygonArea(outline) < 0
+          ? ([...outline].reverse() as [number, number][])
+          : outline;
+      const inset = insetPolygon(ccwOutline, distance, arcSegments);
+      return inset ? geom2.fromPoints(inset) : null;
+    })
+    .filter((item): item is Geom2 => item !== null);
+
+  if (insetParts.length === 0) {
+    return null;
+  }
+
+  return insetParts.length === 1
+    ? insetParts[0]
+    : (union(...insetParts) as Geom2);
+}
+
 // ── Circle-Snapping 后处理 ──────────────────
 
 /**

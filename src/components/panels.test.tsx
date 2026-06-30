@@ -1496,6 +1496,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
           activeGroupId: "group-2",
           spacing: 5,
           holeDepth: 3,
+          splitGrooveDepth: 2,
           smoothingRadius: 14,
           disconnectDistance: 2,
         })}
@@ -1545,6 +1546,9 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
       screen.getByRole("button", { name: "设置凹槽深度:3" }),
     );
     fireEvent.click(
+      screen.getByRole("button", { name: "设置装配槽深度:2" }),
+    );
+    fireEvent.click(
       screen.getByRole("button", { name: "设置平滑半径:14" }),
     );
     fireEvent.click(
@@ -1554,8 +1558,9 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     expect(onAddSlot).toHaveBeenCalledWith(HUNDRED_MM_PRESET.diameter);
     expect(updateParam).toHaveBeenNthCalledWith(1, "spacing", 6);
     expect(updateParam).toHaveBeenNthCalledWith(2, "holeDepth", 3.2);
-    expect(updateParam).toHaveBeenNthCalledWith(3, "smoothingRadius", 15);
-    expect(updateParam).toHaveBeenNthCalledWith(4, "disconnectDistance", 3);
+    expect(updateParam).toHaveBeenNthCalledWith(3, "splitGrooveDepth", 2.2);
+    expect(updateParam).toHaveBeenNthCalledWith(4, "smoothingRadius", 15);
+    expect(updateParam).toHaveBeenNthCalledWith(5, "disconnectDistance", 3);
   });
 
   it("routes stepped magnetic base-hole mode toggles", () => {

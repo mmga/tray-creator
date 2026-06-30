@@ -247,12 +247,15 @@ describe("TrayViewer", { timeout: 15000 }, () => {
 
     const distanceSlider = screen.getByLabelText("爆炸视图间距");
     expect(distanceSlider).toHaveValue("42");
+    expect(useThreeState.camera.position.set).toHaveBeenCalledTimes(2);
     fireEvent.change(distanceSlider, { target: { value: "76" } });
     expect(distanceSlider).toHaveValue("76");
     expect(screen.getByText("76")).toBeInTheDocument();
+    expect(useThreeState.camera.position.set).toHaveBeenCalledTimes(2);
     fireEvent.change(distanceSlider, { target: { value: "0" } });
     expect(distanceSlider).toHaveValue("0");
     expect(screen.getByText("0")).toBeInTheDocument();
+    expect(useThreeState.camera.position.set).toHaveBeenCalledTimes(2);
   });
 
   it("prevents default on context loss and removes listeners on unmount", () => {

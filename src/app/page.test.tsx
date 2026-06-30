@@ -135,6 +135,7 @@ const {
     activeGroupId: "group-1",
     spacing: 5,
     holeDepth: 3,
+    splitGrooveDepth: 2,
     smoothingRadius: 60,
     disconnectDistance: 0,
     enableBaseHole: false,
