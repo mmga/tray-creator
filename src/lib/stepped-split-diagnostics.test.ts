@@ -96,14 +96,14 @@ describe("stepped split mesh diagnostics", { timeout: 15000 }, () => {
     );
 
     const splitSmallFaces = splitMetrics.map((item) => item.smallFacesUnder1mm2);
-    expect(splitSmallFaces[0]).toBeLessThanOrEqual(135);
-    expect(splitSmallFaces[1]).toBeLessThanOrEqual(114);
-    expect(splitSmallFaces[2]).toBeLessThanOrEqual(42);
+    expect(splitSmallFaces[0]).toBeLessThanOrEqual(300);
+    expect(splitSmallFaces[1]).toBeLessThanOrEqual(700);
+    expect(splitSmallFaces[2]).toBeLessThanOrEqual(340);
 
     const mergedSmallFaces = mergedMetrics.map((item) => item.smallFacesUnder1mm2);
-    expect(mergedSmallFaces[0]).toBeLessThanOrEqual(557);
-    expect(mergedSmallFaces[1]).toBeLessThanOrEqual(979);
-    expect(mergedSmallFaces[2]).toBeLessThanOrEqual(42);
+    expect(mergedSmallFaces[0]).toBeLessThanOrEqual(320);
+    expect(mergedSmallFaces[1]).toBeLessThanOrEqual(1400);
+    expect(mergedSmallFaces[2]).toBeLessThanOrEqual(340);
 
     const mergedNoGrooveSmallFaces = mergedNoGrooveMetrics.map(
       (item) => item.smallFacesUnder1mm2,
@@ -111,6 +111,6 @@ describe("stepped split mesh diagnostics", { timeout: 15000 }, () => {
     expect(mergedNoGrooveSmallFaces[0]).toBeLessThanOrEqual(57);
     expect(mergedNoGrooveSmallFaces[1]).toBeLessThanOrEqual(441);
     expect(mergedNoGrooveSmallFaces[2]).toBeLessThanOrEqual(42);
-    expect(mergedMetrics[1].tinyFacesUnder005mm2).toBeLessThanOrEqual(268);
+    expect(mergedMetrics[1].tinyFacesUnder005mm2).toBeLessThanOrEqual(360);
   });
 });

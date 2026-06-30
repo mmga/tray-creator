@@ -504,6 +504,36 @@ function buildSameHeightPartitionMap(
   return partitions;
 }
 
+/**
+ * 用简单圆柱 union 生成 cutter，供公母装配槽使用。
+ *
+ * 公母槽只影响零件内部配合面（外观不可见），无需沿用形态学曲边轮廓。
+ * 改用与 slot 孔同源的圆柱 cutter，可避免"曲边轮廓 × 曲边外轮廓"的
+ * 共面/相切布尔减法在 jscad CSG 下产生薄片与破面。
+ */
+function buildSimpleSlotCylinders(
+  slotData: NormalizedSlotData[],
+  spacing: number,
+  height: number,
+): Geom3 | null {
+  if (slotData.length === 0) {
+    return null;
+  }
+
+  const cols = slotData.map((d) => {
+    const r = Math.max(d.actualW, d.actualH) / 2 + spacing;
+    return translate(
+      [d.cx, d.cy, 0],
+      extrudeLinear(
+        { height },
+        circle({ radius: r, segments: RENDER_CONFIG.cylinderSegments }),
+      ),
+    );
+  });
+
+  return cols.length === 1 ? cols[0] : union(...cols);
+}
+
 function buildGroupFootprintCutter(
   params: SteppedLayoutParams,
   groupSolid: {
@@ -514,9 +544,19 @@ function buildGroupFootprintCutter(
   depth: number,
   zBase: number,
   useContextFootprint = true,
+  simpleShape = false,
 ): Geom3 | null {
   if (depth <= 0 || groupSolid.slotData.length === 0) {
     return null;
+  }
+
+  if (simpleShape) {
+    const cutterSlotData =
+      useContextFootprint
+        ? groupSolid.footprintSlotData ?? groupSolid.slotData
+        : groupSolid.slotData;
+    const simple = buildSimpleSlotCylinders(cutterSlotData, params.spacing, depth);
+    return simple ? translate([0, 0, zBase], simple) : null;
   }
 
   const cutterSlotData =
@@ -616,6 +656,7 @@ function buildSplitUnitFootprintCutter(
   interfaceHeight: number,
   useContextFootprint: boolean,
   allowedGroupIds?: Set<string>,
+  simpleShape = false,
 ): Geom3 | null {
   if (depth <= 0) {
     return null;
@@ -638,6 +679,7 @@ function buildSplitUnitFootprintCutter(
         depth,
         zBase,
         useContextFootprint,
+        simpleShape,
       ),
     )
     .filter((cutter): cutter is Geom3 => cutter !== null);
@@ -870,6 +912,7 @@ export function createSteppedSplitParts(
           splitUnitBaseHeight,
           true,
           supportGroupIds,
+          true,
         );
         if (upperTenon) {
           grooveAdditions.push(upperTenon);
@@ -906,6 +949,7 @@ export function createSteppedSplitParts(
           otherBaseHeight,
           true,
           supportGroupIds,
+          true,
         );
         if (lowPocket) {
           grooveCutters.push(lowPocket);
