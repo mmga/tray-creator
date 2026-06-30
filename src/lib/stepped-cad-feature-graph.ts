@@ -1,7 +1,6 @@
 import {
   booleans,
   geometries,
-  measurements,
   primitives,
   transforms,
 } from "@jscad/modeling";
@@ -24,7 +23,6 @@ import { getEffectiveGroupStructureParams } from "@/lib/stepped-group-params";
 
 const { union } = booleans;
 const { geom2 } = geometries;
-const { measureBoundingBox } = measurements;
 const { circle, ellipse } = primitives;
 const { translate } = transforms;
 
@@ -147,7 +145,6 @@ export interface SteppedCadGroupFeature {
   groupId: string;
   columnHeight: number;
   footprint: Geom2;
-  bounds: [[number, number], [number, number]];
 }
 
 export interface SteppedCadSlotHoleFeature {
@@ -158,7 +155,7 @@ export interface SteppedCadSlotHoleFeature {
   rotation: number;
   topHeight: number;
   depth: number;
-  outerRadius: number;
+  connectorRadius: number;
   profile: Geom2;
 }
 
@@ -337,13 +334,6 @@ export function buildSteppedCadFeatureGraph(
         groupId: group.id,
         columnHeight,
         footprint,
-        bounds: (() => {
-          const bounds = measureBoundingBox(footprint);
-          return [
-            [bounds[0][0], bounds[0][1]],
-            [bounds[1][0], bounds[1][1]],
-          ];
-        })(),
       };
     })
     .filter((item): item is SteppedCadGroupFeature => item !== null);
@@ -388,9 +378,13 @@ export function buildSteppedCadFeatureGraph(
       rotation: slot.rotation,
       topHeight: slot.columnHeight,
       depth: clampedDepth,
-      outerRadius:
-        Math.max(slot.profile.width, slot.profile.height) / 2 +
-        slot.profile.outerOffset,
+      connectorRadius: getConnectivityRadius(
+        slot.slot.width,
+        slot.slot.height,
+        params.spacing,
+        slot.profile.outerOffset * 2,
+        slot.profile.outerOffset * 2,
+      ),
       profile: createOffsetSlotShape(
         slot.profile.width,
         slot.profile.height,
