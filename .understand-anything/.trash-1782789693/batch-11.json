@@ -1,0 +1,226 @@
+{
+  "nodes": [
+    {
+      "id": "config:.mcp.json",
+      "type": "config",
+      "name": ".mcp.json",
+      "filePath": ".mcp.json",
+      "summary": ".mcp.json 是项目配置文件，控制构建、测试、类型检查或工具链行为。",
+      "tags": [
+        "configuration",
+        "json"
+      ],
+      "complexity": "simple",
+      "language": "json"
+    },
+    {
+      "id": "document:CLAUDE.md",
+      "type": "document",
+      "name": "CLAUDE.md",
+      "filePath": "CLAUDE.md",
+      "summary": "CLAUDE.md 是项目文档，说明 项目背景、使用方式或协作上下文。",
+      "tags": [
+        "documentation",
+        "markdown"
+      ],
+      "complexity": "moderate",
+      "language": "markdown"
+    },
+    {
+      "id": "document:CONTEXT.md",
+      "type": "document",
+      "name": "CONTEXT.md",
+      "filePath": "CONTEXT.md",
+      "summary": "CONTEXT.md 是项目文档，说明 项目背景、使用方式或协作上下文。",
+      "tags": [
+        "documentation",
+        "markdown"
+      ],
+      "complexity": "moderate",
+      "language": "markdown"
+    },
+    {
+      "id": "document:README.md",
+      "type": "document",
+      "name": "README.md",
+      "filePath": "README.md",
+      "summary": "README.md 是项目文档，说明 项目背景、使用方式或协作上下文。",
+      "tags": [
+        "documentation",
+        "markdown"
+      ],
+      "complexity": "simple",
+      "language": "markdown"
+    },
+    {
+      "id": "document:claude-progress.txt",
+      "type": "document",
+      "name": "claude-progress.txt",
+      "filePath": "claude-progress.txt",
+      "summary": "claude-progress.txt 是项目文档，说明 项目背景、使用方式或协作上下文。",
+      "tags": [
+        "documentation",
+        "txt"
+      ],
+      "complexity": "moderate",
+      "language": "txt"
+    },
+    {
+      "id": "config:components.json",
+      "type": "config",
+      "name": "components.json",
+      "filePath": "components.json",
+      "summary": "components.json 是项目配置文件，控制构建、测试、类型检查或工具链行为。",
+      "tags": [
+        "configuration",
+        "json"
+      ],
+      "complexity": "simple",
+      "language": "json"
+    },
+    {
+      "id": "document:copilot-session-f86083c1-8fbe-49be-87ab-c69cf7e83a83.md",
+      "type": "document",
+      "name": "copilot-session-f86083c1-8fbe-49be-87ab-c69cf7e83a83.md",
+      "filePath": "copilot-session-f86083c1-8fbe-49be-87ab-c69cf7e83a83.md",
+      "summary": "copilot-session-f86083c1-8fbe-49be-87ab-c69cf7e83a83.md 是项目文档，说明 项目背景、使用方式或协作上下文。",
+      "tags": [
+        "documentation",
+        "markdown"
+      ],
+      "complexity": "moderate",
+      "language": "markdown"
+    },
+    {
+      "id": "config:feature_list.json",
+      "type": "config",
+      "name": "feature_list.json",
+      "filePath": "feature_list.json",
+      "summary": "feature_list.json 是项目配置文件，控制构建、测试、类型检查或工具链行为。",
+      "tags": [
+        "configuration",
+        "json"
+      ],
+      "complexity": "complex",
+      "language": "json"
+    },
+    {
+      "id": "document:lint_output.txt",
+      "type": "document",
+      "name": "lint_output.txt",
+      "filePath": "lint_output.txt",
+      "summary": "lint_output.txt 是项目文档，说明 项目背景、使用方式或协作上下文。",
+      "tags": [
+        "documentation",
+        "txt"
+      ],
+      "complexity": "complex",
+      "language": "txt"
+    },
+    {
+      "id": "config:package.json",
+      "type": "config",
+      "name": "package.json",
+      "filePath": "package.json",
+      "summary": "package.json 是项目配置文件，控制构建、测试、类型检查或工具链行为。",
+      "tags": [
+        "configuration",
+        "json"
+      ],
+      "complexity": "moderate",
+      "language": "json"
+    },
+    {
+      "id": "config:tsconfig.json",
+      "type": "config",
+      "name": "tsconfig.json",
+      "filePath": "tsconfig.json",
+      "summary": "tsconfig.json 是项目配置文件，控制构建、测试、类型检查或工具链行为。",
+      "tags": [
+        "configuration",
+        "json"
+      ],
+      "complexity": "simple",
+      "language": "json"
+    }
+  ],
+  "edges": [
+    {
+      "source": "config:.mcp.json",
+      "target": "file:src/app/page.tsx",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "document:CLAUDE.md",
+      "target": "file:src/app/page.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:CONTEXT.md",
+      "target": "file:src/app/page.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:README.md",
+      "target": "file:src/app/page.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:claude-progress.txt",
+      "target": "file:src/app/page.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:components.json",
+      "target": "file:src/app/page.tsx",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "document:copilot-session-f86083c1-8fbe-49be-87ab-c69cf7e83a83.md",
+      "target": "file:src/app/page.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:feature_list.json",
+      "target": "file:src/app/page.tsx",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "document:lint_output.txt",
+      "target": "file:src/app/page.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "config:package.json",
+      "target": "file:src/app/page.tsx",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:tsconfig.json",
+      "target": "file:src/app/page.tsx",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    }
+  ]
+}

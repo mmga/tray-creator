@@ -1,0 +1,225 @@
+{
+  "nodes": [
+    {
+      "id": "config:.claude/settings.json",
+      "type": "config",
+      "name": "settings.json",
+      "filePath": ".claude/settings.json",
+      "summary": "settings.json 是项目配置文件，控制构建、测试、类型检查或工具链行为。",
+      "tags": [
+        "configuration",
+        "json"
+      ],
+      "complexity": "simple",
+      "language": "json"
+    },
+    {
+      "id": "document:docs/TDD_PROGRESS.md",
+      "type": "document",
+      "name": "TDD_PROGRESS.md",
+      "filePath": "docs/TDD_PROGRESS.md",
+      "summary": "TDD_PROGRESS.md 是项目文档，说明 项目背景、使用方式或协作上下文。",
+      "tags": [
+        "documentation",
+        "markdown"
+      ],
+      "complexity": "complex",
+      "language": "markdown"
+    },
+    {
+      "id": "file:eslint.config.mjs",
+      "type": "file",
+      "name": "eslint.config.mjs",
+      "filePath": "eslint.config.mjs",
+      "summary": "eslint.config.mjs 是 javascript 源文件，包含 0 个函数和 0 个类，用于项目的核心实现或支撑逻辑。",
+      "tags": [
+        "javascript"
+      ],
+      "complexity": "simple",
+      "language": "javascript"
+    },
+    {
+      "id": "file:next.config.ts",
+      "type": "file",
+      "name": "next.config.ts",
+      "filePath": "next.config.ts",
+      "summary": "next.config.ts 是 typescript 源文件，包含 0 个函数和 0 个类，用于项目的核心实现或支撑逻辑。",
+      "tags": [
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "file:postcss.config.mjs",
+      "type": "file",
+      "name": "postcss.config.mjs",
+      "filePath": "postcss.config.mjs",
+      "summary": "postcss.config.mjs 是 javascript 源文件，包含 0 个函数和 0 个类，用于项目的核心实现或支撑逻辑。",
+      "tags": [
+        "javascript"
+      ],
+      "complexity": "simple",
+      "language": "javascript"
+    },
+    {
+      "id": "file:src/app/globals.css",
+      "type": "file",
+      "name": "globals.css",
+      "filePath": "src/app/globals.css",
+      "summary": "globals.css 提供样式或标记资源，影响应用界面的视觉呈现。",
+      "tags": [
+        "styling",
+        "css"
+      ],
+      "complexity": "complex",
+      "language": "css"
+    },
+    {
+      "id": "file:src/lib/fixtures/tray-stepped-merged-split-fragments.json",
+      "type": "file",
+      "name": "tray-stepped-merged-split-fragments.json",
+      "filePath": "src/lib/fixtures/tray-stepped-merged-split-fragments.json",
+      "summary": "tray-stepped-merged-split-fragments.json 是项目配置文件，控制构建、测试、类型检查或工具链行为。",
+      "tags": [
+        "domain-logic",
+        "stepped-mode",
+        "configuration",
+        "json"
+      ],
+      "complexity": "complex",
+      "language": "json"
+    },
+    {
+      "id": "file:src/lib/fixtures/tray-stepped-split-fragments.json",
+      "type": "file",
+      "name": "tray-stepped-split-fragments.json",
+      "filePath": "src/lib/fixtures/tray-stepped-split-fragments.json",
+      "summary": "tray-stepped-split-fragments.json 是项目配置文件，控制构建、测试、类型检查或工具链行为。",
+      "tags": [
+        "domain-logic",
+        "stepped-mode",
+        "configuration",
+        "json"
+      ],
+      "complexity": "complex",
+      "language": "json"
+    },
+    {
+      "id": "file:src/lib/outline-geometry.ts.bak",
+      "type": "file",
+      "name": "outline-geometry.ts.bak",
+      "filePath": "src/lib/outline-geometry.ts.bak",
+      "summary": "outline-geometry.ts.bak 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "bak"
+      ],
+      "complexity": "complex",
+      "language": "bak"
+    },
+    {
+      "id": "file:src/test/setup.ts",
+      "type": "file",
+      "name": "setup.ts",
+      "filePath": "src/test/setup.ts",
+      "summary": "setup.ts 是 typescript 源文件，包含 1 个函数和 3 个类，用于项目的核心实现或支撑逻辑。",
+      "tags": [
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/test/setup.ts:defineWritableValue",
+      "type": "function",
+      "name": "defineWritableValue",
+      "filePath": "src/test/setup.ts",
+      "lineRange": [
+        5,
+        17
+      ],
+      "summary": "defineWritableValue 是 setup.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/types/jscad.d.ts",
+      "type": "file",
+      "name": "jscad.d.ts",
+      "filePath": "src/types/jscad.d.ts",
+      "summary": "jscad.d.ts 定义托盘编辑器使用的 TypeScript 类型，是模式参数、槽位和工作区契约的基础。",
+      "tags": [
+        "type-definition",
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "file:vitest.config.ts",
+      "type": "file",
+      "name": "vitest.config.ts",
+      "filePath": "vitest.config.ts",
+      "summary": "vitest.config.ts 是 typescript 源文件，包含 0 个函数和 0 个类，用于项目的核心实现或支撑逻辑。",
+      "tags": [
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "file:vitest.integration.config.ts",
+      "type": "file",
+      "name": "vitest.integration.config.ts",
+      "filePath": "vitest.integration.config.ts",
+      "summary": "vitest.integration.config.ts 是 typescript 源文件，包含 0 个函数和 0 个类，用于项目的核心实现或支撑逻辑。",
+      "tags": [
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/test/setup.ts",
+      "target": "function:src/test/setup.ts:defineWritableValue",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "config:.claude/settings.json",
+      "target": "file:src/app/page.tsx",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "document:docs/TDD_PROGRESS.md",
+      "target": "file:src/app/page.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/fixtures/tray-stepped-merged-split-fragments.json",
+      "target": "file:src/app/page.tsx",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:src/lib/fixtures/tray-stepped-split-fragments.json",
+      "target": "file:src/app/page.tsx",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    }
+  ]
+}

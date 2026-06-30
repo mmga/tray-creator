@@ -1,0 +1,296 @@
+{
+  "nodes": [
+    {
+      "id": "document:doc/layout-customizer.md",
+      "type": "document",
+      "name": "layout-customizer.md",
+      "filePath": "doc/layout-customizer.md",
+      "summary": "layout-customizer.md 是项目文档，说明 托盘设计、实现计划或功能背景。",
+      "tags": [
+        "custom-mode",
+        "documentation",
+        "markdown"
+      ],
+      "complexity": "simple",
+      "language": "markdown"
+    },
+    {
+      "id": "document:doc/layout-symmetry-plan.md",
+      "type": "document",
+      "name": "layout-symmetry-plan.md",
+      "filePath": "doc/layout-symmetry-plan.md",
+      "summary": "layout-symmetry-plan.md 是项目文档，说明 托盘设计、实现计划或功能背景。",
+      "tags": [
+        "documentation",
+        "markdown"
+      ],
+      "complexity": "complex",
+      "language": "markdown"
+    },
+    {
+      "id": "document:doc/mobile-ux-optimizations.md",
+      "type": "document",
+      "name": "mobile-ux-optimizations.md",
+      "filePath": "doc/mobile-ux-optimizations.md",
+      "summary": "mobile-ux-optimizations.md 是项目文档，说明 托盘设计、实现计划或功能背景。",
+      "tags": [
+        "documentation",
+        "markdown"
+      ],
+      "complexity": "moderate",
+      "language": "markdown"
+    },
+    {
+      "id": "document:doc/requirements.md",
+      "type": "document",
+      "name": "requirements.md",
+      "filePath": "doc/requirements.md",
+      "summary": "requirements.md 是项目文档，说明 托盘设计、实现计划或功能背景。",
+      "tags": [
+        "documentation",
+        "markdown"
+      ],
+      "complexity": "moderate",
+      "language": "markdown"
+    },
+    {
+      "id": "document:doc/right-panel-refactor-plan.md",
+      "type": "document",
+      "name": "right-panel-refactor-plan.md",
+      "filePath": "doc/right-panel-refactor-plan.md",
+      "summary": "right-panel-refactor-plan.md 是项目文档，说明 托盘设计、实现计划或功能背景。",
+      "tags": [
+        "documentation",
+        "markdown"
+      ],
+      "complexity": "moderate",
+      "language": "markdown"
+    },
+    {
+      "id": "document:doc/simple-stepped-mode-plan.md",
+      "type": "document",
+      "name": "simple-stepped-mode-plan.md",
+      "filePath": "doc/simple-stepped-mode-plan.md",
+      "summary": "simple-stepped-mode-plan.md 是项目文档，说明 托盘设计、实现计划或功能背景。",
+      "tags": [
+        "stepped-mode",
+        "simple-stepped-mode",
+        "documentation",
+        "markdown"
+      ],
+      "complexity": "complex",
+      "language": "markdown"
+    },
+    {
+      "id": "document:doc/stepped-2d-editor-optimization-plan.md",
+      "type": "document",
+      "name": "stepped-2d-editor-optimization-plan.md",
+      "filePath": "doc/stepped-2d-editor-optimization-plan.md",
+      "summary": "stepped-2d-editor-optimization-plan.md 是项目文档，说明 托盘设计、实现计划或功能背景。",
+      "tags": [
+        "stepped-mode",
+        "documentation",
+        "markdown"
+      ],
+      "complexity": "complex",
+      "language": "markdown"
+    },
+    {
+      "id": "document:doc/stepped-2d-perf-measurement-guide.md",
+      "type": "document",
+      "name": "stepped-2d-perf-measurement-guide.md",
+      "filePath": "doc/stepped-2d-perf-measurement-guide.md",
+      "summary": "stepped-2d-perf-measurement-guide.md 是项目文档，说明 托盘设计、实现计划或功能背景。",
+      "tags": [
+        "stepped-mode",
+        "documentation",
+        "markdown"
+      ],
+      "complexity": "moderate",
+      "language": "markdown"
+    },
+    {
+      "id": "document:doc/stepped-local-draft-plan.md",
+      "type": "document",
+      "name": "stepped-local-draft-plan.md",
+      "filePath": "doc/stepped-local-draft-plan.md",
+      "summary": "stepped-local-draft-plan.md 是项目文档，说明 托盘设计、实现计划或功能背景。",
+      "tags": [
+        "stepped-mode",
+        "documentation",
+        "markdown"
+      ],
+      "complexity": "complex",
+      "language": "markdown"
+    },
+    {
+      "id": "document:doc/stepped-pricing-formula.md",
+      "type": "document",
+      "name": "stepped-pricing-formula.md",
+      "filePath": "doc/stepped-pricing-formula.md",
+      "summary": "stepped-pricing-formula.md 是项目文档，说明 托盘设计、实现计划或功能背景。",
+      "tags": [
+        "pricing",
+        "stepped-mode",
+        "documentation",
+        "markdown"
+      ],
+      "complexity": "moderate",
+      "language": "markdown"
+    },
+    {
+      "id": "document:doc/stepped-tray-revision-plan-2026-03-26.md",
+      "type": "document",
+      "name": "stepped-tray-revision-plan-2026-03-26.md",
+      "filePath": "doc/stepped-tray-revision-plan-2026-03-26.md",
+      "summary": "stepped-tray-revision-plan-2026-03-26.md 是项目文档，说明 托盘设计、实现计划或功能背景。",
+      "tags": [
+        "stepped-mode",
+        "documentation",
+        "markdown"
+      ],
+      "complexity": "moderate",
+      "language": "markdown"
+    },
+    {
+      "id": "document:doc/stepped-tray.md",
+      "type": "document",
+      "name": "stepped-tray.md",
+      "filePath": "doc/stepped-tray.md",
+      "summary": "stepped-tray.md 是项目文档，说明 托盘设计、实现计划或功能背景。",
+      "tags": [
+        "stepped-mode",
+        "documentation",
+        "markdown"
+      ],
+      "complexity": "moderate",
+      "language": "markdown"
+    },
+    {
+      "id": "document:doc/tdd-refactor.md",
+      "type": "document",
+      "name": "tdd-refactor.md",
+      "filePath": "doc/tdd-refactor.md",
+      "summary": "tdd-refactor.md 是项目文档，说明 托盘设计、实现计划或功能背景。",
+      "tags": [
+        "documentation",
+        "markdown"
+      ],
+      "complexity": "moderate",
+      "language": "markdown"
+    },
+    {
+      "id": "document:doc/ui-design.md",
+      "type": "document",
+      "name": "ui-design.md",
+      "filePath": "doc/ui-design.md",
+      "summary": "ui-design.md 是项目文档，说明 托盘设计、实现计划或功能背景。",
+      "tags": [
+        "documentation",
+        "markdown"
+      ],
+      "complexity": "complex",
+      "language": "markdown"
+    }
+  ],
+  "edges": [
+    {
+      "source": "document:doc/layout-customizer.md",
+      "target": "file:src/app/page.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:doc/layout-symmetry-plan.md",
+      "target": "file:src/app/page.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:doc/mobile-ux-optimizations.md",
+      "target": "file:src/app/page.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:doc/requirements.md",
+      "target": "file:src/app/page.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:doc/right-panel-refactor-plan.md",
+      "target": "file:src/app/page.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:doc/simple-stepped-mode-plan.md",
+      "target": "file:src/app/page.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:doc/stepped-2d-editor-optimization-plan.md",
+      "target": "file:src/app/page.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:doc/stepped-2d-perf-measurement-guide.md",
+      "target": "file:src/app/page.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:doc/stepped-local-draft-plan.md",
+      "target": "file:src/app/page.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:doc/stepped-pricing-formula.md",
+      "target": "file:src/app/page.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:doc/stepped-tray-revision-plan-2026-03-26.md",
+      "target": "file:src/app/page.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:doc/stepped-tray.md",
+      "target": "file:src/app/page.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:doc/tdd-refactor.md",
+      "target": "file:src/app/page.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:doc/ui-design.md",
+      "target": "file:src/app/page.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

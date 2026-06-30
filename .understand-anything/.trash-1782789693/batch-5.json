@@ -1,0 +1,3107 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/lib/outline-geometry.ts",
+      "type": "file",
+      "name": "outline-geometry.ts",
+      "filePath": "src/lib/outline-geometry.ts",
+      "summary": "outline-geometry.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/outline-geometry.ts:computeAdaptiveSegments",
+      "type": "function",
+      "name": "computeAdaptiveSegments",
+      "filePath": "src/lib/outline-geometry.ts",
+      "lineRange": [
+        33,
+        54
+      ],
+      "summary": "computeAdaptiveSegments 是 outline-geometry.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/outline-geometry.ts:computeTangencyEpsilon",
+      "type": "function",
+      "name": "computeTangencyEpsilon",
+      "filePath": "src/lib/outline-geometry.ts",
+      "lineRange": [
+        56,
+        87
+      ],
+      "summary": "computeTangencyEpsilon 是 outline-geometry.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/outline-geometry.ts:signedPolygonArea",
+      "type": "function",
+      "name": "signedPolygonArea",
+      "filePath": "src/lib/outline-geometry.ts",
+      "lineRange": [
+        125,
+        134
+      ],
+      "summary": "signedPolygonArea 是 outline-geometry.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/outline-geometry.ts:lineIntersection",
+      "type": "function",
+      "name": "lineIntersection",
+      "filePath": "src/lib/outline-geometry.ts",
+      "lineRange": [
+        137,
+        151
+      ],
+      "summary": "lineIntersection 是 outline-geometry.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/outline-geometry.ts:segmentIntersection",
+      "type": "function",
+      "name": "segmentIntersection",
+      "filePath": "src/lib/outline-geometry.ts",
+      "lineRange": [
+        154,
+        170
+      ],
+      "summary": "segmentIntersection 是 outline-geometry.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/outline-geometry.ts:removeSelfintersections",
+      "type": "function",
+      "name": "removeSelfintersections",
+      "filePath": "src/lib/outline-geometry.ts",
+      "lineRange": [
+        173,
+        198
+      ],
+      "summary": "removeSelfintersections 是 outline-geometry.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/outline-geometry.ts:insetPolygon",
+      "type": "function",
+      "name": "insetPolygon",
+      "filePath": "src/lib/outline-geometry.ts",
+      "lineRange": [
+        209,
+        308
+      ],
+      "summary": "insetPolygon 是 outline-geometry.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/outline-geometry.ts:computeCircleIntersections",
+      "type": "function",
+      "name": "computeCircleIntersections",
+      "filePath": "src/lib/outline-geometry.ts",
+      "lineRange": [
+        315,
+        343
+      ],
+      "summary": "computeCircleIntersections 是 outline-geometry.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/outline-geometry.ts:correctJunctionVertices",
+      "type": "function",
+      "name": "correctJunctionVertices",
+      "filePath": "src/lib/outline-geometry.ts",
+      "lineRange": [
+        349,
+        367
+      ],
+      "summary": "correctJunctionVertices 是 outline-geometry.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/outline-geometry.ts:generateOutlineGeom2",
+      "type": "function",
+      "name": "generateOutlineGeom2",
+      "filePath": "src/lib/outline-geometry.ts",
+      "lineRange": [
+        386,
+        478
+      ],
+      "summary": "generateOutlineGeom2 是 outline-geometry.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/outline-geometry.ts:snapToCircles",
+      "type": "function",
+      "name": "snapToCircles",
+      "filePath": "src/lib/outline-geometry.ts",
+      "lineRange": [
+        490,
+        603
+      ],
+      "summary": "snapToCircles 是 outline-geometry.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/outline-geometry.ts:generateOutline",
+      "type": "function",
+      "name": "generateOutline",
+      "filePath": "src/lib/outline-geometry.ts",
+      "lineRange": [
+        622,
+        648
+      ],
+      "summary": "generateOutline 是 outline-geometry.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/outline-geometry.ts:outlinePointsToGeom2",
+      "type": "function",
+      "name": "outlinePointsToGeom2",
+      "filePath": "src/lib/outline-geometry.ts",
+      "lineRange": [
+        654,
+        656
+      ],
+      "summary": "outlinePointsToGeom2 是 outline-geometry.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/simple-stepped-row-actions.ts",
+      "type": "file",
+      "name": "simple-stepped-row-actions.ts",
+      "filePath": "src/lib/simple-stepped-row-actions.ts",
+      "summary": "simple-stepped-row-actions.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "stepped-mode",
+        "simple-stepped-mode",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/simple-stepped-row-actions.ts:addSimpleSteppedRow",
+      "type": "function",
+      "name": "addSimpleSteppedRow",
+      "filePath": "src/lib/simple-stepped-row-actions.ts",
+      "lineRange": [
+        12,
+        27
+      ],
+      "summary": "addSimpleSteppedRow 是 simple-stepped-row-actions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/simple-stepped-row-actions.ts:removeSimpleSteppedRow",
+      "type": "function",
+      "name": "removeSimpleSteppedRow",
+      "filePath": "src/lib/simple-stepped-row-actions.ts",
+      "lineRange": [
+        29,
+        38
+      ],
+      "summary": "removeSimpleSteppedRow 是 simple-stepped-row-actions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/simple-stepped-row-actions.ts:renameSimpleSteppedRow",
+      "type": "function",
+      "name": "renameSimpleSteppedRow",
+      "filePath": "src/lib/simple-stepped-row-actions.ts",
+      "lineRange": [
+        40,
+        51
+      ],
+      "summary": "renameSimpleSteppedRow 是 simple-stepped-row-actions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/simple-stepped-row-actions.ts:clearSimpleSteppedRow",
+      "type": "function",
+      "name": "clearSimpleSteppedRow",
+      "filePath": "src/lib/simple-stepped-row-actions.ts",
+      "lineRange": [
+        53,
+        61
+      ],
+      "summary": "clearSimpleSteppedRow 是 simple-stepped-row-actions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/simple-stepped-row-actions.ts:reorderSimpleSteppedRows",
+      "type": "function",
+      "name": "reorderSimpleSteppedRows",
+      "filePath": "src/lib/simple-stepped-row-actions.ts",
+      "lineRange": [
+        63,
+        83
+      ],
+      "summary": "reorderSimpleSteppedRows 是 simple-stepped-row-actions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/slot-definitions.test.ts",
+      "type": "file",
+      "name": "slot-definitions.test.ts",
+      "filePath": "src/lib/slot-definitions.test.ts",
+      "summary": "slot-definitions.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/slot-definitions.ts",
+      "type": "file",
+      "name": "slot-definitions.ts",
+      "filePath": "src/lib/slot-definitions.ts",
+      "summary": "slot-definitions.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/slot-definitions.ts:findCircleSlotDefinitionByBaseDiameter",
+      "type": "function",
+      "name": "findCircleSlotDefinitionByBaseDiameter",
+      "filePath": "src/lib/slot-definitions.ts",
+      "lineRange": [
+        117,
+        123
+      ],
+      "summary": "findCircleSlotDefinitionByBaseDiameter 是 slot-definitions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/slot-definitions.ts:findCircleSlotDefinitionById",
+      "type": "function",
+      "name": "findCircleSlotDefinitionById",
+      "filePath": "src/lib/slot-definitions.ts",
+      "lineRange": [
+        125,
+        127
+      ],
+      "summary": "findCircleSlotDefinitionById 是 slot-definitions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/slot-definitions.ts:findEllipseSlotDefinitionByGeometry",
+      "type": "function",
+      "name": "findEllipseSlotDefinitionByGeometry",
+      "filePath": "src/lib/slot-definitions.ts",
+      "lineRange": [
+        129,
+        142
+      ],
+      "summary": "findEllipseSlotDefinitionByGeometry 是 slot-definitions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/slot-definitions.ts:getLegacyCircleSlotDiameter",
+      "type": "function",
+      "name": "getLegacyCircleSlotDiameter",
+      "filePath": "src/lib/slot-definitions.ts",
+      "lineRange": [
+        144,
+        147
+      ],
+      "summary": "getLegacyCircleSlotDiameter 是 slot-definitions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/slot-definitions.ts:createCircleSlotSnapshot",
+      "type": "function",
+      "name": "createCircleSlotSnapshot",
+      "filePath": "src/lib/slot-definitions.ts",
+      "lineRange": [
+        149,
+        157
+      ],
+      "summary": "createCircleSlotSnapshot 是 slot-definitions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/slot-definitions.ts:createGridSlotSnapshot",
+      "type": "function",
+      "name": "createGridSlotSnapshot",
+      "filePath": "src/lib/slot-definitions.ts",
+      "lineRange": [
+        159,
+        165
+      ],
+      "summary": "createGridSlotSnapshot 是 slot-definitions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/slot-definitions.ts:createEllipseSlotSnapshot",
+      "type": "function",
+      "name": "createEllipseSlotSnapshot",
+      "filePath": "src/lib/slot-definitions.ts",
+      "lineRange": [
+        167,
+        173
+      ],
+      "summary": "createEllipseSlotSnapshot 是 slot-definitions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/slot-definitions.ts:getFreeSlotProfileGeometry",
+      "type": "function",
+      "name": "getFreeSlotProfileGeometry",
+      "filePath": "src/lib/slot-definitions.ts",
+      "lineRange": [
+        175,
+        213
+      ],
+      "summary": "getFreeSlotProfileGeometry 是 slot-definitions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/slot-profile-geometry.ts",
+      "type": "file",
+      "name": "slot-profile-geometry.ts",
+      "filePath": "src/lib/slot-profile-geometry.ts",
+      "summary": "slot-profile-geometry.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/slot-profile-geometry.ts:sampleSlotProfilePoints",
+      "type": "function",
+      "name": "sampleSlotProfilePoints",
+      "filePath": "src/lib/slot-profile-geometry.ts",
+      "lineRange": [
+        9,
+        52
+      ],
+      "summary": "sampleSlotProfilePoints 是 slot-profile-geometry.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/stepped-bridge-warning.ts",
+      "type": "file",
+      "name": "stepped-bridge-warning.ts",
+      "filePath": "src/lib/stepped-bridge-warning.ts",
+      "summary": "stepped-bridge-warning.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "stepped-mode",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/stepped-bridge-warning.ts:buildSteppedBridgeWarning",
+      "type": "function",
+      "name": "buildSteppedBridgeWarning",
+      "filePath": "src/lib/stepped-bridge-warning.ts",
+      "lineRange": [
+        11,
+        96
+      ],
+      "summary": "buildSteppedBridgeWarning 是 stepped-bridge-warning.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/stepped-connectivity.test.ts",
+      "type": "file",
+      "name": "stepped-connectivity.test.ts",
+      "filePath": "src/lib/stepped-connectivity.test.ts",
+      "summary": "stepped-connectivity.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "domain-logic",
+        "stepped-mode",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/stepped-connectivity.ts",
+      "type": "file",
+      "name": "stepped-connectivity.ts",
+      "filePath": "src/lib/stepped-connectivity.ts",
+      "summary": "stepped-connectivity.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "stepped-mode",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/stepped-connectivity.ts:getConnectivityRadius",
+      "type": "function",
+      "name": "getConnectivityRadius",
+      "filePath": "src/lib/stepped-connectivity.ts",
+      "lineRange": [
+        16,
+        26
+      ],
+      "summary": "getConnectivityRadius 是 stepped-connectivity.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-connectivity.ts:getEffectiveBridgeGap",
+      "type": "function",
+      "name": "getEffectiveBridgeGap",
+      "filePath": "src/lib/stepped-connectivity.ts",
+      "lineRange": [
+        32,
+        42
+      ],
+      "summary": "getEffectiveBridgeGap 是 stepped-connectivity.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-connectivity.ts:clusterConnectivityCircles",
+      "type": "function",
+      "name": "clusterConnectivityCircles",
+      "filePath": "src/lib/stepped-connectivity.ts",
+      "lineRange": [
+        44,
+        79
+      ],
+      "summary": "clusterConnectivityCircles 是 stepped-connectivity.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-connectivity.ts:analyzeBridgeWarning",
+      "type": "function",
+      "name": "analyzeBridgeWarning",
+      "filePath": "src/lib/stepped-connectivity.ts",
+      "lineRange": [
+        81,
+        113
+      ],
+      "summary": "analyzeBridgeWarning 是 stepped-connectivity.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/stepped-global-optimize.test.ts",
+      "type": "file",
+      "name": "stepped-global-optimize.test.ts",
+      "filePath": "src/lib/stepped-global-optimize.test.ts",
+      "summary": "stepped-global-optimize.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "domain-logic",
+        "stepped-mode",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/stepped-global-optimize.test.ts:createParams",
+      "type": "function",
+      "name": "createParams",
+      "filePath": "src/lib/stepped-global-optimize.test.ts",
+      "lineRange": [
+        11,
+        78
+      ],
+      "summary": "createParams 是 stepped-global-optimize.test.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/stepped-global-optimize.ts",
+      "type": "file",
+      "name": "stepped-global-optimize.ts",
+      "filePath": "src/lib/stepped-global-optimize.ts",
+      "summary": "stepped-global-optimize.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "stepped-mode",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/stepped-global-optimize.ts:resolveAlignmentOffset",
+      "type": "function",
+      "name": "resolveAlignmentOffset",
+      "filePath": "src/lib/stepped-global-optimize.ts",
+      "lineRange": [
+        81,
+        95
+      ],
+      "summary": "resolveAlignmentOffset 是 stepped-global-optimize.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-global-optimize.ts:buildGroupCompactCandidates",
+      "type": "function",
+      "name": "buildGroupCompactCandidates",
+      "filePath": "src/lib/stepped-global-optimize.ts",
+      "lineRange": [
+        97,
+        172
+      ],
+      "summary": "buildGroupCompactCandidates 是 stepped-global-optimize.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/stepped-global-optimize.ts:composeGroupPlacements",
+      "type": "function",
+      "name": "composeGroupPlacements",
+      "filePath": "src/lib/stepped-global-optimize.ts",
+      "lineRange": [
+        174,
+        226
+      ],
+      "summary": "composeGroupPlacements 是 stepped-global-optimize.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/stepped-global-optimize.ts:buildCompactCandidates",
+      "type": "function",
+      "name": "buildCompactCandidates",
+      "filePath": "src/lib/stepped-global-optimize.ts",
+      "lineRange": [
+        228,
+        333
+      ],
+      "summary": "buildCompactCandidates 是 stepped-global-optimize.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/stepped-global-optimize.ts:createCompactSeed",
+      "type": "function",
+      "name": "createCompactSeed",
+      "filePath": "src/lib/stepped-global-optimize.ts",
+      "lineRange": [
+        335,
+        356
+      ],
+      "summary": "createCompactSeed 是 stepped-global-optimize.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-global-optimize.ts:calculateDisplacement",
+      "type": "function",
+      "name": "calculateDisplacement",
+      "filePath": "src/lib/stepped-global-optimize.ts",
+      "lineRange": [
+        358,
+        377
+      ],
+      "summary": "calculateDisplacement 是 stepped-global-optimize.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-global-optimize.ts:finalizeProposal",
+      "type": "function",
+      "name": "finalizeProposal",
+      "filePath": "src/lib/stepped-global-optimize.ts",
+      "lineRange": [
+        379,
+        413
+      ],
+      "summary": "finalizeProposal 是 stepped-global-optimize.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-global-optimize.ts:generateSteppedOptimizationProposals",
+      "type": "function",
+      "name": "generateSteppedOptimizationProposals",
+      "filePath": "src/lib/stepped-global-optimize.ts",
+      "lineRange": [
+        415,
+        424
+      ],
+      "summary": "generateSteppedOptimizationProposals 是 stepped-global-optimize.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/stepped-layout-math.ts",
+      "type": "file",
+      "name": "stepped-layout-math.ts",
+      "filePath": "src/lib/stepped-layout-math.ts",
+      "summary": "stepped-layout-math.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "stepped-mode",
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/stepped-layout-math.ts:calculateSteppedEffectiveDimensions",
+      "type": "function",
+      "name": "calculateSteppedEffectiveDimensions",
+      "filePath": "src/lib/stepped-layout-math.ts",
+      "lineRange": [
+        10,
+        54
+      ],
+      "summary": "calculateSteppedEffectiveDimensions 是 stepped-layout-math.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/stepped-optimize-config.ts",
+      "type": "file",
+      "name": "stepped-optimize-config.ts",
+      "filePath": "src/lib/stepped-optimize-config.ts",
+      "summary": "stepped-optimize-config.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "stepped-mode",
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/stepped-optimize-evaluator.ts",
+      "type": "file",
+      "name": "stepped-optimize-evaluator.ts",
+      "filePath": "src/lib/stepped-optimize-evaluator.ts",
+      "summary": "stepped-optimize-evaluator.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "stepped-mode",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/stepped-optimize-evaluator.ts:evaluateCompactCandidate",
+      "type": "function",
+      "name": "evaluateCompactCandidate",
+      "filePath": "src/lib/stepped-optimize-evaluator.ts",
+      "lineRange": [
+        27,
+        56
+      ],
+      "summary": "evaluateCompactCandidate 是 stepped-optimize-evaluator.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-optimize-evaluator.ts:compareCompactCandidateEvaluations",
+      "type": "function",
+      "name": "compareCompactCandidateEvaluations",
+      "filePath": "src/lib/stepped-optimize-evaluator.ts",
+      "lineRange": [
+        68,
+        115
+      ],
+      "summary": "compareCompactCandidateEvaluations 是 stepped-optimize-evaluator.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-optimize-evaluator.ts:serializeSlots",
+      "type": "function",
+      "name": "serializeSlots",
+      "filePath": "src/lib/stepped-optimize-evaluator.ts",
+      "lineRange": [
+        118,
+        124
+      ],
+      "summary": "serializeSlots 是 stepped-optimize-evaluator.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/stepped-optimize-shelf-packer.ts",
+      "type": "file",
+      "name": "stepped-optimize-shelf-packer.ts",
+      "filePath": "src/lib/stepped-optimize-shelf-packer.ts",
+      "summary": "stepped-optimize-shelf-packer.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "stepped-mode",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/stepped-optimize-shelf-packer.ts:toRowSlotEntry",
+      "type": "function",
+      "name": "toRowSlotEntry",
+      "filePath": "src/lib/stepped-optimize-shelf-packer.ts",
+      "lineRange": [
+        34,
+        43
+      ],
+      "summary": "toRowSlotEntry 是 stepped-optimize-shelf-packer.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-optimize-shelf-packer.ts:arrangeRowSymmetrically",
+      "type": "function",
+      "name": "arrangeRowSymmetrically",
+      "filePath": "src/lib/stepped-optimize-shelf-packer.ts",
+      "lineRange": [
+        46,
+        111
+      ],
+      "summary": "arrangeRowSymmetrically 是 stepped-optimize-shelf-packer.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/stepped-optimize-shelf-packer.ts:packSlotsIntoShelves",
+      "type": "function",
+      "name": "packSlotsIntoShelves",
+      "filePath": "src/lib/stepped-optimize-shelf-packer.ts",
+      "lineRange": [
+        114,
+        170
+      ],
+      "summary": "packSlotsIntoShelves 是 stepped-optimize-shelf-packer.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/stepped-optimize-slot-geometry.ts",
+      "type": "file",
+      "name": "stepped-optimize-slot-geometry.ts",
+      "filePath": "src/lib/stepped-optimize-slot-geometry.ts",
+      "summary": "stepped-optimize-slot-geometry.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "stepped-mode",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/stepped-optimize-slot-geometry.ts:getSlotGeometry",
+      "type": "function",
+      "name": "getSlotGeometry",
+      "filePath": "src/lib/stepped-optimize-slot-geometry.ts",
+      "lineRange": [
+        20,
+        38
+      ],
+      "summary": "getSlotGeometry 是 stepped-optimize-slot-geometry.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-optimize-slot-geometry.ts:roundToStep",
+      "type": "function",
+      "name": "roundToStep",
+      "filePath": "src/lib/stepped-optimize-slot-geometry.ts",
+      "lineRange": [
+        41,
+        43
+      ],
+      "summary": "roundToStep 是 stepped-optimize-slot-geometry.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-optimize-slot-geometry.ts:roundPosition",
+      "type": "function",
+      "name": "roundPosition",
+      "filePath": "src/lib/stepped-optimize-slot-geometry.ts",
+      "lineRange": [
+        46,
+        48
+      ],
+      "summary": "roundPosition 是 stepped-optimize-slot-geometry.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-optimize-slot-geometry.ts:normalizeSlotsToOrigin",
+      "type": "function",
+      "name": "normalizeSlotsToOrigin",
+      "filePath": "src/lib/stepped-optimize-slot-geometry.ts",
+      "lineRange": [
+        51,
+        80
+      ],
+      "summary": "normalizeSlotsToOrigin 是 stepped-optimize-slot-geometry.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-optimize-slot-geometry.ts:sortSlotsByEffectiveSize",
+      "type": "function",
+      "name": "sortSlotsByEffectiveSize",
+      "filePath": "src/lib/stepped-optimize-slot-geometry.ts",
+      "lineRange": [
+        83,
+        104
+      ],
+      "summary": "sortSlotsByEffectiveSize 是 stepped-optimize-slot-geometry.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-optimize-slot-geometry.ts:buildAlternatingOrder",
+      "type": "function",
+      "name": "buildAlternatingOrder",
+      "filePath": "src/lib/stepped-optimize-slot-geometry.ts",
+      "lineRange": [
+        107,
+        123
+      ],
+      "summary": "buildAlternatingOrder 是 stepped-optimize-slot-geometry.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-optimize-slot-geometry.ts:getTargetShelfWidth",
+      "type": "function",
+      "name": "getTargetShelfWidth",
+      "filePath": "src/lib/stepped-optimize-slot-geometry.ts",
+      "lineRange": [
+        126,
+        145
+      ],
+      "summary": "getTargetShelfWidth 是 stepped-optimize-slot-geometry.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/stepped-outline-preview.test.ts",
+      "type": "file",
+      "name": "stepped-outline-preview.test.ts",
+      "filePath": "src/lib/stepped-outline-preview.test.ts",
+      "summary": "stepped-outline-preview.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "domain-logic",
+        "stepped-mode",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/stepped-outline-preview.test.ts:createParams",
+      "type": "function",
+      "name": "createParams",
+      "filePath": "src/lib/stepped-outline-preview.test.ts",
+      "lineRange": [
+        15,
+        60
+      ],
+      "summary": "createParams 是 stepped-outline-preview.test.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/stepped-outline-preview.ts",
+      "type": "file",
+      "name": "stepped-outline-preview.ts",
+      "filePath": "src/lib/stepped-outline-preview.ts",
+      "summary": "stepped-outline-preview.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "stepped-mode",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/stepped-outline-preview.ts:buildSteppedOutlinePreview",
+      "type": "function",
+      "name": "buildSteppedOutlinePreview",
+      "filePath": "src/lib/stepped-outline-preview.ts",
+      "lineRange": [
+        16,
+        126
+      ],
+      "summary": "buildSteppedOutlinePreview 是 stepped-outline-preview.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/stepped-tray-model.test.ts",
+      "type": "file",
+      "name": "stepped-tray-model.test.ts",
+      "filePath": "src/lib/stepped-tray-model.test.ts",
+      "summary": "stepped-tray-model.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "domain-logic",
+        "stepped-mode",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/stepped-tray-model.test.ts:hasBottomCylinderWallNear",
+      "type": "function",
+      "name": "hasBottomCylinderWallNear",
+      "filePath": "src/lib/stepped-tray-model.test.ts",
+      "lineRange": [
+        15,
+        34
+      ],
+      "summary": "hasBottomCylinderWallNear 是 stepped-tray-model.test.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-tray-model.test.ts:polygonArea2d",
+      "type": "function",
+      "name": "polygonArea2d",
+      "filePath": "src/lib/stepped-tray-model.test.ts",
+      "lineRange": [
+        36,
+        45
+      ],
+      "summary": "polygonArea2d 是 stepped-tray-model.test.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-tray-model.test.ts:countSmallHorizontalTopFaces",
+      "type": "function",
+      "name": "countSmallHorizontalTopFaces",
+      "filePath": "src/lib/stepped-tray-model.test.ts",
+      "lineRange": [
+        47,
+        60
+      ],
+      "summary": "countSmallHorizontalTopFaces 是 stepped-tray-model.test.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-tray-model.test.ts:createParams",
+      "type": "function",
+      "name": "createParams",
+      "filePath": "src/lib/stepped-tray-model.test.ts",
+      "lineRange": [
+        62,
+        106
+      ],
+      "summary": "createParams 是 stepped-tray-model.test.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-tray-model.test.ts:createMagnetParams",
+      "type": "function",
+      "name": "createMagnetParams",
+      "filePath": "src/lib/stepped-tray-model.test.ts",
+      "lineRange": [
+        108,
+        152
+      ],
+      "summary": "createMagnetParams 是 stepped-tray-model.test.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/stepped-tray-model.ts",
+      "type": "file",
+      "name": "stepped-tray-model.ts",
+      "filePath": "src/lib/stepped-tray-model.ts",
+      "summary": "stepped-tray-model.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "stepped-mode",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/stepped-tray-model.ts:getSlotBoundingHalfSize",
+      "type": "function",
+      "name": "getSlotBoundingHalfSize",
+      "filePath": "src/lib/stepped-tray-model.ts",
+      "lineRange": [
+        67,
+        93
+      ],
+      "summary": "getSlotBoundingHalfSize 是 stepped-tray-model.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-tray-model.ts:createOffsetSlotShape",
+      "type": "function",
+      "name": "createOffsetSlotShape",
+      "filePath": "src/lib/stepped-tray-model.ts",
+      "lineRange": [
+        95,
+        117
+      ],
+      "summary": "createOffsetSlotShape 是 stepped-tray-model.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-tray-model.ts:calculateEffectiveBaseplate",
+      "type": "function",
+      "name": "calculateEffectiveBaseplate",
+      "filePath": "src/lib/stepped-tray-model.ts",
+      "lineRange": [
+        119,
+        163
+      ],
+      "summary": "calculateEffectiveBaseplate 是 stepped-tray-model.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-tray-model.ts:buildNormalizedSlotData",
+      "type": "function",
+      "name": "buildNormalizedSlotData",
+      "filePath": "src/lib/stepped-tray-model.ts",
+      "lineRange": [
+        175,
+        216
+      ],
+      "summary": "buildNormalizedSlotData 是 stepped-tray-model.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-tray-model.ts:buildSlotDataSolid",
+      "type": "function",
+      "name": "buildSlotDataSolid",
+      "filePath": "src/lib/stepped-tray-model.ts",
+      "lineRange": [
+        218,
+        285
+      ],
+      "summary": "buildSlotDataSolid 是 stepped-tray-model.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/stepped-tray-model.ts:buildSteppedSlotHoles",
+      "type": "function",
+      "name": "buildSteppedSlotHoles",
+      "filePath": "src/lib/stepped-tray-model.ts",
+      "lineRange": [
+        287,
+        310
+      ],
+      "summary": "buildSteppedSlotHoles 是 stepped-tray-model.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-tray-model.ts:buildSteppedBaseHoleCenters",
+      "type": "function",
+      "name": "buildSteppedBaseHoleCenters",
+      "filePath": "src/lib/stepped-tray-model.ts",
+      "lineRange": [
+        312,
+        327
+      ],
+      "summary": "buildSteppedBaseHoleCenters 是 stepped-tray-model.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-tray-model.ts:buildSteppedGroupSolids",
+      "type": "function",
+      "name": "buildSteppedGroupSolids",
+      "filePath": "src/lib/stepped-tray-model.ts",
+      "lineRange": [
+        329,
+        395
+      ],
+      "summary": "buildSteppedGroupSolids 是 stepped-tray-model.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/stepped-tray-model.ts:getGroupCenter",
+      "type": "function",
+      "name": "getGroupCenter",
+      "filePath": "src/lib/stepped-tray-model.ts",
+      "lineRange": [
+        397,
+        410
+      ],
+      "summary": "getGroupCenter 是 stepped-tray-model.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-tray-model.ts:buildSameHeightPartitionMap",
+      "type": "function",
+      "name": "buildSameHeightPartitionMap",
+      "filePath": "src/lib/stepped-tray-model.ts",
+      "lineRange": [
+        412,
+        500
+      ],
+      "summary": "buildSameHeightPartitionMap 是 stepped-tray-model.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/stepped-tray-model.ts:buildGroupFootprintCutter",
+      "type": "function",
+      "name": "buildGroupFootprintCutter",
+      "filePath": "src/lib/stepped-tray-model.ts",
+      "lineRange": [
+        502,
+        531
+      ],
+      "summary": "buildGroupFootprintCutter 是 stepped-tray-model.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-tray-model.ts:buildSplitUnitKeyByGroupId",
+      "type": "function",
+      "name": "buildSplitUnitKeyByGroupId",
+      "filePath": "src/lib/stepped-tray-model.ts",
+      "lineRange": [
+        533,
+        571
+      ],
+      "summary": "buildSplitUnitKeyByGroupId 是 stepped-tray-model.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-tray-model.ts:buildSplitUnits",
+      "type": "function",
+      "name": "buildSplitUnits",
+      "filePath": "src/lib/stepped-tray-model.ts",
+      "lineRange": [
+        573,
+        602
+      ],
+      "summary": "buildSplitUnits 是 stepped-tray-model.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-tray-model.ts:buildSplitUnitFootprintCutter",
+      "type": "function",
+      "name": "buildSplitUnitFootprintCutter",
+      "filePath": "src/lib/stepped-tray-model.ts",
+      "lineRange": [
+        606,
+        645
+      ],
+      "summary": "buildSplitUnitFootprintCutter 是 stepped-tray-model.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-tray-model.ts:getSplitUnitExternalBaseHeight",
+      "type": "function",
+      "name": "getSplitUnitExternalBaseHeight",
+      "filePath": "src/lib/stepped-tray-model.ts",
+      "lineRange": [
+        647,
+        661
+      ],
+      "summary": "getSplitUnitExternalBaseHeight 是 stepped-tray-model.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-tray-model.ts:clipSolidBelowHeight",
+      "type": "function",
+      "name": "clipSolidBelowHeight",
+      "filePath": "src/lib/stepped-tray-model.ts",
+      "lineRange": [
+        663,
+        683
+      ],
+      "summary": "clipSolidBelowHeight 是 stepped-tray-model.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-tray-model.ts:createSteppedTrayModel",
+      "type": "function",
+      "name": "createSteppedTrayModel",
+      "filePath": "src/lib/stepped-tray-model.ts",
+      "lineRange": [
+        708,
+        741
+      ],
+      "summary": "createSteppedTrayModel 是 stepped-tray-model.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-tray-model.ts:createSteppedSplitParts",
+      "type": "function",
+      "name": "createSteppedSplitParts",
+      "filePath": "src/lib/stepped-tray-model.ts",
+      "lineRange": [
+        743,
+        922
+      ],
+      "summary": "createSteppedSplitParts 是 stepped-tray-model.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/stepped-tray-model.ts:calculateSteppedTrayDimensions",
+      "type": "function",
+      "name": "calculateSteppedTrayDimensions",
+      "filePath": "src/lib/stepped-tray-model.ts",
+      "lineRange": [
+        927,
+        938
+      ],
+      "summary": "calculateSteppedTrayDimensions 是 stepped-tray-model.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/worker/tray.worker.ts",
+      "type": "file",
+      "name": "tray.worker.ts",
+      "filePath": "src/lib/worker/tray.worker.ts",
+      "summary": "tray.worker.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "worker",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/types/custom-tray.ts",
+      "type": "file",
+      "name": "custom-tray.ts",
+      "filePath": "src/types/custom-tray.ts",
+      "summary": "custom-tray.ts 定义托盘编辑器使用的 TypeScript 类型，是模式参数、槽位和工作区契约的基础。",
+      "tags": [
+        "type-definition",
+        "custom-mode",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/lib/outline-geometry.ts",
+      "target": "function:src/lib/outline-geometry.ts:computeAdaptiveSegments",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/outline-geometry.ts",
+      "target": "function:src/lib/outline-geometry.ts:computeTangencyEpsilon",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/outline-geometry.ts",
+      "target": "function:src/lib/outline-geometry.ts:signedPolygonArea",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/outline-geometry.ts",
+      "target": "function:src/lib/outline-geometry.ts:lineIntersection",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/outline-geometry.ts",
+      "target": "function:src/lib/outline-geometry.ts:segmentIntersection",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/outline-geometry.ts",
+      "target": "function:src/lib/outline-geometry.ts:removeSelfintersections",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/outline-geometry.ts",
+      "target": "function:src/lib/outline-geometry.ts:insetPolygon",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/outline-geometry.ts",
+      "target": "function:src/lib/outline-geometry.ts:computeCircleIntersections",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/outline-geometry.ts",
+      "target": "function:src/lib/outline-geometry.ts:correctJunctionVertices",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/outline-geometry.ts",
+      "target": "function:src/lib/outline-geometry.ts:generateOutlineGeom2",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/outline-geometry.ts",
+      "target": "function:src/lib/outline-geometry.ts:generateOutlineGeom2",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/outline-geometry.ts",
+      "target": "function:src/lib/outline-geometry.ts:snapToCircles",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/outline-geometry.ts",
+      "target": "function:src/lib/outline-geometry.ts:generateOutline",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/outline-geometry.ts",
+      "target": "function:src/lib/outline-geometry.ts:generateOutline",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/outline-geometry.ts",
+      "target": "function:src/lib/outline-geometry.ts:outlinePointsToGeom2",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/outline-geometry.ts",
+      "target": "function:src/lib/outline-geometry.ts:outlinePointsToGeom2",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/simple-stepped-row-actions.ts",
+      "target": "function:src/lib/simple-stepped-row-actions.ts:addSimpleSteppedRow",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/simple-stepped-row-actions.ts",
+      "target": "function:src/lib/simple-stepped-row-actions.ts:addSimpleSteppedRow",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/simple-stepped-row-actions.ts",
+      "target": "function:src/lib/simple-stepped-row-actions.ts:removeSimpleSteppedRow",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/simple-stepped-row-actions.ts",
+      "target": "function:src/lib/simple-stepped-row-actions.ts:removeSimpleSteppedRow",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/simple-stepped-row-actions.ts",
+      "target": "function:src/lib/simple-stepped-row-actions.ts:renameSimpleSteppedRow",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/simple-stepped-row-actions.ts",
+      "target": "function:src/lib/simple-stepped-row-actions.ts:renameSimpleSteppedRow",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/simple-stepped-row-actions.ts",
+      "target": "function:src/lib/simple-stepped-row-actions.ts:clearSimpleSteppedRow",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/simple-stepped-row-actions.ts",
+      "target": "function:src/lib/simple-stepped-row-actions.ts:clearSimpleSteppedRow",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/simple-stepped-row-actions.ts",
+      "target": "function:src/lib/simple-stepped-row-actions.ts:reorderSimpleSteppedRows",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/simple-stepped-row-actions.ts",
+      "target": "function:src/lib/simple-stepped-row-actions.ts:reorderSimpleSteppedRows",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/slot-definitions.ts",
+      "target": "function:src/lib/slot-definitions.ts:findCircleSlotDefinitionByBaseDiameter",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/slot-definitions.ts",
+      "target": "function:src/lib/slot-definitions.ts:findCircleSlotDefinitionByBaseDiameter",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/slot-definitions.ts",
+      "target": "function:src/lib/slot-definitions.ts:findCircleSlotDefinitionById",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/slot-definitions.ts",
+      "target": "function:src/lib/slot-definitions.ts:findCircleSlotDefinitionById",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/slot-definitions.ts",
+      "target": "function:src/lib/slot-definitions.ts:findEllipseSlotDefinitionByGeometry",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/slot-definitions.ts",
+      "target": "function:src/lib/slot-definitions.ts:findEllipseSlotDefinitionByGeometry",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/slot-definitions.ts",
+      "target": "function:src/lib/slot-definitions.ts:getLegacyCircleSlotDiameter",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/slot-definitions.ts",
+      "target": "function:src/lib/slot-definitions.ts:getLegacyCircleSlotDiameter",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/slot-definitions.ts",
+      "target": "function:src/lib/slot-definitions.ts:createCircleSlotSnapshot",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/slot-definitions.ts",
+      "target": "function:src/lib/slot-definitions.ts:createCircleSlotSnapshot",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/slot-definitions.ts",
+      "target": "function:src/lib/slot-definitions.ts:createGridSlotSnapshot",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/slot-definitions.ts",
+      "target": "function:src/lib/slot-definitions.ts:createGridSlotSnapshot",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/slot-definitions.ts",
+      "target": "function:src/lib/slot-definitions.ts:createEllipseSlotSnapshot",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/slot-definitions.ts",
+      "target": "function:src/lib/slot-definitions.ts:createEllipseSlotSnapshot",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/slot-definitions.ts",
+      "target": "function:src/lib/slot-definitions.ts:getFreeSlotProfileGeometry",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/slot-definitions.ts",
+      "target": "function:src/lib/slot-definitions.ts:getFreeSlotProfileGeometry",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/slot-profile-geometry.ts",
+      "target": "function:src/lib/slot-profile-geometry.ts:sampleSlotProfilePoints",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/slot-profile-geometry.ts",
+      "target": "function:src/lib/slot-profile-geometry.ts:sampleSlotProfilePoints",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-bridge-warning.ts",
+      "target": "function:src/lib/stepped-bridge-warning.ts:buildSteppedBridgeWarning",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-bridge-warning.ts",
+      "target": "function:src/lib/stepped-bridge-warning.ts:buildSteppedBridgeWarning",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-connectivity.ts",
+      "target": "function:src/lib/stepped-connectivity.ts:getConnectivityRadius",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-connectivity.ts",
+      "target": "function:src/lib/stepped-connectivity.ts:getConnectivityRadius",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-connectivity.ts",
+      "target": "function:src/lib/stepped-connectivity.ts:getEffectiveBridgeGap",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-connectivity.ts",
+      "target": "function:src/lib/stepped-connectivity.ts:getEffectiveBridgeGap",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-connectivity.ts",
+      "target": "function:src/lib/stepped-connectivity.ts:clusterConnectivityCircles",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-connectivity.ts",
+      "target": "function:src/lib/stepped-connectivity.ts:clusterConnectivityCircles",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-connectivity.ts",
+      "target": "function:src/lib/stepped-connectivity.ts:analyzeBridgeWarning",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-connectivity.ts",
+      "target": "function:src/lib/stepped-connectivity.ts:analyzeBridgeWarning",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-global-optimize.test.ts",
+      "target": "function:src/lib/stepped-global-optimize.test.ts:createParams",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-global-optimize.ts",
+      "target": "function:src/lib/stepped-global-optimize.ts:resolveAlignmentOffset",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-global-optimize.ts",
+      "target": "function:src/lib/stepped-global-optimize.ts:buildGroupCompactCandidates",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-global-optimize.ts",
+      "target": "function:src/lib/stepped-global-optimize.ts:composeGroupPlacements",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-global-optimize.ts",
+      "target": "function:src/lib/stepped-global-optimize.ts:buildCompactCandidates",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-global-optimize.ts",
+      "target": "function:src/lib/stepped-global-optimize.ts:createCompactSeed",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-global-optimize.ts",
+      "target": "function:src/lib/stepped-global-optimize.ts:calculateDisplacement",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-global-optimize.ts",
+      "target": "function:src/lib/stepped-global-optimize.ts:finalizeProposal",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-global-optimize.ts",
+      "target": "function:src/lib/stepped-global-optimize.ts:generateSteppedOptimizationProposals",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-global-optimize.ts",
+      "target": "function:src/lib/stepped-global-optimize.ts:generateSteppedOptimizationProposals",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-layout-math.ts",
+      "target": "function:src/lib/stepped-layout-math.ts:calculateSteppedEffectiveDimensions",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-layout-math.ts",
+      "target": "function:src/lib/stepped-layout-math.ts:calculateSteppedEffectiveDimensions",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-evaluator.ts",
+      "target": "function:src/lib/stepped-optimize-evaluator.ts:evaluateCompactCandidate",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-evaluator.ts",
+      "target": "function:src/lib/stepped-optimize-evaluator.ts:evaluateCompactCandidate",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-evaluator.ts",
+      "target": "function:src/lib/stepped-optimize-evaluator.ts:compareCompactCandidateEvaluations",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-evaluator.ts",
+      "target": "function:src/lib/stepped-optimize-evaluator.ts:compareCompactCandidateEvaluations",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-evaluator.ts",
+      "target": "function:src/lib/stepped-optimize-evaluator.ts:serializeSlots",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-evaluator.ts",
+      "target": "function:src/lib/stepped-optimize-evaluator.ts:serializeSlots",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-shelf-packer.ts",
+      "target": "function:src/lib/stepped-optimize-shelf-packer.ts:toRowSlotEntry",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-shelf-packer.ts",
+      "target": "function:src/lib/stepped-optimize-shelf-packer.ts:arrangeRowSymmetrically",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-shelf-packer.ts",
+      "target": "function:src/lib/stepped-optimize-shelf-packer.ts:arrangeRowSymmetrically",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-shelf-packer.ts",
+      "target": "function:src/lib/stepped-optimize-shelf-packer.ts:packSlotsIntoShelves",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-shelf-packer.ts",
+      "target": "function:src/lib/stepped-optimize-shelf-packer.ts:packSlotsIntoShelves",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-slot-geometry.ts",
+      "target": "function:src/lib/stepped-optimize-slot-geometry.ts:getSlotGeometry",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-slot-geometry.ts",
+      "target": "function:src/lib/stepped-optimize-slot-geometry.ts:getSlotGeometry",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-slot-geometry.ts",
+      "target": "function:src/lib/stepped-optimize-slot-geometry.ts:roundToStep",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-slot-geometry.ts",
+      "target": "function:src/lib/stepped-optimize-slot-geometry.ts:roundToStep",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-slot-geometry.ts",
+      "target": "function:src/lib/stepped-optimize-slot-geometry.ts:roundPosition",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-slot-geometry.ts",
+      "target": "function:src/lib/stepped-optimize-slot-geometry.ts:roundPosition",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-slot-geometry.ts",
+      "target": "function:src/lib/stepped-optimize-slot-geometry.ts:normalizeSlotsToOrigin",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-slot-geometry.ts",
+      "target": "function:src/lib/stepped-optimize-slot-geometry.ts:normalizeSlotsToOrigin",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-slot-geometry.ts",
+      "target": "function:src/lib/stepped-optimize-slot-geometry.ts:sortSlotsByEffectiveSize",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-slot-geometry.ts",
+      "target": "function:src/lib/stepped-optimize-slot-geometry.ts:sortSlotsByEffectiveSize",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-slot-geometry.ts",
+      "target": "function:src/lib/stepped-optimize-slot-geometry.ts:buildAlternatingOrder",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-slot-geometry.ts",
+      "target": "function:src/lib/stepped-optimize-slot-geometry.ts:buildAlternatingOrder",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-slot-geometry.ts",
+      "target": "function:src/lib/stepped-optimize-slot-geometry.ts:getTargetShelfWidth",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-slot-geometry.ts",
+      "target": "function:src/lib/stepped-optimize-slot-geometry.ts:getTargetShelfWidth",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-outline-preview.test.ts",
+      "target": "function:src/lib/stepped-outline-preview.test.ts:createParams",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-outline-preview.ts",
+      "target": "function:src/lib/stepped-outline-preview.ts:buildSteppedOutlinePreview",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-outline-preview.ts",
+      "target": "function:src/lib/stepped-outline-preview.ts:buildSteppedOutlinePreview",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.test.ts",
+      "target": "function:src/lib/stepped-tray-model.test.ts:hasBottomCylinderWallNear",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.test.ts",
+      "target": "function:src/lib/stepped-tray-model.test.ts:polygonArea2d",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.test.ts",
+      "target": "function:src/lib/stepped-tray-model.test.ts:countSmallHorizontalTopFaces",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.test.ts",
+      "target": "function:src/lib/stepped-tray-model.test.ts:createParams",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.test.ts",
+      "target": "function:src/lib/stepped-tray-model.test.ts:createMagnetParams",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "function:src/lib/stepped-tray-model.ts:getSlotBoundingHalfSize",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "function:src/lib/stepped-tray-model.ts:createOffsetSlotShape",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "function:src/lib/stepped-tray-model.ts:calculateEffectiveBaseplate",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "function:src/lib/stepped-tray-model.ts:buildNormalizedSlotData",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "function:src/lib/stepped-tray-model.ts:buildSlotDataSolid",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "function:src/lib/stepped-tray-model.ts:buildSteppedSlotHoles",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "function:src/lib/stepped-tray-model.ts:buildSteppedBaseHoleCenters",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "function:src/lib/stepped-tray-model.ts:buildSteppedGroupSolids",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "function:src/lib/stepped-tray-model.ts:getGroupCenter",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "function:src/lib/stepped-tray-model.ts:buildSameHeightPartitionMap",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "function:src/lib/stepped-tray-model.ts:buildGroupFootprintCutter",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "function:src/lib/stepped-tray-model.ts:buildSplitUnitKeyByGroupId",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "function:src/lib/stepped-tray-model.ts:buildSplitUnits",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "function:src/lib/stepped-tray-model.ts:buildSplitUnitFootprintCutter",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "function:src/lib/stepped-tray-model.ts:getSplitUnitExternalBaseHeight",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "function:src/lib/stepped-tray-model.ts:clipSolidBelowHeight",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "function:src/lib/stepped-tray-model.ts:createSteppedTrayModel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "function:src/lib/stepped-tray-model.ts:createSteppedTrayModel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "function:src/lib/stepped-tray-model.ts:createSteppedSplitParts",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "function:src/lib/stepped-tray-model.ts:createSteppedSplitParts",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "function:src/lib/stepped-tray-model.ts:calculateSteppedTrayDimensions",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "function:src/lib/stepped-tray-model.ts:calculateSteppedTrayDimensions",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/simple-stepped-row-actions.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/slot-definitions.test.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/slot-definitions.ts",
+      "target": "file:src/lib/slot-definitions.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/slot-definitions.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/slot-profile-geometry.ts",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/slot-profile-geometry.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-bridge-warning.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-bridge-warning.ts",
+      "target": "file:src/lib/stepped-connectivity.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-bridge-warning.ts",
+      "target": "file:src/lib/stepped-group-params.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-bridge-warning.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-connectivity.test.ts",
+      "target": "file:src/lib/stepped-connectivity.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-connectivity.ts",
+      "target": "file:src/lib/stepped-connectivity.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/stepped-global-optimize.test.ts",
+      "target": "file:src/lib/canvas-collision-model.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-collision-model.ts",
+      "target": "file:src/lib/stepped-global-optimize.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/stepped-global-optimize.test.ts",
+      "target": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-slot-geometry.ts",
+      "target": "file:src/lib/stepped-global-optimize.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/stepped-global-optimize.test.ts",
+      "target": "file:src/lib/stepped-bridge-warning.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-bridge-warning.ts",
+      "target": "file:src/lib/stepped-global-optimize.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/stepped-global-optimize.test.ts",
+      "target": "file:src/lib/stepped-config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-config.ts",
+      "target": "file:src/lib/stepped-global-optimize.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/stepped-global-optimize.test.ts",
+      "target": "file:src/lib/stepped-global-optimize.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-global-optimize.ts",
+      "target": "file:src/lib/stepped-global-optimize.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/stepped-global-optimize.test.ts",
+      "target": "file:src/lib/stepped-layout-math.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-layout-math.ts",
+      "target": "file:src/lib/stepped-global-optimize.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/stepped-global-optimize.ts",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-global-optimize.ts",
+      "target": "file:src/lib/stepped-bridge-warning.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-global-optimize.ts",
+      "target": "file:src/lib/stepped-layout-math.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-global-optimize.ts",
+      "target": "file:src/lib/stepped-layout-slot-actions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-global-optimize.ts",
+      "target": "file:src/lib/stepped-optimize-config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-global-optimize.ts",
+      "target": "file:src/lib/stepped-optimize-evaluator.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-global-optimize.ts",
+      "target": "file:src/lib/stepped-optimize-shelf-packer.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-global-optimize.ts",
+      "target": "file:src/lib/stepped-optimize-slot-geometry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-global-optimize.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-layout-math.ts",
+      "target": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-layout-math.ts",
+      "target": "file:src/lib/custom-layout-math.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-layout-math.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-layout-math.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-evaluator.ts",
+      "target": "file:src/lib/stepped-layout-math.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-evaluator.ts",
+      "target": "file:src/lib/stepped-optimize-config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-evaluator.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-shelf-packer.ts",
+      "target": "file:src/lib/stepped-optimize-slot-geometry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-shelf-packer.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-slot-geometry.ts",
+      "target": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-slot-geometry.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-slot-geometry.ts",
+      "target": "file:src/lib/stepped-optimize-config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-optimize-slot-geometry.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-outline-preview.test.ts",
+      "target": "file:src/lib/stepped-config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-config.ts",
+      "target": "file:src/lib/stepped-outline-preview.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/stepped-outline-preview.test.ts",
+      "target": "file:src/lib/stepped-outline-preview.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-outline-preview.ts",
+      "target": "file:src/lib/stepped-outline-preview.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/stepped-outline-preview.test.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/types/custom-tray.ts",
+      "target": "file:src/lib/stepped-outline-preview.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/stepped-outline-preview.ts",
+      "target": "file:src/lib/outline-geometry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-outline-preview.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-outline-preview.ts",
+      "target": "file:src/lib/stepped-connectivity.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-outline-preview.ts",
+      "target": "file:src/lib/stepped-group-params.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-outline-preview.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.test.ts",
+      "target": "file:src/lib/fixtures/tray-stepped-merged-split-fragments.json",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/fixtures/tray-stepped-merged-split-fragments.json",
+      "target": "file:src/lib/stepped-tray-model.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.test.ts",
+      "target": "file:src/lib/fixtures/tray-stepped-split-fragments.json",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/fixtures/tray-stepped-split-fragments.json",
+      "target": "file:src/lib/stepped-tray-model.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.test.ts",
+      "target": "file:src/lib/stepped-config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-config.ts",
+      "target": "file:src/lib/stepped-tray-model.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.test.ts",
+      "target": "file:src/lib/stepped-tray-model.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "file:src/lib/stepped-tray-model.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.test.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/types/custom-tray.ts",
+      "target": "file:src/lib/stepped-tray-model.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "file:src/lib/model-utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "file:src/lib/outline-geometry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "file:src/lib/slot-profile-geometry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "file:src/lib/stepped-connectivity.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "file:src/lib/stepped-group-params.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-tray-model.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/worker/tray.worker.ts",
+      "target": "file:src/lib/custom-tray-model.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/worker/tray.worker.ts",
+      "target": "file:src/lib/simple-stepped-tray-model.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/worker/tray.worker.ts",
+      "target": "file:src/lib/stepped-outline-preview.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/worker/tray.worker.ts",
+      "target": "file:src/lib/stepped-tray-model.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/worker/tray.worker.ts",
+      "target": "file:src/lib/tray-model.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/worker/tray.worker.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/worker/tray.worker.ts",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/types/custom-tray.ts",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    }
+  ]
+}

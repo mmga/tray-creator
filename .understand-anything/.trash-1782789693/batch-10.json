@@ -1,0 +1,86 @@
+{
+  "nodes": [
+    {
+      "id": "document:.claude/skills/debug-issue.md",
+      "type": "document",
+      "name": "debug-issue.md",
+      "filePath": ".claude/skills/debug-issue.md",
+      "summary": "debug-issue.md 是项目文档，说明 项目背景、使用方式或协作上下文。",
+      "tags": [
+        "documentation",
+        "markdown"
+      ],
+      "complexity": "simple",
+      "language": "markdown"
+    },
+    {
+      "id": "document:.claude/skills/explore-codebase.md",
+      "type": "document",
+      "name": "explore-codebase.md",
+      "filePath": ".claude/skills/explore-codebase.md",
+      "summary": "explore-codebase.md 是项目文档，说明 项目背景、使用方式或协作上下文。",
+      "tags": [
+        "documentation",
+        "markdown"
+      ],
+      "complexity": "simple",
+      "language": "markdown"
+    },
+    {
+      "id": "document:.claude/skills/refactor-safely.md",
+      "type": "document",
+      "name": "refactor-safely.md",
+      "filePath": ".claude/skills/refactor-safely.md",
+      "summary": "refactor-safely.md 是项目文档，说明 项目背景、使用方式或协作上下文。",
+      "tags": [
+        "documentation",
+        "markdown"
+      ],
+      "complexity": "simple",
+      "language": "markdown"
+    },
+    {
+      "id": "document:.claude/skills/review-changes.md",
+      "type": "document",
+      "name": "review-changes.md",
+      "filePath": ".claude/skills/review-changes.md",
+      "summary": "review-changes.md 是项目文档，说明 项目背景、使用方式或协作上下文。",
+      "tags": [
+        "documentation",
+        "markdown"
+      ],
+      "complexity": "simple",
+      "language": "markdown"
+    }
+  ],
+  "edges": [
+    {
+      "source": "document:.claude/skills/debug-issue.md",
+      "target": "file:src/app/page.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.claude/skills/explore-codebase.md",
+      "target": "file:src/app/page.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.claude/skills/refactor-safely.md",
+      "target": "file:src/app/page.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "document:.claude/skills/review-changes.md",
+      "target": "file:src/app/page.tsx",
+      "type": "documents",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

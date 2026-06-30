@@ -1,0 +1,1753 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/components/canvas/AlignPanel.test.tsx",
+      "type": "file",
+      "name": "AlignPanel.test.tsx",
+      "filePath": "src/components/canvas/AlignPanel.test.tsx",
+      "summary": "AlignPanel.test.tsx 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/canvas/AlignPanel.test.tsx:createSlot",
+      "type": "function",
+      "name": "createSlot",
+      "filePath": "src/components/canvas/AlignPanel.test.tsx",
+      "lineRange": [
+        6,
+        17
+      ],
+      "summary": "createSlot 是 AlignPanel.test.tsx 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/canvas/AlignPanel.tsx",
+      "type": "file",
+      "name": "AlignPanel.tsx",
+      "filePath": "src/components/canvas/AlignPanel.tsx",
+      "summary": "AlignPanel.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/canvas/AlignPanel.tsx:getSlotBounds",
+      "type": "function",
+      "name": "getSlotBounds",
+      "filePath": "src/components/canvas/AlignPanel.tsx",
+      "lineRange": [
+        29,
+        52
+      ],
+      "summary": "getSlotBounds 是 AlignPanel.tsx 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/canvas/AlignPanel.tsx:getSelectionBounds",
+      "type": "function",
+      "name": "getSelectionBounds",
+      "filePath": "src/components/canvas/AlignPanel.tsx",
+      "lineRange": [
+        54,
+        76
+      ],
+      "summary": "getSelectionBounds 是 AlignPanel.tsx 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/canvas/AlignPanel.tsx:getSelectionCenter",
+      "type": "function",
+      "name": "getSelectionCenter",
+      "filePath": "src/components/canvas/AlignPanel.tsx",
+      "lineRange": [
+        78,
+        91
+      ],
+      "summary": "getSelectionCenter 是 AlignPanel.tsx 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/canvas/AlignPanel.tsx:AlignPanel",
+      "type": "function",
+      "name": "AlignPanel",
+      "filePath": "src/components/canvas/AlignPanel.tsx",
+      "lineRange": [
+        93,
+        260
+      ],
+      "summary": "AlignPanel 是 AlignPanel.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/canvas/CanvasOverlayLayer.tsx",
+      "type": "file",
+      "name": "CanvasOverlayLayer.tsx",
+      "filePath": "src/components/canvas/CanvasOverlayLayer.tsx",
+      "summary": "CanvasOverlayLayer.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/components/canvas/CanvasSlotLayer.tsx",
+      "type": "file",
+      "name": "CanvasSlotLayer.tsx",
+      "filePath": "src/components/canvas/CanvasSlotLayer.tsx",
+      "summary": "CanvasSlotLayer.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/components/canvas/MirrorPanel.tsx",
+      "type": "file",
+      "name": "MirrorPanel.tsx",
+      "filePath": "src/components/canvas/MirrorPanel.tsx",
+      "summary": "MirrorPanel.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/canvas/MirrorPanel.tsx:buildCollisionPolygon",
+      "type": "function",
+      "name": "buildCollisionPolygon",
+      "filePath": "src/components/canvas/MirrorPanel.tsx",
+      "lineRange": [
+        36,
+        65
+      ],
+      "summary": "buildCollisionPolygon 是 MirrorPanel.tsx 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/canvas/MirrorPanel.tsx:isSameGeometry",
+      "type": "function",
+      "name": "isSameGeometry",
+      "filePath": "src/components/canvas/MirrorPanel.tsx",
+      "lineRange": [
+        67,
+        80
+      ],
+      "summary": "isSameGeometry 是 MirrorPanel.tsx 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/canvas/MirrorPanel.tsx:hasSpacingCollision",
+      "type": "function",
+      "name": "hasSpacingCollision",
+      "filePath": "src/components/canvas/MirrorPanel.tsx",
+      "lineRange": [
+        82,
+        99
+      ],
+      "summary": "hasSpacingCollision 是 MirrorPanel.tsx 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/canvas/MirrorPanel.tsx:MirrorPanel",
+      "type": "function",
+      "name": "MirrorPanel",
+      "filePath": "src/components/canvas/MirrorPanel.tsx",
+      "lineRange": [
+        101,
+        390
+      ],
+      "summary": "MirrorPanel 是 MirrorPanel.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/components/canvas/canvas-components.test.tsx",
+      "type": "file",
+      "name": "canvas-components.test.tsx",
+      "filePath": "src/components/canvas/canvas-components.test.tsx",
+      "summary": "canvas-components.test.tsx 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/canvas/canvas-components.test.tsx:createSteppedSlot",
+      "type": "function",
+      "name": "createSteppedSlot",
+      "filePath": "src/components/canvas/canvas-components.test.tsx",
+      "lineRange": [
+        24,
+        36
+      ],
+      "summary": "createSteppedSlot 是 canvas-components.test.tsx 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/canvas/canvas-components.test.tsx:createGroup",
+      "type": "function",
+      "name": "createGroup",
+      "filePath": "src/components/canvas/canvas-components.test.tsx",
+      "lineRange": [
+        38,
+        50
+      ],
+      "summary": "createGroup 是 canvas-components.test.tsx 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/hooks/useCanvasKeyboard.test.ts",
+      "type": "file",
+      "name": "useCanvasKeyboard.test.ts",
+      "filePath": "src/hooks/useCanvasKeyboard.test.ts",
+      "summary": "useCanvasKeyboard.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "hook",
+        "state",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/hooks/useCanvasKeyboard.test.ts:createSlot",
+      "type": "function",
+      "name": "createSlot",
+      "filePath": "src/hooks/useCanvasKeyboard.test.ts",
+      "lineRange": [
+        7,
+        17
+      ],
+      "summary": "createSlot 是 useCanvasKeyboard.test.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/hooks/useCanvasKeyboard.test.ts:dispatchKeyboardEvent",
+      "type": "function",
+      "name": "dispatchKeyboardEvent",
+      "filePath": "src/hooks/useCanvasKeyboard.test.ts",
+      "lineRange": [
+        19,
+        30
+      ],
+      "summary": "dispatchKeyboardEvent 是 useCanvasKeyboard.test.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/hooks/useCanvasKeyboard.ts",
+      "type": "file",
+      "name": "useCanvasKeyboard.ts",
+      "filePath": "src/hooks/useCanvasKeyboard.ts",
+      "summary": "useCanvasKeyboard.ts 提供 React hook，封装托盘编辑器的状态编排、生命周期或异步请求流程。",
+      "tags": [
+        "hook",
+        "state",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/hooks/useCanvasKeyboard.ts:useCanvasKeyboard",
+      "type": "function",
+      "name": "useCanvasKeyboard",
+      "filePath": "src/hooks/useCanvasKeyboard.ts",
+      "lineRange": [
+        27,
+        151
+      ],
+      "summary": "useCanvasKeyboard 是 useCanvasKeyboard.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/canvas-collision-model.test.ts",
+      "type": "file",
+      "name": "canvas-collision-model.test.ts",
+      "filePath": "src/lib/canvas-collision-model.test.ts",
+      "summary": "canvas-collision-model.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/canvas-collision-model.ts",
+      "type": "file",
+      "name": "canvas-collision-model.ts",
+      "filePath": "src/lib/canvas-collision-model.ts",
+      "summary": "canvas-collision-model.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/canvas-collision-model.ts:buildCanvasCollisionState",
+      "type": "function",
+      "name": "buildCanvasCollisionState",
+      "filePath": "src/lib/canvas-collision-model.ts",
+      "lineRange": [
+        45,
+        170
+      ],
+      "summary": "buildCanvasCollisionState 是 canvas-collision-model.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/canvas-slot-geometry.test.ts",
+      "type": "file",
+      "name": "canvas-slot-geometry.test.ts",
+      "filePath": "src/lib/canvas-slot-geometry.test.ts",
+      "summary": "canvas-slot-geometry.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "file",
+      "name": "canvas-slot-geometry.ts",
+      "filePath": "src/lib/canvas-slot-geometry.ts",
+      "summary": "canvas-slot-geometry.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/canvas-slot-geometry.ts:normalizeDisplayAngle",
+      "type": "function",
+      "name": "normalizeDisplayAngle",
+      "filePath": "src/lib/canvas-slot-geometry.ts",
+      "lineRange": [
+        33,
+        36
+      ],
+      "summary": "normalizeDisplayAngle 是 canvas-slot-geometry.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/canvas-slot-geometry.ts:getSlotLabelRotation",
+      "type": "function",
+      "name": "getSlotLabelRotation",
+      "filePath": "src/lib/canvas-slot-geometry.ts",
+      "lineRange": [
+        38,
+        43
+      ],
+      "summary": "getSlotLabelRotation 是 canvas-slot-geometry.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/canvas-slot-geometry.ts:getEllipseBoundingBox",
+      "type": "function",
+      "name": "getEllipseBoundingBox",
+      "filePath": "src/lib/canvas-slot-geometry.ts",
+      "lineRange": [
+        45,
+        77
+      ],
+      "summary": "getEllipseBoundingBox 是 canvas-slot-geometry.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/canvas-slot-geometry.ts:calculateEffectiveBaseplate",
+      "type": "function",
+      "name": "calculateEffectiveBaseplate",
+      "filePath": "src/lib/canvas-slot-geometry.ts",
+      "lineRange": [
+        79,
+        123
+      ],
+      "summary": "calculateEffectiveBaseplate 是 canvas-slot-geometry.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/canvas-snap-engine.test.ts",
+      "type": "file",
+      "name": "canvas-snap-engine.test.ts",
+      "filePath": "src/lib/canvas-snap-engine.test.ts",
+      "summary": "canvas-snap-engine.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/canvas-snap-engine.ts",
+      "type": "file",
+      "name": "canvas-snap-engine.ts",
+      "filePath": "src/lib/canvas-snap-engine.ts",
+      "summary": "canvas-snap-engine.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/canvas-snap-engine.ts:calculateCanvasDragSnap",
+      "type": "function",
+      "name": "calculateCanvasDragSnap",
+      "filePath": "src/lib/canvas-snap-engine.ts",
+      "lineRange": [
+        51,
+        167
+      ],
+      "summary": "calculateCanvasDragSnap 是 canvas-snap-engine.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/collision.test.ts",
+      "type": "file",
+      "name": "collision.test.ts",
+      "filePath": "src/lib/collision.test.ts",
+      "summary": "collision.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/collision.ts",
+      "type": "file",
+      "name": "collision.ts",
+      "filePath": "src/lib/collision.ts",
+      "summary": "collision.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/collision.ts:getEllipsePolygon",
+      "type": "function",
+      "name": "getEllipsePolygon",
+      "filePath": "src/lib/collision.ts",
+      "lineRange": [
+        37,
+        69
+      ],
+      "summary": "getEllipsePolygon 是 collision.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/collision.ts:polygonsIntersect",
+      "type": "function",
+      "name": "polygonsIntersect",
+      "filePath": "src/lib/collision.ts",
+      "lineRange": [
+        75,
+        113
+      ],
+      "summary": "polygonsIntersect 是 collision.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/custom-layout-math.ts",
+      "type": "file",
+      "name": "custom-layout-math.ts",
+      "filePath": "src/lib/custom-layout-math.ts",
+      "summary": "custom-layout-math.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "custom-mode",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/custom-layout-math.ts:resolveCustomBoundarySpacing",
+      "type": "function",
+      "name": "resolveCustomBoundarySpacing",
+      "filePath": "src/lib/custom-layout-math.ts",
+      "lineRange": [
+        14,
+        22
+      ],
+      "summary": "resolveCustomBoundarySpacing 是 custom-layout-math.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/custom-layout-math.ts:calculateCustomEffectiveDimensions",
+      "type": "function",
+      "name": "calculateCustomEffectiveDimensions",
+      "filePath": "src/lib/custom-layout-math.ts",
+      "lineRange": [
+        24,
+        68
+      ],
+      "summary": "calculateCustomEffectiveDimensions 是 custom-layout-math.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/custom-tray-model.test.ts",
+      "type": "file",
+      "name": "custom-tray-model.test.ts",
+      "filePath": "src/lib/custom-tray-model.test.ts",
+      "summary": "custom-tray-model.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "domain-logic",
+        "custom-mode",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/custom-tray-model.test.ts:createCustomCircleSlot",
+      "type": "function",
+      "name": "createCustomCircleSlot",
+      "filePath": "src/lib/custom-tray-model.test.ts",
+      "lineRange": [
+        13,
+        29
+      ],
+      "summary": "createCustomCircleSlot 是 custom-tray-model.test.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/custom-tray-model.ts",
+      "type": "file",
+      "name": "custom-tray-model.ts",
+      "filePath": "src/lib/custom-tray-model.ts",
+      "summary": "custom-tray-model.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "custom-mode",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/custom-tray-model.ts:calculateCustomEffectiveBaseplate",
+      "type": "function",
+      "name": "calculateCustomEffectiveBaseplate",
+      "filePath": "src/lib/custom-tray-model.ts",
+      "lineRange": [
+        26,
+        73
+      ],
+      "summary": "calculateCustomEffectiveBaseplate 是 custom-tray-model.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/custom-tray-model.ts:createCustomTrayModel",
+      "type": "function",
+      "name": "createCustomTrayModel",
+      "filePath": "src/lib/custom-tray-model.ts",
+      "lineRange": [
+        83,
+        146
+      ],
+      "summary": "createCustomTrayModel 是 custom-tray-model.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/custom-tray-model.ts:calculateCustomTrayDimensions",
+      "type": "function",
+      "name": "calculateCustomTrayDimensions",
+      "filePath": "src/lib/custom-tray-model.ts",
+      "lineRange": [
+        151,
+        158
+      ],
+      "summary": "calculateCustomTrayDimensions 是 custom-tray-model.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/model-utils.ts",
+      "type": "file",
+      "name": "model-utils.ts",
+      "filePath": "src/lib/model-utils.ts",
+      "summary": "model-utils.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/model-utils.ts:createBaseBody",
+      "type": "function",
+      "name": "createBaseBody",
+      "filePath": "src/lib/model-utils.ts",
+      "lineRange": [
+        35,
+        54
+      ],
+      "summary": "createBaseBody 是 model-utils.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/model-utils.ts:subtractBaseHoles",
+      "type": "function",
+      "name": "subtractBaseHoles",
+      "filePath": "src/lib/model-utils.ts",
+      "lineRange": [
+        65,
+        110
+      ],
+      "summary": "subtractBaseHoles 是 model-utils.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/model-utils.ts:createOffsetSlotShape",
+      "type": "function",
+      "name": "createOffsetSlotShape",
+      "filePath": "src/lib/model-utils.ts",
+      "lineRange": [
+        120,
+        144
+      ],
+      "summary": "createOffsetSlotShape 是 model-utils.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/outline-geometry.test.ts",
+      "type": "file",
+      "name": "outline-geometry.test.ts",
+      "filePath": "src/lib/outline-geometry.test.ts",
+      "summary": "outline-geometry.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/outline-geometry.test.ts:getCentroid",
+      "type": "function",
+      "name": "getCentroid",
+      "filePath": "src/lib/outline-geometry.test.ts",
+      "lineRange": [
+        19,
+        29
+      ],
+      "summary": "getCentroid 是 outline-geometry.test.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/components/canvas/AlignPanel.test.tsx",
+      "target": "function:src/components/canvas/AlignPanel.test.tsx:createSlot",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/canvas/AlignPanel.tsx",
+      "target": "function:src/components/canvas/AlignPanel.tsx:getSlotBounds",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/canvas/AlignPanel.tsx",
+      "target": "function:src/components/canvas/AlignPanel.tsx:getSelectionBounds",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/canvas/AlignPanel.tsx",
+      "target": "function:src/components/canvas/AlignPanel.tsx:getSelectionCenter",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/canvas/AlignPanel.tsx",
+      "target": "function:src/components/canvas/AlignPanel.tsx:AlignPanel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/canvas/AlignPanel.tsx",
+      "target": "function:src/components/canvas/AlignPanel.tsx:AlignPanel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/canvas/MirrorPanel.tsx",
+      "target": "function:src/components/canvas/MirrorPanel.tsx:buildCollisionPolygon",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/canvas/MirrorPanel.tsx",
+      "target": "function:src/components/canvas/MirrorPanel.tsx:isSameGeometry",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/canvas/MirrorPanel.tsx",
+      "target": "function:src/components/canvas/MirrorPanel.tsx:hasSpacingCollision",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/canvas/MirrorPanel.tsx",
+      "target": "function:src/components/canvas/MirrorPanel.tsx:MirrorPanel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/canvas/MirrorPanel.tsx",
+      "target": "function:src/components/canvas/MirrorPanel.tsx:MirrorPanel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/canvas/canvas-components.test.tsx",
+      "target": "function:src/components/canvas/canvas-components.test.tsx:createSteppedSlot",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/canvas/canvas-components.test.tsx",
+      "target": "function:src/components/canvas/canvas-components.test.tsx:createGroup",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/hooks/useCanvasKeyboard.test.ts",
+      "target": "function:src/hooks/useCanvasKeyboard.test.ts:createSlot",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/hooks/useCanvasKeyboard.test.ts",
+      "target": "function:src/hooks/useCanvasKeyboard.test.ts:dispatchKeyboardEvent",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/hooks/useCanvasKeyboard.ts",
+      "target": "function:src/hooks/useCanvasKeyboard.ts:useCanvasKeyboard",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/hooks/useCanvasKeyboard.ts",
+      "target": "function:src/hooks/useCanvasKeyboard.ts:useCanvasKeyboard",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/canvas-collision-model.ts",
+      "target": "function:src/lib/canvas-collision-model.ts:buildCanvasCollisionState",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/canvas-collision-model.ts",
+      "target": "function:src/lib/canvas-collision-model.ts:buildCanvasCollisionState",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/canvas-slot-geometry.ts",
+      "target": "function:src/lib/canvas-slot-geometry.ts:normalizeDisplayAngle",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/canvas-slot-geometry.ts",
+      "target": "function:src/lib/canvas-slot-geometry.ts:normalizeDisplayAngle",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/canvas-slot-geometry.ts",
+      "target": "function:src/lib/canvas-slot-geometry.ts:getSlotLabelRotation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/canvas-slot-geometry.ts",
+      "target": "function:src/lib/canvas-slot-geometry.ts:getSlotLabelRotation",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/canvas-slot-geometry.ts",
+      "target": "function:src/lib/canvas-slot-geometry.ts:getEllipseBoundingBox",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/canvas-slot-geometry.ts",
+      "target": "function:src/lib/canvas-slot-geometry.ts:getEllipseBoundingBox",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/canvas-slot-geometry.ts",
+      "target": "function:src/lib/canvas-slot-geometry.ts:calculateEffectiveBaseplate",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/canvas-slot-geometry.ts",
+      "target": "function:src/lib/canvas-slot-geometry.ts:calculateEffectiveBaseplate",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/canvas-snap-engine.ts",
+      "target": "function:src/lib/canvas-snap-engine.ts:calculateCanvasDragSnap",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/canvas-snap-engine.ts",
+      "target": "function:src/lib/canvas-snap-engine.ts:calculateCanvasDragSnap",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/collision.ts",
+      "target": "function:src/lib/collision.ts:getEllipsePolygon",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/collision.ts",
+      "target": "function:src/lib/collision.ts:getEllipsePolygon",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/collision.ts",
+      "target": "function:src/lib/collision.ts:polygonsIntersect",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/collision.ts",
+      "target": "function:src/lib/collision.ts:polygonsIntersect",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/custom-layout-math.ts",
+      "target": "function:src/lib/custom-layout-math.ts:resolveCustomBoundarySpacing",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/custom-layout-math.ts",
+      "target": "function:src/lib/custom-layout-math.ts:resolveCustomBoundarySpacing",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/custom-layout-math.ts",
+      "target": "function:src/lib/custom-layout-math.ts:calculateCustomEffectiveDimensions",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/custom-layout-math.ts",
+      "target": "function:src/lib/custom-layout-math.ts:calculateCustomEffectiveDimensions",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/custom-tray-model.test.ts",
+      "target": "function:src/lib/custom-tray-model.test.ts:createCustomCircleSlot",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/custom-tray-model.ts",
+      "target": "function:src/lib/custom-tray-model.ts:calculateCustomEffectiveBaseplate",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/custom-tray-model.ts",
+      "target": "function:src/lib/custom-tray-model.ts:calculateCustomEffectiveBaseplate",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/custom-tray-model.ts",
+      "target": "function:src/lib/custom-tray-model.ts:createCustomTrayModel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/custom-tray-model.ts",
+      "target": "function:src/lib/custom-tray-model.ts:createCustomTrayModel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/custom-tray-model.ts",
+      "target": "function:src/lib/custom-tray-model.ts:calculateCustomTrayDimensions",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/custom-tray-model.ts",
+      "target": "function:src/lib/custom-tray-model.ts:calculateCustomTrayDimensions",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/model-utils.ts",
+      "target": "function:src/lib/model-utils.ts:createBaseBody",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/model-utils.ts",
+      "target": "function:src/lib/model-utils.ts:createBaseBody",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/model-utils.ts",
+      "target": "function:src/lib/model-utils.ts:subtractBaseHoles",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/model-utils.ts",
+      "target": "function:src/lib/model-utils.ts:subtractBaseHoles",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/model-utils.ts",
+      "target": "function:src/lib/model-utils.ts:createOffsetSlotShape",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/model-utils.ts",
+      "target": "function:src/lib/model-utils.ts:createOffsetSlotShape",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/outline-geometry.test.ts",
+      "target": "function:src/lib/outline-geometry.test.ts:getCentroid",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/canvas/AlignPanel.test.tsx",
+      "target": "file:src/components/canvas/AlignPanel.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/AlignPanel.tsx",
+      "target": "file:src/components/canvas/AlignPanel.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/canvas/AlignPanel.test.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/types/custom-tray.ts",
+      "target": "file:src/components/canvas/AlignPanel.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/canvas/AlignPanel.tsx",
+      "target": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/AlignPanel.tsx",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/AlignPanel.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/CanvasOverlayLayer.tsx",
+      "target": "file:src/lib/canvas-collision-model.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/CanvasOverlayLayer.tsx",
+      "target": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/CanvasOverlayLayer.tsx",
+      "target": "file:src/lib/canvas-types.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/CanvasOverlayLayer.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/CanvasSlotLayer.tsx",
+      "target": "file:src/lib/canvas-collision-model.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/CanvasSlotLayer.tsx",
+      "target": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/CanvasSlotLayer.tsx",
+      "target": "file:src/lib/collision.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/CanvasSlotLayer.tsx",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/CanvasSlotLayer.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/MirrorPanel.tsx",
+      "target": "file:src/hooks/useToast.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/MirrorPanel.tsx",
+      "target": "file:src/lib/collision.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/MirrorPanel.tsx",
+      "target": "file:src/lib/layout-symmetry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/MirrorPanel.tsx",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/MirrorPanel.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/canvas-components.test.tsx",
+      "target": "file:src/components/canvas/AlignPanel.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/AlignPanel.tsx",
+      "target": "file:src/components/canvas/canvas-components.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/canvas/canvas-components.test.tsx",
+      "target": "file:src/components/canvas/CanvasOverlayLayer.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/CanvasOverlayLayer.tsx",
+      "target": "file:src/components/canvas/canvas-components.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/canvas/canvas-components.test.tsx",
+      "target": "file:src/components/canvas/CanvasSlotLayer.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/CanvasSlotLayer.tsx",
+      "target": "file:src/components/canvas/canvas-components.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/canvas/canvas-components.test.tsx",
+      "target": "file:src/components/canvas/MirrorPanel.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/MirrorPanel.tsx",
+      "target": "file:src/components/canvas/canvas-components.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/canvas/canvas-components.test.tsx",
+      "target": "file:src/lib/canvas-collision-model.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-collision-model.ts",
+      "target": "file:src/components/canvas/canvas-components.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/canvas/canvas-components.test.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/types/custom-tray.ts",
+      "target": "file:src/components/canvas/canvas-components.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/hooks/useCanvasKeyboard.test.ts",
+      "target": "file:src/hooks/useCanvasKeyboard.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useCanvasKeyboard.ts",
+      "target": "file:src/hooks/useCanvasKeyboard.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/hooks/useCanvasKeyboard.test.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/types/custom-tray.ts",
+      "target": "file:src/hooks/useCanvasKeyboard.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/hooks/useCanvasKeyboard.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-collision-model.test.ts",
+      "target": "file:src/lib/canvas-collision-model.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-collision-model.ts",
+      "target": "file:src/lib/canvas-collision-model.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/canvas-collision-model.ts",
+      "target": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-collision-model.ts",
+      "target": "file:src/lib/collision.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-collision-model.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-collision-model.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-slot-geometry.test.ts",
+      "target": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-slot-geometry.ts",
+      "target": "file:src/lib/canvas-slot-geometry.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/canvas-slot-geometry.ts",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-slot-geometry.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-slot-geometry.ts",
+      "target": "file:src/lib/slot-profile-geometry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-slot-geometry.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-snap-engine.test.ts",
+      "target": "file:src/lib/canvas-snap-engine.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-snap-engine.ts",
+      "target": "file:src/lib/canvas-snap-engine.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/canvas-snap-engine.ts",
+      "target": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-snap-engine.ts",
+      "target": "file:src/lib/canvas-types.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-snap-engine.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-snap-engine.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/collision.test.ts",
+      "target": "file:src/lib/collision.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/collision.ts",
+      "target": "file:src/lib/collision.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/collision.ts",
+      "target": "file:src/lib/slot-profile-geometry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-math.ts",
+      "target": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-math.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-math.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-tray-model.test.ts",
+      "target": "file:src/lib/custom-config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-config.ts",
+      "target": "file:src/lib/custom-tray-model.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/custom-tray-model.test.ts",
+      "target": "file:src/lib/custom-tray-model.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-tray-model.ts",
+      "target": "file:src/lib/custom-tray-model.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/custom-tray-model.test.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/slot-definitions.ts",
+      "target": "file:src/lib/custom-tray-model.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/custom-tray-model.ts",
+      "target": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-tray-model.ts",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-tray-model.ts",
+      "target": "file:src/lib/model-utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-tray-model.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-tray-model.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/model-utils.ts",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/model-utils.ts",
+      "target": "file:src/lib/slot-profile-geometry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/model-utils.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/model-utils.ts",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/outline-geometry.test.ts",
+      "target": "file:src/lib/outline-geometry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/outline-geometry.ts",
+      "target": "file:src/lib/outline-geometry.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

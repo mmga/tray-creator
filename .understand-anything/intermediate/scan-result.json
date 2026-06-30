@@ -1,14 +1,14 @@
 {
-  "scriptCompleted": true,
-  "projectName": "tray-creator",
-  "rawDescription": "一个基于 Next.js 的 3D 托盘（收纳盘）设计器，支持网格（grid）、阶梯式（stepped）、简易阶梯式（simple-stepped）和自定义（custom）四种布局模式，可实时预览 3D 模型并导出 STL 文件用于 3D 打印。基于 three.js/@react-three 进行 3D 渲染，使用 jscad 进行几何建模。",
-  "readmeHead": "This is a Next.js project bootstrapped with create-next-app. (默认脚手架 README，无项目特定说明)",
+  "name": "tray-creator",
+  "description": "一个基于 Next.js 的 3D 托盘设计器，用 React 与 three.js/@react-three 提供交互式建模界面，并通过 jscad 生成可导出的 STL 几何。支持网格、阶梯式、简易阶梯式和自定义布局模式，配套参数面板、2D/3D 预览、定价、草稿持久化与测试覆盖。 Note: this project has over 100 source files; consider scoping analysis to a subdirectory for faster results.",
   "languages": [
-    "TypeScript",
-    "JavaScript",
     "CSS",
     "JSON",
-    "Markdown"
+    "JavaScript",
+    "Markdown",
+    "TypeScript",
+    "bak",
+    "txt"
   ],
   "frameworks": [
     "Next.js",
@@ -60,18 +60,6 @@
       "fileCategory": "config"
     },
     {
-      "path": ".understand-anything/.understandignore",
-      "language": "unknown",
-      "sizeLines": 42,
-      "fileCategory": "code"
-    },
-    {
-      "path": ".understand-anything/config.json",
-      "language": "json",
-      "sizeLines": 1,
-      "fileCategory": "config"
-    },
-    {
       "path": "claude-progress.txt",
       "language": "txt",
       "sizeLines": 74,
@@ -80,7 +68,7 @@
     {
       "path": "CLAUDE.md",
       "language": "markdown",
-      "sizeLines": 219,
+      "sizeLines": 230,
       "fileCategory": "docs"
     },
     {
@@ -92,7 +80,7 @@
     {
       "path": "CONTEXT.md",
       "language": "markdown",
-      "sizeLines": 233,
+      "sizeLines": 238,
       "fileCategory": "docs"
     },
     {
@@ -296,7 +284,7 @@
     {
       "path": "src/app/page.test.tsx",
       "language": "typescript",
-      "sizeLines": 1079,
+      "sizeLines": 1085,
       "fileCategory": "code"
     },
     {
@@ -314,7 +302,7 @@
     {
       "path": "src/components/AlignmentToolbar.tsx",
       "language": "typescript",
-      "sizeLines": 91,
+      "sizeLines": 94,
       "fileCategory": "code"
     },
     {
@@ -338,7 +326,7 @@
     {
       "path": "src/components/canvas/canvas-components.test.tsx",
       "language": "typescript",
-      "sizeLines": 595,
+      "sizeLines": 752,
       "fileCategory": "code"
     },
     {
@@ -350,7 +338,7 @@
     {
       "path": "src/components/canvas/CanvasSlotLayer.tsx",
       "language": "typescript",
-      "sizeLines": 262,
+      "sizeLines": 291,
       "fileCategory": "code"
     },
     {
@@ -380,7 +368,7 @@
     {
       "path": "src/components/canvas/MirrorPanel.tsx",
       "language": "typescript",
-      "sizeLines": 341,
+      "sizeLines": 390,
       "fileCategory": "code"
     },
     {
@@ -402,15 +390,21 @@
       "fileCategory": "code"
     },
     {
+      "path": "src/components/IndependentSpacingToggle.tsx",
+      "language": "typescript",
+      "sizeLines": 67,
+      "fileCategory": "code"
+    },
+    {
       "path": "src/components/LayoutCanvas.test.tsx",
       "language": "typescript",
-      "sizeLines": 1524,
+      "sizeLines": 1747,
       "fileCategory": "code"
     },
     {
       "path": "src/components/LayoutCanvas.tsx",
       "language": "typescript",
-      "sizeLines": 950,
+      "sizeLines": 1053,
       "fileCategory": "code"
     },
     {
@@ -434,7 +428,7 @@
     {
       "path": "src/components/panels.test.tsx",
       "language": "typescript",
-      "sizeLines": 2350,
+      "sizeLines": 2464,
       "fileCategory": "code"
     },
     {
@@ -456,21 +450,33 @@
       "fileCategory": "code"
     },
     {
+      "path": "src/components/StatsCard.tsx",
+      "language": "typescript",
+      "sizeLines": 112,
+      "fileCategory": "code"
+    },
+    {
       "path": "src/components/SteppedPanel.tsx",
       "language": "typescript",
-      "sizeLines": 900,
+      "sizeLines": 971,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/SteppedPricingFormulaTooltip.tsx",
+      "language": "typescript",
+      "sizeLines": 107,
       "fileCategory": "code"
     },
     {
       "path": "src/components/TrayViewer.test.tsx",
       "language": "typescript",
-      "sizeLines": 220,
+      "sizeLines": 295,
       "fileCategory": "code"
     },
     {
       "path": "src/components/TrayViewer.tsx",
       "language": "typescript",
-      "sizeLines": 240,
+      "sizeLines": 439,
       "fileCategory": "code"
     },
     {
@@ -498,9 +504,21 @@
       "fileCategory": "code"
     },
     {
+      "path": "src/components/ui/ParamSlider.radix.test.tsx",
+      "language": "typescript",
+      "sizeLines": 44,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/components/ui/ParamSlider.test.tsx",
+      "language": "typescript",
+      "sizeLines": 76,
+      "fileCategory": "code"
+    },
+    {
       "path": "src/components/ui/ParamSlider.tsx",
       "language": "typescript",
-      "sizeLines": 59,
+      "sizeLines": 72,
       "fileCategory": "code"
     },
     {
@@ -584,7 +602,13 @@
     {
       "path": "src/hooks/useCustomLayout.ts",
       "language": "typescript",
-      "sizeLines": 309,
+      "sizeLines": 241,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/hooks/useEditableParams.ts",
+      "language": "typescript",
+      "sizeLines": 191,
       "fileCategory": "code"
     },
     {
@@ -620,7 +644,13 @@
     {
       "path": "src/hooks/usePreviewLifecycle.ts",
       "language": "typescript",
-      "sizeLines": 124,
+      "sizeLines": 125,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/hooks/useRequestSequence.ts",
+      "language": "typescript",
+      "sizeLines": 25,
       "fileCategory": "code"
     },
     {
@@ -632,19 +662,19 @@
     {
       "path": "src/hooks/useSimpleSteppedLayout.ts",
       "language": "typescript",
-      "sizeLines": 642,
+      "sizeLines": 638,
       "fileCategory": "code"
     },
     {
       "path": "src/hooks/useSteppedLayout.integration.test.ts",
       "language": "typescript",
-      "sizeLines": 508,
+      "sizeLines": 544,
       "fileCategory": "code"
     },
     {
       "path": "src/hooks/useSteppedLayout.ts",
       "language": "typescript",
-      "sizeLines": 552,
+      "sizeLines": 687,
       "fileCategory": "code"
     },
     {
@@ -656,7 +686,7 @@
     {
       "path": "src/hooks/useSteppedOutlinePreview.ts",
       "language": "typescript",
-      "sizeLines": 117,
+      "sizeLines": 116,
       "fileCategory": "code"
     },
     {
@@ -674,7 +704,7 @@
     {
       "path": "src/hooks/useTrayModel.ts",
       "language": "typescript",
-      "sizeLines": 99,
+      "sizeLines": 91,
       "fileCategory": "code"
     },
     {
@@ -692,13 +722,13 @@
     {
       "path": "src/lib/canvas-collision-model.test.ts",
       "language": "typescript",
-      "sizeLines": 60,
+      "sizeLines": 95,
       "fileCategory": "code"
     },
     {
       "path": "src/lib/canvas-collision-model.ts",
       "language": "typescript",
-      "sizeLines": 153,
+      "sizeLines": 170,
       "fileCategory": "code"
     },
     {
@@ -758,13 +788,13 @@
     {
       "path": "src/lib/config.test.ts",
       "language": "typescript",
-      "sizeLines": 31,
+      "sizeLines": 32,
       "fileCategory": "code"
     },
     {
       "path": "src/lib/config.ts",
       "language": "typescript",
-      "sizeLines": 141,
+      "sizeLines": 144,
       "fileCategory": "code"
     },
     {
@@ -818,7 +848,7 @@
     {
       "path": "src/lib/custom-tray-model.ts",
       "language": "typescript",
-      "sizeLines": 220,
+      "sizeLines": 158,
       "fileCategory": "code"
     },
     {
@@ -831,6 +861,12 @@
       "path": "src/lib/download-port.ts",
       "language": "typescript",
       "sizeLines": 14,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/draft-legacy-normalize.ts",
+      "language": "typescript",
+      "sizeLines": 253,
       "fileCategory": "code"
     },
     {
@@ -850,6 +886,18 @@
       "language": "typescript",
       "sizeLines": 149,
       "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/fixtures/tray-stepped-merged-split-fragments.json",
+      "language": "json",
+      "sizeLines": 512,
+      "fileCategory": "config"
+    },
+    {
+      "path": "src/lib/fixtures/tray-stepped-split-fragments.json",
+      "language": "json",
+      "sizeLines": 501,
+      "fileCategory": "config"
     },
     {
       "path": "src/lib/free-slot-editing.test.ts",
@@ -932,13 +980,13 @@
     {
       "path": "src/lib/layout-symmetry.test.ts",
       "language": "typescript",
-      "sizeLines": 114,
+      "sizeLines": 177,
       "fileCategory": "code"
     },
     {
       "path": "src/lib/layout-symmetry.ts",
       "language": "typescript",
-      "sizeLines": 200,
+      "sizeLines": 312,
       "fileCategory": "code"
     },
     {
@@ -950,19 +998,19 @@
     {
       "path": "src/lib/local-drafts.ts",
       "language": "typescript",
-      "sizeLines": 565,
+      "sizeLines": 359,
       "fileCategory": "code"
     },
     {
       "path": "src/lib/model-ports.ts",
       "language": "typescript",
-      "sizeLines": 56,
+      "sizeLines": 68,
       "fileCategory": "code"
     },
     {
       "path": "src/lib/model-utils.ts",
       "language": "typescript",
-      "sizeLines": 100,
+      "sizeLines": 144,
       "fileCategory": "code"
     },
     {
@@ -996,15 +1044,21 @@
       "fileCategory": "code"
     },
     {
+      "path": "src/lib/param-legacy-migration.ts",
+      "language": "typescript",
+      "sizeLines": 256,
+      "fileCategory": "code"
+    },
+    {
       "path": "src/lib/param-normalization.test.ts",
       "language": "typescript",
-      "sizeLines": 148,
+      "sizeLines": 294,
       "fileCategory": "code"
     },
     {
       "path": "src/lib/param-normalization.ts",
       "language": "typescript",
-      "sizeLines": 817,
+      "sizeLines": 835,
       "fileCategory": "code"
     },
     {
@@ -1016,7 +1070,7 @@
     {
       "path": "src/lib/pricing.test.ts",
       "language": "typescript",
-      "sizeLines": 419,
+      "sizeLines": 327,
       "fileCategory": "code"
     },
     {
@@ -1028,7 +1082,7 @@
     {
       "path": "src/lib/simple-stepped-config.ts",
       "language": "typescript",
-      "sizeLines": 31,
+      "sizeLines": 32,
       "fileCategory": "code"
     },
     {
@@ -1052,7 +1106,19 @@
     {
       "path": "src/lib/simple-stepped-projection.ts",
       "language": "typescript",
-      "sizeLines": 72,
+      "sizeLines": 153,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/simple-stepped-row-actions.ts",
+      "language": "typescript",
+      "sizeLines": 83,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/simple-stepped-slot-actions.ts",
+      "language": "typescript",
+      "sizeLines": 145,
       "fileCategory": "code"
     },
     {
@@ -1070,31 +1136,37 @@
     {
       "path": "src/lib/slot-definitions.test.ts",
       "language": "typescript",
-      "sizeLines": 54,
+      "sizeLines": 66,
       "fileCategory": "code"
     },
     {
       "path": "src/lib/slot-definitions.ts",
       "language": "typescript",
-      "sizeLines": 212,
+      "sizeLines": 213,
       "fileCategory": "code"
     },
     {
       "path": "src/lib/slot-instance-factory.test.ts",
       "language": "typescript",
-      "sizeLines": 134,
+      "sizeLines": 138,
       "fileCategory": "code"
     },
     {
       "path": "src/lib/slot-instance-factory.ts",
       "language": "typescript",
-      "sizeLines": 232,
+      "sizeLines": 272,
       "fileCategory": "code"
     },
     {
       "path": "src/lib/slot-profile-geometry.ts",
       "language": "typescript",
       "sizeLines": 52,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/stepped-base-hole.ts",
+      "language": "typescript",
+      "sizeLines": 101,
       "fileCategory": "code"
     },
     {
@@ -1112,7 +1184,7 @@
     {
       "path": "src/lib/stepped-config.ts",
       "language": "typescript",
-      "sizeLines": 56,
+      "sizeLines": 59,
       "fileCategory": "code"
     },
     {
@@ -1136,7 +1208,7 @@
     {
       "path": "src/lib/stepped-global-optimize.ts",
       "language": "typescript",
-      "sizeLines": 802,
+      "sizeLines": 424,
       "fileCategory": "code"
     },
     {
@@ -1154,13 +1226,13 @@
     {
       "path": "src/lib/stepped-layout-group-actions.test.ts",
       "language": "typescript",
-      "sizeLines": 133,
+      "sizeLines": 177,
       "fileCategory": "code"
     },
     {
       "path": "src/lib/stepped-layout-group-actions.ts",
       "language": "typescript",
-      "sizeLines": 174,
+      "sizeLines": 209,
       "fileCategory": "code"
     },
     {
@@ -1184,13 +1256,37 @@
     {
       "path": "src/lib/stepped-model-service.test.ts",
       "language": "typescript",
-      "sizeLines": 99,
+      "sizeLines": 215,
       "fileCategory": "code"
     },
     {
       "path": "src/lib/stepped-model-service.ts",
       "language": "typescript",
-      "sizeLines": 60,
+      "sizeLines": 139,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/stepped-optimize-config.ts",
+      "language": "typescript",
+      "sizeLines": 30,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/stepped-optimize-evaluator.ts",
+      "language": "typescript",
+      "sizeLines": 124,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/stepped-optimize-shelf-packer.ts",
+      "language": "typescript",
+      "sizeLines": 170,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/lib/stepped-optimize-slot-geometry.ts",
+      "language": "typescript",
+      "sizeLines": 145,
       "fileCategory": "code"
     },
     {
@@ -1208,19 +1304,19 @@
     {
       "path": "src/lib/stepped-perf-fixtures.ts",
       "language": "typescript",
-      "sizeLines": 150,
+      "sizeLines": 152,
       "fileCategory": "code"
     },
     {
       "path": "src/lib/stepped-tray-model.test.ts",
       "language": "typescript",
-      "sizeLines": 120,
+      "sizeLines": 574,
       "fileCategory": "code"
     },
     {
       "path": "src/lib/stepped-tray-model.ts",
       "language": "typescript",
-      "sizeLines": 359,
+      "sizeLines": 938,
       "fileCategory": "code"
     },
     {
@@ -1256,25 +1352,25 @@
     {
       "path": "src/lib/worker/tray.worker.test.ts",
       "language": "typescript",
-      "sizeLines": 204,
+      "sizeLines": 238,
       "fileCategory": "code"
     },
     {
       "path": "src/lib/worker/tray.worker.ts",
       "language": "typescript",
-      "sizeLines": 151,
+      "sizeLines": 178,
       "fileCategory": "code"
     },
     {
       "path": "src/lib/worker/worker-service.test.ts",
       "language": "typescript",
-      "sizeLines": 197,
+      "sizeLines": 232,
       "fileCategory": "code"
     },
     {
       "path": "src/lib/worker/worker-service.ts",
       "language": "typescript",
-      "sizeLines": 179,
+      "sizeLines": 209,
       "fileCategory": "code"
     },
     {
@@ -1286,7 +1382,7 @@
     {
       "path": "src/types/custom-tray.ts",
       "language": "typescript",
-      "sizeLines": 179,
+      "sizeLines": 185,
       "fileCategory": "code"
     },
     {
@@ -1322,7 +1418,7 @@
     {
       "path": "src/viewports/layout-editor/simpleSteppedViewportModel.ts",
       "language": "typescript",
-      "sizeLines": 33,
+      "sizeLines": 36,
       "fileCategory": "code"
     },
     {
@@ -1334,25 +1430,25 @@
     {
       "path": "src/viewports/layout-editor/types.ts",
       "language": "typescript",
-      "sizeLines": 53,
+      "sizeLines": 54,
       "fileCategory": "code"
     },
     {
       "path": "src/viewports/shared/ViewportTabs.tsx",
       "language": "typescript",
-      "sizeLines": 92,
+      "sizeLines": 101,
       "fileCategory": "code"
     },
     {
       "path": "src/viewports/simple-stepped/useSimpleSteppedViewportWorkspace.tsx",
       "language": "typescript",
-      "sizeLines": 102,
+      "sizeLines": 114,
       "fileCategory": "code"
     },
     {
       "path": "src/viewports/stepped/useSteppedViewportWorkspace.tsx",
       "language": "typescript",
-      "sizeLines": 113,
+      "sizeLines": 116,
       "fileCategory": "code"
     },
     {
@@ -1388,7 +1484,7 @@
     {
       "path": "src/workspaces/stepped/useSteppedWorkspace.tsx",
       "language": "typescript",
-      "sizeLines": 132,
+      "sizeLines": 136,
       "fileCategory": "code"
     },
     {
@@ -1400,24 +1496,24 @@
     {
       "path": "tsconfig.json",
       "language": "json",
-      "sizeLines": 34,
+      "sizeLines": 45,
       "fileCategory": "config"
     },
     {
       "path": "vitest.config.ts",
       "language": "typescript",
-      "sizeLines": 40,
+      "sizeLines": 51,
       "fileCategory": "code"
     },
     {
       "path": "vitest.integration.config.ts",
       "language": "typescript",
-      "sizeLines": 16,
+      "sizeLines": 25,
       "fileCategory": "code"
     }
   ],
-  "totalFiles": 232,
-  "filteredByIgnore": 0,
+  "totalFiles": 248,
+  "filteredByIgnore": 48,
   "estimatedComplexity": "large",
   "importMap": {
     ".claude/settings.json": [],
@@ -1426,8 +1522,6 @@
     ".claude/skills/refactor-safely.md": [],
     ".claude/skills/review-changes.md": [],
     ".mcp.json": [],
-    ".understand-anything/.understandignore": [],
-    ".understand-anything/config.json": [],
     "claude-progress.txt": [],
     "CLAUDE.md": [],
     "components.json": [],
@@ -1571,6 +1665,11 @@
       "src/lib/local-drafts.ts",
       "src/types/custom-tray.ts"
     ],
+    "src/components/IndependentSpacingToggle.tsx": [
+      "src/components/ui/label.tsx",
+      "src/components/ui/ParamSlider.tsx",
+      "src/components/ui/switch.tsx"
+    ],
     "src/components/LayoutCanvas.test.tsx": [
       "src/components/LayoutCanvas.tsx",
       "src/lib/canvas-types.ts",
@@ -1665,21 +1764,31 @@
       "src/lib/simple-stepped-layout.ts",
       "src/types/custom-tray.ts"
     ],
+    "src/components/StatsCard.tsx": [
+      "src/components/ui/SectionHeader.tsx",
+      "src/lib/config.ts"
+    ],
     "src/components/SteppedPanel.tsx": [
       "src/components/PanelActionSection.tsx",
+      "src/components/SteppedPricingFormulaTooltip.tsx",
       "src/components/ui/button.tsx",
       "src/components/ui/ParamSlider.tsx",
       "src/components/ui/SectionHeader.tsx",
+      "src/components/ui/select.tsx",
       "src/components/ui/switch.tsx",
       "src/hooks/useToast.tsx",
       "src/lib/config.ts",
       "src/lib/perf.ts",
       "src/lib/pricing.ts",
+      "src/lib/stepped-base-hole.ts",
       "src/lib/stepped-config.ts",
       "src/lib/stepped-connectivity.ts",
       "src/lib/stepped-global-optimize.ts",
       "src/lib/stepped-perf-fixtures.ts",
       "src/types/custom-tray.ts"
+    ],
+    "src/components/SteppedPricingFormulaTooltip.tsx": [
+      "src/lib/pricing.ts"
     ],
     "src/components/TrayViewer.test.tsx": [
       "src/components/TrayViewer.tsx"
@@ -1698,6 +1807,12 @@
     ],
     "src/components/ui/label.tsx": [
       "src/lib/utils.ts"
+    ],
+    "src/components/ui/ParamSlider.radix.test.tsx": [
+      "src/components/ui/ParamSlider.tsx"
+    ],
+    "src/components/ui/ParamSlider.test.tsx": [
+      "src/components/ui/ParamSlider.tsx"
     ],
     "src/components/ui/ParamSlider.tsx": [
       "src/components/ui/input.tsx",
@@ -1739,8 +1854,7 @@
       "src/lib/download-port.ts"
     ],
     "src/hooks/useCustomLayout.ts": [
-      "src/hooks/usePreviewLifecycle.ts",
-      "src/hooks/useUndoHistory.ts",
+      "src/hooks/useEditableParams.ts",
       "src/lib/custom-config.ts",
       "src/lib/custom-layout-actions.ts",
       "src/lib/custom-layout-math.ts",
@@ -1750,6 +1864,10 @@
       "src/lib/layout-symmetry.ts",
       "src/lib/worker/worker-service.ts",
       "src/types/custom-tray.ts"
+    ],
+    "src/hooks/useEditableParams.ts": [
+      "src/hooks/usePreviewLifecycle.ts",
+      "src/hooks/useUndoHistory.ts"
     ],
     "src/hooks/useLiveSlotUpdates.test.ts": [
       "src/hooks/useLiveSlotUpdates.ts",
@@ -1790,8 +1908,10 @@
       "src/workspaces/types.ts"
     ],
     "src/hooks/usePreviewLifecycle.ts": [
+      "src/hooks/useRequestSequence.ts",
       "src/hooks/useToast.tsx"
     ],
+    "src/hooks/useRequestSequence.ts": [],
     "src/hooks/useSimpleSteppedLayout.integration.test.ts": [
       "src/hooks/useSimpleSteppedLayout.ts",
       "src/lib/simple-stepped-config.ts"
@@ -1819,10 +1939,12 @@
     "src/hooks/useSteppedLayout.ts": [
       "src/hooks/usePreviewLifecycle.ts",
       "src/hooks/useSteppedOutlinePreview.ts",
+      "src/hooks/useToast.tsx",
       "src/hooks/useUndoHistory.ts",
       "src/lib/download-port.ts",
       "src/lib/id-factory.ts",
       "src/lib/layout-symmetry.ts",
+      "src/lib/stepped-base-hole.ts",
       "src/lib/stepped-bridge-warning.ts",
       "src/lib/stepped-config.ts",
       "src/lib/stepped-connectivity.ts",
@@ -1840,6 +1962,7 @@
       "src/types/custom-tray.ts"
     ],
     "src/hooks/useSteppedOutlinePreview.ts": [
+      "src/hooks/useRequestSequence.ts",
       "src/lib/model-ports.ts",
       "src/lib/perf.ts",
       "src/lib/stepped-outline-preview.ts",
@@ -1852,7 +1975,7 @@
       "src/lib/grid-config.ts"
     ],
     "src/hooks/useTrayModel.ts": [
-      "src/hooks/usePreviewLifecycle.ts",
+      "src/hooks/useEditableParams.ts",
       "src/lib/download-port.ts",
       "src/lib/grid-model-service.ts",
       "src/lib/grid-model-state.ts",
@@ -1958,10 +2081,10 @@
       "src/lib/slot-definitions.ts"
     ],
     "src/lib/custom-tray-model.ts": [
+      "src/lib/canvas-slot-geometry.ts",
       "src/lib/config.ts",
       "src/lib/model-utils.ts",
       "src/lib/slot-definitions.ts",
-      "src/lib/slot-profile-geometry.ts",
       "src/types/custom-tray.ts"
     ],
     "src/lib/download-port.test.ts": [
@@ -1969,6 +2092,11 @@
     ],
     "src/lib/download-port.ts": [
       "src/lib/model-ports.ts"
+    ],
+    "src/lib/draft-legacy-normalize.ts": [
+      "src/lib/draft-summary.ts",
+      "src/lib/param-io.ts",
+      "src/types/custom-tray.ts"
     ],
     "src/lib/draft-session.test.ts": [
       "src/lib/draft-session.ts"
@@ -1981,6 +2109,8 @@
       "src/types/custom-tray.ts",
       "src/types/tray.ts"
     ],
+    "src/lib/fixtures/tray-stepped-merged-split-fragments.json": [],
+    "src/lib/fixtures/tray-stepped-split-fragments.json": [],
     "src/lib/free-slot-editing.test.ts": [
       "src/lib/free-slot-editing.ts",
       "src/lib/model-ports.ts"
@@ -2051,9 +2181,9 @@
       "src/types/tray.ts"
     ],
     "src/lib/local-drafts.ts": [
+      "src/lib/draft-legacy-normalize.ts",
       "src/lib/draft-summary.ts",
-      "src/lib/param-io.ts",
-      "src/types/custom-tray.ts"
+      "src/lib/param-io.ts"
     ],
     "src/lib/model-ports.ts": [
       "src/types/custom-tray.ts",
@@ -2061,6 +2191,8 @@
     ],
     "src/lib/model-utils.ts": [
       "src/lib/config.ts",
+      "src/lib/slot-profile-geometry.ts",
+      "src/types/custom-tray.ts",
       "src/types/tray.ts"
     ],
     "src/lib/outline-geometry.test.ts": [
@@ -2083,10 +2215,20 @@
       "src/types/custom-tray.ts",
       "src/types/tray.ts"
     ],
+    "src/lib/param-legacy-migration.ts": [
+      "src/lib/grid-config.ts",
+      "src/lib/stepped-config.ts",
+      "src/lib/stepped-group-params.ts",
+      "src/types/custom-tray.ts",
+      "src/types/tray.ts"
+    ],
     "src/lib/param-normalization.test.ts": [
+      "src/lib/config.ts",
       "src/lib/custom-config.ts",
       "src/lib/grid-config.ts",
       "src/lib/param-normalization.ts",
+      "src/lib/simple-stepped-config.ts",
+      "src/lib/stepped-config.ts",
       "src/types/custom-tray.ts",
       "src/types/tray.ts"
     ],
@@ -2097,6 +2239,7 @@
       "src/lib/simple-stepped-config.ts",
       "src/lib/simple-stepped-layout.ts",
       "src/lib/slot-instance-factory.ts",
+      "src/lib/stepped-base-hole.ts",
       "src/lib/stepped-config.ts",
       "src/lib/stepped-group-params.ts",
       "src/types/custom-tray.ts",
@@ -2108,8 +2251,6 @@
       "src/lib/grid-config.ts",
       "src/lib/pricing.ts",
       "src/lib/simple-stepped-config.ts",
-      "src/lib/slot-definitions.ts",
-      "src/lib/slot-instance-factory.ts",
       "src/lib/stepped-config.ts",
       "src/types/custom-tray.ts"
     ],
@@ -2122,6 +2263,7 @@
       "src/types/tray.ts"
     ],
     "src/lib/simple-stepped-config.ts": [
+      "src/lib/config.ts",
       "src/types/custom-tray.ts"
     ],
     "src/lib/simple-stepped-layout.test.ts": [
@@ -2142,7 +2284,18 @@
     ],
     "src/lib/simple-stepped-projection.ts": [
       "src/lib/canvas-types.ts",
+      "src/lib/config.ts",
+      "src/lib/simple-stepped-config.ts",
       "src/lib/simple-stepped-layout.ts",
+      "src/types/custom-tray.ts"
+    ],
+    "src/lib/simple-stepped-row-actions.ts": [
+      "src/types/custom-tray.ts"
+    ],
+    "src/lib/simple-stepped-slot-actions.ts": [
+      "src/lib/canvas-types.ts",
+      "src/lib/simple-stepped-projection.ts",
+      "src/lib/slot-instance-factory.ts",
       "src/types/custom-tray.ts"
     ],
     "src/lib/simple-stepped-tray-model.test.ts": [
@@ -2173,6 +2326,12 @@
       "src/lib/config.ts",
       "src/types/custom-tray.ts"
     ],
+    "src/lib/stepped-base-hole.ts": [
+      "src/lib/config.ts",
+      "src/lib/stepped-config.ts",
+      "src/types/custom-tray.ts",
+      "src/types/tray.ts"
+    ],
     "src/lib/stepped-bridge-warning.test.ts": [
       "src/lib/stepped-bridge-warning.ts",
       "src/lib/stepped-config.ts"
@@ -2184,6 +2343,7 @@
       "src/types/custom-tray.ts"
     ],
     "src/lib/stepped-config.ts": [
+      "src/lib/config.ts",
       "src/lib/stepped-group-params.ts",
       "src/types/custom-tray.ts"
     ],
@@ -2200,12 +2360,14 @@
       "src/lib/stepped-layout-math.ts"
     ],
     "src/lib/stepped-global-optimize.ts": [
-      "src/lib/canvas-slot-geometry.ts",
       "src/lib/config.ts",
-      "src/lib/slot-definitions.ts",
       "src/lib/stepped-bridge-warning.ts",
       "src/lib/stepped-layout-math.ts",
       "src/lib/stepped-layout-slot-actions.ts",
+      "src/lib/stepped-optimize-config.ts",
+      "src/lib/stepped-optimize-evaluator.ts",
+      "src/lib/stepped-optimize-shelf-packer.ts",
+      "src/lib/stepped-optimize-slot-geometry.ts",
       "src/types/custom-tray.ts"
     ],
     "src/lib/stepped-group-params.test.ts": [
@@ -2258,6 +2420,22 @@
       "src/lib/stepped-layout-math.ts",
       "src/types/custom-tray.ts"
     ],
+    "src/lib/stepped-optimize-config.ts": [],
+    "src/lib/stepped-optimize-evaluator.ts": [
+      "src/lib/stepped-layout-math.ts",
+      "src/lib/stepped-optimize-config.ts",
+      "src/types/custom-tray.ts"
+    ],
+    "src/lib/stepped-optimize-shelf-packer.ts": [
+      "src/lib/stepped-optimize-slot-geometry.ts",
+      "src/types/custom-tray.ts"
+    ],
+    "src/lib/stepped-optimize-slot-geometry.ts": [
+      "src/lib/canvas-slot-geometry.ts",
+      "src/lib/slot-definitions.ts",
+      "src/lib/stepped-optimize-config.ts",
+      "src/types/custom-tray.ts"
+    ],
     "src/lib/stepped-outline-preview.test.ts": [
       "src/lib/stepped-config.ts",
       "src/lib/stepped-outline-preview.ts",
@@ -2276,12 +2454,15 @@
       "src/types/custom-tray.ts"
     ],
     "src/lib/stepped-tray-model.test.ts": [
+      "src/lib/fixtures/tray-stepped-merged-split-fragments.json",
+      "src/lib/fixtures/tray-stepped-split-fragments.json",
       "src/lib/stepped-config.ts",
       "src/lib/stepped-tray-model.ts",
       "src/types/custom-tray.ts"
     ],
     "src/lib/stepped-tray-model.ts": [
       "src/lib/config.ts",
+      "src/lib/model-utils.ts",
       "src/lib/outline-geometry.ts",
       "src/lib/slot-definitions.ts",
       "src/lib/slot-profile-geometry.ts",
@@ -2423,24 +2604,5 @@
     "tsconfig.json": [],
     "vitest.config.ts": [],
     "vitest.integration.config.ts": []
-  },
-  "stats": {
-    "filesScanned": 232,
-    "byCategory": {
-      "config": 7,
-      "docs": 33,
-      "code": 191,
-      "markup": 1
-    },
-    "byLanguage": {
-      "json": 7,
-      "markdown": 31,
-      "unknown": 1,
-      "txt": 2,
-      "javascript": 2,
-      "typescript": 187,
-      "css": 1,
-      "bak": 1
-    }
   }
 }

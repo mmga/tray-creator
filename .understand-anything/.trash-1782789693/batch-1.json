@@ -1,0 +1,3652 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/components/BaseHoleConfig.tsx",
+      "type": "file",
+      "name": "BaseHoleConfig.tsx",
+      "filePath": "src/components/BaseHoleConfig.tsx",
+      "summary": "BaseHoleConfig.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/BaseHoleConfig.tsx:BaseHoleConfig",
+      "type": "function",
+      "name": "BaseHoleConfig",
+      "filePath": "src/components/BaseHoleConfig.tsx",
+      "lineRange": [
+        30,
+        133
+      ],
+      "summary": "BaseHoleConfig 是 BaseHoleConfig.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/CustomPanel.tsx",
+      "type": "file",
+      "name": "CustomPanel.tsx",
+      "filePath": "src/components/CustomPanel.tsx",
+      "summary": "CustomPanel.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/CustomPanel.tsx:CustomPanel",
+      "type": "function",
+      "name": "CustomPanel",
+      "filePath": "src/components/CustomPanel.tsx",
+      "lineRange": [
+        64,
+        309
+      ],
+      "summary": "CustomPanel 是 CustomPanel.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/components/DraftManagerDialog.test.tsx",
+      "type": "file",
+      "name": "DraftManagerDialog.test.tsx",
+      "filePath": "src/components/DraftManagerDialog.test.tsx",
+      "summary": "DraftManagerDialog.test.tsx 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/DraftManagerDialog.test.tsx:createGridDraft",
+      "type": "function",
+      "name": "createGridDraft",
+      "filePath": "src/components/DraftManagerDialog.test.tsx",
+      "lineRange": [
+        53,
+        65
+      ],
+      "summary": "createGridDraft 是 DraftManagerDialog.test.tsx 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/DraftManagerDialog.tsx",
+      "type": "file",
+      "name": "DraftManagerDialog.tsx",
+      "filePath": "src/components/DraftManagerDialog.tsx",
+      "summary": "DraftManagerDialog.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/DraftManagerDialog.tsx:DraftItemRow",
+      "type": "function",
+      "name": "DraftItemRow",
+      "filePath": "src/components/DraftManagerDialog.tsx",
+      "lineRange": [
+        67,
+        221
+      ],
+      "summary": "DraftItemRow 是 DraftManagerDialog.tsx 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/DraftManagerDialog.tsx:DraftManagerDialog",
+      "type": "function",
+      "name": "DraftManagerDialog",
+      "filePath": "src/components/DraftManagerDialog.tsx",
+      "lineRange": [
+        223,
+        366
+      ],
+      "summary": "DraftManagerDialog 是 DraftManagerDialog.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/IndependentSpacingToggle.tsx",
+      "type": "file",
+      "name": "IndependentSpacingToggle.tsx",
+      "filePath": "src/components/IndependentSpacingToggle.tsx",
+      "summary": "IndependentSpacingToggle.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/IndependentSpacingToggle.tsx:IndependentSpacingToggle",
+      "type": "function",
+      "name": "IndependentSpacingToggle",
+      "filePath": "src/components/IndependentSpacingToggle.tsx",
+      "lineRange": [
+        33,
+        67
+      ],
+      "summary": "IndependentSpacingToggle 是 IndependentSpacingToggle.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/PanelActionSection.tsx",
+      "type": "file",
+      "name": "PanelActionSection.tsx",
+      "filePath": "src/components/PanelActionSection.tsx",
+      "summary": "PanelActionSection.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/PanelActionSection.tsx:PanelActionSection",
+      "type": "function",
+      "name": "PanelActionSection",
+      "filePath": "src/components/PanelActionSection.tsx",
+      "lineRange": [
+        43,
+        153
+      ],
+      "summary": "PanelActionSection 是 PanelActionSection.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/ParamIOButtons.tsx",
+      "type": "file",
+      "name": "ParamIOButtons.tsx",
+      "filePath": "src/components/ParamIOButtons.tsx",
+      "summary": "ParamIOButtons.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/ParamIOButtons.tsx:ParamIOButtons",
+      "type": "function",
+      "name": "ParamIOButtons",
+      "filePath": "src/components/ParamIOButtons.tsx",
+      "lineRange": [
+        22,
+        84
+      ],
+      "summary": "ParamIOButtons 是 ParamIOButtons.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/ParameterPanel.tsx",
+      "type": "file",
+      "name": "ParameterPanel.tsx",
+      "filePath": "src/components/ParameterPanel.tsx",
+      "summary": "ParameterPanel.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/ParameterPanel.tsx:ParameterPanel",
+      "type": "function",
+      "name": "ParameterPanel",
+      "filePath": "src/components/ParameterPanel.tsx",
+      "lineRange": [
+        48,
+        399
+      ],
+      "summary": "ParameterPanel 是 ParameterPanel.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/components/SimpleSteppedPanel.tsx",
+      "type": "file",
+      "name": "SimpleSteppedPanel.tsx",
+      "filePath": "src/components/SimpleSteppedPanel.tsx",
+      "summary": "SimpleSteppedPanel.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/SimpleSteppedPanel.tsx:SimpleSteppedPanel",
+      "type": "function",
+      "name": "SimpleSteppedPanel",
+      "filePath": "src/components/SimpleSteppedPanel.tsx",
+      "lineRange": [
+        63,
+        481
+      ],
+      "summary": "SimpleSteppedPanel 是 SimpleSteppedPanel.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/components/StatsCard.tsx",
+      "type": "file",
+      "name": "StatsCard.tsx",
+      "filePath": "src/components/StatsCard.tsx",
+      "summary": "StatsCard.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/StatsCard.tsx:StatsCard",
+      "type": "function",
+      "name": "StatsCard",
+      "filePath": "src/components/StatsCard.tsx",
+      "lineRange": [
+        43,
+        112
+      ],
+      "summary": "StatsCard 是 StatsCard.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/SteppedPanel.tsx",
+      "type": "file",
+      "name": "SteppedPanel.tsx",
+      "filePath": "src/components/SteppedPanel.tsx",
+      "summary": "SteppedPanel.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/SteppedPanel.tsx:SteppedPanel",
+      "type": "function",
+      "name": "SteppedPanel",
+      "filePath": "src/components/SteppedPanel.tsx",
+      "lineRange": [
+        105,
+        971
+      ],
+      "summary": "SteppedPanel 是 SteppedPanel.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/components/SteppedPricingFormulaTooltip.tsx",
+      "type": "file",
+      "name": "SteppedPricingFormulaTooltip.tsx",
+      "filePath": "src/components/SteppedPricingFormulaTooltip.tsx",
+      "summary": "SteppedPricingFormulaTooltip.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/SteppedPricingFormulaTooltip.tsx:SteppedPricingFormulaTooltip",
+      "type": "function",
+      "name": "SteppedPricingFormulaTooltip",
+      "filePath": "src/components/SteppedPricingFormulaTooltip.tsx",
+      "lineRange": [
+        7,
+        107
+      ],
+      "summary": "SteppedPricingFormulaTooltip 是 SteppedPricingFormulaTooltip.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/TrayViewer.test.tsx",
+      "type": "file",
+      "name": "TrayViewer.test.tsx",
+      "filePath": "src/components/TrayViewer.test.tsx",
+      "summary": "TrayViewer.test.tsx 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/components/TrayViewer.tsx",
+      "type": "file",
+      "name": "TrayViewer.tsx",
+      "filePath": "src/components/TrayViewer.tsx",
+      "summary": "TrayViewer.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/TrayViewer.tsx:TrayMesh",
+      "type": "function",
+      "name": "TrayMesh",
+      "filePath": "src/components/TrayViewer.tsx",
+      "lineRange": [
+        41,
+        77
+      ],
+      "summary": "TrayMesh 是 TrayViewer.tsx 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/TrayViewer.tsx:CameraAutoFit",
+      "type": "function",
+      "name": "CameraAutoFit",
+      "filePath": "src/components/TrayViewer.tsx",
+      "lineRange": [
+        92,
+        145
+      ],
+      "summary": "CameraAutoFit 是 TrayViewer.tsx 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/components/TrayViewer.tsx:ContextLostHandler",
+      "type": "function",
+      "name": "ContextLostHandler",
+      "filePath": "src/components/TrayViewer.tsx",
+      "lineRange": [
+        150,
+        175
+      ],
+      "summary": "ContextLostHandler 是 TrayViewer.tsx 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/TrayViewer.tsx:TrayViewer",
+      "type": "function",
+      "name": "TrayViewer",
+      "filePath": "src/components/TrayViewer.tsx",
+      "lineRange": [
+        177,
+        439
+      ],
+      "summary": "TrayViewer 是 TrayViewer.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/components/panels.test.tsx",
+      "type": "file",
+      "name": "panels.test.tsx",
+      "filePath": "src/components/panels.test.tsx",
+      "summary": "panels.test.tsx 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/panels.test.tsx:createSteppedParams",
+      "type": "function",
+      "name": "createSteppedParams",
+      "filePath": "src/components/panels.test.tsx",
+      "lineRange": [
+        265,
+        305
+      ],
+      "summary": "createSteppedParams 是 panels.test.tsx 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/panels.test.tsx:createSimpleSteppedParams",
+      "type": "function",
+      "name": "createSimpleSteppedParams",
+      "filePath": "src/components/panels.test.tsx",
+      "lineRange": [
+        307,
+        346
+      ],
+      "summary": "createSimpleSteppedParams 是 panels.test.tsx 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/panels.test.tsx:createOptimizationProposals",
+      "type": "function",
+      "name": "createOptimizationProposals",
+      "filePath": "src/components/panels.test.tsx",
+      "lineRange": [
+        348,
+        368
+      ],
+      "summary": "createOptimizationProposals 是 panels.test.tsx 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/ui/ParamSlider.radix.test.tsx",
+      "type": "file",
+      "name": "ParamSlider.radix.test.tsx",
+      "filePath": "src/components/ui/ParamSlider.radix.test.tsx",
+      "summary": "ParamSlider.radix.test.tsx 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/components/ui/ParamSlider.test.tsx",
+      "type": "file",
+      "name": "ParamSlider.test.tsx",
+      "filePath": "src/components/ui/ParamSlider.test.tsx",
+      "summary": "ParamSlider.test.tsx 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/components/ui/ParamSlider.tsx",
+      "type": "file",
+      "name": "ParamSlider.tsx",
+      "filePath": "src/components/ui/ParamSlider.tsx",
+      "summary": "ParamSlider.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/ui/ParamSlider.tsx:ParamSlider",
+      "type": "function",
+      "name": "ParamSlider",
+      "filePath": "src/components/ui/ParamSlider.tsx",
+      "lineRange": [
+        17,
+        72
+      ],
+      "summary": "ParamSlider 是 ParamSlider.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/ui/SectionHeader.tsx",
+      "type": "file",
+      "name": "SectionHeader.tsx",
+      "filePath": "src/components/ui/SectionHeader.tsx",
+      "summary": "SectionHeader.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/ui/SectionHeader.tsx:SectionHeader",
+      "type": "function",
+      "name": "SectionHeader",
+      "filePath": "src/components/ui/SectionHeader.tsx",
+      "lineRange": [
+        21,
+        79
+      ],
+      "summary": "SectionHeader 是 SectionHeader.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/ui/button.tsx",
+      "type": "file",
+      "name": "button.tsx",
+      "filePath": "src/components/ui/button.tsx",
+      "summary": "button.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/ui/button.tsx:Button",
+      "type": "function",
+      "name": "Button",
+      "filePath": "src/components/ui/button.tsx",
+      "lineRange": [
+        41,
+        62
+      ],
+      "summary": "Button 是 button.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/ui/dialog.tsx",
+      "type": "file",
+      "name": "dialog.tsx",
+      "filePath": "src/components/ui/dialog.tsx",
+      "summary": "dialog.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/ui/dialog.tsx:Dialog",
+      "type": "function",
+      "name": "Dialog",
+      "filePath": "src/components/ui/dialog.tsx",
+      "lineRange": [
+        9,
+        13
+      ],
+      "summary": "Dialog 是 dialog.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/ui/dialog.tsx:DialogTrigger",
+      "type": "function",
+      "name": "DialogTrigger",
+      "filePath": "src/components/ui/dialog.tsx",
+      "lineRange": [
+        15,
+        19
+      ],
+      "summary": "DialogTrigger 是 dialog.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/ui/dialog.tsx:DialogPortal",
+      "type": "function",
+      "name": "DialogPortal",
+      "filePath": "src/components/ui/dialog.tsx",
+      "lineRange": [
+        21,
+        25
+      ],
+      "summary": "DialogPortal 是 dialog.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/ui/dialog.tsx:DialogClose",
+      "type": "function",
+      "name": "DialogClose",
+      "filePath": "src/components/ui/dialog.tsx",
+      "lineRange": [
+        27,
+        31
+      ],
+      "summary": "DialogClose 是 dialog.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/ui/dialog.tsx:DialogOverlay",
+      "type": "function",
+      "name": "DialogOverlay",
+      "filePath": "src/components/ui/dialog.tsx",
+      "lineRange": [
+        33,
+        47
+      ],
+      "summary": "DialogOverlay 是 dialog.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/ui/dialog.tsx:DialogContent",
+      "type": "function",
+      "name": "DialogContent",
+      "filePath": "src/components/ui/dialog.tsx",
+      "lineRange": [
+        49,
+        82
+      ],
+      "summary": "DialogContent 是 dialog.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/ui/dialog.tsx:DialogHeader",
+      "type": "function",
+      "name": "DialogHeader",
+      "filePath": "src/components/ui/dialog.tsx",
+      "lineRange": [
+        84,
+        92
+      ],
+      "summary": "DialogHeader 是 dialog.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/ui/dialog.tsx:DialogFooter",
+      "type": "function",
+      "name": "DialogFooter",
+      "filePath": "src/components/ui/dialog.tsx",
+      "lineRange": [
+        94,
+        105
+      ],
+      "summary": "DialogFooter 是 dialog.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/ui/dialog.tsx:DialogTitle",
+      "type": "function",
+      "name": "DialogTitle",
+      "filePath": "src/components/ui/dialog.tsx",
+      "lineRange": [
+        107,
+        121
+      ],
+      "summary": "DialogTitle 是 dialog.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/ui/dialog.tsx:DialogDescription",
+      "type": "function",
+      "name": "DialogDescription",
+      "filePath": "src/components/ui/dialog.tsx",
+      "lineRange": [
+        123,
+        134
+      ],
+      "summary": "DialogDescription 是 dialog.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/ui/input.tsx",
+      "type": "file",
+      "name": "input.tsx",
+      "filePath": "src/components/ui/input.tsx",
+      "summary": "input.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/ui/input.tsx:Input",
+      "type": "function",
+      "name": "Input",
+      "filePath": "src/components/ui/input.tsx",
+      "lineRange": [
+        5,
+        19
+      ],
+      "summary": "Input 是 input.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/ui/label.tsx",
+      "type": "file",
+      "name": "label.tsx",
+      "filePath": "src/components/ui/label.tsx",
+      "summary": "label.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/ui/label.tsx:Label",
+      "type": "function",
+      "name": "Label",
+      "filePath": "src/components/ui/label.tsx",
+      "lineRange": [
+        8,
+        22
+      ],
+      "summary": "Label 是 label.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/ui/select.tsx",
+      "type": "file",
+      "name": "select.tsx",
+      "filePath": "src/components/ui/select.tsx",
+      "summary": "select.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/ui/select.tsx:Select",
+      "type": "function",
+      "name": "Select",
+      "filePath": "src/components/ui/select.tsx",
+      "lineRange": [
+        9,
+        13
+      ],
+      "summary": "Select 是 select.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/ui/select.tsx:SelectGroup",
+      "type": "function",
+      "name": "SelectGroup",
+      "filePath": "src/components/ui/select.tsx",
+      "lineRange": [
+        15,
+        19
+      ],
+      "summary": "SelectGroup 是 select.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/ui/select.tsx:SelectValue",
+      "type": "function",
+      "name": "SelectValue",
+      "filePath": "src/components/ui/select.tsx",
+      "lineRange": [
+        21,
+        25
+      ],
+      "summary": "SelectValue 是 select.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/ui/select.tsx:SelectTrigger",
+      "type": "function",
+      "name": "SelectTrigger",
+      "filePath": "src/components/ui/select.tsx",
+      "lineRange": [
+        27,
+        51
+      ],
+      "summary": "SelectTrigger 是 select.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/ui/select.tsx:SelectContent",
+      "type": "function",
+      "name": "SelectContent",
+      "filePath": "src/components/ui/select.tsx",
+      "lineRange": [
+        53,
+        88
+      ],
+      "summary": "SelectContent 是 select.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/ui/select.tsx:SelectLabel",
+      "type": "function",
+      "name": "SelectLabel",
+      "filePath": "src/components/ui/select.tsx",
+      "lineRange": [
+        90,
+        101
+      ],
+      "summary": "SelectLabel 是 select.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/ui/select.tsx:SelectItem",
+      "type": "function",
+      "name": "SelectItem",
+      "filePath": "src/components/ui/select.tsx",
+      "lineRange": [
+        103,
+        128
+      ],
+      "summary": "SelectItem 是 select.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/ui/select.tsx:SelectSeparator",
+      "type": "function",
+      "name": "SelectSeparator",
+      "filePath": "src/components/ui/select.tsx",
+      "lineRange": [
+        130,
+        141
+      ],
+      "summary": "SelectSeparator 是 select.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/ui/select.tsx:SelectScrollUpButton",
+      "type": "function",
+      "name": "SelectScrollUpButton",
+      "filePath": "src/components/ui/select.tsx",
+      "lineRange": [
+        143,
+        159
+      ],
+      "summary": "SelectScrollUpButton 是 select.tsx 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/ui/select.tsx:SelectScrollDownButton",
+      "type": "function",
+      "name": "SelectScrollDownButton",
+      "filePath": "src/components/ui/select.tsx",
+      "lineRange": [
+        161,
+        177
+      ],
+      "summary": "SelectScrollDownButton 是 select.tsx 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/ui/slider.tsx",
+      "type": "file",
+      "name": "slider.tsx",
+      "filePath": "src/components/ui/slider.tsx",
+      "summary": "slider.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/ui/slider.tsx:Slider",
+      "type": "function",
+      "name": "Slider",
+      "filePath": "src/components/ui/slider.tsx",
+      "lineRange": [
+        8,
+        72
+      ],
+      "summary": "Slider 是 slider.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/ui/switch.tsx",
+      "type": "file",
+      "name": "switch.tsx",
+      "filePath": "src/components/ui/switch.tsx",
+      "summary": "switch.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/ui/switch.tsx:Switch",
+      "type": "function",
+      "name": "Switch",
+      "filePath": "src/components/ui/switch.tsx",
+      "lineRange": [
+        8,
+        33
+      ],
+      "summary": "Switch 是 switch.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/hooks/useAutoPreview.ts",
+      "type": "file",
+      "name": "useAutoPreview.ts",
+      "filePath": "src/hooks/useAutoPreview.ts",
+      "summary": "useAutoPreview.ts 提供 React hook，封装托盘编辑器的状态编排、生命周期或异步请求流程。",
+      "tags": [
+        "hook",
+        "state",
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/hooks/useAutoPreview.ts:useAutoPreview",
+      "type": "function",
+      "name": "useAutoPreview",
+      "filePath": "src/hooks/useAutoPreview.ts",
+      "lineRange": [
+        13,
+        38
+      ],
+      "summary": "useAutoPreview 是 useAutoPreview.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/config.test.ts",
+      "type": "file",
+      "name": "config.test.ts",
+      "filePath": "src/lib/config.test.ts",
+      "summary": "config.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/config.ts",
+      "type": "file",
+      "name": "config.ts",
+      "filePath": "src/lib/config.ts",
+      "summary": "config.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/config.ts:getSlotTolerance",
+      "type": "function",
+      "name": "getSlotTolerance",
+      "filePath": "src/lib/config.ts",
+      "lineRange": [
+        31,
+        40
+      ],
+      "summary": "getSlotTolerance 是 config.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/config.ts:getSlotOuterOffset",
+      "type": "function",
+      "name": "getSlotOuterOffset",
+      "filePath": "src/lib/config.ts",
+      "lineRange": [
+        43,
+        54
+      ],
+      "summary": "getSlotOuterOffset 是 config.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/config.ts:resolveBaseHolePresetKey",
+      "type": "function",
+      "name": "resolveBaseHolePresetKey",
+      "filePath": "src/lib/config.ts",
+      "lineRange": [
+        69,
+        80
+      ],
+      "summary": "resolveBaseHolePresetKey 是 config.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/config.ts:getBaseHolePreset",
+      "type": "function",
+      "name": "getBaseHolePreset",
+      "filePath": "src/lib/config.ts",
+      "lineRange": [
+        82,
+        84
+      ],
+      "summary": "getBaseHolePreset 是 config.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/config.ts:getBaseHoleMinBottomWall",
+      "type": "function",
+      "name": "getBaseHoleMinBottomWall",
+      "filePath": "src/lib/config.ts",
+      "lineRange": [
+        86,
+        88
+      ],
+      "summary": "getBaseHoleMinBottomWall 是 config.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/config.ts:getBaseHoleMinBaseThickness",
+      "type": "function",
+      "name": "getBaseHoleMinBaseThickness",
+      "filePath": "src/lib/config.ts",
+      "lineRange": [
+        90,
+        96
+      ],
+      "summary": "getBaseHoleMinBaseThickness 是 config.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/pricing.ts",
+      "type": "file",
+      "name": "pricing.ts",
+      "filePath": "src/lib/pricing.ts",
+      "summary": "pricing.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "pricing",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/pricing.ts:getSteppedStructureFlags",
+      "type": "function",
+      "name": "getSteppedStructureFlags",
+      "filePath": "src/lib/pricing.ts",
+      "lineRange": [
+        95,
+        113
+      ],
+      "summary": "getSteppedStructureFlags 是 pricing.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/pricing.ts:getSteppedPricingCounts",
+      "type": "function",
+      "name": "getSteppedPricingCounts",
+      "filePath": "src/lib/pricing.ts",
+      "lineRange": [
+        115,
+        134
+      ],
+      "summary": "getSteppedPricingCounts 是 pricing.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/pricing.ts:calculateSteppedMaterialDensity",
+      "type": "function",
+      "name": "calculateSteppedMaterialDensity",
+      "filePath": "src/lib/pricing.ts",
+      "lineRange": [
+        136,
+        149
+      ],
+      "summary": "calculateSteppedMaterialDensity 是 pricing.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/pricing.ts:calculateWeight",
+      "type": "function",
+      "name": "calculateWeight",
+      "filePath": "src/lib/pricing.ts",
+      "lineRange": [
+        155,
+        159
+      ],
+      "summary": "calculateWeight 是 pricing.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/pricing.ts:calculateGridPrice",
+      "type": "function",
+      "name": "calculateGridPrice",
+      "filePath": "src/lib/pricing.ts",
+      "lineRange": [
+        165,
+        171
+      ],
+      "summary": "calculateGridPrice 是 pricing.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/pricing.ts:calculateCustomPrice",
+      "type": "function",
+      "name": "calculateCustomPrice",
+      "filePath": "src/lib/pricing.ts",
+      "lineRange": [
+        173,
+        186
+      ],
+      "summary": "calculateCustomPrice 是 pricing.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/pricing.ts:getSteppedPricingBreakdown",
+      "type": "function",
+      "name": "getSteppedPricingBreakdown",
+      "filePath": "src/lib/pricing.ts",
+      "lineRange": [
+        188,
+        287
+      ],
+      "summary": "getSteppedPricingBreakdown 是 pricing.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/pricing.ts:calculateSteppedPrice",
+      "type": "function",
+      "name": "calculateSteppedPrice",
+      "filePath": "src/lib/pricing.ts",
+      "lineRange": [
+        289,
+        294
+      ],
+      "summary": "calculateSteppedPrice 是 pricing.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/pricing.ts:calculateSimpleSteppedPrice",
+      "type": "function",
+      "name": "calculateSimpleSteppedPrice",
+      "filePath": "src/lib/pricing.ts",
+      "lineRange": [
+        296,
+        303
+      ],
+      "summary": "calculateSimpleSteppedPrice 是 pricing.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/stepped-base-hole.ts",
+      "type": "file",
+      "name": "stepped-base-hole.ts",
+      "filePath": "src/lib/stepped-base-hole.ts",
+      "summary": "stepped-base-hole.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "stepped-mode",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/stepped-base-hole.ts:getLargestSlotSizeForGroup",
+      "type": "function",
+      "name": "getLargestSlotSizeForGroup",
+      "filePath": "src/lib/stepped-base-hole.ts",
+      "lineRange": [
+        9,
+        20
+      ],
+      "summary": "getLargestSlotSizeForGroup 是 stepped-base-hole.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-base-hole.ts:getSteppedResolvedBaseHoleSize",
+      "type": "function",
+      "name": "getSteppedResolvedBaseHoleSize",
+      "filePath": "src/lib/stepped-base-hole.ts",
+      "lineRange": [
+        22,
+        31
+      ],
+      "summary": "getSteppedResolvedBaseHoleSize 是 stepped-base-hole.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-base-hole.ts:getSteppedGroupResolvedBaseHoleSize",
+      "type": "function",
+      "name": "getSteppedGroupResolvedBaseHoleSize",
+      "filePath": "src/lib/stepped-base-hole.ts",
+      "lineRange": [
+        33,
+        38
+      ],
+      "summary": "getSteppedGroupResolvedBaseHoleSize 是 stepped-base-hole.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-base-hole.ts:getSteppedGroupMinBottomHeight",
+      "type": "function",
+      "name": "getSteppedGroupMinBottomHeight",
+      "filePath": "src/lib/stepped-base-hole.ts",
+      "lineRange": [
+        40,
+        54
+      ],
+      "summary": "getSteppedGroupMinBottomHeight 是 stepped-base-hole.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-base-hole.ts:applySteppedBaseHoleDerivedFields",
+      "type": "function",
+      "name": "applySteppedBaseHoleDerivedFields",
+      "filePath": "src/lib/stepped-base-hole.ts",
+      "lineRange": [
+        56,
+        101
+      ],
+      "summary": "applySteppedBaseHoleDerivedFields 是 stepped-base-hole.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/tray-model.ts",
+      "type": "file",
+      "name": "tray-model.ts",
+      "filePath": "src/lib/tray-model.ts",
+      "summary": "tray-model.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/tray-model.ts:getGridSpacingAxes",
+      "type": "function",
+      "name": "getGridSpacingAxes",
+      "filePath": "src/lib/tray-model.ts",
+      "lineRange": [
+        30,
+        35
+      ],
+      "summary": "getGridSpacingAxes 是 tray-model.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/tray-model.ts:getGridBoundarySpacingAxes",
+      "type": "function",
+      "name": "getGridBoundarySpacingAxes",
+      "filePath": "src/lib/tray-model.ts",
+      "lineRange": [
+        37,
+        47
+      ],
+      "summary": "getGridBoundarySpacingAxes 是 tray-model.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/tray-model.ts:createHalfCircleTrayBody",
+      "type": "function",
+      "name": "createHalfCircleTrayBody",
+      "filePath": "src/lib/tray-model.ts",
+      "lineRange": [
+        49,
+        79
+      ],
+      "summary": "createHalfCircleTrayBody 是 tray-model.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/tray-model.ts:createTrayModel",
+      "type": "function",
+      "name": "createTrayModel",
+      "filePath": "src/lib/tray-model.ts",
+      "lineRange": [
+        81,
+        185
+      ],
+      "summary": "createTrayModel 是 tray-model.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/tray-model.ts:calculateTrayDimensions",
+      "type": "function",
+      "name": "calculateTrayDimensions",
+      "filePath": "src/lib/tray-model.ts",
+      "lineRange": [
+        190,
+        216
+      ],
+      "summary": "calculateTrayDimensions 是 tray-model.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/utils.ts",
+      "type": "file",
+      "name": "utils.ts",
+      "filePath": "src/lib/utils.ts",
+      "summary": "utils.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/utils.ts:cn",
+      "type": "function",
+      "name": "cn",
+      "filePath": "src/lib/utils.ts",
+      "lineRange": [
+        4,
+        6
+      ],
+      "summary": "cn 是 utils.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/types/tray.ts",
+      "type": "file",
+      "name": "tray.ts",
+      "filePath": "src/types/tray.ts",
+      "summary": "tray.ts 定义托盘编辑器使用的 TypeScript 类型，是模式参数、槽位和工作区契约的基础。",
+      "tags": [
+        "type-definition",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/components/BaseHoleConfig.tsx",
+      "target": "function:src/components/BaseHoleConfig.tsx:BaseHoleConfig",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/BaseHoleConfig.tsx",
+      "target": "function:src/components/BaseHoleConfig.tsx:BaseHoleConfig",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/CustomPanel.tsx",
+      "target": "function:src/components/CustomPanel.tsx:CustomPanel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/CustomPanel.tsx",
+      "target": "function:src/components/CustomPanel.tsx:CustomPanel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/DraftManagerDialog.test.tsx",
+      "target": "function:src/components/DraftManagerDialog.test.tsx:createGridDraft",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/DraftManagerDialog.tsx",
+      "target": "function:src/components/DraftManagerDialog.tsx:DraftItemRow",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/DraftManagerDialog.tsx",
+      "target": "function:src/components/DraftManagerDialog.tsx:DraftManagerDialog",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/DraftManagerDialog.tsx",
+      "target": "function:src/components/DraftManagerDialog.tsx:DraftManagerDialog",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/IndependentSpacingToggle.tsx",
+      "target": "function:src/components/IndependentSpacingToggle.tsx:IndependentSpacingToggle",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/IndependentSpacingToggle.tsx",
+      "target": "function:src/components/IndependentSpacingToggle.tsx:IndependentSpacingToggle",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/PanelActionSection.tsx",
+      "target": "function:src/components/PanelActionSection.tsx:PanelActionSection",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/PanelActionSection.tsx",
+      "target": "function:src/components/PanelActionSection.tsx:PanelActionSection",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ParamIOButtons.tsx",
+      "target": "function:src/components/ParamIOButtons.tsx:ParamIOButtons",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ParamIOButtons.tsx",
+      "target": "function:src/components/ParamIOButtons.tsx:ParamIOButtons",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ParameterPanel.tsx",
+      "target": "function:src/components/ParameterPanel.tsx:ParameterPanel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ParameterPanel.tsx",
+      "target": "function:src/components/ParameterPanel.tsx:ParameterPanel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/SimpleSteppedPanel.tsx",
+      "target": "function:src/components/SimpleSteppedPanel.tsx:SimpleSteppedPanel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/SimpleSteppedPanel.tsx",
+      "target": "function:src/components/SimpleSteppedPanel.tsx:SimpleSteppedPanel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/StatsCard.tsx",
+      "target": "function:src/components/StatsCard.tsx:StatsCard",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/StatsCard.tsx",
+      "target": "function:src/components/StatsCard.tsx:StatsCard",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/SteppedPanel.tsx",
+      "target": "function:src/components/SteppedPanel.tsx:SteppedPanel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/SteppedPanel.tsx",
+      "target": "function:src/components/SteppedPanel.tsx:SteppedPanel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/SteppedPricingFormulaTooltip.tsx",
+      "target": "function:src/components/SteppedPricingFormulaTooltip.tsx:SteppedPricingFormulaTooltip",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/SteppedPricingFormulaTooltip.tsx",
+      "target": "function:src/components/SteppedPricingFormulaTooltip.tsx:SteppedPricingFormulaTooltip",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/TrayViewer.tsx",
+      "target": "function:src/components/TrayViewer.tsx:TrayMesh",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/TrayViewer.tsx",
+      "target": "function:src/components/TrayViewer.tsx:CameraAutoFit",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/TrayViewer.tsx",
+      "target": "function:src/components/TrayViewer.tsx:ContextLostHandler",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/TrayViewer.tsx",
+      "target": "function:src/components/TrayViewer.tsx:TrayViewer",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/TrayViewer.tsx",
+      "target": "function:src/components/TrayViewer.tsx:TrayViewer",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/panels.test.tsx",
+      "target": "function:src/components/panels.test.tsx:createSteppedParams",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/panels.test.tsx",
+      "target": "function:src/components/panels.test.tsx:createSimpleSteppedParams",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/panels.test.tsx",
+      "target": "function:src/components/panels.test.tsx:createOptimizationProposals",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/ParamSlider.tsx",
+      "target": "function:src/components/ui/ParamSlider.tsx:ParamSlider",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/ParamSlider.tsx",
+      "target": "function:src/components/ui/ParamSlider.tsx:ParamSlider",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/SectionHeader.tsx",
+      "target": "function:src/components/ui/SectionHeader.tsx:SectionHeader",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/SectionHeader.tsx",
+      "target": "function:src/components/ui/SectionHeader.tsx:SectionHeader",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/button.tsx",
+      "target": "function:src/components/ui/button.tsx:Button",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/button.tsx",
+      "target": "function:src/components/ui/button.tsx:Button",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/dialog.tsx",
+      "target": "function:src/components/ui/dialog.tsx:Dialog",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/dialog.tsx",
+      "target": "function:src/components/ui/dialog.tsx:Dialog",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/dialog.tsx",
+      "target": "function:src/components/ui/dialog.tsx:DialogTrigger",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/dialog.tsx",
+      "target": "function:src/components/ui/dialog.tsx:DialogTrigger",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/dialog.tsx",
+      "target": "function:src/components/ui/dialog.tsx:DialogPortal",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/dialog.tsx",
+      "target": "function:src/components/ui/dialog.tsx:DialogPortal",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/dialog.tsx",
+      "target": "function:src/components/ui/dialog.tsx:DialogClose",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/dialog.tsx",
+      "target": "function:src/components/ui/dialog.tsx:DialogClose",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/dialog.tsx",
+      "target": "function:src/components/ui/dialog.tsx:DialogOverlay",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/dialog.tsx",
+      "target": "function:src/components/ui/dialog.tsx:DialogOverlay",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/dialog.tsx",
+      "target": "function:src/components/ui/dialog.tsx:DialogContent",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/dialog.tsx",
+      "target": "function:src/components/ui/dialog.tsx:DialogContent",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/dialog.tsx",
+      "target": "function:src/components/ui/dialog.tsx:DialogHeader",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/dialog.tsx",
+      "target": "function:src/components/ui/dialog.tsx:DialogHeader",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/dialog.tsx",
+      "target": "function:src/components/ui/dialog.tsx:DialogFooter",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/dialog.tsx",
+      "target": "function:src/components/ui/dialog.tsx:DialogFooter",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/dialog.tsx",
+      "target": "function:src/components/ui/dialog.tsx:DialogTitle",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/dialog.tsx",
+      "target": "function:src/components/ui/dialog.tsx:DialogTitle",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/dialog.tsx",
+      "target": "function:src/components/ui/dialog.tsx:DialogDescription",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/dialog.tsx",
+      "target": "function:src/components/ui/dialog.tsx:DialogDescription",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/input.tsx",
+      "target": "function:src/components/ui/input.tsx:Input",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/input.tsx",
+      "target": "function:src/components/ui/input.tsx:Input",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/label.tsx",
+      "target": "function:src/components/ui/label.tsx:Label",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/label.tsx",
+      "target": "function:src/components/ui/label.tsx:Label",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/select.tsx",
+      "target": "function:src/components/ui/select.tsx:Select",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/select.tsx",
+      "target": "function:src/components/ui/select.tsx:Select",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/select.tsx",
+      "target": "function:src/components/ui/select.tsx:SelectGroup",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/select.tsx",
+      "target": "function:src/components/ui/select.tsx:SelectGroup",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/select.tsx",
+      "target": "function:src/components/ui/select.tsx:SelectValue",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/select.tsx",
+      "target": "function:src/components/ui/select.tsx:SelectValue",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/select.tsx",
+      "target": "function:src/components/ui/select.tsx:SelectTrigger",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/select.tsx",
+      "target": "function:src/components/ui/select.tsx:SelectTrigger",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/select.tsx",
+      "target": "function:src/components/ui/select.tsx:SelectContent",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/select.tsx",
+      "target": "function:src/components/ui/select.tsx:SelectContent",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/select.tsx",
+      "target": "function:src/components/ui/select.tsx:SelectLabel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/select.tsx",
+      "target": "function:src/components/ui/select.tsx:SelectLabel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/select.tsx",
+      "target": "function:src/components/ui/select.tsx:SelectItem",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/select.tsx",
+      "target": "function:src/components/ui/select.tsx:SelectItem",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/select.tsx",
+      "target": "function:src/components/ui/select.tsx:SelectSeparator",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/select.tsx",
+      "target": "function:src/components/ui/select.tsx:SelectSeparator",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/select.tsx",
+      "target": "function:src/components/ui/select.tsx:SelectScrollUpButton",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/select.tsx",
+      "target": "function:src/components/ui/select.tsx:SelectScrollDownButton",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/slider.tsx",
+      "target": "function:src/components/ui/slider.tsx:Slider",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/slider.tsx",
+      "target": "function:src/components/ui/slider.tsx:Slider",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/ui/switch.tsx",
+      "target": "function:src/components/ui/switch.tsx:Switch",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/ui/switch.tsx",
+      "target": "function:src/components/ui/switch.tsx:Switch",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/hooks/useAutoPreview.ts",
+      "target": "function:src/hooks/useAutoPreview.ts:useAutoPreview",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/hooks/useAutoPreview.ts",
+      "target": "function:src/hooks/useAutoPreview.ts:useAutoPreview",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/config.ts",
+      "target": "function:src/lib/config.ts:getSlotTolerance",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/config.ts",
+      "target": "function:src/lib/config.ts:getSlotTolerance",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/config.ts",
+      "target": "function:src/lib/config.ts:getSlotOuterOffset",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/config.ts",
+      "target": "function:src/lib/config.ts:getSlotOuterOffset",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/config.ts",
+      "target": "function:src/lib/config.ts:resolveBaseHolePresetKey",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/config.ts",
+      "target": "function:src/lib/config.ts:resolveBaseHolePresetKey",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/config.ts",
+      "target": "function:src/lib/config.ts:getBaseHolePreset",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/config.ts",
+      "target": "function:src/lib/config.ts:getBaseHolePreset",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/config.ts",
+      "target": "function:src/lib/config.ts:getBaseHoleMinBottomWall",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/config.ts",
+      "target": "function:src/lib/config.ts:getBaseHoleMinBottomWall",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/config.ts",
+      "target": "function:src/lib/config.ts:getBaseHoleMinBaseThickness",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/config.ts",
+      "target": "function:src/lib/config.ts:getBaseHoleMinBaseThickness",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/pricing.ts",
+      "target": "function:src/lib/pricing.ts:getSteppedStructureFlags",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/pricing.ts",
+      "target": "function:src/lib/pricing.ts:getSteppedPricingCounts",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/pricing.ts",
+      "target": "function:src/lib/pricing.ts:calculateSteppedMaterialDensity",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/pricing.ts",
+      "target": "function:src/lib/pricing.ts:calculateWeight",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/pricing.ts",
+      "target": "function:src/lib/pricing.ts:calculateWeight",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/pricing.ts",
+      "target": "function:src/lib/pricing.ts:calculateGridPrice",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/pricing.ts",
+      "target": "function:src/lib/pricing.ts:calculateGridPrice",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/pricing.ts",
+      "target": "function:src/lib/pricing.ts:calculateCustomPrice",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/pricing.ts",
+      "target": "function:src/lib/pricing.ts:calculateCustomPrice",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/pricing.ts",
+      "target": "function:src/lib/pricing.ts:getSteppedPricingBreakdown",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/pricing.ts",
+      "target": "function:src/lib/pricing.ts:getSteppedPricingBreakdown",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/pricing.ts",
+      "target": "function:src/lib/pricing.ts:calculateSteppedPrice",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/pricing.ts",
+      "target": "function:src/lib/pricing.ts:calculateSteppedPrice",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/pricing.ts",
+      "target": "function:src/lib/pricing.ts:calculateSimpleSteppedPrice",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/pricing.ts",
+      "target": "function:src/lib/pricing.ts:calculateSimpleSteppedPrice",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-base-hole.ts",
+      "target": "function:src/lib/stepped-base-hole.ts:getLargestSlotSizeForGroup",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-base-hole.ts",
+      "target": "function:src/lib/stepped-base-hole.ts:getSteppedResolvedBaseHoleSize",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-base-hole.ts",
+      "target": "function:src/lib/stepped-base-hole.ts:getSteppedResolvedBaseHoleSize",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-base-hole.ts",
+      "target": "function:src/lib/stepped-base-hole.ts:getSteppedGroupResolvedBaseHoleSize",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-base-hole.ts",
+      "target": "function:src/lib/stepped-base-hole.ts:getSteppedGroupResolvedBaseHoleSize",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-base-hole.ts",
+      "target": "function:src/lib/stepped-base-hole.ts:getSteppedGroupMinBottomHeight",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-base-hole.ts",
+      "target": "function:src/lib/stepped-base-hole.ts:getSteppedGroupMinBottomHeight",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-base-hole.ts",
+      "target": "function:src/lib/stepped-base-hole.ts:applySteppedBaseHoleDerivedFields",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-base-hole.ts",
+      "target": "function:src/lib/stepped-base-hole.ts:applySteppedBaseHoleDerivedFields",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/tray-model.ts",
+      "target": "function:src/lib/tray-model.ts:getGridSpacingAxes",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/tray-model.ts",
+      "target": "function:src/lib/tray-model.ts:getGridSpacingAxes",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/tray-model.ts",
+      "target": "function:src/lib/tray-model.ts:getGridBoundarySpacingAxes",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/tray-model.ts",
+      "target": "function:src/lib/tray-model.ts:getGridBoundarySpacingAxes",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/tray-model.ts",
+      "target": "function:src/lib/tray-model.ts:createHalfCircleTrayBody",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/tray-model.ts",
+      "target": "function:src/lib/tray-model.ts:createTrayModel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/tray-model.ts",
+      "target": "function:src/lib/tray-model.ts:createTrayModel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/tray-model.ts",
+      "target": "function:src/lib/tray-model.ts:calculateTrayDimensions",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/tray-model.ts",
+      "target": "function:src/lib/tray-model.ts:calculateTrayDimensions",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/utils.ts",
+      "target": "function:src/lib/utils.ts:cn",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/utils.ts",
+      "target": "function:src/lib/utils.ts:cn",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/BaseHoleConfig.tsx",
+      "target": "file:src/components/ui/SectionHeader.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/BaseHoleConfig.tsx",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/BaseHoleConfig.tsx",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/CustomPanel.tsx",
+      "target": "file:src/components/BaseHoleConfig.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/CustomPanel.tsx",
+      "target": "file:src/components/PanelActionSection.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/CustomPanel.tsx",
+      "target": "file:src/components/ui/button.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/CustomPanel.tsx",
+      "target": "file:src/components/ui/label.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/CustomPanel.tsx",
+      "target": "file:src/components/ui/ParamSlider.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/CustomPanel.tsx",
+      "target": "file:src/components/ui/SectionHeader.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/CustomPanel.tsx",
+      "target": "file:src/components/ui/switch.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/CustomPanel.tsx",
+      "target": "file:src/hooks/useAutoPreview.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/CustomPanel.tsx",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/CustomPanel.tsx",
+      "target": "file:src/lib/custom-config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/CustomPanel.tsx",
+      "target": "file:src/lib/custom-layout-actions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/CustomPanel.tsx",
+      "target": "file:src/lib/custom-tray-model.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/CustomPanel.tsx",
+      "target": "file:src/lib/pricing.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/CustomPanel.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/DraftManagerDialog.test.tsx",
+      "target": "file:src/components/DraftManagerDialog.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/DraftManagerDialog.tsx",
+      "target": "file:src/components/DraftManagerDialog.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/DraftManagerDialog.tsx",
+      "target": "file:src/components/ui/button.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/DraftManagerDialog.tsx",
+      "target": "file:src/components/ui/dialog.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/DraftManagerDialog.tsx",
+      "target": "file:src/components/ui/input.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/DraftManagerDialog.tsx",
+      "target": "file:src/lib/local-drafts.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/DraftManagerDialog.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/IndependentSpacingToggle.tsx",
+      "target": "file:src/components/ui/label.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/IndependentSpacingToggle.tsx",
+      "target": "file:src/components/ui/ParamSlider.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/IndependentSpacingToggle.tsx",
+      "target": "file:src/components/ui/switch.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/PanelActionSection.tsx",
+      "target": "file:src/components/ParamIOButtons.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/PanelActionSection.tsx",
+      "target": "file:src/components/ui/button.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/PanelActionSection.tsx",
+      "target": "file:src/components/ui/label.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/PanelActionSection.tsx",
+      "target": "file:src/components/ui/switch.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/PanelActionSection.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/PanelActionSection.tsx",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ParamIOButtons.tsx",
+      "target": "file:src/components/ui/button.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ParamIOButtons.tsx",
+      "target": "file:src/hooks/useToast.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ParamIOButtons.tsx",
+      "target": "file:src/lib/param-io.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ParamIOButtons.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ParamIOButtons.tsx",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ParameterPanel.tsx",
+      "target": "file:src/components/BaseHoleConfig.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ParameterPanel.tsx",
+      "target": "file:src/components/PanelActionSection.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ParameterPanel.tsx",
+      "target": "file:src/components/ui/label.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ParameterPanel.tsx",
+      "target": "file:src/components/ui/ParamSlider.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ParameterPanel.tsx",
+      "target": "file:src/components/ui/SectionHeader.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ParameterPanel.tsx",
+      "target": "file:src/components/ui/select.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ParameterPanel.tsx",
+      "target": "file:src/components/ui/switch.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ParameterPanel.tsx",
+      "target": "file:src/hooks/useAutoPreview.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ParameterPanel.tsx",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ParameterPanel.tsx",
+      "target": "file:src/lib/grid-config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ParameterPanel.tsx",
+      "target": "file:src/lib/pricing.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ParameterPanel.tsx",
+      "target": "file:src/lib/tray-model.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ParameterPanel.tsx",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SimpleSteppedPanel.tsx",
+      "target": "file:src/components/PanelActionSection.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SimpleSteppedPanel.tsx",
+      "target": "file:src/components/ui/button.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SimpleSteppedPanel.tsx",
+      "target": "file:src/components/ui/input.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SimpleSteppedPanel.tsx",
+      "target": "file:src/components/ui/label.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SimpleSteppedPanel.tsx",
+      "target": "file:src/components/ui/ParamSlider.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SimpleSteppedPanel.tsx",
+      "target": "file:src/components/ui/SectionHeader.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SimpleSteppedPanel.tsx",
+      "target": "file:src/components/ui/switch.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SimpleSteppedPanel.tsx",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SimpleSteppedPanel.tsx",
+      "target": "file:src/lib/pricing.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SimpleSteppedPanel.tsx",
+      "target": "file:src/lib/simple-stepped-config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SimpleSteppedPanel.tsx",
+      "target": "file:src/lib/simple-stepped-layout.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SimpleSteppedPanel.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/StatsCard.tsx",
+      "target": "file:src/components/ui/SectionHeader.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/StatsCard.tsx",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SteppedPanel.tsx",
+      "target": "file:src/components/PanelActionSection.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SteppedPanel.tsx",
+      "target": "file:src/components/SteppedPricingFormulaTooltip.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SteppedPanel.tsx",
+      "target": "file:src/components/ui/button.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SteppedPanel.tsx",
+      "target": "file:src/components/ui/ParamSlider.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SteppedPanel.tsx",
+      "target": "file:src/components/ui/SectionHeader.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SteppedPanel.tsx",
+      "target": "file:src/components/ui/select.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SteppedPanel.tsx",
+      "target": "file:src/components/ui/switch.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SteppedPanel.tsx",
+      "target": "file:src/hooks/useToast.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SteppedPanel.tsx",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SteppedPanel.tsx",
+      "target": "file:src/lib/perf.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SteppedPanel.tsx",
+      "target": "file:src/lib/pricing.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SteppedPanel.tsx",
+      "target": "file:src/lib/stepped-base-hole.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SteppedPanel.tsx",
+      "target": "file:src/lib/stepped-config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SteppedPanel.tsx",
+      "target": "file:src/lib/stepped-connectivity.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SteppedPanel.tsx",
+      "target": "file:src/lib/stepped-global-optimize.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SteppedPanel.tsx",
+      "target": "file:src/lib/stepped-perf-fixtures.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SteppedPanel.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SteppedPricingFormulaTooltip.tsx",
+      "target": "file:src/lib/pricing.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/TrayViewer.test.tsx",
+      "target": "file:src/components/TrayViewer.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/TrayViewer.tsx",
+      "target": "file:src/components/TrayViewer.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/TrayViewer.tsx",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/panels.test.tsx",
+      "target": "file:src/components/CustomPanel.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/CustomPanel.tsx",
+      "target": "file:src/components/panels.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/panels.test.tsx",
+      "target": "file:src/components/ParameterPanel.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ParameterPanel.tsx",
+      "target": "file:src/components/panels.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/panels.test.tsx",
+      "target": "file:src/components/SimpleSteppedPanel.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SimpleSteppedPanel.tsx",
+      "target": "file:src/components/panels.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/panels.test.tsx",
+      "target": "file:src/components/SteppedPanel.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/SteppedPanel.tsx",
+      "target": "file:src/components/panels.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/panels.test.tsx",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/config.ts",
+      "target": "file:src/components/panels.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/panels.test.tsx",
+      "target": "file:src/lib/custom-config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-config.ts",
+      "target": "file:src/components/panels.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/panels.test.tsx",
+      "target": "file:src/lib/grid-config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/grid-config.ts",
+      "target": "file:src/components/panels.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/panels.test.tsx",
+      "target": "file:src/lib/simple-stepped-config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/simple-stepped-config.ts",
+      "target": "file:src/components/panels.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/panels.test.tsx",
+      "target": "file:src/lib/simple-stepped-layout.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/simple-stepped-layout.ts",
+      "target": "file:src/components/panels.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/panels.test.tsx",
+      "target": "file:src/lib/stepped-config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-config.ts",
+      "target": "file:src/components/panels.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/panels.test.tsx",
+      "target": "file:src/lib/stepped-perf-fixtures.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-perf-fixtures.ts",
+      "target": "file:src/components/panels.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/ui/ParamSlider.radix.test.tsx",
+      "target": "file:src/components/ui/ParamSlider.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ui/ParamSlider.tsx",
+      "target": "file:src/components/ui/ParamSlider.radix.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/ui/ParamSlider.test.tsx",
+      "target": "file:src/components/ui/ParamSlider.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ui/ParamSlider.tsx",
+      "target": "file:src/components/ui/ParamSlider.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/ui/ParamSlider.tsx",
+      "target": "file:src/components/ui/input.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ui/ParamSlider.tsx",
+      "target": "file:src/components/ui/label.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ui/ParamSlider.tsx",
+      "target": "file:src/components/ui/slider.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ui/button.tsx",
+      "target": "file:src/lib/utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ui/dialog.tsx",
+      "target": "file:src/lib/utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ui/input.tsx",
+      "target": "file:src/lib/utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ui/label.tsx",
+      "target": "file:src/lib/utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ui/select.tsx",
+      "target": "file:src/lib/utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ui/slider.tsx",
+      "target": "file:src/lib/utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/ui/switch.tsx",
+      "target": "file:src/lib/utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/config.test.ts",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/config.ts",
+      "target": "file:src/lib/config.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/config.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/config.ts",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/pricing.ts",
+      "target": "file:src/lib/custom-tray-model.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/pricing.ts",
+      "target": "file:src/lib/stepped-group-params.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/pricing.ts",
+      "target": "file:src/lib/stepped-layout-math.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/pricing.ts",
+      "target": "file:src/lib/tray-model.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/pricing.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/pricing.ts",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-base-hole.ts",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-base-hole.ts",
+      "target": "file:src/lib/stepped-config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-base-hole.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-base-hole.ts",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/tray-model.ts",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/tray-model.ts",
+      "target": "file:src/lib/model-utils.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/tray-model.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/tray-model.ts",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    }
+  ]
+}

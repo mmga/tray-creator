@@ -1,0 +1,2153 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/components/AlignmentToolbar.tsx",
+      "type": "file",
+      "name": "AlignmentToolbar.tsx",
+      "filePath": "src/components/AlignmentToolbar.tsx",
+      "summary": "AlignmentToolbar.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/AlignmentToolbar.tsx:AlignmentToolbar",
+      "type": "function",
+      "name": "AlignmentToolbar",
+      "filePath": "src/components/AlignmentToolbar.tsx",
+      "lineRange": [
+        27,
+        94
+      ],
+      "summary": "AlignmentToolbar 是 AlignmentToolbar.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/LayoutCanvas.test.tsx",
+      "type": "file",
+      "name": "LayoutCanvas.test.tsx",
+      "filePath": "src/components/LayoutCanvas.test.tsx",
+      "summary": "LayoutCanvas.test.tsx 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/LayoutCanvas.test.tsx:createCustomParams",
+      "type": "function",
+      "name": "createCustomParams",
+      "filePath": "src/components/LayoutCanvas.test.tsx",
+      "lineRange": [
+        257,
+        284
+      ],
+      "summary": "createCustomParams 是 LayoutCanvas.test.tsx 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/LayoutCanvas.test.tsx:createSteppedParams",
+      "type": "function",
+      "name": "createSteppedParams",
+      "filePath": "src/components/LayoutCanvas.test.tsx",
+      "lineRange": [
+        286,
+        325
+      ],
+      "summary": "createSteppedParams 是 LayoutCanvas.test.tsx 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/components/LayoutCanvas.test.tsx:TestLayoutCanvas",
+      "type": "function",
+      "name": "TestLayoutCanvas",
+      "filePath": "src/components/LayoutCanvas.test.tsx",
+      "lineRange": [
+        348,
+        414
+      ],
+      "summary": "TestLayoutCanvas 是 LayoutCanvas.test.tsx 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/LayoutCanvas.tsx",
+      "type": "file",
+      "name": "LayoutCanvas.tsx",
+      "filePath": "src/components/LayoutCanvas.tsx",
+      "summary": "LayoutCanvas.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/LayoutCanvas.tsx:LayoutCanvas",
+      "type": "function",
+      "name": "LayoutCanvas",
+      "filePath": "src/components/LayoutCanvas.tsx",
+      "lineRange": [
+        67,
+        1053
+      ],
+      "summary": "LayoutCanvas 是 LayoutCanvas.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:src/components/alignment-sidebar.test.tsx",
+      "type": "file",
+      "name": "alignment-sidebar.test.tsx",
+      "filePath": "src/components/alignment-sidebar.test.tsx",
+      "summary": "alignment-sidebar.test.tsx 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/alignment-sidebar.test.tsx:createSlot",
+      "type": "function",
+      "name": "createSlot",
+      "filePath": "src/components/alignment-sidebar.test.tsx",
+      "lineRange": [
+        43,
+        54
+      ],
+      "summary": "createSlot 是 alignment-sidebar.test.tsx 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/canvas/CanvasStatusBar.tsx",
+      "type": "file",
+      "name": "CanvasStatusBar.tsx",
+      "filePath": "src/components/canvas/CanvasStatusBar.tsx",
+      "summary": "CanvasStatusBar.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/canvas/CanvasStatusBar.tsx:CanvasStatusBar",
+      "type": "function",
+      "name": "CanvasStatusBar",
+      "filePath": "src/components/canvas/CanvasStatusBar.tsx",
+      "lineRange": [
+        30,
+        83
+      ],
+      "summary": "CanvasStatusBar 是 CanvasStatusBar.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/canvas/CanvasZoomControls.tsx",
+      "type": "file",
+      "name": "CanvasZoomControls.tsx",
+      "filePath": "src/components/canvas/CanvasZoomControls.tsx",
+      "summary": "CanvasZoomControls.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/canvas/CanvasZoomControls.tsx:CanvasZoomControls",
+      "type": "function",
+      "name": "CanvasZoomControls",
+      "filePath": "src/components/canvas/CanvasZoomControls.tsx",
+      "lineRange": [
+        10,
+        31
+      ],
+      "summary": "CanvasZoomControls 是 CanvasZoomControls.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/components/canvas/EditSidebar.tsx",
+      "type": "file",
+      "name": "EditSidebar.tsx",
+      "filePath": "src/components/canvas/EditSidebar.tsx",
+      "summary": "EditSidebar.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/canvas/EditSidebar.tsx:EditSidebar",
+      "type": "function",
+      "name": "EditSidebar",
+      "filePath": "src/components/canvas/EditSidebar.tsx",
+      "lineRange": [
+        21,
+        88
+      ],
+      "summary": "EditSidebar 是 EditSidebar.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/components/canvas/KeyboardHintsOverlay.tsx",
+      "type": "file",
+      "name": "KeyboardHintsOverlay.tsx",
+      "filePath": "src/components/canvas/KeyboardHintsOverlay.tsx",
+      "summary": "KeyboardHintsOverlay.tsx 提供 React UI 组件，承载托盘编辑器的参数控制、画布交互或可视化展示。",
+      "tags": [
+        "react-component",
+        "ui",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/components/canvas/KeyboardHintsOverlay.tsx:KeyboardHintsOverlay",
+      "type": "function",
+      "name": "KeyboardHintsOverlay",
+      "filePath": "src/components/canvas/KeyboardHintsOverlay.tsx",
+      "lineRange": [
+        8,
+        59
+      ],
+      "summary": "KeyboardHintsOverlay 是 KeyboardHintsOverlay.tsx 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/hooks/useActionPanelResize.test.ts",
+      "type": "file",
+      "name": "useActionPanelResize.test.ts",
+      "filePath": "src/hooks/useActionPanelResize.test.ts",
+      "summary": "useActionPanelResize.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "hook",
+        "state",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/hooks/useActionPanelResize.ts",
+      "type": "file",
+      "name": "useActionPanelResize.ts",
+      "filePath": "src/hooks/useActionPanelResize.ts",
+      "summary": "useActionPanelResize.ts 提供 React hook，封装托盘编辑器的状态编排、生命周期或异步请求流程。",
+      "tags": [
+        "hook",
+        "state",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/hooks/useActionPanelResize.ts:useActionPanelResize",
+      "type": "function",
+      "name": "useActionPanelResize",
+      "filePath": "src/hooks/useActionPanelResize.ts",
+      "lineRange": [
+        11,
+        89
+      ],
+      "summary": "useActionPanelResize 是 useActionPanelResize.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/hooks/useCanvasZoom.test.ts",
+      "type": "file",
+      "name": "useCanvasZoom.test.ts",
+      "filePath": "src/hooks/useCanvasZoom.test.ts",
+      "summary": "useCanvasZoom.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "hook",
+        "state",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/hooks/useCanvasZoom.ts",
+      "type": "file",
+      "name": "useCanvasZoom.ts",
+      "filePath": "src/hooks/useCanvasZoom.ts",
+      "summary": "useCanvasZoom.ts 提供 React hook，封装托盘编辑器的状态编排、生命周期或异步请求流程。",
+      "tags": [
+        "hook",
+        "state",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/hooks/useCanvasZoom.ts:useCanvasZoom",
+      "type": "function",
+      "name": "useCanvasZoom",
+      "filePath": "src/hooks/useCanvasZoom.ts",
+      "lineRange": [
+        38,
+        153
+      ],
+      "summary": "useCanvasZoom 是 useCanvasZoom.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/hooks/useLiveSlotUpdates.test.ts",
+      "type": "file",
+      "name": "useLiveSlotUpdates.test.ts",
+      "filePath": "src/hooks/useLiveSlotUpdates.test.ts",
+      "summary": "useLiveSlotUpdates.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "hook",
+        "state",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/hooks/useLiveSlotUpdates.ts",
+      "type": "file",
+      "name": "useLiveSlotUpdates.ts",
+      "filePath": "src/hooks/useLiveSlotUpdates.ts",
+      "summary": "useLiveSlotUpdates.ts 提供 React hook，封装托盘编辑器的状态编排、生命周期或异步请求流程。",
+      "tags": [
+        "hook",
+        "state",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/hooks/useLiveSlotUpdates.ts:useLiveSlotUpdates",
+      "type": "function",
+      "name": "useLiveSlotUpdates",
+      "filePath": "src/hooks/useLiveSlotUpdates.ts",
+      "lineRange": [
+        10,
+        66
+      ],
+      "summary": "useLiveSlotUpdates 是 useLiveSlotUpdates.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/canvas-selection-model.test.ts",
+      "type": "file",
+      "name": "canvas-selection-model.test.ts",
+      "filePath": "src/lib/canvas-selection-model.test.ts",
+      "summary": "canvas-selection-model.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/canvas-selection-model.ts",
+      "type": "file",
+      "name": "canvas-selection-model.ts",
+      "filePath": "src/lib/canvas-selection-model.ts",
+      "summary": "canvas-selection-model.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/canvas-selection-model.ts:sanitizeCanvasSelectedIds",
+      "type": "function",
+      "name": "sanitizeCanvasSelectedIds",
+      "filePath": "src/lib/canvas-selection-model.ts",
+      "lineRange": [
+        15,
+        21
+      ],
+      "summary": "sanitizeCanvasSelectedIds 是 canvas-selection-model.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/canvas-selection-model.ts:getCanvasSelectionBoxRect",
+      "type": "function",
+      "name": "getCanvasSelectionBoxRect",
+      "filePath": "src/lib/canvas-selection-model.ts",
+      "lineRange": [
+        23,
+        39
+      ],
+      "summary": "getCanvasSelectionBoxRect 是 canvas-selection-model.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/canvas-selection-model.ts:shouldApplyCanvasSelectionBox",
+      "type": "function",
+      "name": "shouldApplyCanvasSelectionBox",
+      "filePath": "src/lib/canvas-selection-model.ts",
+      "lineRange": [
+        41,
+        46
+      ],
+      "summary": "shouldApplyCanvasSelectionBox 是 canvas-selection-model.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/canvas-selection-model.ts:collectCanvasSelection",
+      "type": "function",
+      "name": "collectCanvasSelection",
+      "filePath": "src/lib/canvas-selection-model.ts",
+      "lineRange": [
+        55,
+        80
+      ],
+      "summary": "collectCanvasSelection 是 canvas-selection-model.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/canvas-types.ts",
+      "type": "file",
+      "name": "canvas-types.ts",
+      "filePath": "src/lib/canvas-types.ts",
+      "summary": "canvas-types.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/layout-canvas-interaction.test.ts",
+      "type": "file",
+      "name": "layout-canvas-interaction.test.ts",
+      "filePath": "src/lib/layout-canvas-interaction.test.ts",
+      "summary": "layout-canvas-interaction.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/layout-canvas-interaction.test.ts:createSlot",
+      "type": "function",
+      "name": "createSlot",
+      "filePath": "src/lib/layout-canvas-interaction.test.ts",
+      "lineRange": [
+        9,
+        19
+      ],
+      "summary": "createSlot 是 layout-canvas-interaction.test.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/layout-canvas-interaction.ts",
+      "type": "file",
+      "name": "layout-canvas-interaction.ts",
+      "filePath": "src/lib/layout-canvas-interaction.ts",
+      "summary": "layout-canvas-interaction.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/layout-canvas-interaction.ts:resolveLayoutCanvasDragStart",
+      "type": "function",
+      "name": "resolveLayoutCanvasDragStart",
+      "filePath": "src/lib/layout-canvas-interaction.ts",
+      "lineRange": [
+        10,
+        48
+      ],
+      "summary": "resolveLayoutCanvasDragStart 是 layout-canvas-interaction.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/layout-canvas-interaction.ts:buildLayoutCanvasDragUpdates",
+      "type": "function",
+      "name": "buildLayoutCanvasDragUpdates",
+      "filePath": "src/lib/layout-canvas-interaction.ts",
+      "lineRange": [
+        50,
+        75
+      ],
+      "summary": "buildLayoutCanvasDragUpdates 是 layout-canvas-interaction.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/layout-canvas-interaction.ts:calculateLayoutCanvasMinimumTrayBounds",
+      "type": "function",
+      "name": "calculateLayoutCanvasMinimumTrayBounds",
+      "filePath": "src/lib/layout-canvas-interaction.ts",
+      "lineRange": [
+        77,
+        100
+      ],
+      "summary": "calculateLayoutCanvasMinimumTrayBounds 是 layout-canvas-interaction.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/layout-symmetry.test.ts",
+      "type": "file",
+      "name": "layout-symmetry.test.ts",
+      "filePath": "src/lib/layout-symmetry.test.ts",
+      "summary": "layout-symmetry.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/layout-symmetry.ts",
+      "type": "file",
+      "name": "layout-symmetry.ts",
+      "filePath": "src/lib/layout-symmetry.ts",
+      "summary": "layout-symmetry.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/layout-symmetry.ts:roundToStep",
+      "type": "function",
+      "name": "roundToStep",
+      "filePath": "src/lib/layout-symmetry.ts",
+      "lineRange": [
+        35,
+        37
+      ],
+      "summary": "roundToStep 是 layout-symmetry.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/layout-symmetry.ts:getSlotBounds",
+      "type": "function",
+      "name": "getSlotBounds",
+      "filePath": "src/lib/layout-symmetry.ts",
+      "lineRange": [
+        44,
+        57
+      ],
+      "summary": "getSlotBounds 是 layout-symmetry.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/layout-symmetry.ts:getSelectionBounds",
+      "type": "function",
+      "name": "getSelectionBounds",
+      "filePath": "src/lib/layout-symmetry.ts",
+      "lineRange": [
+        59,
+        79
+      ],
+      "summary": "getSelectionBounds 是 layout-symmetry.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/layout-symmetry.ts:resolveMirrorAxis",
+      "type": "function",
+      "name": "resolveMirrorAxis",
+      "filePath": "src/lib/layout-symmetry.ts",
+      "lineRange": [
+        81,
+        101
+      ],
+      "summary": "resolveMirrorAxis 是 layout-symmetry.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/layout-symmetry.ts:mirrorSlot",
+      "type": "function",
+      "name": "mirrorSlot",
+      "filePath": "src/lib/layout-symmetry.ts",
+      "lineRange": [
+        103,
+        121
+      ],
+      "summary": "mirrorSlot 是 layout-symmetry.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/layout-symmetry.ts:buildMirrorInsertSlots",
+      "type": "function",
+      "name": "buildMirrorInsertSlots",
+      "filePath": "src/lib/layout-symmetry.ts",
+      "lineRange": [
+        123,
+        156
+      ],
+      "summary": "buildMirrorInsertSlots 是 layout-symmetry.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/layout-symmetry.ts:buildMirrorMoveUpdates",
+      "type": "function",
+      "name": "buildMirrorMoveUpdates",
+      "filePath": "src/lib/layout-symmetry.ts",
+      "lineRange": [
+        158,
+        182
+      ],
+      "summary": "buildMirrorMoveUpdates 是 layout-symmetry.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/layout-symmetry.ts:countOutOfBoundsSlots",
+      "type": "function",
+      "name": "countOutOfBoundsSlots",
+      "filePath": "src/lib/layout-symmetry.ts",
+      "lineRange": [
+        184,
+        200
+      ],
+      "summary": "countOutOfBoundsSlots 是 layout-symmetry.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/layout-symmetry.ts:checkLayoutSymmetry",
+      "type": "function",
+      "name": "checkLayoutSymmetry",
+      "filePath": "src/lib/layout-symmetry.ts",
+      "lineRange": [
+        224,
+        312
+      ],
+      "summary": "checkLayoutSymmetry 是 layout-symmetry.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/perf.ts",
+      "type": "file",
+      "name": "perf.ts",
+      "filePath": "src/lib/perf.ts",
+      "summary": "perf.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/perf.ts:updatePerfSnapshot",
+      "type": "function",
+      "name": "updatePerfSnapshot",
+      "filePath": "src/lib/perf.ts",
+      "lineRange": [
+        50,
+        60
+      ],
+      "summary": "updatePerfSnapshot 是 perf.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/perf.ts:schedulePerfListeners",
+      "type": "function",
+      "name": "schedulePerfListeners",
+      "filePath": "src/lib/perf.ts",
+      "lineRange": [
+        66,
+        87
+      ],
+      "summary": "schedulePerfListeners 是 perf.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/perf.ts:resolvePerfEnabled",
+      "type": "function",
+      "name": "resolvePerfEnabled",
+      "filePath": "src/lib/perf.ts",
+      "lineRange": [
+        89,
+        107
+      ],
+      "summary": "resolvePerfEnabled 是 perf.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/perf.ts:isPerfEnabled",
+      "type": "function",
+      "name": "isPerfEnabled",
+      "filePath": "src/lib/perf.ts",
+      "lineRange": [
+        109,
+        117
+      ],
+      "summary": "isPerfEnabled 是 perf.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/perf.ts:measurePerf",
+      "type": "function",
+      "name": "measurePerf",
+      "filePath": "src/lib/perf.ts",
+      "lineRange": [
+        119,
+        130
+      ],
+      "summary": "measurePerf 是 perf.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/perf.ts:recordPerfSample",
+      "type": "function",
+      "name": "recordPerfSample",
+      "filePath": "src/lib/perf.ts",
+      "lineRange": [
+        132,
+        151
+      ],
+      "summary": "recordPerfSample 是 perf.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/perf.ts:subscribePerfMetrics",
+      "type": "function",
+      "name": "subscribePerfMetrics",
+      "filePath": "src/lib/perf.ts",
+      "lineRange": [
+        153,
+        158
+      ],
+      "summary": "subscribePerfMetrics 是 perf.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/perf.ts:getPerfMetricsSnapshot",
+      "type": "function",
+      "name": "getPerfMetricsSnapshot",
+      "filePath": "src/lib/perf.ts",
+      "lineRange": [
+        160,
+        163
+      ],
+      "summary": "getPerfMetricsSnapshot 是 perf.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/perf.ts:resetPerfMetrics",
+      "type": "function",
+      "name": "resetPerfMetrics",
+      "filePath": "src/lib/perf.ts",
+      "lineRange": [
+        165,
+        169
+      ],
+      "summary": "resetPerfMetrics 是 perf.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/viewports/layout-editor/customViewportModel.ts",
+      "type": "file",
+      "name": "customViewportModel.ts",
+      "filePath": "src/viewports/layout-editor/customViewportModel.ts",
+      "summary": "customViewportModel.ts 组织视口工作区模型，连接编辑器状态与 2D/3D 展示交互。",
+      "tags": [
+        "viewport",
+        "custom-mode",
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/viewports/layout-editor/customViewportModel.ts:buildCustomLayoutEditorViewportModel",
+      "type": "function",
+      "name": "buildCustomLayoutEditorViewportModel",
+      "filePath": "src/viewports/layout-editor/customViewportModel.ts",
+      "lineRange": [
+        4,
+        23
+      ],
+      "summary": "buildCustomLayoutEditorViewportModel 是 customViewportModel.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/viewports/layout-editor/simpleSteppedViewportModel.ts",
+      "type": "file",
+      "name": "simpleSteppedViewportModel.ts",
+      "filePath": "src/viewports/layout-editor/simpleSteppedViewportModel.ts",
+      "summary": "simpleSteppedViewportModel.ts 组织视口工作区模型，连接编辑器状态与 2D/3D 展示交互。",
+      "tags": [
+        "viewport",
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/viewports/layout-editor/simpleSteppedViewportModel.ts:buildSimpleSteppedLayoutEditorViewportModel",
+      "type": "function",
+      "name": "buildSimpleSteppedLayoutEditorViewportModel",
+      "filePath": "src/viewports/layout-editor/simpleSteppedViewportModel.ts",
+      "lineRange": [
+        4,
+        36
+      ],
+      "summary": "buildSimpleSteppedLayoutEditorViewportModel 是 simpleSteppedViewportModel.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/viewports/layout-editor/steppedViewportModel.ts",
+      "type": "file",
+      "name": "steppedViewportModel.ts",
+      "filePath": "src/viewports/layout-editor/steppedViewportModel.ts",
+      "summary": "steppedViewportModel.ts 组织视口工作区模型，连接编辑器状态与 2D/3D 展示交互。",
+      "tags": [
+        "viewport",
+        "stepped-mode",
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/viewports/layout-editor/steppedViewportModel.ts:buildSteppedLayoutEditorViewportModel",
+      "type": "function",
+      "name": "buildSteppedLayoutEditorViewportModel",
+      "filePath": "src/viewports/layout-editor/steppedViewportModel.ts",
+      "lineRange": [
+        7,
+        34
+      ],
+      "summary": "buildSteppedLayoutEditorViewportModel 是 steppedViewportModel.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/viewports/layout-editor/types.ts",
+      "type": "file",
+      "name": "types.ts",
+      "filePath": "src/viewports/layout-editor/types.ts",
+      "summary": "types.ts 组织视口工作区模型，连接编辑器状态与 2D/3D 展示交互。",
+      "tags": [
+        "viewport",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/components/AlignmentToolbar.tsx",
+      "target": "function:src/components/AlignmentToolbar.tsx:AlignmentToolbar",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/AlignmentToolbar.tsx",
+      "target": "function:src/components/AlignmentToolbar.tsx:AlignmentToolbar",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.test.tsx",
+      "target": "function:src/components/LayoutCanvas.test.tsx:createCustomParams",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.test.tsx",
+      "target": "function:src/components/LayoutCanvas.test.tsx:createSteppedParams",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.test.tsx",
+      "target": "function:src/components/LayoutCanvas.test.tsx:TestLayoutCanvas",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "function:src/components/LayoutCanvas.tsx:LayoutCanvas",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "function:src/components/LayoutCanvas.tsx:LayoutCanvas",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/alignment-sidebar.test.tsx",
+      "target": "function:src/components/alignment-sidebar.test.tsx:createSlot",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/canvas/CanvasStatusBar.tsx",
+      "target": "function:src/components/canvas/CanvasStatusBar.tsx:CanvasStatusBar",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/canvas/CanvasStatusBar.tsx",
+      "target": "function:src/components/canvas/CanvasStatusBar.tsx:CanvasStatusBar",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/canvas/CanvasZoomControls.tsx",
+      "target": "function:src/components/canvas/CanvasZoomControls.tsx:CanvasZoomControls",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/canvas/CanvasZoomControls.tsx",
+      "target": "function:src/components/canvas/CanvasZoomControls.tsx:CanvasZoomControls",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/canvas/EditSidebar.tsx",
+      "target": "function:src/components/canvas/EditSidebar.tsx:EditSidebar",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/canvas/EditSidebar.tsx",
+      "target": "function:src/components/canvas/EditSidebar.tsx:EditSidebar",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/canvas/KeyboardHintsOverlay.tsx",
+      "target": "function:src/components/canvas/KeyboardHintsOverlay.tsx:KeyboardHintsOverlay",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/components/canvas/KeyboardHintsOverlay.tsx",
+      "target": "function:src/components/canvas/KeyboardHintsOverlay.tsx:KeyboardHintsOverlay",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/hooks/useActionPanelResize.ts",
+      "target": "function:src/hooks/useActionPanelResize.ts:useActionPanelResize",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/hooks/useActionPanelResize.ts",
+      "target": "function:src/hooks/useActionPanelResize.ts:useActionPanelResize",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/hooks/useCanvasZoom.ts",
+      "target": "function:src/hooks/useCanvasZoom.ts:useCanvasZoom",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/hooks/useCanvasZoom.ts",
+      "target": "function:src/hooks/useCanvasZoom.ts:useCanvasZoom",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/hooks/useLiveSlotUpdates.ts",
+      "target": "function:src/hooks/useLiveSlotUpdates.ts:useLiveSlotUpdates",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/hooks/useLiveSlotUpdates.ts",
+      "target": "function:src/hooks/useLiveSlotUpdates.ts:useLiveSlotUpdates",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/canvas-selection-model.ts",
+      "target": "function:src/lib/canvas-selection-model.ts:sanitizeCanvasSelectedIds",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/canvas-selection-model.ts",
+      "target": "function:src/lib/canvas-selection-model.ts:sanitizeCanvasSelectedIds",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/canvas-selection-model.ts",
+      "target": "function:src/lib/canvas-selection-model.ts:getCanvasSelectionBoxRect",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/canvas-selection-model.ts",
+      "target": "function:src/lib/canvas-selection-model.ts:getCanvasSelectionBoxRect",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/canvas-selection-model.ts",
+      "target": "function:src/lib/canvas-selection-model.ts:shouldApplyCanvasSelectionBox",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/canvas-selection-model.ts",
+      "target": "function:src/lib/canvas-selection-model.ts:shouldApplyCanvasSelectionBox",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/canvas-selection-model.ts",
+      "target": "function:src/lib/canvas-selection-model.ts:collectCanvasSelection",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/canvas-selection-model.ts",
+      "target": "function:src/lib/canvas-selection-model.ts:collectCanvasSelection",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/layout-canvas-interaction.test.ts",
+      "target": "function:src/lib/layout-canvas-interaction.test.ts:createSlot",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/layout-canvas-interaction.ts",
+      "target": "function:src/lib/layout-canvas-interaction.ts:resolveLayoutCanvasDragStart",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/layout-canvas-interaction.ts",
+      "target": "function:src/lib/layout-canvas-interaction.ts:resolveLayoutCanvasDragStart",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/layout-canvas-interaction.ts",
+      "target": "function:src/lib/layout-canvas-interaction.ts:buildLayoutCanvasDragUpdates",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/layout-canvas-interaction.ts",
+      "target": "function:src/lib/layout-canvas-interaction.ts:buildLayoutCanvasDragUpdates",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/layout-canvas-interaction.ts",
+      "target": "function:src/lib/layout-canvas-interaction.ts:calculateLayoutCanvasMinimumTrayBounds",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/layout-canvas-interaction.ts",
+      "target": "function:src/lib/layout-canvas-interaction.ts:calculateLayoutCanvasMinimumTrayBounds",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/layout-symmetry.ts",
+      "target": "function:src/lib/layout-symmetry.ts:roundToStep",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/layout-symmetry.ts",
+      "target": "function:src/lib/layout-symmetry.ts:roundToStep",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/layout-symmetry.ts",
+      "target": "function:src/lib/layout-symmetry.ts:getSlotBounds",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/layout-symmetry.ts",
+      "target": "function:src/lib/layout-symmetry.ts:getSlotBounds",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/layout-symmetry.ts",
+      "target": "function:src/lib/layout-symmetry.ts:getSelectionBounds",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/layout-symmetry.ts",
+      "target": "function:src/lib/layout-symmetry.ts:getSelectionBounds",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/layout-symmetry.ts",
+      "target": "function:src/lib/layout-symmetry.ts:resolveMirrorAxis",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/layout-symmetry.ts",
+      "target": "function:src/lib/layout-symmetry.ts:resolveMirrorAxis",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/layout-symmetry.ts",
+      "target": "function:src/lib/layout-symmetry.ts:mirrorSlot",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/layout-symmetry.ts",
+      "target": "function:src/lib/layout-symmetry.ts:mirrorSlot",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/layout-symmetry.ts",
+      "target": "function:src/lib/layout-symmetry.ts:buildMirrorInsertSlots",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/layout-symmetry.ts",
+      "target": "function:src/lib/layout-symmetry.ts:buildMirrorInsertSlots",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/layout-symmetry.ts",
+      "target": "function:src/lib/layout-symmetry.ts:buildMirrorMoveUpdates",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/layout-symmetry.ts",
+      "target": "function:src/lib/layout-symmetry.ts:buildMirrorMoveUpdates",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/layout-symmetry.ts",
+      "target": "function:src/lib/layout-symmetry.ts:countOutOfBoundsSlots",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/layout-symmetry.ts",
+      "target": "function:src/lib/layout-symmetry.ts:countOutOfBoundsSlots",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/layout-symmetry.ts",
+      "target": "function:src/lib/layout-symmetry.ts:checkLayoutSymmetry",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/layout-symmetry.ts",
+      "target": "function:src/lib/layout-symmetry.ts:checkLayoutSymmetry",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/perf.ts",
+      "target": "function:src/lib/perf.ts:updatePerfSnapshot",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/perf.ts",
+      "target": "function:src/lib/perf.ts:schedulePerfListeners",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/perf.ts",
+      "target": "function:src/lib/perf.ts:resolvePerfEnabled",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/perf.ts",
+      "target": "function:src/lib/perf.ts:isPerfEnabled",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/perf.ts",
+      "target": "function:src/lib/perf.ts:isPerfEnabled",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/perf.ts",
+      "target": "function:src/lib/perf.ts:measurePerf",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/perf.ts",
+      "target": "function:src/lib/perf.ts:measurePerf",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/perf.ts",
+      "target": "function:src/lib/perf.ts:recordPerfSample",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/perf.ts",
+      "target": "function:src/lib/perf.ts:recordPerfSample",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/perf.ts",
+      "target": "function:src/lib/perf.ts:subscribePerfMetrics",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/perf.ts",
+      "target": "function:src/lib/perf.ts:subscribePerfMetrics",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/perf.ts",
+      "target": "function:src/lib/perf.ts:getPerfMetricsSnapshot",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/perf.ts",
+      "target": "function:src/lib/perf.ts:getPerfMetricsSnapshot",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/perf.ts",
+      "target": "function:src/lib/perf.ts:resetPerfMetrics",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/perf.ts",
+      "target": "function:src/lib/perf.ts:resetPerfMetrics",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/viewports/layout-editor/customViewportModel.ts",
+      "target": "function:src/viewports/layout-editor/customViewportModel.ts:buildCustomLayoutEditorViewportModel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/viewports/layout-editor/customViewportModel.ts",
+      "target": "function:src/viewports/layout-editor/customViewportModel.ts:buildCustomLayoutEditorViewportModel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/viewports/layout-editor/simpleSteppedViewportModel.ts",
+      "target": "function:src/viewports/layout-editor/simpleSteppedViewportModel.ts:buildSimpleSteppedLayoutEditorViewportModel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/viewports/layout-editor/simpleSteppedViewportModel.ts",
+      "target": "function:src/viewports/layout-editor/simpleSteppedViewportModel.ts:buildSimpleSteppedLayoutEditorViewportModel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/viewports/layout-editor/steppedViewportModel.ts",
+      "target": "function:src/viewports/layout-editor/steppedViewportModel.ts:buildSteppedLayoutEditorViewportModel",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/viewports/layout-editor/steppedViewportModel.ts",
+      "target": "function:src/viewports/layout-editor/steppedViewportModel.ts:buildSteppedLayoutEditorViewportModel",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/components/AlignmentToolbar.tsx",
+      "target": "file:src/components/canvas/AlignPanel.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/AlignmentToolbar.tsx",
+      "target": "file:src/components/canvas/EditSidebar.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/AlignmentToolbar.tsx",
+      "target": "file:src/components/canvas/MirrorPanel.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/AlignmentToolbar.tsx",
+      "target": "file:src/lib/layout-symmetry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/AlignmentToolbar.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.test.tsx",
+      "target": "file:src/components/LayoutCanvas.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/components/LayoutCanvas.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.test.tsx",
+      "target": "file:src/lib/canvas-types.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-types.ts",
+      "target": "file:src/components/LayoutCanvas.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.test.tsx",
+      "target": "file:src/lib/layout-symmetry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/layout-symmetry.ts",
+      "target": "file:src/components/LayoutCanvas.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.test.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/types/custom-tray.ts",
+      "target": "file:src/components/LayoutCanvas.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/components/AlignmentToolbar.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/components/canvas/CanvasOverlayLayer.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/components/canvas/CanvasSlotLayer.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/components/canvas/CanvasStatusBar.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/components/canvas/CanvasZoomControls.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/components/canvas/EditSidebar.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/components/canvas/KeyboardHintsOverlay.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/hooks/useActionPanelResize.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/hooks/useCanvasKeyboard.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/hooks/useCanvasZoom.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/hooks/useLiveSlotUpdates.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/lib/canvas-collision-model.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/lib/canvas-selection-model.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/lib/canvas-snap-engine.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/lib/canvas-types.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/lib/layout-canvas-interaction.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/lib/layout-symmetry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/lib/perf.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/LayoutCanvas.tsx",
+      "target": "file:src/viewports/layout-editor/types.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/alignment-sidebar.test.tsx",
+      "target": "file:src/components/AlignmentToolbar.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/AlignmentToolbar.tsx",
+      "target": "file:src/components/alignment-sidebar.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/alignment-sidebar.test.tsx",
+      "target": "file:src/components/canvas/EditSidebar.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/EditSidebar.tsx",
+      "target": "file:src/components/alignment-sidebar.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/alignment-sidebar.test.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/types/custom-tray.ts",
+      "target": "file:src/components/alignment-sidebar.test.tsx",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/components/canvas/CanvasStatusBar.tsx",
+      "target": "file:src/lib/perf.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/components/canvas/CanvasStatusBar.tsx",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useActionPanelResize.test.ts",
+      "target": "file:src/hooks/useActionPanelResize.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useActionPanelResize.ts",
+      "target": "file:src/hooks/useActionPanelResize.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/hooks/useCanvasZoom.test.ts",
+      "target": "file:src/hooks/useCanvasZoom.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useCanvasZoom.ts",
+      "target": "file:src/hooks/useCanvasZoom.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/hooks/useLiveSlotUpdates.test.ts",
+      "target": "file:src/hooks/useLiveSlotUpdates.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useLiveSlotUpdates.ts",
+      "target": "file:src/hooks/useLiveSlotUpdates.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/hooks/useLiveSlotUpdates.test.ts",
+      "target": "file:src/lib/canvas-types.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-types.ts",
+      "target": "file:src/hooks/useLiveSlotUpdates.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/hooks/useLiveSlotUpdates.ts",
+      "target": "file:src/lib/canvas-types.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-selection-model.test.ts",
+      "target": "file:src/lib/canvas-selection-model.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-selection-model.ts",
+      "target": "file:src/lib/canvas-selection-model.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/canvas-selection-model.ts",
+      "target": "file:src/lib/canvas-types.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/canvas-selection-model.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/layout-canvas-interaction.test.ts",
+      "target": "file:src/lib/layout-canvas-interaction.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/layout-canvas-interaction.ts",
+      "target": "file:src/lib/layout-canvas-interaction.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/layout-canvas-interaction.test.ts",
+      "target": "file:src/viewports/layout-editor/types.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/layout-editor/types.ts",
+      "target": "file:src/lib/layout-canvas-interaction.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/layout-canvas-interaction.ts",
+      "target": "file:src/lib/canvas-types.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/layout-canvas-interaction.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/layout-canvas-interaction.ts",
+      "target": "file:src/viewports/layout-editor/types.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/layout-symmetry.test.ts",
+      "target": "file:src/lib/layout-symmetry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/layout-symmetry.ts",
+      "target": "file:src/lib/layout-symmetry.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/layout-symmetry.ts",
+      "target": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/layout-symmetry.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/layout-symmetry.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/layout-editor/customViewportModel.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/layout-editor/customViewportModel.ts",
+      "target": "file:src/viewports/layout-editor/types.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/layout-editor/simpleSteppedViewportModel.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/layout-editor/simpleSteppedViewportModel.ts",
+      "target": "file:src/viewports/layout-editor/types.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/layout-editor/steppedViewportModel.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/layout-editor/steppedViewportModel.ts",
+      "target": "file:src/viewports/layout-editor/types.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/layout-editor/types.ts",
+      "target": "file:src/lib/canvas-types.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/layout-editor/types.ts",
+      "target": "file:src/lib/layout-symmetry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/viewports/layout-editor/types.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    }
+  ]
+}

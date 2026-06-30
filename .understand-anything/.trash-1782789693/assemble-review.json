@@ -1,0 +1,11 @@
+{
+  "fixedSectionOk": true,
+  "nodesRecovered": 0,
+  "edgesRestored": 0,
+  "crossBatchEdgesAdded": 0,
+  "typesRemapped": 0,
+  "complexityRemapped": 0,
+  "notes": [
+    "merge-batch-graphs.py completed without unresolved issues after runtime fixture JSON files were modeled as file nodes."
+  ]
+}

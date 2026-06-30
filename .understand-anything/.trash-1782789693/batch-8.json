@@ -1,0 +1,2270 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/hooks/useModeDrafts.ts",
+      "type": "file",
+      "name": "useModeDrafts.ts",
+      "filePath": "src/hooks/useModeDrafts.ts",
+      "summary": "useModeDrafts.ts 提供 React hook，封装托盘编辑器的状态编排、生命周期或异步请求流程。",
+      "tags": [
+        "hook",
+        "state",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/hooks/useModeDrafts.ts:useModeDrafts",
+      "type": "function",
+      "name": "useModeDrafts",
+      "filePath": "src/hooks/useModeDrafts.ts",
+      "lineRange": [
+        54,
+        231
+      ],
+      "summary": "useModeDrafts 是 useModeDrafts.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/custom-layout-service.test.ts",
+      "type": "file",
+      "name": "custom-layout-service.test.ts",
+      "filePath": "src/lib/custom-layout-service.test.ts",
+      "summary": "custom-layout-service.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "domain-logic",
+        "custom-mode",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/custom-layout-service.ts",
+      "type": "file",
+      "name": "custom-layout-service.ts",
+      "filePath": "src/lib/custom-layout-service.ts",
+      "summary": "custom-layout-service.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "custom-mode",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/custom-layout-service.ts:generateCustomPreview",
+      "type": "function",
+      "name": "generateCustomPreview",
+      "filePath": "src/lib/custom-layout-service.ts",
+      "lineRange": [
+        16,
+        27
+      ],
+      "summary": "generateCustomPreview 是 custom-layout-service.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/custom-layout-service.ts:getCustomSTLFilename",
+      "type": "function",
+      "name": "getCustomSTLFilename",
+      "filePath": "src/lib/custom-layout-service.ts",
+      "lineRange": [
+        29,
+        47
+      ],
+      "summary": "getCustomSTLFilename 是 custom-layout-service.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/custom-layout-service.ts:buildCustomParamsBlob",
+      "type": "function",
+      "name": "buildCustomParamsBlob",
+      "filePath": "src/lib/custom-layout-service.ts",
+      "lineRange": [
+        49,
+        51
+      ],
+      "summary": "buildCustomParamsBlob 是 custom-layout-service.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/custom-layout-service.ts:exportCustomModelFiles",
+      "type": "function",
+      "name": "exportCustomModelFiles",
+      "filePath": "src/lib/custom-layout-service.ts",
+      "lineRange": [
+        53,
+        66
+      ],
+      "summary": "exportCustomModelFiles 是 custom-layout-service.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/draft-legacy-normalize.ts",
+      "type": "file",
+      "name": "draft-legacy-normalize.ts",
+      "filePath": "src/lib/draft-legacy-normalize.ts",
+      "summary": "draft-legacy-normalize.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/draft-legacy-normalize.ts:isDraftMode",
+      "type": "function",
+      "name": "isDraftMode",
+      "filePath": "src/lib/draft-legacy-normalize.ts",
+      "lineRange": [
+        75,
+        77
+      ],
+      "summary": "isDraftMode 是 draft-legacy-normalize.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/draft-legacy-normalize.ts:extractCompatibilityFields",
+      "type": "function",
+      "name": "extractCompatibilityFields",
+      "filePath": "src/lib/draft-legacy-normalize.ts",
+      "lineRange": [
+        83,
+        120
+      ],
+      "summary": "extractCompatibilityFields 是 draft-legacy-normalize.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/draft-legacy-normalize.ts:normalizeSummaryFromLegacyFields",
+      "type": "function",
+      "name": "normalizeSummaryFromLegacyFields",
+      "filePath": "src/lib/draft-legacy-normalize.ts",
+      "lineRange": [
+        122,
+        200
+      ],
+      "summary": "normalizeSummaryFromLegacyFields 是 draft-legacy-normalize.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/draft-legacy-normalize.ts:normalizeListItem",
+      "type": "function",
+      "name": "normalizeListItem",
+      "filePath": "src/lib/draft-legacy-normalize.ts",
+      "lineRange": [
+        208,
+        243
+      ],
+      "summary": "normalizeListItem 是 draft-legacy-normalize.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/draft-session.test.ts",
+      "type": "file",
+      "name": "draft-session.test.ts",
+      "filePath": "src/lib/draft-session.test.ts",
+      "summary": "draft-session.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/draft-session.ts",
+      "type": "file",
+      "name": "draft-session.ts",
+      "filePath": "src/lib/draft-session.ts",
+      "summary": "draft-session.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/draft-session.ts:createEmptyDraftSession",
+      "type": "function",
+      "name": "createEmptyDraftSession",
+      "filePath": "src/lib/draft-session.ts",
+      "lineRange": [
+        6,
+        11
+      ],
+      "summary": "createEmptyDraftSession 是 draft-session.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/draft-session.ts:bindDraftSession",
+      "type": "function",
+      "name": "bindDraftSession",
+      "filePath": "src/lib/draft-session.ts",
+      "lineRange": [
+        13,
+        21
+      ],
+      "summary": "bindDraftSession 是 draft-session.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/draft-session.ts:clearDraftSession",
+      "type": "function",
+      "name": "clearDraftSession",
+      "filePath": "src/lib/draft-session.ts",
+      "lineRange": [
+        23,
+        25
+      ],
+      "summary": "clearDraftSession 是 draft-session.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/draft-session.ts:removeDraftSessionBinding",
+      "type": "function",
+      "name": "removeDraftSessionBinding",
+      "filePath": "src/lib/draft-session.ts",
+      "lineRange": [
+        27,
+        36
+      ],
+      "summary": "removeDraftSessionBinding 是 draft-session.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/draft-session.ts:hasUnsavedDraftChanges",
+      "type": "function",
+      "name": "hasUnsavedDraftChanges",
+      "filePath": "src/lib/draft-session.ts",
+      "lineRange": [
+        38,
+        47
+      ],
+      "summary": "hasUnsavedDraftChanges 是 draft-session.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/draft-summary.ts",
+      "type": "file",
+      "name": "draft-summary.ts",
+      "filePath": "src/lib/draft-summary.ts",
+      "summary": "draft-summary.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/draft-summary.ts:buildGridDraftSummary",
+      "type": "function",
+      "name": "buildGridDraftSummary",
+      "filePath": "src/lib/draft-summary.ts",
+      "lineRange": [
+        74,
+        87
+      ],
+      "summary": "buildGridDraftSummary 是 draft-summary.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/draft-summary.ts:buildCustomDraftSummary",
+      "type": "function",
+      "name": "buildCustomDraftSummary",
+      "filePath": "src/lib/draft-summary.ts",
+      "lineRange": [
+        89,
+        98
+      ],
+      "summary": "buildCustomDraftSummary 是 draft-summary.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/draft-summary.ts:buildSimpleSteppedDraftSummary",
+      "type": "function",
+      "name": "buildSimpleSteppedDraftSummary",
+      "filePath": "src/lib/draft-summary.ts",
+      "lineRange": [
+        100,
+        111
+      ],
+      "summary": "buildSimpleSteppedDraftSummary 是 draft-summary.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/draft-summary.ts:buildSteppedDraftSummary",
+      "type": "function",
+      "name": "buildSteppedDraftSummary",
+      "filePath": "src/lib/draft-summary.ts",
+      "lineRange": [
+        113,
+        123
+      ],
+      "summary": "buildSteppedDraftSummary 是 draft-summary.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/draft-summary.ts:buildDraftSummary",
+      "type": "function",
+      "name": "buildDraftSummary",
+      "filePath": "src/lib/draft-summary.ts",
+      "lineRange": [
+        125,
+        149
+      ],
+      "summary": "buildDraftSummary 是 draft-summary.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/grid-model-service.test.ts",
+      "type": "file",
+      "name": "grid-model-service.test.ts",
+      "filePath": "src/lib/grid-model-service.test.ts",
+      "summary": "grid-model-service.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "domain-logic",
+        "grid-mode",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/grid-model-service.ts",
+      "type": "file",
+      "name": "grid-model-service.ts",
+      "filePath": "src/lib/grid-model-service.ts",
+      "summary": "grid-model-service.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "grid-mode",
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/grid-model-service.ts:generateGridPreview",
+      "type": "function",
+      "name": "generateGridPreview",
+      "filePath": "src/lib/grid-model-service.ts",
+      "lineRange": [
+        15,
+        26
+      ],
+      "summary": "generateGridPreview 是 grid-model-service.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/grid-model-service.ts:getGridSTLFilename",
+      "type": "function",
+      "name": "getGridSTLFilename",
+      "filePath": "src/lib/grid-model-service.ts",
+      "lineRange": [
+        28,
+        30
+      ],
+      "summary": "getGridSTLFilename 是 grid-model-service.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/grid-model-service.ts:buildGridParamsBlob",
+      "type": "function",
+      "name": "buildGridParamsBlob",
+      "filePath": "src/lib/grid-model-service.ts",
+      "lineRange": [
+        32,
+        34
+      ],
+      "summary": "buildGridParamsBlob 是 grid-model-service.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/grid-model-service.ts:exportGridModelFiles",
+      "type": "function",
+      "name": "exportGridModelFiles",
+      "filePath": "src/lib/grid-model-service.ts",
+      "lineRange": [
+        36,
+        48
+      ],
+      "summary": "exportGridModelFiles 是 grid-model-service.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/jscad-to-three.test.ts",
+      "type": "file",
+      "name": "jscad-to-three.test.ts",
+      "filePath": "src/lib/jscad-to-three.test.ts",
+      "summary": "jscad-to-three.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/jscad-to-three.ts",
+      "type": "file",
+      "name": "jscad-to-three.ts",
+      "filePath": "src/lib/jscad-to-three.ts",
+      "summary": "jscad-to-three.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/jscad-to-three.ts:projectTo2D",
+      "type": "function",
+      "name": "projectTo2D",
+      "filePath": "src/lib/jscad-to-three.ts",
+      "lineRange": [
+        14,
+        30
+      ],
+      "summary": "projectTo2D 是 jscad-to-three.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/jscad-to-three.ts:jscadToThreeGeometry",
+      "type": "function",
+      "name": "jscadToThreeGeometry",
+      "filePath": "src/lib/jscad-to-three.ts",
+      "lineRange": [
+        41,
+        133
+      ],
+      "summary": "jscadToThreeGeometry 是 jscad-to-three.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/local-drafts.ts",
+      "type": "file",
+      "name": "local-drafts.ts",
+      "filePath": "src/lib/local-drafts.ts",
+      "summary": "local-drafts.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/local-drafts.ts:readIndex",
+      "type": "function",
+      "name": "readIndex",
+      "filePath": "src/lib/local-drafts.ts",
+      "lineRange": [
+        72,
+        85
+      ],
+      "summary": "readIndex 是 local-drafts.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/local-drafts.ts:buildListItem",
+      "type": "function",
+      "name": "buildListItem",
+      "filePath": "src/lib/local-drafts.ts",
+      "lineRange": [
+        91,
+        109
+      ],
+      "summary": "buildListItem 是 local-drafts.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/local-drafts.ts:getDraftInternal",
+      "type": "function",
+      "name": "getDraftInternal",
+      "filePath": "src/lib/local-drafts.ts",
+      "lineRange": [
+        111,
+        159
+      ],
+      "summary": "getDraftInternal 是 local-drafts.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/local-drafts.ts:buildRecord",
+      "type": "function",
+      "name": "buildRecord",
+      "filePath": "src/lib/local-drafts.ts",
+      "lineRange": [
+        161,
+        171
+      ],
+      "summary": "buildRecord 是 local-drafts.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/local-drafts.ts:commitDraft",
+      "type": "function",
+      "name": "commitDraft",
+      "filePath": "src/lib/local-drafts.ts",
+      "lineRange": [
+        190,
+        219
+      ],
+      "summary": "commitDraft 是 local-drafts.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/local-drafts.ts:listDrafts",
+      "type": "function",
+      "name": "listDrafts",
+      "filePath": "src/lib/local-drafts.ts",
+      "lineRange": [
+        223,
+        230
+      ],
+      "summary": "listDrafts 是 local-drafts.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/local-drafts.ts:getDraft",
+      "type": "function",
+      "name": "getDraft",
+      "filePath": "src/lib/local-drafts.ts",
+      "lineRange": [
+        232,
+        237
+      ],
+      "summary": "getDraft 是 local-drafts.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/local-drafts.ts:createDraft",
+      "type": "function",
+      "name": "createDraft",
+      "filePath": "src/lib/local-drafts.ts",
+      "lineRange": [
+        239,
+        258
+      ],
+      "summary": "createDraft 是 local-drafts.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/local-drafts.ts:updateDraft",
+      "type": "function",
+      "name": "updateDraft",
+      "filePath": "src/lib/local-drafts.ts",
+      "lineRange": [
+        260,
+        286
+      ],
+      "summary": "updateDraft 是 local-drafts.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/local-drafts.ts:renameDraft",
+      "type": "function",
+      "name": "renameDraft",
+      "filePath": "src/lib/local-drafts.ts",
+      "lineRange": [
+        288,
+        316
+      ],
+      "summary": "renameDraft 是 local-drafts.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/local-drafts.ts:deleteDraft",
+      "type": "function",
+      "name": "deleteDraft",
+      "filePath": "src/lib/local-drafts.ts",
+      "lineRange": [
+        318,
+        322
+      ],
+      "summary": "deleteDraft 是 local-drafts.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/local-drafts.ts:exportDraft",
+      "type": "function",
+      "name": "exportDraft",
+      "filePath": "src/lib/local-drafts.ts",
+      "lineRange": [
+        325,
+        339
+      ],
+      "summary": "exportDraft 是 local-drafts.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/local-drafts.ts:defaultDraftTitle",
+      "type": "function",
+      "name": "defaultDraftTitle",
+      "filePath": "src/lib/local-drafts.ts",
+      "lineRange": [
+        341,
+        352
+      ],
+      "summary": "defaultDraftTitle 是 local-drafts.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/local-drafts.ts:formatDraftTime",
+      "type": "function",
+      "name": "formatDraftTime",
+      "filePath": "src/lib/local-drafts.ts",
+      "lineRange": [
+        354,
+        359
+      ],
+      "summary": "formatDraftTime 是 local-drafts.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/param-io.ts",
+      "type": "file",
+      "name": "param-io.ts",
+      "filePath": "src/lib/param-io.ts",
+      "summary": "param-io.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/param-io.ts:buildParamFile",
+      "type": "function",
+      "name": "buildParamFile",
+      "filePath": "src/lib/param-io.ts",
+      "lineRange": [
+        34,
+        39
+      ],
+      "summary": "buildParamFile 是 param-io.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/param-io.ts:serializeParamFile",
+      "type": "function",
+      "name": "serializeParamFile",
+      "filePath": "src/lib/param-io.ts",
+      "lineRange": [
+        41,
+        46
+      ],
+      "summary": "serializeParamFile 是 param-io.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/param-io.ts:createParamBlob",
+      "type": "function",
+      "name": "createParamBlob",
+      "filePath": "src/lib/param-io.ts",
+      "lineRange": [
+        48,
+        52
+      ],
+      "summary": "createParamBlob 是 param-io.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/param-io.ts:downloadParamFile",
+      "type": "function",
+      "name": "downloadParamFile",
+      "filePath": "src/lib/param-io.ts",
+      "lineRange": [
+        54,
+        69
+      ],
+      "summary": "downloadParamFile 是 param-io.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/param-io.ts:exportParams",
+      "type": "function",
+      "name": "exportParams",
+      "filePath": "src/lib/param-io.ts",
+      "lineRange": [
+        71,
+        73
+      ],
+      "summary": "exportParams 是 param-io.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/param-io.ts:parseParamFileObject",
+      "type": "function",
+      "name": "parseParamFileObject",
+      "filePath": "src/lib/param-io.ts",
+      "lineRange": [
+        89,
+        133
+      ],
+      "summary": "parseParamFileObject 是 param-io.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/param-io.ts:importParams",
+      "type": "function",
+      "name": "importParams",
+      "filePath": "src/lib/param-io.ts",
+      "lineRange": [
+        135,
+        155
+      ],
+      "summary": "importParams 是 param-io.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/stepped-model-service.test.ts",
+      "type": "file",
+      "name": "stepped-model-service.test.ts",
+      "filePath": "src/lib/stepped-model-service.test.ts",
+      "summary": "stepped-model-service.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "domain-logic",
+        "stepped-mode",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/stepped-model-service.ts",
+      "type": "file",
+      "name": "stepped-model-service.ts",
+      "filePath": "src/lib/stepped-model-service.ts",
+      "summary": "stepped-model-service.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "stepped-mode",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/stepped-model-service.ts:generateSteppedPreview",
+      "type": "function",
+      "name": "generateSteppedPreview",
+      "filePath": "src/lib/stepped-model-service.ts",
+      "lineRange": [
+        24,
+        35
+      ],
+      "summary": "generateSteppedPreview 是 stepped-model-service.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-model-service.ts:getSteppedSTLFilename",
+      "type": "function",
+      "name": "getSteppedSTLFilename",
+      "filePath": "src/lib/stepped-model-service.ts",
+      "lineRange": [
+        37,
+        51
+      ],
+      "summary": "getSteppedSTLFilename 是 stepped-model-service.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-model-service.ts:exportSteppedModelFiles",
+      "type": "function",
+      "name": "exportSteppedModelFiles",
+      "filePath": "src/lib/stepped-model-service.ts",
+      "lineRange": [
+        53,
+        66
+      ],
+      "summary": "exportSteppedModelFiles 是 stepped-model-service.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-model-service.ts:generateSteppedSplitPreview",
+      "type": "function",
+      "name": "generateSteppedSplitPreview",
+      "filePath": "src/lib/stepped-model-service.ts",
+      "lineRange": [
+        68,
+        78
+      ],
+      "summary": "generateSteppedSplitPreview 是 stepped-model-service.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-model-service.ts:getSteppedSplitBaseFilename",
+      "type": "function",
+      "name": "getSteppedSplitBaseFilename",
+      "filePath": "src/lib/stepped-model-service.ts",
+      "lineRange": [
+        80,
+        94
+      ],
+      "summary": "getSteppedSplitBaseFilename 是 stepped-model-service.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-model-service.ts:exportSteppedSplitPartFiles",
+      "type": "function",
+      "name": "exportSteppedSplitPartFiles",
+      "filePath": "src/lib/stepped-model-service.ts",
+      "lineRange": [
+        96,
+        139
+      ],
+      "summary": "exportSteppedSplitPartFiles 是 stepped-model-service.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/stl-export.test.ts",
+      "type": "file",
+      "name": "stl-export.test.ts",
+      "filePath": "src/lib/stl-export.test.ts",
+      "summary": "stl-export.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/stl-export.ts",
+      "type": "file",
+      "name": "stl-export.ts",
+      "filePath": "src/lib/stl-export.ts",
+      "summary": "stl-export.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/stl-export.ts:exportToSTL",
+      "type": "function",
+      "name": "exportToSTL",
+      "filePath": "src/lib/stl-export.ts",
+      "lineRange": [
+        7,
+        21
+      ],
+      "summary": "exportToSTL 是 stl-export.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stl-export.ts:generateSTLFilename",
+      "type": "function",
+      "name": "generateSTLFilename",
+      "filePath": "src/lib/stl-export.ts",
+      "lineRange": [
+        26,
+        32
+      ],
+      "summary": "generateSTLFilename 是 stl-export.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stl-export.ts:generateCustomSTLFilename",
+      "type": "function",
+      "name": "generateCustomSTLFilename",
+      "filePath": "src/lib/stl-export.ts",
+      "lineRange": [
+        37,
+        43
+      ],
+      "summary": "generateCustomSTLFilename 是 stl-export.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stl-export.ts:generateSimpleSteppedSTLFilename",
+      "type": "function",
+      "name": "generateSimpleSteppedSTLFilename",
+      "filePath": "src/lib/stl-export.ts",
+      "lineRange": [
+        48,
+        55
+      ],
+      "summary": "generateSimpleSteppedSTLFilename 是 stl-export.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/hooks/useModeDrafts.ts",
+      "target": "function:src/hooks/useModeDrafts.ts:useModeDrafts",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/hooks/useModeDrafts.ts",
+      "target": "function:src/hooks/useModeDrafts.ts:useModeDrafts",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/custom-layout-service.ts",
+      "target": "function:src/lib/custom-layout-service.ts:generateCustomPreview",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/custom-layout-service.ts",
+      "target": "function:src/lib/custom-layout-service.ts:generateCustomPreview",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/custom-layout-service.ts",
+      "target": "function:src/lib/custom-layout-service.ts:getCustomSTLFilename",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/custom-layout-service.ts",
+      "target": "function:src/lib/custom-layout-service.ts:getCustomSTLFilename",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/custom-layout-service.ts",
+      "target": "function:src/lib/custom-layout-service.ts:buildCustomParamsBlob",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/custom-layout-service.ts",
+      "target": "function:src/lib/custom-layout-service.ts:buildCustomParamsBlob",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/custom-layout-service.ts",
+      "target": "function:src/lib/custom-layout-service.ts:exportCustomModelFiles",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/custom-layout-service.ts",
+      "target": "function:src/lib/custom-layout-service.ts:exportCustomModelFiles",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/draft-legacy-normalize.ts",
+      "target": "function:src/lib/draft-legacy-normalize.ts:isDraftMode",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/draft-legacy-normalize.ts",
+      "target": "function:src/lib/draft-legacy-normalize.ts:isDraftMode",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/draft-legacy-normalize.ts",
+      "target": "function:src/lib/draft-legacy-normalize.ts:extractCompatibilityFields",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/draft-legacy-normalize.ts",
+      "target": "function:src/lib/draft-legacy-normalize.ts:extractCompatibilityFields",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/draft-legacy-normalize.ts",
+      "target": "function:src/lib/draft-legacy-normalize.ts:normalizeSummaryFromLegacyFields",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/draft-legacy-normalize.ts",
+      "target": "function:src/lib/draft-legacy-normalize.ts:normalizeListItem",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/draft-legacy-normalize.ts",
+      "target": "function:src/lib/draft-legacy-normalize.ts:normalizeListItem",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/draft-session.ts",
+      "target": "function:src/lib/draft-session.ts:createEmptyDraftSession",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/draft-session.ts",
+      "target": "function:src/lib/draft-session.ts:createEmptyDraftSession",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/draft-session.ts",
+      "target": "function:src/lib/draft-session.ts:bindDraftSession",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/draft-session.ts",
+      "target": "function:src/lib/draft-session.ts:bindDraftSession",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/draft-session.ts",
+      "target": "function:src/lib/draft-session.ts:clearDraftSession",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/draft-session.ts",
+      "target": "function:src/lib/draft-session.ts:clearDraftSession",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/draft-session.ts",
+      "target": "function:src/lib/draft-session.ts:removeDraftSessionBinding",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/draft-session.ts",
+      "target": "function:src/lib/draft-session.ts:removeDraftSessionBinding",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/draft-session.ts",
+      "target": "function:src/lib/draft-session.ts:hasUnsavedDraftChanges",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/draft-session.ts",
+      "target": "function:src/lib/draft-session.ts:hasUnsavedDraftChanges",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/draft-summary.ts",
+      "target": "function:src/lib/draft-summary.ts:buildGridDraftSummary",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/draft-summary.ts",
+      "target": "function:src/lib/draft-summary.ts:buildCustomDraftSummary",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/draft-summary.ts",
+      "target": "function:src/lib/draft-summary.ts:buildSimpleSteppedDraftSummary",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/draft-summary.ts",
+      "target": "function:src/lib/draft-summary.ts:buildSteppedDraftSummary",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/draft-summary.ts",
+      "target": "function:src/lib/draft-summary.ts:buildDraftSummary",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/draft-summary.ts",
+      "target": "function:src/lib/draft-summary.ts:buildDraftSummary",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/grid-model-service.ts",
+      "target": "function:src/lib/grid-model-service.ts:generateGridPreview",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/grid-model-service.ts",
+      "target": "function:src/lib/grid-model-service.ts:generateGridPreview",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/grid-model-service.ts",
+      "target": "function:src/lib/grid-model-service.ts:getGridSTLFilename",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/grid-model-service.ts",
+      "target": "function:src/lib/grid-model-service.ts:getGridSTLFilename",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/grid-model-service.ts",
+      "target": "function:src/lib/grid-model-service.ts:buildGridParamsBlob",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/grid-model-service.ts",
+      "target": "function:src/lib/grid-model-service.ts:buildGridParamsBlob",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/grid-model-service.ts",
+      "target": "function:src/lib/grid-model-service.ts:exportGridModelFiles",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/grid-model-service.ts",
+      "target": "function:src/lib/grid-model-service.ts:exportGridModelFiles",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/jscad-to-three.ts",
+      "target": "function:src/lib/jscad-to-three.ts:projectTo2D",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/jscad-to-three.ts",
+      "target": "function:src/lib/jscad-to-three.ts:jscadToThreeGeometry",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/jscad-to-three.ts",
+      "target": "function:src/lib/jscad-to-three.ts:jscadToThreeGeometry",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/local-drafts.ts",
+      "target": "function:src/lib/local-drafts.ts:readIndex",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/local-drafts.ts",
+      "target": "function:src/lib/local-drafts.ts:buildListItem",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/local-drafts.ts",
+      "target": "function:src/lib/local-drafts.ts:getDraftInternal",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/local-drafts.ts",
+      "target": "function:src/lib/local-drafts.ts:buildRecord",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/local-drafts.ts",
+      "target": "function:src/lib/local-drafts.ts:commitDraft",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/local-drafts.ts",
+      "target": "function:src/lib/local-drafts.ts:listDrafts",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/local-drafts.ts",
+      "target": "function:src/lib/local-drafts.ts:listDrafts",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/local-drafts.ts",
+      "target": "function:src/lib/local-drafts.ts:getDraft",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/local-drafts.ts",
+      "target": "function:src/lib/local-drafts.ts:getDraft",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/local-drafts.ts",
+      "target": "function:src/lib/local-drafts.ts:createDraft",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/local-drafts.ts",
+      "target": "function:src/lib/local-drafts.ts:createDraft",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/local-drafts.ts",
+      "target": "function:src/lib/local-drafts.ts:updateDraft",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/local-drafts.ts",
+      "target": "function:src/lib/local-drafts.ts:updateDraft",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/local-drafts.ts",
+      "target": "function:src/lib/local-drafts.ts:renameDraft",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/local-drafts.ts",
+      "target": "function:src/lib/local-drafts.ts:renameDraft",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/local-drafts.ts",
+      "target": "function:src/lib/local-drafts.ts:deleteDraft",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/local-drafts.ts",
+      "target": "function:src/lib/local-drafts.ts:deleteDraft",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/local-drafts.ts",
+      "target": "function:src/lib/local-drafts.ts:exportDraft",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/local-drafts.ts",
+      "target": "function:src/lib/local-drafts.ts:exportDraft",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/local-drafts.ts",
+      "target": "function:src/lib/local-drafts.ts:defaultDraftTitle",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/local-drafts.ts",
+      "target": "function:src/lib/local-drafts.ts:defaultDraftTitle",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/local-drafts.ts",
+      "target": "function:src/lib/local-drafts.ts:formatDraftTime",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/local-drafts.ts",
+      "target": "function:src/lib/local-drafts.ts:formatDraftTime",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/param-io.ts",
+      "target": "function:src/lib/param-io.ts:buildParamFile",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/param-io.ts",
+      "target": "function:src/lib/param-io.ts:buildParamFile",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/param-io.ts",
+      "target": "function:src/lib/param-io.ts:serializeParamFile",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/param-io.ts",
+      "target": "function:src/lib/param-io.ts:serializeParamFile",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/param-io.ts",
+      "target": "function:src/lib/param-io.ts:createParamBlob",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/param-io.ts",
+      "target": "function:src/lib/param-io.ts:createParamBlob",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/param-io.ts",
+      "target": "function:src/lib/param-io.ts:downloadParamFile",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/param-io.ts",
+      "target": "function:src/lib/param-io.ts:downloadParamFile",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/param-io.ts",
+      "target": "function:src/lib/param-io.ts:exportParams",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/param-io.ts",
+      "target": "function:src/lib/param-io.ts:exportParams",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/param-io.ts",
+      "target": "function:src/lib/param-io.ts:parseParamFileObject",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/param-io.ts",
+      "target": "function:src/lib/param-io.ts:parseParamFileObject",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/param-io.ts",
+      "target": "function:src/lib/param-io.ts:importParams",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/param-io.ts",
+      "target": "function:src/lib/param-io.ts:importParams",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-model-service.ts",
+      "target": "function:src/lib/stepped-model-service.ts:generateSteppedPreview",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-model-service.ts",
+      "target": "function:src/lib/stepped-model-service.ts:generateSteppedPreview",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-model-service.ts",
+      "target": "function:src/lib/stepped-model-service.ts:getSteppedSTLFilename",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-model-service.ts",
+      "target": "function:src/lib/stepped-model-service.ts:getSteppedSTLFilename",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-model-service.ts",
+      "target": "function:src/lib/stepped-model-service.ts:exportSteppedModelFiles",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-model-service.ts",
+      "target": "function:src/lib/stepped-model-service.ts:exportSteppedModelFiles",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-model-service.ts",
+      "target": "function:src/lib/stepped-model-service.ts:generateSteppedSplitPreview",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-model-service.ts",
+      "target": "function:src/lib/stepped-model-service.ts:generateSteppedSplitPreview",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-model-service.ts",
+      "target": "function:src/lib/stepped-model-service.ts:getSteppedSplitBaseFilename",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-model-service.ts",
+      "target": "function:src/lib/stepped-model-service.ts:getSteppedSplitBaseFilename",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-model-service.ts",
+      "target": "function:src/lib/stepped-model-service.ts:exportSteppedSplitPartFiles",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-model-service.ts",
+      "target": "function:src/lib/stepped-model-service.ts:exportSteppedSplitPartFiles",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stl-export.ts",
+      "target": "function:src/lib/stl-export.ts:exportToSTL",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stl-export.ts",
+      "target": "function:src/lib/stl-export.ts:exportToSTL",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stl-export.ts",
+      "target": "function:src/lib/stl-export.ts:generateSTLFilename",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stl-export.ts",
+      "target": "function:src/lib/stl-export.ts:generateSTLFilename",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stl-export.ts",
+      "target": "function:src/lib/stl-export.ts:generateCustomSTLFilename",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stl-export.ts",
+      "target": "function:src/lib/stl-export.ts:generateCustomSTLFilename",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stl-export.ts",
+      "target": "function:src/lib/stl-export.ts:generateSimpleSteppedSTLFilename",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stl-export.ts",
+      "target": "function:src/lib/stl-export.ts:generateSimpleSteppedSTLFilename",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/hooks/useModeDrafts.ts",
+      "target": "file:src/hooks/useToast.tsx",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useModeDrafts.ts",
+      "target": "file:src/lib/draft-session.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useModeDrafts.ts",
+      "target": "file:src/lib/draft-summary.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useModeDrafts.ts",
+      "target": "file:src/lib/local-drafts.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useModeDrafts.ts",
+      "target": "file:src/lib/param-io.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-service.test.ts",
+      "target": "file:src/lib/custom-config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-config.ts",
+      "target": "file:src/lib/custom-layout-service.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/custom-layout-service.test.ts",
+      "target": "file:src/lib/custom-layout-service.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-service.ts",
+      "target": "file:src/lib/custom-layout-service.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/custom-layout-service.ts",
+      "target": "file:src/lib/custom-layout-math.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-service.ts",
+      "target": "file:src/lib/jscad-to-three.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-service.ts",
+      "target": "file:src/lib/model-ports.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-service.ts",
+      "target": "file:src/lib/param-io.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-service.ts",
+      "target": "file:src/lib/stl-export.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-service.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/draft-legacy-normalize.ts",
+      "target": "file:src/lib/draft-summary.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/draft-legacy-normalize.ts",
+      "target": "file:src/lib/param-io.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/draft-legacy-normalize.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/draft-session.test.ts",
+      "target": "file:src/lib/draft-session.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/draft-session.ts",
+      "target": "file:src/lib/draft-session.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/draft-summary.ts",
+      "target": "file:src/lib/param-io.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/draft-summary.ts",
+      "target": "file:src/lib/simple-stepped-layout.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/draft-summary.ts",
+      "target": "file:src/lib/tray-model.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/draft-summary.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/draft-summary.ts",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/grid-model-service.test.ts",
+      "target": "file:src/lib/grid-config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/grid-config.ts",
+      "target": "file:src/lib/grid-model-service.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/grid-model-service.test.ts",
+      "target": "file:src/lib/grid-model-service.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/grid-model-service.ts",
+      "target": "file:src/lib/grid-model-service.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/grid-model-service.ts",
+      "target": "file:src/lib/jscad-to-three.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/grid-model-service.ts",
+      "target": "file:src/lib/model-ports.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/grid-model-service.ts",
+      "target": "file:src/lib/param-io.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/grid-model-service.ts",
+      "target": "file:src/lib/stl-export.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/grid-model-service.ts",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/jscad-to-three.test.ts",
+      "target": "file:src/lib/jscad-to-three.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/jscad-to-three.ts",
+      "target": "file:src/lib/jscad-to-three.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/local-drafts.ts",
+      "target": "file:src/lib/draft-legacy-normalize.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/local-drafts.ts",
+      "target": "file:src/lib/draft-summary.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/local-drafts.ts",
+      "target": "file:src/lib/param-io.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/param-io.ts",
+      "target": "file:src/lib/param-normalization.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/param-io.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/param-io.ts",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-model-service.test.ts",
+      "target": "file:src/lib/stepped-config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-config.ts",
+      "target": "file:src/lib/stepped-model-service.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/stepped-model-service.test.ts",
+      "target": "file:src/lib/stepped-model-service.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-model-service.ts",
+      "target": "file:src/lib/stepped-model-service.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/stepped-model-service.ts",
+      "target": "file:src/lib/jscad-to-three.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-model-service.ts",
+      "target": "file:src/lib/model-ports.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-model-service.ts",
+      "target": "file:src/lib/param-io.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-model-service.ts",
+      "target": "file:src/lib/stepped-layout-math.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-model-service.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stl-export.test.ts",
+      "target": "file:src/lib/stl-export.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stl-export.ts",
+      "target": "file:src/lib/stl-export.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    }
+  ]
+}

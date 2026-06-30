@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "gitCommitHash": "c7b03937437b750148726bd62df94156e53af324",
-  "generatedAt": "2026-06-15T02:30:02.027Z",
+  "gitCommitHash": "00e6f9015b114dada581914d294455d125462184",
+  "generatedAt": "2026-06-30T03:20:57.026Z",
   "files": {
     ".claude/settings.json": {
       "filePath": ".claude/settings.json",
@@ -63,26 +63,6 @@
       "totalLines": 13,
       "hasStructuralAnalysis": true
     },
-    ".understand-anything/.understandignore": {
-      "filePath": ".understand-anything/.understandignore",
-      "contentHash": "002ed9cb72b5d71e44acade913112e77fb6b99bd39ceea29036929dd01bf77cd",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 43,
-      "hasStructuralAnalysis": false
-    },
-    ".understand-anything/config.json": {
-      "filePath": ".understand-anything/config.json",
-      "contentHash": "c4a81b476be169d02009b0f55951562958b700b6d831e2b5754648ac73552ec9",
-      "functions": [],
-      "classes": [],
-      "imports": [],
-      "exports": [],
-      "totalLines": 2,
-      "hasStructuralAnalysis": true
-    },
     "claude-progress.txt": {
       "filePath": "claude-progress.txt",
       "contentHash": "8298e96777d7c9f486b5430c67bb374b00e1a6b364299d3f5791169536ea0e52",
@@ -95,12 +75,12 @@
     },
     "CLAUDE.md": {
       "filePath": "CLAUDE.md",
-      "contentHash": "15a31ed35743d94959e084ddb37e2b40420ecf9b5b324e9d246bd71cdc84b8d9",
+      "contentHash": "e886de5bbc903f67f2a86b5de7e5b66d6457d2302944190489f5bb26aa0d75ab",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 220,
+      "totalLines": 231,
       "hasStructuralAnalysis": true
     },
     "components.json": {
@@ -115,12 +95,12 @@
     },
     "CONTEXT.md": {
       "filePath": "CONTEXT.md",
-      "contentHash": "9d179e13b9b6a971f23b9b8d6432423c5d3e626feed17904171a75f0dd644789",
+      "contentHash": "6ee985f43b50fcfa9834eea0790a099e432216278df027b99bd4311a16fb3edb",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 234,
+      "totalLines": 239,
       "hasStructuralAnalysis": true
     },
     "copilot-session-f86083c1-8fbe-49be-87ab-c69cf7e83a83.md": {
@@ -245,7 +225,7 @@
     },
     "doc/stepped-tray.md": {
       "filePath": "doc/stepped-tray.md",
-      "contentHash": "4dc106cf219d9443fc740a34e9347dbe8468371881fe77e3fd8d551d4e6f0e1f",
+      "contentHash": "6d7c0de1f6324f98b19684de36dceee4fe0f2c2587b612ac87d4efc29cc65f72",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -521,7 +501,7 @@
     },
     "src/app/page.test.tsx": {
       "filePath": "src/app/page.test.tsx",
-      "contentHash": "1b5ed31e27b9a4e871dacb6b3bbd2bde13e117ff2dfa14343840a1f37fadc733",
+      "contentHash": "2befcffec8957f1d3a252daddb50411b66d08cc00d3a51eefb9307758568ede4",
       "functions": [],
       "classes": [],
       "imports": [
@@ -573,7 +553,7 @@
         }
       ],
       "exports": [],
-      "totalLines": 1080,
+      "totalLines": 1086,
       "hasStructuralAnalysis": true
     },
     "src/app/page.tsx": {
@@ -734,15 +714,15 @@
     },
     "src/components/AlignmentToolbar.tsx": {
       "filePath": "src/components/AlignmentToolbar.tsx",
-      "contentHash": "dcb2819e50c0134d26239fa205b29f02d714a0d8fe363c0ddd44b4d6d521a88c",
+      "contentHash": "54fb8c63080e0e79851d199578ef1349d4db560b965c6d8456df911de21cb82c",
       "functions": [
         {
           "name": "AlignmentToolbar",
           "params": [
-            "{\n  selectedIds,\n  slots,\n  selectedSlots,\n  unselectedSlots,\n  onUpdateSlots,\n  onInsertSlots,\n  enableCopyPreview,\n  spacing,\n  trayWidth,\n  trayDepth,\n  activeTabId,\n  onActiveTabChange,\n}"
+            "{\n  selectedIds,\n  slots,\n  selectedSlots,\n  unselectedSlots,\n  onUpdateSlots,\n  onInsertSlots,\n  onSymmetryUnmatched,\n  enableCopyPreview,\n  spacing,\n  trayWidth,\n  trayDepth,\n  activeTabId,\n  onActiveTabChange,\n}"
           ],
           "exported": true,
-          "lineCount": 66
+          "lineCount": 68
         }
       ],
       "classes": [],
@@ -796,7 +776,7 @@
       "exports": [
         "AlignmentToolbar"
       ],
-      "totalLines": 92,
+      "totalLines": 95,
       "hasStructuralAnalysis": true
     },
     "src/components/BaseHoleConfig.tsx": {
@@ -995,7 +975,7 @@
     },
     "src/components/canvas/canvas-components.test.tsx": {
       "filePath": "src/components/canvas/canvas-components.test.tsx",
-      "contentHash": "defc60c4d6db71a84f830bc186fd5d390ab9c888f0bf0f616884c2e0383d44b9",
+      "contentHash": "f11040e6cb1af08ae8fab261f44ff3eaa921b69cffc074df0cc25566151a1df0",
       "functions": [
         {
           "name": "createSteppedSlot",
@@ -1084,7 +1064,7 @@
         }
       ],
       "exports": [],
-      "totalLines": 596,
+      "totalLines": 753,
       "hasStructuralAnalysis": true
     },
     "src/components/canvas/CanvasOverlayLayer.tsx": {
@@ -1134,7 +1114,7 @@
     },
     "src/components/canvas/CanvasSlotLayer.tsx": {
       "filePath": "src/components/canvas/CanvasSlotLayer.tsx",
-      "contentHash": "31c9610c917cc6c7c4bec3267c8ee940982d216abc06499038964a5e3251e531",
+      "contentHash": "3054269118b2b66cb0ad75bb09f0e344f6e28338d1ab46399164a4fe65c37aa5",
       "functions": [],
       "classes": [],
       "imports": [
@@ -1180,7 +1160,7 @@
       "exports": [
         "CanvasSlotLayer"
       ],
-      "totalLines": 263,
+      "totalLines": 292,
       "hasStructuralAnalysis": true
     },
     "src/components/canvas/CanvasStatusBar.tsx": {
@@ -1319,7 +1299,7 @@
     },
     "src/components/canvas/MirrorPanel.tsx": {
       "filePath": "src/components/canvas/MirrorPanel.tsx",
-      "contentHash": "6ad44b7f5406cb7272e4752ac0314423b68e7be5dd769ec28f22388322c63949",
+      "contentHash": "5112aacd8ffc3a9d950254deb5f5204fb978d4d5b9bdb82cc9635323db76a34d",
       "functions": [
         {
           "name": "buildCollisionPolygon",
@@ -1354,10 +1334,10 @@
         {
           "name": "MirrorPanel",
           "params": [
-            "{\n  allSlots,\n  selectedSlots,\n  unselectedSlots,\n  onUpdateSlots,\n  onInsertSlots,\n  enableCopyPreview,\n  spacing,\n  trayWidth,\n  trayDepth,\n  ellipseProfileExponent,\n}"
+            "{\n  allSlots,\n  selectedSlots,\n  unselectedSlots,\n  onUpdateSlots,\n  onInsertSlots,\n  onSymmetryUnmatched,\n  enableCopyPreview,\n  spacing,\n  trayWidth,\n  trayDepth,\n  ellipseProfileExponent,\n}"
           ],
           "exported": true,
-          "lineCount": 244
+          "lineCount": 290
         }
       ],
       "classes": [],
@@ -1376,7 +1356,8 @@
           "specifiers": [
             "Copy",
             "FlipHorizontal",
-            "FlipVertical"
+            "FlipVertical",
+            "SearchCheck"
           ]
         },
         {
@@ -1410,6 +1391,7 @@
           "specifiers": [
             "buildMirrorInsertSlots",
             "buildMirrorMoveUpdates",
+            "checkLayoutSymmetry",
             "countOutOfBoundsSlots",
             "SymmetryInsertSlot",
             "SymmetryMode",
@@ -1420,12 +1402,12 @@
       "exports": [
         "MirrorPanel"
       ],
-      "totalLines": 342,
+      "totalLines": 391,
       "hasStructuralAnalysis": true
     },
     "src/components/CustomPanel.tsx": {
       "filePath": "src/components/CustomPanel.tsx",
-      "contentHash": "e2e0279777e804c3332a6a73bad7043c160d4e1a2fb9ecd94d35835925d1e407",
+      "contentHash": "a57e93769fa34b9fc217aa505dff883060cb26ab80acd186ce1f4c78c471981a",
       "functions": [
         {
           "name": "getEllipseSlotConfig",
@@ -1699,9 +1681,49 @@
       "totalLines": 367,
       "hasStructuralAnalysis": true
     },
+    "src/components/IndependentSpacingToggle.tsx": {
+      "filePath": "src/components/IndependentSpacingToggle.tsx",
+      "contentHash": "72b8024b46d719ee3975ac65c40a97b4abe3e9b81660d9c7404a55c680755928",
+      "functions": [
+        {
+          "name": "IndependentSpacingToggle",
+          "params": [
+            "{\n  htmlId,\n  label = \"边界间距独立调整\",\n  independent,\n  onIndependentChange,\n  value,\n  config,\n  onValueChange,\n  sliderLabel = \"边界间距\",\n}"
+          ],
+          "exported": true,
+          "lineCount": 35
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@/components/ui/label",
+          "specifiers": [
+            "Label"
+          ]
+        },
+        {
+          "source": "@/components/ui/switch",
+          "specifiers": [
+            "Switch"
+          ]
+        },
+        {
+          "source": "@/components/ui/ParamSlider",
+          "specifiers": [
+            "ParamSlider"
+          ]
+        }
+      ],
+      "exports": [
+        "IndependentSpacingToggle"
+      ],
+      "totalLines": 68,
+      "hasStructuralAnalysis": true
+    },
     "src/components/LayoutCanvas.test.tsx": {
       "filePath": "src/components/LayoutCanvas.test.tsx",
-      "contentHash": "63c2f249a2c4837c60635a18582c56ae1083a725b7af5d608517663b9d092267",
+      "contentHash": "c6c5b763e1f29466f51eef32b96e81b3adf43a7d4cf50960793ecef7d91dec58",
       "functions": [
         {
           "name": "createCustomParams",
@@ -1719,7 +1741,7 @@
           ],
           "returnType": "SteppedLayoutParams",
           "exported": false,
-          "lineCount": 38
+          "lineCount": 40
         },
         {
           "name": "TestLayoutCanvas",
@@ -1786,12 +1808,12 @@
         }
       ],
       "exports": [],
-      "totalLines": 1525,
+      "totalLines": 1748,
       "hasStructuralAnalysis": true
     },
     "src/components/LayoutCanvas.tsx": {
       "filePath": "src/components/LayoutCanvas.tsx",
-      "contentHash": "cee91d5656f9c379b09ddffdc470764900d39e39dc27364854c5d6518ca5dd9c",
+      "contentHash": "51f64a2d171ad585302e4c2e0bd8dfbeadaedee45ed4f658c977924716bd9bfc",
       "functions": [
         {
           "name": "LayoutCanvas",
@@ -1799,7 +1821,7 @@
             "{\n  isActive = true,\n  model,\n  commands,\n}"
           ],
           "exported": true,
-          "lineCount": 887
+          "lineCount": 987
         }
       ],
       "classes": [],
@@ -1960,7 +1982,7 @@
       "exports": [
         "LayoutCanvas"
       ],
-      "totalLines": 951,
+      "totalLines": 1054,
       "hasStructuralAnalysis": true
     },
     "src/components/ModeTabs.test.tsx": {
@@ -2050,7 +2072,7 @@
     },
     "src/components/PanelActionSection.tsx": {
       "filePath": "src/components/PanelActionSection.tsx",
-      "contentHash": "6d34c2150d90fce81a92809002d6e35f24fffeb7c4988db697e752379711616e",
+      "contentHash": "c95d925176ce23996b4d8ad68e9818ed5275b63fcb20c3e06dc093200f73ad73",
       "functions": [
         {
           "name": "PanelActionSection",
@@ -2122,7 +2144,7 @@
     },
     "src/components/panels.test.tsx": {
       "filePath": "src/components/panels.test.tsx",
-      "contentHash": "f0036be7a0fd7353e006eb6e19ef70ecf8a85aa388edc8606dc0fc222ad21ea3",
+      "contentHash": "c3c29d5ce6ab16407886119b16adbdcf16abbc7317e356adfc3f98d611f2fd34",
       "functions": [
         {
           "name": "createSteppedParams",
@@ -2245,12 +2267,12 @@
         }
       ],
       "exports": [],
-      "totalLines": 2351,
+      "totalLines": 2465,
       "hasStructuralAnalysis": true
     },
     "src/components/ParameterPanel.tsx": {
       "filePath": "src/components/ParameterPanel.tsx",
-      "contentHash": "3ff1fccc3f12a44d8459e2d89fdc044a8b3d0eed9b9a3091a8e0e85f50e858ec",
+      "contentHash": "f83877a07e2248b6aec056640d31dc38ecc19f52df187a3a31a9ea2c2343c8a9",
       "functions": [
         {
           "name": "ParameterPanel",
@@ -2445,7 +2467,7 @@
     },
     "src/components/SimpleSteppedPanel.tsx": {
       "filePath": "src/components/SimpleSteppedPanel.tsx",
-      "contentHash": "4d3c70da074171fc48dbca23958fd69b8bce838f3e7bbff16cdcc35d8e937cf3",
+      "contentHash": "2362f7456bc3dd534af65ecd40697fe40a2e7993da2f975896dcb6e00cf8c0e4",
       "functions": [
         {
           "name": "SimpleSteppedPanel",
@@ -2558,25 +2580,57 @@
       "totalLines": 482,
       "hasStructuralAnalysis": true
     },
-    "src/components/SteppedPanel.tsx": {
-      "filePath": "src/components/SteppedPanel.tsx",
-      "contentHash": "7e24b0759b9e442fe5aad844bd87a27417b4b36977eaf0a0677a543d926a27f7",
+    "src/components/StatsCard.tsx": {
+      "filePath": "src/components/StatsCard.tsx",
+      "contentHash": "ecc4202c409b29e1087f86bc2fe9b883c6af70684b4ec4ceaa0ddc7f081a3aa1",
       "functions": [
         {
-          "name": "SteppedPricingFormulaTooltip",
+          "name": "StatsCard",
           "params": [
-            "{\n    breakdown,\n    hasGeneratedVolume,\n}"
+            "{\n  title = \"统计信息\",\n  summary,\n  slotCount,\n  slotCountLabel = \"凹槽数量\",\n  price,\n  weightLabel,\n  weightVisible,\n  weightGeneratingText = \"\",\n  dimensions,\n  oversized,\n  children,\n}"
           ],
-          "exported": false,
-          "lineCount": 103
+          "exported": true,
+          "lineCount": 70
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "lucide-react",
+          "specifiers": [
+            "Ruler"
+          ]
         },
+        {
+          "source": "@/lib/config",
+          "specifiers": [
+            "MAX_BUILD_SIZE"
+          ]
+        },
+        {
+          "source": "@/components/ui/SectionHeader",
+          "specifiers": [
+            "SectionHeader"
+          ]
+        }
+      ],
+      "exports": [
+        "StatsCard"
+      ],
+      "totalLines": 113,
+      "hasStructuralAnalysis": true
+    },
+    "src/components/SteppedPanel.tsx": {
+      "filePath": "src/components/SteppedPanel.tsx",
+      "contentHash": "6fd0256da64a90996a9789cf3b4e7b84cfe1a5c689a3a0cf01d0341e01ee1db3",
+      "functions": [
         {
           "name": "SteppedPanel",
           "params": [
-            "{\n    params,\n    effectiveDimensions,\n    isPreviewStale,\n    updateParam,\n    setParams,\n    onResetParams,\n    onImportParams,\n    onAddSlot,\n    onGenerate,\n    onExportSTL,\n    isGenerating,\n    volume,\n    selectedSlotIds,\n    onAddGroup,\n    onRemoveGroup,\n    onUpdateGroupHeight,\n    onUpdateGroupSmoothingOverride,\n    onUpdateGroupSmoothingRadius,\n    onUpdateGroupDisconnectOverride,\n    onUpdateGroupDisconnectDistance,\n    onSetActiveGroup,\n    onMoveSelectedSlotsToGroup,\n    onReorderGroups,\n    previewGroupId,\n    onPreviewGroupChange,\n    bridgeWarning,\n    optimizationProposals,\n    isOptimizingLayout,\n    onGenerateOptimizationProposals,\n    onApplyOptimizationProposal,\n    onClearOptimizationProposals,\n    draftActions,\n    onOpenDraftDialog,\n    onSaveDraft,\n    currentDraftId,\n}"
+            "{\n    params,\n    effectiveDimensions,\n    isPreviewStale,\n    updateParam,\n    setParams,\n    onResetParams,\n    onImportParams,\n    onAddSlot,\n    onGenerate,\n    onExportSTL,\n    onExportSplitParts,\n    isGenerating,\n    volume,\n    selectedSlotIds,\n    onAddGroup,\n    onRemoveGroup,\n    onUpdateGroupHeight,\n    onUpdateGroupSmoothingOverride,\n    onUpdateGroupSmoothingRadius,\n    onUpdateGroupDisconnectOverride,\n    onUpdateGroupDisconnectDistance,\n    onUpdateGroupSplitPartTarget = () => undefined,\n    onSetActiveGroup,\n    onMoveSelectedSlotsToGroup,\n    onReorderGroups,\n    previewGroupId,\n    onPreviewGroupChange,\n    bridgeWarning,\n    optimizationProposals,\n    isOptimizingLayout,\n    onGenerateOptimizationProposals,\n    onApplyOptimizationProposal,\n    onClearOptimizationProposals,\n    draftActions,\n    onOpenDraftDialog,\n    onSaveDraft,\n    currentDraftId,\n}"
           ],
           "exported": true,
-          "lineCount": 713
+          "lineCount": 867
         }
       ],
       "classes": [],
@@ -2603,6 +2657,8 @@
           "source": "@/lib/config",
           "specifiers": [
             "BASE_PRESETS",
+            "getBaseHoleMinBaseThickness",
+            "getBaseHolePreset",
             "MAX_BUILD_SIZE"
           ]
         },
@@ -2611,6 +2667,13 @@
           "specifiers": [
             "STEPPED_LIMITS",
             "STEPPED_LAYOUT_DEFAULTS"
+          ]
+        },
+        {
+          "source": "@/lib/stepped-base-hole",
+          "specifiers": [
+            "getSteppedGroupMinBottomHeight",
+            "getSteppedGroupResolvedBaseHoleSize"
           ]
         },
         {
@@ -2623,6 +2686,16 @@
           "source": "@/components/ui/switch",
           "specifiers": [
             "Switch"
+          ]
+        },
+        {
+          "source": "@/components/ui/select",
+          "specifiers": [
+            "Select",
+            "SelectContent",
+            "SelectItem",
+            "SelectTrigger",
+            "SelectValue"
           ]
         },
         {
@@ -2650,7 +2723,9 @@
             "ChevronDown",
             "Eye",
             "AlertTriangle",
-            "CircleHelp"
+            "CircleHelp",
+            "Circle",
+            "Download"
           ]
         },
         {
@@ -2699,17 +2774,63 @@
             "PanelActionSection",
             "PanelDraftActions"
           ]
+        },
+        {
+          "source": "@/components/SteppedPricingFormulaTooltip",
+          "specifiers": [
+            "SteppedPricingFormulaTooltip"
+          ]
         }
       ],
       "exports": [
         "SteppedPanel"
       ],
-      "totalLines": 901,
+      "totalLines": 972,
+      "hasStructuralAnalysis": true
+    },
+    "src/components/SteppedPricingFormulaTooltip.tsx": {
+      "filePath": "src/components/SteppedPricingFormulaTooltip.tsx",
+      "contentHash": "213bb39f501c8c18eee313d058a7b09867cdafc2d42b209e89bce3c59ee1c9c7",
+      "functions": [
+        {
+          "name": "SteppedPricingFormulaTooltip",
+          "params": [
+            "{\n  breakdown,\n  hasGeneratedVolume,\n}"
+          ],
+          "exported": true,
+          "lineCount": 101
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "useState"
+          ]
+        },
+        {
+          "source": "lucide-react",
+          "specifiers": [
+            "CircleHelp"
+          ]
+        },
+        {
+          "source": "@/lib/pricing",
+          "specifiers": [
+            "SteppedPricingBreakdown"
+          ]
+        }
+      ],
+      "exports": [
+        "SteppedPricingFormulaTooltip"
+      ],
+      "totalLines": 108,
       "hasStructuralAnalysis": true
     },
     "src/components/TrayViewer.test.tsx": {
       "filePath": "src/components/TrayViewer.test.tsx",
-      "contentHash": "5e1532516351eaa630d99fddae2584e88eb1277c43ce126f1373f9eebda936fb",
+      "contentHash": "e8f93ff336fb706b8b808d9f25e23bad667b5a7602ff85305e6991eed0b0ec6e",
       "functions": [
         {
           "name": "createGeometry",
@@ -2760,28 +2881,39 @@
         }
       ],
       "exports": [],
-      "totalLines": 221,
+      "totalLines": 296,
       "hasStructuralAnalysis": true
     },
     "src/components/TrayViewer.tsx": {
       "filePath": "src/components/TrayViewer.tsx",
-      "contentHash": "ddc3eedd6f3b65a1039d2504c95b97ca0870182a9e1e009962cb872a799598ca",
+      "contentHash": "70fc181f0b847d5864c778648c701f68883d0c67734fe9e686293525f4e8483e",
       "functions": [
         {
           "name": "TrayMesh",
           "params": [
-            "{ geometry }"
+            "{\n  geometry,\n  color = RENDER_CONFIG.modelColor,\n  position = [0, 0, 0],\n}"
           ],
           "exported": false,
-          "lineCount": 29
+          "lineCount": 37
+        },
+        {
+          "name": "getSplitPartOffset",
+          "params": [
+            "index",
+            "count",
+            "explosionDistance"
+          ],
+          "returnType": "[number, number, number]",
+          "exported": false,
+          "lineCount": 9
         },
         {
           "name": "CameraAutoFit",
           "params": [
-            "{ geometry }"
+            "{\n  items,\n}"
           ],
           "exported": false,
-          "lineCount": 37
+          "lineCount": 54
         },
         {
           "name": "ContextLostHandler",
@@ -2792,10 +2924,10 @@
         {
           "name": "TrayViewer",
           "params": [
-            "{ geometry, isStale, isGenerating, onRegenerate }"
+            "{\n  geometry,\n  isStale,\n  isGenerating,\n  onRegenerate,\n  splitParts,\n  isGeneratingSplitPreview,\n  onGenerateSplitPreview,\n}"
           ],
           "exported": true,
-          "lineCount": 124
+          "lineCount": 263
         }
       ],
       "classes": [],
@@ -2824,6 +2956,13 @@
           ]
         },
         {
+          "source": "lucide-react",
+          "specifiers": [
+            "Layers",
+            "Loader2"
+          ]
+        },
+        {
           "source": "three",
           "specifiers": [
             "* as THREE"
@@ -2839,7 +2978,7 @@
       "exports": [
         "TrayViewer"
       ],
-      "totalLines": 241,
+      "totalLines": 440,
       "hasStructuralAnalysis": true
     },
     "src/components/ui/button.tsx": {
@@ -3090,9 +3229,81 @@
       "totalLines": 25,
       "hasStructuralAnalysis": true
     },
+    "src/components/ui/ParamSlider.radix.test.tsx": {
+      "filePath": "src/components/ui/ParamSlider.radix.test.tsx",
+      "contentHash": "2a56bf47dfe828837ccf8d6bc27c7ec6cb71d3c52b6ee673688a85e05776c067",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@testing-library/react",
+          "specifiers": [
+            "render"
+          ]
+        },
+        {
+          "source": "react",
+          "specifiers": [
+            "useState"
+          ]
+        },
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "expect",
+            "it",
+            "vi"
+          ]
+        },
+        {
+          "source": "@/components/ui/ParamSlider",
+          "specifiers": [
+            "ParamSlider"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 45,
+      "hasStructuralAnalysis": true
+    },
+    "src/components/ui/ParamSlider.test.tsx": {
+      "filePath": "src/components/ui/ParamSlider.test.tsx",
+      "contentHash": "5c50fbdc0e73f8919f7964b7657a37cc0152bd84e209bd5db3e3e00cd2b08733",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@testing-library/react",
+          "specifiers": [
+            "fireEvent",
+            "render",
+            "screen"
+          ]
+        },
+        {
+          "source": "vitest",
+          "specifiers": [
+            "describe",
+            "expect",
+            "it",
+            "vi"
+          ]
+        },
+        {
+          "source": "@/components/ui/ParamSlider",
+          "specifiers": [
+            "ParamSlider"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 77,
+      "hasStructuralAnalysis": true
+    },
     "src/components/ui/ParamSlider.tsx": {
       "filePath": "src/components/ui/ParamSlider.tsx",
-      "contentHash": "ea2f7a44233178f662c0cb0b8a0b8567013b4662408b53608054e08571c9173c",
+      "contentHash": "b6254e974cdd67f4f4ac7d1dad2c3d0c86b9b679ba28c5aa4f302410a0f6302c",
       "functions": [
         {
           "name": "ParamSlider",
@@ -3100,11 +3311,18 @@
             "{\n    label,\n    value,\n    config,\n    onChange,\n    unit = \"mm\",\n}"
           ],
           "exported": true,
-          "lineCount": 44
+          "lineCount": 56
         }
       ],
       "classes": [],
       "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "useCallback",
+            "useMemo"
+          ]
+        },
         {
           "source": "@/components/ui/slider",
           "specifiers": [
@@ -3127,7 +3345,7 @@
       "exports": [
         "ParamSlider"
       ],
-      "totalLines": 60,
+      "totalLines": 73,
       "hasStructuralAnalysis": true
     },
     "src/components/ui/SectionHeader.tsx": {
@@ -3806,14 +4024,14 @@
     },
     "src/hooks/useCustomLayout.ts": {
       "filePath": "src/hooks/useCustomLayout.ts",
-      "contentHash": "39d96e1729d467b8193872ed61b7dfacd188db44cc738df99010071f1a66893d",
+      "contentHash": "429270ed2f2a89f739512f46b7dc53bdd6341cf74940f1134f589ded08f5f8cb",
       "functions": [
         {
           "name": "useCustomLayout",
           "params": [],
           "returnType": "UseCustomLayoutReturn",
           "exported": true,
-          "lineCount": 227
+          "lineCount": 160
         }
       ],
       "classes": [],
@@ -3821,11 +4039,8 @@
         {
           "source": "react",
           "specifiers": [
-            "useState",
             "useCallback",
-            "useRef",
-            "useMemo",
-            "useEffect"
+            "useMemo"
           ]
         },
         {
@@ -3882,15 +4097,9 @@
           ]
         },
         {
-          "source": "@/hooks/useUndoHistory",
+          "source": "@/hooks/useEditableParams",
           "specifiers": [
-            "useUndoHistory"
-          ]
-        },
-        {
-          "source": "@/hooks/usePreviewLifecycle",
-          "specifiers": [
-            "usePreviewLifecycle"
+            "useEditableParams"
           ]
         },
         {
@@ -3915,7 +4124,63 @@
       "exports": [
         "useCustomLayout"
       ],
-      "totalLines": 310,
+      "totalLines": 242,
+      "hasStructuralAnalysis": true
+    },
+    "src/hooks/useEditableParams.ts": {
+      "filePath": "src/hooks/useEditableParams.ts",
+      "contentHash": "9fac52d31c06f6c09f35b871915c05a1d546fc40cfa82d26ab30bc87104d9422",
+      "functions": [
+        {
+          "name": "useEditableParams",
+          "params": [
+            "{\n  initialState,\n  generatePreview,\n  exportModel,\n  guard,\n  normalize,\n  onInvalidate,\n}"
+          ],
+          "returnType": "UseEditableParamsReturn<P>",
+          "exported": true,
+          "lineCount": 119
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "useState",
+            "useCallback",
+            "useRef",
+            "useEffect"
+          ]
+        },
+        {
+          "source": "three",
+          "specifiers": [
+            "* as THREE"
+          ]
+        },
+        {
+          "source": "@jscad/modeling/src/geometries/types",
+          "specifiers": [
+            "Geom3"
+          ]
+        },
+        {
+          "source": "@/hooks/useUndoHistory",
+          "specifiers": [
+            "useUndoHistory"
+          ]
+        },
+        {
+          "source": "@/hooks/usePreviewLifecycle",
+          "specifiers": [
+            "usePreviewLifecycle"
+          ]
+        }
+      ],
+      "exports": [
+        "useEditableParams"
+      ],
+      "totalLines": 192,
       "hasStructuralAnalysis": true
     },
     "src/hooks/useLiveSlotUpdates.test.ts": {
@@ -4257,7 +4522,7 @@
     },
     "src/hooks/usePreviewLifecycle.ts": {
       "filePath": "src/hooks/usePreviewLifecycle.ts",
-      "contentHash": "10c95e0690a1b22150f8648c53421823549e20acf093f9b5663f80f3d9c932ce",
+      "contentHash": "5b4539080559223152e66930a941812b7ac6fb48c87b8a964e1e6fde3206c636",
       "functions": [
         {
           "name": "usePreviewLifecycle",
@@ -4296,17 +4561,50 @@
           "specifiers": [
             "useToast"
           ]
+        },
+        {
+          "source": "@/hooks/useRequestSequence",
+          "specifiers": [
+            "useRequestSequence"
+          ]
         }
       ],
       "exports": [
         "usePreviewLifecycle"
       ],
-      "totalLines": 125,
+      "totalLines": 126,
+      "hasStructuralAnalysis": true
+    },
+    "src/hooks/useRequestSequence.ts": {
+      "filePath": "src/hooks/useRequestSequence.ts",
+      "contentHash": "3453bd585b19c1a7011136632706db5b77f8beb7f60fcc7a2d59d3f412e867a3",
+      "functions": [
+        {
+          "name": "useRequestSequence",
+          "params": [],
+          "exported": true,
+          "lineCount": 16
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "useRef",
+            "useCallback"
+          ]
+        }
+      ],
+      "exports": [
+        "useRequestSequence"
+      ],
+      "totalLines": 26,
       "hasStructuralAnalysis": true
     },
     "src/hooks/useSimpleSteppedLayout.integration.test.ts": {
       "filePath": "src/hooks/useSimpleSteppedLayout.integration.test.ts",
-      "contentHash": "43081c56b50a43df9a3f87127a746ede879d9c37c6094ac2bf91a37ff295e76a",
+      "contentHash": "6c46ab6e7514465c42c3619d4613eb2d4d6ed18f69e433f4a85e8ef12711b82c",
       "functions": [
         {
           "name": "createDeferred",
@@ -4355,7 +4653,7 @@
     },
     "src/hooks/useSimpleSteppedLayout.ts": {
       "filePath": "src/hooks/useSimpleSteppedLayout.ts",
-      "contentHash": "7b05ffffd491a04d6583159a49b328cf333c729570cda80d76e7ee9aae4e4a8f",
+      "contentHash": "793441b566d30bd898f920121d545b2ee52e5044d201aed1b3ccd8a4aee567f1",
       "functions": [
         {
           "name": "rebuildRowSlotIds",
@@ -4375,7 +4673,7 @@
             "fallbackSize"
           ],
           "exported": false,
-          "lineCount": 19
+          "lineCount": 15
         },
         {
           "name": "useSimpleSteppedLayout",
@@ -4416,7 +4714,7 @@
         {
           "source": "@/lib/config",
           "specifiers": [
-            "MAX_BUILD_SIZE"
+            "MAX_TRAY_SIZE"
           ]
         },
         {
@@ -4489,12 +4787,12 @@
       "exports": [
         "useSimpleSteppedLayout"
       ],
-      "totalLines": 643,
+      "totalLines": 639,
       "hasStructuralAnalysis": true
     },
     "src/hooks/useSteppedLayout.integration.test.ts": {
       "filePath": "src/hooks/useSteppedLayout.integration.test.ts",
-      "contentHash": "be78a221c67eb03932088494f03c83526f321b9e4a950ca9bf7a6d4eae6dafe4",
+      "contentHash": "fde04fc00a133389184d4e625812408078fdd12cc7c8255f178e99cdca8d1499",
       "functions": [
         {
           "name": "createDeferred",
@@ -4550,19 +4848,19 @@
         }
       ],
       "exports": [],
-      "totalLines": 509,
+      "totalLines": 545,
       "hasStructuralAnalysis": true
     },
     "src/hooks/useSteppedLayout.ts": {
       "filePath": "src/hooks/useSteppedLayout.ts",
-      "contentHash": "697bc1ee218c2d9766b7f40d083250b11d2c82eb7df13ec187285162140191b9",
+      "contentHash": "3337233a1bb79f689211552acf67e04f1bc86dec7d7f7a813b3e16f82bf397d4",
       "functions": [
         {
           "name": "useSteppedLayout",
           "params": [],
           "returnType": "UseSteppedLayoutReturn",
           "exported": true,
-          "lineCount": 436
+          "lineCount": 556
         }
       ],
       "classes": [],
@@ -4615,6 +4913,12 @@
           ]
         },
         {
+          "source": "@/hooks/useToast",
+          "specifiers": [
+            "useToast"
+          ]
+        },
+        {
           "source": "@/lib/worker/worker-service",
           "specifiers": [
             "trayWorkerService"
@@ -4651,6 +4955,12 @@
           ]
         },
         {
+          "source": "@/lib/stepped-base-hole",
+          "specifiers": [
+            "applySteppedBaseHoleDerivedFields"
+          ]
+        },
+        {
           "source": "@/lib/stepped-layout-group-actions",
           "specifiers": [
             "addSteppedGroup",
@@ -4661,6 +4971,7 @@
             "updateSteppedGroupDisconnectDistance",
             "updateSteppedGroupDisconnectOverride",
             "updateSteppedGroupHeight",
+            "updateSteppedGroupSplitPartTarget",
             "updateSteppedGroupSmoothingOverride",
             "updateSteppedGroupSmoothingRadius"
           ]
@@ -4689,8 +5000,11 @@
         {
           "source": "@/lib/stepped-model-service",
           "specifiers": [
+            "exportSteppedSplitPartFiles",
             "exportSteppedModelFiles",
-            "generateSteppedPreview"
+            "generateSteppedSplitPreview",
+            "generateSteppedPreview",
+            "SteppedSplitPreviewPart"
           ]
         },
         {
@@ -4704,7 +5018,7 @@
       "exports": [
         "useSteppedLayout"
       ],
-      "totalLines": 553,
+      "totalLines": 688,
       "hasStructuralAnalysis": true
     },
     "src/hooks/useSteppedOutlinePreview.integration.test.ts": {
@@ -4773,7 +5087,7 @@
     },
     "src/hooks/useSteppedOutlinePreview.ts": {
       "filePath": "src/hooks/useSteppedOutlinePreview.ts",
-      "contentHash": "dc0d1cbd034bfe1fc8bb5a22520a0d811bede77c0e5f07c31d70fdc409a1f09b",
+      "contentHash": "dae602f0a507ff04e1f329e42a8a9ff9f74c50ffb1a8006c3c6de8a6a539f347",
       "functions": [
         {
           "name": "useSteppedOutlinePreview",
@@ -4783,7 +5097,7 @@
           ],
           "returnType": "UseSteppedOutlinePreviewResult",
           "exported": true,
-          "lineCount": 93
+          "lineCount": 92
         }
       ],
       "classes": [],
@@ -4795,7 +5109,6 @@
             "useCallback",
             "useDeferredValue",
             "useEffect",
-            "useRef",
             "useState"
           ]
         },
@@ -4818,6 +5131,12 @@
           ]
         },
         {
+          "source": "@/hooks/useRequestSequence",
+          "specifiers": [
+            "useRequestSequence"
+          ]
+        },
+        {
           "source": "@/types/custom-tray",
           "specifiers": [
             "GroupOutlinePreview",
@@ -4828,7 +5147,7 @@
       "exports": [
         "useSteppedOutlinePreview"
       ],
-      "totalLines": 118,
+      "totalLines": 117,
       "hasStructuralAnalysis": true
     },
     "src/hooks/useToast.tsx": {
@@ -4934,14 +5253,14 @@
     },
     "src/hooks/useTrayModel.ts": {
       "filePath": "src/hooks/useTrayModel.ts",
-      "contentHash": "9778d600f2003d39b20cfc3d4d7f98229ec71fd03bc7f2f0e24863b0f19ab79e",
+      "contentHash": "08b11edfeacefc424d5a1ae472a1b12adaae85ed8c7b77e1c4c37026a5bbe813",
       "functions": [
         {
           "name": "useTrayModel",
           "params": [],
           "returnType": "UseTrayModelReturn",
           "exported": true,
-          "lineCount": 65
+          "lineCount": 57
         }
       ],
       "classes": [],
@@ -4949,7 +5268,6 @@
         {
           "source": "react",
           "specifiers": [
-            "useState",
             "useCallback"
           ]
         },
@@ -4993,16 +5311,16 @@
           ]
         },
         {
-          "source": "@/hooks/usePreviewLifecycle",
+          "source": "@/hooks/useEditableParams",
           "specifiers": [
-            "usePreviewLifecycle"
+            "useEditableParams"
           ]
         }
       ],
       "exports": [
         "useTrayModel"
       ],
-      "totalLines": 100,
+      "totalLines": 92,
       "hasStructuralAnalysis": true
     },
     "src/hooks/useUndoHistory.test.ts": {
@@ -5067,7 +5385,7 @@
     },
     "src/lib/canvas-collision-model.test.ts": {
       "filePath": "src/lib/canvas-collision-model.test.ts",
-      "contentHash": "999378c88502d2abf55db66ad8b974d0a420665681ba9932c8b6d956f64f4313",
+      "contentHash": "448aaef02d7c38bb93c462ce94241e296026c811439901b224ed999bfbd8af0d",
       "functions": [],
       "classes": [],
       "imports": [
@@ -5087,23 +5405,24 @@
         }
       ],
       "exports": [],
-      "totalLines": 61,
+      "totalLines": 96,
       "hasStructuralAnalysis": true
     },
     "src/lib/canvas-collision-model.ts": {
       "filePath": "src/lib/canvas-collision-model.ts",
-      "contentHash": "9ddba30bf251a62a852618b8d712fd99eee716a51bb22f42433ade3700ef9d04",
+      "contentHash": "b8f48b53f43c8b757f0b5a811a72d33712e232e31d4eaedf8fd2e38eeacb9fca",
       "functions": [
         {
           "name": "buildCanvasCollisionState",
           "params": [
             "slots",
             "spacing",
-            "ellipseProfileExponent"
+            "ellipseProfileExponent",
+            "spacingOptions"
           ],
           "returnType": "CanvasCollisionState<TSlot>",
           "exported": true,
-          "lineCount": 114
+          "lineCount": 126
         }
       ],
       "classes": [],
@@ -5137,7 +5456,7 @@
       "exports": [
         "buildCanvasCollisionState"
       ],
-      "totalLines": 154,
+      "totalLines": 171,
       "hasStructuralAnalysis": true
     },
     "src/lib/canvas-selection-model.test.ts": {
@@ -5520,7 +5839,7 @@
     },
     "src/lib/config.test.ts": {
       "filePath": "src/lib/config.test.ts",
-      "contentHash": "580d1e3e8c8fcf65a6783e0d88363cc315fda418aaafcaa1d9672aef7c839aae",
+      "contentHash": "640936a04888ef4525c5674a59dd66f77a64953e9ca6e51bde682f36482399a2",
       "functions": [],
       "classes": [],
       "imports": [
@@ -5543,12 +5862,12 @@
         }
       ],
       "exports": [],
-      "totalLines": 32,
+      "totalLines": 33,
       "hasStructuralAnalysis": true
     },
     "src/lib/config.ts": {
       "filePath": "src/lib/config.ts",
-      "contentHash": "bdaabc31d9f731f7a08c1fcb5529ef9df6bffbc5d552c7f0d932dc91b9c3b7b3",
+      "contentHash": "0c25bb921fbc19e68fab09800181f1924dd9299838cdc5283acfb0af18c624dd",
       "functions": [
         {
           "name": "getSlotTolerance",
@@ -5639,15 +5958,16 @@
         "BASE_PRESETS",
         "SHARED_LAYOUT_LIMITS",
         "MAX_BUILD_SIZE",
+        "MAX_TRAY_SIZE",
         "RENDER_CONFIG",
         "SLOT_COLORS"
       ],
-      "totalLines": 142,
+      "totalLines": 145,
       "hasStructuralAnalysis": true
     },
     "src/lib/custom-config.ts": {
       "filePath": "src/lib/custom-config.ts",
-      "contentHash": "ed8a6c26c05e87fadbb06911bec9a9a7824a6e49f2fa9b981a03c3cfa30a1ca6",
+      "contentHash": "a6b1b0c8c9d77774246e506798424de58ee9891d257196de208f358146b1d4d7",
       "functions": [],
       "classes": [],
       "imports": [
@@ -5660,6 +5980,7 @@
         {
           "source": "@/lib/config",
           "specifiers": [
+            "MAX_TRAY_SIZE",
             "SHARED_LAYOUT_LIMITS"
           ]
         },
@@ -6196,34 +6517,8 @@
     },
     "src/lib/custom-tray-model.ts": {
       "filePath": "src/lib/custom-tray-model.ts",
-      "contentHash": "a47d632092a12d00b0148092a024b775389f6b24d528ddbc51cdd8f2a635afe2",
+      "contentHash": "4fe120fb98e32bc1e25d073c59e3f25ea4adb3b2212296b28d352689b9b847cf",
       "functions": [
-        {
-          "name": "getSlotBoundingHalfSize",
-          "params": [
-            "width",
-            "height",
-            "rotation",
-            "shape",
-            "ellipseProfileExponent",
-            "ellipseOuterOffset"
-          ],
-          "exported": false,
-          "lineCount": 30
-        },
-        {
-          "name": "createOffsetSlotShape",
-          "params": [
-            "width",
-            "height",
-            "shape",
-            "ellipseProfileExponent",
-            "ellipseOuterOffset"
-          ],
-          "returnType": "Geom2",
-          "exported": false,
-          "lineCount": 26
-        },
         {
           "name": "calculateCustomEffectiveBaseplate",
           "params": [
@@ -6256,37 +6551,32 @@
           "source": "@jscad/modeling",
           "specifiers": [
             "booleans",
-            "primitives",
             "transforms",
-            "extrusions",
-            "geometries"
+            "extrusions"
           ]
         },
         {
           "source": "@jscad/modeling/src/geometries/types",
           "specifiers": [
-            "Geom2",
             "Geom3"
           ]
         },
         {
           "source": "@/types/custom-tray",
           "specifiers": [
-            "CustomLayoutParams",
-            "FreeSlot"
+            "CustomLayoutParams"
           ]
         },
         {
           "source": "@/lib/config",
           "specifiers": [
-            "RENDER_CONFIG",
             "resolveBaseHolePresetKey"
           ]
         },
         {
-          "source": "@/lib/slot-profile-geometry",
+          "source": "@/lib/canvas-slot-geometry",
           "specifiers": [
-            "sampleSlotProfilePoints"
+            "getEllipseBoundingBox"
           ]
         },
         {
@@ -6299,6 +6589,7 @@
           "source": "@/lib/model-utils",
           "specifiers": [
             "createBaseBody",
+            "createOffsetSlotShape",
             "subtractBaseHoles",
             "SlotCenter"
           ]
@@ -6309,7 +6600,7 @@
         "createCustomTrayModel",
         "calculateCustomTrayDimensions"
       ],
-      "totalLines": 221,
+      "totalLines": 159,
       "hasStructuralAnalysis": true
     },
     "src/lib/download-port.test.ts": {
@@ -6355,6 +6646,95 @@
         "browserDownloadPort"
       ],
       "totalLines": 15,
+      "hasStructuralAnalysis": true
+    },
+    "src/lib/draft-legacy-normalize.ts": {
+      "filePath": "src/lib/draft-legacy-normalize.ts",
+      "contentHash": "f0df8461304d905ee09aa5e40689ac1cf3746cc1f0832bacf6acb41166e743b5",
+      "functions": [
+        {
+          "name": "isDraftMode",
+          "params": [
+            "value"
+          ],
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "isFiniteNumber",
+          "params": [
+            "value"
+          ],
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "extractCompatibilityFields",
+          "params": [
+            "summary"
+          ],
+          "returnType": "DraftListItemCompatibilityByMode[DraftMode]",
+          "exported": true,
+          "lineCount": 38
+        },
+        {
+          "name": "normalizeSummaryFromLegacyFields",
+          "params": [
+            "item"
+          ],
+          "returnType": "DraftSummary | null",
+          "exported": false,
+          "lineCount": 79
+        },
+        {
+          "name": "normalizeListItem",
+          "params": [
+            "item",
+            "fallbackMode",
+            "fallbackParams"
+          ],
+          "returnType": "(DraftListItemShape<M>) | null",
+          "exported": true,
+          "lineCount": 36
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@/lib/draft-summary",
+          "specifiers": [
+            "buildDraftSummary"
+          ]
+        },
+        {
+          "source": "@/lib/draft-summary",
+          "specifiers": [
+            "DraftParamsByMode",
+            "DraftSummary",
+            "DraftSummaryByMode",
+            "GridDraftStructureMode"
+          ]
+        },
+        {
+          "source": "@/lib/param-io",
+          "specifiers": [
+            "ExportableParams"
+          ]
+        },
+        {
+          "source": "@/types/custom-tray",
+          "specifiers": [
+            "AppMode"
+          ]
+        }
+      ],
+      "exports": [
+        "DRAFT_MODES",
+        "isDraftMode",
+        "extractCompatibilityFields",
+        "normalizeListItem"
+      ],
+      "totalLines": 254,
       "hasStructuralAnalysis": true
     },
     "src/lib/draft-session.test.ts": {
@@ -6556,6 +6936,26 @@
       "totalLines": 150,
       "hasStructuralAnalysis": true
     },
+    "src/lib/fixtures/tray-stepped-merged-split-fragments.json": {
+      "filePath": "src/lib/fixtures/tray-stepped-merged-split-fragments.json",
+      "contentHash": "4eefb4478889e6ebd60a7c72d9bf0e7691dc605dd7758a6f587b430f4f2134fe",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 513,
+      "hasStructuralAnalysis": true
+    },
+    "src/lib/fixtures/tray-stepped-split-fragments.json": {
+      "filePath": "src/lib/fixtures/tray-stepped-split-fragments.json",
+      "contentHash": "0f49d67af2381576cfaacb0fde6054cf730b66a7de9bb2f8baec97de0ff94dc9",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 502,
+      "hasStructuralAnalysis": true
+    },
     "src/lib/free-slot-editing.test.ts": {
       "filePath": "src/lib/free-slot-editing.test.ts",
       "contentHash": "f37ab0fcc97e936377fcdea8474f65ecf147856805ea14277c3e9b8cd4802804",
@@ -6714,7 +7114,7 @@
     },
     "src/lib/grid-config.ts": {
       "filePath": "src/lib/grid-config.ts",
-      "contentHash": "bd7039b5a8e8ddf7ac94ed303feaa70b0ca465483c35fff26871403f929ee5a2",
+      "contentHash": "f0ff1b727b12f97517eca01dcbc2ca0916245b26593742bcffdc2f9604840f24",
       "functions": [],
       "classes": [],
       "imports": [
@@ -7241,7 +7641,7 @@
     },
     "src/lib/layout-symmetry.test.ts": {
       "filePath": "src/lib/layout-symmetry.test.ts",
-      "contentHash": "1a753fcc28b4346e823f73594d996e843ea1056182e2dccdcb45065b0373f4d5",
+      "contentHash": "09c4fad20711909120f7c59aae5ba29e04b9db338e53e57060eb6facc267f66a",
       "functions": [],
       "classes": [],
       "imports": [
@@ -7258,6 +7658,7 @@
           "specifiers": [
             "buildMirrorInsertSlots",
             "buildMirrorMoveUpdates",
+            "checkLayoutSymmetry",
             "countOutOfBoundsSlots",
             "getSelectionBounds",
             "getSlotBounds",
@@ -7268,12 +7669,12 @@
         }
       ],
       "exports": [],
-      "totalLines": 115,
+      "totalLines": 178,
       "hasStructuralAnalysis": true
     },
     "src/lib/layout-symmetry.ts": {
       "filePath": "src/lib/layout-symmetry.ts",
-      "contentHash": "6e91766778fb32b02bc69462dc606045e9ae92888ff767ac3564013f13eff23c",
+      "contentHash": "5178d5e27180b29e0c9b8f182f9bcffb6daca84bce819f5a44deabd92caf7f4b",
       "functions": [
         {
           "name": "roundToStep",
@@ -7368,6 +7769,19 @@
           ],
           "exported": true,
           "lineCount": 17
+        },
+        {
+          "name": "checkLayoutSymmetry",
+          "params": [
+            "slots",
+            "trayWidth",
+            "trayDepth",
+            "axisSource",
+            "mode"
+          ],
+          "returnType": "SymmetryCheckResult",
+          "exported": true,
+          "lineCount": 89
         }
       ],
       "classes": [],
@@ -7399,9 +7813,10 @@
         "mirrorSlot",
         "buildMirrorInsertSlots",
         "buildMirrorMoveUpdates",
-        "countOutOfBoundsSlots"
+        "countOutOfBoundsSlots",
+        "checkLayoutSymmetry"
       ],
-      "totalLines": 201,
+      "totalLines": 313,
       "hasStructuralAnalysis": true
     },
     "src/lib/local-drafts.test.ts": {
@@ -7518,7 +7933,7 @@
     },
     "src/lib/local-drafts.ts": {
       "filePath": "src/lib/local-drafts.ts",
-      "contentHash": "27f75cbc3ea9450ff1dfda01ece51c74c0baef6074d837f76c5ed7b8b0aec745",
+      "contentHash": "738206d68375ab2b7e9579f4ace40a3342e3e724293bb04924092d015a47f1b3",
       "functions": [
         {
           "name": "draftRecordKey",
@@ -7559,51 +7974,6 @@
           "lineCount": 7
         },
         {
-          "name": "isDraftMode",
-          "params": [
-            "value"
-          ],
-          "exported": false,
-          "lineCount": 3
-        },
-        {
-          "name": "isFiniteNumber",
-          "params": [
-            "value"
-          ],
-          "exported": false,
-          "lineCount": 3
-        },
-        {
-          "name": "extractCompatibilityFields",
-          "params": [
-            "summary"
-          ],
-          "returnType": "DraftListItemCompatibilityByMode[DraftMode]",
-          "exported": false,
-          "lineCount": 38
-        },
-        {
-          "name": "normalizeSummaryFromLegacyFields",
-          "params": [
-            "item"
-          ],
-          "returnType": "DraftSummary | null",
-          "exported": false,
-          "lineCount": 79
-        },
-        {
-          "name": "normalizeListItem",
-          "params": [
-            "item",
-            "fallbackMode",
-            "fallbackParams"
-          ],
-          "returnType": "DraftListItem<M> | null",
-          "exported": false,
-          "lineCount": 36
-        },
-        {
           "name": "readIndex",
           "params": [],
           "returnType": "AnyDraftListItem[]",
@@ -7641,7 +8011,31 @@
           ],
           "returnType": "DraftRecord<M> | null",
           "exported": false,
-          "lineCount": 57
+          "lineCount": 49
+        },
+        {
+          "name": "buildRecord",
+          "params": [
+            "mode",
+            "item",
+            "params"
+          ],
+          "returnType": "DraftRecord<M>",
+          "exported": false,
+          "lineCount": 11
+        },
+        {
+          "name": "commitDraft",
+          "params": [
+            "mode",
+            "id",
+            "result",
+            "strategy",
+            "existingRaw"
+          ],
+          "returnType": "DraftRecord<M>",
+          "exported": false,
+          "lineCount": 30
         },
         {
           "name": "listDrafts",
@@ -7671,7 +8065,7 @@
           ],
           "returnType": "DraftRecord<M>",
           "exported": true,
-          "lineCount": 34
+          "lineCount": 20
         },
         {
           "name": "updateDraft",
@@ -7683,7 +8077,7 @@
           ],
           "returnType": "DraftRecord<M>",
           "exported": true,
-          "lineCount": 38
+          "lineCount": 27
         },
         {
           "name": "renameDraft",
@@ -7694,7 +8088,7 @@
           ],
           "returnType": "DraftRecord<M>",
           "exported": true,
-          "lineCount": 26
+          "lineCount": 29
         },
         {
           "name": "deleteDraft",
@@ -7704,7 +8098,7 @@
           ],
           "returnType": "void",
           "exported": true,
-          "lineCount": 8
+          "lineCount": 5
         },
         {
           "name": "exportDraft",
@@ -7746,10 +8140,19 @@
         {
           "source": "@/lib/draft-summary",
           "specifiers": [
-            "DraftParamsByMode",
-            "DraftSummary",
-            "DraftSummaryByMode",
-            "GridDraftStructureMode"
+            "DraftParamsByMode"
+          ]
+        },
+        {
+          "source": "@/lib/draft-legacy-normalize",
+          "specifiers": [
+            "extractCompatibilityFields",
+            "isDraftMode",
+            "normalizeListItem",
+            "DraftListItemCompatibilityByMode",
+            "DraftListItemShape",
+            "DraftMode",
+            "UnknownDraftListItem"
           ]
         },
         {
@@ -7757,21 +8160,11 @@
           "specifiers": [
             "downloadParamFile"
           ]
-        },
-        {
-          "source": "@/lib/param-io",
-          "specifiers": [
-            "ExportableParams"
-          ]
-        },
-        {
-          "source": "@/types/custom-tray",
-          "specifiers": [
-            "AppMode"
-          ]
         }
       ],
       "exports": [
+        "DraftMode",
+        "DraftListItemCompatibilityByMode",
         "MAX_DRAFTS_PER_MODE",
         "listDrafts",
         "getDraft",
@@ -7783,12 +8176,12 @@
         "defaultDraftTitle",
         "formatDraftTime"
       ],
-      "totalLines": 566,
+      "totalLines": 360,
       "hasStructuralAnalysis": true
     },
     "src/lib/model-ports.ts": {
       "filePath": "src/lib/model-ports.ts",
-      "contentHash": "18277ed26a60ed0972b9bfab76773af6cd540a8099402b68003deec3eedca68c",
+      "contentHash": "3ec552c12e0d58917afd88788772a58607f66ba91e94e27885cddd20184f327e",
       "functions": [],
       "classes": [],
       "imports": [
@@ -7814,12 +8207,12 @@
         }
       ],
       "exports": [],
-      "totalLines": 57,
+      "totalLines": 69,
       "hasStructuralAnalysis": true
     },
     "src/lib/model-utils.ts": {
       "filePath": "src/lib/model-utils.ts",
-      "contentHash": "80aa3a8a68fce28b8e9decf70fd341896a19db630fe9bb5cc8895b4bc9356e02",
+      "contentHash": "a637733025633052420bd0e0b18cdcdf4db1031d6c6160933edf2e1b73bbb321",
       "functions": [
         {
           "name": "createBaseBody",
@@ -7843,7 +8236,20 @@
           ],
           "returnType": "Geom3",
           "exported": true,
-          "lineCount": 40
+          "lineCount": 46
+        },
+        {
+          "name": "createOffsetSlotShape",
+          "params": [
+            "width",
+            "height",
+            "shape",
+            "offset",
+            "ellipseProfileExponent"
+          ],
+          "returnType": "Geom2",
+          "exported": true,
+          "lineCount": 25
         }
       ],
       "classes": [],
@@ -7854,12 +8260,14 @@
             "booleans",
             "primitives",
             "transforms",
-            "extrusions"
+            "extrusions",
+            "geometries"
           ]
         },
         {
           "source": "@jscad/modeling/src/geometries/types",
           "specifiers": [
+            "Geom2",
             "Geom3"
           ]
         },
@@ -7872,17 +8280,30 @@
           ]
         },
         {
+          "source": "@/lib/slot-profile-geometry",
+          "specifiers": [
+            "sampleSlotProfilePoints"
+          ]
+        },
+        {
           "source": "@/types/tray",
           "specifiers": [
             "BaseHolePresetKey"
+          ]
+        },
+        {
+          "source": "@/types/custom-tray",
+          "specifiers": [
+            "FreeSlot"
           ]
         }
       ],
       "exports": [
         "createBaseBody",
-        "subtractBaseHoles"
+        "subtractBaseHoles",
+        "createOffsetSlotShape"
       ],
-      "totalLines": 101,
+      "totalLines": 145,
       "hasStructuralAnalysis": true
     },
     "src/lib/outline-geometry.test.ts": {
@@ -7940,7 +8361,7 @@
     },
     "src/lib/outline-geometry.ts": {
       "filePath": "src/lib/outline-geometry.ts",
-      "contentHash": "47392deb9bce2c3718706e5329f42a1d6e0ad566244f9b6b82b369bf61967838",
+      "contentHash": "b17d0396a199b298b4fe2f1477874c3ff88895f2a6a8ab3ec1d1aa94bca4c390",
       "functions": [
         {
           "name": "computeAdaptiveSegments",
@@ -8127,7 +8548,7 @@
     },
     "src/lib/param-io.test.ts": {
       "filePath": "src/lib/param-io.test.ts",
-      "contentHash": "45d36c454c3eecdde4361fc84144cbe9958d9c5392893727a296dfb0c92e02f0",
+      "contentHash": "bb9471aa35557eae417a8e626a0b6e00c6088fbf2591f20c9ec0c8afe479a486",
       "functions": [
         {
           "name": "readBlobText",
@@ -8346,9 +8767,129 @@
       "totalLines": 156,
       "hasStructuralAnalysis": true
     },
+    "src/lib/param-legacy-migration.ts": {
+      "filePath": "src/lib/param-legacy-migration.ts",
+      "contentHash": "fbfd94fc7b85ce23bcbe1f7f42cba0caa4c851bf25f05837ddcb821f9b4245ce",
+      "functions": [
+        {
+          "name": "requireNumber",
+          "params": [
+            "obj",
+            "key"
+          ],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "getRawSteppedSmoothingRadius",
+          "params": [
+            "obj"
+          ],
+          "returnType": "number",
+          "exported": true,
+          "lineCount": 15
+        },
+        {
+          "name": "getRawSteppedDisconnectDistance",
+          "params": [
+            "obj"
+          ],
+          "returnType": "number",
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "migrateGridLegacyShape",
+          "params": [
+            "params"
+          ],
+          "exported": true,
+          "lineCount": 27
+        },
+        {
+          "name": "migrateCustomLegacyShape",
+          "params": [
+            "params"
+          ],
+          "exported": true,
+          "lineCount": 16
+        },
+        {
+          "name": "migrateSimpleSteppedLegacyShape",
+          "params": [
+            "params"
+          ],
+          "exported": true,
+          "lineCount": 37
+        },
+        {
+          "name": "normalizeSteppedGroups",
+          "params": [
+            "params"
+          ],
+          "exported": true,
+          "lineCount": 41
+        },
+        {
+          "name": "migrateSteppedLegacyShape",
+          "params": [
+            "params"
+          ],
+          "exported": true,
+          "lineCount": 75
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@/types/custom-tray",
+          "specifiers": [
+            "CustomLayoutParams",
+            "SimpleSteppedLayoutParams",
+            "SteppedLayoutParams"
+          ]
+        },
+        {
+          "source": "@/types/tray",
+          "specifiers": [
+            "TrayParams"
+          ]
+        },
+        {
+          "source": "@/lib/grid-config",
+          "specifiers": [
+            "DEFAULT_TRAY_PARAMS"
+          ]
+        },
+        {
+          "source": "@/lib/stepped-config",
+          "specifiers": [
+            "GROUP_COLORS",
+            "STEPPED_LAYOUT_DEFAULTS"
+          ]
+        },
+        {
+          "source": "@/lib/stepped-group-params",
+          "specifiers": [
+            "createGroupStructureOverrides"
+          ]
+        }
+      ],
+      "exports": [
+        "getRawSteppedSmoothingRadius",
+        "getRawSteppedDisconnectDistance",
+        "migrateGridLegacyShape",
+        "migrateCustomLegacyShape",
+        "migrateSimpleSteppedLegacyShape",
+        "normalizeSteppedGroups",
+        "migrateSteppedLegacyShape"
+      ],
+      "totalLines": 257,
+      "hasStructuralAnalysis": true
+    },
     "src/lib/param-normalization.test.ts": {
       "filePath": "src/lib/param-normalization.test.ts",
-      "contentHash": "c760ae2f5556fdfd1aff8e7dfe0ea61483e0b87dcf4eccfd139df745fb178666",
+      "contentHash": "bc5a9346fbacf026d2714fef5987c9229a5fb58e2481a09de67755bbcfba8c74",
       "functions": [],
       "classes": [],
       "imports": [
@@ -8367,9 +8908,27 @@
           ]
         },
         {
+          "source": "@/lib/config",
+          "specifiers": [
+            "getBaseHoleMinBaseThickness"
+          ]
+        },
+        {
           "source": "@/lib/grid-config",
           "specifiers": [
             "DEFAULT_TRAY_PARAMS"
+          ]
+        },
+        {
+          "source": "@/lib/simple-stepped-config",
+          "specifiers": [
+            "SIMPLE_STEPPED_LAYOUT_DEFAULTS"
+          ]
+        },
+        {
+          "source": "@/lib/stepped-config",
+          "specifiers": [
+            "STEPPED_LAYOUT_DEFAULTS"
           ]
         },
         {
@@ -8395,12 +8954,12 @@
         }
       ],
       "exports": [],
-      "totalLines": 149,
+      "totalLines": 295,
       "hasStructuralAnalysis": true
     },
     "src/lib/param-normalization.ts": {
       "filePath": "src/lib/param-normalization.ts",
-      "contentHash": "5c1655a7033bfc7eb311bd6a97592cb4c7e81d55a349bc9ad03dd0855c260909",
+      "contentHash": "2a5319a985a6c388a7c5b50399a58fcc9c54627909c7eb0b57eb20f1b44c9761",
       "functions": [
         {
           "name": "getRawSteppedSmoothingRadius",
@@ -8466,7 +9025,7 @@
           ],
           "returnType": "SteppedLayoutParams",
           "exported": true,
-          "lineCount": 39
+          "lineCount": 41
         },
         {
           "name": "validateGridRequiredFields",
@@ -8578,7 +9137,7 @@
             "params"
           ],
           "exported": false,
-          "lineCount": 75
+          "lineCount": 76
         },
         {
           "name": "normalizeSteppedGroups",
@@ -8586,7 +9145,7 @@
             "params"
           ],
           "exported": false,
-          "lineCount": 41
+          "lineCount": 52
         },
         {
           "name": "normalizeSteppedSlotInstances",
@@ -8602,7 +9161,7 @@
             "params"
           ],
           "exported": false,
-          "lineCount": 46
+          "lineCount": 49
         }
       ],
       "classes": [],
@@ -8668,6 +9227,12 @@
           ]
         },
         {
+          "source": "@/lib/stepped-base-hole",
+          "specifiers": [
+            "applySteppedBaseHoleDerivedFields"
+          ]
+        },
+        {
           "source": "@/lib/stepped-group-params",
           "specifiers": [
             "createGroupStructureOverrides"
@@ -8686,7 +9251,7 @@
         "normalizeParamsForMode",
         "migrateCustomParamsToStepped"
       ],
-      "totalLines": 818,
+      "totalLines": 836,
       "hasStructuralAnalysis": true
     },
     "src/lib/perf.ts": {
@@ -8778,7 +9343,7 @@
     },
     "src/lib/pricing.test.ts": {
       "filePath": "src/lib/pricing.test.ts",
-      "contentHash": "ed17ed0241e89a43bce8eda9a04990c845b3a5a8bcef85ebcb94e7c2df963396",
+      "contentHash": "0c454a1bf09242e33a95ad39d3ab356d93b7c29baafe60b89436bebaad731902",
       "functions": [
         {
           "name": "createGroup",
@@ -8802,38 +9367,6 @@
           ],
           "exported": false,
           "lineCount": 18
-        },
-        {
-          "name": "createCustomCircleSlot",
-          "params": [
-            "id",
-            "x",
-            "y",
-            "baseDiameter"
-          ],
-          "exported": false,
-          "lineCount": 17
-        },
-        {
-          "name": "createCustomGridLayout",
-          "params": [
-            "baseDiameter",
-            "columns",
-            "rows",
-            "options"
-          ],
-          "exported": false,
-          "lineCount": 46
-        },
-        {
-          "name": "createGridPricingParams",
-          "params": [
-            "holeDiameter",
-            "columns",
-            "rows"
-          ],
-          "exported": false,
-          "lineCount": 13
         },
         {
           "name": "createSampleA",
@@ -8886,18 +9419,6 @@
           ]
         },
         {
-          "source": "@/lib/slot-definitions",
-          "specifiers": [
-            "createCircleSlotSnapshot"
-          ]
-        },
-        {
-          "source": "@/lib/slot-instance-factory",
-          "specifiers": [
-            "createGridSlotSnapshotFromDefinition"
-          ]
-        },
-        {
           "source": "@/lib/stepped-config",
           "specifiers": [
             "STEPPED_LAYOUT_DEFAULTS"
@@ -8923,7 +9444,7 @@
         }
       ],
       "exports": [],
-      "totalLines": 420,
+      "totalLines": 328,
       "hasStructuralAnalysis": true
     },
     "src/lib/pricing.ts": {
@@ -9098,7 +9619,7 @@
     },
     "src/lib/simple-stepped-config.ts": {
       "filePath": "src/lib/simple-stepped-config.ts",
-      "contentHash": "73219ce3449167f4bef805614cc36f3b644466156f70fcce381255996eb26da3",
+      "contentHash": "acd37c9998f91354f933b37975b9f92803f5006214314ed438cd3ae17d1e50b4",
       "functions": [],
       "classes": [],
       "imports": [
@@ -9107,13 +9628,19 @@
           "specifiers": [
             "SimpleSteppedLayoutParams"
           ]
+        },
+        {
+          "source": "@/lib/config",
+          "specifiers": [
+            "MAX_TRAY_SIZE"
+          ]
         }
       ],
       "exports": [
         "SIMPLE_STEPPED_LAYOUT_DEFAULTS",
         "SIMPLE_STEPPED_LIMITS"
       ],
-      "totalLines": 32,
+      "totalLines": 33,
       "hasStructuralAnalysis": true
     },
     "src/lib/simple-stepped-layout.test.ts": {
@@ -9363,8 +9890,37 @@
     },
     "src/lib/simple-stepped-projection.ts": {
       "filePath": "src/lib/simple-stepped-projection.ts",
-      "contentHash": "8c8fdec2baba1de690bea6931e19927accc3ee26312f488122289c3fd4b86568",
+      "contentHash": "168e8fcd920e863775f7a966ff0d2d3dd561939546f01c187fb7413437cd054b",
       "functions": [
+        {
+          "name": "normalizeSimpleSteppedTraySize",
+          "params": [
+            "requestedSize",
+            "minimumSize",
+            "fallbackSize"
+          ],
+          "exported": true,
+          "lineCount": 19
+        },
+        {
+          "name": "rebuildRowSlotIds",
+          "params": [
+            "rows",
+            "slots"
+          ],
+          "returnType": "SimpleSteppedRow[]",
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "normalizeSimpleSteppedParams",
+          "params": [
+            "next"
+          ],
+          "returnType": "SimpleSteppedLayoutParams",
+          "exported": true,
+          "lineCount": 39
+        },
         {
           "name": "mapSimpleSteppedCanvasUpdatesToLocal",
           "params": [
@@ -9404,7 +9960,27 @@
         {
           "source": "@/types/custom-tray",
           "specifiers": [
-            "SimpleSteppedLayoutParams"
+            "SimpleSteppedLayoutParams",
+            "SimpleSteppedRow",
+            "SimpleSteppedSlot"
+          ]
+        },
+        {
+          "source": "@/lib/config",
+          "specifiers": [
+            "MAX_BUILD_SIZE"
+          ]
+        },
+        {
+          "source": "@/lib/simple-stepped-config",
+          "specifiers": [
+            "SIMPLE_STEPPED_LAYOUT_DEFAULTS"
+          ]
+        },
+        {
+          "source": "@/lib/simple-stepped-layout",
+          "specifiers": [
+            "calculateSimpleSteppedMinimumTraySize"
           ]
         }
       ],
@@ -9420,10 +9996,189 @@
         "SimpleSteppedDerivedRow",
         "SimpleSteppedDerivedSlot",
         "SimpleSteppedSlotUpdate",
+        "normalizeSimpleSteppedTraySize",
+        "normalizeSimpleSteppedParams",
         "mapSimpleSteppedCanvasUpdatesToLocal",
         "resolveSimpleSteppedSlotMoveScope"
       ],
-      "totalLines": 73,
+      "totalLines": 154,
+      "hasStructuralAnalysis": true
+    },
+    "src/lib/simple-stepped-row-actions.ts": {
+      "filePath": "src/lib/simple-stepped-row-actions.ts",
+      "contentHash": "cc17391213562be00f678307d6f5f5abc5c63e342de6a87b41438f45e42e81a8",
+      "functions": [
+        {
+          "name": "addSimpleSteppedRow",
+          "params": [
+            "params",
+            "rowId",
+            "name"
+          ],
+          "returnType": "SimpleSteppedLayoutParams",
+          "exported": true,
+          "lineCount": 16
+        },
+        {
+          "name": "removeSimpleSteppedRow",
+          "params": [
+            "params",
+            "rowId"
+          ],
+          "returnType": "SimpleSteppedLayoutParams",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "renameSimpleSteppedRow",
+          "params": [
+            "params",
+            "rowId",
+            "name"
+          ],
+          "returnType": "SimpleSteppedLayoutParams",
+          "exported": true,
+          "lineCount": 12
+        },
+        {
+          "name": "clearSimpleSteppedRow",
+          "params": [
+            "params",
+            "rowId"
+          ],
+          "returnType": "SimpleSteppedLayoutParams",
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "reorderSimpleSteppedRows",
+          "params": [
+            "params",
+            "fromIndex",
+            "toIndex"
+          ],
+          "returnType": "SimpleSteppedLayoutParams",
+          "exported": true,
+          "lineCount": 21
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@/types/custom-tray",
+          "specifiers": [
+            "SimpleSteppedLayoutParams",
+            "SimpleSteppedRow"
+          ]
+        }
+      ],
+      "exports": [
+        "addSimpleSteppedRow",
+        "removeSimpleSteppedRow",
+        "renameSimpleSteppedRow",
+        "clearSimpleSteppedRow",
+        "reorderSimpleSteppedRows"
+      ],
+      "totalLines": 84,
+      "hasStructuralAnalysis": true
+    },
+    "src/lib/simple-stepped-slot-actions.ts": {
+      "filePath": "src/lib/simple-stepped-slot-actions.ts",
+      "contentHash": "eb2d3254739400d855c542226a681eb9c76c6fc9875453a659524aa3ca9ffa6e",
+      "functions": [
+        {
+          "name": "addSimpleSteppedSlotToRow",
+          "params": [
+            "params",
+            "slotId",
+            "rowId",
+            "diameter"
+          ],
+          "returnType": "SimpleSteppedLayoutParams",
+          "exported": true,
+          "lineCount": 33
+        },
+        {
+          "name": "removeSimpleSteppedSlot",
+          "params": [
+            "params",
+            "id"
+          ],
+          "returnType": "SimpleSteppedLayoutParams",
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "applySimpleSteppedSlotUpdates",
+          "params": [
+            "params",
+            "updates"
+          ],
+          "returnType": "SimpleSteppedLayoutParams",
+          "exported": true,
+          "lineCount": 25
+        },
+        {
+          "name": "duplicateSimpleSteppedSlots",
+          "params": [
+            "params",
+            "slotIds",
+            "newIds"
+          ],
+          "returnType": "SimpleSteppedLayoutParams",
+          "exported": true,
+          "lineCount": 22
+        },
+        {
+          "name": "trimSimpleSteppedBaseplate",
+          "params": [
+            "params"
+          ],
+          "returnType": "SimpleSteppedLayoutParams",
+          "exported": true,
+          "lineCount": 20
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@/types/custom-tray",
+          "specifiers": [
+            "SimpleSteppedLayoutParams",
+            "SimpleSteppedSlot"
+          ]
+        },
+        {
+          "source": "@/lib/canvas-types",
+          "specifiers": [
+            "CanvasSlotUpdate"
+          ]
+        },
+        {
+          "source": "@/lib/slot-instance-factory",
+          "specifiers": [
+            "createSimpleSteppedSlotInstance"
+          ]
+        },
+        {
+          "source": "@/lib/simple-stepped-projection",
+          "specifiers": [
+            "calculateSimpleSteppedMinimumTraySize",
+            "clampSimpleSteppedSlotUpdates",
+            "getSimpleSteppedEffectiveDiameter",
+            "mapSimpleSteppedCanvasUpdatesToLocal"
+          ]
+        }
+      ],
+      "exports": [
+        "addSimpleSteppedSlotToRow",
+        "removeSimpleSteppedSlot",
+        "applySimpleSteppedSlotUpdates",
+        "duplicateSimpleSteppedSlots",
+        "trimSimpleSteppedBaseplate",
+        "SimpleSteppedSlot"
+      ],
+      "totalLines": 146,
       "hasStructuralAnalysis": true
     },
     "src/lib/simple-stepped-tray-model.test.ts": {
@@ -9556,7 +10311,7 @@
     },
     "src/lib/slot-definitions.test.ts": {
       "filePath": "src/lib/slot-definitions.test.ts",
-      "contentHash": "b6ff71a6e0d81ee74aa87edad510fd4393dee1c0ac8653d42bec64d923ecc432",
+      "contentHash": "d8dd689fa10cab9e4f6ae236dd46acfb926eb6c5d5a213b00a16a4da5a9d5cc0",
       "functions": [],
       "classes": [],
       "imports": [
@@ -9580,12 +10335,12 @@
         }
       ],
       "exports": [],
-      "totalLines": 55,
+      "totalLines": 67,
       "hasStructuralAnalysis": true
     },
     "src/lib/slot-definitions.ts": {
       "filePath": "src/lib/slot-definitions.ts",
-      "contentHash": "3c474f0ea192ad3067921200a3241e7f49f906c4d73ff374b868674156d100aa",
+      "contentHash": "bb7f9820d7485fb145a57b7ca39fe2463b5204ebf14a28e43ea44b9ba04c5361",
       "functions": [
         {
           "name": "nearlyEqual",
@@ -9686,12 +10441,12 @@
         "createEllipseSlotSnapshot",
         "getFreeSlotProfileGeometry"
       ],
-      "totalLines": 213,
+      "totalLines": 214,
       "hasStructuralAnalysis": true
     },
     "src/lib/slot-instance-factory.test.ts": {
       "filePath": "src/lib/slot-instance-factory.test.ts",
-      "contentHash": "9c3e7d245240f83320218b1922dbe1cc4aaa163f71fefef004c09ad2e4a84733",
+      "contentHash": "0ff050e7d7f312cd41bf8adcc6bb95778b5e4dd401b49ddfbc501436f1cb6326",
       "functions": [],
       "classes": [],
       "imports": [
@@ -9716,12 +10471,12 @@
         }
       ],
       "exports": [],
-      "totalLines": 135,
+      "totalLines": 139,
       "hasStructuralAnalysis": true
     },
     "src/lib/slot-instance-factory.ts": {
       "filePath": "src/lib/slot-instance-factory.ts",
-      "contentHash": "4f2d3098c0e799af1fb2459c51c485c799d3724715746a0090e84b9c3eadd2d9",
+      "contentHash": "152c06f83c0dfa711072bf9630c7336fc7c2e2a5a6d327f89e32bfb33a39e52e",
       "functions": [
         {
           "name": "normalizeRotation",
@@ -9784,6 +10539,16 @@
           "returnType": "SimpleSteppedSlot",
           "exported": true,
           "lineCount": 20
+        },
+        {
+          "name": "projectSimpleSteppedToFreeSlot",
+          "params": [
+            "derived",
+            "source"
+          ],
+          "returnType": "FreeSlot",
+          "exported": true,
+          "lineCount": 29
         }
       ],
       "classes": [],
@@ -9820,9 +10585,10 @@
         "createSteppedSlotInstance",
         "createSimpleSteppedSlotInstance",
         "normalizeFreeSlotInstanceSnapshot",
-        "normalizeSimpleSteppedSlotInstanceSnapshot"
+        "normalizeSimpleSteppedSlotInstanceSnapshot",
+        "projectSimpleSteppedToFreeSlot"
       ],
-      "totalLines": 233,
+      "totalLines": 273,
       "hasStructuralAnalysis": true
     },
     "src/lib/slot-profile-geometry.ts": {
@@ -9863,6 +10629,96 @@
         "sampleSlotProfilePoints"
       ],
       "totalLines": 53,
+      "hasStructuralAnalysis": true
+    },
+    "src/lib/stepped-base-hole.ts": {
+      "filePath": "src/lib/stepped-base-hole.ts",
+      "contentHash": "5fa4fd755a049c0eb92f7e12c184a557da43b29cebf35d754fde723c2f02c5f7",
+      "functions": [
+        {
+          "name": "getLargestSlotSizeForGroup",
+          "params": [
+            "params",
+            "groupId"
+          ],
+          "returnType": "number",
+          "exported": false,
+          "lineCount": 12
+        },
+        {
+          "name": "getSteppedResolvedBaseHoleSize",
+          "params": [
+            "params"
+          ],
+          "returnType": "BaseHolePresetKey",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "getSteppedGroupResolvedBaseHoleSize",
+          "params": [
+            "params",
+            "groupId"
+          ],
+          "returnType": "BaseHolePresetKey",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "getSteppedGroupMinBottomHeight",
+          "params": [
+            "params",
+            "groupId"
+          ],
+          "returnType": "number",
+          "exported": true,
+          "lineCount": 15
+        },
+        {
+          "name": "applySteppedBaseHoleDerivedFields",
+          "params": [
+            "params"
+          ],
+          "returnType": "SteppedLayoutParams",
+          "exported": true,
+          "lineCount": 46
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@/lib/config",
+          "specifiers": [
+            "getBaseHoleMinBaseThickness",
+            "resolveBaseHolePresetKey"
+          ]
+        },
+        {
+          "source": "@/lib/stepped-config",
+          "specifiers": [
+            "STEPPED_LIMITS"
+          ]
+        },
+        {
+          "source": "@/types/custom-tray",
+          "specifiers": [
+            "SteppedLayoutParams"
+          ]
+        },
+        {
+          "source": "@/types/tray",
+          "specifiers": [
+            "BaseHolePresetKey"
+          ]
+        }
+      ],
+      "exports": [
+        "getSteppedResolvedBaseHoleSize",
+        "getSteppedGroupResolvedBaseHoleSize",
+        "getSteppedGroupMinBottomHeight",
+        "applySteppedBaseHoleDerivedFields"
+      ],
+      "totalLines": 102,
       "hasStructuralAnalysis": true
     },
     "src/lib/stepped-bridge-warning.test.ts": {
@@ -9949,7 +10805,7 @@
     },
     "src/lib/stepped-config.ts": {
       "filePath": "src/lib/stepped-config.ts",
-      "contentHash": "40da9abf4ed5e94faa728e6cad8e391f960a3fb54ee84dcbc8ff781065605f3a",
+      "contentHash": "e7d0e05bd876a0911bffcb0b9c98952333b0371c2dfdd31a4ddc60c1cd9733cf",
       "functions": [],
       "classes": [],
       "imports": [
@@ -9958,6 +10814,12 @@
           "specifiers": [
             "SlotGroup",
             "SteppedLayoutParams"
+          ]
+        },
+        {
+          "source": "@/lib/config",
+          "specifiers": [
+            "MAX_TRAY_SIZE"
           ]
         },
         {
@@ -9972,7 +10834,7 @@
         "STEPPED_LAYOUT_DEFAULTS",
         "STEPPED_LIMITS"
       ],
-      "totalLines": 57,
+      "totalLines": 60,
       "hasStructuralAnalysis": true
     },
     "src/lib/stepped-connectivity.test.ts": {
@@ -10138,137 +11000,8 @@
     },
     "src/lib/stepped-global-optimize.ts": {
       "filePath": "src/lib/stepped-global-optimize.ts",
-      "contentHash": "21ad9ccc4044caa9e46ee8eb07d859abe70bf711e6a58fc360d02fe986b03d7e",
+      "contentHash": "eba2d6c997b3ff00facad7b1640551e288d81237516e703b52361908c4e2985e",
       "functions": [
-        {
-          "name": "getSlotGeometry",
-          "params": [
-            "slot",
-            "spacing"
-          ],
-          "returnType": "SlotGeometry",
-          "exported": false,
-          "lineCount": 19
-        },
-        {
-          "name": "roundToStep",
-          "params": [
-            "value"
-          ],
-          "returnType": "number",
-          "exported": false,
-          "lineCount": 3
-        },
-        {
-          "name": "roundPosition",
-          "params": [
-            "value"
-          ],
-          "returnType": "number",
-          "exported": false,
-          "lineCount": 3
-        },
-        {
-          "name": "normalizeSlotsToOrigin",
-          "params": [
-            "slots",
-            "spacing"
-          ],
-          "returnType": "SteppedSlot[]",
-          "exported": false,
-          "lineCount": 30
-        },
-        {
-          "name": "sortSlotsByEffectiveSize",
-          "params": [
-            "slots",
-            "spacing"
-          ],
-          "returnType": "SteppedSlot[]",
-          "exported": false,
-          "lineCount": 22
-        },
-        {
-          "name": "buildAlternatingOrder",
-          "params": [
-            "slots"
-          ],
-          "returnType": "SteppedSlot[]",
-          "exported": false,
-          "lineCount": 17
-        },
-        {
-          "name": "getTargetShelfWidth",
-          "params": [
-            "slots",
-            "spacing"
-          ],
-          "returnType": "number",
-          "exported": false,
-          "lineCount": 20
-        },
-        {
-          "name": "toRowSlotEntry",
-          "params": [
-            "slot",
-            "spacing"
-          ],
-          "returnType": "RowSlotEntry",
-          "exported": false,
-          "lineCount": 10
-        },
-        {
-          "name": "arrangeRowSymmetrically",
-          "params": [
-            "entries"
-          ],
-          "returnType": "RowLayout",
-          "exported": false,
-          "lineCount": 66
-        },
-        {
-          "name": "packSlotsIntoShelves",
-          "params": [
-            "slots",
-            "spacing",
-            "targetWidth",
-            "startY"
-          ],
-          "returnType": "PackedLayout",
-          "exported": false,
-          "lineCount": 57
-        },
-        {
-          "name": "evaluateCompactCandidate",
-          "params": [
-            "params",
-            "slots",
-            "symmetryPenalty",
-            "rowCount"
-          ],
-          "returnType": "CompactCandidateEvaluation",
-          "exported": false,
-          "lineCount": 30
-        },
-        {
-          "name": "compareCompactCandidateEvaluations",
-          "params": [
-            "current",
-            "best"
-          ],
-          "returnType": "number",
-          "exported": false,
-          "lineCount": 66
-        },
-        {
-          "name": "serializeSlots",
-          "params": [
-            "slots"
-          ],
-          "returnType": "string",
-          "exported": false,
-          "lineCount": 7
-        },
         {
           "name": "resolveAlignmentOffset",
           "params": [
@@ -10359,18 +11092,6 @@
           ]
         },
         {
-          "source": "@/lib/canvas-slot-geometry",
-          "specifiers": [
-            "getEllipseBoundingBox"
-          ]
-        },
-        {
-          "source": "@/lib/slot-definitions",
-          "specifiers": [
-            "getFreeSlotProfileGeometry"
-          ]
-        },
-        {
           "source": "@/lib/stepped-bridge-warning",
           "specifiers": [
             "buildSteppedBridgeWarning"
@@ -10394,12 +11115,47 @@
             "SteppedLayoutParams",
             "SteppedSlot"
           ]
+        },
+        {
+          "source": "@/lib/stepped-optimize-config",
+          "specifiers": [
+            "CANDIDATE_WIDTH_FACTORS",
+            "GROUP_CANDIDATE_LIMIT",
+            "OVERALL_CANDIDATE_LIMIT"
+          ]
+        },
+        {
+          "source": "@/lib/stepped-optimize-evaluator",
+          "specifiers": [
+            "compareCompactCandidateEvaluations",
+            "evaluateCompactCandidate",
+            "serializeSlots",
+            "CompactCandidateEvaluation"
+          ]
+        },
+        {
+          "source": "@/lib/stepped-optimize-slot-geometry",
+          "specifiers": [
+            "buildAlternatingOrder",
+            "getSlotGeometry",
+            "getTargetShelfWidth",
+            "normalizeSlotsToOrigin",
+            "roundPosition",
+            "roundToStep",
+            "sortSlotsByEffectiveSize"
+          ]
+        },
+        {
+          "source": "@/lib/stepped-optimize-shelf-packer",
+          "specifiers": [
+            "packSlotsIntoShelves"
+          ]
         }
       ],
       "exports": [
         "generateSteppedOptimizationProposals"
       ],
-      "totalLines": 803,
+      "totalLines": 425,
       "hasStructuralAnalysis": true
     },
     "src/lib/stepped-group-params.test.ts": {
@@ -10471,7 +11227,7 @@
     },
     "src/lib/stepped-layout-group-actions.test.ts": {
       "filePath": "src/lib/stepped-layout-group-actions.test.ts",
-      "contentHash": "9369cad8dd8474cbed7ce4125dbdb4cbfdcc556b2ca320d99f59302c67473005",
+      "contentHash": "df211d48f02e440f086d43791feb0bef6a7b4369da9c3871312fa869b7fe9524",
       "functions": [
         {
           "name": "createIdFactory",
@@ -10523,18 +11279,19 @@
             "updateSteppedGroupDisconnectDistance",
             "updateSteppedGroupDisconnectOverride",
             "updateSteppedGroupHeight",
+            "updateSteppedGroupSplitPartTarget",
             "updateSteppedGroupSmoothingOverride",
             "updateSteppedGroupSmoothingRadius"
           ]
         }
       ],
       "exports": [],
-      "totalLines": 134,
+      "totalLines": 178,
       "hasStructuralAnalysis": true
     },
     "src/lib/stepped-layout-group-actions.ts": {
       "filePath": "src/lib/stepped-layout-group-actions.ts",
-      "contentHash": "c8676d9b4c905af02cd37b8a2f01b6c804f71caf87f797f31f34df3b935c98b8",
+      "contentHash": "6929932812e38e102962c24af67a9d17455fe3e5b59633b1c820d938aaf82265",
       "functions": [
         {
           "name": "addSteppedGroup",
@@ -10554,7 +11311,7 @@
           ],
           "returnType": "SteppedLayoutParams",
           "exported": true,
-          "lineCount": 22
+          "lineCount": 28
         },
         {
           "name": "updateSteppedGroupHeight",
@@ -10612,6 +11369,17 @@
           "lineCount": 14
         },
         {
+          "name": "updateSteppedGroupSplitPartTarget",
+          "params": [
+            "params",
+            "groupId",
+            "targetGroupId"
+          ],
+          "returnType": "SteppedLayoutParams",
+          "exported": true,
+          "lineCount": 21
+        },
+        {
           "name": "setSteppedActiveGroup",
           "params": [
             "params",
@@ -10619,7 +11387,7 @@
           ],
           "returnType": "SteppedLayoutParams",
           "exported": true,
-          "lineCount": 9
+          "lineCount": 16
         },
         {
           "name": "moveSteppedSlotsToGroup",
@@ -10680,11 +11448,12 @@
         "updateSteppedGroupSmoothingRadius",
         "updateSteppedGroupDisconnectOverride",
         "updateSteppedGroupDisconnectDistance",
+        "updateSteppedGroupSplitPartTarget",
         "setSteppedActiveGroup",
         "moveSteppedSlotsToGroup",
         "reorderSteppedGroups"
       ],
-      "totalLines": 175,
+      "totalLines": 210,
       "hasStructuralAnalysis": true
     },
     "src/lib/stepped-layout-math.ts": {
@@ -10980,7 +11749,7 @@
     },
     "src/lib/stepped-model-service.test.ts": {
       "filePath": "src/lib/stepped-model-service.test.ts",
-      "contentHash": "0de1e9d3510e39a791a361aab7efdfd4e9828d21330a4dddf352cc3d34fc187b",
+      "contentHash": "a6bbe43df37d47a62e6689e7868d404df8b921b14326fbf596f5276ccbfd2dbe",
       "functions": [],
       "classes": [],
       "imports": [
@@ -11003,18 +11772,21 @@
           "source": "@/lib/stepped-model-service",
           "specifiers": [
             "exportSteppedModelFiles",
+            "exportSteppedSplitPartFiles",
+            "generateSteppedSplitPreview",
             "generateSteppedPreview",
+            "getSteppedSplitBaseFilename",
             "getSteppedSTLFilename"
           ]
         }
       ],
       "exports": [],
-      "totalLines": 100,
+      "totalLines": 216,
       "hasStructuralAnalysis": true
     },
     "src/lib/stepped-model-service.ts": {
       "filePath": "src/lib/stepped-model-service.ts",
-      "contentHash": "41a2129d3d7e45dee6bad62d06c26ff7b106c77981f6dffa9b9331aad1d5b695",
+      "contentHash": "60748c4b6330a18923405f0b80620945f580d648db1360a71692fa7bd48e1a86",
       "functions": [
         {
           "name": "generateSteppedPreview",
@@ -11048,6 +11820,38 @@
           "returnType": "Promise<void>",
           "exported": true,
           "lineCount": 14
+        },
+        {
+          "name": "generateSteppedSplitPreview",
+          "params": [
+            "params",
+            "workerPort"
+          ],
+          "returnType": "Promise<SteppedSplitPreviewPart[]>",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "getSteppedSplitBaseFilename",
+          "params": [
+            "params",
+            "effectiveDimensions"
+          ],
+          "returnType": "string",
+          "exported": true,
+          "lineCount": 15
+        },
+        {
+          "name": "exportSteppedSplitPartFiles",
+          "params": [
+            "params",
+            "effectiveDimensions",
+            "workerPort",
+            "downloadPort"
+          ],
+          "returnType": "Promise<void>",
+          "exported": true,
+          "lineCount": 44
         }
       ],
       "classes": [],
@@ -11074,6 +11878,7 @@
           "source": "@/lib/model-ports",
           "specifiers": [
             "DownloadPort",
+            "SteppedSplitPartResult",
             "SteppedWorkerPort"
           ]
         },
@@ -11099,9 +11904,272 @@
       "exports": [
         "generateSteppedPreview",
         "getSteppedSTLFilename",
-        "exportSteppedModelFiles"
+        "exportSteppedModelFiles",
+        "generateSteppedSplitPreview",
+        "getSteppedSplitBaseFilename",
+        "exportSteppedSplitPartFiles"
       ],
-      "totalLines": 61,
+      "totalLines": 140,
+      "hasStructuralAnalysis": true
+    },
+    "src/lib/stepped-optimize-config.ts": {
+      "filePath": "src/lib/stepped-optimize-config.ts",
+      "contentHash": "f35368647303c973b488da81ed5776c99c36bc3e83836aafd9a50989803c0952",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [
+        "SEARCH_STEP",
+        "SYMMETRY_TOLERANCE",
+        "TARGET_WIDTH_TO_DEPTH_RATIO",
+        "ASPECT_RATIO_TOLERANCE",
+        "GROUP_CANDIDATE_LIMIT",
+        "OVERALL_CANDIDATE_LIMIT",
+        "CANDIDATE_WIDTH_FACTORS",
+        "ASPECT_PENALTY_FLIP_THRESHOLD"
+      ],
+      "totalLines": 31,
+      "hasStructuralAnalysis": true
+    },
+    "src/lib/stepped-optimize-evaluator.ts": {
+      "filePath": "src/lib/stepped-optimize-evaluator.ts",
+      "contentHash": "a4657f48bf244927bdcec6328c81be4339763512f799759388278c8897a8e0d6",
+      "functions": [
+        {
+          "name": "evaluateCompactCandidate",
+          "params": [
+            "params",
+            "slots",
+            "symmetryPenalty",
+            "rowCount"
+          ],
+          "returnType": "CompactCandidateEvaluation",
+          "exported": true,
+          "lineCount": 30
+        },
+        {
+          "name": "compareCompactCandidateEvaluations",
+          "params": [
+            "current",
+            "best"
+          ],
+          "returnType": "number",
+          "exported": true,
+          "lineCount": 48
+        },
+        {
+          "name": "serializeSlots",
+          "params": [
+            "slots"
+          ],
+          "returnType": "string",
+          "exported": true,
+          "lineCount": 7
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@/lib/stepped-layout-math",
+          "specifiers": [
+            "calculateSteppedEffectiveDimensions"
+          ]
+        },
+        {
+          "source": "@/types/custom-tray",
+          "specifiers": [
+            "SteppedLayoutParams",
+            "SteppedSlot"
+          ]
+        },
+        {
+          "source": "@/lib/stepped-optimize-config",
+          "specifiers": [
+            "ASPECT_PENALTY_FLIP_THRESHOLD",
+            "ASPECT_RATIO_TOLERANCE",
+            "SYMMETRY_TOLERANCE",
+            "TARGET_WIDTH_TO_DEPTH_RATIO"
+          ]
+        }
+      ],
+      "exports": [
+        "evaluateCompactCandidate",
+        "compareCompactCandidateEvaluations",
+        "serializeSlots"
+      ],
+      "totalLines": 125,
+      "hasStructuralAnalysis": true
+    },
+    "src/lib/stepped-optimize-shelf-packer.ts": {
+      "filePath": "src/lib/stepped-optimize-shelf-packer.ts",
+      "contentHash": "b7c2e2b2901862d3ecbc8ba5cec730e07c0b1d2ac9aa73d75b5e3ce76afb75d4",
+      "functions": [
+        {
+          "name": "toRowSlotEntry",
+          "params": [
+            "slot",
+            "spacing"
+          ],
+          "returnType": "RowSlotEntry",
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "arrangeRowSymmetrically",
+          "params": [
+            "entries"
+          ],
+          "returnType": "RowLayout",
+          "exported": true,
+          "lineCount": 66
+        },
+        {
+          "name": "packSlotsIntoShelves",
+          "params": [
+            "slots",
+            "spacing",
+            "targetWidth",
+            "startY"
+          ],
+          "returnType": "PackedLayout",
+          "exported": true,
+          "lineCount": 57
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@/types/custom-tray",
+          "specifiers": [
+            "SteppedSlot"
+          ]
+        },
+        {
+          "source": "@/lib/stepped-optimize-slot-geometry",
+          "specifiers": [
+            "getSlotGeometry",
+            "roundPosition",
+            "SlotGeometry"
+          ]
+        }
+      ],
+      "exports": [
+        "arrangeRowSymmetrically",
+        "packSlotsIntoShelves"
+      ],
+      "totalLines": 171,
+      "hasStructuralAnalysis": true
+    },
+    "src/lib/stepped-optimize-slot-geometry.ts": {
+      "filePath": "src/lib/stepped-optimize-slot-geometry.ts",
+      "contentHash": "21976a922f4a76aa4e55dbe5ce6903ed5f5cf48c41067c2791939abbf18496be",
+      "functions": [
+        {
+          "name": "getSlotGeometry",
+          "params": [
+            "slot",
+            "spacing"
+          ],
+          "returnType": "SlotGeometry",
+          "exported": true,
+          "lineCount": 19
+        },
+        {
+          "name": "roundToStep",
+          "params": [
+            "value"
+          ],
+          "returnType": "number",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "roundPosition",
+          "params": [
+            "value"
+          ],
+          "returnType": "number",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "normalizeSlotsToOrigin",
+          "params": [
+            "slots",
+            "spacing"
+          ],
+          "returnType": "SteppedSlot[]",
+          "exported": true,
+          "lineCount": 30
+        },
+        {
+          "name": "sortSlotsByEffectiveSize",
+          "params": [
+            "slots",
+            "spacing"
+          ],
+          "returnType": "SteppedSlot[]",
+          "exported": true,
+          "lineCount": 22
+        },
+        {
+          "name": "buildAlternatingOrder",
+          "params": [
+            "slots"
+          ],
+          "returnType": "SteppedSlot[]",
+          "exported": true,
+          "lineCount": 17
+        },
+        {
+          "name": "getTargetShelfWidth",
+          "params": [
+            "slots",
+            "spacing"
+          ],
+          "returnType": "number",
+          "exported": true,
+          "lineCount": 20
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@/lib/canvas-slot-geometry",
+          "specifiers": [
+            "getEllipseBoundingBox"
+          ]
+        },
+        {
+          "source": "@/lib/slot-definitions",
+          "specifiers": [
+            "getFreeSlotProfileGeometry"
+          ]
+        },
+        {
+          "source": "@/lib/stepped-optimize-config",
+          "specifiers": [
+            "SEARCH_STEP",
+            "TARGET_WIDTH_TO_DEPTH_RATIO"
+          ]
+        },
+        {
+          "source": "@/types/custom-tray",
+          "specifiers": [
+            "SteppedSlot"
+          ]
+        }
+      ],
+      "exports": [
+        "getSlotGeometry",
+        "roundToStep",
+        "roundPosition",
+        "normalizeSlotsToOrigin",
+        "sortSlotsByEffectiveSize",
+        "buildAlternatingOrder",
+        "getTargetShelfWidth"
+      ],
+      "totalLines": 146,
       "hasStructuralAnalysis": true
     },
     "src/lib/stepped-outline-preview.test.ts": {
@@ -11217,7 +12285,7 @@
     },
     "src/lib/stepped-perf-fixtures.ts": {
       "filePath": "src/lib/stepped-perf-fixtures.ts",
-      "contentHash": "82430d7f926609c454f0d92af40586e99adba992e342aa8f6e99fccf446d8c6b",
+      "contentHash": "ad915c57662ba04d24256d93dbfc16a251646782a8d5b9d08d7f6421604bc5b1",
       "functions": [
         {
           "name": "roundToTenth",
@@ -11244,7 +12312,7 @@
           ],
           "returnType": "SteppedLayoutParams",
           "exported": true,
-          "lineCount": 59
+          "lineCount": 61
         }
       ],
       "classes": [],
@@ -11274,15 +12342,49 @@
         "STEPPED_PERF_FIXTURE_SIZES",
         "buildSteppedPerfFixture"
       ],
-      "totalLines": 151,
+      "totalLines": 153,
       "hasStructuralAnalysis": true
     },
     "src/lib/stepped-tray-model.test.ts": {
       "filePath": "src/lib/stepped-tray-model.test.ts",
-      "contentHash": "3c4b3d061c9b31d323d3a5095cffc35c7c7b60f407f4fd03467d51e51a985d8a",
+      "contentHash": "12db74c29a6484ae7b558921e75d77a181e822c05d3d6ccf1b930d85bc81dc31",
       "functions": [
         {
+          "name": "hasBottomCylinderWallNear",
+          "params": [
+            "geometry",
+            "center",
+            "radius"
+          ],
+          "exported": false,
+          "lineCount": 20
+        },
+        {
+          "name": "polygonArea2d",
+          "params": [
+            "polygon"
+          ],
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "countSmallHorizontalTopFaces",
+          "params": [
+            "geometry",
+            "z"
+          ],
+          "exported": false,
+          "lineCount": 14
+        },
+        {
           "name": "createParams",
+          "params": [],
+          "returnType": "SteppedLayoutParams",
+          "exported": false,
+          "lineCount": 45
+        },
+        {
+          "name": "createMagnetParams",
           "params": [],
           "returnType": "SteppedLayoutParams",
           "exported": false,
@@ -11312,6 +12414,18 @@
           ]
         },
         {
+          "source": "@/lib/fixtures/tray-stepped-merged-split-fragments.json",
+          "specifiers": [
+            "steppedMergedSplitFragmentFixture"
+          ]
+        },
+        {
+          "source": "@/lib/fixtures/tray-stepped-split-fragments.json",
+          "specifiers": [
+            "steppedSplitFragmentFixture"
+          ]
+        },
+        {
           "source": "@/lib/stepped-config",
           "specifiers": [
             "STEPPED_LAYOUT_DEFAULTS"
@@ -11321,17 +12435,18 @@
           "source": "@/lib/stepped-tray-model",
           "specifiers": [
             "calculateSteppedTrayDimensions",
+            "createSteppedSplitParts",
             "createSteppedTrayModel"
           ]
         }
       ],
       "exports": [],
-      "totalLines": 121,
+      "totalLines": 575,
       "hasStructuralAnalysis": true
     },
     "src/lib/stepped-tray-model.ts": {
       "filePath": "src/lib/stepped-tray-model.ts",
-      "contentHash": "8468d991d0ee564b01c76022923f8d527e56feffb3c42ac7055d195a35ea7c21",
+      "contentHash": "7a981072189a55d0a4b3e308be3fd8561bedaae165dae3eb4e9805bd3fd7f921",
       "functions": [
         {
           "name": "getSlotBoundingHalfSize",
@@ -11366,13 +12481,173 @@
           "lineCount": 45
         },
         {
+          "name": "buildNormalizedSlotData",
+          "params": [
+            "params"
+          ],
+          "exported": false,
+          "lineCount": 42
+        },
+        {
+          "name": "buildSlotDataSolid",
+          "params": [
+            "groupSlotData",
+            "spacing",
+            "height",
+            "structureParams"
+          ],
+          "returnType": "Geom3",
+          "exported": false,
+          "lineCount": 68
+        },
+        {
+          "name": "buildSteppedSlotHoles",
+          "params": [
+            "slotData",
+            "holeDepth"
+          ],
+          "returnType": "Geom3[]",
+          "exported": false,
+          "lineCount": 24
+        },
+        {
+          "name": "buildSteppedBaseHoleCenters",
+          "params": [
+            "slotData",
+            "holeDepth"
+          ],
+          "returnType": "SlotCenter[]",
+          "exported": false,
+          "lineCount": 16
+        },
+        {
+          "name": "buildSteppedGroupSolids",
+          "params": [
+            "params"
+          ],
+          "exported": false,
+          "lineCount": 67
+        },
+        {
+          "name": "getGroupCenter",
+          "params": [
+            "slotData"
+          ],
+          "exported": false,
+          "lineCount": 14
+        },
+        {
+          "name": "buildSameHeightPartitionMap",
+          "params": [
+            "groupSolids",
+            "trayWidth",
+            "trayDepth",
+            "splitUnitKeyByGroupId"
+          ],
+          "exported": false,
+          "lineCount": 89
+        },
+        {
+          "name": "buildGroupFootprintCutter",
+          "params": [
+            "params",
+            "groupSolid",
+            "depth",
+            "zBase",
+            "useContextFootprint"
+          ],
+          "returnType": "Geom3 | null",
+          "exported": false,
+          "lineCount": 30
+        },
+        {
+          "name": "buildSplitUnitKeyByGroupId",
+          "params": [
+            "groupSolids"
+          ],
+          "exported": false,
+          "lineCount": 39
+        },
+        {
+          "name": "buildSplitUnits",
+          "params": [
+            "orderedGroupSolids",
+            "splitUnitKeyByGroupId"
+          ],
+          "exported": false,
+          "lineCount": 30
+        },
+        {
+          "name": "buildSplitUnitFootprintCutter",
+          "params": [
+            "params",
+            "splitUnit",
+            "depth",
+            "zBase",
+            "interfaceHeight",
+            "useContextFootprint",
+            "allowedGroupIds"
+          ],
+          "returnType": "Geom3 | null",
+          "exported": false,
+          "lineCount": 40
+        },
+        {
+          "name": "getSplitUnitExternalBaseHeight",
+          "params": [
+            "splitUnit",
+            "orderedGroupSolids",
+            "splitUnitKeyByGroupId"
+          ],
+          "exported": false,
+          "lineCount": 15
+        },
+        {
+          "name": "clipSolidBelowHeight",
+          "params": [
+            "solid",
+            "baseHeight",
+            "trayWidth",
+            "trayDepth",
+            "maxHeight"
+          ],
+          "exported": false,
+          "lineCount": 21
+        },
+        {
+          "name": "buildSplitPartLabel",
+          "params": [
+            "groupSolids"
+          ],
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "buildSplitPartIdLabel",
+          "params": [
+            "groupSolids"
+          ],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
           "name": "createSteppedTrayModel",
           "params": [
             "params"
           ],
           "returnType": "Geom3",
           "exported": true,
-          "lineCount": 198
+          "lineCount": 34
+        },
+        {
+          "name": "createSteppedSplitParts",
+          "params": [
+            "params",
+            "grooveOptions"
+          ],
+          "returnType": "SteppedSplitPart[]",
+          "exported": true,
+          "lineCount": 180
         },
         {
           "name": "calculateSteppedTrayDimensions",
@@ -11413,7 +12688,8 @@
         {
           "source": "@/lib/config",
           "specifiers": [
-            "RENDER_CONFIG"
+            "RENDER_CONFIG",
+            "resolveBaseHolePresetKey"
           ]
         },
         {
@@ -11426,6 +12702,13 @@
           "source": "@/lib/slot-definitions",
           "specifiers": [
             "getFreeSlotProfileGeometry"
+          ]
+        },
+        {
+          "source": "@/lib/model-utils",
+          "specifiers": [
+            "subtractBaseHoles",
+            "SlotCenter"
           ]
         },
         {
@@ -11453,9 +12736,10 @@
       ],
       "exports": [
         "createSteppedTrayModel",
+        "createSteppedSplitParts",
         "calculateSteppedTrayDimensions"
       ],
-      "totalLines": 360,
+      "totalLines": 939,
       "hasStructuralAnalysis": true
     },
     "src/lib/stl-export.test.ts": {
@@ -11757,7 +13041,7 @@
     },
     "src/lib/worker/tray.worker.test.ts": {
       "filePath": "src/lib/worker/tray.worker.test.ts",
-      "contentHash": "fb595f5ce3aa3e5a8382dc9611ed07b6c85800078d3d2b2e92a4839ba02bb5f2",
+      "contentHash": "adb88279047348a52772bca5f4fda39cef18df10527152572c05ed974982a69f",
       "functions": [
         {
           "name": "createWorkerSelf",
@@ -11804,12 +13088,12 @@
         }
       ],
       "exports": [],
-      "totalLines": 205,
+      "totalLines": 239,
       "hasStructuralAnalysis": true
     },
     "src/lib/worker/tray.worker.ts": {
       "filePath": "src/lib/worker/tray.worker.ts",
-      "contentHash": "2ed42fc834832b857e4de1145524461a6ce0866c6414c8fcb110a066ba6f48e6",
+      "contentHash": "3637b2379e1821a1681d72effbeafbd60af12f374e89b63992c206087c616b08",
       "functions": [],
       "classes": [],
       "imports": [
@@ -11834,6 +13118,7 @@
         {
           "source": "../stepped-tray-model",
           "specifiers": [
+            "createSteppedSplitParts",
             "createSteppedTrayModel"
           ]
         },
@@ -11878,12 +13163,12 @@
         }
       ],
       "exports": [],
-      "totalLines": 152,
+      "totalLines": 179,
       "hasStructuralAnalysis": true
     },
     "src/lib/worker/worker-service.test.ts": {
       "filePath": "src/lib/worker/worker-service.test.ts",
-      "contentHash": "92c2b759def9b52ebda90fae58834ef405a1352a738a00fc20ce6fe56178f272",
+      "contentHash": "30623ec25f69cf4b616d002d6adf1c61b3abd7949d58392ab9fcd088b142da83",
       "functions": [],
       "classes": [
         {
@@ -11946,12 +13231,12 @@
         }
       ],
       "exports": [],
-      "totalLines": 198,
+      "totalLines": 233,
       "hasStructuralAnalysis": true
     },
     "src/lib/worker/worker-service.ts": {
       "filePath": "src/lib/worker/worker-service.ts",
-      "contentHash": "85176d033705f15f730dec864fdcbbd29e773e39d9f25872ad3a35a5282bffe2",
+      "contentHash": "220378c2d02b6d3e54bdbe449df3ffb2fbaacf8ed9f806d656f2e246f433c118",
       "functions": [
         {
           "name": "generateRequestId",
@@ -11973,6 +13258,7 @@
             "generateStepped",
             "generateSimpleStepped",
             "generateSteppedOutlinePreview",
+            "generateSteppedSplitParts",
             "exportSTL",
             "terminate"
           ],
@@ -11982,7 +13268,7 @@
             "pendingRejects"
           ],
           "exported": false,
-          "lineCount": 160
+          "lineCount": 190
         }
       ],
       "imports": [
@@ -12017,7 +13303,7 @@
       "exports": [
         "trayWorkerService"
       ],
-      "totalLines": 180,
+      "totalLines": 210,
       "hasStructuralAnalysis": true
     },
     "src/test/setup.ts": {
@@ -12105,7 +13391,7 @@
     },
     "src/types/custom-tray.ts": {
       "filePath": "src/types/custom-tray.ts",
-      "contentHash": "702030371b6197504d1688818090d244f204678ccd9bc151b8706dbf2ed94de8",
+      "contentHash": "10df3cae22852706c5042645ed469408956e286a87c40fe19578e8d554c435c8",
       "functions": [],
       "classes": [],
       "imports": [
@@ -12117,7 +13403,7 @@
         }
       ],
       "exports": [],
-      "totalLines": 180,
+      "totalLines": 186,
       "hasStructuralAnalysis": true
     },
     "src/types/jscad.d.ts": {
@@ -12285,16 +13571,16 @@
     },
     "src/viewports/layout-editor/simpleSteppedViewportModel.ts": {
       "filePath": "src/viewports/layout-editor/simpleSteppedViewportModel.ts",
-      "contentHash": "2e132fb77b1f40e773f6c545d2d439356bbf0ee75545622220176ad76fda1661",
+      "contentHash": "ec0c1246ce8500569d6e8d1639127039c0ba86299f49cb0478c851cc0df98cf8",
       "functions": [
         {
           "name": "buildSimpleSteppedLayoutEditorViewportModel",
           "params": [
-            "{\n  canvasParams,\n  rowBands,\n  slotMoveScopeResolver,\n}"
+            "{\n  canvasParams,\n  rowBands,\n  slotHeightById,\n  slotMoveScopeResolver,\n}"
           ],
           "returnType": "LayoutEditorViewportModel",
           "exported": true,
-          "lineCount": 30
+          "lineCount": 33
         }
       ],
       "classes": [],
@@ -12316,7 +13602,7 @@
       "exports": [
         "buildSimpleSteppedLayoutEditorViewportModel"
       ],
-      "totalLines": 34,
+      "totalLines": 37,
       "hasStructuralAnalysis": true
     },
     "src/viewports/layout-editor/steppedViewportModel.ts": {
@@ -12357,7 +13643,7 @@
     },
     "src/viewports/layout-editor/types.ts": {
       "filePath": "src/viewports/layout-editor/types.ts",
-      "contentHash": "19f19d9504936e0d1d2b1ae947b26e1f1a417d51423d3388a79be13fbee7eeaf",
+      "contentHash": "cf7794f3c62f9591edc2e411581b9976af62809e83e257f0321e92da49fea835",
       "functions": [],
       "classes": [],
       "imports": [
@@ -12385,20 +13671,20 @@
         }
       ],
       "exports": [],
-      "totalLines": 54,
+      "totalLines": 55,
       "hasStructuralAnalysis": true
     },
     "src/viewports/shared/ViewportTabs.tsx": {
       "filePath": "src/viewports/shared/ViewportTabs.tsx",
-      "contentHash": "e9ca519c068295e057bb1baccfc07be27ba5da33beff333f694d4689cdbf0ebf",
+      "contentHash": "de082d23c876da7ad567e445214a8dbb0019989e0e5f4b8b3483ce64d1ec1a27",
       "functions": [
         {
           "name": "ViewportTabs",
           "params": [
-            "{\n  rightView,\n  onRightViewChange,\n  canvas,\n  threeGeometry,\n  isPreviewStale,\n  isGenerating,\n  onGenerate,\n}"
+            "{\n  rightView,\n  onRightViewChange,\n  canvas,\n  threeGeometry,\n  splitParts,\n  isGeneratingSplitPreview,\n  isPreviewStale,\n  isGenerating,\n  onGenerate,\n  onGenerateSplitPreview,\n}"
           ],
           "exported": true,
-          "lineCount": 65
+          "lineCount": 71
         }
       ],
       "classes": [],
@@ -12421,12 +13707,12 @@
       "exports": [
         "ViewportTabs"
       ],
-      "totalLines": 93,
+      "totalLines": 102,
       "hasStructuralAnalysis": true
     },
     "src/viewports/simple-stepped/useSimpleSteppedViewportWorkspace.tsx": {
       "filePath": "src/viewports/simple-stepped/useSimpleSteppedViewportWorkspace.tsx",
-      "contentHash": "141ef48b7e65e94c85e6af36671fc9c8f1f14739d95bf4eec9e51457614ec344",
+      "contentHash": "d0471378560876fc169bc81a02569a3c2cc74268e111fc05f7eda6f79b330b5a",
       "functions": [
         {
           "name": "useSimpleSteppedViewportWorkspace",
@@ -12435,7 +13721,7 @@
           ],
           "returnType": "ModeViewportWorkspace",
           "exported": true,
-          "lineCount": 82
+          "lineCount": 94
         }
       ],
       "classes": [],
@@ -12487,12 +13773,12 @@
       "exports": [
         "useSimpleSteppedViewportWorkspace"
       ],
-      "totalLines": 103,
+      "totalLines": 115,
       "hasStructuralAnalysis": true
     },
     "src/viewports/stepped/useSteppedViewportWorkspace.tsx": {
       "filePath": "src/viewports/stepped/useSteppedViewportWorkspace.tsx",
-      "contentHash": "97ea1b7556faf7e49fbed83e7f88dff33a46e2fe71e41d929b675a9b138c5756",
+      "contentHash": "f1509ff8b3cef7dae67345d2ab205ea43d60710c1b515f088850c24dd5be90b1",
       "functions": [
         {
           "name": "useSteppedViewportWorkspace",
@@ -12501,7 +13787,7 @@
           ],
           "returnType": "UseSteppedViewportWorkspaceReturn",
           "exported": true,
-          "lineCount": 86
+          "lineCount": 89
         }
       ],
       "classes": [],
@@ -12549,7 +13835,7 @@
       "exports": [
         "useSteppedViewportWorkspace"
       ],
-      "totalLines": 114,
+      "totalLines": 117,
       "hasStructuralAnalysis": true
     },
     "src/viewports/types.ts": {
@@ -12842,7 +14128,7 @@
     },
     "src/workspaces/stepped/useSteppedWorkspace.tsx": {
       "filePath": "src/workspaces/stepped/useSteppedWorkspace.tsx",
-      "contentHash": "b346a83981a363d43cd97817017830ccef0503f922cafaf41ad28a05575de290",
+      "contentHash": "7db27a368e019eaa0fa79acf8a1fef609c65a3db806718c24fd132d1e0a0ca2e",
       "functions": [
         {
           "name": "useSteppedWorkspace",
@@ -12851,7 +14137,7 @@
           ],
           "returnType": "ModeWorkspace",
           "exported": true,
-          "lineCount": 110
+          "lineCount": 114
         }
       ],
       "classes": [],
@@ -12903,7 +14189,7 @@
       "exports": [
         "useSteppedWorkspace"
       ],
-      "totalLines": 133,
+      "totalLines": 137,
       "hasStructuralAnalysis": true
     },
     "src/workspaces/types.ts": {
@@ -12943,17 +14229,17 @@
     },
     "tsconfig.json": {
       "filePath": "tsconfig.json",
-      "contentHash": "3fa20b9ed5b53c7e1aadba34fa3ee78ab4344ad14dada95bfc24f516c9e3b318",
+      "contentHash": "4a73f4d724b0e3f36ccc059ea325840a5010c45782b7652858bf8e8ebe41388f",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 35,
+      "totalLines": 46,
       "hasStructuralAnalysis": true
     },
     "vitest.config.ts": {
       "filePath": "vitest.config.ts",
-      "contentHash": "f0b4b6777e328f60f0636522a306b34d76d4322fce676b8f38b4a69b9e961209",
+      "contentHash": "c003b2ffd1fd837d986417aab69f0e98513c61891a6740c17b54f1bb4faa7027",
       "functions": [],
       "classes": [],
       "imports": [
@@ -12971,12 +14257,12 @@
         }
       ],
       "exports": [],
-      "totalLines": 41,
+      "totalLines": 52,
       "hasStructuralAnalysis": true
     },
     "vitest.integration.config.ts": {
       "filePath": "vitest.integration.config.ts",
-      "contentHash": "65d762155ddfb335103ae96ecccd6e6be1c407794c9d5a716353b82801a3ba71",
+      "contentHash": "d7623308709ee13a38d4db32e1c4d54be429f3be624a10dbe66bec60b8bd2158",
       "functions": [],
       "classes": [],
       "imports": [
@@ -12994,7 +14280,7 @@
         }
       ],
       "exports": [],
-      "totalLines": 17,
+      "totalLines": 26,
       "hasStructuralAnalysis": true
     }
   }

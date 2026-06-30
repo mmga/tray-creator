@@ -6,6 +6,8 @@
 # Built-in defaults (always excluded unless negated):
 #   node_modules/, .git/, dist/, build/, obj/, *.lock, *.min.js, etc.
 #
+.understand-anything/
+
 # --- From .gitignore (uncomment to exclude) ---
 
 # .pnp

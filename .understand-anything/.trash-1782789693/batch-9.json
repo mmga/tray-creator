@@ -1,0 +1,1361 @@
+{
+  "nodes": [
+    {
+      "id": "file:src/hooks/useRequestSequence.ts",
+      "type": "file",
+      "name": "useRequestSequence.ts",
+      "filePath": "src/hooks/useRequestSequence.ts",
+      "summary": "useRequestSequence.ts 提供 React hook，封装托盘编辑器的状态编排、生命周期或异步请求流程。",
+      "tags": [
+        "hook",
+        "state",
+        "typescript"
+      ],
+      "complexity": "simple",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/hooks/useRequestSequence.ts:useRequestSequence",
+      "type": "function",
+      "name": "useRequestSequence",
+      "filePath": "src/hooks/useRequestSequence.ts",
+      "lineRange": [
+        10,
+        25
+      ],
+      "summary": "useRequestSequence 是 useRequestSequence.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/hooks/useSteppedOutlinePreview.integration.test.ts",
+      "type": "file",
+      "name": "useSteppedOutlinePreview.integration.test.ts",
+      "filePath": "src/hooks/useSteppedOutlinePreview.integration.test.ts",
+      "summary": "useSteppedOutlinePreview.integration.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "hook",
+        "state",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/hooks/useSteppedOutlinePreview.integration.test.ts:createSteppedParams",
+      "type": "function",
+      "name": "createSteppedParams",
+      "filePath": "src/hooks/useSteppedOutlinePreview.integration.test.ts",
+      "lineRange": [
+        24,
+        50
+      ],
+      "summary": "createSteppedParams 是 useSteppedOutlinePreview.integration.test.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/hooks/useSteppedOutlinePreview.ts",
+      "type": "file",
+      "name": "useSteppedOutlinePreview.ts",
+      "filePath": "src/hooks/useSteppedOutlinePreview.ts",
+      "summary": "useSteppedOutlinePreview.ts 提供 React hook，封装托盘编辑器的状态编排、生命周期或异步请求流程。",
+      "tags": [
+        "hook",
+        "state",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/hooks/useSteppedOutlinePreview.ts:useSteppedOutlinePreview",
+      "type": "function",
+      "name": "useSteppedOutlinePreview",
+      "filePath": "src/hooks/useSteppedOutlinePreview.ts",
+      "lineRange": [
+        25,
+        116
+      ],
+      "summary": "useSteppedOutlinePreview 是 useSteppedOutlinePreview.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:src/lib/custom-layout-actions.test.ts",
+      "type": "file",
+      "name": "custom-layout-actions.test.ts",
+      "filePath": "src/lib/custom-layout-actions.test.ts",
+      "summary": "custom-layout-actions.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "domain-logic",
+        "custom-mode",
+        "typescript"
+      ],
+      "complexity": "complex",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/custom-layout-actions.ts",
+      "type": "file",
+      "name": "custom-layout-actions.ts",
+      "filePath": "src/lib/custom-layout-actions.ts",
+      "summary": "custom-layout-actions.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "custom-mode",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/custom-layout-actions.ts:updateCustomLayoutParam",
+      "type": "function",
+      "name": "updateCustomLayoutParam",
+      "filePath": "src/lib/custom-layout-actions.ts",
+      "lineRange": [
+        29,
+        69
+      ],
+      "summary": "updateCustomLayoutParam 是 custom-layout-actions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/custom-layout-actions.ts:addCustomSlot",
+      "type": "function",
+      "name": "addCustomSlot",
+      "filePath": "src/lib/custom-layout-actions.ts",
+      "lineRange": [
+        71,
+        121
+      ],
+      "summary": "addCustomSlot 是 custom-layout-actions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:src/lib/custom-layout-actions.ts:removeCustomSlot",
+      "type": "function",
+      "name": "removeCustomSlot",
+      "filePath": "src/lib/custom-layout-actions.ts",
+      "lineRange": [
+        123,
+        128
+      ],
+      "summary": "removeCustomSlot 是 custom-layout-actions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/custom-layout-actions.ts:updateCustomSlotPosition",
+      "type": "function",
+      "name": "updateCustomSlotPosition",
+      "filePath": "src/lib/custom-layout-actions.ts",
+      "lineRange": [
+        130,
+        137
+      ],
+      "summary": "updateCustomSlotPosition 是 custom-layout-actions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/custom-layout-actions.ts:applyCustomSlotUpdates",
+      "type": "function",
+      "name": "applyCustomSlotUpdates",
+      "filePath": "src/lib/custom-layout-actions.ts",
+      "lineRange": [
+        139,
+        144
+      ],
+      "summary": "applyCustomSlotUpdates 是 custom-layout-actions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/custom-layout-actions.ts:updateCustomSlotRotation",
+      "type": "function",
+      "name": "updateCustomSlotRotation",
+      "filePath": "src/lib/custom-layout-actions.ts",
+      "lineRange": [
+        146,
+        152
+      ],
+      "summary": "updateCustomSlotRotation 是 custom-layout-actions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/custom-layout-actions.ts:insertCustomSlots",
+      "type": "function",
+      "name": "insertCustomSlots",
+      "filePath": "src/lib/custom-layout-actions.ts",
+      "lineRange": [
+        154,
+        182
+      ],
+      "summary": "insertCustomSlots 是 custom-layout-actions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/custom-layout-actions.ts:duplicateCustomSlots",
+      "type": "function",
+      "name": "duplicateCustomSlots",
+      "filePath": "src/lib/custom-layout-actions.ts",
+      "lineRange": [
+        184,
+        190
+      ],
+      "summary": "duplicateCustomSlots 是 custom-layout-actions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/custom-layout-actions.ts:trimCustomBaseplate",
+      "type": "function",
+      "name": "trimCustomBaseplate",
+      "filePath": "src/lib/custom-layout-actions.ts",
+      "lineRange": [
+        192,
+        197
+      ],
+      "summary": "trimCustomBaseplate 是 custom-layout-actions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/free-slot-editing.test.ts",
+      "type": "file",
+      "name": "free-slot-editing.test.ts",
+      "filePath": "src/lib/free-slot-editing.test.ts",
+      "summary": "free-slot-editing.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/free-slot-editing.ts",
+      "type": "file",
+      "name": "free-slot-editing.ts",
+      "filePath": "src/lib/free-slot-editing.ts",
+      "summary": "free-slot-editing.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/free-slot-editing.ts:removeFreeSlot",
+      "type": "function",
+      "name": "removeFreeSlot",
+      "filePath": "src/lib/free-slot-editing.ts",
+      "lineRange": [
+        32,
+        40
+      ],
+      "summary": "removeFreeSlot 是 free-slot-editing.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/free-slot-editing.ts:updateFreeSlotPosition",
+      "type": "function",
+      "name": "updateFreeSlotPosition",
+      "filePath": "src/lib/free-slot-editing.ts",
+      "lineRange": [
+        42,
+        52
+      ],
+      "summary": "updateFreeSlotPosition 是 free-slot-editing.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/free-slot-editing.ts:applyFreeSlotUpdates",
+      "type": "function",
+      "name": "applyFreeSlotUpdates",
+      "filePath": "src/lib/free-slot-editing.ts",
+      "lineRange": [
+        54,
+        73
+      ],
+      "summary": "applyFreeSlotUpdates 是 free-slot-editing.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/free-slot-editing.ts:updateFreeSlotRotation",
+      "type": "function",
+      "name": "updateFreeSlotRotation",
+      "filePath": "src/lib/free-slot-editing.ts",
+      "lineRange": [
+        75,
+        85
+      ],
+      "summary": "updateFreeSlotRotation 是 free-slot-editing.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/free-slot-editing.ts:insertFreeSlots",
+      "type": "function",
+      "name": "insertFreeSlots",
+      "filePath": "src/lib/free-slot-editing.ts",
+      "lineRange": [
+        87,
+        109
+      ],
+      "summary": "insertFreeSlots 是 free-slot-editing.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/free-slot-editing.ts:duplicateFreeSlots",
+      "type": "function",
+      "name": "duplicateFreeSlots",
+      "filePath": "src/lib/free-slot-editing.ts",
+      "lineRange": [
+        111,
+        143
+      ],
+      "summary": "duplicateFreeSlots 是 free-slot-editing.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/free-slot-editing.ts:trimFreeSlotBaseplate",
+      "type": "function",
+      "name": "trimFreeSlotBaseplate",
+      "filePath": "src/lib/free-slot-editing.ts",
+      "lineRange": [
+        145,
+        176
+      ],
+      "summary": "trimFreeSlotBaseplate 是 free-slot-editing.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/model-ports.ts",
+      "type": "file",
+      "name": "model-ports.ts",
+      "filePath": "src/lib/model-ports.ts",
+      "summary": "model-ports.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "file:src/lib/stepped-layout-slot-actions.test.ts",
+      "type": "file",
+      "name": "stepped-layout-slot-actions.test.ts",
+      "filePath": "src/lib/stepped-layout-slot-actions.test.ts",
+      "summary": "stepped-layout-slot-actions.test.ts 覆盖相邻功能的测试行为，验证关键交互、状态迁移或几何计算结果。",
+      "tags": [
+        "test",
+        "domain-logic",
+        "stepped-mode",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/stepped-layout-slot-actions.test.ts:createParams",
+      "type": "function",
+      "name": "createParams",
+      "filePath": "src/lib/stepped-layout-slot-actions.test.ts",
+      "lineRange": [
+        23,
+        41
+      ],
+      "summary": "createParams 是 stepped-layout-slot-actions.test.ts 中的内部函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "internal",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/lib/stepped-layout-slot-actions.ts",
+      "type": "file",
+      "name": "stepped-layout-slot-actions.ts",
+      "filePath": "src/lib/stepped-layout-slot-actions.ts",
+      "summary": "stepped-layout-slot-actions.ts 提供托盘领域逻辑或工具函数，包含几何建模、布局计算、参数标准化、定价或持久化能力。",
+      "tags": [
+        "domain-logic",
+        "stepped-mode",
+        "typescript"
+      ],
+      "complexity": "moderate",
+      "language": "typescript"
+    },
+    {
+      "id": "function:src/lib/stepped-layout-slot-actions.ts:updateSteppedLayoutParam",
+      "type": "function",
+      "name": "updateSteppedLayoutParam",
+      "filePath": "src/lib/stepped-layout-slot-actions.ts",
+      "lineRange": [
+        27,
+        43
+      ],
+      "summary": "updateSteppedLayoutParam 是 stepped-layout-slot-actions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-layout-slot-actions.ts:addSteppedSlot",
+      "type": "function",
+      "name": "addSteppedSlot",
+      "filePath": "src/lib/stepped-layout-slot-actions.ts",
+      "lineRange": [
+        45,
+        82
+      ],
+      "summary": "addSteppedSlot 是 stepped-layout-slot-actions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-layout-slot-actions.ts:removeSteppedSlot",
+      "type": "function",
+      "name": "removeSteppedSlot",
+      "filePath": "src/lib/stepped-layout-slot-actions.ts",
+      "lineRange": [
+        84,
+        89
+      ],
+      "summary": "removeSteppedSlot 是 stepped-layout-slot-actions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-layout-slot-actions.ts:updateSteppedSlotPosition",
+      "type": "function",
+      "name": "updateSteppedSlotPosition",
+      "filePath": "src/lib/stepped-layout-slot-actions.ts",
+      "lineRange": [
+        91,
+        98
+      ],
+      "summary": "updateSteppedSlotPosition 是 stepped-layout-slot-actions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-layout-slot-actions.ts:applySteppedSlotUpdates",
+      "type": "function",
+      "name": "applySteppedSlotUpdates",
+      "filePath": "src/lib/stepped-layout-slot-actions.ts",
+      "lineRange": [
+        100,
+        105
+      ],
+      "summary": "applySteppedSlotUpdates 是 stepped-layout-slot-actions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-layout-slot-actions.ts:updateSteppedSlotRotation",
+      "type": "function",
+      "name": "updateSteppedSlotRotation",
+      "filePath": "src/lib/stepped-layout-slot-actions.ts",
+      "lineRange": [
+        107,
+        113
+      ],
+      "summary": "updateSteppedSlotRotation 是 stepped-layout-slot-actions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-layout-slot-actions.ts:insertSteppedSlots",
+      "type": "function",
+      "name": "insertSteppedSlots",
+      "filePath": "src/lib/stepped-layout-slot-actions.ts",
+      "lineRange": [
+        115,
+        138
+      ],
+      "summary": "insertSteppedSlots 是 stepped-layout-slot-actions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-layout-slot-actions.ts:duplicateSteppedSlots",
+      "type": "function",
+      "name": "duplicateSteppedSlots",
+      "filePath": "src/lib/stepped-layout-slot-actions.ts",
+      "lineRange": [
+        140,
+        146
+      ],
+      "summary": "duplicateSteppedSlots 是 stepped-layout-slot-actions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/lib/stepped-layout-slot-actions.ts:trimSteppedBaseplate",
+      "type": "function",
+      "name": "trimSteppedBaseplate",
+      "filePath": "src/lib/stepped-layout-slot-actions.ts",
+      "lineRange": [
+        148,
+        155
+      ],
+      "summary": "trimSteppedBaseplate 是 stepped-layout-slot-actions.ts 中的导出函数，负责该模块的一段关键逻辑。",
+      "tags": [
+        "function",
+        "exported",
+        "typescript"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/hooks/useRequestSequence.ts",
+      "target": "function:src/hooks/useRequestSequence.ts:useRequestSequence",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/hooks/useRequestSequence.ts",
+      "target": "function:src/hooks/useRequestSequence.ts:useRequestSequence",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/hooks/useSteppedOutlinePreview.integration.test.ts",
+      "target": "function:src/hooks/useSteppedOutlinePreview.integration.test.ts:createSteppedParams",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/hooks/useSteppedOutlinePreview.ts",
+      "target": "function:src/hooks/useSteppedOutlinePreview.ts:useSteppedOutlinePreview",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/hooks/useSteppedOutlinePreview.ts",
+      "target": "function:src/hooks/useSteppedOutlinePreview.ts:useSteppedOutlinePreview",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "function:src/lib/custom-layout-actions.ts:updateCustomLayoutParam",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "function:src/lib/custom-layout-actions.ts:updateCustomLayoutParam",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "function:src/lib/custom-layout-actions.ts:addCustomSlot",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "function:src/lib/custom-layout-actions.ts:addCustomSlot",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "function:src/lib/custom-layout-actions.ts:removeCustomSlot",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "function:src/lib/custom-layout-actions.ts:removeCustomSlot",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "function:src/lib/custom-layout-actions.ts:updateCustomSlotPosition",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "function:src/lib/custom-layout-actions.ts:updateCustomSlotPosition",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "function:src/lib/custom-layout-actions.ts:applyCustomSlotUpdates",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "function:src/lib/custom-layout-actions.ts:applyCustomSlotUpdates",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "function:src/lib/custom-layout-actions.ts:updateCustomSlotRotation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "function:src/lib/custom-layout-actions.ts:updateCustomSlotRotation",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "function:src/lib/custom-layout-actions.ts:insertCustomSlots",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "function:src/lib/custom-layout-actions.ts:insertCustomSlots",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "function:src/lib/custom-layout-actions.ts:duplicateCustomSlots",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "function:src/lib/custom-layout-actions.ts:duplicateCustomSlots",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "function:src/lib/custom-layout-actions.ts:trimCustomBaseplate",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "function:src/lib/custom-layout-actions.ts:trimCustomBaseplate",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/free-slot-editing.ts",
+      "target": "function:src/lib/free-slot-editing.ts:removeFreeSlot",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/free-slot-editing.ts",
+      "target": "function:src/lib/free-slot-editing.ts:removeFreeSlot",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/free-slot-editing.ts",
+      "target": "function:src/lib/free-slot-editing.ts:updateFreeSlotPosition",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/free-slot-editing.ts",
+      "target": "function:src/lib/free-slot-editing.ts:updateFreeSlotPosition",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/free-slot-editing.ts",
+      "target": "function:src/lib/free-slot-editing.ts:applyFreeSlotUpdates",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/free-slot-editing.ts",
+      "target": "function:src/lib/free-slot-editing.ts:applyFreeSlotUpdates",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/free-slot-editing.ts",
+      "target": "function:src/lib/free-slot-editing.ts:updateFreeSlotRotation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/free-slot-editing.ts",
+      "target": "function:src/lib/free-slot-editing.ts:updateFreeSlotRotation",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/free-slot-editing.ts",
+      "target": "function:src/lib/free-slot-editing.ts:insertFreeSlots",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/free-slot-editing.ts",
+      "target": "function:src/lib/free-slot-editing.ts:insertFreeSlots",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/free-slot-editing.ts",
+      "target": "function:src/lib/free-slot-editing.ts:duplicateFreeSlots",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/free-slot-editing.ts",
+      "target": "function:src/lib/free-slot-editing.ts:duplicateFreeSlots",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/free-slot-editing.ts",
+      "target": "function:src/lib/free-slot-editing.ts:trimFreeSlotBaseplate",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/free-slot-editing.ts",
+      "target": "function:src/lib/free-slot-editing.ts:trimFreeSlotBaseplate",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.test.ts",
+      "target": "function:src/lib/stepped-layout-slot-actions.test.ts:createParams",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "function:src/lib/stepped-layout-slot-actions.ts:updateSteppedLayoutParam",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "function:src/lib/stepped-layout-slot-actions.ts:updateSteppedLayoutParam",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "function:src/lib/stepped-layout-slot-actions.ts:addSteppedSlot",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "function:src/lib/stepped-layout-slot-actions.ts:addSteppedSlot",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "function:src/lib/stepped-layout-slot-actions.ts:removeSteppedSlot",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "function:src/lib/stepped-layout-slot-actions.ts:removeSteppedSlot",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "function:src/lib/stepped-layout-slot-actions.ts:updateSteppedSlotPosition",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "function:src/lib/stepped-layout-slot-actions.ts:updateSteppedSlotPosition",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "function:src/lib/stepped-layout-slot-actions.ts:applySteppedSlotUpdates",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "function:src/lib/stepped-layout-slot-actions.ts:applySteppedSlotUpdates",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "function:src/lib/stepped-layout-slot-actions.ts:updateSteppedSlotRotation",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "function:src/lib/stepped-layout-slot-actions.ts:updateSteppedSlotRotation",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "function:src/lib/stepped-layout-slot-actions.ts:insertSteppedSlots",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "function:src/lib/stepped-layout-slot-actions.ts:insertSteppedSlots",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "function:src/lib/stepped-layout-slot-actions.ts:duplicateSteppedSlots",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "function:src/lib/stepped-layout-slot-actions.ts:duplicateSteppedSlots",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "function:src/lib/stepped-layout-slot-actions.ts:trimSteppedBaseplate",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "function:src/lib/stepped-layout-slot-actions.ts:trimSteppedBaseplate",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/hooks/useSteppedOutlinePreview.integration.test.ts",
+      "target": "file:src/hooks/useSteppedOutlinePreview.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedOutlinePreview.ts",
+      "target": "file:src/hooks/useSteppedOutlinePreview.integration.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/hooks/useSteppedOutlinePreview.integration.test.ts",
+      "target": "file:src/lib/stepped-config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-config.ts",
+      "target": "file:src/hooks/useSteppedOutlinePreview.integration.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/hooks/useSteppedOutlinePreview.integration.test.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/types/custom-tray.ts",
+      "target": "file:src/hooks/useSteppedOutlinePreview.integration.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/hooks/useSteppedOutlinePreview.ts",
+      "target": "file:src/hooks/useRequestSequence.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedOutlinePreview.ts",
+      "target": "file:src/lib/model-ports.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedOutlinePreview.ts",
+      "target": "file:src/lib/perf.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedOutlinePreview.ts",
+      "target": "file:src/lib/stepped-outline-preview.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/hooks/useSteppedOutlinePreview.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.test.ts",
+      "target": "file:src/lib/custom-config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-config.ts",
+      "target": "file:src/lib/custom-layout-actions.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.test.ts",
+      "target": "file:src/lib/custom-layout-actions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "file:src/lib/custom-layout-actions.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.test.ts",
+      "target": "file:src/lib/model-ports.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/model-ports.ts",
+      "target": "file:src/lib/custom-layout-actions.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "file:src/lib/custom-layout-math.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "file:src/lib/free-slot-editing.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "file:src/lib/layout-symmetry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "file:src/lib/model-ports.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "file:src/lib/slot-instance-factory.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/custom-layout-actions.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/free-slot-editing.test.ts",
+      "target": "file:src/lib/free-slot-editing.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/free-slot-editing.ts",
+      "target": "file:src/lib/free-slot-editing.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/free-slot-editing.test.ts",
+      "target": "file:src/lib/model-ports.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/model-ports.ts",
+      "target": "file:src/lib/free-slot-editing.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/free-slot-editing.ts",
+      "target": "file:src/lib/model-ports.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/model-ports.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/model-ports.ts",
+      "target": "file:src/types/tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.test.ts",
+      "target": "file:src/lib/model-ports.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/model-ports.ts",
+      "target": "file:src/lib/stepped-layout-slot-actions.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.test.ts",
+      "target": "file:src/lib/stepped-config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-config.ts",
+      "target": "file:src/lib/stepped-layout-slot-actions.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.test.ts",
+      "target": "file:src/lib/stepped-layout-slot-actions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "file:src/lib/stepped-layout-slot-actions.test.ts",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "file:src/lib/canvas-slot-geometry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "file:src/lib/config.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "file:src/lib/free-slot-editing.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "file:src/lib/layout-symmetry.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "file:src/lib/model-ports.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "file:src/lib/slot-definitions.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "file:src/lib/slot-instance-factory.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "file:src/lib/stepped-layout-math.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:src/lib/stepped-layout-slot-actions.ts",
+      "target": "file:src/types/custom-tray.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    }
+  ]
+}
