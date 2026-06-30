@@ -172,6 +172,34 @@ function expectBoundsRoughlyMatch(actual: Geom3, expected: Geom3) {
   expect(Math.abs(actualBounds[1][2] - expectedBounds[1][2])).toBeLessThan(0.01);
 }
 
+function polygonArea2d(polygon: { vertices: number[][] }) {
+  let area = 0;
+  for (let i = 0; i < polygon.vertices.length; i += 1) {
+    const current = polygon.vertices[i];
+    const next = polygon.vertices[(i + 1) % polygon.vertices.length];
+    area += (current[0] ?? 0) * (next[1] ?? 0);
+    area -= (next[0] ?? 0) * (current[1] ?? 0);
+  }
+  return Math.abs(area) / 2;
+}
+
+function countSmallHorizontalFacesNear(
+  geometry: { polygons: { vertices: number[][] }[] },
+  z: number,
+) {
+  return geometry.polygons.filter((polygon) => {
+    if (polygon.vertices.length < 3) {
+      return false;
+    }
+
+    const onPlane = polygon.vertices.every(
+      (vertex) => Math.abs((vertex[2] ?? 0) - z) < 0.001,
+    );
+
+    return onPlane && polygonArea2d(polygon) < 5;
+  }).length;
+}
+
 function findMergedPart(grooveDepth: number) {
   return createSteppedCadSplitParts({
     ...USER_REPRO_PARAMS,
@@ -263,5 +291,36 @@ describe("stepped cad user repro", { timeout: 15000 }, () => {
       mergedPart!.geometry,
       buildExpectedMergedPartGeometry(2),
     );
+  });
+
+  it("keeps CAD split assembly interfaces from fragmenting into tiny coplanar faces", () => {
+    const parts = createSteppedCadSplitParts({
+      ...USER_REPRO_PARAMS,
+      enableBaseHole: true,
+      splitGrooveDepth: 2,
+    });
+    const group1Part = parts.find((part) => part.label === "组 1");
+    const mergedPart = parts.find(
+      (part) =>
+        part.label.includes("组 2") &&
+        part.label.includes("组 4") &&
+        part.fromHeight === 10 &&
+        part.toHeight === 35,
+    );
+
+    expect(group1Part).toBeDefined();
+    expect(mergedPart).toBeDefined();
+    expect(
+      countSmallHorizontalFacesNear(
+        group1Part!.geometry as unknown as { polygons: { vertices: number[][] }[] },
+        10,
+      ),
+    ).toBeLessThan(1200);
+    expect(
+      countSmallHorizontalFacesNear(
+        mergedPart!.geometry as unknown as { polygons: { vertices: number[][] }[] },
+        8,
+      ),
+    ).toBeLessThan(350);
   });
 });

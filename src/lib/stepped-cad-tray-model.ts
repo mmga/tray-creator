@@ -18,7 +18,7 @@ const { intersect, subtract, union } = booleans;
 const { extrudeLinear } = extrusions;
 const { geom3 } = geometries;
 const { measureBoundingBox, measureVolume } = measurements;
-const { ellipse, rectangle } = primitives;
+const { circle, ellipse, rectangle } = primitives;
 const { rotateZ, translate } = transforms;
 
 const DEG_TO_RAD = Math.PI / 180;
@@ -27,6 +27,7 @@ const LAYER_OVERLAP = 0.1;
 const PARTITION_MARGIN = 100;
 const DEFAULT_INTERFACE_GROOVE_DEPTH = 2;
 const DEFAULT_INTERFACE_GROOVE_INSET = 1;
+const INTERFACE_FOOTPRINT_SEGMENTS = 24;
 const MIN_VALID_VOLUME = 0.001;
 const generalize = generalizeModule as unknown as (
   options: { snap?: boolean; simplify?: boolean; triangulate?: boolean },
@@ -350,10 +351,10 @@ function cleanupIfBeneficial(part: Geom3) {
   const [[, , originalMinZ], [, , originalMaxZ]] = measureBoundingBox(part);
 
   const cleanupOptions = [
-    { simplify: true, triangulate: true },
     { simplify: true, triangulate: false },
-    { simplify: false, triangulate: true },
     { simplify: false, triangulate: false },
+    { simplify: true, triangulate: true },
+    { simplify: false, triangulate: true },
   ];
 
   for (const { simplify, triangulate } of cleanupOptions) {
@@ -453,6 +454,34 @@ function buildUnifiedSplitUnitBaseFootprint(
   return buildSupportFootprint(splitUnit, partitions);
 }
 
+function buildInterfaceSupportFootprint(
+  splitUnit: SteppedCadSplitUnit,
+  partitions: Map<string, SteppedCadPartition>,
+) {
+  if (splitUnit.slotHoles.length === 0) {
+    return buildUnifiedSplitUnitBaseFootprint(splitUnit, partitions);
+  }
+
+  const slotFootprints = splitUnit.slotHoles.map((slotHole) =>
+    translate(
+      [slotHole.cx, slotHole.cy],
+      circle({
+        radius: slotHole.connectorRadius,
+        segments: INTERFACE_FOOTPRINT_SEGMENTS,
+      }),
+    ) as Geom2
+  );
+  const footprint = unionGeom2Parts(slotFootprints);
+  const partition = partitions.get(splitUnit.key);
+
+  if (!partition) {
+    return footprint;
+  }
+
+  const clipped = intersect(footprint, partition.footprint) as Geom2;
+  return isEmptyGeom2(clipped) ? footprint : clipped;
+}
+
 function insetInterfaceFootprint(footprint: Geom2) {
   try {
     return insetGeom2(
@@ -502,7 +531,7 @@ function buildInterfacePocketMap(
       continue;
     }
 
-    const supportFootprint = buildUnifiedSplitUnitBaseFootprint(
+    const supportFootprint = buildInterfaceSupportFootprint(
       otherSplitUnit,
       partitions,
     );
@@ -588,7 +617,7 @@ function buildSplitUnitBody(
   if (interfaceDepth > 0 && baseHeight > 0) {
     const tenonDepth = Math.min(interfaceDepth, splitUnit.maxHeight - baseHeight);
     if (tenonDepth > 0) {
-      const supportFootprint = buildUnifiedSplitUnitBaseFootprint(
+      const supportFootprint = buildInterfaceSupportFootprint(
         splitUnit,
         partitions,
       );
