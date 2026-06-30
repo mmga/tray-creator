@@ -1,6 +1,6 @@
 "use client";
 
-import type { SteppedLayoutParams } from "@/types/custom-tray";
+import type { AppMode, SteppedLayoutParams } from "@/types/custom-tray";
 import type { BridgeWarning } from "@/lib/stepped-connectivity";
 import type { SteppedOptimizationProposal } from "@/lib/stepped-global-optimize";
 import {
@@ -38,7 +38,6 @@ import {
     ChevronDown,
     Eye,
     AlertTriangle,
-    CircleHelp,
     Circle,
     Download,
 } from "lucide-react";
@@ -46,7 +45,6 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
 import {
     getSteppedPricingBreakdown,
-    type SteppedPricingBreakdown,
 } from "@/lib/pricing";
 import { useToast } from "@/hooks/useToast";
 import { isPerfEnabled, resetPerfMetrics } from "@/lib/perf";
@@ -61,8 +59,14 @@ import {
 } from "@/components/PanelActionSection";
 import { SteppedPricingFormulaTooltip } from "@/components/SteppedPricingFormulaTooltip";
 
+const SPLIT_ASSEMBLY_MODE_LABELS = {
+    "profile-tenon": "轮廓公母槽",
+    "locator-recess": "定位柱 + 轮廓浅槽",
+} as const;
+
 interface SteppedPanelProps {
     params: SteppedLayoutParams;
+    mode?: Extract<AppMode, "stepped" | "stepped-cad">;
     effectiveDimensions: { width: number; depth: number };
     isPreviewStale: boolean;
     updateParam: <K extends keyof SteppedLayoutParams>(key: K, value: SteppedLayoutParams[K]) => void;
@@ -104,6 +108,7 @@ interface SteppedPanelProps {
 
 export default function SteppedPanel({
     params,
+    mode = "stepped",
     effectiveDimensions,
     isPreviewStale,
     updateParam,
@@ -182,6 +187,7 @@ export default function SteppedPanel({
             : params.baseHoleSize,
         [activeGroup, params],
     );
+    const showSplitAssemblyMode = mode === "stepped-cad";
     const activeGroupBaseHolePreset = useMemo(
         () => getBaseHolePreset(activeGroupBaseHoleSize),
         [activeGroupBaseHoleSize],
@@ -661,7 +667,7 @@ export default function SteppedPanel({
             {/* 结构参数 */}
             <div className="iron-panel rounded-sm p-4">
                 <SectionHeader icon={Wrench} title="结构参数" collapsible defaultOpen={false}
-                    summary={`槽距${params.spacing}mm / 凹槽深度${params.holeDepth}mm / 装配槽${params.splitGrooveDepth}mm / 断连${params.disconnectDistance}mm`}>
+                    summary={`槽距${params.spacing}mm / 凹槽深度${params.holeDepth}mm / 装配槽${params.splitGrooveDepth}mm${showSplitAssemblyMode ? ` / ${SPLIT_ASSEMBLY_MODE_LABELS[params.splitAssemblyMode ?? "profile-tenon"]}` : ""} / 断连${params.disconnectDistance}mm`}>
                     <div className="space-y-4">
                         <ParamSlider
                             label={STEPPED_LIMITS.spacing.label}
@@ -684,6 +690,32 @@ export default function SteppedPanel({
                             onChange={(v) => updateParam("splitGrooveDepth", v)}
                             unit={STEPPED_LIMITS.splitGrooveDepth.unit}
                         />
+                        {showSplitAssemblyMode ? (
+                            <div className="space-y-2">
+                                <label className="text-xs text-muted-foreground">装配方式</label>
+                                <Select
+                                    value={params.splitAssemblyMode ?? "profile-tenon"}
+                                    onValueChange={(value) =>
+                                        updateParam(
+                                            "splitAssemblyMode",
+                                            value as SteppedLayoutParams["splitAssemblyMode"],
+                                        )
+                                    }
+                                >
+                                    <SelectTrigger className="h-8">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="profile-tenon">
+                                            {SPLIT_ASSEMBLY_MODE_LABELS["profile-tenon"]}
+                                        </SelectItem>
+                                        <SelectItem value="locator-recess">
+                                            {SPLIT_ASSEMBLY_MODE_LABELS["locator-recess"]}
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        ) : null}
                         <ParamSlider
                             label={STEPPED_LIMITS.smoothingRadius.label}
                             value={params.smoothingRadius}

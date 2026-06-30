@@ -5,6 +5,7 @@ import type {
   FreeSlot,
   SimpleSteppedLayoutParams,
   SimpleSteppedSlot,
+  SteppedSplitAssemblyMode,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import { CUSTOM_LAYOUT_DEFAULTS, CUSTOM_LIMITS } from "@/lib/custom-config";
@@ -81,6 +82,14 @@ function getRawSteppedSplitGrooveDepth(obj: Record<string, unknown>): number {
     return obj.splitGrooveDepth;
   }
   return STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth;
+}
+
+function getRawSteppedSplitAssemblyMode(
+  obj: Record<string, unknown>,
+): SteppedSplitAssemblyMode {
+  return obj.splitAssemblyMode === "locator-recess"
+    ? "locator-recess"
+    : (STEPPED_LAYOUT_DEFAULTS.splitAssemblyMode ?? "profile-tenon");
 }
 
 function requireNumber(obj: Record<string, unknown>, key: string) {
@@ -171,6 +180,7 @@ export function migrateCustomParamsToStepped(
     spacing: customParams.spacing,
     holeDepth: customParams.holeDepth || 3,
     splitGrooveDepth: STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth,
+    splitAssemblyMode: STEPPED_LAYOUT_DEFAULTS.splitAssemblyMode,
     smoothingRadius: STEPPED_LAYOUT_DEFAULTS.smoothingRadius,
     disconnectDistance: STEPPED_LAYOUT_DEFAULTS.disconnectDistance,
     enableBaseHole: customParams.enableBaseHole,
@@ -807,6 +817,7 @@ function clampAndFillSteppedDerivedFields(params: SteppedLayoutParams) {
   const rawSmoothingRadius = getRawSteppedSmoothingRadius(obj);
   const rawDisconnectDistance = getRawSteppedDisconnectDistance(obj);
   const rawSplitGrooveDepth = getRawSteppedSplitGrooveDepth(obj);
+  const rawSplitAssemblyMode = getRawSteppedSplitAssemblyMode(obj);
 
   for (const group of groups) {
     clampField(
@@ -837,6 +848,7 @@ function clampAndFillSteppedDerivedFields(params: SteppedLayoutParams) {
     obj.splitGrooveDepth = rawSplitGrooveDepth;
   }
   clampField(obj, "splitGrooveDepth", STEPPED_LIMITS.splitGrooveDepth);
+  obj.splitAssemblyMode = rawSplitAssemblyMode;
 
   if (
     typeof obj.smoothingRadius !== "number" ||

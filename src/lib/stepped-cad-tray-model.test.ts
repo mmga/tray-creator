@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { measureVolume } from "@jscad/modeling/src/measurements";
+import { measureBoundingBox, measureVolume } from "@jscad/modeling/src/measurements";
 import { BASE_HOLE_CONFIG } from "@/lib/config";
 import { buildSteppedCadFeatureGraph } from "@/lib/stepped-cad-feature-graph";
 import {
@@ -91,6 +91,21 @@ function countCavityWallFacesNear(
       const dy = (vertex[1] ?? 0) - center.y;
       return Math.abs(Math.hypot(dx, dy) - radius) < 0.2;
     });
+  }).length;
+}
+
+function countHorizontalFacesNear(
+  geometry: { polygons: { vertices: number[][] }[] },
+  z: number,
+) {
+  return geometry.polygons.filter((polygon) => {
+    if (polygon.vertices.length < 3) {
+      return false;
+    }
+
+    return polygon.vertices.every(
+      (vertex) => Math.abs((vertex[2] ?? 0) - z) < 0.01,
+    );
   }).length;
 }
 
@@ -206,7 +221,7 @@ describe("stepped cad tray model", () => {
     );
   });
 
-  it("builds inset assembly pockets on lower parts and 2mm tenons on upper parts", () => {
+  it("builds inset assembly pockets on lower parts and 2mm tenons on upper parts by default", () => {
     const params = createParams();
     const plainParts = createSteppedCadSplitParts(params, 0);
     const groovedParts = createSteppedCadSplitParts(params, 2);
@@ -217,5 +232,54 @@ describe("stepped cad tray model", () => {
     expect(measureVolume(groovedParts[0].geometry)).toBeLessThan(
       measureVolume(plainParts[0].geometry),
     );
+    const [[, , plainHighMinZ]] = measureBoundingBox(plainParts[1].geometry);
+    const [[, , groovedHighMinZ]] = measureBoundingBox(groovedParts[1].geometry);
+    expect(groovedHighMinZ).toBeLessThan(plainHighMinZ);
+  });
+
+  it("builds printable locator pins, outline recesses, and sockets when selected", () => {
+    const baseParams = createParams();
+    const params = {
+      ...baseParams,
+      splitAssemblyMode: "locator-recess" as const,
+      slots: [
+        ...baseParams.slots,
+        {
+          id: "slot-high-2",
+          x: 160,
+          y: 150,
+          shape: "circle" as const,
+          width: 25,
+          height: 25,
+          rotation: 0,
+          groupId: "group-high",
+        },
+      ],
+    };
+    const plainParts = createSteppedCadSplitParts(params, 0);
+    const groovedParts = createSteppedCadSplitParts(params, 2);
+
+    expect(plainParts).toHaveLength(2);
+    expect(groovedParts).toHaveLength(2);
+
+    expect(groovedParts[1].geometry.polygons.length).toBeGreaterThan(
+      plainParts[1].geometry.polygons.length,
+    );
+
+    const [, [, , plainLowMaxZ]] = measureBoundingBox(plainParts[0].geometry);
+    const [, [, , groovedLowMaxZ]] = measureBoundingBox(groovedParts[0].geometry);
+    const [[, , plainHighMinZ]] = measureBoundingBox(plainParts[1].geometry);
+    const [[, , groovedHighMinZ]] = measureBoundingBox(groovedParts[1].geometry);
+
+    expect(groovedLowMaxZ).toBeGreaterThan(plainLowMaxZ);
+    expect(groovedHighMinZ).toBeCloseTo(plainHighMinZ, 3);
+    expect(
+      countHorizontalFacesNear(
+        groovedParts[0].geometry as unknown as {
+          polygons: { vertices: number[][] }[];
+        },
+        9.2,
+      ),
+    ).toBeGreaterThan(0);
   });
 });

@@ -37,6 +37,7 @@ export const STEPPED_LAYOUT_DEFAULTS: SteppedLayoutParams = {
   spacing: 5,
   holeDepth: 3,
   splitGrooveDepth: 2,
+  splitAssemblyMode: "profile-tenon",
   smoothingRadius: STEPPED_DEFAULT_SMOOTHING_RADIUS,
   disconnectDistance: STEPPED_DEFAULT_DISCONNECT_DISTANCE,
   enableBaseHole: false,

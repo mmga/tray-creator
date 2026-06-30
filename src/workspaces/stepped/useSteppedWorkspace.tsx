@@ -56,6 +56,7 @@ export function useSteppedWorkspace({
     () => (
       <SteppedPanel
         params={model.params}
+        mode={mode}
         effectiveDimensions={model.effectiveDimensions}
         isPreviewStale={model.isPreviewStale}
         setParams={model.setParams}
@@ -108,6 +109,7 @@ export function useSteppedWorkspace({
       model.isOptimizingLayout,
       model.isPreviewStale,
       model.moveSelectedSlotsToGroup,
+      mode,
       model.optimizationProposals,
       model.params,
       model.removeGroup,

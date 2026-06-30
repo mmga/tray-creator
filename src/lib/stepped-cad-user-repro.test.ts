@@ -200,6 +200,21 @@ function countSmallHorizontalFacesNear(
   }).length;
 }
 
+function countHorizontalFacesNear(
+  geometry: { polygons: { vertices: number[][] }[] },
+  z: number,
+) {
+  return geometry.polygons.filter((polygon) => {
+    if (polygon.vertices.length < 3) {
+      return false;
+    }
+
+    return polygon.vertices.every(
+      (vertex) => Math.abs((vertex[2] ?? 0) - z) < 0.01,
+    );
+  }).length;
+}
+
 function findMergedPart(grooveDepth: number) {
   return createSteppedCadSplitParts({
     ...USER_REPRO_PARAMS,
@@ -291,6 +306,50 @@ describe("stepped cad user repro", { timeout: 15000 }, () => {
       mergedPart!.geometry,
       buildExpectedMergedPartGeometry(2),
     );
+  });
+
+  it("builds printable locator recess assembly features when selected", () => {
+    const plainParts = createSteppedCadSplitParts({
+      ...USER_REPRO_PARAMS,
+      splitAssemblyMode: "locator-recess",
+      splitGrooveDepth: 0,
+    });
+    const groovedParts = createSteppedCadSplitParts({
+      ...USER_REPRO_PARAMS,
+      splitAssemblyMode: "locator-recess",
+      splitGrooveDepth: 2,
+    });
+
+    expect(plainParts).toHaveLength(groovedParts.length);
+
+    const lowestPlainPart = [...plainParts].sort(
+      (left, right) => left.fromHeight - right.fromHeight,
+    )[0];
+    const lowestGroovedPart = [...groovedParts].sort(
+      (left, right) => left.fromHeight - right.fromHeight,
+    )[0];
+    const highestPlainPart = [...plainParts].sort(
+      (left, right) => right.toHeight - left.toHeight,
+    )[0];
+    const highestGroovedPart = [...groovedParts].sort(
+      (left, right) => right.toHeight - left.toHeight,
+    )[0];
+
+    const [, [, , plainLowMaxZ]] = measureBoundingBox(lowestPlainPart.geometry);
+    const [, [, , groovedLowMaxZ]] = measureBoundingBox(lowestGroovedPart.geometry);
+    const [[, , plainHighMinZ]] = measureBoundingBox(highestPlainPart.geometry);
+    const [[, , groovedHighMinZ]] = measureBoundingBox(highestGroovedPart.geometry);
+
+    expect(groovedLowMaxZ).toBeGreaterThan(plainLowMaxZ);
+    expect(groovedHighMinZ).toBeCloseTo(plainHighMinZ, 3);
+    expect(
+      countHorizontalFacesNear(
+        lowestGroovedPart.geometry as unknown as {
+          polygons: { vertices: number[][] }[];
+        },
+        9.2,
+      ),
+    ).toBeGreaterThan(0);
   });
 
   it("keeps CAD split assembly interfaces from fragmenting into tiny coplanar faces", () => {
