@@ -17,13 +17,16 @@ const { intersect, subtract, union } = booleans;
 const { extrudeLinear } = extrusions;
 const { geom3 } = geometries;
 const { measureVolume } = measurements;
-const { cuboid, ellipse } = primitives;
+const { circle, cuboid, ellipse } = primitives;
 const { rotateZ, translate } = transforms;
 
 const DEG_TO_RAD = Math.PI / 180;
 const FEATURE_EPSILON = 0.02;
 const PARTITION_MARGIN = 100;
-const DEFAULT_INTERFACE_GROOVE_DEPTH = 0;
+const DEFAULT_INTERFACE_GROOVE_DEPTH = 2;
+const DEFAULT_MATE_RADIUS = 3;
+const MIN_MATE_RADIUS = 1.2;
+const MATE_WALL_MARGIN = 0.8;
 const generalize = generalizeModule as unknown as (
   options: { snap?: boolean; simplify?: boolean; triangulate?: boolean },
   geometry: Geom3,
@@ -315,36 +318,111 @@ function orientPositiveVolume(geometry: Geom3) {
   return measureVolume(geometry) < 0 ? geom3.invert(geometry) : geometry;
 }
 
-function buildSplitUnitFootprintCutter(
+function getSupportGroups(
+  splitUnit: SteppedCadSplitUnit,
+  allowedGroupIds?: Set<string>,
+) {
+  return splitUnit.groups.filter((group) => {
+    if (!allowedGroupIds) {
+      return true;
+    }
+    return allowedGroupIds.has(group.groupId);
+  });
+}
+
+function getSupportSlotHoles(
+  splitUnit: SteppedCadSplitUnit,
+  allowedGroupIds?: Set<string>,
+) {
+  return splitUnit.slotHoles.filter((slotHole) => {
+    if (!allowedGroupIds) {
+      return true;
+    }
+    return allowedGroupIds.has(slotHole.groupId);
+  });
+}
+
+function buildSingleMateFeature(
   splitUnit: SteppedCadSplitUnit,
   depth: number,
   zBase: number,
-  interfaceHeight: number,
   allowedGroupIds?: Set<string>,
 ) {
   if (depth <= 0) {
     return null;
   }
 
-  const cutters = splitUnit.groups
-    .filter((group) => {
-      if (group.columnHeight <= interfaceHeight) {
-        return false;
-      }
-      if (!allowedGroupIds) {
-        return true;
-      }
-      return allowedGroupIds.has(group.groupId);
-    })
-    .map((group) =>
-      translate([0, 0, zBase], extrudeLinear({ height: depth }, group.footprint)),
-    );
-
-  if (cutters.length === 0) {
+  const supportGroups = getSupportGroups(splitUnit, allowedGroupIds);
+  const supportSlotHoles = getSupportSlotHoles(splitUnit, allowedGroupIds);
+  if (supportGroups.length === 0) {
     return null;
   }
 
-  return cutters.length === 1 ? cutters[0] : union(...cutters);
+  const bounds = supportGroups.reduce(
+    (acc, group) => [
+      [
+        Math.min(acc[0][0], group.bounds[0][0]),
+        Math.min(acc[0][1], group.bounds[0][1]),
+      ],
+      [
+        Math.max(acc[1][0], group.bounds[1][0]),
+        Math.max(acc[1][1], group.bounds[1][1]),
+      ],
+    ] as [[number, number], [number, number]],
+    supportGroups[0].bounds,
+  );
+
+  const centerX = (bounds[0][0] + bounds[1][0]) / 2;
+  const centerY = (bounds[0][1] + bounds[1][1]) / 2;
+  const spanX = bounds[1][0] - bounds[0][0];
+  const spanY = bounds[1][1] - bounds[0][1];
+  const preferredRadius = Math.min(
+    DEFAULT_MATE_RADIUS,
+    spanX / 2 - MATE_WALL_MARGIN,
+    spanY / 2 - MATE_WALL_MARGIN,
+  );
+
+  const initialOffset = preferredRadius + MATE_WALL_MARGIN;
+  const candidates: [number, number][] = [
+    [bounds[0][0] + initialOffset, centerY],
+    [bounds[1][0] - initialOffset, centerY],
+    [centerX, bounds[0][1] + initialOffset],
+    [centerX, bounds[1][1] - initialOffset],
+  ];
+
+  const scored = candidates.map(([cx, cy]) => {
+    const clearance = supportSlotHoles.length === 0
+      ? Infinity
+      : Math.min(
+          ...supportSlotHoles.map((slotHole) => {
+            const dx = cx - slotHole.cx;
+            const dy = cy - slotHole.cy;
+            return Math.hypot(dx, dy) - slotHole.outerRadius;
+          }),
+        );
+    return { cx, cy, clearance };
+  });
+
+  const bestCandidate = scored.sort((left, right) => right.clearance - left.clearance)[0];
+  if (!bestCandidate) {
+    return null;
+  }
+
+  const actualRadius = Math.min(
+    preferredRadius,
+    bestCandidate.clearance - MATE_WALL_MARGIN,
+  );
+  if (!Number.isFinite(actualRadius) || actualRadius < MIN_MATE_RADIUS) {
+    return null;
+  }
+
+  return translate(
+    [bestCandidate.cx, bestCandidate.cy, zBase],
+    extrudeLinear(
+      { height: depth },
+      circle({ radius: actualRadius, segments: 48 }),
+    ),
+  );
 }
 
 export function createSteppedCadSplitParts(
@@ -432,11 +510,10 @@ export function createSteppedCadSplitParts(
           .filter((group) => group.columnHeight === splitUnit.minHeight)
           .map((group) => group.groupId),
       );
-      const upperTenon = buildSplitUnitFootprintCutter(
+      const upperTenon = buildSingleMateFeature(
         splitUnit,
         upperTenonDepth + FEATURE_EPSILON,
         splitUnitBaseHeight - upperTenonDepth,
-        splitUnitBaseHeight,
         supportGroupIds,
       );
       if (upperTenon) {
@@ -464,11 +541,10 @@ export function createSteppedCadSplitParts(
             .filter((group) => group.columnHeight === otherSplitUnit.minHeight)
             .map((group) => group.groupId),
         );
-        const lowPocket = buildSplitUnitFootprintCutter(
+        const lowPocket = buildSingleMateFeature(
           otherSplitUnit,
           lowPocketDepth + FEATURE_EPSILON,
           otherBaseHeight - lowPocketDepth,
-          otherBaseHeight,
           supportGroupIds,
         );
         if (lowPocket) {

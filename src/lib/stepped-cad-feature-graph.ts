@@ -1,4 +1,10 @@
-import { booleans, geometries, primitives, transforms } from "@jscad/modeling";
+import {
+  booleans,
+  geometries,
+  measurements,
+  primitives,
+  transforms,
+} from "@jscad/modeling";
 import type { Geom2 } from "@jscad/modeling/src/geometries/types";
 import type { SteppedLayoutParams, SteppedSlot } from "@/types/custom-tray";
 import { RENDER_CONFIG, resolveBaseHolePresetKey } from "@/lib/config";
@@ -18,6 +24,7 @@ import { getEffectiveGroupStructureParams } from "@/lib/stepped-group-params";
 
 const { union } = booleans;
 const { geom2 } = geometries;
+const { measureBoundingBox } = measurements;
 const { circle, ellipse } = primitives;
 const { translate } = transforms;
 
@@ -140,6 +147,7 @@ export interface SteppedCadGroupFeature {
   groupId: string;
   columnHeight: number;
   footprint: Geom2;
+  bounds: [[number, number], [number, number]];
 }
 
 export interface SteppedCadSlotHoleFeature {
@@ -150,6 +158,7 @@ export interface SteppedCadSlotHoleFeature {
   rotation: number;
   topHeight: number;
   depth: number;
+  outerRadius: number;
   profile: Geom2;
 }
 
@@ -301,7 +310,7 @@ export function buildSteppedCadFeatureGraph(
   }
 
   const groups = params.groups
-    .map((group) => {
+    .map<SteppedCadGroupFeature | null>((group) => {
       const ownSlots = slots.filter((slot) => slot.groupId === group.id);
       if (ownSlots.length === 0) {
         return null;
@@ -328,17 +337,16 @@ export function buildSteppedCadFeatureGraph(
         groupId: group.id,
         columnHeight,
         footprint,
+        bounds: (() => {
+          const bounds = measureBoundingBox(footprint);
+          return [
+            [bounds[0][0], bounds[0][1]],
+            [bounds[1][0], bounds[1][1]],
+          ];
+        })(),
       };
     })
-    .filter(
-      (
-        item,
-      ): item is {
-        groupId: string;
-        columnHeight: number;
-        footprint: Geom2;
-      } => item !== null,
-    );
+    .filter((item): item is SteppedCadGroupFeature => item !== null);
 
   const heights = [...new Set(groups.map((item) => item.columnHeight))]
     .filter((height) => height > 0)
@@ -380,6 +388,9 @@ export function buildSteppedCadFeatureGraph(
       rotation: slot.rotation,
       topHeight: slot.columnHeight,
       depth: clampedDepth,
+      outerRadius:
+        Math.max(slot.profile.width, slot.profile.height) / 2 +
+        slot.profile.outerOffset,
       profile: createOffsetSlotShape(
         slot.profile.width,
         slot.profile.height,

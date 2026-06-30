@@ -117,7 +117,7 @@ export async function exportSteppedCadSplitPartFiles(
   const manifest = {
     mode: "stepped-cad-split-parts",
     generatedAt: new Date().toISOString(),
-    note: "CAD 阶梯模式拆件，按统一 feature graph 生成平接口分件。",
+    note: "CAD 阶梯模式拆件，按统一 feature graph 生成单一公母凹槽。",
     parts: parts.map((part) => ({
       file: `${baseFilename}_${part.filenameLabel}.stl`,
       label: part.label,
