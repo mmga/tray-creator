@@ -10,6 +10,18 @@
 
 ---
 
+## Post-Implementation Correction
+
+The initial layer-profile implementation was reverted after testing showed it split the lower part's outer wall into additional vertical bands. The final implementation keeps the interface sketch contract but applies it as a localized recess feature:
+
+- `A` is the upper-part male interface footprint.
+- `femaleRaw = offset(A, 0.1mm)`.
+- `B` is the lower-part top footprint at the contact height.
+- `C = intersect(femaleRaw, B)`.
+- `C` is used as the lower recess sketch, while `A` is used as the upper tenon sketch.
+
+The separate `src/lib/stepped-cad-split-profiles.ts` module from the original plan was removed because rebuilding whole height bands from `B - C` caused the non-contact outer wall fragmentation reported during validation.
+
 ## File Structure
 
 - Modify: `src/lib/stepped-cad-tray-model.ts`

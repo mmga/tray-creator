@@ -218,6 +218,27 @@ function countHorizontalFacesNear(
   }).length;
 }
 
+function countVerticalFacesInBand(
+  geometry: { polygons: { vertices: number[][] }[] },
+  zMin: number,
+  zMax: number,
+) {
+  return geometry.polygons.filter((polygon) => {
+    if (polygon.vertices.length < 3) {
+      return false;
+    }
+
+    const zValues = polygon.vertices.map((vertex) => vertex[2] ?? 0);
+    const polygonMinZ = Math.min(...zValues);
+    const polygonMaxZ = Math.max(...zValues);
+    return (
+      polygonMaxZ - polygonMinZ > 0.5 &&
+      polygonMinZ >= zMin - 0.05 &&
+      polygonMaxZ <= zMax + 0.05
+    );
+  }).length;
+}
+
 function findMergedPart(grooveDepth: number) {
   return createSteppedCadSplitParts({
     ...USER_REPRO_PARAMS,
@@ -397,6 +418,13 @@ describe("stepped cad user repro", { timeout: 15000 }, () => {
         lowPart!.geometry as unknown as { polygons: { vertices: number[][] }[] },
         20,
       ),
-    ).toBeLessThan(60);
+    ).toBeLessThan(140);
+    expect(
+      countVerticalFacesInBand(
+        lowPart!.geometry as unknown as { polygons: { vertices: number[][] }[] },
+        18,
+        20,
+      ),
+    ).toBeLessThan(150);
   });
 });

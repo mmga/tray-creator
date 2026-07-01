@@ -1,5 +1,6 @@
 import {
   booleans,
+  expansions,
   extrusions,
   geometries,
   measurements,
@@ -11,16 +12,13 @@ import type { SteppedSplitPartResult } from "@/lib/model-ports";
 import { subtractBaseHoles } from "@/lib/model-utils";
 import { buildSteppedCadFeatureGraph } from "@/lib/stepped-cad-feature-graph";
 import { insetGeom2 } from "@/lib/outline-geometry";
-import {
-  buildSteppedCadDefaultGrooveTenonFootprint,
-  buildSteppedCadSplitUnitProfile,
-} from "@/lib/stepped-cad-split-profiles";
 import type {
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import generalizeModule from "@jscad/modeling/src/operations/modifiers/generalize";
 
 const { intersect, subtract, union } = booleans;
+const { offset } = expansions;
 const { extrudeLinear } = extrusions;
 const { geom3 } = geometries;
 const { measureBoundingBox, measureVolume } = measurements;
@@ -33,6 +31,7 @@ const LAYER_OVERLAP = 0.1;
 const PARTITION_MARGIN = 100;
 const DEFAULT_INTERFACE_GROOVE_DEPTH = 2;
 const DEFAULT_INTERFACE_GROOVE_INSET = 1;
+const DEFAULT_INTERFACE_CLEARANCE = 0.1;
 const INTERFACE_FOOTPRINT_SEGMENTS = 24;
 const LOCATOR_PIN_RADIUS = 3;
 const LOCATOR_CLEARANCE = 0.35;
@@ -434,22 +433,6 @@ function buildSolidFromFootprint(
   }
 }
 
-function buildBodyFromLayerProfiles(
-  layers: { fromHeight: number; toHeight: number; footprint: Geom2 }[],
-) {
-  const solids = layers
-    .map((layer) =>
-      buildSolidFromFootprint(layer.footprint, layer.fromHeight, layer.toHeight),
-    )
-    .filter((item): item is Geom3 => item !== null);
-
-  if (solids.length === 0) {
-    return null;
-  }
-
-  return solids.length === 1 ? solids[0] : (union(...solids) as Geom3);
-}
-
 function getPartitionedGroupFootprints(
   splitUnit: SteppedCadSplitUnit,
   partitions: Map<string, SteppedCadPartition>,
@@ -542,6 +525,26 @@ function insetInterfaceFootprint(footprint: Geom2) {
       footprint,
       DEFAULT_INTERFACE_GROOVE_INSET,
     ) ?? footprint;
+  } catch {
+    return footprint;
+  }
+}
+
+function offsetInterfaceFootprint(footprint: Geom2, delta: number) {
+  if (delta <= 0) {
+    return footprint;
+  }
+
+  try {
+    const expanded = offset(
+      {
+        delta,
+        corners: "edge",
+        segments: INTERFACE_FOOTPRINT_SEGMENTS,
+      },
+      footprint,
+    ) as Geom2;
+    return isEmptyGeom2(expanded) ? footprint : expanded;
   } catch {
     return footprint;
   }
@@ -871,8 +874,33 @@ function buildInterfaceRecessMap(
       continue;
     }
 
-    const supportFootprint = buildSupportFootprint(otherSplitUnit, partitions);
-    if (!supportFootprint) {
+    const maleFootprint = buildInterfaceSupportFootprint(
+      otherSplitUnit,
+      partitions,
+    );
+    if (!maleFootprint) {
+      continue;
+    }
+    const contactGroupIds = new Set(
+      splitUnit.groups
+        .filter((group) => group.columnHeight === otherBaseHeight)
+        .map((group) => group.groupId),
+    );
+    const lowerTopFootprint = buildSupportFootprint(
+      splitUnit,
+      partitions,
+      contactGroupIds,
+    );
+    if (!lowerTopFootprint) {
+      continue;
+    }
+
+    const femaleRaw = offsetInterfaceFootprint(
+      maleFootprint,
+      DEFAULT_INTERFACE_CLEARANCE,
+    );
+    const supportFootprint = intersect(femaleRaw, lowerTopFootprint) as Geom2;
+    if (isEmptyGeom2(supportFootprint)) {
       continue;
     }
 
@@ -933,17 +961,6 @@ function buildSplitUnitBody(
   }
 
   if (assemblyFeatures.enableRecess) {
-    const profile = buildSteppedCadSplitUnitProfile(
-      splitUnit,
-      splitUnits,
-      partitions,
-      interfaceDepth,
-    );
-    const profileBody = buildBodyFromLayerProfiles(profile.layers);
-    if (profileBody) {
-      body = profileBody;
-    }
-
     const recesses = buildInterfaceRecessMap(
       splitUnit,
       splitUnits,
@@ -951,6 +968,19 @@ function buildSplitUnitBody(
       baseHeight,
       interfaceDepth,
     );
+    const recessSolids = recesses
+      .map((recess) =>
+        buildSolidFromFootprint(
+          recess.footprint,
+          Math.max(baseHeight, recess.interfaceHeight - recess.depth),
+          recess.interfaceHeight + FEATURE_EPSILON,
+        )
+      )
+      .filter((item): item is Geom3 => item !== null);
+    if (recessSolids.length > 0) {
+      body = subtract(body, ...recessSolids) as Geom3;
+    }
+
     const locators = assemblyFeatures.enableLocators
       ? buildInterfaceLocatorMap(
           splitUnit,
@@ -977,12 +1007,29 @@ function buildSplitUnitBody(
       body = union(body, ...pinSolids) as Geom3;
     }
 
+    const upperTabDepth = baseHeight > 0
+      ? Math.min(
+          LOCATOR_RECESS_DEPTH,
+          interfaceDepth,
+          splitUnit.maxHeight - baseHeight,
+        )
+      : 0;
+
+    if (upperTabDepth > 0) {
+      const maleFootprint = buildInterfaceSupportFootprint(splitUnit, partitions);
+      const tab = maleFootprint
+        ? buildSolidFromFootprint(
+            maleFootprint,
+            baseHeight - upperTabDepth,
+            baseHeight + FEATURE_EPSILON,
+          )
+        : null;
+      if (tab) {
+        body = union(body, tab) as Geom3;
+      }
+    }
+
     if (assemblyFeatures.enableLocators && baseHeight > 0) {
-      const upperTabDepth = Math.min(
-        LOCATOR_RECESS_DEPTH,
-        interfaceDepth,
-        splitUnit.maxHeight - baseHeight,
-      );
       const socketDepth = getLocatorFeatureDepth(
         interfaceDepth,
         splitUnit.maxHeight - baseHeight,
@@ -1032,10 +1079,13 @@ function buildSplitUnitBody(
     if (baseHeight > 0) {
       const tenonDepth = Math.min(interfaceDepth, splitUnit.maxHeight - baseHeight);
       if (tenonDepth > 0) {
-        const tenonFootprint = buildSteppedCadDefaultGrooveTenonFootprint(
+        const supportFootprint = buildInterfaceSupportFootprint(
           splitUnit,
           partitions,
         );
+        const tenonFootprint = supportFootprint
+          ? insetInterfaceFootprint(supportFootprint)
+          : null;
         if (tenonFootprint) {
           const tenon = buildSolidFromFootprint(
             tenonFootprint,
