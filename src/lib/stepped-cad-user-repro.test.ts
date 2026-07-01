@@ -16,6 +16,7 @@ import { insetGeom2 } from "@/lib/outline-geometry";
 import { buildSteppedCadFeatureGraph } from "@/lib/stepped-cad-feature-graph";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
+import twoHeightRecessFixture from "@/lib/fixtures/tray-stepped-cad-two-height-recess.json";
 
 const { subtract, union } = booleans;
 const { extrudeLinear } = extrusions;
@@ -31,6 +32,8 @@ const MERGED_GROUP_IDS = new Set([
 
 const USER_REPRO_PARAMS =
   traySteppedCadUserReproFixture.params as SteppedLayoutParams;
+const DOWNLOADED_REPRO_PARAMS =
+  twoHeightRecessFixture.params as SteppedLayoutParams;
 
 function buildExpectedMergedPartGeometry(grooveDepth: number) {
   const graph = buildSteppedCadFeatureGraph(USER_REPRO_PARAMS);
@@ -377,5 +380,23 @@ describe("stepped cad user repro", { timeout: 15000 }, () => {
         8,
       ),
     ).toBeLessThan(350);
+  });
+
+  it("reduces lower-part coplanar fragments for the two-height recess repro", () => {
+    const groovedParts = createSteppedCadSplitParts({
+      ...DOWNLOADED_REPRO_PARAMS,
+      splitGrooveDepth: 2,
+      enableSplitRecess: true,
+      enableSplitLocators: false,
+    });
+    const lowPart = groovedParts.find((part) => part.label === "组 2");
+
+    expect(lowPart).toBeDefined();
+    expect(
+      countSmallHorizontalFacesNear(
+        lowPart!.geometry as unknown as { polygons: { vertices: number[][] }[] },
+        20,
+      ),
+    ).toBeLessThan(60);
   });
 });

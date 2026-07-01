@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "mode": "stepped",
+  "params": {
+    "trayWidth": 260,
+    "trayDepth": 260,
+    "slots": [
+      {
+        "id": "b1141cc8-a77b-4865-9774-b7e96b89bea2",
+        "x": 130,
+        "y": 130,
+        "shape": "circle",
+        "width": 50,
+        "height": 50,
+        "slotDefinitionId": "circle-50",
+        "slotWidth": 50.4,
+        "slotHeight": 50.4,
+        "rotation": 0,
+        "groupId": "stepped-default-group"
+      },
+      {
+        "id": "99a4dbcf-1351-49a1-8c4a-0414d5dba9a8",
+        "x": 176.4,
+        "y": 130,
+        "shape": "circle",
+        "width": 32,
+        "height": 32,
+        "slotDefinitionId": "circle-32",
+        "slotWidth": 32.4,
+        "slotHeight": 32.4,
+        "rotation": 0,
+        "groupId": "stepped-default-group"
+      },
+      {
+        "id": "c361faf8-36f5-4e3c-b20c-0ba73bb06d4a",
+        "x": 82.2,
+        "y": 130,
+        "shape": "circle",
+        "width": 32,
+        "height": 32,
+        "slotDefinitionId": "circle-32",
+        "slotWidth": 32.4,
+        "slotHeight": 32.4,
+        "rotation": 0,
+        "groupId": "stepped-default-group"
+      },
+      {
+        "id": "7cf7b561-9793-4fac-9928-07d2f53453c4",
+        "x": 95.6,
+        "y": 169.8,
+        "shape": "circle",
+        "width": 32,
+        "height": 32,
+        "slotDefinitionId": "circle-32",
+        "slotWidth": 32.4,
+        "slotHeight": 32.4,
+        "rotation": 0,
+        "groupId": "9424be58-80a2-4faf-b54d-b447aede6cb7"
+      },
+      {
+        "id": "63345b68-043c-4aa5-94e0-3ca4c5ebaad9",
+        "x": 159,
+        "y": 172.2,
+        "shape": "circle",
+        "width": 32,
+        "height": 32,
+        "slotDefinitionId": "circle-32",
+        "slotWidth": 32.4,
+        "slotHeight": 32.4,
+        "rotation": 0,
+        "groupId": "9424be58-80a2-4faf-b54d-b447aede6cb7"
+      }
+    ],
+    "groups": [
+      {
+        "id": "stepped-default-group",
+        "name": "组 1",
+        "color": "#ef4444",
+        "bottomHeight": 31,
+        "useGroupSmoothingRadius": false,
+        "groupSmoothingRadius": 60,
+        "useGroupDisconnectDistance": false,
+        "groupDisconnectDistance": 0
+      },
+      {
+        "id": "9424be58-80a2-4faf-b54d-b447aede6cb7",
+        "name": "组 2",
+        "color": "#3b82f6",
+        "bottomHeight": 20,
+        "useGroupSmoothingRadius": false,
+        "groupSmoothingRadius": 60,
+        "useGroupDisconnectDistance": false,
+        "groupDisconnectDistance": 0
+      }
+    ],
+    "activeGroupId": "9424be58-80a2-4faf-b54d-b447aede6cb7",
+    "spacing": 5,
+    "holeDepth": 3,
+    "smoothingRadius": 60,
+    "disconnectDistance": 0,
+    "enableBaseHole": true,
+    "baseHoleSize": "25",
+    "splitGrooveDepth": 2,
+    "enableSplitRecess": true,
+    "enableSplitLocators": true
+  }
+}

@@ -11,6 +11,10 @@ import type { SteppedSplitPartResult } from "@/lib/model-ports";
 import { subtractBaseHoles } from "@/lib/model-utils";
 import { buildSteppedCadFeatureGraph } from "@/lib/stepped-cad-feature-graph";
 import { insetGeom2 } from "@/lib/outline-geometry";
+import {
+  buildSteppedCadDefaultGrooveTenonFootprint,
+  buildSteppedCadSplitUnitProfile,
+} from "@/lib/stepped-cad-split-profiles";
 import type {
   SteppedLayoutParams,
 } from "@/types/custom-tray";
@@ -428,6 +432,22 @@ function buildSolidFromFootprint(
   } catch {
     return null;
   }
+}
+
+function buildBodyFromLayerProfiles(
+  layers: { fromHeight: number; toHeight: number; footprint: Geom2 }[],
+) {
+  const solids = layers
+    .map((layer) =>
+      buildSolidFromFootprint(layer.footprint, layer.fromHeight, layer.toHeight),
+    )
+    .filter((item): item is Geom3 => item !== null);
+
+  if (solids.length === 0) {
+    return null;
+  }
+
+  return solids.length === 1 ? solids[0] : (union(...solids) as Geom3);
 }
 
 function getPartitionedGroupFootprints(
@@ -912,6 +932,82 @@ function buildSplitUnitBody(
     return body;
   }
 
+  if (assemblyFeatures.enableRecess) {
+    const profile = buildSteppedCadSplitUnitProfile(
+      splitUnit,
+      splitUnits,
+      partitions,
+      interfaceDepth,
+    );
+    const profileBody = buildBodyFromLayerProfiles(profile.layers);
+    if (profileBody) {
+      body = profileBody;
+    }
+
+    const recesses = buildInterfaceRecessMap(
+      splitUnit,
+      splitUnits,
+      partitions,
+      baseHeight,
+      interfaceDepth,
+    );
+    const locators = assemblyFeatures.enableLocators
+      ? buildInterfaceLocatorMap(
+          splitUnit,
+          splitUnits,
+          partitions,
+          baseHeight,
+          interfaceDepth,
+        )
+      : [];
+    const pinSolids = locators
+      .flatMap((locator) =>
+        locator.points.map((point) => {
+          const recess = recesses.find(
+            (item) => item.interfaceHeight === locator.interfaceHeight,
+          );
+          const pinBaseHeight =
+            locator.interfaceHeight - (recess?.depth ?? 0) - FEATURE_EPSILON;
+
+          return buildLocatorSolid(point, pinBaseHeight, locator.depth);
+        })
+      )
+      .filter((item): item is Geom3 => item !== null);
+    if (pinSolids.length > 0) {
+      body = union(body, ...pinSolids) as Geom3;
+    }
+
+    if (assemblyFeatures.enableLocators && baseHeight > 0) {
+      const upperTabDepth = Math.min(
+        LOCATOR_RECESS_DEPTH,
+        interfaceDepth,
+        splitUnit.maxHeight - baseHeight,
+      );
+      const socketDepth = getLocatorFeatureDepth(
+        interfaceDepth,
+        splitUnit.maxHeight - baseHeight,
+      );
+      const socketBaseHeight = baseHeight - upperTabDepth - FEATURE_EPSILON;
+      const socketSolids = socketDepth > 0
+        ? selectInterfaceLocatorPoints(splitUnit)
+            .flatMap((point) =>
+              buildLocatorBandSolids(
+                point,
+                socketBaseHeight,
+                socketDepth,
+                LOCATOR_CLEARANCE,
+              )
+            )
+            .filter((item): item is Geom3 => item !== null)
+        : [];
+      if (socketSolids.length > 0) {
+        body = subtract(body, ...socketSolids) as Geom3;
+      }
+    }
+
+    return body;
+  }
+
   if (!assemblyFeatures.enableRecess && !assemblyFeatures.enableLocators) {
     const pockets = buildInterfacePocketMap(
       splitUnit,
@@ -936,12 +1032,11 @@ function buildSplitUnitBody(
     if (baseHeight > 0) {
       const tenonDepth = Math.min(interfaceDepth, splitUnit.maxHeight - baseHeight);
       if (tenonDepth > 0) {
-        const supportFootprint = buildInterfaceSupportFootprint(
+        const tenonFootprint = buildSteppedCadDefaultGrooveTenonFootprint(
           splitUnit,
           partitions,
         );
-        if (supportFootprint) {
-          const tenonFootprint = insetInterfaceFootprint(supportFootprint);
+        if (tenonFootprint) {
           const tenon = buildSolidFromFootprint(
             tenonFootprint,
             baseHeight - tenonDepth,
