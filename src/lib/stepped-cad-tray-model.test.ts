@@ -109,6 +109,34 @@ function countHorizontalFacesNear(
   }).length;
 }
 
+function polygonArea2d(polygon: { vertices: number[][] }) {
+  let area = 0;
+  for (let index = 0; index < polygon.vertices.length; index += 1) {
+    const current = polygon.vertices[index];
+    const next = polygon.vertices[(index + 1) % polygon.vertices.length];
+    area += (current[0] ?? 0) * (next[1] ?? 0);
+    area -= (next[0] ?? 0) * (current[1] ?? 0);
+  }
+  return Math.abs(area) / 2;
+}
+
+function sumHorizontalFaceAreaNear(
+  geometry: { polygons: { vertices: number[][] }[] },
+  z: number,
+) {
+  return geometry.polygons
+    .filter((polygon) => {
+      if (polygon.vertices.length < 3) {
+        return false;
+      }
+
+      return polygon.vertices.every(
+        (vertex) => Math.abs((vertex[2] ?? 0) - z) < 0.01,
+      );
+    })
+    .reduce((total, polygon) => total + polygonArea2d(polygon), 0);
+}
+
 function expectPartHasBaseHoleCavity(
   geometry: { polygons: { vertices: number[][] }[] },
   baseHole: ReturnType<typeof buildSteppedCadFeatureGraph>["baseHoles"][number],
@@ -302,8 +330,21 @@ describe("stepped cad tray model", () => {
 
     const [[, , plainHighMinZ]] = measureBoundingBox(plainParts[1].geometry);
     const [[, , groovedHighMinZ]] = measureBoundingBox(groovedParts[1].geometry);
+    const plainBottomArea = sumHorizontalFaceAreaNear(
+      plainParts[1].geometry as unknown as {
+        polygons: { vertices: number[][] }[];
+      },
+      plainHighMinZ,
+    );
+    const groovedBottomArea = sumHorizontalFaceAreaNear(
+      groovedParts[1].geometry as unknown as {
+        polygons: { vertices: number[][] }[];
+      },
+      groovedHighMinZ,
+    );
 
     expect(groovedHighMinZ).toBeLessThan(plainHighMinZ - 1.5);
+    expect(groovedBottomArea).toBeGreaterThan(plainBottomArea * 0.75);
     expect(
       countHorizontalFacesNear(
         groovedParts[0].geometry as unknown as {

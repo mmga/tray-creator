@@ -874,7 +874,7 @@ function buildInterfaceRecessMap(
       continue;
     }
 
-    const maleFootprint = buildInterfaceSupportFootprint(
+    const maleFootprint = buildSupportFootprint(
       otherSplitUnit,
       partitions,
     );
@@ -1016,7 +1016,7 @@ function buildSplitUnitBody(
       : 0;
 
     if (upperTabDepth > 0) {
-      const maleFootprint = buildInterfaceSupportFootprint(splitUnit, partitions);
+      const maleFootprint = buildSupportFootprint(splitUnit, partitions);
       const tab = maleFootprint
         ? buildSolidFromFootprint(
             maleFootprint,
