@@ -17,6 +17,7 @@ import { buildSteppedCadFeatureGraph } from "@/lib/stepped-cad-feature-graph";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 import twoHeightRecessFixture from "@/lib/fixtures/tray-stepped-cad-two-height-recess.json";
+import downloadedTwoHeightRecessFixture from "@/lib/fixtures/tray-stepped-cad-download-two-height-recess.json";
 
 const { subtract, union } = booleans;
 const { extrudeLinear } = extrusions;
@@ -34,6 +35,8 @@ const USER_REPRO_PARAMS =
   traySteppedCadUserReproFixture.params as SteppedLayoutParams;
 const DOWNLOADED_REPRO_PARAMS =
   twoHeightRecessFixture.params as SteppedLayoutParams;
+const DOWNLOADED_RAW_REPRO_PARAMS =
+  downloadedTwoHeightRecessFixture.params as SteppedLayoutParams;
 
 function buildExpectedMergedPartGeometry(grooveDepth: number) {
   const graph = buildSteppedCadFeatureGraph(USER_REPRO_PARAMS);
@@ -216,6 +219,23 @@ function countHorizontalFacesNear(
       (vertex) => Math.abs((vertex[2] ?? 0) - z) < 0.01,
     );
   }).length;
+}
+
+function sumHorizontalFaceAreaNear(
+  geometry: { polygons: { vertices: number[][] }[] },
+  z: number,
+) {
+  return geometry.polygons
+    .filter((polygon) => {
+      if (polygon.vertices.length < 3) {
+        return false;
+      }
+
+      return polygon.vertices.every(
+        (vertex) => Math.abs((vertex[2] ?? 0) - z) < 0.01,
+      );
+    })
+    .reduce((total, polygon) => total + polygonArea2d(polygon), 0);
 }
 
 function countVerticalFacesInBand(
@@ -426,5 +446,43 @@ describe("stepped cad user repro", { timeout: 15000 }, () => {
         20,
       ),
     ).toBeLessThan(150);
+  });
+
+  it("keeps the downloaded two-height recess upper tab as the full outline footprint", () => {
+    const plainParts = createSteppedCadSplitParts({
+      ...DOWNLOADED_RAW_REPRO_PARAMS,
+      splitGrooveDepth: 0,
+      enableSplitRecess: true,
+      enableSplitLocators: false,
+    });
+    const groovedParts = createSteppedCadSplitParts({
+      ...DOWNLOADED_RAW_REPRO_PARAMS,
+      splitGrooveDepth: 2,
+      enableSplitRecess: true,
+      enableSplitLocators: false,
+    });
+    const plainHighPart = plainParts.find(
+      (part) => part.label === "组 1" && part.fromHeight === 20 && part.toHeight === 31,
+    );
+    const groovedHighPart = groovedParts.find(
+      (part) => part.label === "组 1" && part.fromHeight === 20 && part.toHeight === 31,
+    );
+
+    expect(plainHighPart).toBeDefined();
+    expect(groovedHighPart).toBeDefined();
+
+    const [[, , plainHighMinZ]] = measureBoundingBox(plainHighPart!.geometry);
+    const [[, , groovedHighMinZ]] = measureBoundingBox(groovedHighPart!.geometry);
+    const plainBottomArea = sumHorizontalFaceAreaNear(
+      plainHighPart!.geometry as unknown as { polygons: { vertices: number[][] }[] },
+      plainHighMinZ,
+    );
+    const groovedBottomArea = sumHorizontalFaceAreaNear(
+      groovedHighPart!.geometry as unknown as { polygons: { vertices: number[][] }[] },
+      groovedHighMinZ,
+    );
+
+    expect(groovedHighMinZ).toBeLessThan(plainHighMinZ - 1.5);
+    expect(groovedBottomArea).toBeGreaterThan(plainBottomArea * 0.8);
   });
 });
