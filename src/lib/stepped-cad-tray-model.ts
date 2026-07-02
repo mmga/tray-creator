@@ -13,6 +13,7 @@ import { subtractBaseHoles } from "@/lib/model-utils";
 import { buildSteppedCadFeatureGraph } from "@/lib/stepped-cad-feature-graph";
 import { insetGeom2 } from "@/lib/outline-geometry";
 import type {
+  SplitGrooveType,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import generalizeModule from "@jscad/modeling/src/operations/modifiers/generalize";
@@ -31,6 +32,7 @@ const LAYER_OVERLAP = 0.1;
 const PARTITION_MARGIN = 100;
 const DEFAULT_INTERFACE_GROOVE_DEPTH = 2;
 const DEFAULT_INTERFACE_GROOVE_INSET = 1;
+const INSET_INTERFACE_GROOVE_INSET = 1;
 const DEFAULT_INTERFACE_CLEARANCE = 0.1;
 const INTERFACE_FOOTPRINT_SEGMENTS = 24;
 const LOCATOR_PIN_RADIUS = 3;
@@ -474,10 +476,14 @@ function buildSupportFootprint(
 function resolveSplitAssemblyMode(
   params: SteppedLayoutParams,
 ) {
+  const grooveType: SplitGrooveType =
+    params.splitGrooveType === "inset" ? "inset" : "profile";
+
   return {
     enableRecess:
       params.enableSplitRecess === true ||
       params.splitAssemblyMode === "locator-recess",
+    grooveType,
     enableLocators:
       params.enableSplitLocators === true ||
       params.splitAssemblyMode === "locator-recess",
@@ -527,6 +533,24 @@ function insetInterfaceFootprint(footprint: Geom2) {
     ) ?? footprint;
   } catch {
     return footprint;
+  }
+}
+
+function buildSplitGrooveMaleFootprint(
+  splitUnit: SteppedCadSplitUnit,
+  partitions: Map<string, SteppedCadPartition>,
+  grooveType: SplitGrooveType,
+) {
+  const footprint = buildSupportFootprint(splitUnit, partitions);
+  if (!footprint || grooveType !== "inset") {
+    return footprint;
+  }
+
+  try {
+    const inset = insetGeom2(footprint, INSET_INTERFACE_GROOVE_INSET);
+    return isEmptyGeom2(inset) ? null : inset;
+  } catch {
+    return null;
   }
 }
 
@@ -851,6 +875,7 @@ function buildInterfaceRecessMap(
   partitions: Map<string, SteppedCadPartition>,
   baseHeight: number,
   grooveDepth: number,
+  grooveType: SplitGrooveType,
 ) {
   const recesses = new Map<number, InterfacePocket>();
   const splitUnitHeights = new Set(splitUnit.groups.map((group) => group.columnHeight));
@@ -874,9 +899,10 @@ function buildInterfaceRecessMap(
       continue;
     }
 
-    const maleFootprint = buildSupportFootprint(
+    const maleFootprint = buildSplitGrooveMaleFootprint(
       otherSplitUnit,
       partitions,
+      grooveType,
     );
     if (!maleFootprint) {
       continue;
@@ -967,6 +993,7 @@ function buildSplitUnitBody(
       partitions,
       baseHeight,
       interfaceDepth,
+      assemblyFeatures.grooveType,
     );
     const recessSolids = recesses
       .map((recess) =>
@@ -1016,7 +1043,11 @@ function buildSplitUnitBody(
       : 0;
 
     if (upperTabDepth > 0) {
-      const maleFootprint = buildSupportFootprint(splitUnit, partitions);
+      const maleFootprint = buildSplitGrooveMaleFootprint(
+        splitUnit,
+        partitions,
+        assemblyFeatures.grooveType,
+      );
       const tab = maleFootprint
         ? buildSolidFromFootprint(
             maleFootprint,
@@ -1109,6 +1140,7 @@ function buildSplitUnitBody(
         partitions,
         baseHeight,
         interfaceDepth,
+        assemblyFeatures.grooveType,
       )
     : [];
   const recessSolids = recesses

@@ -7,6 +7,8 @@ export type AppMode =
   | "stepped"
   | "stepped-cad";
 
+export type SplitGrooveType = "profile" | "inset";
+
 /** 阶梯底座分组（一组凹槽统一高度，并形成阶梯结构的一层） */
 export interface SlotGroup {
   id: string;
@@ -153,6 +155,8 @@ export interface SteppedLayoutParams {
   splitGrooveDepth: number;
   /** CAD 拆件时在下方实体生成上方实体轮廓浅槽 */
   enableSplitRecess?: boolean;
+  /** CAD 拆件装配槽型：完整轮廓或内缩轮廓 */
+  splitGrooveType?: SplitGrooveType;
   /** CAD 拆件时生成定位柱和定位窝 */
   enableSplitLocators?: boolean;
   /** 旧字段：导入时兼容旧的装配方式选项 */

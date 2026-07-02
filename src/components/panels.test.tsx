@@ -1562,13 +1562,14 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     expect(updateParam).toHaveBeenNthCalledWith(5, "disconnectDistance", 3);
   });
 
-  it("routes CAD split recess and locator toggles", () => {
+  it("routes CAD split groove type and locator controls", () => {
     const updateParam = vi.fn();
 
     render(
       <SteppedPanel
         params={createSteppedParams({
           enableSplitRecess: false,
+          splitGrooveType: "profile",
           enableSplitLocators: false,
         })}
         mode="stepped-cad"
@@ -1606,25 +1607,23 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
       />,
     );
 
-    expect(screen.getByText("轮廓浅槽")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "关" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "轮廓凹槽" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "内缩凹槽" })).toBeInTheDocument();
     expect(screen.getByText("定位柱")).toBeInTheDocument();
 
-    const recessSwitch = screen
-      .getByText("轮廓浅槽")
-      .closest("label")
-      ?.querySelector('[role="switch"]');
     const locatorSwitch = screen
       .getByText("定位柱")
       .closest("label")
       ?.querySelector('[role="switch"]');
-    expect(recessSwitch).not.toBeNull();
     expect(locatorSwitch).not.toBeNull();
 
-    fireEvent.click(recessSwitch!);
+    fireEvent.click(screen.getByRole("button", { name: "内缩凹槽" }));
     fireEvent.click(locatorSwitch!);
 
     expect(updateParam).toHaveBeenNthCalledWith(1, "enableSplitRecess", true);
-    expect(updateParam).toHaveBeenNthCalledWith(2, "enableSplitLocators", true);
+    expect(updateParam).toHaveBeenNthCalledWith(2, "splitGrooveType", "inset");
+    expect(updateParam).toHaveBeenNthCalledWith(3, "enableSplitLocators", true);
   });
 
   it("routes stepped magnetic base-hole mode toggles", () => {

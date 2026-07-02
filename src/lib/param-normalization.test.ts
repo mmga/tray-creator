@@ -224,6 +224,7 @@ describe("param normalization", () => {
     expect(normalized.splitGrooveDepth).toBe(
       STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth,
     );
+    expect(normalized.splitGrooveType).toBe("profile");
   });
 
   it("preserves valid stepped split part group targets and drops invalid ones", () => {
@@ -311,5 +312,21 @@ describe("param normalization", () => {
     expect(defaulted.splitGrooveDepth).toBe(
       STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth,
     );
+  });
+
+  it("normalizes stepped split groove type", () => {
+    const inset = normalizeParamsForMode("stepped", {
+      ...STEPPED_LAYOUT_DEFAULTS,
+      enableSplitRecess: true,
+      splitGrooveType: "inset",
+    } as SteppedLayoutParams) as SteppedLayoutParams;
+    const invalid = normalizeParamsForMode("stepped", {
+      ...STEPPED_LAYOUT_DEFAULTS,
+      enableSplitRecess: true,
+      splitGrooveType: "invalid",
+    } as unknown as SteppedLayoutParams) as SteppedLayoutParams;
+
+    expect(inset.splitGrooveType).toBe("inset");
+    expect(invalid.splitGrooveType).toBe("profile");
   });
 });

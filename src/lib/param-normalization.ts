@@ -90,6 +90,10 @@ function getRawSteppedSplitRecessEnabled(obj: Record<string, unknown>) {
   return obj.splitAssemblyMode === "locator-recess";
 }
 
+function getRawSteppedSplitGrooveType(obj: Record<string, unknown>) {
+  return obj.splitGrooveType === "inset" ? "inset" : "profile";
+}
+
 function getRawSteppedSplitLocatorsEnabled(obj: Record<string, unknown>) {
   if (typeof obj.enableSplitLocators === "boolean") {
     return obj.enableSplitLocators;
@@ -186,6 +190,7 @@ export function migrateCustomParamsToStepped(
     holeDepth: customParams.holeDepth || 3,
     splitGrooveDepth: STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth,
     enableSplitRecess: STEPPED_LAYOUT_DEFAULTS.enableSplitRecess,
+    splitGrooveType: STEPPED_LAYOUT_DEFAULTS.splitGrooveType,
     enableSplitLocators: STEPPED_LAYOUT_DEFAULTS.enableSplitLocators,
     smoothingRadius: STEPPED_LAYOUT_DEFAULTS.smoothingRadius,
     disconnectDistance: STEPPED_LAYOUT_DEFAULTS.disconnectDistance,
@@ -824,6 +829,7 @@ function clampAndFillSteppedDerivedFields(params: SteppedLayoutParams) {
   const rawDisconnectDistance = getRawSteppedDisconnectDistance(obj);
   const rawSplitGrooveDepth = getRawSteppedSplitGrooveDepth(obj);
   const rawSplitRecessEnabled = getRawSteppedSplitRecessEnabled(obj);
+  const rawSplitGrooveType = getRawSteppedSplitGrooveType(obj);
   const rawSplitLocatorsEnabled = getRawSteppedSplitLocatorsEnabled(obj);
 
   for (const group of groups) {
@@ -856,6 +862,7 @@ function clampAndFillSteppedDerivedFields(params: SteppedLayoutParams) {
   }
   clampField(obj, "splitGrooveDepth", STEPPED_LIMITS.splitGrooveDepth);
   obj.enableSplitRecess = rawSplitRecessEnabled;
+  obj.splitGrooveType = rawSplitGrooveType;
   obj.enableSplitLocators = rawSplitLocatorsEnabled;
   delete obj.splitAssemblyMode;
 

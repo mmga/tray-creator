@@ -1,6 +1,6 @@
 "use client";
 
-import type { AppMode, SteppedLayoutParams } from "@/types/custom-tray";
+import type { AppMode, SplitGrooveType, SteppedLayoutParams } from "@/types/custom-tray";
 import type { BridgeWarning } from "@/lib/stepped-connectivity";
 import type { SteppedOptimizationProposal } from "@/lib/stepped-global-optimize";
 import {
@@ -183,9 +183,22 @@ export default function SteppedPanel({
         [activeGroup, params],
     );
     const showSplitAssemblyMode = mode === "stepped-cad";
+    const splitGrooveType = params.splitGrooveType ?? "profile";
+    const splitGrooveLabel = params.enableSplitRecess
+        ? splitGrooveType === "inset" ? "内缩凹槽" : "轮廓凹槽"
+        : "关";
     const splitFeatureSummary = showSplitAssemblyMode
-        ? ` / 轮廓槽${params.enableSplitRecess ? "开" : "关"} / 定位柱${params.enableSplitLocators ? "开" : "关"}`
+        ? ` / 装配:${splitGrooveLabel} / 定位柱${params.enableSplitLocators ? "开" : "关"}`
         : "";
+    const handleSplitGrooveTypeChange = useCallback((type: SplitGrooveType | "off") => {
+        if (type === "off") {
+            updateParam("enableSplitRecess", false);
+            return;
+        }
+
+        updateParam("enableSplitRecess", true);
+        updateParam("splitGrooveType", type);
+    }, [updateParam]);
     const activeGroupBaseHolePreset = useMemo(
         () => getBaseHolePreset(activeGroupBaseHoleSize),
         [activeGroupBaseHoleSize],
@@ -690,15 +703,30 @@ export default function SteppedPanel({
                         />
                         {showSplitAssemblyMode ? (
                             <div className="grid gap-2 rounded border border-border/60 bg-card/40 p-3">
-                                <label className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
-                                    <span>轮廓浅槽</span>
-                                    <Switch
-                                        checked={params.enableSplitRecess === true}
-                                        onCheckedChange={(checked) =>
-                                            updateParam("enableSplitRecess", checked)
-                                        }
-                                    />
-                                </label>
+                                <div className="grid grid-cols-3 gap-1">
+                                    {[
+                                        ["off", "关"],
+                                        ["profile", "轮廓凹槽"],
+                                        ["inset", "内缩凹槽"],
+                                    ].map(([value, label]) => {
+                                        const selected = value === "off"
+                                            ? params.enableSplitRecess !== true
+                                            : params.enableSplitRecess === true && splitGrooveType === value;
+                                        return (
+                                            <Button
+                                                key={value}
+                                                type="button"
+                                                size="xs"
+                                                variant={selected ? "default" : "outline"}
+                                                aria-pressed={selected}
+                                                onClick={() =>
+                                                    handleSplitGrooveTypeChange(value as SplitGrooveType | "off")
+                                                }>
+                                                {label}
+                                            </Button>
+                                        );
+                                    })}
+                                </div>
                                 <label className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
                                     <span>定位柱</span>
                                     <Switch

@@ -354,4 +354,55 @@ describe("stepped cad tray model", () => {
       ),
     ).toBeGreaterThan(0);
   });
+
+  it("builds inset recess tabs from the contact outline inset by 1mm", () => {
+    const baseParams = createParams();
+    const params = {
+      ...baseParams,
+      enableSplitRecess: true,
+      slots: [
+        ...baseParams.slots,
+        {
+          id: "slot-high-2",
+          x: 160,
+          y: 150,
+          shape: "circle" as const,
+          width: 25,
+          height: 25,
+          rotation: 0,
+          groupId: "group-high",
+        },
+      ],
+    };
+    const plainParts = createSteppedCadSplitParts(params, 0);
+    const profileParts = createSteppedCadSplitParts({
+      ...params,
+      splitGrooveType: "profile",
+    }, 2);
+    const insetParts = createSteppedCadSplitParts({
+      ...params,
+      splitGrooveType: "inset",
+    }, 2);
+
+    const [[, , plainHighMinZ]] = measureBoundingBox(plainParts[1].geometry);
+    const [[, , profileHighMinZ]] = measureBoundingBox(profileParts[1].geometry);
+    const [[, , insetHighMinZ]] = measureBoundingBox(insetParts[1].geometry);
+    const profileBottomArea = sumHorizontalFaceAreaNear(
+      profileParts[1].geometry as unknown as {
+        polygons: { vertices: number[][] }[];
+      },
+      profileHighMinZ,
+    );
+    const insetBottomArea = sumHorizontalFaceAreaNear(
+      insetParts[1].geometry as unknown as {
+        polygons: { vertices: number[][] }[];
+      },
+      insetHighMinZ,
+    );
+
+    expect(profileHighMinZ).toBeLessThan(plainHighMinZ - 1.5);
+    expect(insetHighMinZ).toBeLessThan(plainHighMinZ - 1.5);
+    expect(insetBottomArea).toBeGreaterThan(0);
+    expect(insetBottomArea).toBeLessThan(profileBottomArea * 0.95);
+  });
 });

@@ -56,6 +56,22 @@ _Avoid_: Using "feature" when the meaning is the editor mode.
 The CAD stepped-mode modeling contract where each height band is generated from its own 2D sketch and then extruded before cuts are applied.
 _Avoid_: Treating CAD stepped mode as an arbitrary union of per-group solids.
 
+**Split Assembly Groove Type**:
+The mutually exclusive stepped CAD choice that decides which contact-face outline becomes the male/female split assembly groove profile.
+_Avoid_: Treating groove types as stackable toggles.
+
+**Profile Recess**:
+A split assembly groove type where the upper male tenon uses the full upper contact-face outline, and the lower female recess uses that outline with assembly clearance clipped to the lower contact face.
+_Avoid_: Locator recess, circular recess.
+
+**Inset Recess**:
+A split assembly groove type where the upper male tenon uses the upper contact-face outline inset inward by a fixed 1mm before the lower female recess is generated from that inset profile with assembly clearance.
+_Avoid_: Treating it as profile recess plus an extra toggle.
+
+**Locator Pin**:
+A local split assembly aid that can be combined with a split assembly groove type without changing that groove type's outline semantics.
+_Avoid_: Treating locators as a groove type.
+
 **Draft**:
 A named browser-stored snapshot of one mode's tray configuration that can be listed, loaded, renamed, deleted, or exported.
 _Avoid_: Mixing draft with imported file, autosave state, or cross-mode shared preset.
@@ -226,6 +242,15 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A **Base Size** is not enough to reproduce a slot unless its **Tolerance** and shape-specific geometry are also known.
 - **CAD Stepped Construction** builds one extruded body per height band.
 - **CAD Stepped Construction** applies slot holes and magnetic base holes after the stepped height bands are assembled.
+- A stepped CAD split part has at most one active **Split Assembly Groove Type**.
+- A **Profile Recess** uses the full upper contact-face outline as the male tenon profile.
+- The user-facing label for **Profile Recess** is "轮廓凹槽".
+- An **Inset Recess** uses the upper contact-face outline after a fixed 1mm inward inset as the male tenon profile.
+- The user-facing label for **Inset Recess** is "内缩凹槽".
+- If an **Inset Recess** profile becomes empty after inset, that interface generates no male tenon or female recess.
+- If an **Inset Recess** profile separates into multiple islands after inset, each island remains part of the split assembly profile.
+- Imported stepped CAD data with split assembly enabled but no explicit **Split Assembly Groove Type** uses **Profile Recess**.
+- A **Locator Pin** may be enabled alongside either **Profile Recess** or **Inset Recess**.
 
 ## Example Dialogue
 
@@ -237,6 +262,9 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 >
 > **Dev:** "Can CAD stepped mode generate each group as a full-height solid and union them?"
 > **Domain expert:** "No. CAD stepped mode should generate the sketch for each height band, extrude that band, then apply the holes."
+>
+> **Dev:** "Can profile recess and inset recess both be enabled on the same split part?"
+> **Domain expert:** "No. They are alternative split assembly groove types; locator pins are the optional add-on."
 
 ## Flagged Ambiguities
 
@@ -246,3 +274,4 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - Grid mode previously mixed a diameter-tier quote ladder with a newer area-based custom quote baseline. Resolved: when grid pricing migrates, it fully replaces the old ladder rather than combining both rules.
 - Grid-mode "面积" could have meant nominal hole layout size or the displayed outer dimensions. Resolved: use **Grid Footprint Area**, derived from the displayed width and depth, for migrated grid pricing.
 - "CAD 阶梯模式生成" could mean either per-group solid union or band-by-band CAD construction. Resolved: use **CAD Stepped Construction**, which generates each height band from a sketch before extrusion.
+- "内缩凹槽" could mean an extra toggle layered on top of "轮廓浅槽". Resolved: use **Inset Recess** as a mutually exclusive **Split Assembly Groove Type**.

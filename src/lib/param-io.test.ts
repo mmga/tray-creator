@@ -419,6 +419,7 @@ describe("param-io", () => {
     ) as SteppedLayoutParams;
 
     expect(parsed.enableSplitRecess).toBe(true);
+    expect(parsed.splitGrooveType).toBe("profile");
     expect(parsed.enableSplitLocators).toBe(true);
     expect(parsed.splitAssemblyMode).toBeUndefined();
   });
