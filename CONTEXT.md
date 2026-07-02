@@ -68,6 +68,10 @@ _Avoid_: Locator recess, circular recess.
 A split assembly groove type where the upper male tenon uses the upper contact-face outline inset inward by a fixed 1mm before the lower female recess is generated from that inset profile with assembly clearance.
 _Avoid_: Treating it as profile recess plus an extra toggle.
 
+**Split Interface Profile**:
+The derived 2D split-interface contract for one stepped CAD contact height, including a contact footprint plus the corresponding male and female footprints used to build assembly geometry before 3D extrusion.
+_Avoid_: Re-deriving male/female assembly geometry separately from finished 3D solids.
+
 **Locator Pin**:
 A local split assembly aid that can be combined with a split assembly groove type without changing that groove type's outline semantics.
 _Avoid_: Treating locators as a groove type.
@@ -247,6 +251,10 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - The user-facing label for **Profile Recess** is "轮廓凹槽".
 - An **Inset Recess** uses the upper contact-face outline after a fixed 1mm inward inset as the male tenon profile.
 - The user-facing label for **Inset Recess** is "内缩凹槽".
+- A **Split Interface Profile** belongs to exactly one stepped CAD contact height.
+- A **Split Interface Profile** includes a contact footprint, a male footprint, and a female footprint.
+- A **Profile Recess** derives its male footprint from the full contact footprint.
+- An **Inset Recess** derives its male footprint from the contact footprint after a fixed 1mm inward inset.
 - If an **Inset Recess** profile becomes empty after inset, that interface generates no male tenon or female recess.
 - If an **Inset Recess** profile separates into multiple islands after inset, each island remains part of the split assembly profile.
 - Imported stepped CAD data with split assembly enabled but no explicit **Split Assembly Groove Type** uses **Profile Recess**.
