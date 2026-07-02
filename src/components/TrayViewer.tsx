@@ -5,7 +5,7 @@ import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { Layers, Loader2 } from "lucide-react";
 import * as THREE from "three";
-import { RENDER_CONFIG } from "@/lib/config";
+import { RENDER_CONFIG, VIEW_PALETTE } from "@/lib/config";
 
 export interface TrayViewerSplitPart {
   index: number;
@@ -24,14 +24,8 @@ interface TrayViewerProps {
   onGenerateSplitPreview?: () => void;
 }
 
-const SPLIT_PART_COLORS = [
-  "#c8a84e",
-  "#8cb880",
-  "#7fb0c8",
-  "#c88f6a",
-  "#b38cc8",
-  "#c87f96",
-];
+// 拆件预览零件配色与阶梯模式分组色共用同一调色板，保持视图颜色一致
+const SPLIT_PART_COLORS = VIEW_PALETTE;
 
 const MODEL_ROTATION = new THREE.Euler(-Math.PI / 2, 0, 0);
 const MODEL_ROTATION_MATRIX = new THREE.Matrix4().makeRotationFromEuler(
@@ -320,9 +314,9 @@ export default function TrayViewer({
             <input
               aria-label="爆炸视图间距"
               type="range"
-              min={0}
+              min={-10}
               max={96}
-              step={2}
+              step={1}
               value={explosionDistance}
               onClick={(event) => event.stopPropagation()}
               onPointerDown={(event) => event.stopPropagation()}

@@ -115,6 +115,19 @@ export const MAX_BUILD_SIZE = 260;
 /** 参数输入允许的最大托盘尺寸；打印尺寸只作为提示，不阻断建模。 */
 export const MAX_TRAY_SIZE = 5000;
 
+/**
+ * 视图共享调色板：阶梯模式分组色与拆件预览零件色统一使用此配色。
+ * 首色刻意排除红色，避免与 2D 画布的碰撞/越界警示红混淆。
+ */
+export const VIEW_PALETTE = [
+  "#c8a84e",
+  "#8cb880",
+  "#7fb0c8",
+  "#c88f6a",
+  "#b38cc8",
+  "#c87f96",
+] as const;
+
 export const RENDER_CONFIG = {
   cylinderSegments: 64,
   cornerSegments: 32,

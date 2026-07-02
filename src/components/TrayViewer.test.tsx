@@ -247,6 +247,8 @@ describe("TrayViewer", { timeout: 15000 }, () => {
 
     const distanceSlider = screen.getByLabelText("爆炸视图间距");
     expect(distanceSlider).toHaveValue("42");
+    expect(distanceSlider).toHaveAttribute("min", "-10");
+    expect(distanceSlider).toHaveAttribute("step", "1");
     expect(useThreeState.camera.position.set).toHaveBeenCalledTimes(2);
     fireEvent.change(distanceSlider, { target: { value: "76" } });
     expect(distanceSlider).toHaveValue("76");
@@ -255,6 +257,10 @@ describe("TrayViewer", { timeout: 15000 }, () => {
     fireEvent.change(distanceSlider, { target: { value: "0" } });
     expect(distanceSlider).toHaveValue("0");
     expect(screen.getByText("0")).toBeInTheDocument();
+    expect(useThreeState.camera.position.set).toHaveBeenCalledTimes(2);
+    fireEvent.change(distanceSlider, { target: { value: "-10" } });
+    expect(distanceSlider).toHaveValue("-10");
+    expect(screen.getByText("-10")).toBeInTheDocument();
     expect(useThreeState.camera.position.set).toHaveBeenCalledTimes(2);
   });
 

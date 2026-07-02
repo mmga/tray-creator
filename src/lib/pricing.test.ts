@@ -21,7 +21,7 @@ function createGroup(
   return {
     id,
     name: id,
-    color: "#ef4444",
+    color: "#c8a84e",
     bottomHeight,
     useGroupSmoothingRadius: false,
     groupSmoothingRadius: 15,

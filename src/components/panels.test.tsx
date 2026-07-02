@@ -280,7 +280,7 @@ function createSteppedParams(overrides?: Partial<React.ComponentProps<typeof Ste
       {
         id: "group-1",
         name: "组 1",
-        color: "#ef4444",
+        color: "#c8a84e",
         bottomHeight: 10,
         useGroupSmoothingRadius: false,
         groupSmoothingRadius: 40,
@@ -1190,7 +1190,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
             {
               id: "group-1",
               name: "组 1",
-              color: "#ef4444",
+              color: "#c8a84e",
               bottomHeight: 10,
               useGroupSmoothingRadius: true,
               groupSmoothingRadius: 40,
@@ -1288,7 +1288,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
             {
               id: "group-1",
               name: "组 1",
-              color: "#ef4444",
+              color: "#c8a84e",
               bottomHeight: 10,
               useGroupSmoothingRadius: true,
               groupSmoothingRadius: 40,
@@ -1703,7 +1703,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
             {
               id: "group-1",
               name: "组 1",
-              color: "#ef4444",
+              color: "#c8a84e",
               bottomHeight: 12,
               useGroupSmoothingRadius: false,
               groupSmoothingRadius: 15,

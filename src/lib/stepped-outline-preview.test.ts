@@ -29,7 +29,7 @@ function createParams(): SteppedLayoutParams {
         ...STEPPED_LAYOUT_DEFAULTS.groups[0],
         id: "low",
         name: "低组",
-        color: "#ef4444",
+        color: "#c8a84e",
         bottomHeight: 10,
       },
     ],
@@ -101,7 +101,7 @@ describe("stepped outline preview", () => {
     const lowGroup = outlinePreview![0];
     const highGroup = outlinePreview![1];
 
-    expect(lowGroup.color).toBe("#ef4444");
+    expect(lowGroup.color).toBe("#c8a84e");
     expect(highGroup.color).toBe("#3b82f6");
     expect(lowGroup.points.length).toBeGreaterThanOrEqual(3);
     expect(highGroup.points.length).toBeGreaterThanOrEqual(3);

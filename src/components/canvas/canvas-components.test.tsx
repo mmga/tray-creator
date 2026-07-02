@@ -681,7 +681,7 @@ describe("CanvasOverlayLayer", { timeout: 15000 }, () => {
       {
         key: "group-2-outline",
         groupId: "group-2",
-        color: "#ef4444",
+        color: "#c8a84e",
         bottomHeight: 16,
         points: [
           { x: 40, y: 30 },
@@ -744,7 +744,7 @@ describe("CanvasOverlayLayer", { timeout: 15000 }, () => {
       "d",
       "M 10.00 80.00 L 30.00 80.00 L 20.00 60.00 Z",
     );
-    expect(container.querySelector('path[stroke="#ef4444"]')).toHaveAttribute(
+    expect(container.querySelector('path[stroke="#c8a84e"]')).toHaveAttribute(
       "stroke-opacity",
       "0.16",
     );

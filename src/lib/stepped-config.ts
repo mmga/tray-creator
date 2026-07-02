@@ -1,17 +1,12 @@
 import type { SlotGroup, SteppedLayoutParams } from "@/types/custom-tray";
-import { MAX_TRAY_SIZE } from "@/lib/config";
+import { MAX_TRAY_SIZE, VIEW_PALETTE } from "@/lib/config";
 import { createGroupStructureOverrides } from "@/lib/stepped-group-params";
 
-export const GROUP_COLORS = [
-  "#ef4444",
-  "#3b82f6",
-  "#22c55e",
-  "#f59e0b",
-  "#8b5cf6",
-  "#06b6d4",
-  "#f97316",
-  "#ec4899",
-] as const;
+/**
+ * 阶梯模式分组配色：与拆件预览（TrayViewer）共用同一调色板，
+ * 保持两种视图颜色一致并排除红色（红色保留给 2D 画布的碰撞/越界警示）。
+ */
+export const GROUP_COLORS = VIEW_PALETTE;
 
 const STEPPED_DEFAULT_GROUP_ID = "stepped-default-group";
 const STEPPED_DEFAULT_SMOOTHING_RADIUS = 60;
