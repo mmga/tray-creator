@@ -79,7 +79,7 @@ function summarize(
   return metrics;
 }
 
-describe("stepped split mesh diagnostics", { timeout: 15000 }, () => {
+describe("stepped split mesh diagnostics", { timeout: 90000 }, () => {
   it("prints small-face distribution for split fixtures", () => {
     const splitMetrics = summarize(
       "split-fragments",

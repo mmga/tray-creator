@@ -3,6 +3,7 @@ import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
+import { createGridSlotSnapshotFromDefinition } from "@/lib/slot-instance-factory";
 import type { SlotGroup, SteppedLayoutParams } from "@/types/custom-tray";
 import {
   calculateCustomPrice,
@@ -147,20 +148,21 @@ function createSampleC(): SteppedLayoutParams {
 
 describe("pricing", () => {
   it("calculates printed weight from model volume", () => {
-    expect(calculateWeight(0)).toBe(0);
-    expect(calculateWeight(1000)).toBeCloseTo(0.744, 5);
+  expect(calculateWeight(0)).toBe(0);
+  expect(calculateWeight(1000)).toBeCloseTo(0.744, 5);
   });
 
-  it("prices grid layouts by slot count, diameter tier and base holes", () => {
+  it("prices grid layouts from the flattened footprint formula", () => {
     expect(
       calculateGridPrice({
         ...DEFAULT_TRAY_PARAMS,
         rows: 2,
         columns: 3,
         holeDiameter: 25,
+        ...createGridSlotSnapshotFromDefinition(25),
         enableBaseHole: false,
       }),
-    ).toBe(3);
+    ).toBe(6);
 
     expect(
       calculateGridPrice({
@@ -168,9 +170,10 @@ describe("pricing", () => {
         rows: 2,
         columns: 3,
         holeDiameter: 50,
+        ...createGridSlotSnapshotFromDefinition(50),
         enableBaseHole: true,
       }),
-    ).toBeCloseTo(9.6, 5);
+    ).toBe(11);
 
     expect(
       calculateGridPrice({
@@ -178,21 +181,37 @@ describe("pricing", () => {
         rows: 1,
         columns: 2,
         holeDiameter: 100,
+        ...createGridSlotSnapshotFromDefinition(100),
         enableBaseHole: false,
       }),
-    ).toBe(4);
+    ).toBe(12);
   });
 
-  it("returns zero for non-positive volume and scales custom prices from weight", () => {
+  it("returns zero for non-positive volume and uses footprint pricing for custom layouts", () => {
     expect(calculateCustomPrice(CUSTOM_LAYOUT_DEFAULTS, 0)).toBe(0);
     expect(calculateSteppedPrice(STEPPED_LAYOUT_DEFAULTS, -1)).toBe(0);
     expect(
       calculateSimpleSteppedPrice(SIMPLE_STEPPED_LAYOUT_DEFAULTS, 0),
     ).toBe(0);
-    expect(calculateCustomPrice(CUSTOM_LAYOUT_DEFAULTS, 1000)).toBeCloseTo(
-      0.2976,
-      5,
-    );
+    expect(
+      calculateCustomPrice(
+        {
+          ...CUSTOM_LAYOUT_DEFAULTS,
+          slots: [
+            {
+              id: "custom-1",
+              x: 130,
+              y: 130,
+              shape: "circle",
+              width: 32,
+              height: 32,
+              rotation: 0,
+            },
+          ],
+        },
+        1000,
+      ),
+    ).toBe(3);
     expect(
       calculateSimpleSteppedPrice(SIMPLE_STEPPED_LAYOUT_DEFAULTS, 1000),
     ).toBeCloseTo(0.2976, 5);

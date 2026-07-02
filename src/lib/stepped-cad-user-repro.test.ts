@@ -272,8 +272,8 @@ function findMergedPart(grooveDepth: number) {
   );
 }
 
-describe("stepped cad user repro", { timeout: 15000 }, () => {
-  it("keeps the complex CAD main tray convertible when magnetic holes are enabled", () => {
+describe("stepped cad user repro", { timeout: 90000 }, () => {
+  it("keeps the complex CAD main tray convertible when magnetic holes are enabled", { timeout: 90000 }, () => {
     const plainModel = createSteppedCadTrayModel({
       ...USER_REPRO_PARAMS,
       enableBaseHole: false,

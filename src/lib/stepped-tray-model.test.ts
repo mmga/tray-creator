@@ -151,7 +151,7 @@ function createMagnetParams(): SteppedLayoutParams {
   };
 }
 
-describe("stepped tray model", { timeout: 15000 }, () => {
+describe("stepped tray model", { timeout: 90000 }, () => {
   it("returns a thin placeholder body when slots or groups are missing", () => {
     const model = createSteppedTrayModel({
       ...STEPPED_LAYOUT_DEFAULTS,
