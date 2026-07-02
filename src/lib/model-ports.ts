@@ -62,9 +62,6 @@ export interface SteppedWorkerPort
   generateStepped: (
     params: SteppedLayoutParams,
   ) => Promise<{ geometry: Geom3; volume: number }>;
-  generateSteppedSplitParts: (
-    params: SteppedLayoutParams,
-  ) => Promise<{ parts: SteppedSplitPartResult[] }>;
 }
 
 export interface SteppedCadWorkerPort

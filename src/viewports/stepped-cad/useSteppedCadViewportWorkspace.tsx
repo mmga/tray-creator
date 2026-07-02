@@ -1,10 +1,10 @@
 "use client";
 
-import type { UseSteppedLayoutReturn } from "@/hooks/useSteppedLayout";
+import type { UseSteppedCadLayoutReturn } from "@/hooks/useSteppedCadLayout";
 import { useSteppedViewportWorkspace } from "@/viewports/stepped/useSteppedViewportWorkspace";
 
 interface UseSteppedCadViewportWorkspaceOptions {
-  model: UseSteppedLayoutReturn;
+  model: UseSteppedCadLayoutReturn;
   rightView: "2d" | "3d";
   onRightViewChange: (next: "2d" | "3d") => void;
 }

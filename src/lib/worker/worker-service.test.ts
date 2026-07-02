@@ -58,7 +58,7 @@ describe("worker service", () => {
     await expect(promise).resolves.toEqual({ geometry, volume: 321 });
   });
 
-  it("routes custom, simple stepped, stepped, stepped cad, split parts, and outline preview requests to their response shapes", async () => {
+  it("routes custom, simple stepped, stepped, stepped cad, and outline preview requests to their response shapes", async () => {
     const { trayWorkerService } = await import("@/lib/worker/worker-service");
     const service = trayWorkerService!;
     const worker = FakeWorker.instances[0];
@@ -183,41 +183,6 @@ describe("worker service", () => {
     await expect(previewPromise).resolves.toEqual({
       outlinePreview: null,
       durationMs: 9,
-    });
-
-    const splitPartsPromise = service.generateSteppedSplitParts(
-      STEPPED_LAYOUT_DEFAULTS,
-    );
-    const splitPartsRequest = worker.postMessage.mock.calls[6]?.[0] as {
-      requestId: string;
-      type: string;
-    };
-    expect(splitPartsRequest.type).toBe("GENERATE_STEPPED_SPLIT_PARTS");
-    worker.emit({
-      type: "STEPPED_SPLIT_PARTS_SUCCESS",
-      requestId: splitPartsRequest.requestId,
-      parts: [
-        {
-          index: 0,
-          filenameLabel: "part_01_low",
-          label: "低组",
-          fromHeight: 0,
-          toHeight: 3,
-          geometry: { id: "split-geom" } as never,
-        },
-      ],
-    });
-    await expect(splitPartsPromise).resolves.toEqual({
-      parts: [
-        {
-          index: 0,
-          filenameLabel: "part_01_low",
-          label: "低组",
-          fromHeight: 0,
-          toHeight: 3,
-          geometry: { id: "split-geom" },
-        },
-      ],
     });
   });
 

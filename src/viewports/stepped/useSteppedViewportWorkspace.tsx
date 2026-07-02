@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { UseSteppedLayoutReturn } from "@/hooks/useSteppedLayout";
+import type { UseSteppedCadLayoutReturn } from "@/hooks/useSteppedCadLayout";
 import { buildSteppedLayoutEditorViewportModel } from "@/viewports/layout-editor/steppedViewportModel";
 import { ViewportTabs } from "@/viewports/shared/ViewportTabs";
 import type { ModeViewportWorkspace } from "@/viewports/types";
@@ -13,7 +14,7 @@ const LayoutCanvas = dynamic(() => import("@/components/LayoutCanvas"), {
 });
 
 interface UseSteppedViewportWorkspaceOptions {
-  model: UseSteppedLayoutReturn;
+  model: UseSteppedLayoutReturn | UseSteppedCadLayoutReturn;
   rightView: "2d" | "3d";
   onRightViewChange: (next: "2d" | "3d") => void;
   mode?: Extract<AppMode, "stepped" | "stepped-cad">;
@@ -33,10 +34,20 @@ export function useSteppedViewportWorkspace({
   rightView,
   onRightViewChange,
   mode = "stepped",
-  supportsSplitPreview = true,
+  supportsSplitPreview = false,
 }: UseSteppedViewportWorkspaceOptions): UseSteppedViewportWorkspaceReturn {
   const [selectedSlotIds, setSelectedSlotIds] = useState<string[]>([]);
   const [previewGroupId, setPreviewGroupId] = useState<string | null>(null);
+  const splitPreviewParts =
+    "splitPreviewParts" in model ? model.splitPreviewParts : undefined;
+  const isGeneratingSplitPreview =
+    "isGeneratingSplitPreview" in model
+      ? model.isGeneratingSplitPreview
+      : undefined;
+  const generateSplitPreviewHandler =
+    supportsSplitPreview && "handleGenerateSplitPreview" in model
+      ? model.handleGenerateSplitPreview
+      : undefined;
 
   const resetSteppedViewportState = useCallback(() => {
     setSelectedSlotIds([]);
@@ -96,17 +107,26 @@ export function useSteppedViewportWorkspace({
         onRightViewChange={onRightViewChange}
         canvas={canvas}
         threeGeometry={model.threeGeometry}
-        splitParts={model.splitPreviewParts}
-        isGeneratingSplitPreview={model.isGeneratingSplitPreview}
+        splitParts={splitPreviewParts}
+        isGeneratingSplitPreview={isGeneratingSplitPreview}
         isPreviewStale={model.isPreviewStale}
         isGenerating={model.isGenerating}
         onGenerate={model.handleGenerate}
-        onGenerateSplitPreview={supportsSplitPreview
-          ? model.handleGenerateSplitPreview
-          : undefined}
+        onGenerateSplitPreview={generateSplitPreviewHandler}
       />
     ),
-    [canvas, model, onRightViewChange, rightView, supportsSplitPreview],
+    [
+      canvas,
+      generateSplitPreviewHandler,
+      isGeneratingSplitPreview,
+      model.handleGenerate,
+      model.isGenerating,
+      model.isPreviewStale,
+      model.threeGeometry,
+      onRightViewChange,
+      rightView,
+      splitPreviewParts,
+    ],
   );
 
   return {

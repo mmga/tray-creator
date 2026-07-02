@@ -62,7 +62,7 @@ import type {
   SteppedSplitPreviewPart,
 } from "@/lib/stepped-model-service";
 
-export interface UseSteppedLayoutReturn {
+export interface UseSteppedLayoutControllerReturn {
   params: SteppedLayoutParams;
   setParams: React.Dispatch<React.SetStateAction<SteppedLayoutParams>>;
   updateParam: <K extends keyof SteppedLayoutParams>(
@@ -155,7 +155,7 @@ export function useSteppedLayoutController<
   exportModel,
   generateSplitPreview,
   exportSplitParts,
-}: UseSteppedLayoutControllerOptions<TWorkerPort>): UseSteppedLayoutReturn {
+}: UseSteppedLayoutControllerOptions<TWorkerPort>): UseSteppedLayoutControllerReturn {
   const { toast } = useToast();
   const [params, internalSetParams] = useState<SteppedLayoutParams>(
     () => applySteppedBaseHoleDerivedFields(STEPPED_LAYOUT_DEFAULTS),

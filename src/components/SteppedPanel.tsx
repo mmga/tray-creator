@@ -477,43 +477,45 @@ export default function SteppedPanel({
                                                         />
                                                     ) : null}
                                                 </div>
-                                                <div className="rounded border border-[#2e2a24] bg-[#171511] px-2.5 py-2 space-y-2">
-                                                    <div>
-                                                        <div className="text-[11px] font-medium text-foreground/90">拆件归并</div>
-                                                        <div className="text-[10px] text-muted-foreground">
-                                                            可将不同高度的组导出为同一个分件 STL
+                                                {showSplitAssemblyMode ? (
+                                                    <div className="rounded border border-[#2e2a24] bg-[#171511] px-2.5 py-2 space-y-2">
+                                                        <div>
+                                                            <div className="text-[11px] font-medium text-foreground/90">拆件归并</div>
+                                                            <div className="text-[10px] text-muted-foreground">
+                                                                可将不同高度的组导出为同一个分件 STL
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                    <Select
-                                                        value={group.splitPartGroupId ?? "__solo__"}
-                                                        onValueChange={(value) =>
-                                                            onUpdateGroupSplitPartTarget(
-                                                                group.id,
-                                                                value === "__solo__" ? null : value,
-                                                            )
-                                                        }
-                                                    >
-                                                        <SelectTrigger
-                                                            size="sm"
-                                                            onClick={(e) => e.stopPropagation()}
-                                                            onPointerDown={(e) => e.stopPropagation()}
-                                                            className="w-full border-[#2e2a24] bg-[#0f0e0c] text-xs"
-                                                            aria-label={`${group.name} 拆件归并目标`}
+                                                        <Select
+                                                            value={group.splitPartGroupId ?? "__solo__"}
+                                                            onValueChange={(value) =>
+                                                                onUpdateGroupSplitPartTarget(
+                                                                    group.id,
+                                                                    value === "__solo__" ? null : value,
+                                                                )
+                                                            }
                                                         >
-                                                            <SelectValue placeholder="单独导出" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="__solo__">单独导出</SelectItem>
-                                                            {params.groups
-                                                                .filter((targetGroup) => targetGroup.id !== group.id)
-                                                                .map((targetGroup) => (
-                                                                    <SelectItem key={targetGroup.id} value={targetGroup.id}>
-                                                                        并入 {targetGroup.name} ({targetGroup.bottomHeight}mm)
-                                                                    </SelectItem>
-                                                                ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
+                                                            <SelectTrigger
+                                                                size="sm"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                onPointerDown={(e) => e.stopPropagation()}
+                                                                className="w-full border-[#2e2a24] bg-[#0f0e0c] text-xs"
+                                                                aria-label={`${group.name} 拆件归并目标`}
+                                                            >
+                                                                <SelectValue placeholder="单独导出" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="__solo__">单独导出</SelectItem>
+                                                                {params.groups
+                                                                    .filter((targetGroup) => targetGroup.id !== group.id)
+                                                                    .map((targetGroup) => (
+                                                                        <SelectItem key={targetGroup.id} value={targetGroup.id}>
+                                                                            并入 {targetGroup.name} ({targetGroup.bottomHeight}mm)
+                                                                        </SelectItem>
+                                                                    ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                ) : null}
                                             </div>
                                         ) : (
                                             <div className="px-2 pb-1.5">
@@ -678,7 +680,9 @@ export default function SteppedPanel({
             {/* 结构参数 */}
             <div className="iron-panel rounded-sm p-4">
                 <SectionHeader icon={Wrench} title="结构参数" collapsible defaultOpen={false}
-                    summary={`槽距${params.spacing}mm / 凹槽深度${params.holeDepth}mm / 装配槽${params.splitGrooveDepth}mm${splitFeatureSummary} / 断连${params.disconnectDistance}mm`}>
+                    summary={showSplitAssemblyMode
+                        ? `槽距${params.spacing}mm / 凹槽深度${params.holeDepth}mm / 装配槽${params.splitGrooveDepth}mm${splitFeatureSummary} / 断连${params.disconnectDistance}mm`
+                        : `槽距${params.spacing}mm / 凹槽深度${params.holeDepth}mm / 断连${params.disconnectDistance}mm`}>
                     <div className="space-y-4">
                         <ParamSlider
                             label={STEPPED_LIMITS.spacing.label}
@@ -694,13 +698,15 @@ export default function SteppedPanel({
                             onChange={(v) => updateParam("holeDepth", v)}
                             unit={STEPPED_LIMITS.holeDepth.unit}
                         />
-                        <ParamSlider
-                            label={STEPPED_LIMITS.splitGrooveDepth.label}
-                            value={params.splitGrooveDepth}
-                            config={STEPPED_LIMITS.splitGrooveDepth}
-                            onChange={(v) => updateParam("splitGrooveDepth", v)}
-                            unit={STEPPED_LIMITS.splitGrooveDepth.unit}
-                        />
+                        {showSplitAssemblyMode ? (
+                            <ParamSlider
+                                label={STEPPED_LIMITS.splitGrooveDepth.label}
+                                value={params.splitGrooveDepth}
+                                config={STEPPED_LIMITS.splitGrooveDepth}
+                                onChange={(v) => updateParam("splitGrooveDepth", v)}
+                                unit={STEPPED_LIMITS.splitGrooveDepth.unit}
+                            />
+                        ) : null}
                         {showSplitAssemblyMode ? (
                             <div className="grid gap-2 rounded border border-border/60 bg-card/40 p-3">
                                 <div className="grid grid-cols-3 gap-1">
@@ -979,15 +985,17 @@ export default function SteppedPanel({
                     showStaleNotice={isPreviewStale}
                     draftActions={resolvedDraftActions}
                 />
-                <Button
-                    variant="outline"
-                    onClick={() => onExportSplitParts?.()}
-                    disabled={!onExportSplitParts || params.groups.length < 2 || params.slots.length === 0}
-                    className="w-full h-10 border-[#4a6741] text-[#8cb880] hover:bg-[#20301d] hover:text-[#a8d39a] hover:border-[#5f8054] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                    <Download className="w-4 h-4 mr-2" />
-                    导出分件 STL
-                </Button>
+                {showSplitAssemblyMode ? (
+                    <Button
+                        variant="outline"
+                        onClick={() => onExportSplitParts?.()}
+                        disabled={!onExportSplitParts || params.groups.length < 2 || params.slots.length === 0}
+                        className="w-full h-10 border-[#4a6741] text-[#8cb880] hover:bg-[#20301d] hover:text-[#a8d39a] hover:border-[#5f8054] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        <Download className="w-4 h-4 mr-2" />
+                        导出分件 STL
+                    </Button>
+                ) : null}
 
                 {perfEnabled && (
                     <div className="iron-panel rounded-sm p-3">

@@ -750,15 +750,8 @@ function normalizeSteppedGroups(params: SteppedLayoutParams) {
     }
   }
 
-  const groupIds = new Set(groups.map((group) => group.id as string));
   for (const group of groups) {
-    if (
-      typeof group.splitPartGroupId !== "string" ||
-      group.splitPartGroupId === group.id ||
-      !groupIds.has(group.splitPartGroupId)
-    ) {
-      delete group.splitPartGroupId;
-    }
+    delete group.splitPartGroupId;
   }
 }
 
@@ -827,7 +820,6 @@ function clampAndFillSteppedDerivedFields(params: SteppedLayoutParams) {
   const groups = obj.groups as Record<string, unknown>[];
   const rawSmoothingRadius = getRawSteppedSmoothingRadius(obj);
   const rawDisconnectDistance = getRawSteppedDisconnectDistance(obj);
-  const rawSplitGrooveDepth = getRawSteppedSplitGrooveDepth(obj);
   const rawSplitRecessEnabled = getRawSteppedSplitRecessEnabled(obj);
   const rawSplitGrooveType = getRawSteppedSplitGrooveType(obj);
   const rawSplitLocatorsEnabled = getRawSteppedSplitLocatorsEnabled(obj);
@@ -854,13 +846,7 @@ function clampAndFillSteppedDerivedFields(params: SteppedLayoutParams) {
   clampField(obj, "trayDepth", STEPPED_LIMITS.trayDepth);
   clampField(obj, "spacing", STEPPED_LIMITS.spacing);
   clampField(obj, "holeDepth", STEPPED_LIMITS.holeDepth);
-  if (
-    typeof obj.splitGrooveDepth !== "number" ||
-    !Number.isFinite(obj.splitGrooveDepth)
-  ) {
-    obj.splitGrooveDepth = rawSplitGrooveDepth;
-  }
-  clampField(obj, "splitGrooveDepth", STEPPED_LIMITS.splitGrooveDepth);
+  obj.splitGrooveDepth = STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth;
   obj.enableSplitRecess = rawSplitRecessEnabled;
   obj.splitGrooveType = rawSplitGrooveType;
   obj.enableSplitLocators = rawSplitLocatorsEnabled;

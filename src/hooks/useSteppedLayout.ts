@@ -1,20 +1,37 @@
 "use client";
 
 import { useSteppedLayoutController } from "@/hooks/useSteppedLayoutController";
-import {
-  exportSteppedSplitPartFiles,
-  exportSteppedModelFiles,
-  generateSteppedSplitPreview,
-  generateSteppedPreview,
-} from "@/lib/stepped-model-service";
+import type { UseSteppedLayoutControllerReturn } from "@/hooks/useSteppedLayoutController";
+import { exportSteppedModelFiles, generateSteppedPreview } from "@/lib/stepped-model-service";
 
-export type { UseSteppedLayoutReturn } from "@/hooks/useSteppedLayoutController";
+type SteppedOnlyKeys =
+  | "updateGroupSplitPartTarget"
+  | "splitPreviewParts"
+  | "isGeneratingSplitPreview"
+  | "handleGenerateSplitPreview"
+  | "clearSplitPreview"
+  | "handleExportSplitParts";
+
+export type UseSteppedLayoutReturn = Omit<
+  UseSteppedLayoutControllerReturn,
+  SteppedOnlyKeys
+>;
 
 export function useSteppedLayout() {
-  return useSteppedLayoutController({
+  const model = useSteppedLayoutController({
     generatePreview: generateSteppedPreview,
     exportModel: exportSteppedModelFiles,
-    generateSplitPreview: generateSteppedSplitPreview,
-    exportSplitParts: exportSteppedSplitPartFiles,
   });
+
+  const {
+    updateGroupSplitPartTarget: _updateGroupSplitPartTarget,
+    splitPreviewParts: _splitPreviewParts,
+    isGeneratingSplitPreview: _isGeneratingSplitPreview,
+    handleGenerateSplitPreview: _handleGenerateSplitPreview,
+    clearSplitPreview: _clearSplitPreview,
+    handleExportSplitParts: _handleExportSplitParts,
+    ...steppedModel
+  } = model;
+
+  return steppedModel;
 }

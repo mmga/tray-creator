@@ -227,7 +227,7 @@ describe("param normalization", () => {
     expect(normalized.splitGrooveType).toBe("profile");
   });
 
-  it("preserves valid stepped split part group targets and drops invalid ones", () => {
+  it("clears stepped split part group targets during normalization", () => {
     const normalized = normalizeParamsForMode("stepped", {
       ...STEPPED_LAYOUT_DEFAULTS,
       groups: [
@@ -256,7 +256,7 @@ describe("param normalization", () => {
       activeGroupId: "low",
     } as SteppedLayoutParams) as SteppedLayoutParams;
 
-    expect(normalized.groups[0].splitPartGroupId).toBe("high");
+    expect(normalized.groups[0].splitPartGroupId).toBeUndefined();
     expect(normalized.groups[1].splitPartGroupId).toBeUndefined();
     expect(normalized.groups[2].splitPartGroupId).toBeUndefined();
   });
@@ -296,13 +296,15 @@ describe("param normalization", () => {
     );
   });
 
-  it("clamps stepped split groove depth and fills the default when missing", () => {
+  it("resets stepped split groove depth to the default", () => {
     const normalized = normalizeParamsForMode("stepped", {
       ...STEPPED_LAYOUT_DEFAULTS,
       splitGrooveDepth: 99,
     } as SteppedLayoutParams) as SteppedLayoutParams;
 
-    expect(normalized.splitGrooveDepth).toBe(10);
+    expect(normalized.splitGrooveDepth).toBe(
+      STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth,
+    );
 
     const defaulted = normalizeParamsForMode("stepped", {
       ...STEPPED_LAYOUT_DEFAULTS,

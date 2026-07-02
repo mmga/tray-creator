@@ -6,7 +6,6 @@ import {
   createSteppedCadTrayModel,
 } from "../stepped-cad-tray-model";
 import {
-  createSteppedSplitParts,
   createSteppedTrayModel,
 } from "../stepped-tray-model";
 import { buildSteppedOutlinePreview } from "../stepped-outline-preview";
@@ -51,11 +50,6 @@ export type WorkerRequest =
     }
   | {
       type: "GENERATE_STEPPED_OUTLINE_PREVIEW";
-      requestId: string;
-      params: SteppedLayoutParams;
-    }
-  | {
-      type: "GENERATE_STEPPED_SPLIT_PARTS";
       requestId: string;
       params: SteppedLayoutParams;
     }
@@ -180,13 +174,6 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
         requestId,
         outlinePreview,
         durationMs: performance.now() - startedAt,
-      });
-    } else if (req.type === "GENERATE_STEPPED_SPLIT_PARTS") {
-      const parts = createSteppedSplitParts(req.params);
-      self.postMessage({
-        type: "STEPPED_SPLIT_PARTS_SUCCESS",
-        requestId,
-        parts,
       });
     } else if (req.type === "EXPORT_STL") {
       const rawData = stlSerializer.serialize({ binary: true }, req.geometry);

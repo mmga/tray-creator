@@ -302,6 +302,7 @@ const {
       applyOptimizationProposal: vi.fn(),
       clearOptimizationProposals: vi.fn(),
       threeGeometry: { id: "stepped-geometry" },
+      canUndo: true,
     },
     steppedCadModelMock: {
       params: steppedParams,

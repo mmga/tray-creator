@@ -1379,6 +1379,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     render(
       <SteppedPanel
         params={createSteppedParams()}
+        mode="stepped-cad"
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
         updateParam={vi.fn()}
@@ -1485,7 +1486,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     expect(setParams).toHaveBeenNthCalledWith(2, { importedMode: "stepped" });
   });
 
-  it("adds slots from presets and updates global stepped structure controls", () => {
+  it("adds slots from presets and updates CAD stepped structure controls", () => {
     const updateParam = vi.fn();
     const onAddSlot = vi.fn();
 
@@ -1499,6 +1500,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
           smoothingRadius: 14,
           disconnectDistance: 2,
         })}
+        mode="stepped-cad"
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
         updateParam={updateParam}
@@ -1560,6 +1562,57 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     expect(updateParam).toHaveBeenNthCalledWith(3, "splitGrooveDepth", 2.2);
     expect(updateParam).toHaveBeenNthCalledWith(4, "smoothingRadius", 15);
     expect(updateParam).toHaveBeenNthCalledWith(5, "disconnectDistance", 3);
+  });
+
+  it("hides split controls in non-CAD stepped mode", () => {
+    render(
+      <SteppedPanel
+        params={createSteppedParams({
+          splitGrooveDepth: 2,
+        })}
+        effectiveDimensions={{ width: 120, depth: 140 }}
+        isPreviewStale={false}
+        updateParam={vi.fn()}
+        setParams={vi.fn()}
+        onAddSlot={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        onExportSplitParts={vi.fn()}
+        isGenerating={false}
+        volume={0}
+        selectedSlotIds={[]}
+        onAddGroup={vi.fn()}
+        onRemoveGroup={vi.fn()}
+        onUpdateGroupHeight={vi.fn()}
+        onUpdateGroupSmoothingOverride={vi.fn()}
+        onUpdateGroupSmoothingRadius={vi.fn()}
+        onUpdateGroupDisconnectOverride={vi.fn()}
+        onUpdateGroupDisconnectDistance={vi.fn()}
+        onUpdateGroupSplitPartTarget={vi.fn()}
+        onSetActiveGroup={vi.fn()}
+        onMoveSelectedSlotsToGroup={vi.fn()}
+        onReorderGroups={vi.fn()}
+        previewGroupId={null}
+        onPreviewGroupChange={vi.fn()}
+        bridgeWarning={null}
+        optimizationProposals={[]}
+        isOptimizingLayout={false}
+        onGenerateOptimizationProposals={vi.fn()}
+        onApplyOptimizationProposal={vi.fn()}
+        onClearOptimizationProposals={vi.fn()}
+        onOpenDraftDialog={vi.fn()}
+        onSaveDraft={vi.fn()}
+        currentDraftId={null}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "设置装配槽深度:2" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "导出分件 STL" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("拆件归并")).not.toBeInTheDocument();
   });
 
   it("routes CAD split groove type and locator controls", () => {

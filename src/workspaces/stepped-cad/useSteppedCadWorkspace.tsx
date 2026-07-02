@@ -1,11 +1,11 @@
 "use client";
 
-import type { UseSteppedLayoutReturn } from "@/hooks/useSteppedLayout";
+import type { UseSteppedCadLayoutReturn } from "@/hooks/useSteppedCadLayout";
 import { useSteppedWorkspace } from "@/workspaces/stepped/useSteppedWorkspace";
 import type { ModeWorkspace } from "@/workspaces/types";
 
 interface UseSteppedCadWorkspaceOptions {
-  model: UseSteppedLayoutReturn;
+  model: UseSteppedCadLayoutReturn;
   selectedSlotIds: string[];
   previewGroupId: string | null;
   onPreviewGroupChange: (groupId: string | null) => void;

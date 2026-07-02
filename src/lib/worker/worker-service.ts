@@ -194,36 +194,6 @@ class TrayWorkerService {
     });
   }
 
-  public async generateSteppedSplitParts(
-    params: SteppedLayoutParams,
-  ): Promise<{
-    parts: {
-      index: number;
-      filenameLabel: string;
-      label: string;
-      fromHeight: number;
-      toHeight: number;
-      geometry: Geom3;
-    }[];
-  }> {
-    const requestId = generateRequestId();
-    return new Promise((resolve, reject) => {
-      this.pendingResolves.set(requestId, (data) => {
-        if (data.type !== "STEPPED_SPLIT_PARTS_SUCCESS") {
-          reject(new Error(`Unexpected worker response: ${data.type}`));
-          return;
-        }
-        resolve({ parts: data.parts });
-      });
-      this.pendingRejects.set(requestId, reject);
-      this.worker?.postMessage({
-        type: "GENERATE_STEPPED_SPLIT_PARTS",
-        requestId,
-        params,
-      });
-    });
-  }
-
   public async exportSTL(
     geometry: Geom3,
     filename: string,
