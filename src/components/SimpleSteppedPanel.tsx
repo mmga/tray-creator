@@ -370,7 +370,7 @@ export default function SimpleSteppedPanel({
           title="统计信息"
           collapsible
           defaultOpen={false}
-          summary={`${params.rows.length}行 / ${params.slots.length}槽 / ${effectiveDimensions.width.toFixed(0)}×${effectiveDimensions.depth.toFixed(0)}mm`}
+          summary={`${params.rows.length}行 / ${params.slots.length}槽 / ${effectiveDimensions.width.toFixed(1)}×${effectiveDimensions.depth.toFixed(1)}mm`}
         >
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-2">

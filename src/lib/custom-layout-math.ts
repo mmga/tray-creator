@@ -11,6 +11,10 @@ export interface LayoutExtents {
   maxY: number;
 }
 
+export function roundLayoutDimensionToTenth(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
 export function resolveCustomBoundarySpacing(
   params: CustomLayoutParams,
 ): number {
@@ -58,8 +62,8 @@ export function calculateCustomEffectiveDimensions(
   });
 
   return {
-    width: Math.ceil(maxX - minX + boundarySpacing * 2),
-    depth: Math.ceil(maxY - minY + boundarySpacing * 2),
+    width: roundLayoutDimensionToTenth(maxX - minX + boundarySpacing * 2),
+    depth: roundLayoutDimensionToTenth(maxY - minY + boundarySpacing * 2),
     minX,
     maxX,
     minY,

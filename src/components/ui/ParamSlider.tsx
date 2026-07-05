@@ -5,6 +5,8 @@ import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+const ARROW_KEYS = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
+
 interface ParamSliderProps {
     label: string;
     value: number;
@@ -34,6 +36,17 @@ export function ParamSlider({
         },
         [onChange, safeValue],
     );
+    const blockArrowKeyParamAdjust = useCallback(
+        (event: React.KeyboardEvent<HTMLElement>) => {
+            if (!ARROW_KEYS.has(event.key)) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+        },
+        [],
+    );
 
     return (
         <div className="space-y-2 group">
@@ -47,7 +60,8 @@ export function ParamSlider({
                         value={safeValue}
                         min={effectiveMin}
                         max={effectiveMax}
-                        step={config.step}
+                        step="any"
+                        onKeyDown={blockArrowKeyParamAdjust}
                         onChange={(e) => {
                             const v = parseFloat(e.target.value);
                             if (!isNaN(v) && v >= effectiveMin && v <= effectiveMax) {
@@ -64,6 +78,7 @@ export function ParamSlider({
                 min={effectiveMin}
                 max={effectiveMax}
                 step={config.step}
+                onKeyDownCapture={blockArrowKeyParamAdjust}
                 onValueChange={([v]) => handleValueChange(v)}
                 className="py-1"
             />

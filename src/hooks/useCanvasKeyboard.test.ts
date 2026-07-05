@@ -82,8 +82,8 @@ describe("useCanvasKeyboard", () => {
     });
 
     expect(onUpdateSlot).toHaveBeenCalledTimes(2);
-    expect(onUpdateSlot).toHaveBeenNthCalledWith(1, "slot-1", 10.2, 20);
-    expect(onUpdateSlot).toHaveBeenNthCalledWith(2, "slot-2", 30.2, 40);
+    expect(onUpdateSlot).toHaveBeenNthCalledWith(1, "slot-1", 10.1, 20);
+    expect(onUpdateSlot).toHaveBeenNthCalledWith(2, "slot-2", 30.1, 40);
 
     const input = document.createElement("input");
     document.body.appendChild(input);

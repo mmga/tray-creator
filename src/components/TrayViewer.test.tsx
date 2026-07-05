@@ -205,6 +205,11 @@ describe("TrayViewer", { timeout: 15000 }, () => {
       expect.objectContaining({
         makeDefault: true,
         enableDamping: true,
+        mouseButtons: {
+          LEFT: THREE.MOUSE.ROTATE,
+          MIDDLE: THREE.MOUSE.PAN,
+          RIGHT: THREE.MOUSE.PAN,
+        },
         minDistance: 10,
         maxDistance: 900,
       }),

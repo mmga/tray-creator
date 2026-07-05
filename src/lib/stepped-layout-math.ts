@@ -1,5 +1,8 @@
 import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
-import type { LayoutExtents } from "@/lib/custom-layout-math";
+import {
+  roundLayoutDimensionToTenth,
+  type LayoutExtents,
+} from "@/lib/custom-layout-math";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 
@@ -44,8 +47,8 @@ export function calculateSteppedEffectiveDimensions(
   });
 
   return {
-    width: Math.ceil(maxX - minX + boundarySpacing * 2),
-    depth: Math.ceil(maxY - minY + boundarySpacing * 2),
+    width: roundLayoutDimensionToTenth(maxX - minX + boundarySpacing * 2),
+    depth: roundLayoutDimensionToTenth(maxY - minY + boundarySpacing * 2),
     minX,
     maxX,
     minY,

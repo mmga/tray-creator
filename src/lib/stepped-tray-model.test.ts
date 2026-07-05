@@ -140,8 +140,8 @@ describe("stepped tray model", { timeout: 90000 }, () => {
     };
 
     expect(calculateSteppedTrayDimensions(lowOnlyParams)).toEqual({
-      width: 36,
-      depth: 36,
+      width: 35.2,
+      depth: 35.2,
       height: 3,
     });
   });

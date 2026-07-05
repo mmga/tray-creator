@@ -68,8 +68,8 @@ describe("custom layout math", () => {
     };
 
     expect(calculateCustomEffectiveDimensions(params)).toEqual({
-      width: 85,
-      depth: 95,
+      width: 84.4,
+      depth: 94.4,
       minX: 19.8,
       maxX: 90.2,
       minY: 29.8,

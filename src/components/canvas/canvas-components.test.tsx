@@ -5,6 +5,7 @@ import { buildCanvasCollisionState } from "@/lib/canvas-collision-model";
 import AlignPanel from "@/components/canvas/AlignPanel";
 import { CanvasOverlayLayer } from "@/components/canvas/CanvasOverlayLayer";
 import { CanvasSlotLayer } from "@/components/canvas/CanvasSlotLayer";
+import { CanvasStatusBar } from "@/components/canvas/CanvasStatusBar";
 import MirrorPanel from "@/components/canvas/MirrorPanel";
 import type {
   FreeSlot,
@@ -640,6 +641,49 @@ describe("CanvasSlotLayer", { timeout: 15000 }, () => {
     expect(
       container.querySelector('[data-symmetry-highlight="true"]'),
     ).toBeNull();
+  });
+});
+
+describe("CanvasStatusBar", () => {
+  it("shows the boundary distance when exactly two slots are selected", () => {
+    const slots: FreeSlot[] = [
+      {
+        id: "slot-1",
+        x: 20,
+        y: 40,
+        shape: "circle",
+        width: 20,
+        height: 20,
+        slotWidth: 20,
+        slotHeight: 20,
+        rotation: 0,
+      },
+      {
+        id: "slot-2",
+        x: 55,
+        y: 40,
+        shape: "circle",
+        width: 20,
+        height: 20,
+        slotWidth: 20,
+        slotHeight: 20,
+        rotation: 0,
+      },
+    ];
+
+    render(
+      <CanvasStatusBar
+        trayWidth={100}
+        trayDepth={80}
+        zoom={1}
+        selectedIds={new Set(["slot-1", "slot-2"])}
+        slots={slots}
+      />,
+    );
+
+    expect(screen.getByText(/2 ITEMS SELECTED/)).toHaveTextContent(
+      "EDGE GAP: 15.0mm | X:15.0 Y:0.0",
+    );
   });
 });
 

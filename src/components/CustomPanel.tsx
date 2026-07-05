@@ -222,7 +222,7 @@ export default function CustomPanel({
       {/* 统计信息 — 移动端默认折叠 */}
       <div className={`iron-panel rounded-sm p-4 transition-all duration-300 ${isOversized ? 'border-[#8b1a1a] animate-forge-pulse' : ''}`}>
         <SectionHeader icon={Ruler} title="统计信息" collapsible defaultOpen={false}
-          summary={`${params.slots.length}个凹槽 / ${effectiveWidth.toFixed(0)}×${effectiveDepth.toFixed(0)}mm`}>
+          summary={`${params.slots.length}个凹槽 / ${effectiveWidth.toFixed(1)}×${effectiveDepth.toFixed(1)}mm`}>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-2 mb-2">
               <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
@@ -275,7 +275,7 @@ export default function CustomPanel({
               </div>
             )}
             <div className="text-[11px] text-muted-foreground/80 text-center pt-1">
-              有效底板尺寸: {effectiveWidth.toFixed(0)} × {effectiveDepth.toFixed(0)} mm
+              有效底板尺寸: {effectiveWidth.toFixed(1)} × {effectiveDepth.toFixed(1)} mm
             </div>
           </div>
         </SectionHeader>

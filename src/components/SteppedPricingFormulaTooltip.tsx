@@ -75,7 +75,7 @@ export function SteppedPricingFormulaTooltip({
                 </span>
                 <span>占地</span>
                 <span className="text-right font-mono text-foreground">
-                  {breakdown.effectiveWidth.toFixed(0)}×{breakdown.effectiveDepth.toFixed(0)}mm
+                  {breakdown.effectiveWidth.toFixed(1)}×{breakdown.effectiveDepth.toFixed(1)}mm
                 </span>
                 <span>复杂度费</span>
                 <span className="text-right font-mono text-foreground">

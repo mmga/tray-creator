@@ -7,6 +7,7 @@ import {
 import type { Geom2 } from "@jscad/modeling/src/geometries/types";
 import type { SteppedLayoutParams, SteppedSlot } from "@/types/custom-tray";
 import { RENDER_CONFIG, resolveBaseHolePresetKey } from "@/lib/config";
+import { roundLayoutDimensionToTenth } from "@/lib/custom-layout-math";
 import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import {
@@ -122,8 +123,8 @@ function calculateEffectiveBaseplate(params: SteppedLayoutParams) {
 
   return {
     hasSlots: true,
-    width: Math.ceil(maxX - minX + boundarySpacing * 2),
-    depth: Math.ceil(maxY - minY + boundarySpacing * 2),
+    width: roundLayoutDimensionToTenth(maxX - minX + boundarySpacing * 2),
+    depth: roundLayoutDimensionToTenth(maxY - minY + boundarySpacing * 2),
     minX,
     maxX,
     minY,

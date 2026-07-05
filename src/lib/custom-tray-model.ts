@@ -9,6 +9,7 @@ import {
   resolveBaseHolePresetKey,
 } from "@/lib/config";
 import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
+import { roundLayoutDimensionToTenth } from "@/lib/custom-layout-math";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import {
   createBaseBody,
@@ -63,8 +64,8 @@ export function calculateCustomEffectiveBaseplate(params: CustomLayoutParams) {
 
   return {
     hasSlots: true,
-    width: Math.ceil(maxX - minX + boundarySpacing * 2),
-    depth: Math.ceil(maxY - minY + boundarySpacing * 2),
+    width: roundLayoutDimensionToTenth(maxX - minX + boundarySpacing * 2),
+    depth: roundLayoutDimensionToTenth(maxY - minY + boundarySpacing * 2),
     minX,
     maxX,
     minY,

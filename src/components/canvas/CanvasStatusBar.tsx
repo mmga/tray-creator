@@ -2,11 +2,13 @@
 
 import { useSyncExternalStore } from "react";
 import type { FreeSlot } from "@/types/custom-tray";
+import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
 import {
     getPerfMetricsSnapshot,
     subscribePerfMetrics,
     type PerfMetricName,
 } from "@/lib/perf";
+import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 
 interface CanvasStatusBarProps {
     trayWidth: number;
@@ -27,6 +29,59 @@ function formatPerfMs(value: number) {
     return value >= 10 ? value.toFixed(1) : value.toFixed(2);
 }
 
+function getSlotBounds(slot: FreeSlot) {
+    const profile = getFreeSlotProfileGeometry(slot);
+    const { halfW, halfH } = getEllipseBoundingBox(
+        profile.width,
+        profile.height,
+        slot.rotation,
+        slot.shape,
+        profile.profileExponent,
+        profile.outerOffset,
+    );
+
+    return {
+        minX: slot.x - halfW,
+        maxX: slot.x + halfW,
+        minY: slot.y - halfH,
+        maxY: slot.y + halfH,
+    };
+}
+
+function getAxisBoundaryGap(
+    firstMin: number,
+    firstMax: number,
+    secondMin: number,
+    secondMax: number,
+) {
+    if (firstMax < secondMin) {
+        return secondMin - firstMax;
+    }
+
+    if (secondMax < firstMin) {
+        return firstMin - secondMax;
+    }
+
+    return 0;
+}
+
+function getTwoSlotBoundaryDistance(slots: FreeSlot[]) {
+    if (slots.length !== 2) {
+        return null;
+    }
+
+    const first = getSlotBounds(slots[0]);
+    const second = getSlotBounds(slots[1]);
+    const gapX = getAxisBoundaryGap(first.minX, first.maxX, second.minX, second.maxX);
+    const gapY = getAxisBoundaryGap(first.minY, first.maxY, second.minY, second.maxY);
+
+    return {
+        gapX,
+        gapY,
+        distance: Math.hypot(gapX, gapY),
+    };
+}
+
 export function CanvasStatusBar({
     trayWidth,
     trayDepth,
@@ -44,6 +99,13 @@ export function CanvasStatusBar({
     const selectedSlot = selectedId
         ? slots.find((slot) => slot.id === selectedId) ?? null
         : null;
+    const selectedSlots =
+        selectedIds.size === 2
+            ? Array.from(selectedIds)
+                .map((id) => slots.find((slot) => slot.id === id))
+                .filter((slot): slot is FreeSlot => Boolean(slot))
+            : [];
+    const boundaryDistance = getTwoSlotBoundaryDistance(selectedSlots);
 
     return (
         <div className="absolute bottom-2 left-2 right-12 flex items-end justify-between pointer-events-none px-2 pb-1 gap-4">
@@ -64,7 +126,12 @@ export function CanvasStatusBar({
                 )}
 
                 {selectedIds.size > 1 && (
-                    <span className="text-orange-400">{selectedIds.size} ITEMS SELECTED</span>
+                    <span className="text-orange-400">
+                        {selectedIds.size} ITEMS SELECTED
+                        {boundaryDistance
+                            ? ` | EDGE GAP: ${boundaryDistance.distance.toFixed(1)}mm | X:${boundaryDistance.gapX.toFixed(1)} Y:${boundaryDistance.gapY.toFixed(1)}`
+                            : ""}
+                    </span>
                 )}
             </div>
 

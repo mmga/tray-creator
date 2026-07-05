@@ -317,7 +317,7 @@ export default function ParameterPanel({
       {/* 模型尺寸 — 移动端默认折叠 */}
       <div className={`iron-panel rounded-sm p-4 transition-all duration-300 ${isOversized ? 'border-[#8b1a1a] animate-forge-pulse' : ''}`}>
         <SectionHeader icon={Ruler} title="模型尺寸" collapsible defaultOpen={false}
-          summary={`${params.rows * params.columns}个 / ${dimensions.width.toFixed(0)}×${dimensions.depth.toFixed(0)}mm`}>
+          summary={`${params.rows * params.columns}个 / ${dimensions.width.toFixed(1)}×${dimensions.depth.toFixed(1)}mm`}>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-2 mb-2">
               <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">

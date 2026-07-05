@@ -1357,6 +1357,66 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     });
   });
 
+  it("pans the 2D canvas while dragging with the middle mouse button", async () => {
+    const onSelectionChange = vi.fn();
+    const onSaveSnapshot = vi.fn();
+    const { container, rerender } = render(
+      <TestLayoutCanvas
+        params={createCustomParams()}
+        onUpdateSlot={vi.fn()}
+        onRemoveSlot={vi.fn()}
+        onSelectionChange={onSelectionChange}
+        onSaveSnapshot={onSaveSnapshot}
+      />,
+    );
+
+    const svg = container.querySelector("svg");
+    expect(svg).not.toBeNull();
+
+    fireEvent.pointerDown(svg!, {
+      pointerId: 11,
+      pointerType: "mouse",
+      button: 1,
+      clientX: 40,
+      clientY: 50,
+    });
+
+    expect(setIsPanningMock).toHaveBeenCalledWith(true);
+    expect(canvasZoomState.panStartRef.current).toEqual({ x: 40, y: 50 });
+    expect(onSaveSnapshot).not.toHaveBeenCalled();
+
+    rerender(
+      <TestLayoutCanvas
+        params={createCustomParams()}
+        onUpdateSlot={vi.fn()}
+        onRemoveSlot={vi.fn()}
+        onSelectionChange={onSelectionChange}
+        onSaveSnapshot={onSaveSnapshot}
+      />,
+    );
+
+    fireEvent.pointerMove(svg!, {
+      pointerId: 11,
+      pointerType: "mouse",
+      buttons: 4,
+      clientX: 55,
+      clientY: 62,
+    });
+
+    await waitFor(() => {
+      expect(setPanMock).toHaveBeenCalledTimes(1);
+    });
+    const updater = setPanMock.mock.calls[0]?.[0] as
+      | ((prev: { x: number; y: number }) => { x: number; y: number })
+      | undefined;
+    expect(updater?.({ x: 2, y: 3 })).toEqual({ x: 17, y: 15 });
+    expect(canvasZoomState.panStartRef.current).toEqual({ x: 55, y: 62 });
+    expect(screen.getByTestId("canvas-slot-layer")).toHaveAttribute(
+      "data-selected-ids",
+      "",
+    );
+  });
+
   it("renders cursor and panel classes for active zoom and resize states", () => {
     canvasZoomState.isSpacePressed = true;
     canvasZoomState.isPanning = true;

@@ -426,6 +426,11 @@ export default function TrayViewer({
           makeDefault
           enableDamping
           dampingFactor={0.1}
+          mouseButtons={{
+            LEFT: THREE.MOUSE.ROTATE,
+            MIDDLE: THREE.MOUSE.PAN,
+            RIGHT: THREE.MOUSE.PAN,
+          }}
           minDistance={10}
           maxDistance={900}
           maxPolarAngle={Math.PI / 1.5}

@@ -60,7 +60,7 @@ export function useCanvasKeyboard({
       event.preventDefault();
       let dx = 0;
       let dy = 0;
-      const step = 0.2;
+      const step = 0.1;
       if (event.code === "ArrowLeft") dx = -step;
       if (event.code === "ArrowRight") dx = step;
       if (event.code === "ArrowUp") dy = step;

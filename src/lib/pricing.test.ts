@@ -276,7 +276,7 @@ describe("pricing", () => {
     const sampleB = getSteppedPricingBreakdown(createSampleB(), 316356.25431361876);
     const sampleC = getSteppedPricingBreakdown(createSampleC(), 609970.6591252618);
 
-    expect(sampleA.effectiveWidth).toBe(236);
+    expect(sampleA.effectiveWidth).toBe(235.6);
     expect(sampleA.effectiveDepth).toBe(109);
     expect(sampleA.materialDensityGPerCm3).toBeCloseTo(0.352, 5);
     expect(sampleA.estimatedWeight).toBeCloseTo(
@@ -299,7 +299,7 @@ describe("pricing", () => {
       5,
     );
 
-    expect(sampleB.effectiveWidth).toBe(189);
+    expect(sampleB.effectiveWidth).toBe(188.4);
     expect(sampleB.effectiveDepth).toBe(107);
     expect(sampleB.materialDensityGPerCm3).toBeCloseTo(0.34, 5);
     expect(sampleB.estimatedWeight).toBeCloseTo(
@@ -322,7 +322,7 @@ describe("pricing", () => {
     );
 
     expect(sampleC.effectiveWidth).toBe(222);
-    expect(sampleC.effectiveDepth).toBe(173);
+    expect(sampleC.effectiveDepth).toBe(172.8);
     expect(sampleC.materialDensityGPerCm3).toBeCloseTo(0.316, 5);
     expect(sampleC.estimatedWeight).toBeCloseTo(
       (609970.6591252618 / 1000) * sampleC.materialDensityGPerCm3,

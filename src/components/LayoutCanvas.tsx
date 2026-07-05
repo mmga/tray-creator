@@ -57,6 +57,7 @@ const ACTION_PANEL_TAB_RAIL_WIDTH = EDIT_SIDEBAR_RAIL_WIDTH;
 const HEIGHT_GROUP_PROTECTION_MM = 1;
 const SYMMETRY_HIGHLIGHT_DURATION_MS = 5000;
 const EMPTY_SET: ReadonlySet<string> = new Set();
+const MIDDLE_MOUSE_BUTTON = 1;
 
 interface LayoutCanvasProps {
   isActive?: boolean;
@@ -703,7 +704,7 @@ export default function LayoutCanvas({
 
     const isCtrl = event.ctrlKey || event.metaKey;
 
-    if (isSpacePressed) {
+    if (event.button === MIDDLE_MOUSE_BUTTON || isSpacePressed) {
       setIsPanning(true);
       panStartRef.current = { x: event.clientX, y: event.clientY };
       return;
@@ -853,6 +854,11 @@ export default function LayoutCanvas({
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          onAuxClick={(event) => {
+            if (event.button === MIDDLE_MOUSE_BUTTON) {
+              event.preventDefault();
+            }
+          }}
           preserveAspectRatio="xMidYMid meet"
         >
           {isSimpleSteppedCanvas && (
