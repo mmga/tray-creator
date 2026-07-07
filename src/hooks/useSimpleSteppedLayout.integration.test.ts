@@ -1,5 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MAX_BUILD_SIZE } from "@/lib/config";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 
 const {
@@ -56,8 +57,17 @@ describe("useSimpleSteppedLayout", () => {
     toastMock.mockReset();
     trayWorkerServiceMock.generateSimpleStepped.mockReset();
     trayWorkerServiceMock.exportSTL.mockReset();
+    trayWorkerServiceMock.generateSimpleStepped.mockResolvedValue({
+      geometry: { id: "default-geom" } as never,
+      volume: 0,
+    });
+    trayWorkerServiceMock.exportSTL.mockResolvedValue({
+      blob: new Blob(["stl"]),
+      filename: "default.stl",
+    });
     downloadParamFileMock.mockReset();
     jscadToThreeGeometryMock.mockReset();
+    jscadToThreeGeometryMock.mockReturnValue({ dispose: vi.fn() } as never);
     vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
@@ -192,6 +202,34 @@ describe("useSimpleSteppedLayout", () => {
     );
   });
 
+  it("keeps content-required tray size above the build warning threshold during runtime edits", () => {
+    vi.spyOn(crypto, "randomUUID")
+      .mockReturnValueOnce("row-1")
+      .mockReturnValueOnce("slot-1")
+      .mockReturnValueOnce("slot-2");
+
+    const { result } = renderHook(() => useSimpleSteppedLayout());
+
+    act(() => {
+      result.current.addRow();
+    });
+    act(() => {
+      result.current.addSlotToRow("row-1", 100);
+    });
+    act(() => {
+      result.current.addSlotToRow("row-1", 100);
+    });
+    act(() => {
+      result.current.updateMultipleSlots([
+        { id: "slot-1", x: -MAX_BUILD_SIZE, y: result.current.params.slots[0].y },
+        { id: "slot-2", x: MAX_BUILD_SIZE, y: result.current.params.slots[1].y },
+      ]);
+    });
+
+    expect(result.current.params.trayWidth).toBeGreaterThan(MAX_BUILD_SIZE);
+    expect(result.current.isPreviewStale).toBe(true);
+  });
+
   it("generates previews and exports the current simple stepped layout", async () => {
     vi.spyOn(crypto, "randomUUID")
       .mockReturnValueOnce("row-1")
@@ -282,10 +320,7 @@ describe("useSimpleSteppedLayout", () => {
     await act(async () => {
       await fresh.result.current.handleExportSTL();
     });
-    expect(toastMock).toHaveBeenCalledWith(
-      "error",
-      "当前没有可导出的模型，请先点击开始锻造",
-    );
+    expect(toastMock).not.toHaveBeenCalled();
 
     act(() => {
       result.current.addRow();
@@ -299,14 +334,12 @@ describe("useSimpleSteppedLayout", () => {
       await result.current.handleGenerate();
     });
     expect(toastMock).toHaveBeenCalledWith("error", "模型生成失败：boom");
+    toastMock.mockClear();
 
     await act(async () => {
       await result.current.handleExportSTL();
     });
-    expect(toastMock).toHaveBeenCalledWith(
-      "error",
-      "参数已变更，请先点击开始锻造生成最新模型",
-    );
+    expect(toastMock).not.toHaveBeenCalled();
 
     trayWorkerServiceMock.generateSimpleStepped.mockResolvedValueOnce({
       geometry: { id: "geom-1" } as never,
