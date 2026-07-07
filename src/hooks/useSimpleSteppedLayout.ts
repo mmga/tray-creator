@@ -6,6 +6,7 @@ import type {
   CustomLayoutParams,
   FreeSlot,
   SimpleSteppedLayoutParams,
+  SimpleSteppedRow,
 } from "@/types/custom-tray";
 import { createSimpleSteppedSlotInstance } from "@/lib/slot-instance-factory";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";

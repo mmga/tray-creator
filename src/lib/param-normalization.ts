@@ -71,16 +71,6 @@ function getRawSteppedDisconnectDistance(obj: Record<string, unknown>): number {
   return STEPPED_LAYOUT_DEFAULTS.disconnectDistance;
 }
 
-function getRawSteppedSplitGrooveDepth(obj: Record<string, unknown>): number {
-  if (
-    typeof obj.splitGrooveDepth === "number" &&
-    Number.isFinite(obj.splitGrooveDepth)
-  ) {
-    return obj.splitGrooveDepth;
-  }
-  return STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth;
-}
-
 function getRawSteppedSplitRecessEnabled(obj: Record<string, unknown>) {
   if (typeof obj.enableSplitRecess === "boolean") {
     return obj.enableSplitRecess;
@@ -567,6 +557,14 @@ function normalizeSimpleSteppedSlotInstances(
 function clampAndFillSimpleSteppedDerivedFields(
   params: SimpleSteppedLayoutParams,
 ) {
+  const obj = params as unknown as Record<string, unknown>;
+  clampField(obj, "firstRowHeight", SIMPLE_STEPPED_LIMITS.firstRowHeight);
+  clampField(obj, "stepHeight", SIMPLE_STEPPED_LIMITS.stepHeight);
+  clampField(obj, "rowGap", SIMPLE_STEPPED_LIMITS.rowGap);
+  clampField(obj, "spacing", SIMPLE_STEPPED_LIMITS.spacing);
+  clampField(obj, "outerMargin", SIMPLE_STEPPED_LIMITS.outerMargin);
+  clampField(obj, "holeDepth", SIMPLE_STEPPED_LIMITS.holeDepth);
+  clampField(obj, "cornerRadius", SIMPLE_STEPPED_LIMITS.cornerRadius);
   Object.assign(params, normalizeSimpleSteppedParams(params));
 }
 
