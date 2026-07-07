@@ -52,6 +52,10 @@ _Avoid_: Using base size to mean the final generated slot size.
 One tray editing workflow such as grid, custom, simple stepped, or stepped.
 _Avoid_: Using "feature" when the meaning is the editor mode.
 
+**Mode Interaction State**:
+Mode-local transient editor state shared by a **Mode Workspace** and a **Mode Viewport Workspace**, such as selected slot ids or preview focus ids.
+_Avoid_: Treating shared editor interaction state as page-owned state or as registry-owned state.
+
 **CAD Stepped Construction**:
 The CAD stepped-mode modeling contract where each height band is generated from its own 2D sketch and then extruded before cuts are applied.
 _Avoid_: Treating CAD stepped mode as an arbitrary union of per-group solids.
@@ -226,6 +230,8 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A **Mode Workspace** should not own viewport-specific 2D/3D editing details unless those details become shared across modes.
 - A **Mode Workspace Adapter** implements the shared **Mode Workspace** interface for one **Mode**.
 - A **Mode Workspace Registry** selects the active **Mode Workspace Adapter** for the current **Mode**.
+- **Mode Interaction State** belongs to one active **Mode** editing workflow, not to the page shell or a registry.
+- A **Mode Workspace** and **Mode Viewport Workspace** may share **Mode Interaction State** when left-panel controls and viewport interactions both read or write the same transient editor state.
 - A **Stepped Layout Core** may be shared by both `stepped` and `stepped-cad` when the behavior is not split-assembly-specific.
 - A **Stepped Layout Core** should not expose CAD-only split assembly behavior through the ordinary `stepped` runtime interface.
 - A **Simple Stepped Layout Core** may allow the derived tray size to exceed the maximum build size when row and slot content requires it.
