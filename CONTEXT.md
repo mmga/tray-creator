@@ -60,6 +60,10 @@ _Avoid_: Treating CAD stepped mode as an arbitrary union of per-group solids.
 The shared stepped editing module that owns group and slot editing, undo history, outline preview, whole-model preview/export, base-hole derived fields, and layout optimization for both `stepped` and `stepped-cad`, while excluding split assembly behavior.
 _Avoid_: Letting the shared stepped editing module own CAD-only split preview, split export, split assembly groove, Locator Pin, or split merge rules.
 
+**Simple Stepped Layout Core**:
+The simple stepped editing module that owns row and slot relationship repair, simple stepped tray size normalization, outer margin synchronization, and canvas-to-row slot update projection for `simple-stepped` mode.
+_Avoid_: Reimplementing simple stepped row membership repair or tray size normalization separately in import normalization, hooks, and viewport adapters.
+
 **Split Assembly Groove Type**:
 The mutually exclusive stepped CAD choice that decides which contact-face outline becomes the male/female split assembly groove profile.
 _Avoid_: Treating groove types as stackable toggles.
@@ -224,6 +228,10 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A **Mode Workspace Registry** selects the active **Mode Workspace Adapter** for the current **Mode**.
 - A **Stepped Layout Core** may be shared by both `stepped` and `stepped-cad` when the behavior is not split-assembly-specific.
 - A **Stepped Layout Core** should not expose CAD-only split assembly behavior through the ordinary `stepped` runtime interface.
+- A **Simple Stepped Layout Core** may allow the derived tray size to exceed the maximum build size when row and slot content requires it.
+- In simple stepped mode, the maximum build size is a user warning threshold, not a hard normalization cap.
+- Imported, draft-loaded, and runtime-edited simple stepped params should pass through the same **Simple Stepped Layout Core** normalization rules.
+- A **Simple Stepped Layout Core** should call the **Slot Instance Factory** when repairing simple stepped **Slot Geometry Snapshots**, rather than owning slot definition matching rules itself.
 - A **Mode Viewport Workspace** may own a **Mode**'s viewport wiring, preview-view switching, and viewport-only transient state.
 - A **Mode Viewport Workspace** should not own left-panel parameter editing or **Draft Binding** rules.
 - A **Mode Viewport Workspace Adapter** implements the shared **Mode Viewport Workspace** interface for one **Mode**.
