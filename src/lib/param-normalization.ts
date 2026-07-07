@@ -4,13 +4,12 @@ import type {
   CustomLayoutParams,
   FreeSlot,
   SimpleSteppedLayoutParams,
-  SimpleSteppedSlot,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import { CUSTOM_LAYOUT_DEFAULTS, CUSTOM_LIMITS } from "@/lib/custom-config";
 import { getBaseHoleMinBaseThickness, resolveBaseHolePresetKey } from "@/lib/config";
 import { DEFAULT_TRAY_PARAMS, PARAM_CONFIG } from "@/lib/grid-config";
-import { calculateSimpleSteppedDimensions } from "@/lib/simple-stepped-layout";
+import { normalizeSimpleSteppedParams } from "@/lib/simple-stepped-projection";
 import {
   SIMPLE_STEPPED_LAYOUT_DEFAULTS,
   SIMPLE_STEPPED_LIMITS,
@@ -25,7 +24,6 @@ import { createGroupStructureOverrides } from "@/lib/stepped-group-params";
 import {
   createGridSlotSnapshotFromDefinition,
   normalizeFreeSlotInstanceSnapshot,
-  normalizeSimpleSteppedSlotInstanceSnapshot,
 } from "@/lib/slot-instance-factory";
 
 export type NormalizableParams =
@@ -561,65 +559,15 @@ function normalizeSimpleSteppedSlotInstances(
     if (typeof slot.x !== "number" || !Number.isFinite(slot.x)) {
       throw new Error(`slots[${index}].x: 缺少或无效（需要有限数字）`);
     }
-    Object.assign(
-      slot,
-      normalizeSimpleSteppedSlotInstanceSnapshot(
-        slot as unknown as SimpleSteppedSlot,
-      ),
-    );
   }
+
+  Object.assign(params, normalizeSimpleSteppedParams(params));
 }
 
 function clampAndFillSimpleSteppedDerivedFields(
   params: SimpleSteppedLayoutParams,
 ) {
-  const obj = params as unknown as Record<string, unknown>;
-  const rows = obj.rows as Record<string, unknown>[];
-  const slots = obj.slots as Record<string, unknown>[];
-
-  clampField(obj, "firstRowHeight", SIMPLE_STEPPED_LIMITS.firstRowHeight);
-  clampField(obj, "stepHeight", SIMPLE_STEPPED_LIMITS.stepHeight);
-  clampField(obj, "rowGap", SIMPLE_STEPPED_LIMITS.rowGap);
-  clampField(obj, "spacing", SIMPLE_STEPPED_LIMITS.spacing);
-  clampField(obj, "outerMargin", SIMPLE_STEPPED_LIMITS.outerMargin);
-  clampField(obj, "holeDepth", SIMPLE_STEPPED_LIMITS.holeDepth);
-  clampField(obj, "cornerRadius", SIMPLE_STEPPED_LIMITS.cornerRadius);
-  if (!obj.outerMarginIndependent) {
-    obj.outerMargin = obj.spacing;
-  }
-
-  const slotIdsByRowId = new Map<string, string[]>();
-  rows.forEach((row) => {
-    slotIdsByRowId.set(row.id as string, []);
-  });
-  slots.forEach((slot) => {
-    const rowId = slot.rowId as string;
-    const list = slotIdsByRowId.get(rowId);
-    if (list) {
-      list.push(slot.id as string);
-    }
-  });
-  rows.forEach((row) => {
-    row.slotIds = slotIdsByRowId.get(row.id as string) ?? [];
-  });
-
-  const normalized = obj as unknown as SimpleSteppedLayoutParams;
-  const fallbackWidth =
-    typeof normalized.trayWidth === "number" &&
-    Number.isFinite(normalized.trayWidth)
-      ? normalized.trayWidth
-      : SIMPLE_STEPPED_LAYOUT_DEFAULTS.trayWidth;
-  const fallbackDepth =
-    typeof normalized.trayDepth === "number" &&
-    Number.isFinite(normalized.trayDepth)
-      ? normalized.trayDepth
-      : SIMPLE_STEPPED_LAYOUT_DEFAULTS.trayDepth;
-  normalized.trayWidth = fallbackWidth;
-  normalized.trayDepth = fallbackDepth;
-
-  const dimensions = calculateSimpleSteppedDimensions(normalized);
-  normalized.trayWidth = Math.max(fallbackWidth, dimensions.width);
-  normalized.trayDepth = Math.max(fallbackDepth, dimensions.depth);
+  Object.assign(params, normalizeSimpleSteppedParams(params));
 }
 
 function validateSteppedRequiredFields(params: SteppedLayoutParams) {
