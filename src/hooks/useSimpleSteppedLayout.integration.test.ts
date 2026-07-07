@@ -220,10 +220,16 @@ describe("useSimpleSteppedLayout", () => {
       result.current.addSlotToRow("row-1", 100);
     });
     act(() => {
-      result.current.updateMultipleSlots([
-        { id: "slot-1", x: -MAX_BUILD_SIZE, y: result.current.params.slots[0].y },
-        { id: "slot-2", x: MAX_BUILD_SIZE, y: result.current.params.slots[1].y },
-      ]);
+      result.current.setParams((prev) => ({
+        ...prev,
+        slots: prev.slots.map((slot) =>
+          slot.id === "slot-1"
+            ? { ...slot, x: -MAX_BUILD_SIZE }
+            : slot.id === "slot-2"
+              ? { ...slot, x: MAX_BUILD_SIZE }
+              : slot,
+        ),
+      }));
     });
 
     expect(result.current.params.trayWidth).toBeGreaterThan(MAX_BUILD_SIZE);

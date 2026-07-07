@@ -6,10 +6,7 @@ import type {
   CustomLayoutParams,
   FreeSlot,
   SimpleSteppedLayoutParams,
-  SimpleSteppedRow,
-  SimpleSteppedSlot,
 } from "@/types/custom-tray";
-import { MAX_TRAY_SIZE } from "@/lib/config";
 import { createSimpleSteppedSlotInstance } from "@/lib/slot-instance-factory";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import {
@@ -19,6 +16,7 @@ import {
   deriveSimpleSteppedLayout,
   getSimpleSteppedEffectiveDiameter,
   mapSimpleSteppedCanvasUpdatesToLocal,
+  normalizeSimpleSteppedParams,
   type SimpleSteppedDerivedLayout,
 } from "@/lib/simple-stepped-projection";
 import type { CanvasSlotUpdate } from "@/lib/canvas-types";
@@ -68,32 +66,6 @@ export interface UseSimpleSteppedLayoutReturn {
   isPreviewStale: boolean;
   handleGenerate: () => void;
   handleExportSTL: () => void;
-}
-
-function rebuildRowSlotIds(
-  rows: SimpleSteppedRow[],
-  slots: SimpleSteppedSlot[],
-): SimpleSteppedRow[] {
-  return rows.map((row) => ({
-    ...row,
-    slotIds: slots.filter((slot) => slot.rowId === row.id).map((slot) => slot.id),
-  }));
-}
-
-function normalizeSimpleSteppedTraySize(
-  requestedSize: number,
-  minimumSize: number,
-  fallbackSize: number,
-) {
-  const safeRequestedSize =
-    Number.isFinite(requestedSize) && requestedSize > 0
-      ? requestedSize
-      : fallbackSize;
-
-  return Math.min(
-    Math.max(safeRequestedSize, minimumSize),
-    MAX_TRAY_SIZE,
-  );
 }
 
 export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
@@ -159,43 +131,10 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
     },
   });
 
-  const normalizeParams = useCallback((next: SimpleSteppedLayoutParams) => {
-    const rebuiltRows = rebuildRowSlotIds(next.rows, next.slots);
-    const normalizedSlots = next.slots.map((slot) => ({
-      ...slot,
-      y: Number.isFinite(slot.y) ? slot.y : 0,
-    }));
-    const withRowIds = {
-      ...next,
-      rows: rebuiltRows,
-      slots: normalizedSlots,
-      outerMarginIndependent: Boolean(next.outerMarginIndependent),
-      outerMargin: next.outerMarginIndependent ? next.outerMargin : next.spacing,
-    };
-    const minimumDims = calculateSimpleSteppedMinimumTraySize(withRowIds);
-    const fallbackWidth =
-      Number.isFinite(withRowIds.trayWidth) && withRowIds.trayWidth > 0
-        ? withRowIds.trayWidth
-        : SIMPLE_STEPPED_LAYOUT_DEFAULTS.trayWidth;
-    const fallbackDepth =
-      Number.isFinite(withRowIds.trayDepth) && withRowIds.trayDepth > 0
-        ? withRowIds.trayDepth
-        : SIMPLE_STEPPED_LAYOUT_DEFAULTS.trayDepth;
-
-    return {
-      ...withRowIds,
-      trayWidth: normalizeSimpleSteppedTraySize(
-        withRowIds.trayWidth,
-        minimumDims.width,
-        fallbackWidth,
-      ),
-      trayDepth: normalizeSimpleSteppedTraySize(
-        withRowIds.trayDepth,
-        minimumDims.depth,
-        fallbackDepth,
-      ),
-    };
-  }, []);
+  const normalizeParams = useCallback(
+    (next: SimpleSteppedLayoutParams) => normalizeSimpleSteppedParams(next),
+    [],
+  );
 
   const setParams = useCallback<
     React.Dispatch<React.SetStateAction<SimpleSteppedLayoutParams>>
