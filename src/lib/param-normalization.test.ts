@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
-import { getBaseHoleMinBaseThickness } from "@/lib/config";
+import { getBaseHoleMinBaseThickness, MAX_BUILD_SIZE } from "@/lib/config";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
@@ -173,6 +173,55 @@ describe("param normalization", () => {
     });
     expect(normalized.trayWidth).toBeGreaterThan(0);
     expect(normalized.trayDepth).toBeGreaterThan(0);
+  });
+
+  it("uses the simple stepped layout core for imported tray size and snapshots", () => {
+    const normalized = normalizeParamsForMode("simple-stepped", {
+      ...SIMPLE_STEPPED_LAYOUT_DEFAULTS,
+      trayWidth: 100,
+      trayDepth: 100,
+      spacing: 6,
+      outerMarginIndependent: false,
+      outerMargin: 99,
+      rows: [
+        { id: "row-1", name: "超宽行", slotIds: ["stale"] },
+      ],
+      slots: [
+        {
+          id: "slot-1",
+          rowId: "row-1",
+          shape: "circle",
+          diameter: 100,
+          slotDefinitionId: undefined,
+          effectiveDiameter: undefined,
+          x: -MAX_BUILD_SIZE,
+          y: Number.NaN,
+        },
+        {
+          id: "slot-2",
+          rowId: "row-1",
+          shape: "circle",
+          diameter: 100,
+          slotDefinitionId: undefined,
+          effectiveDiameter: undefined,
+          x: MAX_BUILD_SIZE,
+          y: 0,
+        },
+      ],
+    } as unknown as SimpleSteppedLayoutParams) as SimpleSteppedLayoutParams;
+
+    expect(normalized.outerMargin).toBe(6);
+    expect(normalized.rows[0].slotIds).toEqual(["slot-1", "slot-2"]);
+    expect(normalized.trayWidth).toBeGreaterThan(MAX_BUILD_SIZE);
+    expect(normalized.slots[0]).toMatchObject({
+      y: 0,
+      slotDefinitionId: "circle-100",
+      effectiveDiameter: 100.4,
+    });
+    expect(normalized.slots[1]).toMatchObject({
+      slotDefinitionId: "circle-100",
+      effectiveDiameter: 100.4,
+    });
   });
 
   it("migrates stepped legacy groups before slot snapshots and derived clamps", () => {
