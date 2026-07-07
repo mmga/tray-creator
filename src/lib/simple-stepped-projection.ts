@@ -10,6 +10,7 @@ import type {
 } from "@/types/custom-tray";
 import { MAX_BUILD_SIZE } from "@/lib/config";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
+import { normalizeSimpleSteppedSlotInstanceSnapshot } from "@/lib/slot-instance-factory";
 
 export {
   buildSimpleSteppedRowBands,
@@ -63,11 +64,28 @@ function rebuildRowSlotIds(
 export function normalizeSimpleSteppedParams(
   next: SimpleSteppedLayoutParams,
 ): SimpleSteppedLayoutParams {
-  const rebuiltRows = rebuildRowSlotIds(next.rows, next.slots);
-  const normalizedSlots = next.slots.map((slot) => ({
-    ...slot,
-    y: Number.isFinite(slot.y) ? slot.y : 0,
-  }));
+  const rows = next.rows.length > 0
+    ? next.rows
+    : next.slots.length > 0
+      ? [
+          {
+            id: crypto.randomUUID(),
+            name: "行 1",
+            slotIds: [],
+          },
+        ]
+      : [];
+  const rowIds = new Set(rows.map((row) => row.id));
+  const fallbackRowId = rows[0]?.id ?? "";
+  const normalizedSlots = next.slots.map((slot) =>
+    normalizeSimpleSteppedSlotInstanceSnapshot({
+      ...slot,
+      rowId: rowIds.has(slot.rowId) ? slot.rowId : fallbackRowId,
+      shape: "circle",
+      y: Number.isFinite(slot.y) ? slot.y : 0,
+    }),
+  );
+  const rebuiltRows = rebuildRowSlotIds(rows, normalizedSlots);
   const withRowIds: SimpleSteppedLayoutParams = {
     ...next,
     rows: rebuiltRows,
