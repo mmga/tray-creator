@@ -133,7 +133,6 @@ export function useSteppedWorkspace({
       model.updateGroupSmoothingRadius,
       model.updateParam,
       model.volume,
-      enableSplitExport,
       exportSplitPartsHandler,
       previewGroupId,
       resetWorkspace,

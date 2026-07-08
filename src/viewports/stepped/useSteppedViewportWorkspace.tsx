@@ -99,7 +99,7 @@ export function useSteppedViewportWorkspace({
         }}
       />
     ),
-    [mode, model, previewGroupId, rightView],
+    [mode, model, previewGroupId, rightView, setSelectedSlotIds],
   );
 
   const viewport = useMemo(
