@@ -26,6 +26,10 @@ function requireNumber(obj: Record<string, unknown>, key: string) {
   if (typeof obj[key] !== "number") {
     throw new Error(`缺少或无效的字段: ${key}`);
   }
+
+  for (const group of groups) {
+    delete group.splitPartGroupId;
+  }
 }
 
 export function getRawSteppedSmoothingRadius(obj: Record<string, unknown>): number {
@@ -202,6 +206,7 @@ export function migrateSteppedLegacyShape(params: SteppedLayoutParams) {
         groupSmoothingRadius: number;
         useGroupDisconnectDistance: boolean;
         groupDisconnectDistance: number;
+        splitPartGroupId?: string;
       }
     >();
     const migratedSlots = slots.map((slot) => {
