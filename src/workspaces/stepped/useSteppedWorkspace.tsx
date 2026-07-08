@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
+import type { ModeInteractionState } from "@/hooks/useModeInteractionState";
 import { useWorkspaceDraftSupport } from "@/workspaces/shared";
 import type { ModeWorkspace } from "@/workspaces/types";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
@@ -16,23 +17,23 @@ const SteppedPanel = dynamic(() => import("@/components/SteppedPanel"), {
 
 interface UseSteppedWorkspaceOptions {
   model: UseSteppedLayoutReturn | UseSteppedCadLayoutReturn;
-  selectedSlotIds: string[];
-  previewGroupId: string | null;
-  onPreviewGroupChange: (groupId: string | null) => void;
-  onWorkspaceReset: () => void;
+  interactionState: ModeInteractionState;
   mode?: Extract<AppMode, "stepped" | "stepped-cad">;
   enableSplitExport?: boolean;
 }
 
 export function useSteppedWorkspace({
   model,
-  selectedSlotIds,
-  previewGroupId,
-  onPreviewGroupChange,
-  onWorkspaceReset,
+  interactionState,
   mode = "stepped",
   enableSplitExport = false,
 }: UseSteppedWorkspaceOptions): ModeWorkspace {
+  const {
+    selectedSlotIds,
+    previewGroupId,
+    setPreviewGroupId,
+    resetInteractionState,
+  } = interactionState;
   const exportSplitPartsHandler =
     enableSplitExport && "handleExportSplitParts" in model
       ? model.handleExportSplitParts
@@ -47,20 +48,20 @@ export function useSteppedWorkspace({
       mode: "stepped",
       params: model.params,
       setParams: model.setParams,
-      onAfterLoad: onWorkspaceReset,
+      onAfterLoad: resetInteractionState,
     });
 
   const resetWorkspace = useCallback(() => {
     model.setParams(STEPPED_LAYOUT_DEFAULTS);
-    onWorkspaceReset();
+    resetInteractionState();
     clearDraftBinding();
-  }, [clearDraftBinding, model, onWorkspaceReset]);
+  }, [clearDraftBinding, model, resetInteractionState]);
 
   const importIntoWorkspace = useCallback((params: unknown) => {
     model.setParams(params as SteppedLayoutParams);
-    onWorkspaceReset();
+    resetInteractionState();
     clearDraftBinding();
-  }, [clearDraftBinding, model, onWorkspaceReset]);
+  }, [clearDraftBinding, model, resetInteractionState]);
 
   const panel = useMemo(
     () => (
@@ -92,7 +93,7 @@ export function useSteppedWorkspace({
         onMoveSelectedSlotsToGroup={model.moveSelectedSlotsToGroup}
         onReorderGroups={model.reorderGroups}
         previewGroupId={previewGroupId}
-        onPreviewGroupChange={onPreviewGroupChange}
+        onPreviewGroupChange={setPreviewGroupId}
         bridgeWarning={model.bridgeWarning}
         optimizationProposals={model.optimizationProposals}
         isOptimizingLayout={model.isOptimizingLayout}
@@ -134,9 +135,9 @@ export function useSteppedWorkspace({
       model.volume,
       enableSplitExport,
       exportSplitPartsHandler,
-      onPreviewGroupChange,
       previewGroupId,
       resetWorkspace,
+      setPreviewGroupId,
       selectedSlotIds,
       updateGroupSplitPartTargetHandler,
     ],

@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import type { useCustomLayout } from "@/hooks/useCustomLayout";
+import type { ModeInteractionState } from "@/hooks/useModeInteractionState";
 import type { useSimpleSteppedLayout } from "@/hooks/useSimpleSteppedLayout";
 import type { useSteppedLayout } from "@/hooks/useSteppedLayout";
 import type { useSteppedCadLayout } from "@/hooks/useSteppedCadLayout";
@@ -21,10 +22,7 @@ interface UseModeWorkspacesOptions {
   simpleSteppedModel: ReturnType<typeof useSimpleSteppedLayout>;
   steppedModel: ReturnType<typeof useSteppedLayout>;
   steppedCadModel: ReturnType<typeof useSteppedCadLayout>;
-  selectedSlotIds: string[];
-  previewGroupId: string | null;
-  onPreviewGroupChange: (groupId: string | null) => void;
-  onSteppedWorkspaceReset: () => void;
+  steppedInteractionState: ModeInteractionState;
 }
 
 interface UseModeWorkspacesReturn {
@@ -38,10 +36,7 @@ export function useModeWorkspaces({
   simpleSteppedModel,
   steppedModel,
   steppedCadModel,
-  selectedSlotIds,
-  previewGroupId,
-  onPreviewGroupChange,
-  onSteppedWorkspaceReset,
+  steppedInteractionState,
 }: UseModeWorkspacesOptions): UseModeWorkspacesReturn {
   const gridWorkspace = useGridWorkspace({
     model: gridModel,
@@ -54,17 +49,11 @@ export function useModeWorkspaces({
   });
   const steppedWorkspace = useSteppedWorkspace({
     model: steppedModel,
-    selectedSlotIds,
-    previewGroupId,
-    onPreviewGroupChange,
-    onWorkspaceReset: onSteppedWorkspaceReset,
+    interactionState: steppedInteractionState,
   });
   const steppedCadWorkspace = useSteppedCadWorkspace({
     model: steppedCadModel,
-    selectedSlotIds,
-    previewGroupId,
-    onPreviewGroupChange,
-    onWorkspaceReset: onSteppedWorkspaceReset,
+    interactionState: steppedInteractionState,
   });
 
   const activeWorkspace = useMemo<ModeWorkspace>(() => {

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { useCustomLayout } from "@/hooks/useCustomLayout";
+import type { ModeInteractionState } from "@/hooks/useModeInteractionState";
 import type { useSimpleSteppedLayout } from "@/hooks/useSimpleSteppedLayout";
 import type { useSteppedLayout } from "@/hooks/useSteppedLayout";
 import type { useSteppedCadLayout } from "@/hooks/useSteppedCadLayout";
@@ -21,14 +22,11 @@ interface UseModeViewportWorkspacesOptions {
   simpleSteppedModel: ReturnType<typeof useSimpleSteppedLayout>;
   steppedModel: ReturnType<typeof useSteppedLayout>;
   steppedCadModel: ReturnType<typeof useSteppedCadLayout>;
+  steppedInteractionState: ModeInteractionState;
 }
 
 interface UseModeViewportWorkspacesReturn {
   activeViewport: ModeViewportWorkspace;
-  resetSteppedViewportState: () => void;
-  steppedSelectedSlotIds: string[];
-  steppedPreviewGroupId: string | null;
-  setSteppedPreviewGroupId: (groupId: string | null) => void;
 }
 
 export function useModeViewportWorkspaces({
@@ -38,6 +36,7 @@ export function useModeViewportWorkspaces({
   simpleSteppedModel,
   steppedModel,
   steppedCadModel,
+  steppedInteractionState,
 }: UseModeViewportWorkspacesOptions): UseModeViewportWorkspacesReturn {
   const [rightView, setRightView] = useState<"2d" | "3d">("2d");
 
@@ -56,16 +55,16 @@ export function useModeViewportWorkspaces({
   });
   const steppedViewport = useSteppedViewportWorkspace({
     model: steppedModel,
+    interactionState: steppedInteractionState,
     rightView,
     onRightViewChange: setRightView,
   });
   const steppedCadViewport = useSteppedCadViewportWorkspace({
     model: steppedCadModel,
+    interactionState: steppedInteractionState,
     rightView,
     onRightViewChange: setRightView,
   });
-  const activeSteppedViewportState =
-    mode === "stepped-cad" ? steppedCadViewport : steppedViewport;
 
   const activeViewport = useMemo<ModeViewportWorkspace>(() => {
     switch (mode) {
@@ -95,9 +94,5 @@ export function useModeViewportWorkspaces({
 
   return {
     activeViewport,
-    resetSteppedViewportState: activeSteppedViewportState.resetSteppedViewportState,
-    steppedSelectedSlotIds: activeSteppedViewportState.selectedSlotIds,
-    steppedPreviewGroupId: activeSteppedViewportState.previewGroupId,
-    setSteppedPreviewGroupId: activeSteppedViewportState.setPreviewGroupId,
   };
 }

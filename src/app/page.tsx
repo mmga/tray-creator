@@ -3,13 +3,7 @@
 import {
   useState,
 } from "react";
-import { useTrayModel } from "@/hooks/useTrayModel";
-import { useCustomLayout } from "@/hooks/useCustomLayout";
-import { useSimpleSteppedLayout } from "@/hooks/useSimpleSteppedLayout";
-import { useSteppedLayout } from "@/hooks/useSteppedLayout";
-import { useSteppedCadLayout } from "@/hooks/useSteppedCadLayout";
-import { useModeWorkspaces } from "@/hooks/useModeWorkspaces";
-import { useModeViewportWorkspaces } from "@/hooks/useModeViewportWorkspaces";
+import { useModeEditorWorkspaces } from "@/hooks/useModeEditorWorkspaces";
 import { ModeTabs } from "@/components/ModeTabs";
 import { DraftManagerDialog } from "@/components/DraftManagerDialog";
 import type { AppMode } from "@/types/custom-tray";
@@ -17,46 +11,8 @@ import { Boxes } from "lucide-react";
 
 export default function Home() {
   const [mode, setMode] = useState<AppMode>("grid");
-
-  // Grid Mode State
-  const gridModel = useTrayModel();
-
-  // Custom Mode State
-  const customModel = useCustomLayout();
-
-  // Simple Stepped Mode State
-  const simpleSteppedModel = useSimpleSteppedLayout();
-
-  // Stepped Mode State
-  const steppedModel = useSteppedLayout();
-  const steppedCadModel = useSteppedCadLayout();
-
-  const {
-    activeViewport,
-    resetSteppedViewportState,
-    steppedSelectedSlotIds,
-    steppedPreviewGroupId,
-    setSteppedPreviewGroupId,
-  } = useModeViewportWorkspaces({
+  const { activeWorkspace, activeViewport } = useModeEditorWorkspaces({
     mode,
-    gridModel,
-    customModel,
-    simpleSteppedModel,
-    steppedModel,
-    steppedCadModel,
-  });
-
-  const { activeWorkspace } = useModeWorkspaces({
-    mode,
-    gridModel,
-    customModel,
-    simpleSteppedModel,
-    steppedModel,
-    steppedCadModel,
-    selectedSlotIds: steppedSelectedSlotIds,
-    previewGroupId: steppedPreviewGroupId,
-    onPreviewGroupChange: setSteppedPreviewGroupId,
-    onSteppedWorkspaceReset: resetSteppedViewportState,
   });
 
   return (

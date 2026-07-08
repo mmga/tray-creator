@@ -1074,6 +1074,8 @@ describe("Home page", { timeout: 15000 }, () => {
       "group-1",
     );
 
+    // Page shell only calls active viewport reset; stepped interaction state
+    // is owned behind useModeEditorWorkspaces.
     fireEvent.click(screen.getByRole("button", { name: "切到网格" }));
     fireEvent.click(screen.getByRole("button", { name: "切到阶梯" }));
 

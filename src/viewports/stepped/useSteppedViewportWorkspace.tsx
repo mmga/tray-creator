@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
+import type { ModeInteractionState } from "@/hooks/useModeInteractionState";
 import type { UseSteppedLayoutReturn } from "@/hooks/useSteppedLayout";
 import type { UseSteppedCadLayoutReturn } from "@/hooks/useSteppedCadLayout";
 import { buildSteppedLayoutEditorViewportModel } from "@/viewports/layout-editor/steppedViewportModel";
@@ -15,6 +16,7 @@ const LayoutCanvas = dynamic(() => import("@/components/LayoutCanvas"), {
 
 interface UseSteppedViewportWorkspaceOptions {
   model: UseSteppedLayoutReturn | UseSteppedCadLayoutReturn;
+  interactionState: ModeInteractionState;
   rightView: "2d" | "3d";
   onRightViewChange: (next: "2d" | "3d") => void;
   mode?: Extract<AppMode, "stepped" | "stepped-cad">;
@@ -23,21 +25,22 @@ interface UseSteppedViewportWorkspaceOptions {
 
 interface UseSteppedViewportWorkspaceReturn {
   workspace: ModeViewportWorkspace;
-  selectedSlotIds: string[];
-  previewGroupId: string | null;
-  setPreviewGroupId: (groupId: string | null) => void;
-  resetSteppedViewportState: () => void;
 }
 
 export function useSteppedViewportWorkspace({
   model,
+  interactionState,
   rightView,
   onRightViewChange,
   mode = "stepped",
   supportsSplitPreview = false,
 }: UseSteppedViewportWorkspaceOptions): UseSteppedViewportWorkspaceReturn {
-  const [selectedSlotIds, setSelectedSlotIds] = useState<string[]>([]);
-  const [previewGroupId, setPreviewGroupId] = useState<string | null>(null);
+  const {
+    selectedSlotIds,
+    previewGroupId,
+    setSelectedSlotIds,
+    resetInteractionState,
+  } = interactionState;
   const splitPreviewParts =
     "splitPreviewParts" in model ? model.splitPreviewParts : undefined;
   const isGeneratingSplitPreview =
@@ -49,10 +52,9 @@ export function useSteppedViewportWorkspace({
       ? model.handleGenerateSplitPreview
       : undefined;
 
-  const resetSteppedViewportState = useCallback(() => {
-    setSelectedSlotIds([]);
-    setPreviewGroupId(null);
-  }, []);
+  const resetTransientState = useCallback(() => {
+    resetInteractionState();
+  }, [resetInteractionState]);
 
   useEffect(() => {
     if (selectedSlotIds.length === 0) {
@@ -133,11 +135,7 @@ export function useSteppedViewportWorkspace({
     workspace: {
       mode,
       viewport,
-      resetTransientState: resetSteppedViewportState,
+      resetTransientState,
     },
-    selectedSlotIds,
-    previewGroupId,
-    setPreviewGroupId,
-    resetSteppedViewportState,
   };
 }
