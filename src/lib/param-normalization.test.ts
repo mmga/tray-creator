@@ -278,36 +278,82 @@ describe("param normalization", () => {
 
   it("clears stepped split part group targets during normalization", () => {
     const normalized = normalizeParamsForMode("stepped", {
-      ...STEPPED_LAYOUT_DEFAULTS,
+      trayWidth: 260,
+      trayDepth: 260,
       groups: [
         {
-          ...STEPPED_LAYOUT_DEFAULTS.groups[0],
           id: "low",
           name: "低组",
+          color: "#22c55e",
           bottomHeight: 10,
+          useGroupSmoothingRadius: false,
+          groupSmoothingRadius: 60,
+          useGroupDisconnectDistance: false,
+          groupDisconnectDistance: 0,
           splitPartGroupId: "high",
         },
         {
-          ...STEPPED_LAYOUT_DEFAULTS.groups[0],
           id: "high",
           name: "高组",
+          color: "#3b82f6",
           bottomHeight: 20,
+          useGroupSmoothingRadius: false,
+          groupSmoothingRadius: 60,
+          useGroupDisconnectDistance: false,
+          groupDisconnectDistance: 0,
           splitPartGroupId: "high",
         },
         {
-          ...STEPPED_LAYOUT_DEFAULTS.groups[0],
           id: "mid",
           name: "中组",
+          color: "#f97316",
           bottomHeight: 15,
+          useGroupSmoothingRadius: false,
+          groupSmoothingRadius: 60,
+          useGroupDisconnectDistance: false,
+          groupDisconnectDistance: 0,
           splitPartGroupId: "missing",
         },
       ],
       activeGroupId: "low",
+      slots: [
+        {
+          id: "slot-1",
+          x: 80,
+          y: 90,
+          shape: "circle",
+          width: 40,
+          height: 40,
+          rotation: 0,
+          groupId: "low",
+        },
+      ],
+      spacing: 5,
+      holeDepth: 3,
+      splitGrooveDepth: STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth,
+      enableSplitRecess: STEPPED_LAYOUT_DEFAULTS.enableSplitRecess,
+      splitGrooveType: STEPPED_LAYOUT_DEFAULTS.splitGrooveType,
+      enableSplitLocators: STEPPED_LAYOUT_DEFAULTS.enableSplitLocators,
+      smoothingRadius: 60,
+      disconnectDistance: 0,
+      enableBaseHole: false,
+      baseHoleSize: "25",
     } as SteppedLayoutParams) as SteppedLayoutParams;
 
+    expect(normalized.groups.map((group) => group.id)).toEqual([
+      "low",
+      "high",
+      "mid",
+    ]);
     expect(normalized.groups[0].splitPartGroupId).toBeUndefined();
     expect(normalized.groups[1].splitPartGroupId).toBeUndefined();
     expect(normalized.groups[2].splitPartGroupId).toBeUndefined();
+    expect(normalized.slots[0]).toMatchObject({
+      groupId: "low",
+      slotDefinitionId: "circle-40",
+      slotWidth: 40.4,
+      slotHeight: 40.4,
+    });
   });
 
   it("fills stepped base hole defaults and raises group height for magnetic holes", () => {
