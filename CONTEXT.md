@@ -28,6 +28,10 @@ _Avoid_: Reimplementing slot definition matching or snapshot fields separately i
 A module that converts imported, legacy, or draft Mode params into current runtime params through a fixed sequence: validate required fields, migrate legacy shape, normalize Slot Instances, then clamp and fill derived fields.
 _Avoid_: Mixing parameter file wrapper parsing, browser draft storage, or UI side effects into parameter normalization.
 
+**Legacy Param Migration**:
+The compatibility step inside the **Param Normalization Pipeline** that repairs older Mode parameter shapes before Slot Instance normalization and derived-field clamping run.
+_Avoid_: Duplicating old-shape repair logic across import parsing, Draft loading, and runtime editors.
+
 **Tolerance**:
 The extra clearance included in a slot definition so the generated slot fits the physical base.
 _Avoid_: Mode-specific tolerance, hidden tolerance.
@@ -197,6 +201,8 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A **Slot Instance** keeps a **Slot Geometry Snapshot** for reproducible generation.
 - A **Slot Instance Factory** is the shared creation seam for writing **Slot Geometry Snapshots** onto new or imported **Slot Instances**.
 - A **Param Normalization Pipeline** runs before imported or loaded params become runtime **Mode** params.
+- **Legacy Param Migration** runs inside the **Param Normalization Pipeline** after required-field validation and before **Slot Instance** normalization.
+- **Legacy Param Migration** owns old-shape compatibility repair, while the rest of the **Param Normalization Pipeline** owns validation, Slot Instance normalization, and derived-field clamping.
 - A **Param Normalization Pipeline** uses the **Slot Instance Factory** when it writes or repairs **Slot Geometry Snapshots**.
 - Existing **Slot Instances** do not silently change when a **Slot Definition** changes.
 - Updating an existing slot to the latest **Slot Definition** must be an explicit action.
