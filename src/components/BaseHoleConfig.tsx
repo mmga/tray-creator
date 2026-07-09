@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import {
   BASE_HOLE_CONFIG,
   getBaseHoleMinBaseThickness,
@@ -38,14 +37,6 @@ export function BaseHoleConfig<TParams extends BaseHoleConfigFields>({
   const preset = getBaseHolePreset(resolvedBaseHoleSize);
   const minBaseThickness = getBaseHoleMinBaseThickness(resolvedBaseHoleSize);
   const minBottomWall = getBaseHoleMinBottomWall(resolvedBaseHoleSize);
-
-  useEffect(() => {
-    if (!enableBaseHole || baseThickness >= minBaseThickness) {
-      return;
-    }
-
-    updateParam("baseThickness", minBaseThickness as TParams["baseThickness"]);
-  }, [baseThickness, enableBaseHole, minBaseThickness, updateParam]);
 
   return (
     <div className="iron-panel rounded-sm p-4">
@@ -116,7 +107,7 @@ export function BaseHoleConfig<TParams extends BaseHoleConfigFields>({
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span>最小底厚</span>
+                  <span>建议底厚</span>
                   <span className="text-foreground/80">{minBaseThickness.toFixed(1)}mm</span>
                 </div>
                 <div className="flex justify-between">

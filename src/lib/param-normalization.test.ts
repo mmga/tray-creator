@@ -106,6 +106,17 @@ describe("param normalization", () => {
     expect(normalized.slotDiameter).toBeCloseTo(32.4, 5);
   });
 
+  it("keeps 1mm grid base thickness when magnetic holes are enabled", () => {
+    const normalized = normalizeParamsForMode("grid", {
+      ...DEFAULT_TRAY_PARAMS,
+      enableBaseHole: true,
+      baseThickness: 1,
+    } as TrayParams) as TrayParams;
+
+    expect(normalized.enableBaseHole).toBe(true);
+    expect(normalized.baseThickness).toBe(1);
+  });
+
   it("migrates custom params into normalized stepped params", () => {
     const customParams: CustomLayoutParams = {
       ...CUSTOM_LAYOUT_DEFAULTS,
@@ -139,6 +150,29 @@ describe("param normalization", () => {
     });
     expect(migrated.enableBaseHole).toBe(customParams.enableBaseHole);
     expect(migrated.baseHoleSize).toBe("25");
+  });
+
+  it("keeps 1mm custom base thickness when magnetic holes are enabled", () => {
+    const normalized = normalizeParamsForMode("custom", {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      enableBaseHole: true,
+      baseThickness: 1,
+      slots: [
+        {
+          id: "custom-60",
+          x: 80,
+          y: 80,
+          shape: "circle",
+          width: 60,
+          height: 60,
+          rotation: 0,
+        },
+      ],
+    } as CustomLayoutParams) as CustomLayoutParams;
+
+    expect(normalized.enableBaseHole).toBe(true);
+    expect(normalized.baseHoleSize).toBe("40");
+    expect(normalized.baseThickness).toBe(1);
   });
 
   it("normalizes simple stepped legacy rows before slot snapshots and derived size", () => {

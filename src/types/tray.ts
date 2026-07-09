@@ -28,6 +28,8 @@ export interface TrayParams {
   holeDepth: number;
   /** 圆角半径 (mm)，仅影响底板四角竖直方向的边 */
   cornerRadius: number;
+  /** 侧面斜面宽度 (mm)，下沿保持外形尺寸，上沿向内收缩 */
+  sideBevelWidth: number;
   /** 边界间距 (mm)，凹槽到底板边缘的距离；仅在 boundarySpacingIndependent=true 时生效 */
   boundarySpacing: number;
   /** 是否独立调整边界间距（false 时 X/Y 两轴分别跟随对应的 spacing） */

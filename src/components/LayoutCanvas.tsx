@@ -101,6 +101,7 @@ export default function LayoutCanvas({
     spacing,
     boundarySpacing,
     cornerRadius,
+    sideBevelWidth,
     showEffectiveBaseplate,
     showMaxBuildBoundary,
   } = trayFrame;
@@ -423,8 +424,14 @@ export default function LayoutCanvas({
 
   const effectiveBaseplate = useMemo(
     () =>
-      calculateEffectiveBaseplate(slots, trayDepth, boundarySpacing),
-    [boundarySpacing, slots, trayDepth],
+      calculateEffectiveBaseplate(
+        slots,
+        trayDepth,
+        boundarySpacing,
+        undefined,
+        sideBevelWidth,
+      ),
+    [boundarySpacing, sideBevelWidth, slots, trayDepth],
   );
 
   const isSimpleSteppedCanvas = Boolean(rowBands);
@@ -887,6 +894,7 @@ export default function LayoutCanvas({
             showEffectiveBaseplate={showEffectiveBaseplate}
             effectiveBaseplate={effectiveBaseplate}
             cornerRadius={cornerRadius}
+            sideBevelWidth={sideBevelWidth}
             symmetryAxes={symmetryAxes}
             collisionState={collisionState}
             focusedGroupId={focusedGroupId}

@@ -402,7 +402,7 @@ export default function SimpleSteppedPanel({
             <div className="grid grid-cols-3 gap-2">
               {[
                 { label: "长度", value: effectiveDimensions.width, warn: effectiveDimensions.width > MAX_BUILD_SIZE },
-                { label: "深度", value: effectiveDimensions.depth, warn: effectiveDimensions.depth > MAX_BUILD_SIZE },
+                { label: "宽度", value: effectiveDimensions.depth, warn: effectiveDimensions.depth > MAX_BUILD_SIZE },
                 { label: "高度", value: effectiveDimensions.height, warn: false },
               ].map(({ label, value, warn }) => (
                 <div

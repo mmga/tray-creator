@@ -9,8 +9,8 @@ import {
 import { CUSTOM_BASE_PRESETS } from "@/lib/custom-config";
 
 describe("base presets", () => {
-  it("exposes the 10mm base only in custom mode", () => {
-    expect(CUSTOM_BASE_PRESETS.some((preset) => preset.diameter === 10)).toBe(true);
+  it("keeps the 10mm base out of fixed presets", () => {
+    expect(CUSTOM_BASE_PRESETS.some((preset) => preset.diameter === 10)).toBe(false);
     expect(BASE_PRESETS.some((preset) => preset.diameter === 10)).toBe(false);
   });
 });

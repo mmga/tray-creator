@@ -81,6 +81,7 @@ export function calculateEffectiveBaseplate(
   trayDepth: number,
   boundarySpacing: number,
   ellipseProfileExponent?: number,
+  sideBevelWidth = 0,
 ): CanvasEffectiveBaseplate {
   if (slots.length === 0) {
     return {
@@ -113,11 +114,19 @@ export function calculateEffectiveBaseplate(
     maxY = Math.max(maxY, slot.y + halfH);
   }
 
+  const safeSideBevelWidth = Math.max(0, sideBevelWidth);
+
   return {
     hasSlots: true,
-    x: minX - boundarySpacing,
-    y: trayDepth - (maxY + boundarySpacing),
-    width: Math.max(0, maxX - minX + boundarySpacing * 2),
-    height: Math.max(0, maxY - minY + boundarySpacing * 2),
+    x: minX - boundarySpacing - safeSideBevelWidth,
+    y: trayDepth - (maxY + boundarySpacing + safeSideBevelWidth),
+    width: Math.max(
+      0,
+      maxX - minX + boundarySpacing * 2 + safeSideBevelWidth * 2,
+    ),
+    height: Math.max(
+      0,
+      maxY - minY + boundarySpacing * 2 + safeSideBevelWidth * 2,
+    ),
   };
 }

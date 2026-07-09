@@ -132,10 +132,12 @@ vi.mock("@/components/canvas/CanvasOverlayLayer", () => ({
     showEffectiveBaseplate,
     focusedGroupId,
     outlinePreview,
+    sideBevelWidth,
   }: {
     showEffectiveBaseplate: boolean;
     focusedGroupId?: string | null;
     outlinePreview?: GroupOutlinePreview[] | null;
+    sideBevelWidth?: number;
   }) {
     return (
       <g
@@ -143,6 +145,7 @@ vi.mock("@/components/canvas/CanvasOverlayLayer", () => ({
         data-show-effective-baseplate={String(showEffectiveBaseplate)}
         data-focused-group-id={focusedGroupId ?? ""}
         data-outline-count={outlinePreview?.length ?? 0}
+        data-side-bevel-width={sideBevelWidth ?? 0}
       />
     );
   },
@@ -277,6 +280,7 @@ function createCustomParams(
     baseThickness: 3,
     holeDepth: 3,
     cornerRadius: 6,
+    sideBevelWidth: 0,
     enableBaseHole: false,
     baseHoleSize: "25",
     ...overrides,
@@ -382,6 +386,7 @@ function TestLayoutCanvas({
           spacing: params.spacing,
           boundarySpacing,
           cornerRadius: "cornerRadius" in params ? params.cornerRadius : 0,
+          sideBevelWidth: "sideBevelWidth" in params ? params.sideBevelWidth : 0,
           showEffectiveBaseplate: !isStepped && !rowBands,
           showMaxBuildBoundary: Boolean(rowBands),
         },
@@ -1355,6 +1360,21 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     await waitFor(() => {
       expect(startActionPanelResizeMock).toHaveBeenCalledWith(284);
     });
+  });
+
+  it("forwards side bevel width to the 2D overlay layer", () => {
+    render(
+      <TestLayoutCanvas
+        params={createCustomParams({ sideBevelWidth: 3 })}
+        onUpdateSlot={vi.fn()}
+        onRemoveSlot={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("canvas-overlay-layer")).toHaveAttribute(
+      "data-side-bevel-width",
+      "3",
+    );
   });
 
   it("pans the 2D canvas while dragging with the middle mouse button", async () => {

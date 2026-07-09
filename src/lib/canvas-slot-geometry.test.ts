@@ -90,4 +90,19 @@ describe("canvas slot geometry", () => {
     expect(expandedBounds.width).toBeGreaterThan(baselineBounds.width);
     expect(expandedBounds.height).toBeGreaterThan(baselineBounds.height);
   });
+
+  it("expands the lower edge while keeping boundary spacing based on the upper edge", () => {
+    const bounds = calculateEffectiveBaseplate(
+      [{ x: 30, y: 40, width: 20, height: 20, rotation: 0, shape: "circle" }],
+      100,
+      5,
+      undefined,
+      3,
+    );
+
+    expect(bounds.x).toBeCloseTo(11.8, 5);
+    expect(bounds.y).toBeCloseTo(41.8, 5);
+    expect(bounds.width).toBeCloseTo(36.4, 5);
+    expect(bounds.height).toBeCloseTo(36.4, 5);
+  });
 });

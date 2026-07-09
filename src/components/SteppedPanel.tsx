@@ -832,8 +832,8 @@ export default function SteppedPanel({
 
                         <div className="grid grid-cols-3 gap-2">
                             {[
-                                { label: "宽度", value: effectiveWidth, warn: effectiveWidth > MAX_BUILD_SIZE },
-                                { label: "深度", value: effectiveDepth, warn: effectiveDepth > MAX_BUILD_SIZE },
+                                { label: "长度", value: effectiveWidth, warn: effectiveWidth > MAX_BUILD_SIZE },
+                                { label: "宽度", value: effectiveDepth, warn: effectiveDepth > MAX_BUILD_SIZE },
                                 { label: "高度", value: maxGroupHeight, warn: false },
                             ].map(({ label, value, warn }) => (
                                 <div

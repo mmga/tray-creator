@@ -52,12 +52,35 @@ function createHalfCircleTrayBody(
   baseThickness: number,
   holeDepth: number,
   cornerRadius: number,
+  sideBevelWidth: number,
   splitAxis: "x" | "y",
 ) {
-  const base = createBaseBody(width, depth, baseThickness, cornerRadius);
+  const totalHeight = baseThickness + holeDepth;
+  const safeSideBevelWidth = Math.max(
+    0,
+    Math.min(sideBevelWidth, width / 2 - 0.1, depth / 2 - 0.1),
+  );
+  const baseBevelWidth = safeSideBevelWidth * (baseThickness / totalHeight);
+  const upperBevelWidth = safeSideBevelWidth - baseBevelWidth;
+  const upperWidth = width - baseBevelWidth * 2;
+  const upperDepth = depth - baseBevelWidth * 2;
+  const upperCornerRadius = Math.max(cornerRadius - baseBevelWidth, 0);
+  const base = createBaseBody(
+    width,
+    depth,
+    baseThickness,
+    cornerRadius,
+    baseBevelWidth,
+  );
   const upper = translate(
     [0, 0, baseThickness],
-    createBaseBody(width, depth, holeDepth, cornerRadius),
+    createBaseBody(
+      upperWidth,
+      upperDepth,
+      holeDepth,
+      upperCornerRadius,
+      upperBevelWidth,
+    ),
   );
   const clipCenter: [number, number, number] =
     splitAxis === "y"
@@ -86,6 +109,7 @@ export function createTrayModel(params: TrayParams): Geom3 {
     baseThickness,
     holeDepth,
     cornerRadius,
+    sideBevelWidth,
   } = params;
 
   // 实际凹槽直径（已内置公差）
@@ -100,12 +124,15 @@ export function createTrayModel(params: TrayParams): Geom3 {
   const baseHoleSize = resolveBaseHolePresetKey(holeDiameter);
 
   // 计算总尺寸：2 * 边界间距 + (N-1) 段凹槽间距 + N 个凹槽
-  const totalWidth =
+  const safeSideBevelWidth = Math.max(0, sideBevelWidth);
+  const topWidth =
     2 * boundarySpacingX +
     (columns - 1) * spacingX +
     columns * actualHoleDiameter;
-  const totalDepth =
+  const topDepth =
     2 * boundarySpacingY + (rows - 1) * spacingY + rows * actualHoleDiameter;
+  const totalWidth = topWidth + safeSideBevelWidth * 2;
+  const totalDepth = topDepth + safeSideBevelWidth * 2;
   const totalHeight = params.basePlateOnly ? baseThickness : baseThickness + holeDepth;
   const usesHalfCircleSlots =
     !params.basePlateOnly &&
@@ -120,6 +147,7 @@ export function createTrayModel(params: TrayParams): Geom3 {
         totalDepth,
         baseThickness,
         cornerRadius,
+        sideBevelWidth,
       )
     : usesHalfCircleSlots
     ? createHalfCircleTrayBody(
@@ -128,6 +156,7 @@ export function createTrayModel(params: TrayParams): Geom3 {
         baseThickness,
         holeDepth,
         cornerRadius,
+        sideBevelWidth,
         halfCircleSplitAxis,
       )
     : createBaseBody(
@@ -135,6 +164,7 @@ export function createTrayModel(params: TrayParams): Geom3 {
         totalDepth,
         totalHeight,
         cornerRadius,
+        sideBevelWidth,
       );
 
   // 2. 计算凹槽中心坐标
@@ -144,11 +174,13 @@ export function createTrayModel(params: TrayParams): Geom3 {
       centers.push({
         cx:
           -totalWidth / 2 +
+          safeSideBevelWidth +
           boundarySpacingX +
           holeRadius +
           col * (actualHoleDiameter + spacingX),
         cy:
           -totalDepth / 2 +
+          safeSideBevelWidth +
           boundarySpacingY +
           holeRadius +
           row * (actualHoleDiameter + spacingY),
@@ -206,11 +238,13 @@ export function calculateTrayDimensions(params: TrayParams) {
     width:
       2 * boundarySpacingX +
       (columns - 1) * spacingX +
-      columns * actualHoleDiameter,
+      columns * actualHoleDiameter +
+      Math.max(0, params.sideBevelWidth) * 2,
     depth:
       2 * boundarySpacingY +
       (rows - 1) * spacingY +
-      rows * actualHoleDiameter,
+      rows * actualHoleDiameter +
+      Math.max(0, params.sideBevelWidth) * 2,
     height: params.basePlateOnly ? baseThickness : baseThickness + holeDepth,
   };
 }

@@ -3,7 +3,6 @@ import type { TrayParams } from "@/types/tray";
 import {
   BASE_PRESETS,
   MAX_BUILD_SIZE,
-  getBaseHoleMinBaseThickness,
   resolveBaseHolePresetKey,
 } from "@/lib/config";
 import { PARAM_CONFIG } from "@/lib/grid-config";
@@ -88,7 +87,6 @@ export default function ParameterPanel({
   const selectedPresetValue =
     selectedPresetIndex >= 0 ? String(selectedPresetIndex) : undefined;
   const resolvedBaseHoleSize = resolveBaseHolePresetKey(params.holeDiameter);
-  const minBaseThickness = getBaseHoleMinBaseThickness(resolvedBaseHoleSize);
 
   useAutoPreview(params, {
     enabled: autoPreview,
@@ -274,15 +272,13 @@ export default function ParameterPanel({
       {/* 结构参数 — 移动端默认折叠 */}
       <div className="iron-panel rounded-sm p-4">
         <SectionHeader icon={Wrench} title="结构参数" collapsible defaultOpen={false}
-          summary={`底厚${params.baseThickness}mm / 孔深${params.holeDepth}mm / 圆角${params.cornerRadius}mm`}>
+          summary={`底厚${params.baseThickness}mm / 孔深${params.holeDepth}mm / 圆角${params.cornerRadius}mm / 斜面${params.sideBevelWidth}mm`}>
           <div className="space-y-4">
 
             <ParamSlider
               label={PARAM_CONFIG.baseThickness.label}
               value={params.baseThickness}
-              config={params.enableBaseHole
-                ? { ...PARAM_CONFIG.baseThickness, min: minBaseThickness }
-                : PARAM_CONFIG.baseThickness}
+              config={PARAM_CONFIG.baseThickness}
               onChange={(v) => updateParam("baseThickness", v)}
               unit={PARAM_CONFIG.baseThickness.unit}
             />
@@ -299,6 +295,13 @@ export default function ParameterPanel({
               config={PARAM_CONFIG.cornerRadius}
               onChange={(v) => updateParam("cornerRadius", v)}
               unit={PARAM_CONFIG.cornerRadius.unit}
+            />
+            <ParamSlider
+              label={PARAM_CONFIG.sideBevelWidth.label}
+              value={params.sideBevelWidth}
+              config={PARAM_CONFIG.sideBevelWidth}
+              onChange={(v) => updateParam("sideBevelWidth", v)}
+              unit={PARAM_CONFIG.sideBevelWidth.unit}
             />
           </div>
         </SectionHeader>
@@ -345,8 +348,8 @@ export default function ParameterPanel({
 
             <div className="grid grid-cols-3 gap-2">
               {[
-                { label: "宽度", value: dimensions.width, warn: dimensions.width > MAX_BUILD_SIZE },
-                { label: "深度", value: dimensions.depth, warn: dimensions.depth > MAX_BUILD_SIZE },
+                { label: "长度", value: dimensions.width, warn: dimensions.width > MAX_BUILD_SIZE },
+                { label: "宽度", value: dimensions.depth, warn: dimensions.depth > MAX_BUILD_SIZE },
                 { label: "高度", value: dimensions.height, warn: false },
               ].map(({ label, value, warn }) => (
                 <div

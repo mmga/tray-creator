@@ -20,7 +20,7 @@ export const SIMPLE_STEPPED_LAYOUT_DEFAULTS: SimpleSteppedLayoutParams = {
 
 export const SIMPLE_STEPPED_LIMITS = {
   trayWidth: { label: "长度", min: 0, max: MAX_TRAY_SIZE, step: 1, unit: "mm" },
-  trayDepth: { label: "深度", min: 0, max: MAX_TRAY_SIZE, step: 1, unit: "mm" },
+  trayDepth: { label: "宽度", min: 0, max: MAX_TRAY_SIZE, step: 1, unit: "mm" },
   firstRowHeight: { label: "首排高度", min: 1, max: 40, step: 0.5, unit: "mm" },
   stepHeight: { label: "阶梯步进", min: 1, max: 40, step: 0.5, unit: "mm" },
   rowGap: { label: "行间距", min: 0, max: 40, step: 1, unit: "mm" },

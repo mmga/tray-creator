@@ -129,6 +129,8 @@ export interface CustomLayoutParams {
   holeDepth: number;
   /** 圆角半径 (mm) */
   cornerRadius: number;
+  /** 侧面斜面宽度 (mm)，下沿保持有效底板尺寸，上沿向内收缩 */
+  sideBevelWidth: number;
   /** 是否启用底板磁吸孔 */
   enableBaseHole: boolean;
   /** 兼容导入/导出保留字段；实际规格由配置自动匹配 */

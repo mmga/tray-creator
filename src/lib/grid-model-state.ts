@@ -28,6 +28,10 @@ export function normalizeGridParams(next: TrayParams): TrayParams {
     Boolean(next.halfCircleSlots);
   const enableBaseHole = basePlateOnly ? true : Boolean(next.enableBaseHole);
   const baseHoleSize = resolveBaseHolePresetKey(next.holeDiameter);
+  const sideBevelWidth = getFiniteOr(
+    next.sideBevelWidth,
+    DEFAULT_TRAY_PARAMS.sideBevelWidth,
+  );
 
   return {
     ...next,
@@ -41,6 +45,7 @@ export function normalizeGridParams(next: TrayParams): TrayParams {
     slotDiameter: getFiniteOr(next.slotDiameter, slotSnapshot.slotDiameter),
     halfCircleSlots,
     basePlateOnly,
+    sideBevelWidth,
     enableBaseHole,
     baseHoleSize,
   };

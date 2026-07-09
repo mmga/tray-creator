@@ -28,6 +28,7 @@ export function calculateCustomEffectiveBaseplate(params: CustomLayoutParams) {
   const boundarySpacing = params.boundarySpacingIndependent
     ? params.boundarySpacing
     : params.spacing;
+  const sideBevelWidth = Math.max(0, params.sideBevelWidth);
 
   if (params.slots.length === 0) {
     return {
@@ -64,8 +65,12 @@ export function calculateCustomEffectiveBaseplate(params: CustomLayoutParams) {
 
   return {
     hasSlots: true,
-    width: roundLayoutDimensionToTenth(maxX - minX + boundarySpacing * 2),
-    depth: roundLayoutDimensionToTenth(maxY - minY + boundarySpacing * 2),
+    width: roundLayoutDimensionToTenth(
+      maxX - minX + boundarySpacing * 2 + sideBevelWidth * 2,
+    ),
+    depth: roundLayoutDimensionToTenth(
+      maxY - minY + boundarySpacing * 2 + sideBevelWidth * 2,
+    ),
     minX,
     maxX,
     minY,
@@ -82,7 +87,7 @@ export function calculateCustomEffectiveBaseplate(params: CustomLayoutParams) {
  * - 转换公式：jscad_x = user_x - width/2, jscad_y = user_y - depth/2
  */
 export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
-  const { slots, baseThickness, holeDepth, cornerRadius } = params;
+  const { slots, baseThickness, holeDepth, cornerRadius, sideBevelWidth } = params;
   const effective = calculateCustomEffectiveBaseplate(params);
   const trayWidth = effective.hasSlots ? effective.width : params.trayWidth;
   const trayDepth = effective.hasSlots ? effective.depth : params.trayDepth;
@@ -95,7 +100,13 @@ export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
     : trayDepth / 2;
 
   // 1. 创建底板实体
-  const body = createBaseBody(trayWidth, trayDepth, totalHeight, cornerRadius);
+  const body = createBaseBody(
+    trayWidth,
+    trayDepth,
+    totalHeight,
+    cornerRadius,
+    sideBevelWidth,
+  );
 
   // 2. 生成凹槽
   const holes: Geom3[] = [];

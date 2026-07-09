@@ -3,11 +3,11 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BASE_PRESETS } from "@/lib/config";
 import {
-  CUSTOM_BASE_PRESETS,
   CUSTOM_LAYOUT_DEFAULTS,
   ELLIPSE_PRESETS,
 } from "@/lib/custom-config";
 import { PARAM_CONFIG, DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
+import { calculateCustomEffectiveDimensions } from "@/lib/custom-layout-math";
 import { calculateSimpleSteppedDimensions, deriveSimpleSteppedLayout } from "@/lib/simple-stepped-layout";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import { buildSteppedPerfFixture } from "@/lib/stepped-perf-fixtures";
@@ -264,10 +264,6 @@ import SteppedPanel from "@/components/SteppedPanel";
 const HUNDRED_MM_PRESET = BASE_PRESETS.find(
   (preset) => preset.diameter === 100,
 )!;
-const TEN_MM_CUSTOM_PRESET = CUSTOM_BASE_PRESETS.find(
-  (preset) => preset.diameter === 10,
-)!;
-
 function createSteppedParams(overrides?: Partial<React.ComponentProps<typeof SteppedPanel>["params"]>) {
   return {
     ...STEPPED_LAYOUT_DEFAULTS,
@@ -593,10 +589,16 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
         name: `设置${PARAM_CONFIG.cornerRadius.label}:${DEFAULT_TRAY_PARAMS.cornerRadius}`,
       }),
     );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: `设置${PARAM_CONFIG.sideBevelWidth.label}:${DEFAULT_TRAY_PARAMS.sideBevelWidth}`,
+      }),
+    );
 
     expect(updateParam).toHaveBeenNthCalledWith(1, "baseThickness", 3.2);
     expect(updateParam).toHaveBeenNthCalledWith(2, "holeDepth", 3.2);
     expect(updateParam).toHaveBeenNthCalledWith(3, "cornerRadius", 5);
+    expect(updateParam).toHaveBeenNthCalledWith(4, "sideBevelWidth", 0.5);
 
     rerender(
       <ParameterPanel
@@ -772,7 +774,7 @@ describe("CustomPanel", { timeout: 15000 }, () => {
     useAutoPreviewMock.mockReset();
   });
 
-  it("adds circular and ellipse slots from preset buttons", () => {
+  it("adds circular slots from the custom input and preset buttons, then adds ellipse slots", () => {
     const onAddSlot = vi.fn();
 
     render(
@@ -789,11 +791,10 @@ describe("CustomPanel", { timeout: 15000 }, () => {
       />,
     );
 
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: String(TEN_MM_CUSTOM_PRESET.diameter),
-      }),
-    );
+    fireEvent.change(screen.getByLabelText("自定义直径"), {
+      target: { value: "13.5" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "添加" }));
     fireEvent.click(
       screen.getByRole("button", {
         name: String(HUNDRED_MM_PRESET.diameter),
@@ -805,7 +806,7 @@ describe("CustomPanel", { timeout: 15000 }, () => {
       }),
     );
 
-    expect(onAddSlot).toHaveBeenNthCalledWith(1, TEN_MM_CUSTOM_PRESET.diameter);
+    expect(onAddSlot).toHaveBeenNthCalledWith(1, 13.5);
     expect(onAddSlot).toHaveBeenNthCalledWith(2, HUNDRED_MM_PRESET.diameter);
     expect(onAddSlot).toHaveBeenNthCalledWith(
       3,
@@ -835,6 +836,85 @@ describe("CustomPanel", { timeout: 15000 }, () => {
     );
 
     expect(screen.queryByText("椭圆丰满度")).not.toBeInTheDocument();
+  });
+
+  it("shows custom statistics from the calculated upper edge dimensions", () => {
+    const params = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      boundarySpacing: 3,
+      boundarySpacingIndependent: true,
+      sideBevelWidth: 2,
+      slots: [
+        {
+          id: "slot-1",
+          x: 109.6,
+          y: 112.8,
+          shape: "circle" as const,
+          width: 11,
+          height: 11,
+          slotWidth: 11.4,
+          slotHeight: 11.4,
+          rotation: 0,
+        },
+        {
+          id: "slot-2",
+          x: 89,
+          y: 112.6,
+          shape: "circle" as const,
+          width: 11,
+          height: 11,
+          slotWidth: 11.4,
+          slotHeight: 11.4,
+          rotation: 0,
+        },
+        {
+          id: "slot-3",
+          x: 98.2,
+          y: 103.1,
+          shape: "circle" as const,
+          width: 11,
+          height: 11,
+          slotWidth: 11.4,
+          slotHeight: 11.4,
+          rotation: 0,
+        },
+        {
+          id: "slot-4",
+          x: 81,
+          y: 102.2,
+          shape: "circle" as const,
+          width: 11,
+          height: 11,
+          slotWidth: 11.4,
+          slotHeight: 11.4,
+          rotation: 0,
+        },
+      ],
+    };
+    const dimensions = calculateCustomEffectiveDimensions(params);
+
+    render(
+      <CustomPanel
+        params={params}
+        effectiveDimensions={dimensions}
+        updateParam={vi.fn()}
+        setParams={vi.fn()}
+        onAddSlot={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+      />,
+    );
+
+    expect(
+      screen.getByText(
+        `上沿尺寸: ${dimensions.width.toFixed(1)} × ${dimensions.depth.toFixed(1)} mm`,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("长度")).toBeInTheDocument();
+    expect(screen.getByText("宽度")).toBeInTheDocument();
+    expect(screen.queryByText("上沿尺寸: 50.0 × 32.0 mm")).not.toBeInTheDocument();
   });
 
   it("routes layout actions and reset/import through the panel controls", () => {
@@ -867,6 +947,11 @@ describe("CustomPanel", { timeout: 15000 }, () => {
         name: `设置边界间距:${CUSTOM_LAYOUT_DEFAULTS.boundarySpacing}`,
       }),
     );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: `设置侧面斜面宽度:${CUSTOM_LAYOUT_DEFAULTS.sideBevelWidth}`,
+      }),
+    );
     fireEvent.click(screen.getByRole("button", { name: "启用自动预览" }));
     fireEvent.click(screen.getByRole("button", { name: "开始锻造" }));
     fireEvent.click(screen.getByRole("button", { name: "导出 STL" }));
@@ -883,6 +968,7 @@ describe("CustomPanel", { timeout: 15000 }, () => {
       "boundarySpacing",
       CUSTOM_LAYOUT_DEFAULTS.boundarySpacing + 1,
     );
+    expect(updateParam).toHaveBeenNthCalledWith(3, "sideBevelWidth", 0.5);
     expect(useAutoPreviewMock).toHaveBeenLastCalledWith(
       { ...CUSTOM_LAYOUT_DEFAULTS, boundarySpacingIndependent: true },
       expect.objectContaining({

@@ -1,40 +1,49 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
-import dynamic from "next/dynamic";
 import type { useTrayModel } from "@/hooks/useTrayModel";
+import { GridLayoutPreview } from "@/components/GridLayoutPreview";
+import { ViewportTabs } from "@/viewports/shared/ViewportTabs";
 import type { ModeViewportWorkspace } from "@/viewports/types";
-
-const TrayViewer = dynamic(() => import("@/components/TrayViewer"), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-full min-h-[400px] flex items-center justify-center bg-[#0a0908]">
-      <div className="flex flex-col items-center gap-3 text-muted-foreground">
-        <div className="w-8 h-8 border-2 border-muted-foreground/40 border-t-primary rounded-full animate-spin" />
-        <p className="text-sm font-mono tracking-wider">LOADING FORGE...</p>
-      </div>
-    </div>
-  ),
-});
 
 interface UseGridViewportWorkspaceOptions {
   model: ReturnType<typeof useTrayModel>;
+  rightView: "2d" | "3d";
+  onRightViewChange: (next: "2d" | "3d") => void;
 }
 
 export function useGridViewportWorkspace({
   model,
+  rightView,
+  onRightViewChange,
 }: UseGridViewportWorkspaceOptions): ModeViewportWorkspace {
   const resetTransientState = useCallback(() => {}, []);
 
+  const twoDView = useMemo(
+    () => <GridLayoutPreview params={model.params} />,
+    [model.params],
+  );
   const viewport = useMemo(
     () => (
-      <TrayViewer
-        geometry={model.threeGeometry}
-        isStale={model.isPreviewStale}
-        onRegenerate={model.handleGenerate}
+      <ViewportTabs
+        rightView={rightView}
+        onRightViewChange={onRightViewChange}
+        canvas={twoDView}
+        threeGeometry={model.threeGeometry}
+        isPreviewStale={model.isPreviewStale}
+        isGenerating={model.isGenerating}
+        onGenerate={model.handleGenerate}
       />
     ),
-    [model.handleGenerate, model.isPreviewStale, model.threeGeometry],
+    [
+      model.handleGenerate,
+      model.isGenerating,
+      model.isPreviewStale,
+      model.threeGeometry,
+      onRightViewChange,
+      rightView,
+      twoDView,
+    ],
   );
 
   return {

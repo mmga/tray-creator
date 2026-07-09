@@ -42,6 +42,8 @@ export function useModeViewportWorkspaces({
 
   const gridViewport = useGridViewportWorkspace({
     model: gridModel,
+    rightView,
+    onRightViewChange: setRightView,
   });
   const customViewport = useCustomViewportWorkspace({
     model: customModel,

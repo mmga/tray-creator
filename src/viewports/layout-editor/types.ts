@@ -19,6 +19,7 @@ export interface LayoutEditorViewportModel {
     spacing: number;
     boundarySpacing: number;
     cornerRadius: number;
+    sideBevelWidth: number;
     showEffectiveBaseplate: boolean;
     showMaxBuildBoundary: boolean;
   };

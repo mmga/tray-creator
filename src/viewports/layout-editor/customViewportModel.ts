@@ -13,6 +13,7 @@ export function buildCustomLayoutEditorViewportModel(
         ? params.boundarySpacing
         : params.spacing,
       cornerRadius: params.cornerRadius,
+      sideBevelWidth: params.sideBevelWidth,
       showEffectiveBaseplate: true,
       showMaxBuildBoundary: false,
     },

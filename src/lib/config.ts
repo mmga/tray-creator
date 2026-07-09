@@ -104,9 +104,10 @@ export const BASE_PRESETS: BasePreset[] = CIRCLE_SLOT_DEFINITIONS
 
 /** 网格 / 自定义模式共用的结构参数范围 */
 export const SHARED_LAYOUT_LIMITS = {
-  baseThickness: { label: "底板厚度", min: 2, max: 4, step: 0.2, unit: "mm" },
-  holeDepth: { label: "凹槽深度", min: 2, max: 4, step: 0.2, unit: "mm" },
+  baseThickness: { label: "底板厚度", min: 1, max: 4, step: 0.2, unit: "mm" },
+  holeDepth: { label: "凹槽深度", min: 1, max: 4, step: 0.2, unit: "mm" },
   cornerRadius: { label: "圆角半径", min: 0, max: 10, step: 1, unit: "mm" },
+  sideBevelWidth: { label: "侧面斜面宽度", min: 0, max: 10, step: 0.5, unit: "mm" },
 } as const;
 
 /** 最大构建尺寸 (mm)，超过此值会警告 */

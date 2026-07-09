@@ -20,6 +20,7 @@ export function buildSteppedLayoutEditorViewportModel({
       spacing: params.spacing,
       boundarySpacing: params.spacing,
       cornerRadius: 0,
+      sideBevelWidth: 0,
       showEffectiveBaseplate: false,
       showMaxBuildBoundary: false,
     },

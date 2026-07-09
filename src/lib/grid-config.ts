@@ -23,6 +23,7 @@ export const DEFAULT_TRAY_PARAMS: TrayParams = {
   baseThickness: 3,
   holeDepth: 3,
   cornerRadius: 4,
+  sideBevelWidth: 0,
   enableBaseHole: true,
   baseHoleSize: "25",
 };
@@ -37,4 +38,5 @@ export const PARAM_CONFIG = {
   baseThickness: SHARED_LAYOUT_LIMITS.baseThickness,
   holeDepth: SHARED_LAYOUT_LIMITS.holeDepth,
   cornerRadius: SHARED_LAYOUT_LIMITS.cornerRadius,
+  sideBevelWidth: SHARED_LAYOUT_LIMITS.sideBevelWidth,
 } as const;

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
+import { calculateCustomEffectiveDimensions } from "@/lib/custom-layout-math";
 
 const { jscadToThreeGeometryMock } = vi.hoisted(() => ({
   jscadToThreeGeometryMock: vi.fn(),
@@ -128,5 +129,64 @@ describe("custom layout service", () => {
     await expect(
       downloadPort.downloadBlob.mock.calls[1]?.[0].text(),
     ).resolves.toContain('"mode": "custom"');
+  });
+
+  it("uses upper edge dimensions for custom filenames when side bevel is enabled", () => {
+    const params = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      boundarySpacing: 3,
+      boundarySpacingIndependent: true,
+      sideBevelWidth: 2,
+      slots: [
+        {
+          id: "slot-1",
+          x: 109.6,
+          y: 112.8,
+          shape: "circle" as const,
+          width: 11,
+          height: 11,
+          slotWidth: 11.4,
+          slotHeight: 11.4,
+          rotation: 0,
+        },
+        {
+          id: "slot-2",
+          x: 89,
+          y: 112.6,
+          shape: "circle" as const,
+          width: 11,
+          height: 11,
+          slotWidth: 11.4,
+          slotHeight: 11.4,
+          rotation: 0,
+        },
+        {
+          id: "slot-3",
+          x: 98.2,
+          y: 103.1,
+          shape: "circle" as const,
+          width: 11,
+          height: 11,
+          slotWidth: 11.4,
+          slotHeight: 11.4,
+          rotation: 0,
+        },
+        {
+          id: "slot-4",
+          x: 81,
+          y: 102.2,
+          shape: "circle" as const,
+          width: 11,
+          height: 11,
+          slotWidth: 11.4,
+          slotHeight: 11.4,
+          rotation: 0,
+        },
+      ],
+    };
+
+    expect(
+      getCustomSTLFilename(params, calculateCustomEffectiveDimensions(params)),
+    ).toBe("tray_custom_46x28_4slots.stl");
   });
 });

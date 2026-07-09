@@ -1,4 +1,4 @@
-import { booleans, primitives, transforms, extrusions, geometries } from "@jscad/modeling";
+import { booleans, primitives, transforms, extrusions, geometries, maths } from "@jscad/modeling";
 import type { Geom2, Geom3 } from "@jscad/modeling/src/geometries/types";
 import {
     RENDER_CONFIG,
@@ -12,9 +12,11 @@ import type { FreeSlot } from "@/types/custom-tray";
 const { subtract } = booleans;
 const { roundedRectangle, cylinder, ellipse } = primitives;
 const { translate } = transforms;
-const { extrudeLinear } = extrusions;
+const { extrudeLinear, extrudeFromSlices, slice } = extrusions;
 const { geom2 } = geometries;
+const { mat4 } = maths;
 const BASE_HOLE_WALL_EPSILON = 1e-6;
+const MIN_BEVEL_TOP_SIZE = 0.1;
 
 // ── 共享建模工具 ──────────────────────────
 
@@ -37,11 +39,20 @@ export function createBaseBody(
     depth: number,
     height: number,
     cornerRadius: number,
+    sideBevelWidth = 0,
 ): Geom3 {
     const effectiveRadius = Math.min(
         cornerRadius,
         width / 2 - 0.01,
         depth / 2 - 0.01,
+    );
+    const safeBevelWidth = Math.max(
+        0,
+        Math.min(
+            sideBevelWidth,
+            width / 2 - MIN_BEVEL_TOP_SIZE,
+            depth / 2 - MIN_BEVEL_TOP_SIZE,
+        ),
     );
 
     const profile = roundedRectangle({
@@ -49,6 +60,37 @@ export function createBaseBody(
         roundRadius: Math.max(effectiveRadius, 0),
         segments: RENDER_CONFIG.cornerSegments,
     });
+
+    if (safeBevelWidth > 0) {
+        const topWidth = width - safeBevelWidth * 2;
+        const topDepth = depth - safeBevelWidth * 2;
+        const topRadius = Math.max(effectiveRadius - safeBevelWidth, 0);
+
+        return extrudeFromSlices(
+            {
+                numberOfSlices: 2,
+                callback: (progress) => {
+                    const currentProfile = progress === 0
+                        ? profile
+                        : roundedRectangle({
+                            size: [topWidth, topDepth],
+                            roundRadius: Math.min(
+                                topRadius,
+                                topWidth / 2 - 0.01,
+                                topDepth / 2 - 0.01,
+                            ),
+                            segments: RENDER_CONFIG.cornerSegments,
+                        });
+                    const currentSlice = slice.fromSides(geom2.toSides(currentProfile));
+                    return slice.transform(
+                        mat4.fromTranslation(mat4.create(), [0, 0, height * progress]),
+                        currentSlice,
+                    );
+                },
+            },
+            slice.fromSides(geom2.toSides(profile)),
+        );
+    }
 
     return extrudeLinear({ height }, profile);
 }

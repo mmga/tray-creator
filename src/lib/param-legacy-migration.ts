@@ -77,6 +77,9 @@ export function migrateGridLegacyShape(params: TrayParams) {
   if (typeof obj.basePlateOnly !== "boolean") {
     obj.basePlateOnly = false;
   }
+  if (typeof obj.sideBevelWidth !== "number") {
+    obj.sideBevelWidth = DEFAULT_TRAY_PARAMS.sideBevelWidth;
+  }
   if (typeof obj.enableBaseHole !== "boolean") {
     obj.enableBaseHole = DEFAULT_TRAY_PARAMS.enableBaseHole;
   }
@@ -89,6 +92,9 @@ export function migrateCustomLegacyShape(params: CustomLayoutParams) {
   }
   if (typeof obj.boundarySpacingIndependent !== "boolean") {
     obj.boundarySpacingIndependent = false;
+  }
+  if (typeof obj.sideBevelWidth !== "number") {
+    obj.sideBevelWidth = 0;
   }
 
   const slots = obj.slots as Record<string, unknown>[];

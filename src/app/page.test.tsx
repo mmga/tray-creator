@@ -35,6 +35,7 @@ const {
     baseThickness: 3,
     holeDepth: 3,
     cornerRadius: 4,
+    sideBevelWidth: 0,
     enableBaseHole: true,
     baseHoleSize: "25",
   };
@@ -59,6 +60,7 @@ const {
     baseThickness: 3,
     holeDepth: 3,
     cornerRadius: 4,
+    sideBevelWidth: 0,
     enableBaseHole: false,
     baseHoleSize: "25",
   };
@@ -101,6 +103,7 @@ const {
     baseThickness: 5,
     holeDepth: 3,
     cornerRadius: 4,
+    sideBevelWidth: 0,
     enableBaseHole: false,
     baseHoleSize: "25",
   };

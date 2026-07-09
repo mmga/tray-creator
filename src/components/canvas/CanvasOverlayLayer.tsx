@@ -22,6 +22,7 @@ interface CanvasOverlayLayerProps {
   showEffectiveBaseplate: boolean;
   effectiveBaseplate: CanvasEffectiveBaseplate;
   cornerRadius?: number;
+  sideBevelWidth?: number;
   symmetryAxes: { vertical: number; horizontal: number } | null;
   collisionState: CanvasCollisionState<FreeSlot | SteppedSlot>;
   focusedGroupId?: string | null;
@@ -40,6 +41,7 @@ export const CanvasOverlayLayer = memo(function CanvasOverlayLayer({
   showEffectiveBaseplate,
   effectiveBaseplate,
   cornerRadius = 0,
+  sideBevelWidth = 0,
   symmetryAxes,
   collisionState,
   focusedGroupId,
@@ -54,6 +56,35 @@ export const CanvasOverlayLayer = memo(function CanvasOverlayLayer({
   const axisGuideStrokeWidth = 0.3 / zoom;
   const axisGuideStrokeDash = `${2 / zoom} ${2 / zoom}`;
   const axisGuideStrokeOpacity = 0.8;
+  const bevelFrame =
+    showEffectiveBaseplate && effectiveBaseplate.hasSlots
+      ? {
+          x: effectiveBaseplate.x,
+          y: effectiveBaseplate.y,
+          width: effectiveBaseplate.width,
+          height: effectiveBaseplate.height,
+        }
+      : {
+          x: 0,
+          y: 0,
+          width: trayWidth,
+          height: trayDepth,
+        };
+  const safeBevelWidth = Math.max(
+    0,
+    Math.min(
+      sideBevelWidth,
+      bevelFrame.width / 2 - 0.1,
+      bevelFrame.height / 2 - 0.1,
+    ),
+  );
+  const showSideBevel = safeBevelWidth > 0;
+  const upperBevelFrame = {
+    x: bevelFrame.x + safeBevelWidth,
+    y: bevelFrame.y + safeBevelWidth,
+    width: bevelFrame.width - safeBevelWidth * 2,
+    height: bevelFrame.height - safeBevelWidth * 2,
+  };
 
   return (
     <>
@@ -88,6 +119,31 @@ export const CanvasOverlayLayer = memo(function CanvasOverlayLayer({
           )}
           strokeOpacity={0.95}
         />
+      )}
+
+      {showSideBevel && (
+        <g pointerEvents="none">
+          <rect
+            data-bevel-edge="upper"
+            x={upperBevelFrame.x}
+            y={upperBevelFrame.y}
+            width={upperBevelFrame.width}
+            height={upperBevelFrame.height}
+            rx={Math.max(
+              0,
+              Math.min(
+                cornerRadius - safeBevelWidth,
+                upperBevelFrame.width / 2,
+                upperBevelFrame.height / 2,
+              ),
+            )}
+            fill="none"
+            stroke="#d6a84f"
+            strokeWidth={0.75 / zoom}
+            strokeDasharray={`${2 / zoom} ${1.5 / zoom}`}
+            strokeOpacity={0.85}
+          />
+        </g>
       )}
 
       {symmetryAxes && (

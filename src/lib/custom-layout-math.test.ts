@@ -76,4 +76,64 @@ describe("custom layout math", () => {
       maxY: 110.2,
     });
   });
+
+  it("reports the upper edge footprint without adding side bevel width", () => {
+    const params = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      boundarySpacing: 3,
+      boundarySpacingIndependent: true,
+      sideBevelWidth: 2,
+      slots: [
+        {
+          id: "slot-1",
+          x: 109.6,
+          y: 112.8,
+          shape: "circle" as const,
+          width: 11,
+          height: 11,
+          slotWidth: 11.4,
+          slotHeight: 11.4,
+          rotation: 0,
+        },
+        {
+          id: "slot-2",
+          x: 89,
+          y: 112.6,
+          shape: "circle" as const,
+          width: 11,
+          height: 11,
+          slotWidth: 11.4,
+          slotHeight: 11.4,
+          rotation: 0,
+        },
+        {
+          id: "slot-3",
+          x: 98.2,
+          y: 103.1,
+          shape: "circle" as const,
+          width: 11,
+          height: 11,
+          slotWidth: 11.4,
+          slotHeight: 11.4,
+          rotation: 0,
+        },
+        {
+          id: "slot-4",
+          x: 81,
+          y: 102.2,
+          shape: "circle" as const,
+          width: 11,
+          height: 11,
+          slotWidth: 11.4,
+          slotHeight: 11.4,
+          rotation: 0,
+        },
+      ],
+    };
+
+    expect(calculateCustomEffectiveDimensions(params)).toMatchObject({
+      width: 46,
+      depth: 28,
+    });
+  });
 });

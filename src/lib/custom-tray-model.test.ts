@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { measurements } from "@jscad/modeling";
+import { geometries, measurements } from "@jscad/modeling";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { createCircleSlotSnapshot } from "@/lib/slot-definitions";
 import {
@@ -9,6 +9,24 @@ import {
 } from "@/lib/custom-tray-model";
 
 const { measureBoundingBox, measureVolume } = measurements;
+const { geom3 } = geometries;
+
+function measureBoundsAtZ(
+  model: ReturnType<typeof createCustomTrayModel>,
+  z: number,
+) {
+  const points = geom3
+    .toPoints(model)
+    .flat()
+    .filter((point) => Math.abs(point[2] - z) < 1e-5);
+  const xs = points.map((point) => point[0]);
+  const ys = points.map((point) => point[1]);
+
+  return {
+    width: Math.max(...xs) - Math.min(...xs),
+    depth: Math.max(...ys) - Math.min(...ys),
+  };
+}
 
 function createCustomCircleSlot(
   id: string,
@@ -35,6 +53,22 @@ describe("custom tray model", () => {
       depth: 260,
       height: 6,
     });
+  });
+
+  it("insets the custom tray top edge by the configured side bevel width", () => {
+    const params = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      sideBevelWidth: 4,
+    };
+    const model = createCustomTrayModel(params);
+    const dimensions = calculateCustomTrayDimensions(params);
+    const lowerBounds = measureBoundsAtZ(model, 0);
+    const upperBounds = measureBoundsAtZ(model, dimensions.height);
+
+    expect(lowerBounds.width).toBeCloseTo(dimensions.width, 5);
+    expect(lowerBounds.depth).toBeCloseTo(dimensions.depth, 5);
+    expect(upperBounds.width).toBeCloseTo(dimensions.width - 8, 5);
+    expect(upperBounds.depth).toBeCloseTo(dimensions.depth - 8, 5);
   });
 
   it("derives occupied bounds from rotated slots and boundary spacing", () => {

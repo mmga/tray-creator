@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { measurements } from "@jscad/modeling";
+import { geometries, measurements } from "@jscad/modeling";
 import stlSerializer from "@jscad/stl-serializer";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import {
@@ -10,6 +10,21 @@ import {
 } from "@/lib/tray-model";
 
 const { measureBoundingBox, measureVolume } = measurements;
+const { geom3 } = geometries;
+
+function measureBoundsAtZ(model: ReturnType<typeof createTrayModel>, z: number) {
+  const points = geom3
+    .toPoints(model)
+    .flat()
+    .filter((point) => Math.abs(point[2] - z) < 1e-5);
+  const xs = points.map((point) => point[0]);
+  const ys = points.map((point) => point[1]);
+
+  return {
+    width: Math.max(...xs) - Math.min(...xs),
+    depth: Math.max(...ys) - Math.min(...ys),
+  };
+}
 
 function getSerializedStlByteLength(model: ReturnType<typeof createTrayModel>) {
   return (stlSerializer.serialize({ binary: true }, model) as BlobPart[])
@@ -110,6 +125,24 @@ describe("tray model", () => {
     expect(dimensions.width).toBeCloseTo(117.2, 5);
     expect(dimensions.depth).toBeCloseTo(79.8, 5);
     expect(dimensions.height).toBe(3.4);
+  });
+
+  it("insets the top edge by the configured side bevel width", () => {
+    const params = {
+      ...DEFAULT_TRAY_PARAMS,
+      rows: 1,
+      columns: 1,
+      sideBevelWidth: 2,
+    };
+    const model = createTrayModel(params);
+    const dimensions = calculateTrayDimensions(params);
+    const lowerBounds = measureBoundsAtZ(model, 0);
+    const upperBounds = measureBoundsAtZ(model, dimensions.height);
+
+    expect(lowerBounds.width).toBeCloseTo(dimensions.width, 5);
+    expect(lowerBounds.depth).toBeCloseTo(dimensions.depth, 5);
+    expect(upperBounds.width).toBeCloseTo(dimensions.width - 4, 5);
+    expect(upperBounds.depth).toBeCloseTo(dimensions.depth - 4, 5);
   });
 
   it("keeps positive volume and removes more material when enabling base holes", () => {

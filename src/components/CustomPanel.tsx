@@ -4,7 +4,6 @@ import type { CustomLayoutParams } from "@/types/custom-tray";
 import {
   MAX_BUILD_SIZE,
   SHARED_LAYOUT_LIMITS,
-  getBaseHoleMinBaseThickness,
   resolveBaseHolePresetKey,
 } from "@/lib/config";
 import {
@@ -19,6 +18,7 @@ import type { EllipseSlotConfig } from "@/lib/custom-layout-actions";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import {
   Plus,
@@ -76,16 +76,19 @@ export default function CustomPanel({
   draftActions,
 }: CustomPanelProps) {
   const dimensions = calculateCustomTrayDimensions(params);
-  const effectiveWidth = effectiveDimensions.width;
-  const effectiveDepth = effectiveDimensions.depth;
-  const isOversized = effectiveWidth > MAX_BUILD_SIZE || effectiveDepth > MAX_BUILD_SIZE;
+  const displayLength =
+    effectiveDimensions.width > 0 ? effectiveDimensions.width : params.trayWidth;
+  const displayWidth =
+    effectiveDimensions.depth > 0 ? effectiveDimensions.depth : params.trayDepth;
+  const isOversized =
+    displayLength > MAX_BUILD_SIZE || displayWidth > MAX_BUILD_SIZE;
   const [autoPreview, setAutoPreview] = useState(false);
+  const [customCircleDiameter, setCustomCircleDiameter] = useState(10);
   const largestSlotSize = params.slots.reduce(
     (maxSize, slot) => Math.max(maxSize, slot.width, slot.height),
     0,
   );
   const resolvedBaseHoleSize = resolveBaseHolePresetKey(largestSlotSize);
-  const minBaseThickness = getBaseHoleMinBaseThickness(resolvedBaseHoleSize);
 
   useAutoPreview(params, {
     enabled: autoPreview,
@@ -101,6 +104,12 @@ export default function CustomPanel({
     }
     setParams(CUSTOM_LAYOUT_DEFAULTS);
   };
+  const handleAddCustomCircleSlot = () => {
+    if (!Number.isFinite(customCircleDiameter) || customCircleDiameter <= 0) {
+      return;
+    }
+    onAddSlot(customCircleDiameter);
+  };
 
   return (
     <div className="flex flex-col gap-4 animate-fade-in">
@@ -110,6 +119,35 @@ export default function CustomPanel({
           summary={`已有 ${params.slots.length} 个凹槽`}>
           <div className="space-y-2">
             <div className="text-[10px] text-muted-foreground/70 font-bold tracking-wider uppercase mb-0.5">圆形</div>
+            <div className="flex items-end gap-2 rounded-sm border border-[#2e2a24] bg-[#1c1a16] p-2">
+              <div className="min-w-0 flex-1 space-y-1">
+                <Label htmlFor="custom-circle-diameter" className="text-xs text-muted-foreground">
+                  自定义直径
+                </Label>
+                <Input
+                  id="custom-circle-diameter"
+                  type="number"
+                  min={1}
+                  max={200}
+                  step={0.1}
+                  value={customCircleDiameter}
+                  onChange={(event) =>
+                    setCustomCircleDiameter(Number(event.target.value))
+                  }
+                  className="h-9 border-[#2e2a24] bg-[#120f0c] font-mono text-sm"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddCustomCircleSlot}
+                className="h-9 shrink-0 border-[#2e2a24] bg-[#120f0c] px-3 text-xs hover:bg-[#2e2a24] hover:text-primary"
+              >
+                <Plus className="w-3 h-3 mr-1" />
+                添加
+              </Button>
+            </div>
             <div className="grid grid-cols-3 gap-1.5">
               {CUSTOM_BASE_PRESETS.map((preset) => (
                 <Button
@@ -153,7 +191,7 @@ export default function CustomPanel({
       {/* 结构参数 — 移动端默认折叠 */}
       <div className="iron-panel rounded-sm p-4">
         <SectionHeader icon={Wrench} title="结构参数" collapsible defaultOpen={false}
-          summary={`槽距${params.spacing}mm / 边距${(params.boundarySpacingIndependent ? params.boundarySpacing : params.spacing)}mm`}>
+          summary={`槽距${params.spacing}mm / 边距${(params.boundarySpacingIndependent ? params.boundarySpacing : params.spacing)}mm / 斜面${params.sideBevelWidth}mm`}>
           <div className="space-y-4">
             <ParamSlider
               label={CUSTOM_LIMITS.spacing.label}
@@ -185,9 +223,7 @@ export default function CustomPanel({
             <ParamSlider
               label={SHARED_LAYOUT_LIMITS.baseThickness.label}
               value={params.baseThickness}
-              config={params.enableBaseHole
-                ? { ...CUSTOM_LIMITS.baseThickness, min: minBaseThickness }
-                : CUSTOM_LIMITS.baseThickness}
+              config={CUSTOM_LIMITS.baseThickness}
               onChange={(v) => updateParam("baseThickness", v)}
               unit={SHARED_LAYOUT_LIMITS.baseThickness.unit}
             />
@@ -204,6 +240,13 @@ export default function CustomPanel({
               config={CUSTOM_LIMITS.cornerRadius}
               onChange={(v) => updateParam("cornerRadius", v)}
               unit={SHARED_LAYOUT_LIMITS.cornerRadius.unit}
+            />
+            <ParamSlider
+              label={SHARED_LAYOUT_LIMITS.sideBevelWidth.label}
+              value={params.sideBevelWidth}
+              config={CUSTOM_LIMITS.sideBevelWidth}
+              onChange={(v) => updateParam("sideBevelWidth", v)}
+              unit={SHARED_LAYOUT_LIMITS.sideBevelWidth.unit}
             />
           </div>
         </SectionHeader>
@@ -222,7 +265,7 @@ export default function CustomPanel({
       {/* 统计信息 — 移动端默认折叠 */}
       <div className={`iron-panel rounded-sm p-4 transition-all duration-300 ${isOversized ? 'border-[#8b1a1a] animate-forge-pulse' : ''}`}>
         <SectionHeader icon={Ruler} title="统计信息" collapsible defaultOpen={false}
-          summary={`${params.slots.length}个凹槽 / ${effectiveWidth.toFixed(1)}×${effectiveDepth.toFixed(1)}mm`}>
+          summary={`${params.slots.length}个凹槽 / ${displayLength.toFixed(1)}×${displayWidth.toFixed(1)}mm`}>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-2 mb-2">
               <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
@@ -250,8 +293,8 @@ export default function CustomPanel({
 
             <div className="grid grid-cols-3 gap-2">
               {[
-                { label: "宽度", value: effectiveWidth, warn: effectiveWidth > MAX_BUILD_SIZE },
-                { label: "深度", value: effectiveDepth, warn: effectiveDepth > MAX_BUILD_SIZE },
+                { label: "长度", value: displayLength, warn: displayLength > MAX_BUILD_SIZE },
+                { label: "宽度", value: displayWidth, warn: displayWidth > MAX_BUILD_SIZE },
                 { label: "高度", value: dimensions.height, warn: false },
               ].map(({ label, value, warn }) => (
                 <div
@@ -275,7 +318,7 @@ export default function CustomPanel({
               </div>
             )}
             <div className="text-[11px] text-muted-foreground/80 text-center pt-1">
-              有效底板尺寸: {effectiveWidth.toFixed(1)} × {effectiveDepth.toFixed(1)} mm
+              上沿尺寸: {displayLength.toFixed(1)} × {displayWidth.toFixed(1)} mm
             </div>
           </div>
         </SectionHeader>

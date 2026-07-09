@@ -168,6 +168,10 @@ _Avoid_: Passing mode-specific canvas exceptions directly through the page or vi
 The actual baseplate footprint derived from placed slots and boundary spacing, rather than the raw tray width/depth inputs.
 _Avoid_: Using baseplate, tray size, or tray width/depth to mean the derived printable footprint in custom mode.
 
+**Side Bevel**:
+The continuous side-wall slope from the tray's bottom edge footprint to its top edge footprint. Its width is the horizontal inset from the lower edge to the upper edge.
+_Avoid_: Treating it as a corner radius, slot clearance, stepped split groove, or a decorative 2D-only annotation.
+
 **Effective Baseplate Area**:
 The footprint area of the **Effective Baseplate**, calculated as derived width multiplied by derived depth.
 _Avoid_: Using model volume or raw tray area when the meaning is the derived custom-mode footprint used for pricing.
@@ -259,6 +263,8 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A **Layout Editor Viewport Adapter** projects a **Mode**'s local layout state into a **Layout Editor Viewport**.
 - A layout canvas should consume a **Layout Editor Viewport** instead of inferring **Mode** behavior from raw parameters.
 - In custom mode, the **Effective Baseplate** is derived from placed **Slot Instances** plus boundary spacing.
+- A **Side Bevel** keeps the upper edge as the slot boundary-spacing reference and expands the lower edge outward by the configured bevel width.
+- A 2D view that displays a **Side Bevel** should keep the ordinary tray outline for the lower edge and mark only the inset upper edge.
 - An **Effective Baseplate Area** belongs to exactly one **Effective Baseplate**.
 - A tray quote may use **Effective Baseplate Area** and **Slot Count** instead of model volume.
 - The current **Custom Quote Baseline** computes `2 + 0.2 × Slot Count + Effective Baseplate Area / 2560`, then rounds the final quote up to the next integer yuan.

@@ -1,4 +1,4 @@
-import type { BaseHolePresetKey, TrayParams } from "@/types/tray";
+import type { TrayParams } from "@/types/tray";
 import type {
   AppMode,
   CustomLayoutParams,
@@ -7,7 +7,7 @@ import type {
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import { CUSTOM_LAYOUT_DEFAULTS, CUSTOM_LIMITS } from "@/lib/custom-config";
-import { getBaseHoleMinBaseThickness, resolveBaseHolePresetKey } from "@/lib/config";
+import { resolveBaseHolePresetKey } from "@/lib/config";
 import { PARAM_CONFIG } from "@/lib/grid-config";
 import {
   getRawSteppedDisconnectDistance,
@@ -244,6 +244,7 @@ function clampAndFillGridDerivedFields(params: TrayParams) {
   clampField(obj, "baseThickness", PARAM_CONFIG.baseThickness);
   clampField(obj, "holeDepth", PARAM_CONFIG.holeDepth);
   clampField(obj, "cornerRadius", PARAM_CONFIG.cornerRadius);
+  clampField(obj, "sideBevelWidth", PARAM_CONFIG.sideBevelWidth);
 
   clampField(obj, "spacingX", PARAM_CONFIG.spacingX);
   clampField(obj, "spacingY", PARAM_CONFIG.spacingY);
@@ -266,13 +267,6 @@ function clampAndFillGridDerivedFields(params: TrayParams) {
   obj.baseHoleSize = resolveBaseHolePresetKey(obj.holeDiameter as number);
   if (obj.basePlateOnly) {
     obj.enableBaseHole = true;
-  }
-  if (obj.enableBaseHole) {
-    const baseHoleSize = obj.baseHoleSize as BaseHolePresetKey;
-    obj.baseThickness = Math.max(
-      obj.baseThickness as number,
-      getBaseHoleMinBaseThickness(baseHoleSize),
-    );
   }
 }
 
@@ -352,6 +346,7 @@ function clampAndFillCustomDerivedFields(params: CustomLayoutParams) {
   clampField(obj, "baseThickness", CUSTOM_LIMITS.baseThickness);
   clampField(obj, "holeDepth", CUSTOM_LIMITS.holeDepth);
   clampField(obj, "cornerRadius", CUSTOM_LIMITS.cornerRadius);
+  clampField(obj, "sideBevelWidth", CUSTOM_LIMITS.sideBevelWidth);
 
   if (!obj.boundarySpacingIndependent) {
     obj.boundarySpacing = obj.spacing;
@@ -365,13 +360,6 @@ function clampAndFillCustomDerivedFields(params: CustomLayoutParams) {
     0,
   );
   obj.baseHoleSize = resolveBaseHolePresetKey(largestSlotSize);
-  if (obj.enableBaseHole) {
-    const baseHoleSize = obj.baseHoleSize as BaseHolePresetKey;
-    obj.baseThickness = Math.max(
-      obj.baseThickness as number,
-      getBaseHoleMinBaseThickness(baseHoleSize),
-    );
-  }
 }
 
 function validateSimpleSteppedRequiredFields(params: SimpleSteppedLayoutParams) {

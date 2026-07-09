@@ -62,8 +62,12 @@ export function calculateCustomEffectiveDimensions(
   });
 
   return {
-    width: roundLayoutDimensionToTenth(maxX - minX + boundarySpacing * 2),
-    depth: roundLayoutDimensionToTenth(maxY - minY + boundarySpacing * 2),
+    width: roundLayoutDimensionToTenth(
+      maxX - minX + boundarySpacing * 2,
+    ),
+    depth: roundLayoutDimensionToTenth(
+      maxY - minY + boundarySpacing * 2,
+    ),
     minX,
     maxX,
     minY,

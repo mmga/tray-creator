@@ -754,6 +754,7 @@ describe("CanvasOverlayLayer", { timeout: 15000 }, () => {
             height: 60,
           }}
           cornerRadius={6}
+          sideBevelWidth={4}
           symmetryAxes={{ vertical: 60, horizontal: 25 }}
           collisionState={collisionState}
           focusedGroupId="group-1"
@@ -769,6 +770,13 @@ describe("CanvasOverlayLayer", { timeout: 15000 }, () => {
     expect(
       container.querySelector('rect[stroke="#8b7355"]'),
     ).toHaveAttribute("rx", "6");
+    expect(
+      container.querySelector('rect[data-bevel-edge="upper"]'),
+    ).toHaveAttribute("x", "9");
+    expect(
+      container.querySelector('rect[data-bevel-edge="upper"]'),
+    ).toHaveAttribute("rx", "2");
+    expect(container.textContent).not.toContain("下沿");
     expect(
       container.querySelector('line[data-symmetry-axis="mirror-x"]'),
     ).toHaveAttribute("x1", "60");

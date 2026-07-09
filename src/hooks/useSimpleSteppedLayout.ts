@@ -199,6 +199,7 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
       baseThickness: params.firstRowHeight,
       holeDepth: params.holeDepth,
       cornerRadius: params.cornerRadius,
+      sideBevelWidth: 0,
       enableBaseHole: false,
       baseHoleSize: "25",
     };

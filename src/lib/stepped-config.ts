@@ -42,8 +42,8 @@ export const STEPPED_LAYOUT_DEFAULTS: SteppedLayoutParams = {
 };
 
 export const STEPPED_LIMITS = {
-  trayWidth: { label: "宽度", min: 50, max: MAX_TRAY_SIZE, step: 1, unit: "mm" },
-  trayDepth: { label: "深度", min: 50, max: MAX_TRAY_SIZE, step: 1, unit: "mm" },
+  trayWidth: { label: "长度", min: 50, max: MAX_TRAY_SIZE, step: 1, unit: "mm" },
+  trayDepth: { label: "宽度", min: 50, max: MAX_TRAY_SIZE, step: 1, unit: "mm" },
   spacing: { label: "凹槽间距", min: 2, max: 20, step: 1, unit: "mm" },
   holeDepth: { label: "凹槽深度", min: 0.2, max: 20, step: 0.2, unit: "mm" },
   splitGrooveDepth: { label: "装配槽深度", min: 0, max: 10, step: 0.2, unit: "mm" },

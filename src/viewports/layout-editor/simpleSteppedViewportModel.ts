@@ -21,6 +21,7 @@ export function buildSimpleSteppedLayoutEditorViewportModel({
         ? canvasParams.boundarySpacing
         : canvasParams.spacing,
       cornerRadius: canvasParams.cornerRadius,
+      sideBevelWidth: canvasParams.sideBevelWidth,
       showEffectiveBaseplate: false,
       showMaxBuildBoundary: true,
     },
