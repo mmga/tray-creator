@@ -10,7 +10,6 @@ import type {
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import { useUndoHistory } from "@/hooks/useUndoHistory";
 import { usePreviewLifecycle } from "@/hooks/usePreviewLifecycle";
-import { useToast } from "@/hooks/useToast";
 import { trayWorkerService } from "@/lib/worker/worker-service";
 import type * as THREE from "three";
 import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
@@ -57,10 +56,7 @@ import {
   generateSteppedOptimizationProposals,
   type SteppedOptimizationProposal,
 } from "@/lib/stepped-global-optimize";
-import type {
-  SteppedPreviewResult,
-  SteppedSplitPreviewPart,
-} from "@/lib/stepped-model-service";
+import type { SteppedPreviewResult } from "@/lib/stepped-model-service";
 
 export interface UseSteppedLayoutControllerReturn {
   params: SteppedLayoutParams;
@@ -101,10 +97,8 @@ export interface UseSteppedLayoutControllerReturn {
   undo: () => void;
   canUndo: boolean;
   threeGeometry: THREE.BufferGeometry | null;
-  splitPreviewParts: SteppedSplitPreviewPart[] | null;
   volume: number;
   isGenerating: boolean;
-  isGeneratingSplitPreview: boolean;
   isPreviewStale: boolean;
   bridgeWarning: BridgeWarning | null;
   optimizationProposals: SteppedOptimizationProposal[];
@@ -115,10 +109,7 @@ export interface UseSteppedLayoutControllerReturn {
   pauseOutlinePreview: () => void;
   resumeOutlinePreview: () => void;
   handleGenerate: () => void;
-  handleGenerateSplitPreview: () => void;
-  clearSplitPreview: () => void;
   handleExportSTL: () => void;
-  handleExportSplitParts: () => void;
   outlinePreview: GroupOutlinePreview[] | null;
 }
 
@@ -136,16 +127,6 @@ interface UseSteppedLayoutControllerOptions<
     workerPort: TWorkerPort,
     downloadPort: DownloadPort,
   ) => Promise<void>;
-  generateSplitPreview?: (
-    params: SteppedLayoutParams,
-    workerPort: TWorkerPort,
-  ) => Promise<SteppedSplitPreviewPart[]>;
-  exportSplitParts?: (
-    params: SteppedLayoutParams,
-    effectiveDimensions: SteppedLayoutExtents,
-    workerPort: TWorkerPort,
-    downloadPort: DownloadPort,
-  ) => Promise<void>;
 }
 
 export function useSteppedLayoutController<
@@ -153,10 +134,7 @@ export function useSteppedLayoutController<
 >({
   generatePreview,
   exportModel,
-  generateSplitPreview,
-  exportSplitParts,
 }: UseSteppedLayoutControllerOptions<TWorkerPort>): UseSteppedLayoutControllerReturn {
-  const { toast } = useToast();
   const [params, internalSetParams] = useState<SteppedLayoutParams>(
     () => applySteppedBaseHoleDerivedFields(STEPPED_LAYOUT_DEFAULTS),
   );
@@ -164,11 +142,6 @@ export function useSteppedLayoutController<
     SteppedOptimizationProposal[]
   >([]);
   const [isOptimizingLayout, setIsOptimizingLayout] = useState(false);
-  const [splitPreviewParts, setSplitPreviewParts] = useState<
-    SteppedSplitPreviewPart[] | null
-  >(null);
-  const [isGeneratingSplitPreview, setIsGeneratingSplitPreview] =
-    useState(false);
 
   const {
     pushState,
@@ -207,19 +180,12 @@ export function useSteppedLayoutController<
     [],
   );
 
-  const clearSplitPreview = useCallback(() => {
-    setSplitPreviewParts((prev) => {
-      prev?.forEach((part) => part.threeGeometry.dispose());
-      return null;
-    });
-  }, []);
-
-  useEffect(() => {
-    return () => {
+  useEffect(
+    () => () => {
       cancelPendingOptimization();
-      splitPreviewParts?.forEach((part) => part.threeGeometry.dispose());
-    };
-  }, [cancelPendingOptimization, splitPreviewParts]);
+    },
+    [cancelPendingOptimization],
+  );
 
   const {
     threeGeometry,
@@ -254,80 +220,8 @@ export function useSteppedLayoutController<
     onInvalidate: () => {
       optimizationVariantRef.current = 0;
       clearOptimizationProposals();
-      clearSplitPreview();
     },
   });
-
-  const handleGenerateSplitPreview = useCallback(async () => {
-    if (!generateSplitPreview) {
-      toast("error", "CAD 阶梯模式暂不支持拆件预览");
-      return;
-    }
-
-    const workerPort = trayWorkerService as unknown as TWorkerPort | null;
-    if (!workerPort) {
-      toast("error", "当前环境无法使用后台建模服务");
-      return;
-    }
-
-    const currentParams = paramsRef.current;
-    if (currentParams.groups.length < 2) {
-      toast("error", "至少需要两个分组才能预览拆件");
-      return;
-    }
-
-    setIsGeneratingSplitPreview(true);
-    try {
-      const parts = await generateSplitPreview(currentParams, workerPort);
-      setSplitPreviewParts((prev) => {
-        prev?.forEach((part) => part.threeGeometry.dispose());
-        return parts;
-      });
-    } catch (err) {
-      console.error("拆件预览生成失败:", err);
-      toast(
-        "error",
-        `拆件预览失败：${err instanceof Error ? err.message : "未知错误"}`,
-      );
-    } finally {
-      setIsGeneratingSplitPreview(false);
-    }
-  }, [generateSplitPreview, toast]);
-
-  const handleExportSplitParts = useCallback(async () => {
-    if (!exportSplitParts) {
-      toast("error", "CAD 阶梯模式暂不支持分件导出");
-      return;
-    }
-
-    const workerPort = trayWorkerService as unknown as TWorkerPort | null;
-    if (!workerPort) {
-      toast("error", "当前环境无法使用后台建模服务");
-      return;
-    }
-
-    const currentParams = paramsRef.current;
-    if (currentParams.groups.length < 2) {
-      toast("error", "至少需要两个分组才能导出分件");
-      return;
-    }
-
-    try {
-      await exportSplitParts(
-        currentParams,
-        calculateSteppedEffectiveDimensions(currentParams),
-        workerPort,
-        browserDownloadPort,
-      );
-      toast("success", "分件 STL、定位孔清单和参数文件已导出");
-    } catch (err) {
-      console.error("分件导出失败:", err);
-      toast(
-        "error",
-        `分件导出失败：${err instanceof Error ? err.message : "未知错误"}`,
-      );
-    }
-  }, [exportSplitParts, toast]);
 
   const setParams = useCallback<
     React.Dispatch<React.SetStateAction<SteppedLayoutParams>>
@@ -702,10 +596,8 @@ export function useSteppedLayoutController<
     undo,
     canUndo: canUndoFn(),
     threeGeometry,
-    splitPreviewParts,
     volume,
     isGenerating,
-    isGeneratingSplitPreview,
     isPreviewStale,
     bridgeWarning,
     optimizationProposals,
@@ -716,10 +608,7 @@ export function useSteppedLayoutController<
     pauseOutlinePreview,
     resumeOutlinePreview,
     handleGenerate,
-    handleGenerateSplitPreview,
-    clearSplitPreview,
     handleExportSTL,
-    handleExportSplitParts,
     outlinePreview,
   };
 }

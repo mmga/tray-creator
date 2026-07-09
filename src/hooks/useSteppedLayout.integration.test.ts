@@ -121,6 +121,16 @@ describe("useSteppedLayout", () => {
     vi.useRealTimers();
   });
 
+  it("不暴露 CAD-only split lifecycle", () => {
+    const { result } = renderHook(() => useSteppedLayout());
+
+    expect(result.current).not.toHaveProperty("splitPreviewParts");
+    expect(result.current).not.toHaveProperty("isGeneratingSplitPreview");
+    expect(result.current).not.toHaveProperty("handleGenerateSplitPreview");
+    expect(result.current).not.toHaveProperty("clearSplitPreview");
+    expect(result.current).not.toHaveProperty("handleExportSplitParts");
+  });
+
   it("wires outline preview state and manages groups", () => {
     randomIdFactoryMock.createId.mockReturnValue("group-2");
     const { result } = renderHook(() => useSteppedLayout());
