@@ -1,9 +1,18 @@
 import type { CustomLayoutParams } from "@/types/custom-tray";
+import type { BasePreset } from "@/types/tray";
 import { MAX_TRAY_SIZE, SHARED_LAYOUT_LIMITS } from "@/lib/config";
 import {
+  CIRCLE_SLOT_DEFINITIONS,
   ELLIPSE_SLOT_DEFINITIONS,
   type EllipseSlotDefinition,
 } from "@/lib/slot-definitions";
+
+export const CUSTOM_BASE_PRESETS: BasePreset[] = CIRCLE_SLOT_DEFINITIONS.map(
+  (definition) => ({
+    name: definition.name,
+    diameter: definition.baseDiameter,
+  }),
+);
 
 export type EllipsePreset = EllipseSlotDefinition;
 

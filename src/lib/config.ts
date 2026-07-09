@@ -95,12 +95,12 @@ export function getBaseHoleMinBaseThickness(baseHoleSize: BaseHolePresetKey) {
   );
 }
 
-export const BASE_PRESETS: BasePreset[] = CIRCLE_SLOT_DEFINITIONS.map(
-  (definition) => ({
+export const BASE_PRESETS: BasePreset[] = CIRCLE_SLOT_DEFINITIONS
+  .filter((definition) => definition.id !== "circle-10")
+  .map((definition) => ({
     name: definition.name,
     diameter: definition.baseDiameter,
-  }),
-);
+  }));
 
 /** 网格 / 自定义模式共用的结构参数范围 */
 export const SHARED_LAYOUT_LIMITS = {

@@ -9,6 +9,12 @@ import {
 
 describe("slot definitions", () => {
   it("stores circular final slot sizes in the shared definitions", () => {
+    expect(findCircleSlotDefinitionByBaseDiameter(10)).toMatchObject({
+      id: "circle-10",
+      baseDiameter: 10,
+      slotDiameter: 10.4,
+      tolerance: 0.4,
+    });
     expect(findCircleSlotDefinitionByBaseDiameter(25)).toMatchObject({
       id: "circle-25",
       baseDiameter: 25,
@@ -29,10 +35,15 @@ describe("slot definitions", () => {
       tolerance: 0.4,
     });
     expect(CIRCLE_SLOT_DEFINITIONS.map((definition) => definition.baseDiameter))
-      .toEqual([25, 28.5, 32, 40, 50, 60, 65, 90, 100]);
+      .toEqual([10, 25, 28.5, 32, 40, 50, 60, 65, 90, 100]);
   });
 
   it("creates circular snapshots from shared definitions", () => {
+    expect(createCircleSlotSnapshot(10)).toEqual({
+      slotDefinitionId: "circle-10",
+      slotWidth: 10.4,
+      slotHeight: 10.4,
+    });
     expect(createCircleSlotSnapshot(32)).toEqual({
       slotDefinitionId: "circle-32",
       slotWidth: 32.4,

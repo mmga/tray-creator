@@ -2,7 +2,11 @@ import * as React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BASE_PRESETS } from "@/lib/config";
-import { CUSTOM_LAYOUT_DEFAULTS, ELLIPSE_PRESETS } from "@/lib/custom-config";
+import {
+  CUSTOM_BASE_PRESETS,
+  CUSTOM_LAYOUT_DEFAULTS,
+  ELLIPSE_PRESETS,
+} from "@/lib/custom-config";
 import { PARAM_CONFIG, DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { calculateSimpleSteppedDimensions, deriveSimpleSteppedLayout } from "@/lib/simple-stepped-layout";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
@@ -259,6 +263,9 @@ import SteppedPanel from "@/components/SteppedPanel";
 
 const HUNDRED_MM_PRESET = BASE_PRESETS.find(
   (preset) => preset.diameter === 100,
+)!;
+const TEN_MM_CUSTOM_PRESET = CUSTOM_BASE_PRESETS.find(
+  (preset) => preset.diameter === 10,
 )!;
 
 function createSteppedParams(overrides?: Partial<React.ComponentProps<typeof SteppedPanel>["params"]>) {
@@ -784,6 +791,11 @@ describe("CustomPanel", { timeout: 15000 }, () => {
 
     fireEvent.click(
       screen.getByRole("button", {
+        name: String(TEN_MM_CUSTOM_PRESET.diameter),
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
         name: String(HUNDRED_MM_PRESET.diameter),
       }),
     );
@@ -793,9 +805,10 @@ describe("CustomPanel", { timeout: 15000 }, () => {
       }),
     );
 
-    expect(onAddSlot).toHaveBeenNthCalledWith(1, HUNDRED_MM_PRESET.diameter);
+    expect(onAddSlot).toHaveBeenNthCalledWith(1, TEN_MM_CUSTOM_PRESET.diameter);
+    expect(onAddSlot).toHaveBeenNthCalledWith(2, HUNDRED_MM_PRESET.diameter);
     expect(onAddSlot).toHaveBeenNthCalledWith(
-      2,
+      3,
       ELLIPSE_PRESETS[0].width,
       ELLIPSE_PRESETS[0].height,
       {

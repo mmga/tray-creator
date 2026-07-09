@@ -1,10 +1,19 @@
 import { describe, expect, it } from "vitest";
 import {
+  BASE_PRESETS,
   getBaseHoleMinBaseThickness,
   getBaseHoleMinBottomWall,
   getBaseHolePreset,
   resolveBaseHolePresetKey,
 } from "@/lib/config";
+import { CUSTOM_BASE_PRESETS } from "@/lib/custom-config";
+
+describe("base presets", () => {
+  it("exposes the 10mm base only in custom mode", () => {
+    expect(CUSTOM_BASE_PRESETS.some((preset) => preset.diameter === 10)).toBe(true);
+    expect(BASE_PRESETS.some((preset) => preset.diameter === 10)).toBe(false);
+  });
+});
 
 describe("base hole config", () => {
   it("resolves the large preset for larger slot sizes", () => {

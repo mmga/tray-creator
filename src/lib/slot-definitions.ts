@@ -28,6 +28,7 @@ export const DEFAULT_ELLIPSE_OUTER_OFFSET = 0.4;
 export const DEFAULT_ELLIPSE_PROFILE_EXPONENT = 2.6;
 
 export const CIRCLE_SLOT_DEFINITIONS: CircleSlotDefinition[] = [
+  { id: "circle-10", shape: "circle", name: "10mm 圆形", baseDiameter: 10, slotDiameter: 10.4, tolerance: 0.4 },
   { id: "circle-25", shape: "circle", name: "小型步兵 (25mm)", baseDiameter: 25, slotDiameter: 25.2, tolerance: 0.2 },
   { id: "circle-28.5", shape: "circle", name: "中型步兵 (28.5mm)", baseDiameter: 28.5, slotDiameter: 28.9, tolerance: 0.4 },
   { id: "circle-32", shape: "circle", name: "标准步兵 (32mm)", baseDiameter: 32, slotDiameter: 32.4, tolerance: 0.4 },

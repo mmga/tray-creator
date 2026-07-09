@@ -2,13 +2,13 @@
 
 import type { CustomLayoutParams } from "@/types/custom-tray";
 import {
-  BASE_PRESETS,
   MAX_BUILD_SIZE,
   SHARED_LAYOUT_LIMITS,
   getBaseHoleMinBaseThickness,
   resolveBaseHolePresetKey,
 } from "@/lib/config";
 import {
+  CUSTOM_BASE_PRESETS,
   CUSTOM_LAYOUT_DEFAULTS,
   CUSTOM_LIMITS,
   ELLIPSE_PRESETS,
@@ -111,9 +111,9 @@ export default function CustomPanel({
           <div className="space-y-2">
             <div className="text-[10px] text-muted-foreground/70 font-bold tracking-wider uppercase mb-0.5">圆形</div>
             <div className="grid grid-cols-3 gap-1.5">
-              {BASE_PRESETS.map((preset, i) => (
+              {CUSTOM_BASE_PRESETS.map((preset) => (
                 <Button
-                  key={i}
+                  key={preset.diameter}
                   variant="outline"
                   size="sm"
                   onClick={() => onAddSlot(preset.diameter)}
