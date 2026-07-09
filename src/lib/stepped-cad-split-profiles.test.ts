@@ -111,6 +111,17 @@ describe("stepped cad split profiles", () => {
           issue.interfaceHeight === 10,
       ),
     ).toBe(true);
+    const lowerUnit = plan.units.find((unit) => unit.baseHeight === 0);
+    const upperUnit = plan.units.find((unit) => unit.baseHeight === 10);
+
+    expect(
+      lowerUnit?.layerProfiles.some(
+        (layer) => layer.kind === "recess-shell-band",
+      ),
+    ).toBe(false);
+    expect(
+      upperUnit?.layerProfiles.some((layer) => layer.kind === "tenon-band"),
+    ).toBe(false);
   });
 
   it("keeps merged multi-group units on a single active recess interface", () => {
@@ -231,6 +242,9 @@ describe("stepped cad split profiles", () => {
     const lowUnit = plan.units.find((unit) =>
       unit.groupIds.includes("9424be58-80a2-4faf-b54d-b447aede6cb7"),
     );
+    const highUnit = plan.units.find((unit) =>
+      unit.groupIds.includes("stepped-default-group"),
+    );
 
     expect(lowUnit).toBeDefined();
     expect(lowUnit?.layerProfiles.filter((layer) => layer.kind === "recess-shell-band")).toHaveLength(1);
@@ -246,6 +260,22 @@ describe("stepped cad split profiles", () => {
           fromHeight: 18,
           toHeight: 20,
           interfaceHeight: 20,
+        }),
+      ]),
+    );
+    expect(highUnit).toBeDefined();
+    expect(highUnit?.layerProfiles).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "tenon-band",
+          fromHeight: 18,
+          toHeight: 20,
+          interfaceHeight: 20,
+        }),
+        expect.objectContaining({
+          kind: "body-band",
+          fromHeight: 20,
+          toHeight: 31,
         }),
       ]),
     );
