@@ -238,27 +238,6 @@ function sumHorizontalFaceAreaNear(
     .reduce((total, polygon) => total + polygonArea2d(polygon), 0);
 }
 
-function countVerticalFacesInBand(
-  geometry: { polygons: { vertices: number[][] }[] },
-  zMin: number,
-  zMax: number,
-) {
-  return geometry.polygons.filter((polygon) => {
-    if (polygon.vertices.length < 3) {
-      return false;
-    }
-
-    const zValues = polygon.vertices.map((vertex) => vertex[2] ?? 0);
-    const polygonMinZ = Math.min(...zValues);
-    const polygonMaxZ = Math.max(...zValues);
-    return (
-      polygonMaxZ - polygonMinZ > 0.5 &&
-      polygonMinZ >= zMin - 0.05 &&
-      polygonMaxZ <= zMax + 0.05
-    );
-  }).length;
-}
-
 function findMergedPart(grooveDepth: number) {
   return createSteppedCadSplitParts({
     ...USER_REPRO_PARAMS,
@@ -433,19 +412,14 @@ describe("stepped cad user repro", { timeout: 90000 }, () => {
     const lowPart = groovedParts.find((part) => part.label === "组 2");
 
     expect(lowPart).toBeDefined();
-    expect(
-      countSmallHorizontalFacesNear(
-        lowPart!.geometry as unknown as { polygons: { vertices: number[][] }[] },
-        20,
-      ),
-    ).toBeLessThan(140);
-    expect(
-      countVerticalFacesInBand(
-        lowPart!.geometry as unknown as { polygons: { vertices: number[][] }[] },
-        18,
-        20,
-      ),
-    ).toBeLessThan(150);
+    const smallHorizontalFaceCount = countSmallHorizontalFacesNear(
+      lowPart!.geometry as unknown as { polygons: { vertices: number[][] }[] },
+      20,
+    );
+
+    // Planned shell bands add legitimate side-wall segments; tiny coplanar
+    // interface faces are the fragmentation signal this repro protects.
+    expect(smallHorizontalFaceCount).toBe(0);
   });
 
   it("keeps the downloaded two-height recess upper tab as the full outline footprint", () => {

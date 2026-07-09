@@ -1,6 +1,5 @@
 import {
   booleans,
-  expansions,
   extrusions,
   geometries,
   measurements,
@@ -11,19 +10,14 @@ import type { Geom2, Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { SteppedSplitPartResult } from "@/lib/model-ports";
 import { subtractBaseHoles } from "@/lib/model-utils";
 import { buildSteppedCadFeatureGraph } from "@/lib/stepped-cad-feature-graph";
-import { insetGeom2 } from "@/lib/outline-geometry";
 import {
   buildSteppedCadSplitProfilePlan,
-  type SteppedCadSplitInterfaceProfile,
+  type SteppedCadLayerProfilePlan,
 } from "@/lib/stepped-cad-split-profiles";
-import type {
-  SplitGrooveType,
-  SteppedLayoutParams,
-} from "@/types/custom-tray";
+import type { SteppedLayoutParams } from "@/types/custom-tray";
 import generalizeModule from "@jscad/modeling/src/operations/modifiers/generalize";
 
 const { intersect, subtract, union } = booleans;
-const { offset } = expansions;
 const { extrudeLinear } = extrusions;
 const { geom3 } = geometries;
 const { measureBoundingBox, measureVolume } = measurements;
@@ -35,9 +29,6 @@ const FEATURE_EPSILON = 0.02;
 const LAYER_OVERLAP = 0.1;
 const PARTITION_MARGIN = 100;
 const DEFAULT_INTERFACE_GROOVE_DEPTH = 2;
-const DEFAULT_INTERFACE_GROOVE_INSET = 1;
-const INSET_INTERFACE_GROOVE_INSET = 1;
-const DEFAULT_INTERFACE_CLEARANCE = 0.1;
 const INTERFACE_FOOTPRINT_SEGMENTS = 24;
 const LOCATOR_PIN_RADIUS = 3;
 const LOCATOR_CLEARANCE = 0.35;
@@ -45,7 +36,6 @@ const LOCATOR_MAX_HEIGHT = 1.8;
 const LOCATOR_TAPER_STEPS = 6;
 const LOCATOR_MAX_COUNT = 6;
 const LOCATOR_MIN_SPACING = 14;
-const LOCATOR_RECESS_DEPTH = 2;
 const MIN_VALID_VOLUME = 0.001;
 const generalize = generalizeModule as unknown as (
   options: { snap?: boolean; simplify?: boolean; triangulate?: boolean },
@@ -114,12 +104,6 @@ type SteppedCadPartition = {
 
 type PartitionedGroupFootprint = {
   group: SteppedCadGroupFeature;
-  footprint: Geom2;
-};
-
-type InterfacePocket = {
-  interfaceHeight: number;
-  depth: number;
   footprint: Geom2;
 };
 
@@ -439,21 +423,16 @@ function buildSolidFromFootprint(
   }
 }
 
-function buildBodyFromInterfaceProfiles(
-  splitUnit: SteppedCadSplitUnit,
-  splitUnitBaseHeight: number,
-  partitions: Map<string, SteppedCadPartition>,
-  interfaceProfiles: SteppedCadSplitInterfaceProfile[],
+function buildBodyFromLayerProfiles(
+  layerProfiles: SteppedCadLayerProfilePlan[],
 ) {
-  const groupFootprints = getPartitionedGroupFootprints(splitUnit, partitions);
-  const bodySolids = groupFootprints
-    .filter((entry) => entry.group.columnHeight > splitUnitBaseHeight)
-    .map((entry) =>
+  const bodySolids = layerProfiles
+    .map((layer) =>
       buildSolidFromFootprint(
-        entry.footprint,
-        splitUnitBaseHeight,
-        entry.group.columnHeight,
-      )
+        layer.footprint,
+        layer.fromHeight,
+        layer.toHeight,
+      ),
     )
     .filter((item): item is Geom3 => item !== null);
 
@@ -461,56 +440,9 @@ function buildBodyFromInterfaceProfiles(
     return null;
   }
 
-  let body =
-    bodySolids.length === 1 ? bodySolids[0] : (union(...bodySolids) as Geom3);
-
-  const activeLowerInterfaces = interfaceProfiles.filter(
-    (profile) =>
-      profile.lowerUnitKey === splitUnit.key &&
-      profile.state === "active" &&
-      profile.femaleFootprint &&
-      profile.femaleDepth > 0,
-  );
-  const femaleSolids = activeLowerInterfaces
-    .map((profile) =>
-      buildSolidFromFootprint(
-        profile.femaleFootprint!,
-        Math.max(
-          splitUnitBaseHeight,
-          profile.interfaceHeight - profile.femaleDepth,
-        ),
-        profile.interfaceHeight + FEATURE_EPSILON,
-      )
-    )
-    .filter((item): item is Geom3 => item !== null);
-  if (femaleSolids.length > 0) {
-    body = subtract(body, ...femaleSolids) as Geom3;
-  }
-
-  const activeUpperInterfaces = interfaceProfiles.filter(
-    (profile) =>
-      profile.upperUnitKey === splitUnit.key &&
-      profile.state === "active" &&
-      profile.maleFootprint &&
-      profile.maleDepth > 0,
-  );
-  const maleSolids =
-    splitUnitBaseHeight > 0
-      ? activeUpperInterfaces
-          .map((profile) =>
-            buildSolidFromFootprint(
-              profile.maleFootprint!,
-              Math.max(0, splitUnitBaseHeight - profile.maleDepth),
-              splitUnitBaseHeight + FEATURE_EPSILON,
-            )
-          )
-          .filter((item): item is Geom3 => item !== null)
-      : [];
-  if (maleSolids.length > 0) {
-    body = union(body, ...maleSolids) as Geom3;
-  }
-
-  return body;
+  return bodySolids.length === 1
+    ? bodySolids[0]
+    : (union(...bodySolids) as Geom3);
 }
 
 function getPartitionedGroupFootprints(
@@ -554,102 +486,14 @@ function buildSupportFootprint(
 function resolveSplitAssemblyMode(
   params: SteppedLayoutParams,
 ) {
-  const grooveType: SplitGrooveType =
-    params.splitGrooveType === "inset" ? "inset" : "profile";
-
   return {
     enableRecess:
       params.enableSplitRecess === true ||
       params.splitAssemblyMode === "locator-recess",
-    grooveType,
     enableLocators:
       params.enableSplitLocators === true ||
       params.splitAssemblyMode === "locator-recess",
   };
-}
-
-function buildUnifiedSplitUnitBaseFootprint(
-  splitUnit: SteppedCadSplitUnit,
-  partitions: Map<string, SteppedCadPartition>,
-) {
-  return buildSupportFootprint(splitUnit, partitions);
-}
-
-function buildInterfaceSupportFootprint(
-  splitUnit: SteppedCadSplitUnit,
-  partitions: Map<string, SteppedCadPartition>,
-) {
-  if (splitUnit.slotHoles.length === 0) {
-    return buildUnifiedSplitUnitBaseFootprint(splitUnit, partitions);
-  }
-
-  const slotFootprints = splitUnit.slotHoles.map((slotHole) =>
-    translate(
-      [slotHole.cx, slotHole.cy],
-      circle({
-        radius: slotHole.connectorRadius,
-        segments: INTERFACE_FOOTPRINT_SEGMENTS,
-      }),
-    ) as Geom2
-  );
-  const footprint = unionGeom2Parts(slotFootprints);
-  const partition = partitions.get(splitUnit.key);
-
-  if (!partition) {
-    return footprint;
-  }
-
-  const clipped = intersect(footprint, partition.footprint) as Geom2;
-  return isEmptyGeom2(clipped) ? footprint : clipped;
-}
-
-function insetInterfaceFootprint(footprint: Geom2) {
-  try {
-    return insetGeom2(
-      footprint,
-      DEFAULT_INTERFACE_GROOVE_INSET,
-    ) ?? footprint;
-  } catch {
-    return footprint;
-  }
-}
-
-function buildSplitGrooveMaleFootprint(
-  splitUnit: SteppedCadSplitUnit,
-  partitions: Map<string, SteppedCadPartition>,
-  grooveType: SplitGrooveType,
-) {
-  const footprint = buildSupportFootprint(splitUnit, partitions);
-  if (!footprint || grooveType !== "inset") {
-    return footprint;
-  }
-
-  try {
-    const inset = insetGeom2(footprint, INSET_INTERFACE_GROOVE_INSET);
-    return isEmptyGeom2(inset) ? null : inset;
-  } catch {
-    return null;
-  }
-}
-
-function offsetInterfaceFootprint(footprint: Geom2, delta: number) {
-  if (delta <= 0) {
-    return footprint;
-  }
-
-  try {
-    const expanded = offset(
-      {
-        delta,
-        corners: "edge",
-        segments: INTERFACE_FOOTPRINT_SEGMENTS,
-      },
-      footprint,
-    ) as Geom2;
-    return isEmptyGeom2(expanded) ? footprint : expanded;
-  } catch {
-    return footprint;
-  }
 }
 
 function buildSlotHoleSolid(slotHole: SteppedCadSlotHoleFeature) {
@@ -824,63 +668,6 @@ function buildLocatorSolid(
   return bands.length === 1 ? bands[0] : (union(...bands) as Geom3);
 }
 
-function buildInterfacePocketMap(
-  splitUnit: SteppedCadSplitUnit,
-  splitUnits: SteppedCadSplitUnit[],
-  partitions: Map<string, SteppedCadPartition>,
-  baseHeight: number,
-  grooveDepth: number,
-) {
-  const pockets = new Map<number, InterfacePocket>();
-  const splitUnitHeights = new Set(splitUnit.groups.map((group) => group.columnHeight));
-
-  for (const otherSplitUnit of splitUnits) {
-    if (otherSplitUnit.key === splitUnit.key) {
-      continue;
-    }
-
-    const otherBaseHeight = getSplitUnitExternalBaseHeight(otherSplitUnit, splitUnits);
-    if (!splitUnitHeights.has(otherBaseHeight)) {
-      continue;
-    }
-
-    const depth = Math.min(grooveDepth, otherBaseHeight - baseHeight);
-    if (depth <= 0) {
-      continue;
-    }
-
-    const supportFootprint = buildInterfaceSupportFootprint(
-      otherSplitUnit,
-      partitions,
-    );
-    if (!supportFootprint) {
-      continue;
-    }
-
-    const pocketFootprint = insetInterfaceFootprint(supportFootprint);
-    const existing = pockets.get(otherBaseHeight);
-
-    pockets.set(
-      otherBaseHeight,
-      existing
-        ? {
-            interfaceHeight: otherBaseHeight,
-            depth: Math.max(existing.depth, depth),
-            footprint: unionGeom2Parts([existing.footprint, pocketFootprint]),
-          }
-        : {
-            interfaceHeight: otherBaseHeight,
-            depth,
-            footprint: pocketFootprint,
-          },
-    );
-  }
-
-  return [...pockets.values()].sort(
-    (left, right) => left.interfaceHeight - right.interfaceHeight,
-  );
-}
-
 function buildInterfaceLocatorMap(
   splitUnit: SteppedCadSplitUnit,
   splitUnits: SteppedCadSplitUnit[],
@@ -947,367 +734,6 @@ function buildInterfaceLocatorMap(
   );
 }
 
-function buildInterfaceRecessMap(
-  splitUnit: SteppedCadSplitUnit,
-  splitUnits: SteppedCadSplitUnit[],
-  partitions: Map<string, SteppedCadPartition>,
-  baseHeight: number,
-  grooveDepth: number,
-  grooveType: SplitGrooveType,
-) {
-  const recesses = new Map<number, InterfacePocket>();
-  const splitUnitHeights = new Set(splitUnit.groups.map((group) => group.columnHeight));
-
-  for (const otherSplitUnit of splitUnits) {
-    if (otherSplitUnit.key === splitUnit.key) {
-      continue;
-    }
-
-    const otherBaseHeight = getSplitUnitExternalBaseHeight(otherSplitUnit, splitUnits);
-    if (!splitUnitHeights.has(otherBaseHeight)) {
-      continue;
-    }
-
-    const depth = Math.min(
-      LOCATOR_RECESS_DEPTH,
-      grooveDepth,
-      otherBaseHeight - baseHeight,
-    );
-    if (depth <= 0) {
-      continue;
-    }
-
-    const maleFootprint = buildSplitGrooveMaleFootprint(
-      otherSplitUnit,
-      partitions,
-      grooveType,
-    );
-    if (!maleFootprint) {
-      continue;
-    }
-    const contactGroupIds = new Set(
-      splitUnit.groups
-        .filter((group) => group.columnHeight === otherBaseHeight)
-        .map((group) => group.groupId),
-    );
-    const lowerTopFootprint = buildSupportFootprint(
-      splitUnit,
-      partitions,
-      contactGroupIds,
-    );
-    if (!lowerTopFootprint) {
-      continue;
-    }
-
-    const femaleRaw = offsetInterfaceFootprint(
-      maleFootprint,
-      DEFAULT_INTERFACE_CLEARANCE,
-    );
-    const supportFootprint = intersect(femaleRaw, lowerTopFootprint) as Geom2;
-    if (isEmptyGeom2(supportFootprint)) {
-      continue;
-    }
-
-    const existing = recesses.get(otherBaseHeight);
-    recesses.set(
-      otherBaseHeight,
-      existing
-        ? {
-            interfaceHeight: otherBaseHeight,
-            depth: Math.max(existing.depth, depth),
-            footprint: unionGeom2Parts([existing.footprint, supportFootprint]),
-          }
-        : {
-            interfaceHeight: otherBaseHeight,
-            depth,
-            footprint: supportFootprint,
-          },
-    );
-  }
-
-  return [...recesses.values()].sort(
-    (left, right) => left.interfaceHeight - right.interfaceHeight,
-  );
-}
-
-function buildSplitUnitBody(
-  splitUnit: SteppedCadSplitUnit,
-  splitUnits: SteppedCadSplitUnit[],
-  partitions: Map<string, SteppedCadPartition>,
-  grooveDepth: number,
-  assemblyFeatures: ReturnType<typeof resolveSplitAssemblyMode>,
-) {
-  const baseHeight = getSplitUnitExternalBaseHeight(splitUnit, splitUnits);
-  const interfaceDepth = Math.max(grooveDepth, 0);
-  const groupFootprints = getPartitionedGroupFootprints(splitUnit, partitions);
-  if (groupFootprints.length === 0) {
-    return null;
-  }
-
-  const bodySolids = groupFootprints
-    .filter((entry) => entry.group.columnHeight > baseHeight)
-    .map((entry) =>
-      buildSolidFromFootprint(
-        entry.footprint,
-        baseHeight,
-        entry.group.columnHeight,
-      )
-    )
-    .filter((item): item is Geom3 => item !== null);
-  if (bodySolids.length === 0) {
-    return null;
-  }
-
-  let body = bodySolids.length === 1 ? bodySolids[0] : union(...bodySolids);
-
-  if (interfaceDepth <= 0) {
-    return body;
-  }
-
-  if (assemblyFeatures.enableRecess) {
-    const recesses = buildInterfaceRecessMap(
-      splitUnit,
-      splitUnits,
-      partitions,
-      baseHeight,
-      interfaceDepth,
-      assemblyFeatures.grooveType,
-    );
-    const recessSolids = recesses
-      .map((recess) =>
-        buildSolidFromFootprint(
-          recess.footprint,
-          Math.max(baseHeight, recess.interfaceHeight - recess.depth),
-          recess.interfaceHeight + FEATURE_EPSILON,
-        )
-      )
-      .filter((item): item is Geom3 => item !== null);
-    if (recessSolids.length > 0) {
-      body = subtract(body, ...recessSolids) as Geom3;
-    }
-
-    const locators = assemblyFeatures.enableLocators
-      ? buildInterfaceLocatorMap(
-          splitUnit,
-          splitUnits,
-          partitions,
-          baseHeight,
-          interfaceDepth,
-        )
-      : [];
-    const pinSolids = locators
-      .flatMap((locator) =>
-        locator.points.map((point) => {
-          const recess = recesses.find(
-            (item) => item.interfaceHeight === locator.interfaceHeight,
-          );
-          const pinBaseHeight =
-            locator.interfaceHeight - (recess?.depth ?? 0) - FEATURE_EPSILON;
-
-          return buildLocatorSolid(point, pinBaseHeight, locator.depth);
-        })
-      )
-      .filter((item): item is Geom3 => item !== null);
-    if (pinSolids.length > 0) {
-      body = union(body, ...pinSolids) as Geom3;
-    }
-
-    const upperTabDepth = baseHeight > 0
-      ? Math.min(
-          LOCATOR_RECESS_DEPTH,
-          interfaceDepth,
-          splitUnit.maxHeight - baseHeight,
-        )
-      : 0;
-
-    if (upperTabDepth > 0) {
-      const maleFootprint = buildSplitGrooveMaleFootprint(
-        splitUnit,
-        partitions,
-        assemblyFeatures.grooveType,
-      );
-      const tab = maleFootprint
-        ? buildSolidFromFootprint(
-            maleFootprint,
-            baseHeight - upperTabDepth,
-            baseHeight + FEATURE_EPSILON,
-          )
-        : null;
-      if (tab) {
-        body = union(body, tab) as Geom3;
-      }
-    }
-
-    if (assemblyFeatures.enableLocators && baseHeight > 0) {
-      const socketDepth = getLocatorFeatureDepth(
-        interfaceDepth,
-        splitUnit.maxHeight - baseHeight,
-      );
-      const socketBaseHeight = baseHeight - upperTabDepth - FEATURE_EPSILON;
-      const socketSolids = socketDepth > 0
-        ? selectInterfaceLocatorPoints(splitUnit)
-            .flatMap((point) =>
-              buildLocatorBandSolids(
-                point,
-                socketBaseHeight,
-                socketDepth,
-                LOCATOR_CLEARANCE,
-              )
-            )
-            .filter((item): item is Geom3 => item !== null)
-        : [];
-      if (socketSolids.length > 0) {
-        body = subtract(body, ...socketSolids) as Geom3;
-      }
-    }
-
-    return body;
-  }
-
-  if (!assemblyFeatures.enableRecess && !assemblyFeatures.enableLocators) {
-    const pockets = buildInterfacePocketMap(
-      splitUnit,
-      splitUnits,
-      partitions,
-      baseHeight,
-      interfaceDepth,
-    );
-    const pocketSolids = pockets
-      .map((pocket) =>
-        buildSolidFromFootprint(
-          pocket.footprint,
-          Math.max(baseHeight, pocket.interfaceHeight - pocket.depth),
-          pocket.interfaceHeight + FEATURE_EPSILON,
-        )
-      )
-      .filter((item): item is Geom3 => item !== null);
-    if (pocketSolids.length > 0) {
-      body = subtract(body, ...pocketSolids) as Geom3;
-    }
-
-    if (baseHeight > 0) {
-      const tenonDepth = Math.min(interfaceDepth, splitUnit.maxHeight - baseHeight);
-      if (tenonDepth > 0) {
-        const supportFootprint = buildInterfaceSupportFootprint(
-          splitUnit,
-          partitions,
-        );
-        const tenonFootprint = supportFootprint
-          ? insetInterfaceFootprint(supportFootprint)
-          : null;
-        if (tenonFootprint) {
-          const tenon = buildSolidFromFootprint(
-            tenonFootprint,
-            baseHeight - tenonDepth,
-            baseHeight + FEATURE_EPSILON,
-          );
-          if (tenon) {
-            body = union(body, tenon);
-          }
-        }
-      }
-    }
-
-    return body;
-  }
-
-  const recesses = assemblyFeatures.enableRecess
-    ? buildInterfaceRecessMap(
-        splitUnit,
-        splitUnits,
-        partitions,
-        baseHeight,
-        interfaceDepth,
-        assemblyFeatures.grooveType,
-      )
-    : [];
-  const recessSolids = recesses
-    .map((recess) =>
-      buildSolidFromFootprint(
-        recess.footprint,
-        Math.max(baseHeight, recess.interfaceHeight - recess.depth),
-        recess.interfaceHeight + FEATURE_EPSILON,
-      )
-    )
-    .filter((item): item is Geom3 => item !== null);
-  if (recessSolids.length > 0) {
-    body = subtract(body, ...recessSolids) as Geom3;
-  }
-
-  const locators = assemblyFeatures.enableLocators
-    ? buildInterfaceLocatorMap(
-        splitUnit,
-        splitUnits,
-        partitions,
-        baseHeight,
-        interfaceDepth,
-      )
-    : [];
-  const pinSolids = locators
-    .flatMap((locator) =>
-      locator.points.map((point) => {
-        const recess = recesses.find(
-          (item) => item.interfaceHeight === locator.interfaceHeight,
-        );
-        const pinBaseHeight =
-          locator.interfaceHeight - (recess?.depth ?? 0) - FEATURE_EPSILON;
-
-        return buildLocatorSolid(point, pinBaseHeight, locator.depth);
-      })
-    )
-    .filter((item): item is Geom3 => item !== null);
-  if (pinSolids.length > 0) {
-    body = union(body, ...pinSolids) as Geom3;
-  }
-
-  const upperTabDepth = assemblyFeatures.enableRecess && baseHeight > 0
-    ? Math.min(
-        LOCATOR_RECESS_DEPTH,
-        interfaceDepth,
-        splitUnit.maxHeight - baseHeight,
-      )
-    : 0;
-
-  if (upperTabDepth > 0) {
-    const supportFootprint = buildSupportFootprint(splitUnit, partitions);
-    const tab = supportFootprint
-      ? buildSolidFromFootprint(
-          supportFootprint,
-          baseHeight - upperTabDepth,
-          baseHeight + FEATURE_EPSILON,
-        )
-      : null;
-    if (tab) {
-      body = union(body, tab);
-    }
-  }
-
-  if (assemblyFeatures.enableLocators && baseHeight > 0) {
-    const socketDepth = getLocatorFeatureDepth(
-      interfaceDepth,
-      splitUnit.maxHeight - baseHeight,
-    );
-    const socketBaseHeight = baseHeight - upperTabDepth - FEATURE_EPSILON;
-    const socketSolids = socketDepth > 0
-      ? selectInterfaceLocatorPoints(splitUnit)
-          .flatMap((point) =>
-            buildLocatorBandSolids(
-              point,
-              socketBaseHeight,
-              socketDepth,
-              LOCATOR_CLEARANCE,
-            )
-          )
-          .filter((item): item is Geom3 => item !== null)
-      : [];
-    if (socketSolids.length > 0) {
-      body = subtract(body, ...socketSolids) as Geom3;
-    }
-  }
-
-  return body;
-}
-
 export function createSteppedCadSplitParts(
   params: SteppedLayoutParams,
   grooveDepth = params.splitGrooveDepth ?? DEFAULT_INTERFACE_GROOVE_DEPTH,
@@ -1352,12 +778,7 @@ export function createSteppedCadSplitParts(
       return [];
     }
 
-    let body = buildBodyFromInterfaceProfiles(
-      splitUnit,
-      splitUnitBaseHeight,
-      partitions,
-      profileUnit.interfaceProfiles,
-    );
+    let body = buildBodyFromLayerProfiles(profileUnit.layerProfiles);
     if (!body) {
       return [];
     }
