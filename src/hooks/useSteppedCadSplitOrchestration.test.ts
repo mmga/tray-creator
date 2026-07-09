@@ -209,4 +209,46 @@ describe("useSteppedCadSplitOrchestration", () => {
       "分件 STL、定位孔清单和参数文件已导出",
     );
   });
+
+  it("拒绝在少于两个分组时导出分件", async () => {
+    const params = createParams();
+    params.groups = [params.groups[0]];
+    const { result } = renderHook(() =>
+      useSteppedCadSplitOrchestration({
+        params,
+        generateSplitPreview: generateSplitPreviewMock,
+        exportSplitParts: exportSplitPartsMock,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.handleExportSplitParts();
+    });
+
+    expect(exportSplitPartsMock).not.toHaveBeenCalled();
+    expect(toastMock).toHaveBeenCalledWith(
+      "error",
+      "至少需要两个分组才能导出分件",
+    );
+  });
+
+  it("报告分件导出失败", async () => {
+    exportSplitPartsMock.mockRejectedValue(new Error("export failed"));
+    const { result } = renderHook(() =>
+      useSteppedCadSplitOrchestration({
+        params: createParams(),
+        generateSplitPreview: generateSplitPreviewMock,
+        exportSplitParts: exportSplitPartsMock,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.handleExportSplitParts();
+    });
+
+    expect(toastMock).toHaveBeenCalledWith(
+      "error",
+      "分件导出失败：export failed",
+    );
+  });
 });
