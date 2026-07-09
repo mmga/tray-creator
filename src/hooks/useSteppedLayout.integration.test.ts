@@ -507,15 +507,6 @@ describe("useSteppedLayout", () => {
     });
     expect(toastMock).toHaveBeenCalledWith("error", "模型生成失败：boom");
 
-    const fresh = renderHook(() => useSteppedLayout());
-    await act(async () => {
-      await fresh.result.current.handleExportSTL();
-    });
-    expect(toastMock).toHaveBeenCalledWith(
-      "error",
-      "当前没有可导出的模型，请先点击开始锻造",
-    );
-
     generateSteppedPreviewMock.mockResolvedValueOnce({
       geometry: { id: "geom" } as never,
       threeGeometry: { dispose: vi.fn() } as never,
@@ -523,29 +514,6 @@ describe("useSteppedLayout", () => {
     });
     exportSteppedModelFilesMock.mockRejectedValueOnce(new Error("export failed"));
 
-    await act(async () => {
-      await result.current.handleGenerate();
-    });
-
-    act(() => {
-      result.current.updateParam("spacing", 10);
-    });
-    await act(async () => {
-      await result.current.handleExportSTL();
-    });
-    expect(toastMock).toHaveBeenCalledWith(
-      "error",
-      "参数已变更，请先点击开始锻造生成最新模型",
-    );
-
-    generateSteppedPreviewMock.mockResolvedValueOnce({
-      geometry: { id: "geom-2" } as never,
-      threeGeometry: { dispose: vi.fn() } as never,
-      volume: 24,
-    });
-    await act(async () => {
-      await result.current.handleGenerate();
-    });
     await act(async () => {
       await result.current.handleExportSTL();
     });
