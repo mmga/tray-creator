@@ -286,6 +286,8 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - The user-facing label for **Inset Recess** is "内缩凹槽".
 - A **Split Interface Profile** belongs to exactly one stepped CAD contact height.
 - A **Split Interface Profile** includes a contact footprint, a male footprint, and a female footprint.
+- A stepped CAD split body must consume profile-derived body, recess-shell, and tenon bands instead of re-deriving male or female geometry from finished 3D solids.
+- **Split Interface Profile** is the sole source of male and female footprint geometry used by stepped CAD split body generation.
 - A **Profile Recess** derives its male footprint from the full contact footprint.
 - An **Inset Recess** derives its male footprint from the contact footprint after a fixed 1mm inward inset.
 - If an **Inset Recess** profile becomes empty after inset, that interface generates no male tenon or female recess.
