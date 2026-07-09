@@ -68,6 +68,10 @@ _Avoid_: Treating CAD stepped mode as an arbitrary union of per-group solids.
 The shared stepped editing module that owns group and slot editing, undo history, outline preview, whole-model preview/export, base-hole derived fields, and layout optimization for both `stepped` and `stepped-cad`, while excluding split assembly behavior.
 _Avoid_: Letting the shared stepped editing module own CAD-only split preview, split export, split assembly groove, Locator Pin, or split merge rules.
 
+**Stepped CAD Split Orchestration**:
+The `stepped-cad`-only workflow that owns split-preview lifecycle and split-part export while reusing group editing from the **Stepped Layout Core**.
+_Avoid_: Exposing CAD-only split preview or split export through the ordinary `stepped` runtime interface.
+
 **Simple Stepped Layout Core**:
 The simple stepped editing module that owns row and slot relationship repair, simple stepped tray size normalization, outer margin synchronization, and canvas-to-row slot update projection for `simple-stepped` mode.
 _Avoid_: Reimplementing simple stepped row membership repair or tray size normalization separately in import normalization, hooks, and viewport adapters.
@@ -240,6 +244,9 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A **Mode Workspace** and **Mode Viewport Workspace** may share **Mode Interaction State** when left-panel controls and viewport interactions both read or write the same transient editor state.
 - A **Stepped Layout Core** may be shared by both `stepped` and `stepped-cad` when the behavior is not split-assembly-specific.
 - A **Stepped Layout Core** should not expose CAD-only split assembly behavior through the ordinary `stepped` runtime interface.
+- **Stepped CAD Split Orchestration** composes the **Stepped Layout Core** rather than being owned by it.
+- **Stepped CAD Split Orchestration** owns split-preview generation, invalidation, disposal, and split-part export for `stepped-cad`.
+- **Stepped CAD Split Orchestration** reuses the **Stepped Layout Core** group action when it changes a group's split-part target.
 - A **Simple Stepped Layout Core** may allow the derived tray size to exceed the maximum build size when row and slot content requires it.
 - In simple stepped mode, the maximum build size is a user warning threshold, not a hard normalization cap.
 - Imported, draft-loaded, and runtime-edited simple stepped params should pass through the same **Simple Stepped Layout Core** normalization rules.
@@ -299,6 +306,9 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 >
 > **Dev:** "Can profile recess and inset recess both be enabled on the same split part?"
 > **Domain expert:** "No. They are alternative split assembly groove types; locator pins are the optional add-on."
+>
+> **Dev:** "Should ordinary stepped mode expose split preview because it shares its editor with CAD stepped mode?"
+> **Domain expert:** "No. Split preview and split-part export belong to Stepped CAD Split Orchestration, which composes the shared Stepped Layout Core."
 
 ## Flagged Ambiguities
 
