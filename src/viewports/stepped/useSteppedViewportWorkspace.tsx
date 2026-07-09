@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import type { ModeInteractionState } from "@/hooks/useModeInteractionState";
 import type { UseSteppedLayoutReturn } from "@/hooks/useSteppedLayout";
-import type { UseSteppedCadLayoutReturn } from "@/hooks/useSteppedCadLayout";
+import type { TrayViewerSplitPart } from "@/components/TrayViewer";
 import { buildSteppedLayoutEditorViewportModel } from "@/viewports/layout-editor/steppedViewportModel";
 import { ViewportTabs } from "@/viewports/shared/ViewportTabs";
 import type { ModeViewportWorkspace } from "@/viewports/types";
@@ -14,13 +14,19 @@ const LayoutCanvas = dynamic(() => import("@/components/LayoutCanvas"), {
   ssr: false,
 });
 
+interface SteppedSplitPreview {
+  parts: TrayViewerSplitPart[] | null;
+  isGenerating: boolean;
+  generate: () => void;
+}
+
 interface UseSteppedViewportWorkspaceOptions {
-  model: UseSteppedLayoutReturn | UseSteppedCadLayoutReturn;
+  model: UseSteppedLayoutReturn;
   interactionState: ModeInteractionState;
   rightView: "2d" | "3d";
   onRightViewChange: (next: "2d" | "3d") => void;
   mode?: Extract<AppMode, "stepped" | "stepped-cad">;
-  supportsSplitPreview?: boolean;
+  splitPreview?: SteppedSplitPreview;
 }
 
 interface UseSteppedViewportWorkspaceReturn {
@@ -33,7 +39,7 @@ export function useSteppedViewportWorkspace({
   rightView,
   onRightViewChange,
   mode = "stepped",
-  supportsSplitPreview = false,
+  splitPreview,
 }: UseSteppedViewportWorkspaceOptions): UseSteppedViewportWorkspaceReturn {
   const {
     selectedSlotIds,
@@ -41,17 +47,6 @@ export function useSteppedViewportWorkspace({
     setSelectedSlotIds,
     resetInteractionState,
   } = interactionState;
-  const splitPreviewParts =
-    "splitPreviewParts" in model ? model.splitPreviewParts : undefined;
-  const isGeneratingSplitPreview =
-    "isGeneratingSplitPreview" in model
-      ? model.isGeneratingSplitPreview
-      : undefined;
-  const generateSplitPreviewHandler =
-    supportsSplitPreview && "handleGenerateSplitPreview" in model
-      ? model.handleGenerateSplitPreview
-      : undefined;
-
   const resetTransientState = useCallback(() => {
     resetInteractionState();
   }, [resetInteractionState]);
@@ -109,25 +104,25 @@ export function useSteppedViewportWorkspace({
         onRightViewChange={onRightViewChange}
         canvas={canvas}
         threeGeometry={model.threeGeometry}
-        splitParts={splitPreviewParts}
-        isGeneratingSplitPreview={isGeneratingSplitPreview}
+        splitParts={splitPreview?.parts}
+        isGeneratingSplitPreview={splitPreview?.isGenerating}
         isPreviewStale={model.isPreviewStale}
         isGenerating={model.isGenerating}
         onGenerate={model.handleGenerate}
-        onGenerateSplitPreview={generateSplitPreviewHandler}
+        onGenerateSplitPreview={splitPreview?.generate}
       />
     ),
     [
       canvas,
-      generateSplitPreviewHandler,
-      isGeneratingSplitPreview,
       model.handleGenerate,
       model.isGenerating,
       model.isPreviewStale,
       model.threeGeometry,
       onRightViewChange,
       rightView,
-      splitPreviewParts,
+      splitPreview?.generate,
+      splitPreview?.isGenerating,
+      splitPreview?.parts,
     ],
   );
 

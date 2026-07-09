@@ -9,24 +9,31 @@ import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import type { AppMode } from "@/types/custom-tray";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 import type { UseSteppedLayoutReturn } from "@/hooks/useSteppedLayout";
-import type { UseSteppedCadLayoutReturn } from "@/hooks/useSteppedCadLayout";
 
 const SteppedPanel = dynamic(() => import("@/components/SteppedPanel"), {
   ssr: false,
 });
 
+interface SteppedSplitActions {
+  handleExportSplitParts: () => void;
+  updateGroupSplitPartTarget: (
+    groupId: string,
+    targetGroupId: string | null,
+  ) => void;
+}
+
 interface UseSteppedWorkspaceOptions {
-  model: UseSteppedLayoutReturn | UseSteppedCadLayoutReturn;
+  model: UseSteppedLayoutReturn;
   interactionState: ModeInteractionState;
   mode?: Extract<AppMode, "stepped" | "stepped-cad">;
-  enableSplitExport?: boolean;
+  splitActions?: SteppedSplitActions;
 }
 
 export function useSteppedWorkspace({
   model,
   interactionState,
   mode = "stepped",
-  enableSplitExport = false,
+  splitActions,
 }: UseSteppedWorkspaceOptions): ModeWorkspace {
   const {
     selectedSlotIds,
@@ -34,15 +41,6 @@ export function useSteppedWorkspace({
     setPreviewGroupId,
     resetInteractionState,
   } = interactionState;
-  const exportSplitPartsHandler =
-    enableSplitExport && "handleExportSplitParts" in model
-      ? model.handleExportSplitParts
-      : undefined;
-  const updateGroupSplitPartTargetHandler =
-    "updateGroupSplitPartTarget" in model
-      ? model.updateGroupSplitPartTarget
-      : undefined;
-
   const { draftActions, draftDialogProps, clearDraftBinding } =
     useWorkspaceDraftSupport({
       mode: "stepped",
@@ -77,7 +75,7 @@ export function useSteppedWorkspace({
         onAddSlot={model.addSlot}
         onGenerate={model.handleGenerate}
         onExportSTL={model.handleExportSTL}
-        onExportSplitParts={exportSplitPartsHandler}
+        onExportSplitParts={splitActions?.handleExportSplitParts}
         isGenerating={model.isGenerating}
         volume={model.volume}
         selectedSlotIds={selectedSlotIds}
@@ -88,7 +86,7 @@ export function useSteppedWorkspace({
         onUpdateGroupSmoothingRadius={model.updateGroupSmoothingRadius}
         onUpdateGroupDisconnectOverride={model.updateGroupDisconnectOverride}
         onUpdateGroupDisconnectDistance={model.updateGroupDisconnectDistance}
-        onUpdateGroupSplitPartTarget={updateGroupSplitPartTargetHandler}
+        onUpdateGroupSplitPartTarget={splitActions?.updateGroupSplitPartTarget}
         onSetActiveGroup={model.setActiveGroup}
         onMoveSelectedSlotsToGroup={model.moveSelectedSlotsToGroup}
         onReorderGroups={model.reorderGroups}
@@ -133,12 +131,12 @@ export function useSteppedWorkspace({
       model.updateGroupSmoothingRadius,
       model.updateParam,
       model.volume,
-      exportSplitPartsHandler,
+      splitActions?.handleExportSplitParts,
       previewGroupId,
       resetWorkspace,
       setPreviewGroupId,
       selectedSlotIds,
-      updateGroupSplitPartTargetHandler,
+      splitActions?.updateGroupSplitPartTarget,
     ],
   );
 

@@ -16,6 +16,9 @@ export function useSteppedCadWorkspace(
   return useSteppedWorkspace({
     ...options,
     mode: "stepped-cad",
-    enableSplitExport: true,
+    splitActions: {
+      handleExportSplitParts: options.model.handleExportSplitParts,
+      updateGroupSplitPartTarget: options.model.updateGroupSplitPartTarget,
+    },
   });
 }
