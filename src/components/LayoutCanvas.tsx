@@ -21,9 +21,13 @@ import {
   calculateLayoutCanvasMinimumTrayBounds,
   resolveLayoutCanvasDragStart,
 } from "@/lib/layout-canvas-interaction";
-import { calculateCanvasDragSnap } from "@/lib/canvas-snap-engine";
+import {
+  calculateCanvasDragPosition,
+  calculateCanvasDragSnap,
+} from "@/lib/canvas-snap-engine";
 import type {
   CanvasGuideLine,
+  CanvasPoint,
   CanvasSelectionBox,
   CanvasSlotUpdate,
 } from "@/lib/canvas-types";
@@ -692,28 +696,45 @@ export default function LayoutCanvas({
         }
 
         const dragOrigins = dragStartRef.current.slotOrigins;
-        const dragSnap = calculateCanvasDragSnap({
-          draggingSlotId: effectiveDraggingId,
-          slots,
-          dragOrigins,
-          trayWidth,
-          trayDepth,
-          currentMouse: svgPoint,
-          startMouse: dragStartRef.current.mouseStart,
-        });
-        if (!dragSnap) {
-          return;
-        }
+        let finalDraggingPosition: CanvasPoint;
+        if (event.shiftKey) {
+          const dragPosition = calculateCanvasDragPosition({
+            draggingSlotId: effectiveDraggingId,
+            dragOrigins,
+            currentMouse: svgPoint,
+            startMouse: dragStartRef.current.mouseStart,
+          });
+          if (!dragPosition) {
+            return;
+          }
 
-        setGuideLines(dragSnap.guides);
+          setGuideLines([]);
+          finalDraggingPosition = dragPosition;
+        } else {
+          const dragSnap = calculateCanvasDragSnap({
+            draggingSlotId: effectiveDraggingId,
+            slots,
+            dragOrigins,
+            trayWidth,
+            trayDepth,
+            currentMouse: svgPoint,
+            startMouse: dragStartRef.current.mouseStart,
+          });
+          if (!dragSnap) {
+            return;
+          }
+
+          setGuideLines(dragSnap.guides);
+          finalDraggingPosition = {
+            x: dragSnap.finalX,
+            y: dragSnap.finalY,
+          };
+        }
 
         const liveUpdates = buildLayoutCanvasDragUpdates({
           draggingId: effectiveDraggingId,
           dragOrigins,
-          finalDraggingPosition: {
-            x: dragSnap.finalX,
-            y: dragSnap.finalY,
-          },
+          finalDraggingPosition,
         });
 
         scheduleLiveUpdates(liveUpdates);

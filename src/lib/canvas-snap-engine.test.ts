@@ -1,7 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { calculateCanvasDragSnap } from "@/lib/canvas-snap-engine";
+import {
+  calculateCanvasDragPosition,
+  calculateCanvasDragSnap,
+} from "@/lib/canvas-snap-engine";
 
 describe("canvas snap engine", () => {
+  it("calculates an unsnapped drag position at the canvas precision", () => {
+    const position = calculateCanvasDragPosition({
+      draggingSlotId: "drag",
+      dragOrigins: new Map([["drag", { x: 10, y: 20 }]]),
+      currentMouse: { x: 3.13, y: 4.07 },
+      startMouse: { x: 0, y: 0 },
+    });
+
+    expect(position).toMatchObject({ y: 16 });
+    expect(position?.x).toBeCloseTo(13.2, 5);
+  });
+
   it("returns null when the dragging slot or origin is missing", () => {
     expect(
       calculateCanvasDragSnap({

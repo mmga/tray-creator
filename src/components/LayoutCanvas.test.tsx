@@ -13,6 +13,7 @@ import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
 
 const {
   actionPanelResizeState,
+  calculateCanvasDragPositionMock,
   calculateCanvasDragSnapMock,
   canvasZoomState,
   flushScheduledLiveUpdatesMock,
@@ -29,6 +30,7 @@ const {
     actionPanelWidth: 200,
     isResizingActionPanel: false,
   },
+  calculateCanvasDragPositionMock: vi.fn(),
   calculateCanvasDragSnapMock: vi.fn(),
   canvasZoomState: {
     isSpacePressed: false,
@@ -55,6 +57,7 @@ vi.mock("@/lib/perf", () => ({
 }));
 
 vi.mock("@/lib/canvas-snap-engine", () => ({
+  calculateCanvasDragPosition: calculateCanvasDragPositionMock,
   calculateCanvasDragSnap: calculateCanvasDragSnapMock,
 }));
 
@@ -424,6 +427,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     actionPanelResizeState.actionPanelWidth = 200;
     actionPanelResizeState.isResizingActionPanel = false;
     calculateCanvasDragSnapMock.mockReset();
+    calculateCanvasDragPositionMock.mockReset();
     canvasZoomState.isSpacePressed = false;
     canvasZoomState.isPanning = false;
     canvasZoomState.panStartRef.current = { x: 0, y: 0 };
@@ -1360,6 +1364,50 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     await waitFor(() => {
       expect(startActionPanelResizeMock).toHaveBeenCalledWith(284);
     });
+  });
+
+  it("bypasses magnetic snapping while Shift is held during a drag", async () => {
+    const { container } = render(
+      <TestLayoutCanvas
+        params={createCustomParams()}
+        onUpdateSlot={vi.fn()}
+        onRemoveSlot={vi.fn()}
+      />,
+    );
+    const svg = container.querySelector("svg");
+    expect(svg).not.toBeNull();
+
+    fireEvent.pointerDown(screen.getByTestId("canvas-slot-slot-1"), {
+      pointerId: 1,
+      pointerType: "mouse",
+      clientX: 100,
+      clientY: 120,
+    });
+    fireEvent.pointerUp(svg!, { pointerId: 1, pointerType: "mouse" });
+
+    calculateCanvasDragPositionMock.mockReturnValue({ x: 123, y: 87 });
+
+    fireEvent.pointerDown(screen.getByTestId("canvas-slot-slot-1"), {
+      pointerId: 2,
+      pointerType: "mouse",
+      clientX: 100,
+      clientY: 120,
+    });
+    fireEvent.pointerMove(svg!, {
+      pointerId: 2,
+      pointerType: "mouse",
+      clientX: 130,
+      clientY: 150,
+      shiftKey: true,
+    });
+
+    await waitFor(() => {
+      expect(calculateCanvasDragPositionMock).toHaveBeenCalledTimes(1);
+    });
+    expect(calculateCanvasDragSnapMock).not.toHaveBeenCalled();
+    expect(scheduleLiveUpdatesMock).toHaveBeenCalledWith([
+      { id: "slot-1", x: 123, y: 87 },
+    ]);
   });
 
   it("forwards side bevel width to the 2D overlay layer", () => {

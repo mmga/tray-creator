@@ -44,8 +44,33 @@ interface CalculateCanvasDragSnapOptions<TSlot extends CanvasSnapSlot> {
   ellipseProfileExponent?: number;
 }
 
+interface CalculateCanvasDragPositionOptions {
+  draggingSlotId: string;
+  dragOrigins: ReadonlyMap<string, CanvasPoint>;
+  currentMouse: CanvasPoint;
+  startMouse: CanvasPoint;
+}
+
 function roundToStep(value: number) {
   return Math.round(value / SNAP_STEP) * SNAP_STEP;
+}
+
+/** 计算拖拽后的基础位置，不应用任何磁吸候选。 */
+export function calculateCanvasDragPosition({
+  draggingSlotId,
+  dragOrigins,
+  currentMouse,
+  startMouse,
+}: CalculateCanvasDragPositionOptions): CanvasPoint | null {
+  const draggingOrigin = dragOrigins.get(draggingSlotId);
+  if (!draggingOrigin) {
+    return null;
+  }
+
+  return {
+    x: roundToStep(draggingOrigin.x + currentMouse.x - startMouse.x),
+    y: roundToStep(draggingOrigin.y - (currentMouse.y - startMouse.y)),
+  };
 }
 
 export function calculateCanvasDragSnap<TSlot extends CanvasSnapSlot>({
@@ -58,18 +83,18 @@ export function calculateCanvasDragSnap<TSlot extends CanvasSnapSlot>({
   startMouse,
   ellipseProfileExponent,
 }: CalculateCanvasDragSnapOptions<TSlot>): CanvasDragSnapResult | null {
-  const draggingOrigin = dragOrigins.get(draggingSlotId);
   const draggingSlot = slots.find((slot) => slot.id === draggingSlotId);
-  if (!draggingOrigin || !draggingSlot) {
+  const proposedPosition = calculateCanvasDragPosition({
+    draggingSlotId,
+    dragOrigins,
+    currentMouse,
+    startMouse,
+  });
+  if (!proposedPosition || !draggingSlot) {
     return null;
   }
 
-  const totalSvgDeltaX = currentMouse.x - startMouse.x;
-  const totalPhysicalDeltaX = totalSvgDeltaX;
-  const totalPhysicalDeltaY = -(currentMouse.y - startMouse.y);
-
-  const proposedX = roundToStep(draggingOrigin.x + totalPhysicalDeltaX);
-  const proposedY = roundToStep(draggingOrigin.y + totalPhysicalDeltaY);
+  const { x: proposedX, y: proposedY } = proposedPosition;
   const dragProfile = getFreeSlotProfileGeometry(draggingSlot);
   const dragBounds = getEllipseBoundingBox(
     dragProfile.width,
