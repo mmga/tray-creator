@@ -772,6 +772,7 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
 describe("CustomPanel", { timeout: 15000 }, () => {
   beforeEach(() => {
     useAutoPreviewMock.mockReset();
+    toastMock.mockReset();
   });
 
   it("adds circular slots from the custom input and preset buttons, then adds ellipse slots", () => {
@@ -887,6 +888,89 @@ describe("CustomPanel", { timeout: 15000 }, () => {
       }),
     ).toBeInTheDocument();
     expect(screen.getByText("外尺寸固定，凹槽可在内部自由排版")).toBeInTheDocument();
+  });
+
+  it("only provides random arrangement for fixed trays and reports its result", () => {
+    const onRandomizeSlots = vi
+      .fn()
+      .mockReturnValueOnce({
+        status: "success",
+        updates: [{ id: "slot-1", x: 80, y: 70 }],
+      })
+      .mockReturnValueOnce({ status: "failed" });
+    const fixedParams = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      traySizingMode: "fixed" as const,
+      slots: [
+        {
+          id: "slot-1",
+          x: 30,
+          y: 40,
+          shape: "circle" as const,
+          width: 20,
+          height: 20,
+          rotation: 0,
+        },
+      ],
+    };
+    const { rerender } = render(
+      <CustomPanel
+        params={fixedParams}
+        effectiveDimensions={{ width: 120, depth: 140 }}
+        updateParam={vi.fn()}
+        setParams={vi.fn()}
+        onAddSlot={vi.fn()}
+        onRandomizeSlots={onRandomizeSlots}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "随机排列" }));
+    expect(toastMock).toHaveBeenLastCalledWith("success", "已随机排列 1 个凹槽");
+
+    fireEvent.click(screen.getByRole("button", { name: "随机排列" }));
+    expect(toastMock).toHaveBeenLastCalledWith(
+      "error",
+      "固定可用区域无法容纳当前全部凹槽",
+    );
+
+    rerender(
+      <CustomPanel
+        params={{ ...fixedParams, traySizingMode: "auto" }}
+        effectiveDimensions={{ width: 120, depth: 140 }}
+        updateParam={vi.fn()}
+        setParams={vi.fn()}
+        onAddSlot={vi.fn()}
+        onRandomizeSlots={onRandomizeSlots}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+      />,
+    );
+    expect(screen.queryByRole("button", { name: "随机排列" })).not.toBeInTheDocument();
+  });
+
+  it("disables random arrangement when a fixed tray has no slots", () => {
+    render(
+      <CustomPanel
+        params={{ ...CUSTOM_LAYOUT_DEFAULTS, traySizingMode: "fixed" }}
+        effectiveDimensions={{ width: 120, depth: 140 }}
+        updateParam={vi.fn()}
+        setParams={vi.fn()}
+        onAddSlot={vi.fn()}
+        onRandomizeSlots={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "随机排列" })).toBeDisabled();
   });
 
   it("shows custom statistics from the calculated upper edge dimensions", () => {

@@ -46,6 +46,7 @@ export function useCustomWorkspace({
         onImportParams={importIntoWorkspace}
         updateParam={model.updateParam}
         onAddSlot={model.addSlot}
+        onRandomizeSlots={model.randomizeSlots}
         onGenerate={model.handleGenerate}
         onExportSTL={model.handleExportSTL}
         isGenerating={model.isGenerating}
@@ -62,6 +63,7 @@ export function useCustomWorkspace({
       model.handleGenerate,
       model.isGenerating,
       model.params,
+      model.randomizeSlots,
       model.setParams,
       model.updateParam,
       model.volume,

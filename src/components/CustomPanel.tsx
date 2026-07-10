@@ -15,6 +15,7 @@ import {
 } from "@/lib/custom-config";
 import { calculateCustomTrayDimensions } from "@/lib/custom-tray-model";
 import type { EllipseSlotConfig } from "@/lib/custom-layout-actions";
+import type { RandomSlotArrangementResult } from "@/lib/custom-random-layout";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -25,12 +26,14 @@ import {
   Wrench,
   Ruler,
   BoxSelect,
+  Shuffle,
 } from "lucide-react";
 import { BaseHoleConfig } from "@/components/BaseHoleConfig";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
 import { calculateWeight, calculateCustomPrice } from "@/lib/pricing";
 import { useAutoPreview } from "@/hooks/useAutoPreview";
+import { useToast } from "@/hooks/useToast";
 import {
   PanelActionSection,
   type PanelDraftActions,
@@ -46,6 +49,7 @@ interface CustomPanelProps {
   onResetParams?: () => void;
   onImportParams?: (params: CustomLayoutParams) => void;
   onAddSlot: (width: number, height?: number, ellipseConfig?: EllipseSlotConfig) => void;
+  onRandomizeSlots?: () => RandomSlotArrangementResult;
   onGenerate: (options?: { shouldSwitchView?: boolean }) => void;
   onExportSTL: () => void;
   isGenerating: boolean;
@@ -69,12 +73,14 @@ export default function CustomPanel({
   onResetParams,
   onImportParams,
   onAddSlot,
+  onRandomizeSlots,
   onGenerate,
   onExportSTL,
   isGenerating,
   volume,
   draftActions,
 }: CustomPanelProps) {
+  const { toast } = useToast();
   const dimensions = calculateCustomTrayDimensions(params);
   const isFixedTraySize = params.traySizingMode === "fixed";
   const displayLength =
@@ -118,6 +124,17 @@ export default function CustomPanel({
       return;
     }
     onAddSlot(customCircleDiameter);
+  };
+  const handleRandomizeSlots = () => {
+    if (!onRandomizeSlots) return;
+
+    const result = onRandomizeSlots();
+    if (result.status === "success") {
+      toast("success", `已随机排列 ${result.updates.length} 个凹槽`);
+      return;
+    }
+
+    toast("error", "固定可用区域无法容纳当前全部凹槽");
   };
 
   return (
@@ -168,6 +185,19 @@ export default function CustomPanel({
                   onChange={(value) => updateParam("trayDepth", value)}
                   unit={CUSTOM_LIMITS.trayDepth.unit}
                 />
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={params.slots.length === 0 || !onRandomizeSlots}
+                    onClick={handleRandomizeSlots}
+                    className="border-[#2e2a24] bg-[#120f0c] text-xs hover:bg-[#2e2a24] hover:text-primary"
+                  >
+                    <Shuffle className="mr-1 h-3 w-3" />
+                    随机排列
+                  </Button>
+                </div>
               </div>
             )}
           </div>
