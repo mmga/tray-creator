@@ -66,6 +66,8 @@ describe("custom tray model", () => {
     };
     const model = createCustomTrayModel(params);
     const [[minX, minY], [maxX, maxY]] = measureBoundingBox(model);
+    const slotLeftEdgeX = -50 + 20 - 10.2;
+    const slotCenterY = -40 + 30;
 
     expect(calculateCustomTrayDimensions(params)).toEqual({
       width: 100,
@@ -74,6 +76,13 @@ describe("custom tray model", () => {
     });
     expect(maxX - minX).toBeCloseTo(100, 5);
     expect(maxY - minY).toBeCloseTo(80, 5);
+    expect(
+      geom3.toPoints(model).flat().some(
+        (point) =>
+          Math.abs(point[0] - slotLeftEdgeX) < 1e-5 &&
+          Math.abs(point[1] - slotCenterY) < 1e-5,
+      ),
+    ).toBe(true);
   });
 
   it("insets the custom tray top edge by the configured side bevel width", () => {
