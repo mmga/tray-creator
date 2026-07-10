@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +31,7 @@ export function ParamSlider({
     const [isInputFocused, setIsInputFocused] = useState(false);
     const skipNextBlurCommitRef = useRef(false);
     const sliderValue = useMemo(() => [safeValue], [safeValue]);
+    const displayedInputValue = isInputFocused ? inputDraft : String(safeValue);
     const handleValueChange = useCallback(
         (nextValue: number) => {
             if (nextValue !== safeValue) {
@@ -39,11 +40,6 @@ export function ParamSlider({
         },
         [onChange, safeValue],
     );
-    useEffect(() => {
-        if (!isInputFocused) {
-            setInputDraft(String(safeValue));
-        }
-    }, [isInputFocused, safeValue]);
     const blockArrowKeyParamAdjust = useCallback(
         (event: React.KeyboardEvent<HTMLElement>) => {
             if (!ARROW_KEYS.has(event.key)) {
@@ -93,11 +89,14 @@ export function ParamSlider({
                 <div className="flex items-center gap-1.5">
                     <Input
                         type="number"
-                        value={inputDraft}
+                        value={displayedInputValue}
                         min={effectiveMin}
                         max={effectiveMax}
                         step="any"
-                        onFocus={() => setIsInputFocused(true)}
+                        onFocus={() => {
+                            setInputDraft(String(safeValue));
+                            setIsInputFocused(true);
+                        }}
                         onBlur={() => {
                             setIsInputFocused(false);
                             if (skipNextBlurCommitRef.current) {
@@ -107,7 +106,10 @@ export function ParamSlider({
                             commitInputDraft();
                         }}
                         onKeyDown={handleInputKeyDown}
-                        onChange={(event) => setInputDraft(event.target.value)}
+                        onChange={(event) => {
+                            setIsInputFocused(true);
+                            setInputDraft(event.target.value);
+                        }}
                         className="w-18 h-9 lg:h-7 text-right text-sm font-mono bg-[#1c1a16] border-[#2e2a24] text-foreground focus:border-primary/50 focus:ring-primary/20 transition-colors duration-200 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                     <span className="text-[11px] text-muted-foreground/60 w-6 font-mono">{unit}</span>
