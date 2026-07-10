@@ -76,10 +76,19 @@ export default function CustomPanel({
   draftActions,
 }: CustomPanelProps) {
   const dimensions = calculateCustomTrayDimensions(params);
+  const isFixedTraySize = params.traySizingMode === "fixed";
   const displayLength =
-    effectiveDimensions.width > 0 ? effectiveDimensions.width : params.trayWidth;
+    isFixedTraySize
+      ? dimensions.width
+      : effectiveDimensions.width > 0
+        ? effectiveDimensions.width
+        : params.trayWidth;
   const displayWidth =
-    effectiveDimensions.depth > 0 ? effectiveDimensions.depth : params.trayDepth;
+    isFixedTraySize
+      ? dimensions.depth
+      : effectiveDimensions.depth > 0
+        ? effectiveDimensions.depth
+        : params.trayDepth;
   const isOversized =
     displayLength > MAX_BUILD_SIZE || displayWidth > MAX_BUILD_SIZE;
   const [autoPreview, setAutoPreview] = useState(false);
@@ -113,6 +122,58 @@ export default function CustomPanel({
 
   return (
     <div className="flex flex-col gap-4 animate-fade-in">
+      <div className="iron-panel rounded-sm p-4">
+        <SectionHeader
+          icon={Ruler}
+          title="托盘尺寸"
+          collapsible
+          defaultOpen={true}
+          summary={isFixedTraySize ? "固定外尺寸" : "自动适配凹槽布局"}
+        >
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
+              <div className="space-y-0.5">
+                <Label htmlFor="custom-fixed-tray-size" className="text-sm cursor-pointer text-[#f0d8b8]">
+                  固定托盘大小
+                </Label>
+                <p className="text-[11px] text-muted-foreground">
+                  {isFixedTraySize
+                    ? "外尺寸固定，凹槽可在内部自由排版"
+                    : "托盘外形随凹槽位置与边界间距自动变化"}
+                </p>
+              </div>
+              <Switch
+                id="custom-fixed-tray-size"
+                aria-label="custom-fixed-tray-size"
+                checked={isFixedTraySize}
+                onCheckedChange={(checked) =>
+                  updateParam("traySizingMode", checked ? "fixed" : "auto")
+                }
+                className="data-[state=checked]:bg-[#8cb880]"
+              />
+            </div>
+            {isFixedTraySize && (
+              <div className="space-y-4">
+                <ParamSlider
+                  label={CUSTOM_LIMITS.trayWidth.label}
+                  value={params.trayWidth}
+                  config={CUSTOM_LIMITS.trayWidth}
+                  onChange={(value) => updateParam("trayWidth", value)}
+                  unit={CUSTOM_LIMITS.trayWidth.unit}
+                />
+                <ParamSlider
+                  label={CUSTOM_LIMITS.trayDepth.label}
+                  value={params.trayDepth}
+                  config={CUSTOM_LIMITS.trayDepth}
+                  onChange={(value) => updateParam("trayDepth", value)}
+                  unit={CUSTOM_LIMITS.trayDepth.unit}
+                />
+              </div>
+            )}
+          </div>
+        </SectionHeader>
+      </div>
+
       {/* 添加凹槽 — 移动端默认展开 */}
       <div className="iron-panel rounded-sm p-3">
         <SectionHeader icon={BoxSelect} title="添加凹槽" collapsible defaultOpen={true}
@@ -318,7 +379,7 @@ export default function CustomPanel({
               </div>
             )}
             <div className="text-[11px] text-muted-foreground/80 text-center pt-1">
-              上沿尺寸: {displayLength.toFixed(1)} × {displayWidth.toFixed(1)} mm
+              {isFixedTraySize ? "固定外尺寸" : "上沿尺寸"}: {displayLength.toFixed(1)} × {displayWidth.toFixed(1)} mm
             </div>
           </div>
         </SectionHeader>

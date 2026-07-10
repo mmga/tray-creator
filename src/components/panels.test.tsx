@@ -838,6 +838,57 @@ describe("CustomPanel", { timeout: 15000 }, () => {
     expect(screen.queryByText("椭圆丰满度")).not.toBeInTheDocument();
   });
 
+  it("switches between automatic and fixed tray sizing without moving slots", () => {
+    const updateParam = vi.fn();
+    const { rerender } = render(
+      <CustomPanel
+        params={CUSTOM_LAYOUT_DEFAULTS}
+        effectiveDimensions={{ width: 120, depth: 140 }}
+        updateParam={updateParam}
+        setParams={vi.fn()}
+        onAddSlot={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+      />,
+    );
+
+    expect(screen.getByRole("switch", { name: "custom-fixed-tray-size" })).toHaveAttribute(
+      "aria-checked",
+      "false",
+    );
+    expect(screen.getAllByRole("spinbutton")).toHaveLength(1);
+    fireEvent.click(screen.getByRole("switch", { name: "custom-fixed-tray-size" }));
+    expect(updateParam).toHaveBeenCalledWith("traySizingMode", "fixed");
+
+    rerender(
+      <CustomPanel
+        params={{ ...CUSTOM_LAYOUT_DEFAULTS, traySizingMode: "fixed" }}
+        effectiveDimensions={{ width: 120, depth: 140 }}
+        updateParam={updateParam}
+        setParams={vi.fn()}
+        onAddSlot={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", {
+        name: `设置长度:${CUSTOM_LAYOUT_DEFAULTS.trayWidth}`,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: `设置宽度:${CUSTOM_LAYOUT_DEFAULTS.trayDepth}`,
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("外尺寸固定，凹槽可在内部自由排版")).toBeInTheDocument();
+  });
+
   it("shows custom statistics from the calculated upper edge dimensions", () => {
     const params = {
       ...CUSTOM_LAYOUT_DEFAULTS,
