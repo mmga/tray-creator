@@ -19,6 +19,7 @@ export type EllipsePreset = EllipseSlotDefinition;
 export const ELLIPSE_PRESETS: EllipsePreset[] = ELLIPSE_SLOT_DEFINITIONS;
 
 export const CUSTOM_LAYOUT_DEFAULTS: CustomLayoutParams = {
+  traySizingMode: "auto",
   trayWidth: 260,
   trayDepth: 260,
   slots: [],
@@ -34,8 +35,8 @@ export const CUSTOM_LAYOUT_DEFAULTS: CustomLayoutParams = {
 };
 
 export const CUSTOM_LIMITS = {
-  trayWidth: { label: "长度", min: 50, max: MAX_TRAY_SIZE, step: 1, unit: "mm" },
-  trayDepth: { label: "宽度", min: 50, max: MAX_TRAY_SIZE, step: 1, unit: "mm" },
+  trayWidth: { label: "长度", min: 10, max: MAX_TRAY_SIZE, step: 0.1, unit: "mm" },
+  trayDepth: { label: "宽度", min: 10, max: MAX_TRAY_SIZE, step: 0.1, unit: "mm" },
   spacing: { label: "凹槽间距", min: 2, max: 20, step: 1, unit: "mm" },
   boundarySpacing: { label: "边界间距", min: 2, max: 20, step: 1, unit: "mm" },
   baseThickness: SHARED_LAYOUT_LIMITS.baseThickness,

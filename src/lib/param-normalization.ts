@@ -348,6 +348,8 @@ function clampAndFillCustomDerivedFields(params: CustomLayoutParams) {
   clampField(obj, "cornerRadius", CUSTOM_LIMITS.cornerRadius);
   clampField(obj, "sideBevelWidth", CUSTOM_LIMITS.sideBevelWidth);
 
+  obj.traySizingMode = obj.traySizingMode === "fixed" ? "fixed" : "auto";
+
   if (!obj.boundarySpacingIndependent) {
     obj.boundarySpacing = obj.spacing;
   }

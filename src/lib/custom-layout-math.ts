@@ -2,6 +2,8 @@ import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import type { CustomLayoutParams } from "@/types/custom-tray";
 
+export type CustomTraySizingMode = "auto" | "fixed";
+
 export interface LayoutExtents {
   width: number;
   depth: number;
@@ -9,6 +11,25 @@ export interface LayoutExtents {
   maxX: number;
   minY: number;
   maxY: number;
+}
+
+export interface CustomTrayFootprint {
+  sizingMode: CustomTraySizingMode;
+  hasSlots: boolean;
+  width: number;
+  depth: number;
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+}
+
+export interface FixedCustomTrayUsableArea {
+  x: number;
+  y: number;
+  width: number;
+  depth: number;
+  cornerRadius: number;
 }
 
 export function roundLayoutDimensionToTenth(value: number): number {
@@ -23,6 +44,12 @@ export function resolveCustomBoundarySpacing(
   }
 
   return params.spacing;
+}
+
+export function resolveCustomTraySizingMode(
+  params: Pick<CustomLayoutParams, "traySizingMode">,
+): CustomTraySizingMode {
+  return params.traySizingMode === "fixed" ? "fixed" : "auto";
 }
 
 export function calculateCustomEffectiveDimensions(
@@ -72,5 +99,71 @@ export function calculateCustomEffectiveDimensions(
     maxX,
     minY,
     maxY,
+  };
+}
+
+export function calculateCustomTrayFootprint(
+  params: CustomLayoutParams,
+): CustomTrayFootprint {
+  const sizingMode = resolveCustomTraySizingMode(params);
+  if (sizingMode === "fixed") {
+    return {
+      sizingMode,
+      hasSlots: params.slots.length > 0,
+      width: params.trayWidth,
+      depth: params.trayDepth,
+      minX: 0,
+      maxX: params.trayWidth,
+      minY: 0,
+      maxY: params.trayDepth,
+    };
+  }
+
+  const effective = calculateCustomEffectiveDimensions(params);
+  const sideBevelWidth = Math.max(0, params.sideBevelWidth);
+  return {
+    sizingMode,
+    hasSlots: effective.width > 0 && effective.depth > 0,
+    width: effective.width > 0 ? effective.width + sideBevelWidth * 2 : params.trayWidth,
+    depth: effective.depth > 0 ? effective.depth + sideBevelWidth * 2 : params.trayDepth,
+    minX: effective.minX,
+    maxX: effective.maxX,
+    minY: effective.minY,
+    maxY: effective.maxY,
+  };
+}
+
+export function calculateFixedCustomTrayUsableArea(
+  params: CustomLayoutParams,
+): FixedCustomTrayUsableArea {
+  const safeBevelWidth = Math.max(
+    0,
+    Math.min(
+      params.sideBevelWidth,
+      params.trayWidth / 2 - 0.1,
+      params.trayDepth / 2 - 0.1,
+    ),
+  );
+  const outerCornerRadius = Math.max(
+    0,
+    Math.min(
+      params.cornerRadius,
+      params.trayWidth / 2 - 0.01,
+      params.trayDepth / 2 - 0.01,
+    ),
+  );
+  const inset = safeBevelWidth + resolveCustomBoundarySpacing(params);
+  const width = Math.max(0, params.trayWidth - inset * 2);
+  const depth = Math.max(0, params.trayDepth - inset * 2);
+
+  return {
+    x: inset,
+    y: inset,
+    width,
+    depth,
+    cornerRadius: Math.max(
+      0,
+      Math.min(outerCornerRadius - inset, width / 2, depth / 2),
+    ),
   };
 }

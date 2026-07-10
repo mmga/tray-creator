@@ -87,6 +87,30 @@ describe("param normalization", () => {
     });
   });
 
+  it("defaults legacy custom params to auto sizing and clamps fixed dimensions", () => {
+    const legacy = normalizeParamsForMode("custom", {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      traySizingMode: undefined,
+      trayWidth: 5,
+      trayDepth: 6000,
+    } as unknown as CustomLayoutParams) as CustomLayoutParams;
+    const fixed = normalizeParamsForMode("custom", {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      traySizingMode: "fixed",
+      trayWidth: 10.1,
+      trayDepth: 249.7,
+    } as CustomLayoutParams) as CustomLayoutParams;
+
+    expect(legacy.traySizingMode).toBe("auto");
+    expect(legacy.trayWidth).toBe(10);
+    expect(legacy.trayDepth).toBe(5000);
+    expect(fixed).toMatchObject({
+      traySizingMode: "fixed",
+      trayWidth: 10.1,
+      trayDepth: 249.7,
+    });
+  });
+
   it("normalizes grid params without requiring a param file wrapper", () => {
     const normalized = normalizeParamsForMode("grid", {
       ...DEFAULT_TRAY_PARAMS,

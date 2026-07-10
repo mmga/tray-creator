@@ -111,6 +111,8 @@ export interface SimpleSteppedRowBand {
 
 /** 自定义布局参数（完全独立） */
 export interface CustomLayoutParams {
+  /** 托盘尺寸模式；缺失时按自动尺寸兼容旧配置。 */
+  traySizingMode?: "auto" | "fixed";
   /** 托盘宽度 (mm) */
   trayWidth: number;
   /** 托盘深度 (mm) */

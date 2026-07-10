@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import {
   calculateCustomEffectiveDimensions,
+  calculateCustomTrayFootprint,
+  calculateFixedCustomTrayUsableArea,
   resolveCustomBoundarySpacing,
+  resolveCustomTraySizingMode,
 } from "@/lib/custom-layout-math";
 
 describe("custom layout math", () => {
@@ -134,6 +137,58 @@ describe("custom layout math", () => {
     expect(calculateCustomEffectiveDimensions(params)).toMatchObject({
       width: 46,
       depth: 28,
+    });
+  });
+
+  it("treats missing sizing mode as automatic and preserves the derived footprint", () => {
+    const params = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      traySizingMode: undefined,
+      sideBevelWidth: 2,
+      slots: [
+        {
+          id: "slot-1",
+          x: 40,
+          y: 30,
+          shape: "circle" as const,
+          width: 20,
+          height: 20,
+          rotation: 0,
+        },
+      ],
+    };
+
+    expect(resolveCustomTraySizingMode(params)).toBe("auto");
+    expect(calculateCustomTrayFootprint(params)).toMatchObject({
+      sizingMode: "auto",
+      width: 34.4,
+      depth: 34.4,
+    });
+  });
+
+  it("uses configured outer dimensions and an inset rounded usable area in fixed mode", () => {
+    const params = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      traySizingMode: "fixed" as const,
+      trayWidth: 100,
+      trayDepth: 80,
+      boundarySpacingIndependent: true,
+      boundarySpacing: 5,
+      cornerRadius: 12,
+      sideBevelWidth: 3,
+    };
+
+    expect(calculateCustomTrayFootprint(params)).toMatchObject({
+      sizingMode: "fixed",
+      width: 100,
+      depth: 80,
+    });
+    expect(calculateFixedCustomTrayUsableArea(params)).toEqual({
+      x: 8,
+      y: 8,
+      width: 84,
+      depth: 64,
+      cornerRadius: 4,
     });
   });
 });
