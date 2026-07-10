@@ -109,9 +109,60 @@ describe("ParamSlider", () => {
 
     expect(fireEvent.keyDown(input, { key: "ArrowUp" })).toBe(false);
     fireEvent.change(input, { target: { value: "10.15" } });
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.blur(input);
 
     expect(onParentKeyDown).not.toHaveBeenCalled();
     expect(onChange).toHaveBeenCalledWith(10.15);
+  });
+
+  it("keeps intermediate text until a complete in-range value is committed", () => {
+    const onChange = vi.fn();
+
+    render(
+      <ParamSlider
+        label="长度"
+        value={260}
+        config={{ min: 10, max: 5000, step: 0.1 }}
+        onChange={onChange}
+      />,
+    );
+
+    const input = screen.getByRole("spinbutton");
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: "1" } });
+    expect(input).toHaveValue(1);
+    fireEvent.change(input, { target: { value: "10" } });
+    fireEvent.change(input, { target: { value: "100" } });
+    expect(input).toHaveValue(100);
+    expect(onChange).not.toHaveBeenCalled();
+
+    fireEvent.keyDown(input, { key: "Enter" });
+    fireEvent.blur(input);
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith(100);
+  });
+
+  it("restores the last valid value when the text is invalid on blur", () => {
+    const onChange = vi.fn();
+
+    render(
+      <ParamSlider
+        label="长度"
+        value={260}
+        config={{ min: 10, max: 5000, step: 0.1 }}
+        onChange={onChange}
+      />,
+    );
+
+    const input = screen.getByRole("spinbutton");
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: "" } });
+    fireEvent.blur(input);
+
+    expect(input).toHaveValue(260);
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it("keeps the slider step but blocks slider arrow keys", () => {
