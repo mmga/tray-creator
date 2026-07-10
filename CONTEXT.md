@@ -184,6 +184,14 @@ _Avoid_: Pricing, naming, or summarizing a fixed tray from only its occupied slo
 A fixed-mode state where a slot's final profile crosses the usable upper footprint after side-bevel and boundary-spacing insets are applied.
 _Avoid_: Treating a boundary violation as an automatic position correction or an export-blocking error.
 
+**Random Slot Arrangement**:
+A fixed custom tray operation that assigns new positions to all existing slot instances without changing their count, identity, geometry, or rotation.
+_Avoid_: Treating random arrangement as adding, deleting, or redefining slots.
+
+**Random Arrangement Result**:
+An all-or-nothing candidate layout produced by a **Random Slot Arrangement** that either relocates every slot successfully or leaves the current layout unchanged.
+_Avoid_: Applying a partially placed random layout.
+
 **Side Bevel**:
 The continuous side-wall slope from the tray's bottom edge footprint to its top edge footprint. Its width is the horizontal inset from the lower edge to the upper edge.
 _Avoid_: Treating it as a corner radius, slot clearance, stepped split groove, or a decorative 2D-only annotation.
@@ -294,6 +302,12 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A **Fixed Tray Footprint Area** belongs to exactly one **Fixed Tray Outer Footprint**.
 - A fixed custom tray's quote, displayed dimensions, exported file name, and **Draft Summary** use its **Fixed Tray Outer Footprint** and **Fixed Tray Footprint Area**.
 - A fixed custom tray may have zero **Slot Instances** and can still be generated or exported as an empty tray using its **Fixed Tray Outer Footprint**.
+- A **Random Slot Arrangement** applies only to the existing **Slot Instances** of a fixed custom tray and preserves each slot's identity, geometry, and rotation.
+- A successful **Random Slot Arrangement** has no **Slot Boundary Violations** and no slot-overlap or slot-spacing collision.
+- A **Random Slot Arrangement** searches positions at 0.1mm precision, placing larger slot footprints before smaller ones.
+- A **Random Arrangement Result** is atomic: failure preserves every current slot position, while success replaces every slot position as one undoable edit.
+- Repeating a successful **Random Slot Arrangement** produces a fresh candidate layout; no random seed is stored in a Draft or exported parameter file.
+- A **Random Slot Arrangement** reports its success or capacity failure as action feedback, while ordinary **Slot Boundary Violations** remain persistent canvas status rather than transient feedback.
 - A **Side Bevel** keeps the upper edge as the slot boundary-spacing reference and expands the lower edge outward by the configured bevel width.
 - A 2D view that displays a **Side Bevel** should keep the ordinary tray outline for the lower edge and mark only the inset upper edge.
 - An **Effective Baseplate Area** belongs to exactly one **Effective Baseplate**.
@@ -356,6 +370,7 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - "固定托盘大小" could mean a canvas-only frame or the generated model footprint. Resolved: fixed **Tray Sizing Mode** uses the configured width and depth as the final generated tray footprint.
 - "固定尺寸" could mean the bottom outer edge or the side-bevel-inset upper edge. Resolved: it means the **Fixed Tray Outer Footprint**.
 - "凹槽越界" could mean a hard editing constraint or a warning-only state. Resolved: use **Slot Boundary Violation** for a red, warning-only state that keeps generation and export available.
+- "随机排列" could mean arbitrary positions that may require manual repair. Resolved: use **Random Slot Arrangement** only for an all-valid layout that satisfies both fixed-boundary and slot-spacing constraints.
 - Historical custom-mode prices may be used as reference points, not as an exact fitted law. Resolved: treat them as sanity checks around the **Custom Quote Baseline**, then adjust after reviewing representative layouts.
 - Grid mode previously mixed a diameter-tier quote ladder with a newer area-based custom quote baseline. Resolved: when grid pricing migrates, it fully replaces the old ladder rather than combining both rules.
 - Grid-mode "面积" could have meant nominal hole layout size or the displayed outer dimensions. Resolved: use **Grid Footprint Area**, derived from the displayed width and depth, for migrated grid pricing.
