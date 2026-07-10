@@ -136,8 +136,8 @@ export const CanvasOverlayLayer = memo(function CanvasOverlayLayer({
           stroke={Array.from(collisionState.collisionMap.values()).some(
             (info) => info.boundaryReasons.length > 0,
           ) ? "#ef4444" : "#d6a84f"}
-          strokeWidth={0.75 / zoom}
-          strokeDasharray={`${2 / zoom} ${1.5 / zoom}`}
+          strokeWidth={trayOutlineStrokeWidth}
+          strokeDasharray={trayOutlineStrokeDash}
           strokeOpacity={0.85}
           pointerEvents="none"
         />

@@ -801,4 +801,61 @@ describe("CanvasOverlayLayer", { timeout: 15000 }, () => {
       "0.16",
     );
   });
+
+  it("uses the tray-outline dash style while retaining fixed-area status colors", () => {
+    const slot: FreeSlot = {
+      id: "outside",
+      x: 10,
+      y: 10,
+      shape: "circle",
+      width: 20,
+      height: 20,
+      rotation: 0,
+    };
+    const fixedUsableArea = {
+      x: 8,
+      y: 8,
+      width: 84,
+      depth: 64,
+      cornerRadius: 4,
+    };
+    const renderOverlay = (collisionState: ReturnType<typeof buildCanvasCollisionState>) => (
+      <svg>
+        <CanvasOverlayLayer
+          trayWidth={100}
+          trayDepth={80}
+          zoom={1}
+          minX={0}
+          minY={0}
+          viewW={100}
+          viewH={80}
+          showEffectiveBaseplate={false}
+          effectiveBaseplate={{ hasSlots: false, x: 0, y: 0, width: 0, height: 0 }}
+          fixedUsableArea={fixedUsableArea}
+          symmetryAxes={null}
+          collisionState={collisionState}
+          guideLines={[]}
+        />
+      </svg>
+    );
+    const { container, rerender } = render(
+      renderOverlay(buildCanvasCollisionState([], 5)),
+    );
+
+    const fixedArea = container.querySelector('[data-fixed-usable-area="true"]');
+    expect(fixedArea).toHaveAttribute("stroke", "#d6a84f");
+    expect(fixedArea).toHaveAttribute("stroke-width", "0.5");
+    expect(fixedArea).toHaveAttribute("stroke-dasharray", "3 3");
+
+    rerender(
+      renderOverlay(
+        buildCanvasCollisionState([slot], 5, undefined, {
+          getBoundaryReasons: () => ["超出固定托盘可用区域"],
+        }),
+      ),
+    );
+    expect(
+      container.querySelector('[data-fixed-usable-area="true"]'),
+    ).toHaveAttribute("stroke", "#ef4444");
+  });
 });
