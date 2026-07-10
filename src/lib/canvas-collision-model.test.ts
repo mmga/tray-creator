@@ -58,6 +58,33 @@ describe("canvas collision model", () => {
     expect(state.slotById.get("slot-3")?.x).toBe(120);
   });
 
+  it("counts each boundary-violating slot once without creating overlap connectors", () => {
+    const state = buildCanvasCollisionState(
+      [
+        {
+          id: "outside",
+          x: 20,
+          y: 20,
+          width: 20,
+          height: 20,
+          rotation: 0,
+          shape: "circle" as const,
+        },
+      ],
+      5,
+      undefined,
+      {
+        getBoundaryReasons: () => ["超出固定托盘可用区域"],
+      },
+    );
+
+    expect(state.collisionErrorCount).toBe(1);
+    expect(state.connectorPairs).toEqual([]);
+    expect(state.collisionMap.get("outside")?.boundaryReasons).toEqual([
+      "超出固定托盘可用区域",
+    ]);
+  });
+
   it("supports wider pair spacing for protected height-group boundaries", () => {
     const slots = [
       {

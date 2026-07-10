@@ -25,6 +25,7 @@ export interface CanvasCollisionState<TSlot extends { id: string }> {
 export interface CanvasCollisionSpacingOptions<TSlot> {
   maxSpacing?: number;
   getPairSpacing?: (left: TSlot, right: TSlot, baseSpacing: number) => number;
+  getBoundaryReasons?: (slot: TSlot) => string[];
 }
 
 type CanvasCollisionSlot = Pick<
@@ -111,14 +112,18 @@ export function buildCanvasCollisionState<TSlot extends CanvasCollisionSlot>(
     return polygon;
   };
 
+  let collisionErrorCount = 0;
   slots.forEach((slot) => {
+    const boundaryReasons = spacingOptions?.getBoundaryReasons?.(slot) ?? [];
     collisionMap.set(slot.id, {
-      boundaryReasons: [],
+      boundaryReasons,
       overlapIds: [],
     });
+    if (boundaryReasons.length > 0) {
+      collisionErrorCount += 1;
+    }
   });
 
-  let collisionErrorCount = 0;
   for (let i = 0; i < expandedBounds.length; i += 1) {
     const current = expandedBounds[i];
 

@@ -4,6 +4,7 @@ import { memo } from "react";
 
 import type { CanvasCollisionState } from "@/lib/canvas-collision-model";
 import type { CanvasEffectiveBaseplate } from "@/lib/canvas-slot-geometry";
+import type { FixedCustomTrayUsableArea } from "@/lib/custom-layout-math";
 import type { CanvasGuideLine } from "@/lib/canvas-types";
 import type {
   FreeSlot,
@@ -21,6 +22,7 @@ interface CanvasOverlayLayerProps {
   viewH: number;
   showEffectiveBaseplate: boolean;
   effectiveBaseplate: CanvasEffectiveBaseplate;
+  fixedUsableArea?: FixedCustomTrayUsableArea;
   cornerRadius?: number;
   sideBevelWidth?: number;
   symmetryAxes: { vertical: number; horizontal: number } | null;
@@ -40,6 +42,7 @@ export const CanvasOverlayLayer = memo(function CanvasOverlayLayer({
   viewH,
   showEffectiveBaseplate,
   effectiveBaseplate,
+  fixedUsableArea,
   cornerRadius = 0,
   sideBevelWidth = 0,
   symmetryAxes,
@@ -118,6 +121,25 @@ export const CanvasOverlayLayer = memo(function CanvasOverlayLayer({
             ),
           )}
           strokeOpacity={0.95}
+        />
+      )}
+
+      {fixedUsableArea && (
+        <rect
+          data-fixed-usable-area="true"
+          x={fixedUsableArea.x}
+          y={trayDepth - fixedUsableArea.y - fixedUsableArea.depth}
+          width={fixedUsableArea.width}
+          height={fixedUsableArea.depth}
+          rx={fixedUsableArea.cornerRadius}
+          fill="none"
+          stroke={Array.from(collisionState.collisionMap.values()).some(
+            (info) => info.boundaryReasons.length > 0,
+          ) ? "#ef4444" : "#d6a84f"}
+          strokeWidth={0.75 / zoom}
+          strokeDasharray={`${2 / zoom} ${1.5 / zoom}`}
+          strokeOpacity={0.85}
+          pointerEvents="none"
         />
       )}
 

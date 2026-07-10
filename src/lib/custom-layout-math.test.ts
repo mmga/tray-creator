@@ -4,6 +4,7 @@ import {
   calculateCustomEffectiveDimensions,
   calculateCustomTrayFootprint,
   calculateFixedCustomTrayUsableArea,
+  isCustomSlotWithinFixedTrayUsableArea,
   resolveCustomBoundarySpacing,
   resolveCustomTraySizingMode,
 } from "@/lib/custom-layout-math";
@@ -190,5 +191,34 @@ describe("custom layout math", () => {
       depth: 64,
       cornerRadius: 4,
     });
+
+    expect(
+      isCustomSlotWithinFixedTrayUsableArea(
+        {
+          id: "safe-slot",
+          x: 25,
+          y: 25,
+          shape: "circle",
+          width: 20,
+          height: 20,
+          rotation: 0,
+        },
+        calculateFixedCustomTrayUsableArea(params),
+      ),
+    ).toBe(true);
+    expect(
+      isCustomSlotWithinFixedTrayUsableArea(
+        {
+          id: "corner-slot",
+          x: 9,
+          y: 9,
+          shape: "circle",
+          width: 1,
+          height: 1,
+          rotation: 0,
+        },
+        calculateFixedCustomTrayUsableArea(params),
+      ),
+    ).toBe(false);
   });
 });

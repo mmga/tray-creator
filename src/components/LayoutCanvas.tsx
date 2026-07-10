@@ -8,6 +8,7 @@ import type {
 import { MAX_BUILD_SIZE } from "@/lib/config";
 import { buildCanvasCollisionState } from "@/lib/canvas-collision-model";
 import { calculateEffectiveBaseplate } from "@/lib/canvas-slot-geometry";
+import { isCustomSlotWithinFixedTrayUsableArea } from "@/lib/custom-layout-math";
 import {
   collectCanvasSelection,
   getCanvasSelectionBoxRect,
@@ -104,6 +105,7 @@ export default function LayoutCanvas({
     sideBevelWidth,
     showEffectiveBaseplate,
     showMaxBuildBoundary,
+    fixedUsableArea,
   } = trayFrame;
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -409,6 +411,19 @@ export default function LayoutCanvas({
     resetTransientCanvasState,
   ]);
 
+  const collisionOptions = useMemo(
+    () => ({
+      ...heightGroupSpacingOptions,
+      getBoundaryReasons: fixedUsableArea
+        ? (slot: FreeSlot | SteppedSlot) =>
+            isCustomSlotWithinFixedTrayUsableArea(slot, fixedUsableArea)
+              ? []
+              : ["超出固定托盘可用区域"]
+        : undefined,
+    }),
+    [fixedUsableArea, heightGroupSpacingOptions],
+  );
+
   const collisionState = useMemo(
     () =>
       measurePerf("canvas.collision", () =>
@@ -416,10 +431,10 @@ export default function LayoutCanvas({
           slots,
           spacing,
           undefined,
-          heightGroupSpacingOptions,
+          collisionOptions,
         ),
       ),
-    [heightGroupSpacingOptions, slots, spacing],
+    [collisionOptions, slots, spacing],
   );
 
   const effectiveBaseplate = useMemo(
@@ -435,10 +450,21 @@ export default function LayoutCanvas({
   );
 
   const isSimpleSteppedCanvas = Boolean(rowBands);
+  const fixedBoundaryViolationCount = useMemo(
+    () =>
+      fixedUsableArea
+        ? slots.filter(
+            (slot) =>
+              (collisionState.collisionMap.get(slot.id)?.boundaryReasons.length ??
+                0) > 0,
+          ).length
+        : 0,
+    [collisionState.collisionMap, fixedUsableArea, slots],
+  );
   const isEffectiveOversized =
-    (isSimpleSteppedCanvas ? trayWidth : effectiveBaseplate.width) >
+    (isSimpleSteppedCanvas || fixedUsableArea ? trayWidth : effectiveBaseplate.width) >
       MAX_BUILD_SIZE ||
-    (isSimpleSteppedCanvas ? trayDepth : effectiveBaseplate.height) >
+    (isSimpleSteppedCanvas || fixedUsableArea ? trayDepth : effectiveBaseplate.height) >
       MAX_BUILD_SIZE;
 
   const symmetryAxes =
@@ -893,6 +919,7 @@ export default function LayoutCanvas({
             viewH={viewH}
             showEffectiveBaseplate={showEffectiveBaseplate}
             effectiveBaseplate={effectiveBaseplate}
+            fixedUsableArea={fixedUsableArea}
             cornerRadius={cornerRadius}
             sideBevelWidth={sideBevelWidth}
             symmetryAxes={symmetryAxes}
@@ -1011,11 +1038,17 @@ export default function LayoutCanvas({
 
         {isEffectiveOversized && (
           <div className="absolute top-14 right-3 z-72 px-3 py-1.5 bg-[#3b1515]/90 border border-[#8b1a1a] rounded-sm text-xs text-[#f2b8b8] font-mono backdrop-blur-sm">
-            {isSimpleSteppedCanvas ? "打印边框超限" : "有效底板超限"}:{" "}
-            {(isSimpleSteppedCanvas ? trayWidth : effectiveBaseplate.width).toFixed(0)}{" "}
+            {isSimpleSteppedCanvas || fixedUsableArea ? "打印边框超限" : "有效底板超限"}:{" "}
+            {(isSimpleSteppedCanvas || fixedUsableArea ? trayWidth : effectiveBaseplate.width).toFixed(0)}{" "}
             ×{" "}
-            {(isSimpleSteppedCanvas ? trayDepth : effectiveBaseplate.height).toFixed(0)}{" "}
+            {(isSimpleSteppedCanvas || fixedUsableArea ? trayDepth : effectiveBaseplate.height).toFixed(0)}{" "}
             mm
+          </div>
+        )}
+
+        {fixedBoundaryViolationCount > 0 && (
+          <div className={`absolute ${isEffectiveOversized ? "top-24" : "top-14"} right-3 z-72 px-3 py-1.5 bg-[#3b1515]/90 border border-[#8b1a1a] rounded-sm text-xs text-[#f2b8b8] font-mono backdrop-blur-sm`}>
+            有 {fixedBoundaryViolationCount} 个凹槽超出可用区域
           </div>
         )}
 

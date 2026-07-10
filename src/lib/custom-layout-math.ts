@@ -1,6 +1,8 @@
 import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
-import type { CustomLayoutParams } from "@/types/custom-tray";
+import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
+import { RENDER_CONFIG } from "@/lib/config";
+import type { CustomLayoutParams, FreeSlot } from "@/types/custom-tray";
 
 export type CustomTraySizingMode = "auto" | "fixed";
 
@@ -166,4 +168,59 @@ export function calculateFixedCustomTrayUsableArea(
       Math.min(outerCornerRadius - inset, width / 2, depth / 2),
     ),
   };
+}
+
+function isPointWithinRoundedArea(
+  x: number,
+  y: number,
+  area: FixedCustomTrayUsableArea,
+) {
+  if (
+    x < area.x ||
+    x > area.x + area.width ||
+    y < area.y ||
+    y > area.y + area.depth
+  ) {
+    return false;
+  }
+
+  if (area.cornerRadius <= 0) {
+    return true;
+  }
+
+  const centerX = Math.min(
+    Math.max(x, area.x + area.cornerRadius),
+    area.x + area.width - area.cornerRadius,
+  );
+  const centerY = Math.min(
+    Math.max(y, area.y + area.cornerRadius),
+    area.y + area.depth - area.cornerRadius,
+  );
+  return Math.hypot(x - centerX, y - centerY) <= area.cornerRadius + 1e-6;
+}
+
+export function isCustomSlotWithinFixedTrayUsableArea(
+  slot: FreeSlot,
+  area: FixedCustomTrayUsableArea,
+): boolean {
+  const profile = getFreeSlotProfileGeometry(slot);
+  const radians = (slot.rotation * Math.PI) / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  const points = sampleSlotProfilePoints(
+    profile.width,
+    profile.height,
+    slot.shape,
+    profile.outerOffset,
+    RENDER_CONFIG.cylinderSegments,
+    profile.profileExponent,
+  );
+
+  return points.every((point) =>
+    isPointWithinRoundedArea(
+      slot.x + point.x * cos - point.y * sin,
+      slot.y + point.x * sin + point.y * cos,
+      area,
+    ),
+  );
 }

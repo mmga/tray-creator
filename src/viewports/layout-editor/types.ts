@@ -9,6 +9,7 @@ import type {
 } from "@/types/custom-tray";
 import type { CanvasSlotUpdate } from "@/lib/canvas-types";
 import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
+import type { FixedCustomTrayUsableArea } from "@/lib/custom-layout-math";
 
 export type LayoutEditorSlot = FreeSlot | SteppedSlot;
 
@@ -22,6 +23,7 @@ export interface LayoutEditorViewportModel {
     sideBevelWidth: number;
     showEffectiveBaseplate: boolean;
     showMaxBuildBoundary: boolean;
+    fixedUsableArea?: FixedCustomTrayUsableArea;
   };
   slots: LayoutEditorSlot[];
   overlays: {
