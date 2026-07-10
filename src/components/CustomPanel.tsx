@@ -210,35 +210,6 @@ export default function CustomPanel({
           summary={`已有 ${params.slots.length} 个凹槽`}>
           <div className="space-y-2">
             <div className="text-[10px] text-muted-foreground/70 font-bold tracking-wider uppercase mb-0.5">圆形</div>
-            <div className="flex items-end gap-2 rounded-sm border border-[#2e2a24] bg-[#1c1a16] p-2">
-              <div className="min-w-0 flex-1 space-y-1">
-                <Label htmlFor="custom-circle-diameter" className="text-xs text-muted-foreground">
-                  自定义直径
-                </Label>
-                <Input
-                  id="custom-circle-diameter"
-                  type="number"
-                  min={1}
-                  max={200}
-                  step={0.1}
-                  value={customCircleDiameter}
-                  onChange={(event) =>
-                    setCustomCircleDiameter(Number(event.target.value))
-                  }
-                  className="h-9 border-[#2e2a24] bg-[#120f0c] font-mono text-sm"
-                />
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleAddCustomCircleSlot}
-                className="h-9 shrink-0 border-[#2e2a24] bg-[#120f0c] px-3 text-xs hover:bg-[#2e2a24] hover:text-primary"
-              >
-                <Plus className="w-3 h-3 mr-1" />
-                添加
-              </Button>
-            </div>
             <div className="grid grid-cols-3 gap-1.5">
               {CUSTOM_BASE_PRESETS.map((preset) => (
                 <Button
@@ -252,6 +223,36 @@ export default function CustomPanel({
                   {preset.diameter}
                 </Button>
               ))}
+            </div>
+            <div className="flex items-center gap-2 rounded-sm border border-[#2e2a24] bg-[#1c1a16] p-2">
+              <Label
+                htmlFor="custom-circle-diameter"
+                className="shrink-0 whitespace-nowrap text-xs text-muted-foreground"
+              >
+                自定义直径
+              </Label>
+              <Input
+                id="custom-circle-diameter"
+                type="number"
+                min={1}
+                max={200}
+                step={0.1}
+                value={customCircleDiameter}
+                onChange={(event) =>
+                  setCustomCircleDiameter(Number(event.target.value))
+                }
+                className="h-9 min-w-0 flex-1 border-[#2e2a24] bg-[#120f0c] font-mono text-sm"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddCustomCircleSlot}
+                className="h-9 shrink-0 border-[#2e2a24] bg-[#120f0c] px-3 text-xs hover:bg-[#2e2a24] hover:text-primary"
+              >
+                <Plus className="mr-1 h-3 w-3" />
+                添加
+              </Button>
             </div>
 
             <div className="text-[10px] text-muted-foreground/70 font-bold tracking-wider uppercase mb-0.5 mt-1.5">椭圆</div>

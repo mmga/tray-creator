@@ -1,5 +1,5 @@
 import * as React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BASE_PRESETS } from "@/lib/config";
 import {
@@ -819,6 +819,34 @@ describe("CustomPanel", { timeout: 15000 }, () => {
         profileExponent: ELLIPSE_PRESETS[0].profileExponent,
       },
     );
+  });
+
+  it("places the custom circle diameter row after presets in one line", () => {
+    render(
+      <CustomPanel
+        params={CUSTOM_LAYOUT_DEFAULTS}
+        effectiveDimensions={{ width: 120, depth: 140 }}
+        updateParam={vi.fn()}
+        setParams={vi.fn()}
+        onAddSlot={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+      />,
+    );
+
+    const input = screen.getByLabelText("自定义直径");
+    const preset = screen.getByRole("button", {
+      name: String(HUNDRED_MM_PRESET.diameter),
+    });
+    const customRow = input.parentElement;
+
+    expect(
+      preset.compareDocumentPosition(input) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(customRow).toHaveClass("flex", "items-center");
+    expect(within(customRow!).getByRole("button", { name: "添加" })).toBeInTheDocument();
   });
 
   it("does not render a global ellipse fullness control", () => {
