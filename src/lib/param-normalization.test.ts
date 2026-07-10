@@ -326,12 +326,29 @@ describe("param normalization", () => {
     );
     expect(normalized.trayWidth).toBe(50);
     expect(normalized.trayDepth).toBe(300);
-    expect(normalized.spacing).toBe(2);
+    expect(normalized.spacing).toBe(1);
     expect(normalized.smoothingRadius).toBe(25);
     expect(normalized.splitGrooveDepth).toBe(
       STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth,
     );
     expect(normalized.splitGrooveType).toBe("profile");
+  });
+
+  it("保留自定义与阶梯模式的零间距和零边界间距", () => {
+    const custom = normalizeParamsForMode("custom", {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      spacing: 0,
+      boundarySpacing: 0,
+      boundarySpacingIndependent: true,
+    } as CustomLayoutParams) as CustomLayoutParams;
+    const stepped = normalizeParamsForMode("stepped", {
+      ...STEPPED_LAYOUT_DEFAULTS,
+      spacing: 0,
+    } as SteppedLayoutParams) as SteppedLayoutParams;
+
+    expect(custom.spacing).toBe(0);
+    expect(custom.boundarySpacing).toBe(0);
+    expect(stepped.spacing).toBe(0);
   });
 
   it("clears stepped split part group targets during normalization", () => {
