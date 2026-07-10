@@ -5,7 +5,7 @@ import type {
   SlotGroup,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
-import { calculateCustomEffectiveBaseplate } from "@/lib/custom-tray-model";
+import { calculateCustomTrayFootprint } from "@/lib/custom-layout-math";
 import { calculateSteppedEffectiveDimensions } from "@/lib/stepped-layout-math";
 import { getEffectiveGroupStructureParams } from "@/lib/stepped-group-params";
 import { calculateTrayDimensions } from "@/lib/tray-model";
@@ -176,10 +176,10 @@ export function calculateCustomPrice(
 ): number {
   if (volume <= 0 || params.slots.length === 0) return 0;
 
-  const effective = calculateCustomEffectiveBaseplate(params);
-  const footprintArea = effective.width * effective.depth;
+  const footprint = calculateCustomTrayFootprint(params);
+  const footprintArea = footprint.width * footprint.depth;
 
-  if (!effective.hasSlots || footprintArea <= 0) return 0;
+  if (!footprint.hasSlots || footprintArea <= 0) return 0;
 
   const rawPrice = calculateFlatTrayRawPrice(params.slots.length, footprintArea);
   return Math.ceil(rawPrice);

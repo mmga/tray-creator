@@ -8,8 +8,11 @@ import type { CustomLayoutParams } from "@/types/custom-tray";
 import {
   resolveBaseHolePresetKey,
 } from "@/lib/config";
-import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
-import { roundLayoutDimensionToTenth } from "@/lib/custom-layout-math";
+import {
+  calculateCustomEffectiveDimensions,
+  calculateCustomTrayFootprint,
+  roundLayoutDimensionToTenth,
+} from "@/lib/custom-layout-math";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import {
   createBaseBody,
@@ -25,12 +28,10 @@ const { extrudeLinear } = extrusions;
 const DEG_TO_RAD = Math.PI / 180;
 
 export function calculateCustomEffectiveBaseplate(params: CustomLayoutParams) {
-  const boundarySpacing = params.boundarySpacingIndependent
-    ? params.boundarySpacing
-    : params.spacing;
+  const effective = calculateCustomEffectiveDimensions(params);
   const sideBevelWidth = Math.max(0, params.sideBevelWidth);
 
-  if (params.slots.length === 0) {
+  if (!effective.width || !effective.depth) {
     return {
       hasSlots: false,
       width: 0,
@@ -42,39 +43,18 @@ export function calculateCustomEffectiveBaseplate(params: CustomLayoutParams) {
     };
   }
 
-  let minX = Infinity;
-  let maxX = -Infinity;
-  let minY = Infinity;
-  let maxY = -Infinity;
-
-  params.slots.forEach((slot) => {
-    const profile = getFreeSlotProfileGeometry(slot);
-    const { halfW, halfH } = getEllipseBoundingBox(
-      profile.width,
-      profile.height,
-      slot.rotation,
-      slot.shape,
-      profile.profileExponent,
-      profile.outerOffset,
-    );
-    minX = Math.min(minX, slot.x - halfW);
-    maxX = Math.max(maxX, slot.x + halfW);
-    minY = Math.min(minY, slot.y - halfH);
-    maxY = Math.max(maxY, slot.y + halfH);
-  });
-
   return {
     hasSlots: true,
     width: roundLayoutDimensionToTenth(
-      maxX - minX + boundarySpacing * 2 + sideBevelWidth * 2,
+      effective.width + sideBevelWidth * 2,
     ),
     depth: roundLayoutDimensionToTenth(
-      maxY - minY + boundarySpacing * 2 + sideBevelWidth * 2,
+      effective.depth + sideBevelWidth * 2,
     ),
-    minX,
-    maxX,
-    minY,
-    maxY,
+    minX: effective.minX,
+    maxX: effective.maxX,
+    minY: effective.minY,
+    maxY: effective.maxY,
   };
 }
 
@@ -88,15 +68,15 @@ export function calculateCustomEffectiveBaseplate(params: CustomLayoutParams) {
  */
 export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
   const { slots, baseThickness, holeDepth, cornerRadius, sideBevelWidth } = params;
-  const effective = calculateCustomEffectiveBaseplate(params);
-  const trayWidth = effective.hasSlots ? effective.width : params.trayWidth;
-  const trayDepth = effective.hasSlots ? effective.depth : params.trayDepth;
+  const footprint = calculateCustomTrayFootprint(params);
+  const trayWidth = footprint.width;
+  const trayDepth = footprint.depth;
   const totalHeight = baseThickness + holeDepth;
-  const sourceCenterX = effective.hasSlots
-    ? (effective.minX + effective.maxX) / 2
+  const sourceCenterX = footprint.sizingMode === "auto" && footprint.hasSlots
+    ? (footprint.minX + footprint.maxX) / 2
     : trayWidth / 2;
-  const sourceCenterY = effective.hasSlots
-    ? (effective.minY + effective.maxY) / 2
+  const sourceCenterY = footprint.sizingMode === "auto" && footprint.hasSlots
+    ? (footprint.minY + footprint.maxY) / 2
     : trayDepth / 2;
 
   // 1. 创建底板实体
@@ -161,10 +141,10 @@ export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
  * 计算自定义托盘的边界尺寸
  */
 export function calculateCustomTrayDimensions(params: CustomLayoutParams) {
-  const effective = calculateCustomEffectiveBaseplate(params);
+  const footprint = calculateCustomTrayFootprint(params);
   return {
-    width: effective.hasSlots ? effective.width : params.trayWidth,
-    depth: effective.hasSlots ? effective.depth : params.trayDepth,
+    width: footprint.width,
+    depth: footprint.depth,
     height: params.baseThickness + params.holeDepth,
   };
 }

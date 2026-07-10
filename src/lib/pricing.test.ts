@@ -217,6 +217,29 @@ describe("pricing", () => {
     ).toBeCloseTo(0.2976, 5);
   });
 
+  it("uses fixed outer footprint area for custom pricing", () => {
+    const params = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      traySizingMode: "fixed" as const,
+      trayWidth: 100,
+      trayDepth: 80,
+      slots: [
+        {
+          id: "fixed-slot",
+          x: 20,
+          y: 20,
+          shape: "circle" as const,
+          width: 20,
+          height: 20,
+          rotation: 0,
+        },
+      ],
+    };
+
+    expect(calculateCustomPrice(params, 1)).toBe(6);
+    expect(calculateCustomPrice({ ...params, slots: [] }, 1)).toBe(0);
+  });
+
   it("returns a zeroed stepped breakdown when no printable geometry exists", () => {
     const breakdown = getSteppedPricingBreakdown(STEPPED_LAYOUT_DEFAULTS, 120000);
 

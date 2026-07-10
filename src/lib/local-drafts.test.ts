@@ -169,7 +169,15 @@ describe("local drafts", () => {
         halfCircleSlots: true,
       }),
     );
-    const custom = createDraft("自定义草稿", "custom", createCustomParams());
+    const custom = createDraft(
+      "自定义草稿",
+      "custom",
+      createCustomParams({
+        traySizingMode: "fixed",
+        trayWidth: 120,
+        trayDepth: 80,
+      }),
+    );
     const simple = createDraft(
       "简易阶梯草稿",
       "simple-stepped",
@@ -200,8 +208,8 @@ describe("local drafts", () => {
     expect(custom.item.summary).toEqual({
       mode: "custom",
       slotCount: 1,
-      trayWidth: CUSTOM_LAYOUT_DEFAULTS.trayWidth,
-      trayDepth: CUSTOM_LAYOUT_DEFAULTS.trayDepth,
+      trayWidth: 120,
+      trayDepth: 80,
     });
     expect(simple.item.summary).toEqual({
       mode: "simple-stepped",

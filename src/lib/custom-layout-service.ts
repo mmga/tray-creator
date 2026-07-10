@@ -1,6 +1,10 @@
 import type * as THREE from "three";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
-import type { LayoutExtents } from "@/lib/custom-layout-math";
+import {
+  calculateCustomEffectiveDimensions,
+  resolveCustomTraySizingMode,
+  type LayoutExtents,
+} from "@/lib/custom-layout-math";
 import type { CustomWorkerPort, DownloadPort } from "@/lib/model-ports";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
 import { createParamBlob } from "@/lib/param-io";
@@ -28,14 +32,17 @@ export async function generateCustomPreview(
 
 export function getCustomSTLFilename(
   params: CustomLayoutParams,
-  effectiveDimensions: LayoutExtents,
+  effectiveDimensions: LayoutExtents = calculateCustomEffectiveDimensions(params),
 ): string {
-  const exportWidth =
-    effectiveDimensions.width > 0
+  const isFixed = resolveCustomTraySizingMode(params) === "fixed";
+  const exportWidth = isFixed
+    ? params.trayWidth
+    : effectiveDimensions.width > 0
       ? effectiveDimensions.width
       : params.trayWidth;
-  const exportDepth =
-    effectiveDimensions.depth > 0
+  const exportDepth = isFixed
+    ? params.trayDepth
+    : effectiveDimensions.depth > 0
       ? effectiveDimensions.depth
       : params.trayDepth;
 

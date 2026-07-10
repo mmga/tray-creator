@@ -39,14 +39,14 @@ describe("custom layout service", () => {
     );
   });
 
-  it("prefers effective dimensions for filenames and exports JSON alongside STL", async () => {
+  it("uses the actual tray footprint for filenames and exports JSON alongside STL", async () => {
     const geometry = { id: "custom-geom" } as never;
     const stlBlob = new Blob(["stl"], { type: "application/sla" });
     const workerPort = {
       generateCustom: vi.fn(),
       exportSTL: vi.fn().mockResolvedValue({
         blob: stlBlob,
-        filename: "tray_custom_120x80_2slots.stl",
+        filename: "tray_custom_150x90_2slots.stl",
       }),
     };
     const downloadPort = {
@@ -85,20 +85,19 @@ describe("custom layout service", () => {
       minY: 0,
       maxY: 0,
     };
-
     expect(getCustomSTLFilename(params, effectiveDimensions)).toBe(
       "tray_custom_120x80_2slots.stl",
     );
-    expect(
-      getCustomSTLFilename(params, {
-        width: 0,
-        depth: 0,
-        minX: 0,
-        maxX: 0,
-        minY: 0,
-        maxY: 0,
-      }),
-    ).toBe("tray_custom_260x200_2slots.stl");
+
+    const fixedParams = {
+      ...params,
+      traySizingMode: "fixed" as const,
+      trayWidth: 150,
+      trayDepth: 90,
+    };
+    expect(getCustomSTLFilename(fixedParams, effectiveDimensions)).toBe(
+      "tray_custom_150x90_2slots.stl",
+    );
 
     const paramsBlob = buildCustomParamsBlob(params);
     await expect(paramsBlob.text()).resolves.toContain('"version": 1');
@@ -106,7 +105,7 @@ describe("custom layout service", () => {
     await expect(paramsBlob.text()).resolves.toContain('"trayWidth": 260');
 
     await exportCustomModelFiles(
-      params,
+      fixedParams,
       effectiveDimensions,
       geometry,
       workerPort,
@@ -115,23 +114,23 @@ describe("custom layout service", () => {
 
     expect(workerPort.exportSTL).toHaveBeenCalledWith(
       geometry,
-      "tray_custom_120x80_2slots.stl",
+      "tray_custom_150x90_2slots.stl",
     );
     expect(downloadPort.downloadBlob).toHaveBeenCalledTimes(2);
     expect(downloadPort.downloadBlob).toHaveBeenNthCalledWith(
       1,
       stlBlob,
-      "tray_custom_120x80_2slots.stl",
+      "tray_custom_150x90_2slots.stl",
     );
     expect(downloadPort.downloadBlob.mock.calls[1]?.[1]).toBe(
-      "tray_custom_120x80_2slots.json",
+      "tray_custom_150x90_2slots.json",
     );
     await expect(
       downloadPort.downloadBlob.mock.calls[1]?.[0].text(),
     ).resolves.toContain('"mode": "custom"');
   });
 
-  it("uses upper edge dimensions for custom filenames when side bevel is enabled", () => {
+  it("uses derived outer dimensions for automatic filenames when side bevel is enabled", () => {
     const params = {
       ...CUSTOM_LAYOUT_DEFAULTS,
       boundarySpacing: 3,

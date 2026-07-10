@@ -55,6 +55,27 @@ describe("custom tray model", () => {
     });
   });
 
+  it("uses fixed outer dimensions without recentering placed slots", () => {
+    const params = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      traySizingMode: "fixed" as const,
+      trayWidth: 100,
+      trayDepth: 80,
+      cornerRadius: 0,
+      slots: [createCustomCircleSlot("slot-1", 20, 30, 20)],
+    };
+    const model = createCustomTrayModel(params);
+    const [[minX, minY], [maxX, maxY]] = measureBoundingBox(model);
+
+    expect(calculateCustomTrayDimensions(params)).toEqual({
+      width: 100,
+      depth: 80,
+      height: 6,
+    });
+    expect(maxX - minX).toBeCloseTo(100, 5);
+    expect(maxY - minY).toBeCloseTo(80, 5);
+  });
+
   it("insets the custom tray top edge by the configured side bevel width", () => {
     const params = {
       ...CUSTOM_LAYOUT_DEFAULTS,
