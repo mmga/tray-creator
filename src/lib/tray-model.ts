@@ -1,11 +1,12 @@
 import { booleans, primitives, transforms } from "@jscad/modeling";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { TrayParams } from "@/types/tray";
+import { RENDER_CONFIG } from "@/lib/config";
 import {
-  RENDER_CONFIG,
-  resolveBaseHolePresetKey,
-} from "@/lib/config";
-import { getLegacyCircleSlotDiameter } from "@/lib/slot-definitions";
+  getGridSlotGeometry,
+  isRectangularGridSlot,
+  resolveGridBaseHolePresetKey,
+} from "@/lib/grid-config";
 import {
   createBaseBody,
   subtractBaseHoles,
@@ -105,38 +106,33 @@ export function createTrayModel(params: TrayParams): Geom3 {
   const {
     rows,
     columns,
-    holeDiameter,
     baseThickness,
     holeDepth,
     cornerRadius,
     sideBevelWidth,
   } = params;
 
-  // 实际凹槽直径（已内置公差）
-  const actualHoleDiameter =
-    typeof params.slotDiameter === "number" && Number.isFinite(params.slotDiameter)
-      ? params.slotDiameter
-      : getLegacyCircleSlotDiameter(holeDiameter);
-  const holeRadius = actualHoleDiameter / 2;
+  const slot = getGridSlotGeometry(params);
   const { spacingX, spacingY } = getGridSpacingAxes(params);
   const { boundarySpacingX, boundarySpacingY } =
     getGridBoundarySpacingAxes(params);
-  const baseHoleSize = resolveBaseHolePresetKey(holeDiameter);
+  const baseHoleSize = resolveGridBaseHolePresetKey(params);
 
   // 计算总尺寸：2 * 边界间距 + (N-1) 段凹槽间距 + N 个凹槽
   const safeSideBevelWidth = Math.max(0, sideBevelWidth);
   const topWidth =
     2 * boundarySpacingX +
     (columns - 1) * spacingX +
-    columns * actualHoleDiameter;
+    columns * slot.slotWidth;
   const topDepth =
-    2 * boundarySpacingY + (rows - 1) * spacingY + rows * actualHoleDiameter;
+    2 * boundarySpacingY + (rows - 1) * spacingY + rows * slot.slotHeight;
   const totalWidth = topWidth + safeSideBevelWidth * 2;
   const totalDepth = topDepth + safeSideBevelWidth * 2;
   const totalHeight = params.basePlateOnly ? baseThickness : baseThickness + holeDepth;
   const usesHalfCircleSlots =
     !params.basePlateOnly &&
     params.halfCircleSlots &&
+    !isRectangularGridSlot(params) &&
     (rows === 1 || columns === 1);
   const halfCircleSplitAxis = rows === 1 ? "y" : "x";
 
@@ -176,14 +172,14 @@ export function createTrayModel(params: TrayParams): Geom3 {
           -totalWidth / 2 +
           safeSideBevelWidth +
           boundarySpacingX +
-          holeRadius +
-          col * (actualHoleDiameter + spacingX),
+          slot.slotWidth / 2 +
+          col * (slot.slotWidth + spacingX),
         cy:
           -totalDepth / 2 +
           safeSideBevelWidth +
           boundarySpacingY +
-          holeRadius +
-          row * (actualHoleDiameter + spacingY),
+          slot.slotHeight / 2 +
+          row * (slot.slotHeight + spacingY),
         baseHoleSize,
       });
     }
@@ -197,11 +193,15 @@ export function createTrayModel(params: TrayParams): Geom3 {
         cy,
         baseThickness + holeDepth / 2 + (usesHalfCircleSlots ? 0.01 : 0),
       ],
-      cylinder({
-        radius: holeRadius,
-        height: holeDepth + 0.02, // 略微超过以确保布尔运算干净
-        segments: RENDER_CONFIG.cylinderSegments,
-      }),
+      slot.shape === "circle"
+        ? cylinder({
+            radius: slot.slotWidth / 2,
+            height: holeDepth + 0.02,
+            segments: RENDER_CONFIG.cylinderSegments,
+          })
+        : cuboid({
+            size: [slot.slotWidth, slot.slotHeight, holeDepth + 0.02],
+          }),
     ),
   );
 
@@ -223,14 +223,10 @@ export function calculateTrayDimensions(params: TrayParams) {
   const {
     rows,
     columns,
-    holeDiameter,
     baseThickness,
     holeDepth,
   } = params;
-  const actualHoleDiameter =
-    typeof params.slotDiameter === "number" && Number.isFinite(params.slotDiameter)
-      ? params.slotDiameter
-      : getLegacyCircleSlotDiameter(holeDiameter);
+  const slot = getGridSlotGeometry(params);
   const { spacingX, spacingY } = getGridSpacingAxes(params);
   const { boundarySpacingX, boundarySpacingY } =
     getGridBoundarySpacingAxes(params);
@@ -238,12 +234,12 @@ export function calculateTrayDimensions(params: TrayParams) {
     width:
       2 * boundarySpacingX +
       (columns - 1) * spacingX +
-      columns * actualHoleDiameter +
+      columns * slot.slotWidth +
       Math.max(0, params.sideBevelWidth) * 2,
     depth:
       2 * boundarySpacingY +
       (rows - 1) * spacingY +
-      rows * actualHoleDiameter +
+      rows * slot.slotHeight +
       Math.max(0, params.sideBevelWidth) * 2,
     height: params.basePlateOnly ? baseThickness : baseThickness + holeDepth,
   };

@@ -6,7 +6,9 @@ import {
   getGridBoundarySpacingAxes,
   getGridSpacingAxes,
 } from "@/lib/tray-model";
-import { getLegacyCircleSlotDiameter } from "@/lib/slot-definitions";
+import {
+  getGridSlotGeometry,
+} from "@/lib/grid-config";
 import { getCanvasDashAttributes } from "@/lib/canvas-dash-styles";
 
 interface GridLayoutPreviewProps {
@@ -16,11 +18,7 @@ interface GridLayoutPreviewProps {
 export function GridLayoutPreview({ params }: GridLayoutPreviewProps) {
   const boundaryDash = getCanvasDashAttributes("boundary", 1);
   const dimensions = calculateTrayDimensions(params);
-  const actualHoleDiameter =
-    typeof params.slotDiameter === "number" && Number.isFinite(params.slotDiameter)
-      ? params.slotDiameter
-      : getLegacyCircleSlotDiameter(params.holeDiameter);
-  const radius = actualHoleDiameter / 2;
+  const slotGeometry = getGridSlotGeometry(params);
   const { spacingX, spacingY } = getGridSpacingAxes(params);
   const { boundarySpacingX, boundarySpacingY } =
     getGridBoundarySpacingAxes(params);
@@ -45,13 +43,13 @@ export function GridLayoutPreview({ params }: GridLayoutPreviewProps) {
       x:
         safeBevelWidth +
         boundarySpacingX +
-        radius +
-        col * (actualHoleDiameter + spacingX),
+        slotGeometry.slotWidth / 2 +
+        col * (slotGeometry.slotWidth + spacingX),
       y: dimensions.depth - (
         safeBevelWidth +
         boundarySpacingY +
-        radius +
-        row * (actualHoleDiameter + spacingY)
+        slotGeometry.slotHeight / 2 +
+        row * (slotGeometry.slotHeight + spacingY)
       ),
     };
   });
@@ -115,16 +113,30 @@ export function GridLayoutPreview({ params }: GridLayoutPreviewProps) {
           )}
           {!params.basePlateOnly &&
             slots.map((slot) => (
-              <circle
-                key={slot.id}
-                cx={slot.x}
-                cy={slot.y}
-                r={radius}
-                fill="#eab308"
-                fillOpacity={0.65}
-                stroke="#fff"
-                strokeWidth={0.3}
-              />
+              slotGeometry.shape === "circle" ? (
+                <circle
+                  key={slot.id}
+                  cx={slot.x}
+                  cy={slot.y}
+                  r={slotGeometry.slotWidth / 2}
+                  fill="#eab308"
+                  fillOpacity={0.65}
+                  stroke="#fff"
+                  strokeWidth={0.3}
+                />
+              ) : (
+                <rect
+                  key={slot.id}
+                  x={slot.x - slotGeometry.slotWidth / 2}
+                  y={slot.y - slotGeometry.slotHeight / 2}
+                  width={slotGeometry.slotWidth}
+                  height={slotGeometry.slotHeight}
+                  fill="#eab308"
+                  fillOpacity={0.65}
+                  stroke="#fff"
+                  strokeWidth={0.3}
+                />
+              )
             ))}
         </svg>
         <div className="absolute bottom-3 left-3 z-20 rounded-sm border border-[#2e2a24] bg-[#100d0a]/90 px-3 py-1.5 font-mono text-xs text-[#d8d1c5]">

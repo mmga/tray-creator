@@ -9,6 +9,7 @@ import type {
 import { CUSTOM_LAYOUT_DEFAULTS, CUSTOM_LIMITS } from "@/lib/custom-config";
 import { resolveBaseHolePresetKey } from "@/lib/config";
 import { PARAM_CONFIG } from "@/lib/grid-config";
+import { normalizeGridParams } from "@/lib/grid-model-state";
 import {
   getRawSteppedDisconnectDistance,
   getRawSteppedSmoothingRadius,
@@ -30,7 +31,6 @@ import {
 import { applySteppedBaseHoleDerivedFields } from "@/lib/stepped-base-hole";
 import { createGroupStructureOverrides } from "@/lib/stepped-group-params";
 import {
-  createGridSlotSnapshotFromDefinition,
   normalizeFreeSlotInstanceSnapshot,
 } from "@/lib/slot-instance-factory";
 
@@ -225,15 +225,7 @@ function validateGridRequiredFields(params: TrayParams) {
 }
 
 function normalizeGridSlotInstances(params: TrayParams) {
-  const obj = params as unknown as Record<string, unknown>;
-  const slotSnapshot = createGridSlotSnapshotFromDefinition(
-    obj.holeDiameter as number,
-  );
-  obj.slotDefinitionId = slotSnapshot.slotDefinitionId;
-  obj.slotDiameter =
-    typeof obj.slotDiameter === "number" && Number.isFinite(obj.slotDiameter)
-      ? obj.slotDiameter
-      : slotSnapshot.slotDiameter;
+  Object.assign(params, normalizeGridParams(params));
 }
 
 function clampAndFillGridDerivedFields(params: TrayParams) {
@@ -264,10 +256,10 @@ function clampAndFillGridDerivedFields(params: TrayParams) {
   if (obj.basePlateOnly) {
     obj.halfCircleSlots = false;
   }
-  obj.baseHoleSize = resolveBaseHolePresetKey(obj.holeDiameter as number);
   if (obj.basePlateOnly) {
     obj.enableBaseHole = true;
   }
+  Object.assign(params, normalizeGridParams(params));
 }
 
 function validateCustomRequiredFields(params: CustomLayoutParams) {

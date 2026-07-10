@@ -1,10 +1,51 @@
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
-import { resolveBaseHolePresetKey } from "@/lib/config";
+import {
+  createOldWorldGridSlotSnapshot,
+  findOldWorldRectangularPreset,
+  resolveGridBaseHolePresetKey,
+} from "@/lib/grid-config";
+import { findCircleSlotDefinitionById } from "@/lib/slot-definitions";
 import { createGridSlotSnapshotFromDefinition } from "@/lib/slot-instance-factory";
 import type { TrayParams } from "@/types/tray";
 
 function getFiniteOr(value: unknown, fallback: number) {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function getNormalizedSlotSnapshot(next: TrayParams) {
+  const rectangularPreset =
+    next.slotShape === "rectangle"
+      ? findOldWorldRectangularPreset(next.slotDefinitionId)
+      : undefined;
+
+  if (rectangularPreset) {
+    const defaults = createOldWorldGridSlotSnapshot(rectangularPreset);
+    const defaultBaseWidth = defaults.slotBaseWidth ?? rectangularPreset.width;
+    const defaultBaseHeight = defaults.slotBaseHeight ?? rectangularPreset.height;
+    const defaultSlotWidth = defaults.slotWidth ?? defaultBaseWidth + 0.4;
+    const defaultSlotHeight = defaults.slotHeight ?? defaultBaseHeight + 0.4;
+    const slotBaseWidth = getFiniteOr(next.slotBaseWidth, defaultBaseWidth);
+    const slotBaseHeight = getFiniteOr(next.slotBaseHeight, defaultBaseHeight);
+    return {
+      ...defaults,
+      holeDiameter: Math.min(slotBaseWidth, slotBaseHeight),
+      slotBaseWidth,
+      slotBaseHeight,
+      slotWidth: getFiniteOr(next.slotWidth, defaultSlotWidth),
+      slotHeight: getFiniteOr(next.slotHeight, defaultSlotHeight),
+      slotDiameter: undefined,
+    };
+  }
+
+  const slotSnapshot = createGridSlotSnapshotFromDefinition(next.holeDiameter);
+  return {
+    ...slotSnapshot,
+    slotShape: "circle" as const,
+    slotBaseWidth: undefined,
+    slotBaseHeight: undefined,
+    slotWidth: undefined,
+    slotHeight: undefined,
+  };
 }
 
 export function normalizeGridParams(next: TrayParams): TrayParams {
@@ -21,13 +62,15 @@ export function normalizeGridParams(next: TrayParams): TrayParams {
     ? getFiniteOr(next.boundarySpacing, spacing)
     : spacing;
   const basePlateOnly = Boolean(next.basePlateOnly);
-  const slotSnapshot = createGridSlotSnapshotFromDefinition(next.holeDiameter);
+  const slotSnapshot = getNormalizedSlotSnapshot(next);
   const halfCircleSlots =
     !basePlateOnly &&
+    next.slotShape !== "rectangle" &&
     (next.rows === 1 || next.columns === 1) &&
     Boolean(next.halfCircleSlots);
   const enableBaseHole = basePlateOnly ? true : Boolean(next.enableBaseHole);
-  const baseHoleSize = resolveBaseHolePresetKey(next.holeDiameter);
+  const normalizedSlotParams = { ...next, ...slotSnapshot } as TrayParams;
+  const baseHoleSize = resolveGridBaseHolePresetKey(normalizedSlotParams);
   const sideBevelWidth = getFiniteOr(
     next.sideBevelWidth,
     DEFAULT_TRAY_PARAMS.sideBevelWidth,
@@ -42,7 +85,10 @@ export function normalizeGridParams(next: TrayParams): TrayParams {
     boundarySpacingIndependent,
     boundarySpacing,
     ...slotSnapshot,
-    slotDiameter: getFiniteOr(next.slotDiameter, slotSnapshot.slotDiameter),
+    slotDiameter:
+      slotSnapshot.slotShape === "rectangle"
+        ? undefined
+        : getFiniteOr(next.slotDiameter, slotSnapshot.slotDiameter ?? next.holeDiameter),
     halfCircleSlots,
     basePlateOnly,
     sideBevelWidth,
@@ -57,6 +103,33 @@ export function replaceGridParams(next: TrayParams): TrayParams {
 
 export function resetGridParams(): TrayParams {
   return normalizeGridParams({ ...DEFAULT_TRAY_PARAMS });
+}
+
+export function selectGridSlotDefinition(
+  params: TrayParams,
+  slotDefinitionId: string,
+): TrayParams {
+  const rectangularPreset = findOldWorldRectangularPreset(slotDefinitionId);
+  if (rectangularPreset) {
+    return normalizeGridParams({
+      ...params,
+      ...createOldWorldGridSlotSnapshot(rectangularPreset),
+      halfCircleSlots: false,
+    });
+  }
+
+  const circleDefinition = findCircleSlotDefinitionById(slotDefinitionId);
+  if (!circleDefinition) {
+    return params;
+  }
+
+  return normalizeGridParams({
+    ...params,
+    holeDiameter: circleDefinition.baseDiameter,
+    ...createGridSlotSnapshotFromDefinition(circleDefinition.baseDiameter),
+    slotShape: "circle",
+    halfCircleSlots: params.halfCircleSlots,
+  });
 }
 
 export function updateGridParam<K extends keyof TrayParams>(
@@ -91,6 +164,7 @@ export function updateGridParam<K extends keyof TrayParams>(
       ...params,
       holeDiameter,
       ...createGridSlotSnapshotFromDefinition(holeDiameter),
+      slotShape: "circle",
     });
   }
 

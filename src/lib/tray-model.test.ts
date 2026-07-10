@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { geometries, measurements } from "@jscad/modeling";
 import stlSerializer from "@jscad/stl-serializer";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
+import { createOldWorldGridSlotSnapshot } from "@/lib/grid-config";
 import {
   calculateTrayDimensions,
   createTrayModel,
@@ -43,6 +44,34 @@ function getSerializedStlByteLength(model: ReturnType<typeof createTrayModel>) {
 }
 
 describe("tray model", () => {
+  it("creates a rectangular Old World tray with independent slot axes", () => {
+    const params = {
+      ...DEFAULT_TRAY_PARAMS,
+      ...createOldWorldGridSlotSnapshot({
+        id: "old-world-30x60",
+        name: "旧世界 30×60mm",
+        width: 30,
+        height: 60,
+      }),
+      rows: 2,
+      columns: 3,
+      spacing: 5,
+      boundarySpacing: 5,
+      boundarySpacingIndependent: true,
+      halfCircleSlots: true,
+    };
+    const dimensions = calculateTrayDimensions(params);
+    const model = createTrayModel(params);
+    const bounds = measureBoundingBox(model);
+
+    expect(dimensions.width).toBeCloseTo(111.2, 5);
+    expect(dimensions.depth).toBeCloseTo(135.8, 5);
+    expect(dimensions.height).toBe(6);
+    expect(bounds[1][0] - bounds[0][0]).toBeCloseTo(dimensions.width, 5);
+    expect(bounds[1][1] - bounds[0][1]).toBeCloseTo(dimensions.depth, 5);
+    expect(measureVolume(model)).toBeGreaterThan(0);
+  });
+
   it("derives spacing axes from unified and independent spacing settings", () => {
     expect(getGridSpacingAxes(DEFAULT_TRAY_PARAMS)).toEqual({
       spacingX: 5,

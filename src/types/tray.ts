@@ -1,4 +1,5 @@
 export type BaseHolePresetKey = "25" | "40";
+export type GridSlotShape = "circle" | "rectangle";
 
 /**
  * 托盘参数接口
@@ -12,8 +13,18 @@ export interface TrayParams {
   holeDiameter: number;
   /** 创建该凹槽规格所用的统一凹槽定义 ID */
   slotDefinitionId?: string;
+  /** 网格凹槽轮廓类型；旧文件缺失时按圆形处理 */
+  slotShape?: GridSlotShape;
   /** 最终生成的凹槽直径 (mm)，已内置公差 */
   slotDiameter?: number;
+  /** 矩形凹槽的名义宽度 (mm)，仅 slotShape=rectangle 时生效 */
+  slotBaseWidth?: number;
+  /** 矩形凹槽的名义深度 (mm)，仅 slotShape=rectangle 时生效 */
+  slotBaseHeight?: number;
+  /** 矩形凹槽的最终宽度快照 (mm)，已内置公差 */
+  slotWidth?: number;
+  /** 矩形凹槽的最终深度快照 (mm)，已内置公差 */
+  slotHeight?: number;
   /** 间距 (mm)，X/Y 未独立时作为统一间距；也是兼容旧文件的共享值 */
   spacing: number;
   /** 是否分别设置 X / Y 轴凹槽间距 */

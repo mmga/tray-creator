@@ -6,7 +6,11 @@ import {
   CUSTOM_LAYOUT_DEFAULTS,
   ELLIPSE_PRESETS,
 } from "@/lib/custom-config";
-import { PARAM_CONFIG, DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
+import {
+  createOldWorldGridSlotSnapshot,
+  DEFAULT_TRAY_PARAMS,
+  PARAM_CONFIG,
+} from "@/lib/grid-config";
 import { calculateCustomEffectiveDimensions } from "@/lib/custom-layout-math";
 import { calculateSimpleSteppedDimensions, deriveSimpleSteppedLayout } from "@/lib/simple-stepped-layout";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
@@ -376,12 +380,13 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
 
   it("wires preset changes and boundary spacing controls", () => {
     const updateParam = vi.fn();
+    const replaceParams = vi.fn();
 
     render(
       <ParameterPanel
         params={{ ...DEFAULT_TRAY_PARAMS, boundarySpacingIndependent: true }}
         updateParam={updateParam}
-        replaceParams={vi.fn()}
+        replaceParams={replaceParams}
         resetParams={vi.fn()}
         onGenerate={vi.fn()}
         onExportSTL={vi.fn()}
@@ -391,7 +396,7 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
     );
 
     fireEvent.click(
-      screen.getByRole("button", { name: HUNDRED_MM_PRESET.name }),
+      screen.getByRole("button", { name: `圆形 · ${HUNDRED_MM_PRESET.name}` }),
     );
     fireEvent.click(
       screen.getByRole("switch", {
@@ -404,18 +409,20 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
       }),
     );
 
-    expect(updateParam).toHaveBeenNthCalledWith(
-      1,
-      "holeDiameter",
-      HUNDRED_MM_PRESET.diameter,
+    expect(replaceParams).toHaveBeenCalledWith(
+      expect.objectContaining({
+        holeDiameter: HUNDRED_MM_PRESET.diameter,
+        slotDefinitionId: "circle-100",
+        slotShape: "circle",
+      }),
     );
     expect(updateParam).toHaveBeenNthCalledWith(
-      2,
+      1,
       "boundarySpacingIndependent",
       false,
     );
     expect(updateParam).toHaveBeenNthCalledWith(
-      3,
+      2,
       "boundarySpacing",
       DEFAULT_TRAY_PARAMS.boundarySpacing + PARAM_CONFIG.boundarySpacing.step,
     );
@@ -523,7 +530,7 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
       />,
     );
 
-    expect(screen.getByText("选择底座尺寸")).toBeInTheDocument();
+    expect(screen.getByText("选择底座规格")).toBeInTheDocument();
     expect(screen.getByText("待锻造")).toBeInTheDocument();
 
     fireEvent.click(
@@ -549,6 +556,66 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
     );
     expect(updateParam).toHaveBeenNthCalledWith(2, "spacingX", 6.6);
     expect(updateParam).toHaveBeenNthCalledWith(3, "spacingY", 7.6);
+  });
+
+  it("selects Old World rectangular presets and hides the circular half-slot mode", () => {
+    const replaceParams = vi.fn();
+
+    render(
+      <ParameterPanel
+        params={{ ...DEFAULT_TRAY_PARAMS, rows: 1, halfCircleSlots: true }}
+        updateParam={vi.fn()}
+        replaceParams={replaceParams}
+        resetParams={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "旧世界 30×60mm" }));
+
+    expect(replaceParams).toHaveBeenCalledWith(
+      expect.objectContaining({
+        slotShape: "rectangle",
+        slotDefinitionId: "old-world-30x60",
+        slotBaseWidth: 30,
+        slotBaseHeight: 60,
+        slotWidth: 30.4,
+        slotHeight: 60.4,
+        halfCircleSlots: false,
+        baseHoleSize: "25",
+      }),
+    );
+  });
+
+  it("shows only full-slot and base-plate structures for Old World rectangles", () => {
+    render(
+      <ParameterPanel
+        params={{
+          ...DEFAULT_TRAY_PARAMS,
+          ...createOldWorldGridSlotSnapshot({
+            id: "old-world-30x60",
+            name: "旧世界 30×60mm",
+            width: 30,
+            height: 60,
+          }),
+          rows: 1,
+          halfCircleSlots: false,
+        }}
+        updateParam={vi.fn()}
+        replaceParams={vi.fn()}
+        resetParams={vi.fn()}
+        onGenerate={vi.fn()}
+        onExportSTL={vi.fn()}
+        isGenerating={false}
+        volume={0}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "完整矩形槽" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "半圆槽" })).toBeNull();
   });
 
   it("routes structure controls when base holes are enabled and shows generating text without volume", () => {

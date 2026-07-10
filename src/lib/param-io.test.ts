@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
+import {
+  createOldWorldGridSlotSnapshot,
+  DEFAULT_TRAY_PARAMS,
+} from "@/lib/grid-config";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
@@ -132,6 +135,37 @@ describe("param-io", () => {
     expect(parsed.rows).toBe(30);
     expect(parsed.columns).toBe(30);
     expect(parsed.slotDefinitionId).toBe("circle-32");
+  });
+
+  it("preserves Old World rectangular slot snapshots in grid files", () => {
+    const parsed = parseParamFileObject(
+      {
+        version: 1,
+        mode: "grid" as AppMode,
+        params: {
+          ...DEFAULT_TRAY_PARAMS,
+          ...createOldWorldGridSlotSnapshot({
+            id: "old-world-30x60",
+            name: "旧世界 30×60mm",
+            width: 30,
+            height: 60,
+          }),
+          halfCircleSlots: true,
+        },
+      },
+      "grid",
+    ) as TrayParams;
+
+    expect(parsed).toMatchObject({
+      slotShape: "rectangle",
+      slotDefinitionId: "old-world-30x60",
+      slotBaseWidth: 30,
+      slotBaseHeight: 60,
+      slotWidth: 30.4,
+      slotHeight: 60.4,
+      halfCircleSlots: false,
+      baseHoleSize: "25",
+    });
   });
 
   it("preserves imported half-circle slots only for single-axis grids", () => {

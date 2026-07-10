@@ -4,6 +4,7 @@ import {
   normalizeGridParams,
   replaceGridParams,
   resetGridParams,
+  selectGridSlotDefinition,
   updateGridParam,
 } from "@/lib/grid-model-state";
 
@@ -48,6 +49,58 @@ describe("grid model state", () => {
       ...DEFAULT_TRAY_PARAMS,
       boundarySpacing: DEFAULT_TRAY_PARAMS.spacing,
       enableBaseHole: true,
+    });
+  });
+
+  it("selects Old World rectangular presets without resetting grid parameters", () => {
+    const selected = selectGridSlotDefinition(
+      {
+        ...DEFAULT_TRAY_PARAMS,
+        rows: 3,
+        columns: 4,
+        spacing: 7,
+        boundarySpacingIndependent: true,
+        boundarySpacing: 9,
+        halfCircleSlots: true,
+      },
+      "old-world-30x60",
+    );
+
+    expect(selected).toMatchObject({
+      rows: 3,
+      columns: 4,
+      spacing: 7,
+      boundarySpacing: 9,
+      slotShape: "rectangle",
+      slotDefinitionId: "old-world-30x60",
+      slotBaseWidth: 30,
+      slotBaseHeight: 60,
+      slotWidth: 30.4,
+      slotHeight: 60.4,
+      holeDiameter: 30,
+      halfCircleSlots: false,
+      baseHoleSize: "25",
+    });
+
+    expect(
+      selectGridSlotDefinition(DEFAULT_TRAY_PARAMS, "old-world-50x75")
+        .baseHoleSize,
+    ).toBe("40");
+  });
+
+  it("keeps legacy grid params circular when no rectangular shape is specified", () => {
+    const normalized = normalizeGridParams({
+      ...DEFAULT_TRAY_PARAMS,
+      slotShape: undefined,
+      slotDefinitionId: undefined,
+      holeDiameter: 32,
+      slotDiameter: undefined,
+    });
+
+    expect(normalized).toMatchObject({
+      slotShape: "circle",
+      slotDefinitionId: "circle-32",
+      slotDiameter: 32.4,
     });
   });
 

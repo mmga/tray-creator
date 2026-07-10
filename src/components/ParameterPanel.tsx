@@ -3,8 +3,14 @@ import type { TrayParams } from "@/types/tray";
 import {
   BASE_PRESETS,
   MAX_BUILD_SIZE,
-  resolveBaseHolePresetKey,
 } from "@/lib/config";
+import {
+  OLD_WORLD_RECTANGULAR_PRESETS,
+  getGridSlotGeometry,
+  isRectangularGridSlot,
+  resolveGridBaseHolePresetKey,
+} from "@/lib/grid-config";
+import { selectGridSlotDefinition } from "@/lib/grid-model-state";
 import { PARAM_CONFIG } from "@/lib/grid-config";
 import {
   calculateTrayDimensions,
@@ -56,6 +62,8 @@ export default function ParameterPanel({
   draftActions,
 }: ParameterPanelProps) {
   const dimensions = calculateTrayDimensions(params);
+  const slotGeometry = getGridSlotGeometry(params);
+  const isRectangularSlot = isRectangularGridSlot(params);
   const { spacingX, spacingY } = getGridSpacingAxes(params);
   const { boundarySpacingX, boundarySpacingY } =
     getGridBoundarySpacingAxes(params);
@@ -67,7 +75,8 @@ export default function ParameterPanel({
     : params.spacingIndependent
       ? `边距 X${boundarySpacingX}mm / Y${boundarySpacingY}mm`
       : `边距${boundarySpacingX}mm`;
-  const canUseHalfCircleSlots = params.rows === 1 || params.columns === 1;
+  const canUseHalfCircleSlots =
+    !isRectangularSlot && (params.rows === 1 || params.columns === 1);
   const structureMode = params.basePlateOnly
     ? "base-plate-only"
     : params.halfCircleSlots
@@ -77,16 +86,18 @@ export default function ParameterPanel({
     structureMode === "base-plate-only"
       ? "仅内嵌孔底板"
       : structureMode === "half-circle"
-        ? "半圆槽"
-        : "完整圆槽";
+      ? "半圆槽"
+        : isRectangularSlot
+          ? "完整矩形槽"
+          : "完整圆槽";
   const isOversized = dimensions.width > MAX_BUILD_SIZE || dimensions.depth > MAX_BUILD_SIZE;
   const [autoPreview, setAutoPreview] = useState(false);
-  const selectedPresetIndex = BASE_PRESETS.findIndex(
-    (preset) => preset.diameter === params.holeDiameter,
-  );
-  const selectedPresetValue =
-    selectedPresetIndex >= 0 ? String(selectedPresetIndex) : undefined;
-  const resolvedBaseHoleSize = resolveBaseHolePresetKey(params.holeDiameter);
+  const selectedPresetValue = isRectangularSlot
+    ? params.slotDefinitionId
+    : BASE_PRESETS.some((preset) => preset.diameter === params.holeDiameter)
+      ? `circle-${params.holeDiameter}`
+      : undefined;
+  const resolvedBaseHoleSize = resolveGridBaseHolePresetKey(params);
 
   useAutoPreview(params, {
     enabled: autoPreview,
@@ -96,11 +107,7 @@ export default function ParameterPanel({
   });
 
   const handlePresetChange = (value: string) => {
-    const index = Number.parseInt(value, 10);
-    const preset = BASE_PRESETS[index];
-    if (preset) {
-      updateParam("holeDiameter", preset.diameter);
-    }
+    replaceParams(selectGridSlotDefinition(params, value));
   };
 
   const handleReset = () => {
@@ -134,23 +141,32 @@ export default function ParameterPanel({
       {/* 布局参数 — 移动端默认展开 */}
       <div className="iron-panel rounded-sm p-4">
         <SectionHeader icon={Layout} title="布局" collapsible defaultOpen={true}
-          summary={`${params.columns}×${params.rows} / ${structureModeLabel} / ⌀${params.holeDiameter}mm / ${spacingSummary} / ${boundarySummary}`}>
+          summary={`${params.columns}×${params.rows} / ${structureModeLabel} / ${isRectangularSlot ? `${slotGeometry.baseWidth}×${slotGeometry.baseHeight}mm` : `⌀${params.holeDiameter}mm`} / ${spacingSummary} / ${boundarySummary}`}>
           <div className="space-y-4">
             {/* 底座预设 */}
             <div className="space-y-1.5">
-              <Label className="text-sm text-muted-foreground">底座尺寸</Label>
+              <Label className="text-sm text-muted-foreground">底座规格</Label>
               <Select
                 value={selectedPresetValue}
                 onValueChange={handlePresetChange}
               >
                 <SelectTrigger className="bg-[#1c1a16] border-[#2e2a24] text-foreground hover:border-primary/40 cursor-pointer transition-all duration-200">
-                  <SelectValue placeholder="选择底座尺寸" />
+                  <SelectValue placeholder="选择底座规格" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#16140f] border-[#2e2a24]">
-                  {BASE_PRESETS.map((preset, i) => (
+                  {BASE_PRESETS.map((preset) => (
                     <SelectItem
-                      key={i}
-                      value={String(i)}
+                      key={preset.diameter}
+                      value={`circle-${preset.diameter}`}
+                      className="text-foreground/90 cursor-pointer focus:bg-primary/10 focus:text-primary"
+                    >
+                      圆形 · {preset.name}
+                    </SelectItem>
+                  ))}
+                  {OLD_WORLD_RECTANGULAR_PRESETS.map((preset) => (
+                    <SelectItem
+                      key={preset.id}
+                      value={preset.id}
                       className="text-foreground/90 cursor-pointer focus:bg-primary/10 focus:text-primary"
                     >
                       {preset.name}
@@ -241,10 +257,12 @@ export default function ParameterPanel({
           summary={`结构模式：${structureModeLabel}`}>
           <div className="space-y-2">
             <Label className="text-sm text-muted-foreground">结构模式</Label>
-            <div className="grid grid-cols-3 gap-1 rounded-sm border border-[#2e2a24] bg-[#1c1a16] p-1">
+            <div className={`grid ${isRectangularSlot ? "grid-cols-2" : "grid-cols-3"} gap-1 rounded-sm border border-[#2e2a24] bg-[#1c1a16] p-1`}>
               {[
-                { mode: "full" as const, label: "完整圆槽", disabled: false },
-                { mode: "half-circle" as const, label: "半圆槽", disabled: !canUseHalfCircleSlots },
+                { mode: "full" as const, label: isRectangularSlot ? "完整矩形槽" : "完整圆槽", disabled: false },
+                ...(!isRectangularSlot
+                  ? [{ mode: "half-circle" as const, label: "半圆槽", disabled: !canUseHalfCircleSlots }]
+                  : []),
                 { mode: "base-plate-only" as const, label: "仅内嵌孔底板", disabled: false },
               ].map(({ mode, label, disabled }) => {
                 const active = structureMode === mode;

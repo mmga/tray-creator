@@ -8,6 +8,42 @@ This context describes the domain language for configuring miniature base trays 
 A reusable definition of a supported base shape, nominal dimensions, and the final slot geometry needed to generate a tray slot.
 _Avoid_: Preset, base preset, hole preset when referring to the complete slot geometry.
 
+**Old World Rectangular Slot Definition**:
+A Slot Definition for a Warhammer: The Old World square or rectangular base, storing nominal width and depth plus final slot dimensions with 0.4mm total tolerance on each axis.
+_Avoid_: Calling the whole family “方底盘模式”, because it also includes rectangular bases.
+
+**Old World Grid Orientation**:
+The fixed grid convention where an Old World Rectangular Slot Definition’s first dimension follows the X-axis columns and its second dimension follows the Y-axis rows, with no per-layout rotation option.
+_Avoid_: Interpreting `30×60` as a rotatable or orientation-free size.
+
+**Old World Full-Slot Grid**:
+A grid of Old World Rectangular Slot Definitions that permits only complete rectangular slots and never exposes the circular half-slot structure.
+_Avoid_: Half rectangular slot, rectangular half-slot mode.
+
+**Old World Magnetic Hole Rule**:
+The magnet-hole rule for an Old World Rectangular Slot Definition that selects the large magnet only when its shorter nominal side is greater than 40mm.
+_Avoid_: Selecting the magnet from the longer side or treating a 40mm short side as large.
+
+**Old World Preset Set**:
+The fixed first-release set of Old World Rectangular Slot Definitions: 25×25, 30×30, 30×60, 40×40, 50×50, 50×75, and 60×100mm, without custom width-and-depth entry.
+_Avoid_: Treating this release as a general custom rectangular-slot editor.
+
+**Grid Slot Definition Switch**:
+A grid-mode change that replaces the active Slot Definition while preserving row count, column count, spacing, boundary spacing, and base structure parameters.
+_Avoid_: Resetting the whole grid configuration when only the Slot Definition changes.
+
+**Uniform Grid Slot Definition**:
+The rule that every cell in one grid tray uses the same active Slot Definition, whether circular or Old World rectangular.
+_Avoid_: Mixed-size grid, mixed-shape grid.
+
+**Grid Draft Shape Compatibility**:
+The rule that a grid draft or import without an explicit non-circular Slot Definition remains a circular grid when loaded.
+_Avoid_: Inferring an Old World rectangular Slot Definition from legacy diameter fields.
+
+**Old World Rectangular Slot Corners**:
+The straight 90-degree internal corners of an Old World Rectangular Slot Definition, without an additional slot-corner radius.
+_Avoid_: Applying the tray’s outer corner radius to a rectangular slot.
+
 **Slot Instance**:
 A placed slot in a tray layout that stores the slot definition geometry needed to reproduce the model.
 _Avoid_: Treating a slot instance as only a diameter or position.
@@ -229,6 +265,16 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A **Slot Definition** includes its **Tolerance**.
 - A circular **Slot Definition** records its **Final Slot Size** directly.
 - An ellipse **Slot Definition** includes base width, base height, **Ellipse Outer Offset**, and **Ellipse Profile Exponent**.
+- An **Old World Rectangular Slot Definition** records nominal width and depth, with each **Final Slot Size** axis 0.4mm larger than its nominal axis.
+- An **Old World Grid Orientation** maps a rectangular slot’s width to grid columns and depth to grid rows.
+- An **Old World Full-Slot Grid** uses complete **Old World Rectangular Slot Definitions** only.
+- An **Old World Magnetic Hole Rule** uses the shorter nominal axis of an **Old World Rectangular Slot Definition**.
+- The **Old World Preset Set** contains exactly seven **Old World Rectangular Slot Definitions** in its first release.
+- A **Grid Slot Definition Switch** preserves grid and base parameters while changing the selected Slot Definition and derived footprint.
+- A grid tray has exactly one **Uniform Grid Slot Definition**.
+- An **Old World Full-Slot Grid** uses the existing **Grid Quote Baseline** without a rectangular-slot surcharge.
+- **Grid Draft Shape Compatibility** preserves circular geometry for legacy grid drafts and imports.
+- An **Old World Rectangular Slot Definition** uses **Old World Rectangular Slot Corners**.
 - A **Slot Instance** is created from exactly one **Slot Definition** and records its **Slot Definition ID**.
 - A **Slot Instance** keeps a **Slot Geometry Snapshot** for reproducible generation.
 - A **Slot Instance Factory** is the shared creation seam for writing **Slot Geometry Snapshots** onto new or imported **Slot Instances**.
@@ -366,6 +412,16 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 ## Flagged Ambiguities
 
 - "凹槽定义" previously meant either a visible UI option or the generated hole geometry. Resolved: **Slot Definition** means the complete reusable geometry definition, including tolerance.
+- "方底盘" was used for both square and rectangular Old World bases. Resolved: use **Old World Rectangular Slot Definition** for the family, including square dimensions as a special case.
+- "30×60" could mean either grid orientation. Resolved: the first dimension follows X-axis columns and the second follows Y-axis rows.
+- "半圆槽" could be mistaken for a generic grid feature. Resolved: it applies only to circular Slot Definitions, never to an **Old World Full-Slot Grid**.
+- "矩形磁吸孔规格" could be chosen from either side. Resolved: use the shorter nominal side, and select the large magnet only above 40mm.
+- "旧世界方底盘模式" might imply arbitrary rectangular dimensions. Resolved: the first release exposes only the seven-size **Old World Preset Set**.
+- "切换底盘类型" could imply resetting the layout. Resolved: a **Grid Slot Definition Switch** preserves grid and base parameters.
+- "网格模式" could imply arbitrary mixed base layouts. Resolved: a grid tray has one **Uniform Grid Slot Definition**; mixed layouts belong to custom mode.
+- "旧世界矩形凹槽" could imply a new quote tier. Resolved: an **Old World Full-Slot Grid** uses the existing **Grid Quote Baseline** without a surcharge.
+- "旧版网格配置" could be interpreted as an Old World layout after the feature is added. Resolved: **Grid Draft Shape Compatibility** keeps it circular unless it explicitly selects a non-circular Slot Definition.
+- "矩形凹槽圆角" could be conflated with the tray’s outer corner radius. Resolved: **Old World Rectangular Slot Corners** are straight 90-degree corners.
 - "底盘" was ambiguous between raw tray width/depth inputs and the derived printable footprint in custom mode. Resolved: use **Effective Baseplate** for the derived custom-mode footprint used in pricing.
 - "固定托盘大小" could mean a canvas-only frame or the generated model footprint. Resolved: fixed **Tray Sizing Mode** uses the configured width and depth as the final generated tray footprint.
 - "固定尺寸" could mean the bottom outer edge or the side-bevel-inset upper edge. Resolved: it means the **Fixed Tray Outer Footprint**.
