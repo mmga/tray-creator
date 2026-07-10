@@ -122,7 +122,7 @@ export default function SimpleSteppedPanel({
         >
           <div className="space-y-1.5 mt-1">
             {params.rows.length === 0 ? (
-              <div className="rounded border border-dashed border-[#3d372e] px-3 py-4 text-center text-xs text-muted-foreground/70">
+              <div className="dashed-hint rounded-sm px-3 py-4 text-center text-xs text-muted-foreground/70">
                 还没有行，先新建一行再开始排布凹槽。
               </div>
             ) : (
@@ -246,7 +246,7 @@ export default function SimpleSteppedPanel({
               variant="outline"
               size="sm"
               onClick={onAddRow}
-              className="w-full mt-1 h-8 text-xs border-dashed border-[#3d372e] text-muted-foreground hover:text-foreground hover:border-[#5a5040] transition-all"
+              className="w-full mt-1 h-8 text-xs border-[#3d372e] text-muted-foreground hover:text-foreground hover:border-[#5a5040] transition-[border-color,color,background-color]"
             >
               <Plus className="w-3 h-3 mr-1" />
               新建行
@@ -264,7 +264,7 @@ export default function SimpleSteppedPanel({
           summary={activeRow ? `添加到 ${activeRow.name}` : "未选中行"}
         >
           <div className="space-y-2 mt-1">
-            <div className="rounded border border-dashed border-[#3d372e] px-3 py-2 text-[10px] text-muted-foreground/70">
+            <div className="dashed-hint rounded-sm px-3 py-2 text-[10px] text-muted-foreground/70">
               画布里现在支持同行上下拖动混排，也可以直接拖动虚线底板边框来放大打印边界。
             </div>
             <div className="text-[10px] text-muted-foreground/70">

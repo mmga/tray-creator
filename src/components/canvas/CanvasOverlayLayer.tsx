@@ -2,6 +2,7 @@
 
 import { memo } from "react";
 
+import { getCanvasDashAttributes } from "@/lib/canvas-dash-styles";
 import type { CanvasCollisionState } from "@/lib/canvas-collision-model";
 import type { CanvasEffectiveBaseplate } from "@/lib/canvas-slot-geometry";
 import type { FixedCustomTrayUsableArea } from "@/lib/custom-layout-math";
@@ -51,14 +52,11 @@ export const CanvasOverlayLayer = memo(function CanvasOverlayLayer({
   guideLines,
   outlinePreview,
 }: CanvasOverlayLayerProps) {
+  const boundaryDash = getCanvasDashAttributes("boundary", zoom);
+  const guideDash = getCanvasDashAttributes("guide", zoom);
+  const alertDash = getCanvasDashAttributes("alert", zoom);
   const trayOutlineStroke = "#4b5563";
-  const trayOutlineStrokeWidth = 0.5 / zoom;
-  const trayOutlineStrokeDash = `${3 / zoom} ${3 / zoom}`;
-  const trayOutlineStrokeOpacity = 0.9;
   const axisGuideStroke = "#38bdf8";
-  const axisGuideStrokeWidth = 0.3 / zoom;
-  const axisGuideStrokeDash = `${2 / zoom} ${2 / zoom}`;
-  const axisGuideStrokeOpacity = 0.8;
   const bevelFrame =
     showEffectiveBaseplate && effectiveBaseplate.hasSlots
       ? {
@@ -98,9 +96,7 @@ export const CanvasOverlayLayer = memo(function CanvasOverlayLayer({
         height={trayDepth}
         fill="none"
         stroke={trayOutlineStroke}
-        strokeWidth={trayOutlineStrokeWidth}
-        strokeDasharray={trayOutlineStrokeDash}
-        strokeOpacity={trayOutlineStrokeOpacity}
+        {...boundaryDash}
       />
 
       {showEffectiveBaseplate && effectiveBaseplate.hasSlots && (
@@ -136,9 +132,7 @@ export const CanvasOverlayLayer = memo(function CanvasOverlayLayer({
           stroke={Array.from(collisionState.collisionMap.values()).some(
             (info) => info.boundaryReasons.length > 0,
           ) ? "#ef4444" : "#d6a84f"}
-          strokeWidth={trayOutlineStrokeWidth}
-          strokeDasharray={trayOutlineStrokeDash}
-          strokeOpacity={0.85}
+          {...boundaryDash}
           pointerEvents="none"
         />
       )}
@@ -161,9 +155,7 @@ export const CanvasOverlayLayer = memo(function CanvasOverlayLayer({
             )}
             fill="none"
             stroke="#d6a84f"
-            strokeWidth={0.75 / zoom}
-            strokeDasharray={`${2 / zoom} ${1.5 / zoom}`}
-            strokeOpacity={0.85}
+            {...boundaryDash}
           />
         </g>
       )}
@@ -177,9 +169,7 @@ export const CanvasOverlayLayer = memo(function CanvasOverlayLayer({
             x2={symmetryAxes.vertical}
             y2={trayDepth}
             stroke={axisGuideStroke}
-            strokeWidth={axisGuideStrokeWidth}
-            strokeDasharray={axisGuideStrokeDash}
-            strokeOpacity={axisGuideStrokeOpacity}
+            {...guideDash}
           />
           <line
             data-symmetry-axis="mirror-y"
@@ -188,9 +178,7 @@ export const CanvasOverlayLayer = memo(function CanvasOverlayLayer({
             x2={trayWidth}
             y2={trayDepth - symmetryAxes.horizontal}
             stroke={axisGuideStroke}
-            strokeWidth={axisGuideStrokeWidth}
-            strokeDasharray={axisGuideStrokeDash}
-            strokeOpacity={axisGuideStrokeOpacity}
+            {...guideDash}
           />
         </>
       )}
@@ -203,7 +191,7 @@ export const CanvasOverlayLayer = memo(function CanvasOverlayLayer({
         }
 
         const lineOpacity = !focusedGroupId
-          ? 0.6
+          ? alertDash.strokeOpacity
           : ("groupId" in slot && slot.groupId === focusedGroupId) ||
             ("groupId" in other && other.groupId === focusedGroupId)
             ? 0.5
@@ -217,8 +205,8 @@ export const CanvasOverlayLayer = memo(function CanvasOverlayLayer({
             x2={other.x}
             y2={trayDepth - other.y}
             stroke="#ef4444"
-            strokeWidth={0.5 / zoom}
-            strokeDasharray="3 2"
+            strokeWidth={alertDash.strokeWidth}
+            strokeDasharray={alertDash.strokeDasharray}
             opacity={lineOpacity}
             pointerEvents="none"
           />
@@ -234,10 +222,10 @@ export const CanvasOverlayLayer = memo(function CanvasOverlayLayer({
             x2={guideLine.value}
             y2={minY + viewH}
             stroke={axisGuideStroke}
-            strokeWidth={axisGuideStrokeWidth}
-            strokeDasharray={axisGuideStrokeDash}
+            strokeWidth={guideDash.strokeWidth}
+            strokeDasharray={guideDash.strokeDasharray}
             pointerEvents="none"
-            opacity={axisGuideStrokeOpacity}
+            opacity={guideDash.strokeOpacity}
           />
         ) : (
           <line
@@ -247,10 +235,10 @@ export const CanvasOverlayLayer = memo(function CanvasOverlayLayer({
             x2={minX + viewW}
             y2={guideLine.value}
             stroke={axisGuideStroke}
-            strokeWidth={axisGuideStrokeWidth}
-            strokeDasharray={axisGuideStrokeDash}
+            strokeWidth={guideDash.strokeWidth}
+            strokeDasharray={guideDash.strokeDasharray}
             pointerEvents="none"
-            opacity={axisGuideStrokeOpacity}
+            opacity={guideDash.strokeOpacity}
           />
         ),
       )}

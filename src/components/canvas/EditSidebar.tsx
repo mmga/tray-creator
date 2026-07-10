@@ -57,7 +57,7 @@ export default function EditSidebar({
           })}
         </div>
 
-        <div className="mt-3 rounded-sm border border-dashed border-[#3c3227] bg-[#15110d] px-1.5 py-2 text-center text-[9px] uppercase tracking-[0.2em] text-muted-foreground/60">
+        <div className="mt-3 rounded-sm border border-[#3d372e] bg-[#15110d] px-1.5 py-2 text-center text-[9px] uppercase tracking-[0.2em] text-muted-foreground/60">
           更多
         </div>
       </nav>

@@ -531,7 +531,7 @@ export default function SteppedPanel({
                             variant="outline"
                             size="sm"
                             onClick={onAddGroup}
-                            className="w-full mt-1 h-8 text-xs border-dashed border-[#3d372e] text-muted-foreground hover:text-foreground hover:border-[#5a5040] transition-all"
+                            className="w-full mt-1 h-8 text-xs border-[#3d372e] text-muted-foreground hover:text-foreground hover:border-[#5a5040] transition-[border-color,color,background-color]"
                         >
                             <Plus className="w-3 h-3 mr-1" />
                             新建组
@@ -629,7 +629,7 @@ export default function SteppedPanel({
 
                         {params.enableBaseHole ? (
                             <div className="space-y-3">
-                                <div className="rounded border border-dashed border-[#3d372e] px-3 py-2 text-[11px] text-muted-foreground/70">
+                                <div className="dashed-hint rounded-sm px-3 py-2 text-[11px] text-muted-foreground/70">
                                     各组会按本组最大槽径自动匹配磁吸孔规格，并自动抬高圆柱高度以保留足够底厚。
                                 </div>
 

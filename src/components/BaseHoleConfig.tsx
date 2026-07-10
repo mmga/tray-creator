@@ -79,7 +79,7 @@ export function BaseHoleConfig<TParams extends BaseHoleConfigFields>({
 
           {enableBaseHole ? (
             <div className="space-y-3">
-              <div className="rounded border border-dashed border-[#3d372e] px-3 py-2 text-[11px] text-muted-foreground/70">
+              <div className="dashed-hint rounded-sm px-3 py-2 text-[11px] text-muted-foreground/70">
                 规格按配置自动匹配，大底座会自动切换到更大更厚的磁吸孔。
               </div>
 

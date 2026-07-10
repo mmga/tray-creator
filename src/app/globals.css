@@ -167,6 +167,10 @@
 
 /* ---- Warhammer Utility Classes ---- */
 @layer utilities {
+  .dashed-hint {
+    border: 1px dashed #3d372e;
+  }
+
   /* Iron panel card */
   .iron-panel {
     background: linear-gradient(165deg, #16140f 0%, #12110e 50%, #0e0d0a 100%);

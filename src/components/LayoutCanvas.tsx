@@ -6,6 +6,7 @@ import type {
   SteppedSlot,
 } from "@/types/custom-tray";
 import { MAX_BUILD_SIZE } from "@/lib/config";
+import { getCanvasDashAttributes } from "@/lib/canvas-dash-styles";
 import { buildCanvasCollisionState } from "@/lib/canvas-collision-model";
 import { calculateEffectiveBaseplate } from "@/lib/canvas-slot-geometry";
 import { isCustomSlotWithinFixedTrayUsableArea } from "@/lib/custom-layout-math";
@@ -185,6 +186,7 @@ export default function LayoutCanvas({
     trayWidth,
     trayDepth,
   });
+  const boundaryDash = getCanvasDashAttributes("boundary", zoom);
 
   const slotById = useMemo(
     () =>
@@ -902,9 +904,7 @@ export default function LayoutCanvas({
               height={MAX_BUILD_SIZE}
               fill="none"
               stroke="#38bdf8"
-              strokeWidth={0.3 / zoom}
-              strokeDasharray={`${2 / zoom} ${2 / zoom}`}
-              strokeOpacity={0.95}
+              {...boundaryDash}
               pointerEvents="none"
             />
           )}
@@ -938,9 +938,9 @@ export default function LayoutCanvas({
               height={band.depth}
               fill={band.isActive ? "#a1620730" : "#78716c18"}
               stroke={band.isActive ? "#fbbf24" : "#78716c"}
-              strokeWidth={(band.isActive ? 0.8 : 0.5) / zoom}
-              strokeDasharray={band.isActive ? undefined : "3 2"}
-              strokeOpacity={band.isActive ? 0.95 : 0.55}
+              strokeWidth={band.isActive ? 0.8 / zoom : boundaryDash.strokeWidth}
+              strokeDasharray={band.isActive ? undefined : boundaryDash.strokeDasharray}
+              strokeOpacity={band.isActive ? 0.95 : boundaryDash.strokeOpacity}
               pointerEvents="none"
             />
           ))}

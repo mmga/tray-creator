@@ -1,6 +1,7 @@
 "use client";
 
 import { memo } from "react";
+import { getCanvasDashAttributes } from "@/lib/canvas-dash-styles";
 import { getEllipsePolygon } from "@/lib/collision";
 import { getSlotLabelRotation } from "@/lib/canvas-slot-geometry";
 import type { CanvasCollisionState } from "@/lib/canvas-collision-model";
@@ -123,6 +124,7 @@ export const CanvasSlotLayer = memo(function CanvasSlotLayer({
             : null;
         const groupColor = isSteppedSlot ? groupMeta?.color ?? "#86efac" : null;
         const labelRotation = getSlotLabelRotation(slot.rotation);
+        const boundaryDash = getCanvasDashAttributes("boundary", zoom);
 
         return (
           <g
@@ -148,8 +150,8 @@ export const CanvasSlotLayer = memo(function CanvasSlotLayer({
                       ? "#ef4444"
                       : groupColor ?? "#888"
                 }
-                strokeWidth={0.25 / zoom}
-                strokeDasharray="2 2"
+                strokeWidth={boundaryDash.strokeWidth}
+                strokeDasharray={boundaryDash.strokeDasharray}
                 opacity={
                   isColliding
                     ? 1

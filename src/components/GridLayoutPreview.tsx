@@ -7,12 +7,14 @@ import {
   getGridSpacingAxes,
 } from "@/lib/tray-model";
 import { getLegacyCircleSlotDiameter } from "@/lib/slot-definitions";
+import { getCanvasDashAttributes } from "@/lib/canvas-dash-styles";
 
 interface GridLayoutPreviewProps {
   params: TrayParams;
 }
 
 export function GridLayoutPreview({ params }: GridLayoutPreviewProps) {
+  const boundaryDash = getCanvasDashAttributes("boundary", 1);
   const dimensions = calculateTrayDimensions(params);
   const actualHoleDiameter =
     typeof params.slotDiameter === "number" && Number.isFinite(params.slotDiameter)
@@ -106,8 +108,7 @@ export function GridLayoutPreview({ params }: GridLayoutPreviewProps) {
                 )}
                 fill="none"
                 stroke="#d6a84f"
-                strokeWidth={0.8}
-                strokeDasharray="2 1.5"
+                {...boundaryDash}
                 data-bevel-edge="upper"
               />
             </g>
