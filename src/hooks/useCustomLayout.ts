@@ -22,6 +22,10 @@ import {
   calculateCustomEffectiveDimensions,
 } from "@/lib/custom-layout-math";
 import {
+  randomizeCustomSlotArrangement,
+  type RandomSlotArrangementResult,
+} from "@/lib/custom-random-layout";
+import {
   exportCustomModelFiles,
   generateCustomPreview,
 } from "@/lib/custom-layout-service";
@@ -50,6 +54,7 @@ interface UseCustomLayoutReturn {
   insertSlots: (slots: SymmetryInsertSlot[]) => void;
   duplicateSlots: (ids: string[]) => string[];
   trimBaseplate: () => void;
+  randomizeSlots: () => RandomSlotArrangementResult;
   calculateEffectiveDimensions: () => {
     width: number;
     depth: number;
@@ -213,6 +218,14 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     });
   }, [applyChange]);
 
+  const randomizeSlots = useCallback(() => {
+    const result = randomizeCustomSlotArrangement(paramsRef.current);
+    if (result.status === "success") {
+      applyChange((prev) => applyCustomSlotUpdates(prev, result.updates));
+    }
+    return result;
+  }, [applyChange, paramsRef]);
+
   return {
     params,
     setParams,
@@ -226,6 +239,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     insertSlots,
     duplicateSlots,
     trimBaseplate,
+    randomizeSlots,
     calculateEffectiveDimensions,
     effectiveDimensions,
     saveSnapshot,

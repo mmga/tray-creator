@@ -9,6 +9,7 @@ const {
   toastMock,
   trayWorkerServiceMock,
   randomIdFactoryMock,
+  randomizeCustomSlotArrangementMock,
 } = vi.hoisted(() => ({
   generateCustomPreviewMock: vi.fn(),
   exportCustomModelFilesMock: vi.fn(),
@@ -20,6 +21,7 @@ const {
   randomIdFactoryMock: {
     createId: vi.fn(),
   },
+  randomizeCustomSlotArrangementMock: vi.fn(),
 }));
 
 vi.mock("@/lib/custom-layout-service", () => ({
@@ -37,6 +39,10 @@ vi.mock("@/lib/worker/worker-service", () => ({
 
 vi.mock("@/lib/id-factory", () => ({
   randomIdFactory: randomIdFactoryMock,
+}));
+
+vi.mock("@/lib/custom-random-layout", () => ({
+  randomizeCustomSlotArrangement: randomizeCustomSlotArrangementMock,
 }));
 
 import { useCustomLayout } from "@/hooks/useCustomLayout";
@@ -59,6 +65,7 @@ describe("useCustomLayout", () => {
     trayWorkerServiceMock.generateCustom.mockReset();
     trayWorkerServiceMock.exportSTL.mockReset();
     randomIdFactoryMock.createId.mockReset();
+    randomizeCustomSlotArrangementMock.mockReset();
   });
 
   afterEach(() => {
@@ -191,6 +198,74 @@ describe("useCustomLayout", () => {
       y: 95,
       rotation: 30,
     });
+  });
+
+  it("applies a successful random layout as one undoable edit", async () => {
+    const preview = {
+      geometry: { id: "geom" } as never,
+      threeGeometry: { dispose: vi.fn() } as never,
+      volume: 10,
+    };
+    generateCustomPreviewMock.mockResolvedValue(preview);
+    randomizeCustomSlotArrangementMock.mockReturnValue({
+      status: "success",
+      updates: [{ id: "slot-1", x: 80, y: 70 }],
+    });
+    const initialParams = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      traySizingMode: "fixed" as const,
+      slots: [
+        {
+          id: "slot-1",
+          x: 30,
+          y: 40,
+          shape: "circle" as const,
+          width: 20,
+          height: 20,
+          rotation: 0,
+        },
+      ],
+    };
+    const { result } = renderHook(() => useCustomLayout());
+
+    act(() => {
+      result.current.setParams(initialParams);
+    });
+    await act(async () => {
+      await result.current.handleGenerate();
+    });
+    expect(result.current.isPreviewStale).toBe(false);
+
+    let randomizationResult: ReturnType<typeof result.current.randomizeSlots>;
+    act(() => {
+      randomizationResult = result.current.randomizeSlots();
+    });
+
+    expect(randomizationResult!).toMatchObject({ status: "success" });
+    expect(result.current.params.slots[0]).toMatchObject({ x: 80, y: 70 });
+    expect(result.current.canUndo).toBe(true);
+    expect(result.current.isPreviewStale).toBe(true);
+
+    act(() => {
+      result.current.undo();
+    });
+    expect(result.current.params).toEqual(initialParams);
+  });
+
+  it("does not change the layout when random placement fails", () => {
+    randomizeCustomSlotArrangementMock.mockReturnValue({ status: "failed" });
+    const { result } = renderHook(() => useCustomLayout());
+    const originalParams = result.current.params;
+
+    let randomizationResult: ReturnType<typeof result.current.randomizeSlots>;
+    act(() => {
+      randomizationResult = result.current.randomizeSlots();
+    });
+
+    expect(randomizationResult!).toEqual({ status: "failed" });
+    expect(result.current.params).toBe(originalParams);
+    expect(result.current.canUndo).toBe(false);
+    expect(result.current.isPreviewStale).toBe(false);
   });
 
   it("generates previews and exports the current custom layout", async () => {

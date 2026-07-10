@@ -47,7 +47,7 @@ pnpm typecheck
 **验证：**
 
 ```bash
-pnpm vitest run src/hooks/useCustomLayout.integration.test.ts
+pnpm vitest run --config vitest.integration.config.ts src/hooks/useCustomLayout.integration.test.ts
 pnpm typecheck
 ```
 
