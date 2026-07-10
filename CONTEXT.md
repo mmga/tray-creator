@@ -168,6 +168,22 @@ _Avoid_: Passing mode-specific canvas exceptions directly through the page or vi
 The actual baseplate footprint derived from placed slots and boundary spacing, rather than the raw tray width/depth inputs.
 _Avoid_: Using baseplate, tray size, or tray width/depth to mean the derived printable footprint in custom mode.
 
+**Tray Sizing Mode**:
+The custom-mode choice between deriving the tray footprint from placed slots or keeping the tray footprint at the configured width and depth.
+_Avoid_: Calling a fixed tray an auto-sized effective baseplate.
+
+**Fixed Tray Outer Footprint**:
+The bottom outer dimensions of a fixed custom tray, which remain unchanged when slots are added or moved.
+_Avoid_: Using the upper edge size as the fixed size when a side bevel is present.
+
+**Fixed Tray Footprint Area**:
+The width-by-depth area of a **Fixed Tray Outer Footprint**, used as the custom tray's business footprint while fixed sizing is active.
+_Avoid_: Pricing, naming, or summarizing a fixed tray from only its occupied slot bounds.
+
+**Slot Boundary Violation**:
+A fixed-mode state where a slot's final profile crosses the usable upper footprint after side-bevel and boundary-spacing insets are applied.
+_Avoid_: Treating a boundary violation as an automatic position correction or an export-blocking error.
+
 **Side Bevel**:
 The continuous side-wall slope from the tray's bottom edge footprint to its top edge footprint. Its width is the horizontal inset from the lower edge to the upper edge.
 _Avoid_: Treating it as a corner radius, slot clearance, stepped split groove, or a decorative 2D-only annotation.
@@ -263,6 +279,21 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A **Layout Editor Viewport Adapter** projects a **Mode**'s local layout state into a **Layout Editor Viewport**.
 - A layout canvas should consume a **Layout Editor Viewport** instead of inferring **Mode** behavior from raw parameters.
 - In custom mode, the **Effective Baseplate** is derived from placed **Slot Instances** plus boundary spacing.
+- A custom **Tray Sizing Mode** is either automatic, which uses the **Effective Baseplate**, or fixed, which uses the configured tray width and depth as the final tray footprint.
+- In fixed custom **Tray Sizing Mode**, **Slot Instances** use the fixed tray's lower-left corner as their layout origin.
+- Changing a custom **Tray Sizing Mode** preserves each **Slot Instance** position and does not silently reflow the layout.
+- A custom tray retains configured width and depth while in automatic **Tray Sizing Mode**, so switching back to fixed mode restores the chosen size.
+- A custom configuration that does not record a **Tray Sizing Mode** is treated as automatic to preserve legacy behavior.
+- A **Tray Sizing Mode** is an optional additive custom configuration field and does not require a parameter-file version change.
+- **Tray Sizing Mode** applies only to custom **Mode** and does not alter grid, simple stepped, stepped, or CAD stepped size rules.
+- A fixed custom tray's configured width and depth define its **Fixed Tray Outer Footprint**.
+- A **Side Bevel** reduces the fixed tray's upper usable footprint inward from its **Fixed Tray Outer Footprint**, while boundary spacing is measured from that upper edge.
+- A fixed tray's upper usable footprint follows its rounded-corner geometry, so a **Slot Boundary Violation** may occur at a corner even when a slot fits within the enclosing rectangle.
+- A fixed-mode **Slot Boundary Violation** is visibly reported but does not prevent model generation or export.
+- A **Slot Boundary Violation** is shown as persistent canvas status and error count feedback, not as an interrupting confirmation or transient message.
+- A **Fixed Tray Footprint Area** belongs to exactly one **Fixed Tray Outer Footprint**.
+- A fixed custom tray's quote, displayed dimensions, exported file name, and **Draft Summary** use its **Fixed Tray Outer Footprint** and **Fixed Tray Footprint Area**.
+- A fixed custom tray may have zero **Slot Instances** and can still be generated or exported as an empty tray using its **Fixed Tray Outer Footprint**.
 - A **Side Bevel** keeps the upper edge as the slot boundary-spacing reference and expands the lower edge outward by the configured bevel width.
 - A 2D view that displays a **Side Bevel** should keep the ordinary tray outline for the lower edge and mark only the inset upper edge.
 - An **Effective Baseplate Area** belongs to exactly one **Effective Baseplate**.
@@ -322,6 +353,9 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 
 - "凹槽定义" previously meant either a visible UI option or the generated hole geometry. Resolved: **Slot Definition** means the complete reusable geometry definition, including tolerance.
 - "底盘" was ambiguous between raw tray width/depth inputs and the derived printable footprint in custom mode. Resolved: use **Effective Baseplate** for the derived custom-mode footprint used in pricing.
+- "固定托盘大小" could mean a canvas-only frame or the generated model footprint. Resolved: fixed **Tray Sizing Mode** uses the configured width and depth as the final generated tray footprint.
+- "固定尺寸" could mean the bottom outer edge or the side-bevel-inset upper edge. Resolved: it means the **Fixed Tray Outer Footprint**.
+- "凹槽越界" could mean a hard editing constraint or a warning-only state. Resolved: use **Slot Boundary Violation** for a red, warning-only state that keeps generation and export available.
 - Historical custom-mode prices may be used as reference points, not as an exact fitted law. Resolved: treat them as sanity checks around the **Custom Quote Baseline**, then adjust after reviewing representative layouts.
 - Grid mode previously mixed a diameter-tier quote ladder with a newer area-based custom quote baseline. Resolved: when grid pricing migrates, it fully replaces the old ladder rather than combining both rules.
 - Grid-mode "面积" could have meant nominal hole layout size or the displayed outer dimensions. Resolved: use **Grid Footprint Area**, derived from the displayed width and depth, for migrated grid pricing.
