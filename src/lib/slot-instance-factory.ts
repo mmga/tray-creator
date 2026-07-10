@@ -19,6 +19,11 @@ export interface EllipseSlotInstanceConfig {
   slotDefinitionId?: string;
 }
 
+export interface CircleSlotInstanceConfig {
+  /** 手动输入直径时保留原始尺寸，不追加预设加工容差。 */
+  applyTolerance?: boolean;
+}
+
 export interface CreateFreeSlotInstanceOptions {
   id: string;
   x: number;
@@ -26,6 +31,7 @@ export interface CreateFreeSlotInstanceOptions {
   width: number;
   height?: number;
   rotation?: number;
+  circleConfig?: CircleSlotInstanceConfig;
   ellipseConfig?: EllipseSlotInstanceConfig;
 }
 
@@ -63,6 +69,7 @@ export function createFreeSlotInstance({
   width,
   height,
   rotation = 0,
+  circleConfig,
   ellipseConfig,
 }: CreateFreeSlotInstanceOptions): FreeSlot {
   const slotHeight = height ?? width;
@@ -76,7 +83,9 @@ export function createFreeSlotInstance({
       shape: "circle",
       width,
       height: slotHeight,
-      ...createCircleSlotSnapshot(width),
+      ...(circleConfig?.applyTolerance === false
+        ? { slotWidth: width, slotHeight }
+        : createCircleSlotSnapshot(width)),
       rotation: normalizeRotation(rotation),
     };
   }

@@ -77,6 +77,25 @@ describe("custom layout actions", () => {
     expect(removed.slots.map((slot) => slot.id)).toEqual(["slot-1"]);
   });
 
+  it("keeps a manually entered circle diameter exact", () => {
+    const params = addCustomSlot(
+      CUSTOM_LAYOUT_DEFAULTS,
+      createIdFactory("custom-circle"),
+      13.5,
+      undefined,
+      undefined,
+      { applyTolerance: false },
+    );
+
+    expect(params.slots[0]).toMatchObject({
+      width: 13.5,
+      height: 13.5,
+      slotWidth: 13.5,
+      slotHeight: 13.5,
+    });
+    expect(params.slots[0].slotDefinitionId).toBeUndefined();
+  });
+
   it("stores ellipse preset geometry on the slot instance", () => {
     const empty = {
       ...CUSTOM_LAYOUT_DEFAULTS,

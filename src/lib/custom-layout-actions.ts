@@ -9,7 +9,10 @@ import {
   updateFreeSlotRotation,
   type FreeSlotUpdate,
 } from "@/lib/free-slot-editing";
-import { createFreeSlotInstance } from "@/lib/slot-instance-factory";
+import {
+  createFreeSlotInstance,
+  type CircleSlotInstanceConfig,
+} from "@/lib/slot-instance-factory";
 import {
   getFreeSlotProfileGeometry,
 } from "@/lib/slot-definitions";
@@ -23,6 +26,8 @@ export interface EllipseSlotConfig {
   profileExponent?: number;
   slotDefinitionId?: string;
 }
+
+export type CircleSlotConfig = CircleSlotInstanceConfig;
 
 export type CustomSlotUpdate = FreeSlotUpdate;
 
@@ -74,6 +79,7 @@ export function addCustomSlot(
   width: number,
   height?: number,
   ellipseConfig?: EllipseSlotConfig,
+  circleConfig?: CircleSlotConfig,
 ): CustomLayoutParams {
   const isCircle = !height || width === height;
   const shape = isCircle ? "circle" : "ellipse";
@@ -111,6 +117,7 @@ export function addCustomSlot(
     y: nextY,
     width,
     height: slotHeight,
+    circleConfig: shape === "circle" ? circleConfig : undefined,
     ellipseConfig: shape === "ellipse" ? ellipseConfig : undefined,
   });
 

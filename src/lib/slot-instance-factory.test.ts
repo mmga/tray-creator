@@ -39,6 +39,22 @@ describe("slot instance factory", () => {
       rotation: 0,
     });
 
+    const customCircle = createFreeSlotInstance({
+      id: "custom-circle-1",
+      x: 20,
+      y: 30,
+      width: 13.5,
+      circleConfig: { applyTolerance: false },
+    });
+    expect(customCircle).toMatchObject({
+      shape: "circle",
+      width: 13.5,
+      height: 13.5,
+      slotWidth: 13.5,
+      slotHeight: 13.5,
+    });
+    expect(customCircle.slotDefinitionId).toBeUndefined();
+
     expect(
       createFreeSlotInstance({
         id: "ellipse-1",
@@ -118,6 +134,23 @@ describe("slot instance factory", () => {
       slotWidth: 40.4,
       slotHeight: 40.4,
       rotation: 270,
+    });
+
+    expect(
+      normalizeFreeSlotInstanceSnapshot({
+        id: "custom-circle",
+        x: 0,
+        y: 0,
+        shape: "circle",
+        width: 13.5,
+        height: 13.5,
+        slotWidth: 13.5,
+        slotHeight: 13.5,
+        rotation: 0,
+      }),
+    ).toMatchObject({
+      slotWidth: 13.5,
+      slotHeight: 13.5,
     });
 
     expect(

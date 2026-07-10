@@ -807,7 +807,13 @@ describe("CustomPanel", { timeout: 15000 }, () => {
       }),
     );
 
-    expect(onAddSlot).toHaveBeenNthCalledWith(1, 13.5);
+    expect(onAddSlot).toHaveBeenNthCalledWith(
+      1,
+      13.5,
+      undefined,
+      undefined,
+      { applyTolerance: false },
+    );
     expect(onAddSlot).toHaveBeenNthCalledWith(2, HUNDRED_MM_PRESET.diameter);
     expect(onAddSlot).toHaveBeenNthCalledWith(
       3,

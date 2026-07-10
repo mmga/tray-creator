@@ -14,7 +14,10 @@ import {
   type EllipsePreset,
 } from "@/lib/custom-config";
 import { calculateCustomTrayDimensions } from "@/lib/custom-tray-model";
-import type { EllipseSlotConfig } from "@/lib/custom-layout-actions";
+import type {
+  CircleSlotConfig,
+  EllipseSlotConfig,
+} from "@/lib/custom-layout-actions";
 import type { RandomSlotArrangementResult } from "@/lib/custom-random-layout";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -48,7 +51,12 @@ interface CustomPanelProps {
   setParams: React.Dispatch<React.SetStateAction<CustomLayoutParams>>;
   onResetParams?: () => void;
   onImportParams?: (params: CustomLayoutParams) => void;
-  onAddSlot: (width: number, height?: number, ellipseConfig?: EllipseSlotConfig) => void;
+  onAddSlot: (
+    width: number,
+    height?: number,
+    ellipseConfig?: EllipseSlotConfig,
+    circleConfig?: CircleSlotConfig,
+  ) => void;
   onRandomizeSlots?: () => RandomSlotArrangementResult;
   onGenerate: (options?: { shouldSwitchView?: boolean }) => void;
   onExportSTL: () => void;
@@ -123,7 +131,12 @@ export default function CustomPanel({
     if (!Number.isFinite(customCircleDiameter) || customCircleDiameter <= 0) {
       return;
     }
-    onAddSlot(customCircleDiameter);
+    onAddSlot(
+      customCircleDiameter,
+      undefined,
+      undefined,
+      { applyTolerance: false },
+    );
   };
   const handleRandomizeSlots = () => {
     if (!onRandomizeSlots) return;
