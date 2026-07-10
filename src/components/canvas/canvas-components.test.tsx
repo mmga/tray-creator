@@ -858,4 +858,36 @@ describe("CanvasOverlayLayer", { timeout: 15000 }, () => {
       container.querySelector('[data-fixed-usable-area="true"]'),
     ).toHaveAttribute("stroke", "#ef4444");
   });
+
+  it("uses a single fixed-tray outline when the usable area has no inset", () => {
+    const { container } = render(
+      <svg>
+        <CanvasOverlayLayer
+          trayWidth={100}
+          trayDepth={80}
+          zoom={1}
+          minX={0}
+          minY={0}
+          viewW={100}
+          viewH={80}
+          showEffectiveBaseplate={false}
+          effectiveBaseplate={{ hasSlots: false, x: 0, y: 0, width: 0, height: 0 }}
+          fixedUsableArea={{
+            x: 0,
+            y: 0,
+            width: 100,
+            depth: 80,
+            cornerRadius: 4,
+          }}
+          symmetryAxes={null}
+          collisionState={buildCanvasCollisionState([], 0)}
+          guideLines={[]}
+        />
+      </svg>,
+    );
+
+    expect(container.querySelectorAll("rect")).toHaveLength(1);
+    expect(container.querySelector("rect")).toHaveAttribute("stroke", "#d6a84f");
+    expect(container.querySelector('[data-fixed-usable-area="true"]')).toBeNull();
+  });
 });

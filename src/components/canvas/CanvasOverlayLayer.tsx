@@ -55,7 +55,20 @@ export const CanvasOverlayLayer = memo(function CanvasOverlayLayer({
   const boundaryDash = getCanvasDashAttributes("boundary", zoom);
   const guideDash = getCanvasDashAttributes("guide", zoom);
   const alertDash = getCanvasDashAttributes("alert", zoom);
-  const trayOutlineStroke = "#4b5563";
+  const hasFixedBoundaryViolation = Array.from(
+    collisionState.collisionMap.values(),
+  ).some((info) => info.boundaryReasons.length > 0);
+  const fixedUsableAreaMatchesTray =
+    fixedUsableArea !== undefined &&
+    Math.abs(fixedUsableArea.x) < 1e-6 &&
+    Math.abs(fixedUsableArea.y) < 1e-6 &&
+    Math.abs(fixedUsableArea.width - trayWidth) < 1e-6 &&
+    Math.abs(fixedUsableArea.depth - trayDepth) < 1e-6;
+  const trayOutlineStroke = fixedUsableAreaMatchesTray
+    ? hasFixedBoundaryViolation
+      ? "#ef4444"
+      : "#d6a84f"
+    : "#4b5563";
   const axisGuideStroke = "#38bdf8";
   const bevelFrame =
     showEffectiveBaseplate && effectiveBaseplate.hasSlots
@@ -120,7 +133,7 @@ export const CanvasOverlayLayer = memo(function CanvasOverlayLayer({
         />
       )}
 
-      {fixedUsableArea && (
+      {fixedUsableArea && !fixedUsableAreaMatchesTray && (
         <rect
           data-fixed-usable-area="true"
           x={fixedUsableArea.x}
@@ -129,9 +142,7 @@ export const CanvasOverlayLayer = memo(function CanvasOverlayLayer({
           height={fixedUsableArea.depth}
           rx={fixedUsableArea.cornerRadius}
           fill="none"
-          stroke={Array.from(collisionState.collisionMap.values()).some(
-            (info) => info.boundaryReasons.length > 0,
-          ) ? "#ef4444" : "#d6a84f"}
+          stroke={hasFixedBoundaryViolation ? "#ef4444" : "#d6a84f"}
           {...boundaryDash}
           pointerEvents="none"
         />
