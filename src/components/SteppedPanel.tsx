@@ -1066,8 +1066,7 @@ export function SteppedLayoutPanel(props: SteppedLayoutPanelProps) {
             isOversized={effectiveDimensions.width > MAX_BUILD_SIZE || effectiveDimensions.depth > MAX_BUILD_SIZE}
             mode="stepped"
             params={params}
-            onImport={(p) => {
-                const nextParams = p as SteppedLayoutParams;
+            onImport={(nextParams) => {
                 if (onImportParams) onImportParams(nextParams);
                 else setParams(nextParams);
             }}
@@ -1143,8 +1142,7 @@ export function SteppedCadPanel(props: SteppedCadPanelProps) {
             isOversized={effectiveDimensions.width > MAX_BUILD_SIZE || effectiveDimensions.depth > MAX_BUILD_SIZE}
             mode="stepped-cad"
             params={params}
-            onImport={(p) => {
-                const nextParams = p as SteppedLayoutParams;
+            onImport={(nextParams) => {
                 if (onImportParams) onImportParams(nextParams);
                 else setParams(nextParams);
             }}

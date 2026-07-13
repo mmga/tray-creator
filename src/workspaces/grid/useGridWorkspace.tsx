@@ -35,8 +35,8 @@ export function useGridWorkspace({
     clearDraftBinding();
   }, [clearDraftBinding, model]);
 
-  const importIntoWorkspace = useCallback((params: unknown) => {
-    model.replaceParams(params as TrayParams);
+  const importIntoWorkspace = useCallback((params: TrayParams) => {
+    model.replaceParams(params);
     clearDraftBinding();
   }, [clearDraftBinding, model]);
 

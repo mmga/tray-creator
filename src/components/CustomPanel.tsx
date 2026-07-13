@@ -139,7 +139,7 @@ export default function CustomPanel({
     toast("error", "固定可用区域无法容纳当前全部凹槽");
   };
 
-  const panelActions = <PanelActionSection autoPreviewId="custom-auto-preview" autoPreview={autoPreview} onAutoPreviewChange={setAutoPreview} onGenerate={() => onGenerate({ shouldSwitchView: true })} onExportSTL={onExportSTL} onReset={handleReset} isGenerating={isGenerating} isOversized={isOversized} mode="custom" params={params} onImport={(p) => { const nextParams = p as CustomLayoutParams; if (onImportParams) onImportParams(nextParams); else setParams(nextParams); }} draftActions={draftActions} />;
+  const panelActions = <PanelActionSection autoPreviewId="custom-auto-preview" autoPreview={autoPreview} onAutoPreviewChange={setAutoPreview} onGenerate={() => onGenerate({ shouldSwitchView: true })} onExportSTL={onExportSTL} onReset={handleReset} isGenerating={isGenerating} isOversized={isOversized} mode="custom" params={params} onImport={(nextParams) => { if (onImportParams) onImportParams(nextParams); else setParams(nextParams); }} draftActions={draftActions} />;
 
   return (
     <PanelShell summary={<ResultSummary itemLabel={`${params.slots.length} 个凹槽`} dimensions={[displayLength, displayWidth, dimensions.height]} price={`¥${calculateCustomPrice(params, volume).toFixed(1)}`} oversized={isOversized} generating={isGenerating} />} actions={panelActions}>

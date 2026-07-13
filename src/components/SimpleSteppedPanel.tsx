@@ -112,7 +112,7 @@ export default function SimpleSteppedPanel({
     onSetActiveRow(null);
   };
 
-  const panelActions = <PanelActionSection onGenerate={onGenerate} onExportSTL={onExportSTL} onReset={handleReset} isGenerating={isGenerating} isOversized={isOversized} mode="simple-stepped" params={params} onImport={(p) => { const nextParams = p as SimpleSteppedLayoutParams; if (onImportParams) onImportParams(nextParams); else setParams(nextParams); }} showStaleNotice={isPreviewStale} draftActions={draftActions} />;
+  const panelActions = <PanelActionSection onGenerate={onGenerate} onExportSTL={onExportSTL} onReset={handleReset} isGenerating={isGenerating} isOversized={isOversized} mode="simple-stepped" params={params} onImport={(nextParams) => { if (onImportParams) onImportParams(nextParams); else setParams(nextParams); }} showStaleNotice={isPreviewStale} draftActions={draftActions} />;
 
   return (
     <PanelShell summary={<ResultSummary itemLabel={`${params.rows.length} 行 · ${params.slots.length} 槽`} dimensions={[effectiveDimensions.width, effectiveDimensions.depth, effectiveDimensions.height]} price={`¥${calculateSimpleSteppedPrice(params, volume).toFixed(1)}`} oversized={isOversized} generating={isGenerating} stale={isPreviewStale} />} actions={panelActions}>

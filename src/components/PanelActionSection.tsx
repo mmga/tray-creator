@@ -12,8 +12,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { AppMode, CustomLayoutParams, SimpleSteppedLayoutParams, SteppedLayoutParams } from "@/types/custom-tray";
-import type { TrayParams } from "@/types/tray";
+import type { AppMode } from "@/types/custom-tray";
+import type { ParamsByMode } from "@/lib/param-io";
 
 export interface PanelDraftActions {
   currentDraftId: string | null;
@@ -22,7 +22,7 @@ export interface PanelDraftActions {
   onOpenDraftDialog: () => void;
 }
 
-interface PanelActionSectionProps {
+interface PanelActionSectionProps<M extends AppMode> {
   autoPreviewId?: string;
   autoPreview?: boolean;
   onAutoPreviewChange?: (checked: boolean) => void;
@@ -31,16 +31,16 @@ interface PanelActionSectionProps {
   onReset: () => void;
   isGenerating: boolean;
   isOversized: boolean;
-  mode: AppMode;
-  params: TrayParams | CustomLayoutParams | SimpleSteppedLayoutParams | SteppedLayoutParams;
-  onImport: (params: unknown) => void;
+  mode: M;
+  params: ParamsByMode[M];
+  onImport: (params: ParamsByMode[M]) => void;
   showStaleNotice?: boolean;
   draftActions?: PanelDraftActions;
   onExportSplitParts?: () => void;
   canExportSplitParts?: boolean;
 }
 
-export function PanelActionSection({
+export function PanelActionSection<M extends AppMode>({
   autoPreviewId,
   autoPreview,
   onAutoPreviewChange,
@@ -55,7 +55,7 @@ export function PanelActionSection({
   draftActions,
   onExportSplitParts,
   canExportSplitParts = false,
-}: PanelActionSectionProps) {
+}: PanelActionSectionProps<M>) {
   return (
     <div className="relative flex flex-col gap-2">
       {showStaleNotice ? <div className="rounded-sm border border-[#5a4a2a] bg-[#2a2518]/95 px-3 py-1.5 text-[11px] text-[#d7b95d]">当前预览已过期，请重新锻造。</div> : null}

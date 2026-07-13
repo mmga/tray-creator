@@ -33,8 +33,8 @@ export function useSimpleSteppedWorkspace({
     clearDraftBinding();
   }, [clearDraftBinding, model]);
 
-  const importIntoWorkspace = useCallback((params: unknown) => {
-    model.setParams(params as SimpleSteppedLayoutParams);
+  const importIntoWorkspace = useCallback((params: SimpleSteppedLayoutParams) => {
+    model.setParams(params);
     model.setActiveRow(null);
     clearDraftBinding();
   }, [clearDraftBinding, model]);

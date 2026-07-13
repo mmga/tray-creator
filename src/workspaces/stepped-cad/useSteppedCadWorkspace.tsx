@@ -45,8 +45,8 @@ export function useSteppedCadWorkspace({
     clearDraftBinding();
   }, [clearDraftBinding, model, resetInteractionState]);
 
-  const importIntoWorkspace = useCallback((params: unknown) => {
-    model.setParams(params as SteppedLayoutParams);
+  const importIntoWorkspace = useCallback((params: SteppedLayoutParams) => {
+    model.setParams(params);
     resetInteractionState();
     clearDraftBinding();
   }, [clearDraftBinding, model, resetInteractionState]);

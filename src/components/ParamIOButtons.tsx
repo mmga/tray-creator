@@ -3,25 +3,23 @@
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload, Share2 } from "lucide-react";
-import { exportParams, importParams } from "@/lib/param-io";
+import {
+    exportParams,
+    importParams,
+    type ParamsByMode,
+} from "@/lib/param-io";
 import { useToast } from "@/hooks/useToast";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import type {
-    AppMode,
-    CustomLayoutParams,
-    SimpleSteppedLayoutParams,
-    SteppedLayoutParams,
-} from "@/types/custom-tray";
-import type { TrayParams } from "@/types/tray";
+import type { AppMode } from "@/types/custom-tray";
 
-interface ParamIOButtonsProps {
-    mode: AppMode;
-    params: TrayParams | CustomLayoutParams | SimpleSteppedLayoutParams | SteppedLayoutParams;
-    onImport: (params: unknown) => void;
+interface ParamIOButtonsProps<M extends AppMode> {
+    mode: M;
+    params: ParamsByMode[M];
+    onImport: (params: ParamsByMode[M]) => void;
     variant?: "buttons" | "menu";
 }
 
-export function ParamIOButtons({ mode, params, onImport, variant = "buttons" }: ParamIOButtonsProps) {
+export function ParamIOButtons<M extends AppMode>({ mode, params, onImport, variant = "buttons" }: ParamIOButtonsProps<M>) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
 

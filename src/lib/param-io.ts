@@ -16,6 +16,14 @@ export type ExportableParams =
   | SimpleSteppedLayoutParams
   | SteppedLayoutParams;
 
+export type ParamsByMode = {
+  grid: TrayParams;
+  custom: CustomLayoutParams;
+  "simple-stepped": SimpleSteppedLayoutParams;
+  stepped: SteppedLayoutParams;
+  "stepped-cad": SteppedLayoutParams;
+};
+
 interface ParamFile {
   version: number;
   mode: AppMode;
@@ -90,6 +98,10 @@ function isLegacyCustomParamObject(data: Record<string, unknown>) {
   );
 }
 
+export function parseParamFileObject<M extends AppMode>(
+  data: unknown,
+  expectedMode: M,
+): ParamsByMode[M];
 export function parseParamFileObject(
   data: unknown,
   expectedMode: AppMode,
@@ -141,6 +153,10 @@ export function parseParamFileObject(
   return normalizeParamsForMode(resolvedExpectedMode, paramFile.params);
 }
 
+export function importParams<M extends AppMode>(
+  file: File,
+  expectedMode: M,
+): Promise<ParamsByMode[M]>;
 export function importParams(
   file: File,
   expectedMode: AppMode,

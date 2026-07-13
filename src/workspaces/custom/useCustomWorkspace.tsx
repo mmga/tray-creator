@@ -31,8 +31,8 @@ export function useCustomWorkspace({
     clearDraftBinding();
   }, [clearDraftBinding, model]);
 
-  const importIntoWorkspace = useCallback((params: unknown) => {
-    model.setParams(params as CustomLayoutParams);
+  const importIntoWorkspace = useCallback((params: CustomLayoutParams) => {
+    model.setParams(params);
     clearDraftBinding();
   }, [clearDraftBinding, model]);
 

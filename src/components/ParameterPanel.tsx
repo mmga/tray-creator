@@ -134,7 +134,7 @@ export default function ParameterPanel({
   return (
     <PanelShell
       summary={<ResultSummary itemLabel={`${params.rows * params.columns} 个凹槽`} dimensions={[dimensions.width, dimensions.depth, dimensions.height]} price={`¥${calculateGridPrice(params).toFixed(2)}`} oversized={isOversized} generating={isGenerating} />}
-      actions={<PanelActionSection autoPreviewId="auto-preview" autoPreview={autoPreview} onAutoPreviewChange={setAutoPreview} onGenerate={() => onGenerate({ shouldSwitchView: true })} onExportSTL={onExportSTL} onReset={handleReset} isGenerating={isGenerating} isOversized={isOversized} mode="grid" params={params} onImport={(p) => replaceParams(p as TrayParams)} draftActions={draftActions} />}
+      actions={<PanelActionSection autoPreviewId="auto-preview" autoPreview={autoPreview} onAutoPreviewChange={setAutoPreview} onGenerate={() => onGenerate({ shouldSwitchView: true })} onExportSTL={onExportSTL} onReset={handleReset} isGenerating={isGenerating} isOversized={isOversized} mode="grid" params={params} onImport={replaceParams} draftActions={draftActions} />}
     >
     <div className="flex flex-col gap-4 animate-fade-in">
       {/* 布局参数 — 移动端默认展开 */}
