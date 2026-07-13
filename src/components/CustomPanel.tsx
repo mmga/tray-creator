@@ -144,73 +144,8 @@ export default function CustomPanel({
   return (
     <PanelShell summary={<ResultSummary itemLabel={`${params.slots.length} 个凹槽`} dimensions={[displayLength, displayWidth, dimensions.height]} price={`¥${calculateCustomPrice(params, volume).toFixed(1)}`} oversized={isOversized} generating={isGenerating} />} actions={panelActions}>
     <div className="flex flex-col gap-4 animate-fade-in">
-      <div className="order-2 iron-panel rounded-sm p-4">
-        <SectionHeader
-          icon={Ruler}
-          title="托盘尺寸"
-          collapsible
-          defaultOpen={true}
-          summary={isFixedTraySize ? "固定外尺寸" : "自动适配凹槽布局"}
-        >
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
-              <div className="space-y-0.5">
-                <Label htmlFor="custom-fixed-tray-size" className="text-sm cursor-pointer text-[#f0d8b8]">
-                  固定托盘大小
-                </Label>
-                <p className="text-[11px] text-muted-foreground">
-                  {isFixedTraySize
-                    ? "外尺寸固定，凹槽可在内部自由排版"
-                    : "托盘外形随凹槽位置与边界间距自动变化"}
-                </p>
-              </div>
-              <Switch
-                id="custom-fixed-tray-size"
-                aria-label="custom-fixed-tray-size"
-                checked={isFixedTraySize}
-                onCheckedChange={(checked) =>
-                  updateParam("traySizingMode", checked ? "fixed" : "auto")
-                }
-                className="data-[state=checked]:bg-[#8cb880]"
-              />
-            </div>
-            {isFixedTraySize && (
-              <div className="space-y-4">
-                <ParamSlider
-                  label={CUSTOM_LIMITS.trayWidth.label}
-                  value={params.trayWidth}
-                  config={CUSTOM_LIMITS.trayWidth}
-                  onChange={(value) => updateParam("trayWidth", value)}
-                  unit={CUSTOM_LIMITS.trayWidth.unit}
-                />
-                <ParamSlider
-                  label={CUSTOM_LIMITS.trayDepth.label}
-                  value={params.trayDepth}
-                  config={CUSTOM_LIMITS.trayDepth}
-                  onChange={(value) => updateParam("trayDepth", value)}
-                  unit={CUSTOM_LIMITS.trayDepth.unit}
-                />
-                <div className="flex justify-end">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={params.slots.length === 0 || !onRandomizeSlots}
-                    onClick={handleRandomizeSlots}
-                    className="border-[#2e2a24] bg-[#120f0c] text-xs hover:bg-[#2e2a24] hover:text-primary"
-                  >
-                    <Shuffle className="mr-1 h-3 w-3" />
-                    随机排列
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        </SectionHeader>
-      </div>
-
-      {/* 添加凹槽 — 移动端默认展开 */}
-      <div className="order-1 iron-panel rounded-sm p-3">
+      {/* 布局编辑 */}
+      <div className="iron-panel rounded-sm p-3">
         <SectionHeader icon={BoxSelect} title="布局编辑" collapsible defaultOpen={true}
           summary={`已有 ${params.slots.length} 个凹槽`}>
           <div className="space-y-2">
@@ -285,8 +220,74 @@ export default function CustomPanel({
         </SectionHeader>
       </div>
 
+      {/* 托盘边界 */}
+      <div className="iron-panel rounded-sm p-4">
+        <SectionHeader
+          icon={Ruler}
+          title="托盘尺寸"
+          collapsible
+          defaultOpen={true}
+          summary={isFixedTraySize ? "固定外尺寸" : "自动适配凹槽布局"}
+        >
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
+              <div className="space-y-0.5">
+                <Label htmlFor="custom-fixed-tray-size" className="text-sm cursor-pointer text-[#f0d8b8]">
+                  固定托盘大小
+                </Label>
+                <p className="text-[11px] text-muted-foreground">
+                  {isFixedTraySize
+                    ? "外尺寸固定，凹槽可在内部自由排版"
+                    : "托盘外形随凹槽位置与边界间距自动变化"}
+                </p>
+              </div>
+              <Switch
+                id="custom-fixed-tray-size"
+                aria-label="custom-fixed-tray-size"
+                checked={isFixedTraySize}
+                onCheckedChange={(checked) =>
+                  updateParam("traySizingMode", checked ? "fixed" : "auto")
+                }
+                className="data-[state=checked]:bg-[#8cb880]"
+              />
+            </div>
+            {isFixedTraySize && (
+              <div className="space-y-4">
+                <ParamSlider
+                  label={CUSTOM_LIMITS.trayWidth.label}
+                  value={params.trayWidth}
+                  config={CUSTOM_LIMITS.trayWidth}
+                  onChange={(value) => updateParam("trayWidth", value)}
+                  unit={CUSTOM_LIMITS.trayWidth.unit}
+                />
+                <ParamSlider
+                  label={CUSTOM_LIMITS.trayDepth.label}
+                  value={params.trayDepth}
+                  config={CUSTOM_LIMITS.trayDepth}
+                  onChange={(value) => updateParam("trayDepth", value)}
+                  unit={CUSTOM_LIMITS.trayDepth.unit}
+                />
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={params.slots.length === 0 || !onRandomizeSlots}
+                    onClick={handleRandomizeSlots}
+                    className="border-[#2e2a24] bg-[#120f0c] text-xs hover:bg-[#2e2a24] hover:text-primary"
+                  >
+                    <Shuffle className="mr-1 h-3 w-3" />
+                    随机排列
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </SectionHeader>
+      </div>
+
       {/* 结构参数 — 移动端默认折叠 */}
-      <div className="order-3 iron-panel rounded-sm p-4">
+      <div className="iron-panel rounded-sm p-4">
         <SectionHeader icon={Wrench} title="制造结构" collapsible defaultOpen={false}
           summary={`槽距${params.spacing}mm / 边距${(params.boundarySpacingIndependent ? params.boundarySpacing : params.spacing)}mm / 斜面${params.sideBevelWidth}mm`}>
           <div className="space-y-4">
@@ -350,7 +351,7 @@ export default function CustomPanel({
       </div>
 
       {/* 底板孔位 — 移动端默认折叠 */}
-      <div className="order-4"><BaseHoleConfig<CustomLayoutParams>
+      <div><BaseHoleConfig<CustomLayoutParams>
         enableBaseHole={params.enableBaseHole}
         baseThickness={params.baseThickness}
         resolvedBaseHoleSize={resolvedBaseHoleSize}
@@ -360,7 +361,7 @@ export default function CustomPanel({
       /></div>
 
       {/* 统计信息 — 移动端默认折叠 */}
-      <div className={`order-5 iron-panel rounded-sm p-4 transition-all duration-300 ${isOversized ? 'border-[#8b1a1a] animate-forge-pulse' : ''}`}>
+      <div className={`iron-panel rounded-sm p-4 transition-all duration-300 ${isOversized ? 'border-[#8b1a1a] animate-forge-pulse' : ''}`}>
         <SectionHeader icon={Ruler} title="统计信息" collapsible defaultOpen={false}
           summary={`${params.slots.length}个凹槽 / ${displayLength.toFixed(1)}×${displayWidth.toFixed(1)}mm`}>
           <div className="space-y-3">

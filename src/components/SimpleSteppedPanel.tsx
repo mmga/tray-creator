@@ -117,7 +117,7 @@ export default function SimpleSteppedPanel({
   return (
     <PanelShell summary={<ResultSummary itemLabel={`${params.rows.length} 行 · ${params.slots.length} 槽`} dimensions={[effectiveDimensions.width, effectiveDimensions.depth, effectiveDimensions.height]} price={`¥${calculateSimpleSteppedPrice(params, volume).toFixed(1)}`} oversized={isOversized} generating={isGenerating} stale={isPreviewStale} />} actions={panelActions}>
     <div className="flex flex-col gap-4 animate-fade-in">
-      <div className="order-1 iron-panel rounded-sm p-3">
+      <div className="iron-panel rounded-sm p-3">
         <SectionHeader
           icon={Rows3}
           title="行管理"
@@ -260,7 +260,7 @@ export default function SimpleSteppedPanel({
         </SectionHeader>
       </div>
 
-      <div className="order-2 iron-panel rounded-sm p-3">
+      <div className="iron-panel rounded-sm p-3">
         <SectionHeader
           icon={Plus}
           title="添加凹槽"
@@ -294,7 +294,7 @@ export default function SimpleSteppedPanel({
         </SectionHeader>
       </div>
 
-      <div className="order-3 iron-panel rounded-sm p-4">
+      <div className="iron-panel rounded-sm p-4">
         <SectionHeader
           icon={Ruler}
           title="阶梯结构"
@@ -369,7 +369,7 @@ export default function SimpleSteppedPanel({
         </SectionHeader>
       </div>
 
-      <div className={`order-4 iron-panel rounded-sm p-4 transition-all duration-300 ${isOversized ? "border-[#8b1a1a] animate-forge-pulse" : ""}`}>
+      <div className={`iron-panel rounded-sm p-4 transition-all duration-300 ${isOversized ? "border-[#8b1a1a] animate-forge-pulse" : ""}`}>
         <SectionHeader
           icon={Ruler}
           title="统计信息"

@@ -313,8 +313,66 @@ export default function SteppedPanel({
         <PanelShell summary={<ResultSummary itemLabel={`${params.groups.length} 组 · ${params.slots.length} 槽`} dimensions={[effectiveWidth, effectiveDepth, maxGroupHeight]} price={`¥${steppedPricing.price.toFixed(0)}`} oversized={isOversized} generating={isGenerating} stale={isPreviewStale} />} actions={panelActions}>
         <div className="flex flex-col gap-4 animate-fade-in">
 
+            {/* 添加凹槽 */}
+            <div className="iron-panel rounded-sm p-3">
+                <SectionHeader icon={BoxSelect} title="添加凹槽" collapsible defaultOpen={true}
+                    summary={`已有 ${params.slots.length} 个凹槽`}>
+                    <div className="space-y-2">
+                        {activeGroup && (
+                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/70">
+                                <span>新凹槽将加入</span>
+                                <div className="w-2 h-2 rounded-sm" style={{ background: activeGroup.color }} />
+                                <span style={{ color: activeGroup.color }}>{activeGroup.name}</span>
+                            </div>
+                        )}
+                        <div className="text-[10px] text-muted-foreground/70 font-bold tracking-wider uppercase mb-0.5">圆形</div>
+                        <div className="grid grid-cols-3 gap-1.5">
+                            {BASE_PRESETS.map((preset, i) => (
+                                <Button
+                                    key={i}
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => onAddSlot(preset.diameter)}
+                                    className="h-10 lg:h-7 text-xs lg:text-[11px] border-[#2e2a24] bg-[#1c1a16] hover:bg-[#2e2a24] hover:text-primary transition-all"
+                                >
+                                    <Plus className="w-3 h-3 mr-1" />
+                                    {preset.diameter}
+                                </Button>
+                            ))}
+                        </div>
+                    </div>
+                </SectionHeader>
+            </div>
+
+            {/* 选中凹槽操作：移动到组 */}
+            {selectedSlotIds.length > 0 && (
+                <div className="iron-panel rounded-sm p-3">
+                    <SectionHeader icon={ArrowRight} title="选中凹槽" collapsible defaultOpen={true}
+                        summary={`${selectedSlotIds.length} 个已选中，移动到组`}>
+                        <div className="space-y-2 mt-1">
+                            <div className="text-[10px] text-muted-foreground/70 uppercase tracking-wider">移动到</div>
+                            <div className="flex flex-wrap gap-1.5">
+                                {params.groups.map((group) => (
+                                    <Button
+                                        key={group.id}
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => onMoveSelectedSlotsToGroup(selectedSlotIds, group.id)}
+                                        className="h-7 text-xs gap-1.5 transition-all"
+                                        style={{ borderColor: group.color + "60", color: group.color }}
+                                    >
+                                        <div className="w-2 h-2 rounded-sm shrink-0" style={{ background: group.color }} />
+                                        {group.name}
+                                    </Button>
+                                ))}
+                            </div>
+                        </div>
+                    </SectionHeader>
+                </div>
+            )}
+
             {/* 分组管理 */}
-            <div className="order-3 iron-panel rounded-sm p-3">
+            <div className="iron-panel rounded-sm p-3">
                 <SectionHeader icon={Layers} title="分组管理" collapsible defaultOpen={true}
                     summary={`${params.groups.length} 组 / ${params.slots.length} 个凹槽`}>
                     <div className="space-y-1.5 mt-1">
@@ -544,145 +602,8 @@ export default function SteppedPanel({
                 </SectionHeader>
             </div>
 
-            {/* 选中凹槽操作：移动到组 */}
-            {selectedSlotIds.length > 0 && (
-                <div className="order-1 iron-panel rounded-sm p-3">
-                    <SectionHeader icon={ArrowRight} title="选中凹槽" collapsible defaultOpen={true}
-                        summary={`${selectedSlotIds.length} 个已选中，移动到组`}>
-                        <div className="space-y-2 mt-1">
-                            <div className="text-[10px] text-muted-foreground/70 uppercase tracking-wider">移动到</div>
-                            <div className="flex flex-wrap gap-1.5">
-                                {params.groups.map((group) => (
-                                    <Button
-                                        key={group.id}
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => onMoveSelectedSlotsToGroup(selectedSlotIds, group.id)}
-                                        className="h-7 text-xs gap-1.5 transition-all"
-                                        style={{ borderColor: group.color + "60", color: group.color }}
-                                    >
-                                        <div className="w-2 h-2 rounded-sm shrink-0" style={{ background: group.color }} />
-                                        {group.name}
-                                    </Button>
-                                ))}
-                            </div>
-                        </div>
-                    </SectionHeader>
-                </div>
-            )}
-
-            {/* 添加凹槽 */}
-            <div className="order-2 iron-panel rounded-sm p-3">
-                <SectionHeader icon={BoxSelect} title="添加凹槽" collapsible defaultOpen={true}
-                    summary={`已有 ${params.slots.length} 个凹槽`}>
-                    <div className="space-y-2">
-                        {activeGroup && (
-                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/70">
-                                <span>新凹槽将加入</span>
-                                <div className="w-2 h-2 rounded-sm" style={{ background: activeGroup.color }} />
-                                <span style={{ color: activeGroup.color }}>{activeGroup.name}</span>
-                            </div>
-                        )}
-                        <div className="text-[10px] text-muted-foreground/70 font-bold tracking-wider uppercase mb-0.5">圆形</div>
-                        <div className="grid grid-cols-3 gap-1.5">
-                            {BASE_PRESETS.map((preset, i) => (
-                                <Button
-                                    key={i}
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => onAddSlot(preset.diameter)}
-                                    className="h-10 lg:h-7 text-xs lg:text-[11px] border-[#2e2a24] bg-[#1c1a16] hover:bg-[#2e2a24] hover:text-primary transition-all"
-                                >
-                                    <Plus className="w-3 h-3 mr-1" />
-                                    {preset.diameter}
-                                </Button>
-                            ))}
-                        </div>
-                    </div>
-                </SectionHeader>
-            </div>
-
-            <div className="order-5 iron-panel rounded-sm p-4">
-                <SectionHeader icon={Circle} title="底板孔位" collapsible defaultOpen={false}
-                    summary={params.enableBaseHole ? "磁吸孔 按各组最大槽径自动匹配" : "普通托盘"}>
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-2">
-                            <button
-                                type="button"
-                                onClick={() => updateParam("enableBaseHole", false)}
-                                className={`px-3 py-2 text-xs font-bold tracking-wider uppercase border transition-all duration-200 cursor-pointer ${
-                                    !params.enableBaseHole
-                                        ? "bg-primary/15 text-primary border-primary/50 shadow-inner"
-                                        : "bg-[#1c1a16] text-muted-foreground border-[#2e2a24] hover:border-[#3d372e]"
-                                }`}
-                            >
-                                普通托盘
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => updateParam("enableBaseHole", true)}
-                                className={`px-3 py-2 text-xs font-bold tracking-wider uppercase border transition-all duration-200 cursor-pointer ${
-                                    params.enableBaseHole
-                                        ? "bg-primary/15 text-primary border-primary/50 shadow-inner"
-                                        : "bg-[#1c1a16] text-muted-foreground border-[#2e2a24] hover:border-[#3d372e]"
-                                }`}
-                            >
-                                磁吸孔
-                            </button>
-                        </div>
-
-                        {params.enableBaseHole ? (
-                            <div className="space-y-3">
-                                <div className="rounded border border-dashed border-[#3d372e] px-3 py-2 text-[11px] text-muted-foreground/70">
-                                    各组会按本组最大槽径自动匹配磁吸孔规格，并自动抬高圆柱高度以保留足够底厚。
-                                </div>
-
-                                <div className="space-y-1.5 text-[11px] font-mono text-muted-foreground/70 bg-[#1c1a16] border border-[#2e2a24] p-2.5">
-                                    <div className="flex justify-between">
-                                        <span>当前组</span>
-                                        <span className="text-foreground/80">
-                                            {activeGroup?.name ?? "未选择"}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span>自动规格</span>
-                                        <span className="text-foreground/80">
-                                            {activeGroupBaseHolePreset.label}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span>磁铁孔</span>
-                                        <span className="text-foreground/80">
-                                            ⌀{activeGroupBaseHolePreset.diameter}mm × {activeGroupBaseHolePreset.depth}mm
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span>当前支撑厚度</span>
-                                        <span className="text-foreground/80">
-                                            {activeGroupSupportThickness.toFixed(1)}mm
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span>当前组最小圆柱高度</span>
-                                        <span className="text-foreground/80">
-                                            {activeGroupMinBottomHeight.toFixed(1)}mm
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span>最小支撑厚度</span>
-                                        <span className="text-foreground/80">
-                                            {getBaseHoleMinBaseThickness(activeGroupBaseHoleSize).toFixed(1)}mm
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        ) : null}
-                    </div>
-                </SectionHeader>
-            </div>
-
             {/* 结构参数 */}
-            <div className="order-4 iron-panel rounded-sm p-4">
+            <div className="iron-panel rounded-sm p-4">
                 <SectionHeader icon={Wrench} title="阶梯结构" collapsible defaultOpen={false}
                     summary={showSplitAssemblyMode
                         ? `槽距${params.spacing}mm / 凹槽深度${params.holeDepth}mm / 装配槽${params.splitGrooveDepth}mm${splitFeatureSummary} / 断连${params.disconnectDistance}mm`
@@ -781,96 +702,87 @@ export default function SteppedPanel({
                 </SectionHeader>
             </div>
 
-            {/* 统计信息 */}
-            <div className={`order-7 iron-panel rounded-sm p-4 transition-all duration-300 ${isOversized ? 'border-[#8b1a1a] animate-forge-pulse' : ''}`}>
-                <SectionHeader icon={Ruler} title="统计信息" collapsible defaultOpen={false}
-                    summary={`${params.slots.length}个凹槽 / ${effectiveWidth.toFixed(1)}×${effectiveDepth.toFixed(1)}mm`}>
-                    <div className="space-y-3">
-                        <div className="grid grid-cols-2 gap-2 mb-2">
-                            <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
-                                <span className="text-[10px] text-muted-foreground block">凹槽数量</span>
-                                <span className="text-lg font-mono font-bold text-primary">{params.slots.length}</span>
-                            </div>
-                            <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
-                                <div className="flex items-center justify-center gap-1">
-                                    <span className="text-[10px] text-muted-foreground block">预估报价 & 耗材参考</span>
-                                    <SteppedPricingFormulaTooltip
-                                        breakdown={steppedPricing}
-                                        hasGeneratedVolume={hasGeneratedVolume}
-                                    />
-                                </div>
-                                <div className="flex flex-col items-center mt-0.5">
-                                    <span className="text-sm font-mono font-bold text-[#eab308]">
-                                        ¥{steppedPricing.price.toFixed(0)}
-                                    </span>
-                                    {hasGeneratedVolume ? (
-                                        <span className="text-[9px] text-muted-foreground">
-                                            估重: {steppedPricing.estimatedWeight.toFixed(1)}g
-                                        </span>
-                                    ) : (
-                                        <span className="text-[9px] text-muted-foreground">
-                                            {isGenerating ? "图纸生成中..." : ""}
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
+            <div className="iron-panel rounded-sm p-4">
+                <SectionHeader icon={Circle} title="底板孔位" collapsible defaultOpen={false}
+                    summary={params.enableBaseHole ? "磁吸孔 按各组最大槽径自动匹配" : "普通托盘"}>
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                onClick={() => updateParam("enableBaseHole", false)}
+                                className={`px-3 py-2 text-xs font-bold tracking-wider uppercase border transition-all duration-200 cursor-pointer ${
+                                    !params.enableBaseHole
+                                        ? "bg-primary/15 text-primary border-primary/50 shadow-inner"
+                                        : "bg-[#1c1a16] text-muted-foreground border-[#2e2a24] hover:border-[#3d372e]"
+                                }`}
+                            >
+                                普通托盘
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => updateParam("enableBaseHole", true)}
+                                className={`px-3 py-2 text-xs font-bold tracking-wider uppercase border transition-all duration-200 cursor-pointer ${
+                                    params.enableBaseHole
+                                        ? "bg-primary/15 text-primary border-primary/50 shadow-inner"
+                                        : "bg-[#1c1a16] text-muted-foreground border-[#2e2a24] hover:border-[#3d372e]"
+                                }`}
+                            >
+                                磁吸孔
+                            </button>
                         </div>
 
-                        {/* 分组槽位统计 */}
-                        {params.groups.length > 1 && (
-                            <div className="space-y-1">
-                                {params.groups
-                                    .map((group) => {
-                                        const count = groupSlotCounts.get(group.id) ?? 0;
-                                        return (
-                                            <div key={group.id} className="flex items-center gap-2 text-[11px]">
-                                                <div className="w-2 h-2 rounded-sm shrink-0" style={{ background: group.color }} />
-                                                <span className="text-muted-foreground">{group.name}</span>
-                                                <span className="font-mono" style={{ color: group.color }}>↑{group.bottomHeight}mm</span>
-                                                <span className="ml-auto text-muted-foreground">{count} 个</span>
-                                            </div>
-                                        );
-                                    })}
-                            </div>
-                        )}
-
-                        <div className="grid grid-cols-3 gap-2">
-                            {[
-                                { label: "长度", value: effectiveWidth, warn: effectiveWidth > MAX_BUILD_SIZE },
-                                { label: "宽度", value: effectiveDepth, warn: effectiveDepth > MAX_BUILD_SIZE },
-                                { label: "高度", value: maxGroupHeight, warn: false },
-                            ].map(({ label, value, warn }) => (
-                                <div
-                                    key={label}
-                                    className={`relative text-center p-2.5 transition-colors duration-200 ${warn
-                                        ? 'bg-[#8b1a1a15] border border-[#8b1a1a50]'
-                                        : 'bg-[#1c1a16] border border-[#2e2a24]'
-                                        }`}
-                                >
-                                    <p className="text-[11px] text-muted-foreground/60 mb-0.5">{label}</p>
-                                    <p className={`text-sm font-mono font-semibold tabular-nums ${warn ? 'text-[#c04040]' : 'text-foreground'}`}>
-                                        {value.toFixed(1)}
-                                    </p>
-                                    <p className="text-[10px] text-muted-foreground/40 font-mono">mm</p>
+                        {params.enableBaseHole ? (
+                            <div className="space-y-3">
+                                <div className="rounded border border-dashed border-[#3d372e] px-3 py-2 text-[11px] text-muted-foreground/70">
+                                    各组会按本组最大槽径自动匹配磁吸孔规格，并自动抬高圆柱高度以保留足够底厚。
                                 </div>
-                            ))}
-                        </div>
-                        {isOversized && (
-                            <div className="flex items-center justify-center gap-1.5 text-xs text-[#c04040] animate-fade-in">
-                                <span>超过常规打印尺寸，仍可继续建模</span>
+
+                                <div className="space-y-1.5 text-[11px] font-mono text-muted-foreground/70 bg-[#1c1a16] border border-[#2e2a24] p-2.5">
+                                    <div className="flex justify-between">
+                                        <span>当前组</span>
+                                        <span className="text-foreground/80">
+                                            {activeGroup?.name ?? "未选择"}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>自动规格</span>
+                                        <span className="text-foreground/80">
+                                            {activeGroupBaseHolePreset.label}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>磁铁孔</span>
+                                        <span className="text-foreground/80">
+                                            ⌀{activeGroupBaseHolePreset.diameter}mm × {activeGroupBaseHolePreset.depth}mm
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>当前支撑厚度</span>
+                                        <span className="text-foreground/80">
+                                            {activeGroupSupportThickness.toFixed(1)}mm
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>当前组最小圆柱高度</span>
+                                        <span className="text-foreground/80">
+                                            {activeGroupMinBottomHeight.toFixed(1)}mm
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>最小支撑厚度</span>
+                                        <span className="text-foreground/80">
+                                            {getBaseHoleMinBaseThickness(activeGroupBaseHoleSize).toFixed(1)}mm
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
-                        )}
-                        <div className="text-[11px] text-muted-foreground/80 text-center pt-1">
-                            有效底板尺寸: {effectiveWidth.toFixed(1)} × {effectiveDepth.toFixed(1)} mm
-                        </div>
+                        ) : null}
                     </div>
                 </SectionHeader>
             </div>
 
-            <div className="wh-divider" />
-
             {/* 操作按钮 */}
-            <div className="order-6 flex flex-col gap-2.5 pb-4">
+            <div className="flex flex-col gap-2.5 pb-4">
                 <Button
                     variant="outline"
                     onClick={onGenerateOptimizationProposals}
@@ -1007,6 +919,95 @@ export default function SteppedPanel({
                         </SectionHeader>
                     </div>
                 )}
+
+            </div>
+
+            <div className="wh-divider" />
+
+            {/* 统计信息 */}
+            <div className={`iron-panel rounded-sm p-4 transition-all duration-300 ${isOversized ? 'border-[#8b1a1a] animate-forge-pulse' : ''}`}>
+                <SectionHeader icon={Ruler} title="统计信息" collapsible defaultOpen={false}
+                    summary={`${params.slots.length}个凹槽 / ${effectiveWidth.toFixed(1)}×${effectiveDepth.toFixed(1)}mm`}>
+                    <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-2 mb-2">
+                            <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
+                                <span className="text-[10px] text-muted-foreground block">凹槽数量</span>
+                                <span className="text-lg font-mono font-bold text-primary">{params.slots.length}</span>
+                            </div>
+                            <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
+                                <div className="flex items-center justify-center gap-1">
+                                    <span className="text-[10px] text-muted-foreground block">预估报价 & 耗材参考</span>
+                                    <SteppedPricingFormulaTooltip
+                                        breakdown={steppedPricing}
+                                        hasGeneratedVolume={hasGeneratedVolume}
+                                    />
+                                </div>
+                                <div className="flex flex-col items-center mt-0.5">
+                                    <span className="text-sm font-mono font-bold text-[#eab308]">
+                                        ¥{steppedPricing.price.toFixed(0)}
+                                    </span>
+                                    {hasGeneratedVolume ? (
+                                        <span className="text-[9px] text-muted-foreground">
+                                            估重: {steppedPricing.estimatedWeight.toFixed(1)}g
+                                        </span>
+                                    ) : (
+                                        <span className="text-[9px] text-muted-foreground">
+                                            {isGenerating ? "图纸生成中..." : ""}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 分组槽位统计 */}
+                        {params.groups.length > 1 && (
+                            <div className="space-y-1">
+                                {params.groups
+                                    .map((group) => {
+                                        const count = groupSlotCounts.get(group.id) ?? 0;
+                                        return (
+                                            <div key={group.id} className="flex items-center gap-2 text-[11px]">
+                                                <div className="w-2 h-2 rounded-sm shrink-0" style={{ background: group.color }} />
+                                                <span className="text-muted-foreground">{group.name}</span>
+                                                <span className="font-mono" style={{ color: group.color }}>↑{group.bottomHeight}mm</span>
+                                                <span className="ml-auto text-muted-foreground">{count} 个</span>
+                                            </div>
+                                        );
+                                    })}
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-3 gap-2">
+                            {[
+                                { label: "长度", value: effectiveWidth, warn: effectiveWidth > MAX_BUILD_SIZE },
+                                { label: "宽度", value: effectiveDepth, warn: effectiveDepth > MAX_BUILD_SIZE },
+                                { label: "高度", value: maxGroupHeight, warn: false },
+                            ].map(({ label, value, warn }) => (
+                                <div
+                                    key={label}
+                                    className={`relative text-center p-2.5 transition-colors duration-200 ${warn
+                                        ? 'bg-[#8b1a1a15] border border-[#8b1a1a50]'
+                                        : 'bg-[#1c1a16] border border-[#2e2a24]'
+                                        }`}
+                                >
+                                    <p className="text-[11px] text-muted-foreground/60 mb-0.5">{label}</p>
+                                    <p className={`text-sm font-mono font-semibold tabular-nums ${warn ? 'text-[#c04040]' : 'text-foreground'}`}>
+                                        {value.toFixed(1)}
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground/40 font-mono">mm</p>
+                                </div>
+                            ))}
+                        </div>
+                        {isOversized && (
+                            <div className="flex items-center justify-center gap-1.5 text-xs text-[#c04040] animate-fade-in">
+                                <span>超过常规打印尺寸，仍可继续建模</span>
+                            </div>
+                        )}
+                        <div className="text-[11px] text-muted-foreground/80 text-center pt-1">
+                            有效底板尺寸: {effectiveWidth.toFixed(1)} × {effectiveDepth.toFixed(1)} mm
+                        </div>
+                    </div>
+                </SectionHeader>
             </div>
         </div>
         </PanelShell>
