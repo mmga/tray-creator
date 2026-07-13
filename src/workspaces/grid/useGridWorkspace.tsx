@@ -120,12 +120,14 @@ export function useGridWorkspace({
         updateParam={model.updateParam}
         actions={actions}
         isGenerating={model.isGenerating}
+        isPreviewStale={model.isPreviewStale}
         volume={model.volume}
       />
     ),
     [
       actions,
       model.isGenerating,
+      model.isPreviewStale,
       model.params,
       model.updateParam,
       model.volume,

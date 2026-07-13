@@ -7,7 +7,6 @@ import {
     BASE_PRESETS,
     getBaseHoleMinBaseThickness,
     getBaseHolePreset,
-    MAX_BUILD_SIZE,
 } from "@/lib/config";
 import type { BaseHolePresetKey } from "@/types/tray";
 import { STEPPED_LIMITS } from "@/lib/stepped-config";
@@ -51,9 +50,6 @@ import {
 } from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
-import {
-    getSteppedPricingBreakdown,
-} from "@/lib/pricing";
 import { useToast } from "@/hooks/useToast";
 import { isPerfEnabled, resetPerfMetrics } from "@/lib/perf";
 import {
@@ -62,8 +58,11 @@ import {
     type SteppedPerfFixtureSize,
 } from "@/lib/stepped-perf-fixtures";
 import { PanelShell } from "@/components/PanelShell";
-import { ResultSummary } from "@/components/ResultSummary";
-import { SteppedPricingFormulaTooltip } from "@/components/SteppedPricingFormulaTooltip";
+import { TrayResultSummary } from "@/components/TrayResultSummary";
+import {
+    projectSteppedTrayResult,
+    type SteppedTrayResultProjection,
+} from "@/lib/tray-result-projection";
 
 type SteppedGroup = SteppedLayoutParams["groups"][number];
 
@@ -110,19 +109,19 @@ export interface SteppedCadPanelProps extends SteppedPanelSharedProps {
 }
 
 interface UseSteppedPanelStateOptions {
+    mode: "stepped" | "stepped-cad";
     params: SteppedLayoutParams;
     effectiveDimensions: { width: number; depth: number };
     volume: number;
+    isGenerating: boolean;
+    isPreviewStale: boolean;
     previewGroupId: string | null;
     onPreviewGroupChange: (groupId: string | null) => void;
     setParams: Dispatch<SetStateAction<SteppedLayoutParams>>;
 }
 
 interface UseSteppedPanelStateReturn {
-    maxGroupHeight: number;
-    effectiveWidth: number;
-    effectiveDepth: number;
-    isOversized: boolean;
+    result: SteppedTrayResultProjection;
     pressedPreviewGroupId: string | null;
     lockedPreviewGroupId: string | null;
     activePressedPreviewGroupId: string | null;
@@ -135,8 +134,6 @@ interface UseSteppedPanelStateReturn {
     activeGroupMinBottomHeight: number;
     activeGroupSupportThickness: number;
     perfEnabled: boolean;
-    steppedPricing: ReturnType<typeof getSteppedPricingBreakdown>;
-    hasGeneratedVolume: boolean;
     currentArea: number;
     handlePreviewGroupStart: (groupId: string) => void;
     handlePreviewGroupEnd: () => void;
@@ -148,23 +145,25 @@ interface UseSteppedPanelStateReturn {
 
 function useSteppedPanelState(options: UseSteppedPanelStateOptions): UseSteppedPanelStateReturn {
     const {
+        mode,
         params,
         effectiveDimensions,
         volume,
+        isGenerating,
+        isPreviewStale,
         previewGroupId,
         onPreviewGroupChange,
         setParams,
     } = options;
     const { toast } = useToast();
-    const maxGroupHeight = useMemo(
-        () => (params.groups.length > 0
-            ? Math.max(...params.groups.map((group) => Math.max(group.bottomHeight, 3)))
-            : 0),
-        [params.groups],
+    const result = useMemo(
+        () => projectSteppedTrayResult(mode, params, effectiveDimensions, {
+            volume,
+            isGenerating,
+            isPreviewStale,
+        }),
+        [effectiveDimensions, isGenerating, isPreviewStale, mode, params, volume],
     );
-    const effectiveWidth = effectiveDimensions.width;
-    const effectiveDepth = effectiveDimensions.depth;
-    const isOversized = effectiveWidth > MAX_BUILD_SIZE || effectiveDepth > MAX_BUILD_SIZE;
     const [pressedPreviewGroupId, setPressedPreviewGroupId] = useState<string | null>(null);
     const [lockedPreviewGroupId, setLockedPreviewGroupId] = useState<string | null>(null);
     const validGroupIds = useMemo(
@@ -213,12 +212,7 @@ function useSteppedPanelState(options: UseSteppedPanelStateOptions): UseSteppedP
         [activeGroup, params.holeDepth],
     );
     const perfEnabled = useMemo(() => isPerfEnabled(), []);
-    const steppedPricing = useMemo(
-        () => getSteppedPricingBreakdown(params, volume),
-        [params, volume],
-    );
-    const hasGeneratedVolume = volume > 0;
-    const currentArea = effectiveWidth * effectiveDepth;
+    const currentArea = result.dimensions.width * result.dimensions.depth;
 
     useEffect(() => {
         if (!activePressedPreviewGroupId) {
@@ -286,10 +280,7 @@ function useSteppedPanelState(options: UseSteppedPanelStateOptions): UseSteppedP
     }, [currentArea]);
 
     return {
-        maxGroupHeight,
-        effectiveWidth,
-        effectiveDepth,
-        isOversized,
+        result,
         pressedPreviewGroupId,
         lockedPreviewGroupId,
         activePressedPreviewGroupId,
@@ -302,8 +293,6 @@ function useSteppedPanelState(options: UseSteppedPanelStateOptions): UseSteppedP
         activeGroupMinBottomHeight,
         activeGroupSupportThickness,
         perfEnabled,
-        steppedPricing,
-        hasGeneratedVolume,
         currentArea,
         handlePreviewGroupStart,
         handlePreviewGroupEnd,
@@ -319,6 +308,7 @@ function useSteppedPanelState(options: UseSteppedPanelStateOptions): UseSteppedP
  * 都把公共 props 透传给它，并通过可选注入点提供 CAD 专属内容。
  */
 interface SteppedPanelBodyProps extends SteppedPanelSharedProps {
+    mode: "stepped" | "stepped-cad";
     actions: ReactNode;
     structureSummary: string;
     structureExtras?: ReactNode;
@@ -326,6 +316,7 @@ interface SteppedPanelBodyProps extends SteppedPanelSharedProps {
 }
 
 function SteppedPanelBody({
+    mode,
     params,
     effectiveDimensions,
     isPreviewStale,
@@ -359,18 +350,18 @@ function SteppedPanelBody({
     renderGroupSplitAssembly,
 }: SteppedPanelBodyProps) {
     const state = useSteppedPanelState({
+        mode,
         params,
         effectiveDimensions,
         volume,
+        isGenerating,
+        isPreviewStale,
         previewGroupId,
         onPreviewGroupChange,
         setParams,
     });
     const {
-        maxGroupHeight,
-        effectiveWidth,
-        effectiveDepth,
-        isOversized,
+        result,
         activePressedPreviewGroupId,
         groupSlotCounts,
         activeGroup,
@@ -379,8 +370,6 @@ function SteppedPanelBody({
         activeGroupSupportThickness,
         activeGroupBaseHoleSize,
         perfEnabled,
-        steppedPricing,
-        hasGeneratedVolume,
         handlePreviewGroupStart,
         handlePreviewGroupEnd,
         toggleLockedPreviewGroup,
@@ -390,7 +379,7 @@ function SteppedPanelBody({
     } = state;
 
     return (
-        <PanelShell summary={<ResultSummary itemLabel={`${params.groups.length} 组 · ${params.slots.length} 槽`} dimensions={[effectiveWidth, effectiveDepth, maxGroupHeight]} price={`¥${steppedPricing.price.toFixed(0)}`} oversized={isOversized} generating={isGenerating} stale={isPreviewStale} />} actions={actions}>
+        <PanelShell summary={<TrayResultSummary result={result} />} actions={actions}>
         <div className="flex flex-col gap-4 animate-fade-in">
 
             {/* 添加凹槽 */}
@@ -917,93 +906,6 @@ function SteppedPanelBody({
 
             </div>
 
-            <div className="wh-divider" />
-
-            {/* 统计信息 */}
-            <div className={`iron-panel rounded-sm p-4 transition-all duration-300 ${isOversized ? 'border-[#8b1a1a] animate-forge-pulse' : ''}`}>
-                <SectionHeader icon={Ruler} title="统计信息" collapsible defaultOpen={false}
-                    summary={`${params.slots.length}个凹槽 / ${effectiveWidth.toFixed(1)}×${effectiveDepth.toFixed(1)}mm`}>
-                    <div className="space-y-3">
-                        <div className="grid grid-cols-2 gap-2 mb-2">
-                            <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
-                                <span className="text-[10px] text-muted-foreground block">凹槽数量</span>
-                                <span className="text-lg font-mono font-bold text-primary">{params.slots.length}</span>
-                            </div>
-                            <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
-                                <div className="flex items-center justify-center gap-1">
-                                    <span className="text-[10px] text-muted-foreground block">预估报价 & 耗材参考</span>
-                                    <SteppedPricingFormulaTooltip
-                                        breakdown={steppedPricing}
-                                        hasGeneratedVolume={hasGeneratedVolume}
-                                    />
-                                </div>
-                                <div className="flex flex-col items-center mt-0.5">
-                                    <span className="text-sm font-mono font-bold text-[#eab308]">
-                                        ¥{steppedPricing.price.toFixed(0)}
-                                    </span>
-                                    {hasGeneratedVolume ? (
-                                        <span className="text-[9px] text-muted-foreground">
-                                            估重: {steppedPricing.estimatedWeight.toFixed(1)}g
-                                        </span>
-                                    ) : (
-                                        <span className="text-[9px] text-muted-foreground">
-                                            {isGenerating ? "图纸生成中..." : ""}
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* 分组槽位统计 */}
-                        {params.groups.length > 1 && (
-                            <div className="space-y-1">
-                                {params.groups
-                                    .map((group) => {
-                                        const count = groupSlotCounts.get(group.id) ?? 0;
-                                        return (
-                                            <div key={group.id} className="flex items-center gap-2 text-[11px]">
-                                                <div className="w-2 h-2 rounded-sm shrink-0" style={{ background: group.color }} />
-                                                <span className="text-muted-foreground">{group.name}</span>
-                                                <span className="font-mono" style={{ color: group.color }}>↑{group.bottomHeight}mm</span>
-                                                <span className="ml-auto text-muted-foreground">{count} 个</span>
-                                            </div>
-                                        );
-                                    })}
-                            </div>
-                        )}
-
-                        <div className="grid grid-cols-3 gap-2">
-                            {[
-                                { label: "长度", value: effectiveWidth, warn: effectiveWidth > MAX_BUILD_SIZE },
-                                { label: "宽度", value: effectiveDepth, warn: effectiveDepth > MAX_BUILD_SIZE },
-                                { label: "高度", value: maxGroupHeight, warn: false },
-                            ].map(({ label, value, warn }) => (
-                                <div
-                                    key={label}
-                                    className={`relative text-center p-2.5 transition-colors duration-200 ${warn
-                                        ? 'bg-[#8b1a1a15] border border-[#8b1a1a50]'
-                                        : 'bg-[#1c1a16] border border-[#2e2a24]'
-                                        }`}
-                                >
-                                    <p className="text-[11px] text-muted-foreground/60 mb-0.5">{label}</p>
-                                    <p className={`text-sm font-mono font-semibold tabular-nums ${warn ? 'text-[#c04040]' : 'text-foreground'}`}>
-                                        {value.toFixed(1)}
-                                    </p>
-                                    <p className="text-[10px] text-muted-foreground/40 font-mono">mm</p>
-                                </div>
-                            ))}
-                        </div>
-                        {isOversized && (
-                            <div className="flex items-center justify-center gap-1.5 text-xs text-[#c04040] animate-fade-in">
-                                <span>超过常规打印尺寸，仍可继续建模</span>
-                            </div>
-                        )}
-                        <div className="text-[11px] text-muted-foreground/80 text-center pt-1">
-                            有效底板尺寸: {effectiveWidth.toFixed(1)} × {effectiveDepth.toFixed(1)} mm
-                        </div>
-                    </div>
-                </SectionHeader>
-            </div>
         </div>
         </PanelShell>
     );
@@ -1020,6 +922,7 @@ export function SteppedLayoutPanel(props: SteppedLayoutPanelProps) {
     return (
         <SteppedPanelBody
             {...props}
+            mode="stepped"
             actions={actions}
             structureSummary={structureSummary}
         />
@@ -1142,6 +1045,7 @@ export function SteppedCadPanel(props: SteppedCadPanelProps) {
     return (
         <SteppedPanelBody
             {...props}
+            mode="stepped-cad"
             actions={actions}
             structureSummary={structureSummary}
             structureExtras={structureExtras}

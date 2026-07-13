@@ -28,7 +28,11 @@ export function ResultSummary({ itemLabel, dimensions, price, oversized = false,
         </div>
         {details ? <ChevronDown className={`size-4 text-primary/60 transition-transform ${open ? "rotate-180" : ""}`} /> : null}
       </button>
-      {details ? <div className={`grid transition-[grid-template-rows,opacity] duration-200 ${open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}><div className="min-h-0 overflow-hidden"><div className="border-t border-[#2e2a24] px-3 py-2">{details}</div></div></div> : null}
+      {details && open ? (
+        <div className="border-t border-[#2e2a24] px-3 py-2 animate-fade-in">
+          {details}
+        </div>
+      ) : null}
     </div>
   );
 }

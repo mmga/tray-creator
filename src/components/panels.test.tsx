@@ -15,6 +15,12 @@ import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 import type { SteppedOptimizationProposal } from "@/lib/stepped-global-optimize";
 
+function expandResultSummary() {
+  fireEvent.click(
+    within(screen.getByTestId("panel-summary")).getByRole("button"),
+  );
+}
+
 const {
   toastMock,
   resetPerfMetricsMock,
@@ -173,19 +179,23 @@ import {
 const panelActionsStub = <div data-testid="panel-actions-stub" />;
 
 function ParameterPanel(
-  props: Omit<React.ComponentProps<typeof ParameterPanelImplementation>, "actions"> &
-    { actions?: React.ReactNode },
+  props: Omit<
+    React.ComponentProps<typeof ParameterPanelImplementation>,
+    "actions" | "isPreviewStale"
+  > & { actions?: React.ReactNode; isPreviewStale?: boolean },
 ) {
-  const { actions = panelActionsStub, ...rest } = props;
-  return <ParameterPanelImplementation {...rest} actions={actions} />;
+  const { actions = panelActionsStub, isPreviewStale = false, ...rest } = props;
+  return <ParameterPanelImplementation {...rest} actions={actions} isPreviewStale={isPreviewStale} />;
 }
 
 function CustomPanel(
-  props: Omit<React.ComponentProps<typeof CustomPanelImplementation>, "actions"> &
-    { actions?: React.ReactNode },
+  props: Omit<
+    React.ComponentProps<typeof CustomPanelImplementation>,
+    "actions" | "isPreviewStale"
+  > & { actions?: React.ReactNode; isPreviewStale?: boolean },
 ) {
-  const { actions = panelActionsStub, ...rest } = props;
-  return <CustomPanelImplementation {...rest} actions={actions} />;
+  const { actions = panelActionsStub, isPreviewStale = false, ...rest } = props;
+  return <CustomPanelImplementation {...rest} actions={actions} isPreviewStale={isPreviewStale} />;
 }
 
 function SimpleSteppedPanel(
@@ -392,8 +402,10 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
       />,
     );
 
-    expect(screen.getByText("超过常规打印尺寸 (260×260mm)，仍可继续建模")).toBeInTheDocument();
-    expect(screen.getByText("PLA估重: 0.7g")).toBeInTheDocument();
+    expect(screen.getByText("超出常规尺寸")).toBeInTheDocument();
+    expandResultSummary();
+    expect(screen.getByText(/超过常规打印尺寸 260 × 260 mm/)).toBeInTheDocument();
+    expect(screen.getByText("0.7 g")).toBeInTheDocument();
 
   });
 
@@ -418,7 +430,7 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
     );
 
     expect(screen.getByText("选择底座尺寸")).toBeInTheDocument();
-    expect(screen.getByText("待锻造")).toBeInTheDocument();
+    expect(screen.getByText("可锻造")).toBeInTheDocument();
 
     fireEvent.click(
       screen.getByRole("switch", {
@@ -462,7 +474,7 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
       />,
     );
 
-    expect(screen.getByText("图纸生成中...")).toBeInTheDocument();
+    expect(screen.getByText("正在锻造")).toBeInTheDocument();
 
     fireEvent.click(
       screen.getByRole("button", {
@@ -502,7 +514,7 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
       />,
     );
 
-    expect(screen.getByText("待锻造")).toBeInTheDocument();
+    expect(screen.getByText("可锻造")).toBeInTheDocument();
   });
 
   it("updates columns, rows, and unified spacing", () => {
@@ -900,14 +912,13 @@ describe("CustomPanel", { timeout: 15000 }, () => {
       />,
     );
 
-    expect(
-      screen.getByText(
-        `上沿尺寸: ${dimensions.width.toFixed(1)} × ${dimensions.depth.toFixed(1)} mm`,
-      ),
-    ).toBeInTheDocument();
+    expandResultSummary();
+    expect(screen.getByText(`${dimensions.width.toFixed(1)} mm`)).toBeInTheDocument();
+    expect(screen.getByText(`${dimensions.depth.toFixed(1)} mm`)).toBeInTheDocument();
+    expect(screen.getByText("有效底板")).toBeInTheDocument();
     expect(screen.getByText("长度")).toBeInTheDocument();
     expect(screen.getByText("宽度")).toBeInTheDocument();
-    expect(screen.queryByText("上沿尺寸: 50.0 × 32.0 mm")).not.toBeInTheDocument();
+    expect(screen.queryByText("50.0 mm")).not.toBeInTheDocument();
   });
 
   it("routes custom layout parameter controls", () => {
@@ -1046,8 +1057,9 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
     );
 
     expect(screen.getByText("预览待更新")).toBeInTheDocument();
-    expect(screen.getByText("¥0.3")).toBeInTheDocument();
-    expect(screen.getByText("估重: 0.7g")).toBeInTheDocument();
+    expect(screen.getByText(/¥0\.3/)).toBeInTheDocument();
+    expandResultSummary();
+    expect(screen.getByText("0.7 g")).toBeInTheDocument();
 
     fireEvent.click(
       screen.getByRole("switch", {
@@ -1112,7 +1124,7 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
     expect(
       screen.getByRole("button", { name: "Trim 到凹槽占用区域" }),
     ).toBeDisabled();
-    expect(screen.getByText("超过常规打印尺寸，仍可继续建模")).toBeInTheDocument();
+    expect(screen.getByText("超出常规尺寸")).toBeInTheDocument();
   });
 
   it("renders the empty-row state and only allows creating a new row", () => {
@@ -1196,7 +1208,6 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
     );
 
     expect(screen.getByText("0 槽位 / 空行")).toBeInTheDocument();
-    expect(screen.getByText("图纸生成中...")).toBeInTheDocument();
     expect(screen.getByText("正在锻造")).toBeInTheDocument();
     expect(screen.getByText("-")).toBeInTheDocument();
     expect(screen.getAllByText("0mm")).toHaveLength(2);
@@ -1795,6 +1806,7 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
     );
 
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+    expandResultSummary();
 
     fireEvent.mouseEnter(
       screen.getByRole("button", { name: "查看阶梯底座报价公式" }),
@@ -1844,12 +1856,11 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
       />,
     );
 
+    expect(screen.getByText("正在锻造")).toBeInTheDocument();
+    expandResultSummary();
     const tooltipButton = screen.getByRole("button", {
       name: tooltipButtonLabel,
     });
-
-    expect(screen.getByText("图纸生成中...")).toBeInTheDocument();
-    expect(screen.getByText("正在锻造")).toBeInTheDocument();
 
     fireEvent.mouseEnter(tooltipButton);
     expect(screen.getByRole("tooltip")).toHaveTextContent(
@@ -1900,7 +1911,7 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
       />,
     );
 
-    expect(screen.getByText("超过常规打印尺寸，仍可继续建模")).toBeInTheDocument();
+    expect(screen.getByText("超出常规尺寸")).toBeInTheDocument();
   });
 
   it("toggles preview groups through pointer and keyboard interactions", () => {

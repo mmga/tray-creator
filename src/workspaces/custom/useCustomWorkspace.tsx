@@ -119,6 +119,7 @@ export function useCustomWorkspace({
         onAddSlot={model.addSlot}
         onRandomizeSlots={model.randomizeSlots}
         isGenerating={model.isGenerating}
+        isPreviewStale={model.isPreviewStale}
         volume={model.volume}
       />
     ),
@@ -127,6 +128,7 @@ export function useCustomWorkspace({
       model.addSlot,
       model.effectiveDimensions,
       model.isGenerating,
+      model.isPreviewStale,
       model.params,
       model.randomizeSlots,
       model.updateParam,
