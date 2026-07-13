@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Layout, Wrench, Ruler, SlidersHorizontal } from "lucide-react";
+import { Layout, Wrench, Ruler } from "lucide-react";
 import { BaseHoleConfig } from "@/components/BaseHoleConfig";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
@@ -31,6 +31,8 @@ import {
   PanelActionSection,
   type PanelDraftActions,
 } from "@/components/PanelActionSection";
+import { PanelShell } from "@/components/PanelShell";
+import { ResultSummary } from "@/components/ResultSummary";
 
 interface ParameterPanelProps {
   params: TrayParams;
@@ -130,6 +132,10 @@ export default function ParameterPanel({
 
 
   return (
+    <PanelShell
+      summary={<ResultSummary itemLabel={`${params.rows * params.columns} 个凹槽`} dimensions={[dimensions.width, dimensions.depth, dimensions.height]} price={`¥${calculateGridPrice(params).toFixed(2)}`} oversized={isOversized} generating={isGenerating} />}
+      actions={<PanelActionSection autoPreviewId="auto-preview" autoPreview={autoPreview} onAutoPreviewChange={setAutoPreview} onGenerate={() => onGenerate({ shouldSwitchView: true })} onExportSTL={onExportSTL} onReset={handleReset} isGenerating={isGenerating} isOversized={isOversized} mode="grid" params={params} onImport={(p) => replaceParams(p as TrayParams)} draftActions={draftActions} />}
+    >
     <div className="flex flex-col gap-4 animate-fade-in">
       {/* 布局参数 — 移动端默认展开 */}
       <div className="iron-panel rounded-sm p-4">
@@ -231,39 +237,11 @@ export default function ParameterPanel({
                 unit={PARAM_CONFIG.boundarySpacing.unit}
               />
             )}
-          </div>
-        </SectionHeader>
-      </div>
-
-      {/* 高级设置 — 结构模式互斥选择 */}
-      <div className="iron-panel rounded-sm p-4">
-        <SectionHeader icon={SlidersHorizontal} title="高级设置" collapsible defaultOpen={false}
-          summary={`结构模式：${structureModeLabel}`}>
-          <div className="space-y-2">
-            <Label className="text-sm text-muted-foreground">结构模式</Label>
-            <div className="grid grid-cols-3 gap-1 rounded-sm border border-[#2e2a24] bg-[#1c1a16] p-1">
-              {[
-                { mode: "full" as const, label: "完整圆槽", disabled: false },
-                { mode: "half-circle" as const, label: "半圆槽", disabled: !canUseHalfCircleSlots },
-                { mode: "base-plate-only" as const, label: "仅内嵌孔底板", disabled: false },
-              ].map(({ mode, label, disabled }) => {
-                const active = structureMode === mode;
-                return (
-                  <button
-                    key={mode}
-                    type="button"
-                    aria-pressed={active}
-                    disabled={disabled}
-                    onClick={() => handleStructureModeChange(mode)}
-                    className={`min-h-9 px-2 text-xs font-semibold transition-colors ${active
-                      ? "bg-[#8cb880] text-[#11140f]"
-                      : "text-[#d8d1c5] hover:bg-[#252119] disabled:cursor-not-allowed disabled:opacity-35"
-                      }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
+            <div className="space-y-2 pt-1">
+              <Label className="text-sm text-muted-foreground">槽位结构</Label>
+              <div className="grid grid-cols-3 gap-1 rounded-sm border border-[#2e2a24] bg-[#1c1a16] p-1">
+                {[{ mode: "full" as const, label: "完整圆槽", disabled: false }, { mode: "half-circle" as const, label: "半圆槽", disabled: !canUseHalfCircleSlots }, { mode: "base-plate-only" as const, label: "仅内嵌孔底板", disabled: false }].map(({ mode, label, disabled }) => <button key={mode} type="button" aria-pressed={structureMode === mode} disabled={disabled} onClick={() => handleStructureModeChange(mode)} className={`min-h-9 px-1 text-[11px] font-semibold ${structureMode === mode ? "bg-[#8cb880] text-[#11140f]" : "text-[#d8d1c5] hover:bg-[#252119] disabled:opacity-35"}`}>{label}</button>)}
+              </div>
             </div>
           </div>
         </SectionHeader>
@@ -271,7 +249,7 @@ export default function ParameterPanel({
 
       {/* 结构参数 — 移动端默认折叠 */}
       <div className="iron-panel rounded-sm p-4">
-        <SectionHeader icon={Wrench} title="结构参数" collapsible defaultOpen={false}
+        <SectionHeader icon={Wrench} title="制造结构" collapsible defaultOpen={false}
           summary={`底厚${params.baseThickness}mm / 孔深${params.holeDepth}mm / 圆角${params.cornerRadius}mm / 斜面${params.sideBevelWidth}mm`}>
           <div className="space-y-4">
 
@@ -382,21 +360,7 @@ export default function ParameterPanel({
       {/* Gold trim divider */}
       <div className="wh-divider" />
 
-      <PanelActionSection
-        autoPreviewId="auto-preview"
-        autoPreview={autoPreview}
-        onAutoPreviewChange={setAutoPreview}
-        onGenerate={() => onGenerate({ shouldSwitchView: true })}
-        onExportSTL={onExportSTL}
-        onReset={handleReset}
-        isGenerating={isGenerating}
-        isOversized={isOversized}
-        mode="grid"
-        params={params}
-        onImport={(p) => replaceParams(p as TrayParams)}
-        draftActions={draftActions}
-      />
-
     </div>
+    </PanelShell>
   );
 }

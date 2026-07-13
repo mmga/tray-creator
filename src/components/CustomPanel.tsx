@@ -38,6 +38,8 @@ import {
   PanelActionSection,
   type PanelDraftActions,
 } from "@/components/PanelActionSection";
+import { PanelShell } from "@/components/PanelShell";
+import { ResultSummary } from "@/components/ResultSummary";
 
 // ── Props ──────────────────────────────
 
@@ -137,9 +139,12 @@ export default function CustomPanel({
     toast("error", "固定可用区域无法容纳当前全部凹槽");
   };
 
+  const panelActions = <PanelActionSection autoPreviewId="custom-auto-preview" autoPreview={autoPreview} onAutoPreviewChange={setAutoPreview} onGenerate={() => onGenerate({ shouldSwitchView: true })} onExportSTL={onExportSTL} onReset={handleReset} isGenerating={isGenerating} isOversized={isOversized} mode="custom" params={params} onImport={(p) => { const nextParams = p as CustomLayoutParams; if (onImportParams) onImportParams(nextParams); else setParams(nextParams); }} draftActions={draftActions} />;
+
   return (
+    <PanelShell summary={<ResultSummary itemLabel={`${params.slots.length} 个凹槽`} dimensions={[displayLength, displayWidth, dimensions.height]} price={`¥${calculateCustomPrice(params, volume).toFixed(1)}`} oversized={isOversized} generating={isGenerating} />} actions={panelActions}>
     <div className="flex flex-col gap-4 animate-fade-in">
-      <div className="iron-panel rounded-sm p-4">
+      <div className="order-2 iron-panel rounded-sm p-4">
         <SectionHeader
           icon={Ruler}
           title="托盘尺寸"
@@ -205,8 +210,8 @@ export default function CustomPanel({
       </div>
 
       {/* 添加凹槽 — 移动端默认展开 */}
-      <div className="iron-panel rounded-sm p-3">
-        <SectionHeader icon={BoxSelect} title="添加凹槽" collapsible defaultOpen={true}
+      <div className="order-1 iron-panel rounded-sm p-3">
+        <SectionHeader icon={BoxSelect} title="布局编辑" collapsible defaultOpen={true}
           summary={`已有 ${params.slots.length} 个凹槽`}>
           <div className="space-y-2">
             <div className="text-[10px] text-muted-foreground/70 font-bold tracking-wider uppercase mb-0.5">圆形</div>
@@ -281,8 +286,8 @@ export default function CustomPanel({
       </div>
 
       {/* 结构参数 — 移动端默认折叠 */}
-      <div className="iron-panel rounded-sm p-4">
-        <SectionHeader icon={Wrench} title="结构参数" collapsible defaultOpen={false}
+      <div className="order-3 iron-panel rounded-sm p-4">
+        <SectionHeader icon={Wrench} title="制造结构" collapsible defaultOpen={false}
           summary={`槽距${params.spacing}mm / 边距${(params.boundarySpacingIndependent ? params.boundarySpacing : params.spacing)}mm / 斜面${params.sideBevelWidth}mm`}>
           <div className="space-y-4">
             <ParamSlider
@@ -345,17 +350,17 @@ export default function CustomPanel({
       </div>
 
       {/* 底板孔位 — 移动端默认折叠 */}
-      <BaseHoleConfig<CustomLayoutParams>
+      <div className="order-4"><BaseHoleConfig<CustomLayoutParams>
         enableBaseHole={params.enableBaseHole}
         baseThickness={params.baseThickness}
         resolvedBaseHoleSize={resolvedBaseHoleSize}
         updateParam={updateParam}
         collapsible
         defaultOpen={false}
-      />
+      /></div>
 
       {/* 统计信息 — 移动端默认折叠 */}
-      <div className={`iron-panel rounded-sm p-4 transition-all duration-300 ${isOversized ? 'border-[#8b1a1a] animate-forge-pulse' : ''}`}>
+      <div className={`order-5 iron-panel rounded-sm p-4 transition-all duration-300 ${isOversized ? 'border-[#8b1a1a] animate-forge-pulse' : ''}`}>
         <SectionHeader icon={Ruler} title="统计信息" collapsible defaultOpen={false}
           summary={`${params.slots.length}个凹槽 / ${displayLength.toFixed(1)}×${displayWidth.toFixed(1)}mm`}>
           <div className="space-y-3">
@@ -416,29 +421,7 @@ export default function CustomPanel({
         </SectionHeader>
       </div>
 
-      <div className="wh-divider" />
-
-      <PanelActionSection
-        autoPreviewId="custom-auto-preview"
-        autoPreview={autoPreview}
-        onAutoPreviewChange={setAutoPreview}
-        onGenerate={() => onGenerate({ shouldSwitchView: true })}
-        onExportSTL={onExportSTL}
-        onReset={handleReset}
-        isGenerating={isGenerating}
-        isOversized={isOversized}
-        mode="custom"
-        params={params}
-        onImport={(p) => {
-          const nextParams = p as CustomLayoutParams;
-          if (onImportParams) {
-            onImportParams(nextParams);
-            return;
-          }
-          setParams(nextParams);
-        }}
-        draftActions={draftActions}
-      />
     </div>
+    </PanelShell>
   );
 }

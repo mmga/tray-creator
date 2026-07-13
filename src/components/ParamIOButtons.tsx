@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, Share2 } from "lucide-react";
 import { exportParams, importParams } from "@/lib/param-io";
 import { useToast } from "@/hooks/useToast";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import type {
     AppMode,
     CustomLayoutParams,
@@ -17,9 +18,10 @@ interface ParamIOButtonsProps {
     mode: AppMode;
     params: TrayParams | CustomLayoutParams | SimpleSteppedLayoutParams | SteppedLayoutParams;
     onImport: (params: unknown) => void;
+    variant?: "buttons" | "menu";
 }
 
-export function ParamIOButtons({ mode, params, onImport }: ParamIOButtonsProps) {
+export function ParamIOButtons({ mode, params, onImport, variant = "buttons" }: ParamIOButtonsProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
 
@@ -48,6 +50,20 @@ export function ParamIOButtons({ mode, params, onImport }: ParamIOButtonsProps) 
     };
 
     const outlineBtnClasses = "flex-1 h-9 text-sm tracking-wider border-[#2e2a24] text-muted-foreground cursor-pointer hover:bg-[#1c1a16] hover:text-foreground/80 hover:border-[#3d372e] transition-all duration-200";
+
+    if (variant === "menu") {
+        return (
+            <>
+                <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleFileChange} />
+                <DropdownMenuItem onSelect={handleExport}>
+                    <Share2 className="size-4" />导出参数
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={handleImportClick}>
+                    <Upload className="size-4" />导入参数
+                </DropdownMenuItem>
+            </>
+        );
+    }
 
     return (
         <>

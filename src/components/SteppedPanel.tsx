@@ -39,7 +39,6 @@ import {
     Eye,
     AlertTriangle,
     Circle,
-    Download,
 } from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
@@ -57,6 +56,8 @@ import {
     PanelActionSection,
     type PanelDraftActions,
 } from "@/components/PanelActionSection";
+import { PanelShell } from "@/components/PanelShell";
+import { ResultSummary } from "@/components/ResultSummary";
 import { SteppedPricingFormulaTooltip } from "@/components/SteppedPricingFormulaTooltip";
 
 interface SteppedPanelProps {
@@ -306,11 +307,14 @@ export default function SteppedPanel({
             : undefined
     );
 
+    const panelActions = <PanelActionSection onGenerate={onGenerate} onExportSTL={onExportSTL} onReset={handleReset} isGenerating={isGenerating} isOversized={isOversized} mode={mode} params={params} onImport={(p) => { const nextParams = p as SteppedLayoutParams; if (onImportParams) onImportParams(nextParams); else setParams(nextParams); }} showStaleNotice={isPreviewStale} draftActions={resolvedDraftActions} onExportSplitParts={showSplitAssemblyMode ? onExportSplitParts : undefined} canExportSplitParts={Boolean(onExportSplitParts && params.groups.length >= 2 && params.slots.length > 0)} />;
+
     return (
+        <PanelShell summary={<ResultSummary itemLabel={`${params.groups.length} 组 · ${params.slots.length} 槽`} dimensions={[effectiveWidth, effectiveDepth, maxGroupHeight]} price={`¥${steppedPricing.price.toFixed(0)}`} oversized={isOversized} generating={isGenerating} stale={isPreviewStale} />} actions={panelActions}>
         <div className="flex flex-col gap-4 animate-fade-in">
 
             {/* 分组管理 */}
-            <div className="iron-panel rounded-sm p-3">
+            <div className="order-3 iron-panel rounded-sm p-3">
                 <SectionHeader icon={Layers} title="分组管理" collapsible defaultOpen={true}
                     summary={`${params.groups.length} 组 / ${params.slots.length} 个凹槽`}>
                     <div className="space-y-1.5 mt-1">
@@ -542,7 +546,7 @@ export default function SteppedPanel({
 
             {/* 选中凹槽操作：移动到组 */}
             {selectedSlotIds.length > 0 && (
-                <div className="iron-panel rounded-sm p-3">
+                <div className="order-1 iron-panel rounded-sm p-3">
                     <SectionHeader icon={ArrowRight} title="选中凹槽" collapsible defaultOpen={true}
                         summary={`${selectedSlotIds.length} 个已选中，移动到组`}>
                         <div className="space-y-2 mt-1">
@@ -568,7 +572,7 @@ export default function SteppedPanel({
             )}
 
             {/* 添加凹槽 */}
-            <div className="iron-panel rounded-sm p-3">
+            <div className="order-2 iron-panel rounded-sm p-3">
                 <SectionHeader icon={BoxSelect} title="添加凹槽" collapsible defaultOpen={true}
                     summary={`已有 ${params.slots.length} 个凹槽`}>
                     <div className="space-y-2">
@@ -598,7 +602,7 @@ export default function SteppedPanel({
                 </SectionHeader>
             </div>
 
-            <div className="iron-panel rounded-sm p-4">
+            <div className="order-5 iron-panel rounded-sm p-4">
                 <SectionHeader icon={Circle} title="底板孔位" collapsible defaultOpen={false}
                     summary={params.enableBaseHole ? "磁吸孔 按各组最大槽径自动匹配" : "普通托盘"}>
                     <div className="space-y-4">
@@ -678,8 +682,8 @@ export default function SteppedPanel({
             </div>
 
             {/* 结构参数 */}
-            <div className="iron-panel rounded-sm p-4">
-                <SectionHeader icon={Wrench} title="结构参数" collapsible defaultOpen={false}
+            <div className="order-4 iron-panel rounded-sm p-4">
+                <SectionHeader icon={Wrench} title="阶梯结构" collapsible defaultOpen={false}
                     summary={showSplitAssemblyMode
                         ? `槽距${params.spacing}mm / 凹槽深度${params.holeDepth}mm / 装配槽${params.splitGrooveDepth}mm${splitFeatureSummary} / 断连${params.disconnectDistance}mm`
                         : `槽距${params.spacing}mm / 凹槽深度${params.holeDepth}mm / 断连${params.disconnectDistance}mm`}>
@@ -778,7 +782,7 @@ export default function SteppedPanel({
             </div>
 
             {/* 统计信息 */}
-            <div className={`iron-panel rounded-sm p-4 transition-all duration-300 ${isOversized ? 'border-[#8b1a1a] animate-forge-pulse' : ''}`}>
+            <div className={`order-7 iron-panel rounded-sm p-4 transition-all duration-300 ${isOversized ? 'border-[#8b1a1a] animate-forge-pulse' : ''}`}>
                 <SectionHeader icon={Ruler} title="统计信息" collapsible defaultOpen={false}
                     summary={`${params.slots.length}个凹槽 / ${effectiveWidth.toFixed(1)}×${effectiveDepth.toFixed(1)}mm`}>
                     <div className="space-y-3">
@@ -866,7 +870,7 @@ export default function SteppedPanel({
             <div className="wh-divider" />
 
             {/* 操作按钮 */}
-            <div className="flex flex-col gap-2.5 pb-4">
+            <div className="order-6 flex flex-col gap-2.5 pb-4">
                 <Button
                     variant="outline"
                     onClick={onGenerateOptimizationProposals}
@@ -966,37 +970,6 @@ export default function SteppedPanel({
                         </div>
                     </div>
                 ) : null}
-                <PanelActionSection
-                    onGenerate={onGenerate}
-                    onExportSTL={onExportSTL}
-                    onReset={handleReset}
-                    isGenerating={isGenerating}
-                    isOversized={isOversized}
-                    mode="stepped"
-                    params={params}
-                    onImport={(p) => {
-                        const nextParams = p as SteppedLayoutParams;
-                        if (onImportParams) {
-                            onImportParams(nextParams);
-                            return;
-                        }
-                        setParams(nextParams);
-                    }}
-                    showStaleNotice={isPreviewStale}
-                    draftActions={resolvedDraftActions}
-                />
-                {showSplitAssemblyMode ? (
-                    <Button
-                        variant="outline"
-                        onClick={() => onExportSplitParts?.()}
-                        disabled={!onExportSplitParts || params.groups.length < 2 || params.slots.length === 0}
-                        className="w-full h-10 border-[#4a6741] text-[#8cb880] hover:bg-[#20301d] hover:text-[#a8d39a] hover:border-[#5f8054] disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                        <Download className="w-4 h-4 mr-2" />
-                        导出分件 STL
-                    </Button>
-                ) : null}
-
                 {perfEnabled && (
                     <div className="iron-panel rounded-sm p-3">
                         <SectionHeader
@@ -1036,5 +1009,6 @@ export default function SteppedPanel({
                 )}
             </div>
         </div>
+        </PanelShell>
     );
 }

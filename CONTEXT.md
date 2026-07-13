@@ -164,6 +164,10 @@ _Avoid_: Making the canvas infer mode semantics from raw Mode params.
 A mode-specific adapter that projects Mode-local layout state into a **Layout Editor Viewport**.
 _Avoid_: Passing mode-specific canvas exceptions directly through the page or viewport shell.
 
+**Tray Result Projection**:
+A read-only, mode-specific result derived once from normalized tray state for both the fixed result summary and its expanded details.
+_Avoid_: Recomputing dimensions, quote, weight, slot count, or mode-specific footprint semantics separately in summary and detail views.
+
 **Effective Baseplate**:
 The actual baseplate footprint derived from placed slots and boundary spacing, rather than the raw tray width/depth inputs.
 _Avoid_: Using baseplate, tray size, or tray width/depth to mean the derived printable footprint in custom mode.
@@ -286,6 +290,12 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A **Layout Editor Viewport** is the shape consumed by the layout canvas for 2D editing.
 - A **Layout Editor Viewport Adapter** projects a **Mode**'s local layout state into a **Layout Editor Viewport**.
 - A layout canvas should consume a **Layout Editor Viewport** instead of inferring **Mode** behavior from raw parameters.
+- A **Tray Result Projection** belongs to exactly one **Mode** editor state.
+- A fixed result summary and its expanded details consume the same **Tray Result Projection** instance.
+- A **Tray Result Projection** preserves **Slot Count**, build-limit, generation, and preview-staleness facts independently rather than collapsing them into one lifecycle state.
+- A custom **Tray Result Projection** distinguishes an **Effective Baseplate** from a **Fixed Tray Outer Footprint**.
+- A grid **Tray Result Projection** uses the **Grid Footprint Area** shown to the user.
+- A stepped CAD **Tray Result Projection** reuses the shared **Stepped Layout Core** result and does not expose split-assembly-only behaviour as ordinary tray statistics.
 - In custom mode, the **Effective Baseplate** is derived from placed **Slot Instances** plus boundary spacing.
 - A custom **Tray Sizing Mode** is either automatic, which uses the **Effective Baseplate**, or fixed, which uses the configured tray width and depth as the final tray footprint.
 - In fixed custom **Tray Sizing Mode**, **Slot Instances** use the fixed tray's lower-left corner as their layout origin.

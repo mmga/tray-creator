@@ -18,6 +18,8 @@ import {
   PanelActionSection,
   type PanelDraftActions,
 } from "@/components/PanelActionSection";
+import { PanelShell } from "@/components/PanelShell";
+import { ResultSummary } from "@/components/ResultSummary";
 import {
   ArrowDown,
   ArrowUp,
@@ -110,9 +112,12 @@ export default function SimpleSteppedPanel({
     onSetActiveRow(null);
   };
 
+  const panelActions = <PanelActionSection onGenerate={onGenerate} onExportSTL={onExportSTL} onReset={handleReset} isGenerating={isGenerating} isOversized={isOversized} mode="simple-stepped" params={params} onImport={(p) => { const nextParams = p as SimpleSteppedLayoutParams; if (onImportParams) onImportParams(nextParams); else setParams(nextParams); }} showStaleNotice={isPreviewStale} draftActions={draftActions} />;
+
   return (
+    <PanelShell summary={<ResultSummary itemLabel={`${params.rows.length} 行 · ${params.slots.length} 槽`} dimensions={[effectiveDimensions.width, effectiveDimensions.depth, effectiveDimensions.height]} price={`¥${calculateSimpleSteppedPrice(params, volume).toFixed(1)}`} oversized={isOversized} generating={isGenerating} stale={isPreviewStale} />} actions={panelActions}>
     <div className="flex flex-col gap-4 animate-fade-in">
-      <div className="iron-panel rounded-sm p-3">
+      <div className="order-1 iron-panel rounded-sm p-3">
         <SectionHeader
           icon={Rows3}
           title="行管理"
@@ -255,7 +260,7 @@ export default function SimpleSteppedPanel({
         </SectionHeader>
       </div>
 
-      <div className="iron-panel rounded-sm p-3">
+      <div className="order-2 iron-panel rounded-sm p-3">
         <SectionHeader
           icon={Plus}
           title="添加凹槽"
@@ -289,10 +294,10 @@ export default function SimpleSteppedPanel({
         </SectionHeader>
       </div>
 
-      <div className="iron-panel rounded-sm p-4">
+      <div className="order-3 iron-panel rounded-sm p-4">
         <SectionHeader
           icon={Ruler}
-          title="结构参数"
+          title="阶梯结构"
           collapsible
           defaultOpen={false}
           summary={`首排${params.firstRowHeight}mm / 步进${params.stepHeight}mm / 圆角${params.cornerRadius}mm / ${spacingSummary}`}
@@ -364,7 +369,7 @@ export default function SimpleSteppedPanel({
         </SectionHeader>
       </div>
 
-      <div className={`iron-panel rounded-sm p-4 transition-all duration-300 ${isOversized ? "border-[#8b1a1a] animate-forge-pulse" : ""}`}>
+      <div className={`order-4 iron-panel rounded-sm p-4 transition-all duration-300 ${isOversized ? "border-[#8b1a1a] animate-forge-pulse" : ""}`}>
         <SectionHeader
           icon={Ruler}
           title="统计信息"
@@ -455,27 +460,7 @@ export default function SimpleSteppedPanel({
         </SectionHeader>
       </div>
 
-      <div className="wh-divider" />
-
-      <PanelActionSection
-        onGenerate={onGenerate}
-        onExportSTL={onExportSTL}
-        onReset={handleReset}
-        isGenerating={isGenerating}
-        isOversized={isOversized}
-        mode="simple-stepped"
-        params={params}
-        onImport={(p) => {
-          const nextParams = p as SimpleSteppedLayoutParams;
-          if (onImportParams) {
-            onImportParams(nextParams);
-            return;
-          }
-          setParams(nextParams);
-        }}
-        showStaleNotice={isPreviewStale}
-        draftActions={draftActions}
-      />
     </div>
+    </PanelShell>
   );
 }
