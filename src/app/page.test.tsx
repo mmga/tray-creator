@@ -499,7 +499,7 @@ vi.mock("next/dynamic", async () => {
 
   return {
     default(
-      loader: () => Promise<{ default: React.ComponentType<unknown> }>,
+      loader: () => Promise<unknown>,
       options?: { loading?: () => React.ReactNode },
     ) {
       return function DynamicComponent(props: unknown) {
@@ -510,8 +510,18 @@ vi.mock("next/dynamic", async () => {
           let active = true;
 
           void loader().then((module) => {
-            if (active) {
-              setResolved(() => module.default);
+            if (!active) {
+              return;
+            }
+            // 兼容两种动态导入写法：
+            //   - `import("...")`           → module.default
+            //   - `import("...").then(m => m.SteppedLayoutPanel)` → 直接为组件
+            const resolved =
+              typeof module === "function"
+                ? (module as React.ComponentType<unknown>)
+                : (module as { default?: React.ComponentType<unknown> }).default;
+            if (resolved) {
+              setResolved(() => resolved);
             }
           });
 
@@ -614,70 +624,79 @@ vi.mock("@/components/SimpleSteppedPanel", () => ({
 }));
 
 vi.mock("@/components/SteppedPanel", () => ({
-  default({
-    selectedSlotIds,
-    previewGroupId,
-    draftActions,
-    onPreviewGroupChange,
-    optimizationProposals,
-    isOptimizingLayout,
-    onGenerateOptimizationProposals,
-    onApplyOptimizationProposal,
-    onClearOptimizationProposals,
-  }: {
-    selectedSlotIds: string[];
-    previewGroupId: string | null;
-    draftActions?: {
-      currentDraftId: string | null;
-      hasUnsavedChanges: boolean;
-      onSaveDraft: () => void;
-      onOpenDraftDialog: () => void;
-    };
-    onPreviewGroupChange: (groupId: string | null) => void;
-    optimizationProposals: { id: string }[];
-    isOptimizingLayout: boolean;
-    onGenerateOptimizationProposals: () => void;
-    onApplyOptimizationProposal: (proposalId: string) => void;
-    onClearOptimizationProposals: () => void;
-  }) {
-    return (
-      <div
-        data-testid="stepped-panel"
-        data-selected-slot-ids={selectedSlotIds.join(",")}
-        data-preview-group-id={previewGroupId ?? ""}
-        data-current-draft-id={draftActions?.currentDraftId ?? ""}
-        data-optimization-count={optimizationProposals.length}
-        data-optimizing={String(isOptimizingLayout)}
-      >
-        <button type="button" onClick={() => onPreviewGroupChange("group-1")}>
-          设置预览组
-        </button>
-        <button type="button" onClick={onGenerateOptimizationProposals}>
-          生成优化建议
-        </button>
-        <button
-          type="button"
-          onClick={() => onApplyOptimizationProposal(optimizationProposals[0]?.id ?? "")}
-        >
-          应用优化建议
-        </button>
-        <button type="button" onClick={onClearOptimizationProposals}>
-          清空优化建议
-        </button>
-        {draftActions ? (
-          <>
-            <button type="button" onClick={draftActions.onSaveDraft}>
-              {draftActions.currentDraftId ? "更新草稿" : "保存草稿"}
-            </button>
-            <button type="button" onClick={draftActions.onOpenDraftDialog}>
-              草稿列表
-            </button>
-          </>
-        ) : null}
-      </div>
-    );
+  SteppedLayoutPanel(props: SteppedPanelMockProps) {
+    return SteppedPanelMock(props);
+  },
+  SteppedCadPanel(props: SteppedPanelMockProps) {
+    return SteppedPanelMock(props);
   },
 }));
+
+interface SteppedPanelMockProps {
+  selectedSlotIds: string[];
+  previewGroupId: string | null;
+  draftActions?: {
+    currentDraftId: string | null;
+    hasUnsavedChanges: boolean;
+    onSaveDraft: () => void;
+    onOpenDraftDialog: () => void;
+  };
+  onPreviewGroupChange: (groupId: string | null) => void;
+  optimizationProposals: { id: string }[];
+  isOptimizingLayout: boolean;
+  onGenerateOptimizationProposals: () => void;
+  onApplyOptimizationProposal: (proposalId: string) => void;
+  onClearOptimizationProposals: () => void;
+}
+
+function SteppedPanelMock({
+  selectedSlotIds,
+  previewGroupId,
+  draftActions,
+  onPreviewGroupChange,
+  optimizationProposals,
+  isOptimizingLayout,
+  onGenerateOptimizationProposals,
+  onApplyOptimizationProposal,
+  onClearOptimizationProposals,
+}: SteppedPanelMockProps) {
+  return (
+    <div
+      data-testid="stepped-panel"
+      data-selected-slot-ids={selectedSlotIds.join(",")}
+      data-preview-group-id={previewGroupId ?? ""}
+      data-current-draft-id={draftActions?.currentDraftId ?? ""}
+      data-optimization-count={optimizationProposals.length}
+      data-optimizing={String(isOptimizingLayout)}
+    >
+      <button type="button" onClick={() => onPreviewGroupChange("group-1")}>
+        设置预览组
+      </button>
+      <button type="button" onClick={onGenerateOptimizationProposals}>
+        生成优化建议
+      </button>
+      <button
+        type="button"
+        onClick={() => onApplyOptimizationProposal(optimizationProposals[0]?.id ?? "")}
+      >
+        应用优化建议
+      </button>
+      <button type="button" onClick={onClearOptimizationProposals}>
+        清空优化建议
+      </button>
+      {draftActions ? (
+        <>
+          <button type="button" onClick={draftActions.onSaveDraft}>
+            {draftActions.currentDraftId ? "更新草稿" : "保存草稿"}
+          </button>
+          <button type="button" onClick={draftActions.onOpenDraftDialog}>
+            草稿列表
+          </button>
+        </>
+      ) : null}
+    </div>
+  );
+}
 
 vi.mock("@/components/LayoutCanvas", () => ({
   default({

@@ -12,6 +12,8 @@ import { calculateSimpleSteppedDimensions, deriveSimpleSteppedLayout } from "@/l
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import { buildSteppedPerfFixture } from "@/lib/stepped-perf-fixtures";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
+import type { SteppedLayoutParams } from "@/types/custom-tray";
+import type { SteppedOptimizationProposal } from "@/lib/stepped-global-optimize";
 
 const {
   useAutoPreviewMock,
@@ -259,12 +261,12 @@ vi.mock("@/components/ParamIOButtons", () => ({
 import CustomPanel from "@/components/CustomPanel";
 import ParameterPanel from "@/components/ParameterPanel";
 import SimpleSteppedPanel from "@/components/SimpleSteppedPanel";
-import SteppedPanel from "@/components/SteppedPanel";
+import { SteppedCadPanel, SteppedLayoutPanel } from "@/components/SteppedPanel";
 
 const HUNDRED_MM_PRESET = BASE_PRESETS.find(
   (preset) => preset.diameter === 100,
 )!;
-function createSteppedParams(overrides?: Partial<React.ComponentProps<typeof SteppedPanel>["params"]>) {
+function createSteppedParams(overrides?: Partial<SteppedLayoutParams>) {
   return {
     ...STEPPED_LAYOUT_DEFAULTS,
     slots: [
@@ -347,9 +349,7 @@ function createSimpleSteppedParams(
   };
 }
 
-function createOptimizationProposals(): React.ComponentProps<
-  typeof SteppedPanel
->["optimizationProposals"] {
+function createOptimizationProposals(): SteppedOptimizationProposal[] {
   return [
     {
       id: "compact",
@@ -1430,7 +1430,7 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
   });
 });
 
-describe("SteppedPanel", { timeout: 15000 }, () => {
+describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
   beforeEach(() => {
     toastMock.mockReset();
     resetPerfMetricsMock.mockReset();
@@ -1446,7 +1446,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const onUpdateGroupDisconnectDistance = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams({
           groups: [
             {
@@ -1544,7 +1544,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const onRemoveGroup = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams({
           groups: [
             {
@@ -1639,9 +1639,8 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const onUpdateGroupSplitPartTarget = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedCadPanel
         params={createSteppedParams()}
-        mode="stepped-cad"
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
         updateParam={vi.fn()}
@@ -1649,6 +1648,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onAddSlot={vi.fn()}
         onGenerate={vi.fn()}
         onExportSTL={vi.fn()}
+        onExportSplitParts={vi.fn()}
         isGenerating={false}
         volume={0}
         selectedSlotIds={[]}
@@ -1698,7 +1698,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const onMoveSelectedSlotsToGroup = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams()}
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={true}
@@ -1753,7 +1753,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const onAddSlot = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedCadPanel
         params={createSteppedParams({
           activeGroupId: "group-2",
           spacing: 5,
@@ -1762,7 +1762,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
           smoothingRadius: 14,
           disconnectDistance: 2,
         })}
-        mode="stepped-cad"
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
         updateParam={updateParam}
@@ -1770,6 +1769,8 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onAddSlot={onAddSlot}
         onGenerate={vi.fn()}
         onExportSTL={vi.fn()}
+        onExportSplitParts={vi.fn()}
+        onUpdateGroupSplitPartTarget={vi.fn()}
         isGenerating={false}
         volume={0}
         selectedSlotIds={[]}
@@ -1828,7 +1829,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
 
   it("hides split controls in non-CAD stepped mode", () => {
     render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams({
           splitGrooveDepth: 2,
         })}
@@ -1839,7 +1840,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onAddSlot={vi.fn()}
         onGenerate={vi.fn()}
         onExportSTL={vi.fn()}
-        onExportSplitParts={vi.fn()}
         isGenerating={false}
         volume={0}
         selectedSlotIds={[]}
@@ -1850,7 +1850,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onUpdateGroupSmoothingRadius={vi.fn()}
         onUpdateGroupDisconnectOverride={vi.fn()}
         onUpdateGroupDisconnectDistance={vi.fn()}
-        onUpdateGroupSplitPartTarget={vi.fn()}
         onSetActiveGroup={vi.fn()}
         onMoveSelectedSlotsToGroup={vi.fn()}
         onReorderGroups={vi.fn()}
@@ -1868,12 +1867,13 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
       />,
     );
 
+    // 类型保证普通阶梯组件没有 CAD 专属字段；这里断言 CAD 专属内容不渲染。
     expect(
       screen.queryByRole("button", { name: "设置装配槽深度:2" }),
     ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "导出分件 STL" }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText("轮廓凹槽")).not.toBeInTheDocument();
+    expect(screen.queryByText("内缩凹槽")).not.toBeInTheDocument();
+    expect(screen.queryByText("定位柱")).not.toBeInTheDocument();
     expect(screen.queryByText("拆件归并")).not.toBeInTheDocument();
   });
 
@@ -1881,13 +1881,12 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const updateParam = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedCadPanel
         params={createSteppedParams({
           enableSplitRecess: false,
           splitGrooveType: "profile",
           enableSplitLocators: false,
         })}
-        mode="stepped-cad"
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
         updateParam={updateParam}
@@ -1895,6 +1894,8 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onAddSlot={vi.fn()}
         onGenerate={vi.fn()}
         onExportSTL={vi.fn()}
+        onExportSplitParts={vi.fn()}
+        onUpdateGroupSplitPartTarget={vi.fn()}
         isGenerating={false}
         volume={0}
         selectedSlotIds={[]}
@@ -1945,7 +1946,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const updateParam = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams()}
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
@@ -1990,7 +1991,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
 
   it("shows the stepped pricing formula tooltip on hover", () => {
     render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams({
           slots: [
             {
@@ -2093,7 +2094,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const tooltipButtonLabel = "查看阶梯底座报价公式";
     const onGenerate = vi.fn();
     const { rerender } = render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams()}
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
@@ -2154,7 +2155,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
 
     rerender(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams()}
         effectiveDimensions={{ width: 280, depth: 270 }}
         isPreviewStale={false}
@@ -2201,7 +2202,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const onPreviewGroupChange = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams()}
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
@@ -2259,7 +2260,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
   it("clears preview on blur and invalidates preview groups removed from params", () => {
     const onPreviewGroupChange = vi.fn();
     const { rerender } = render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams()}
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
@@ -2312,7 +2313,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const nextParams = createSteppedParams();
 
     rerender(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={{
           ...nextParams,
           slots: [],
@@ -2360,7 +2361,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const onPreviewGroupChange = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams()}
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
@@ -2423,7 +2424,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const onPreviewGroupChange = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams()}
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
@@ -2484,7 +2485,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const onPreviewGroupChange = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams()}
         effectiveDimensions={{ width: 0, depth: 0 }}
         isPreviewStale={false}
@@ -2548,7 +2549,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const onPreviewGroupChange = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams()}
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
@@ -2610,7 +2611,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const onClearOptimizationProposals = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams({
           slots: [
             {
@@ -2683,7 +2684,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
 
   it("disables optimization when there are too few slots or generation is in progress", () => {
     const { rerender } = render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams()}
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
@@ -2722,7 +2723,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     expect(screen.getByRole("button", { name: "全局优化" })).toBeDisabled();
 
     rerender(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams({
           slots: [
             {
@@ -2789,7 +2790,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const onSaveDraft = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams()}
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}

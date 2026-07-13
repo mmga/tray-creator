@@ -1,6 +1,6 @@
 "use client";
 
-import type { AppMode, SplitGrooveType, SteppedLayoutParams } from "@/types/custom-tray";
+import type { SplitGrooveType, SteppedLayoutParams } from "@/types/custom-tray";
 import type { BridgeWarning } from "@/lib/stepped-connectivity";
 import type { SteppedOptimizationProposal } from "@/lib/stepped-global-optimize";
 import {
@@ -9,6 +9,7 @@ import {
     getBaseHolePreset,
     MAX_BUILD_SIZE,
 } from "@/lib/config";
+import type { BaseHolePresetKey } from "@/types/tray";
 import { STEPPED_LIMITS, STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import {
     getSteppedGroupMinBottomHeight,
@@ -23,7 +24,15 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useState,
+    type Dispatch,
+    type ReactNode,
+    type SetStateAction,
+} from "react";
 import {
     RotateCcw,
     Loader2,
@@ -60,19 +69,22 @@ import { PanelShell } from "@/components/PanelShell";
 import { ResultSummary } from "@/components/ResultSummary";
 import { SteppedPricingFormulaTooltip } from "@/components/SteppedPricingFormulaTooltip";
 
-interface SteppedPanelProps {
+type SteppedGroup = SteppedLayoutParams["groups"][number];
+
+/**
+ * 普通阶梯与 CAD 阶梯共享的 props（不含任何 CAD 专属字段）。
+ */
+interface SteppedPanelSharedProps {
     params: SteppedLayoutParams;
-    mode?: Extract<AppMode, "stepped" | "stepped-cad">;
     effectiveDimensions: { width: number; depth: number };
     isPreviewStale: boolean;
     updateParam: <K extends keyof SteppedLayoutParams>(key: K, value: SteppedLayoutParams[K]) => void;
-    setParams: React.Dispatch<React.SetStateAction<SteppedLayoutParams>>;
+    setParams: Dispatch<SetStateAction<SteppedLayoutParams>>;
     onResetParams?: () => void;
     onImportParams?: (params: SteppedLayoutParams) => void;
     onAddSlot: (width: number) => void;
     onGenerate: () => void;
     onExportSTL: () => void;
-    onExportSplitParts?: () => void;
     isGenerating: boolean;
     volume: number;
     selectedSlotIds: string[];
@@ -84,7 +96,6 @@ interface SteppedPanelProps {
     onUpdateGroupSmoothingRadius: (groupId: string, radius: number) => void;
     onUpdateGroupDisconnectOverride: (groupId: string, enabled: boolean) => void;
     onUpdateGroupDisconnectDistance: (groupId: string, distance: number) => void;
-    onUpdateGroupSplitPartTarget?: (groupId: string, targetGroupId: string | null) => void;
     onSetActiveGroup: (groupId: string) => void;
     onMoveSelectedSlotsToGroup: (ids: string[], targetGroupId: string) => void;
     onReorderGroups: (fromIndex: number, toIndex: number) => void;
@@ -102,46 +113,64 @@ interface SteppedPanelProps {
     currentDraftId?: string | null;
 }
 
-export default function SteppedPanel({
-    params,
-    mode = "stepped",
-    effectiveDimensions,
-    isPreviewStale,
-    updateParam,
-    setParams,
-    onResetParams,
-    onImportParams,
-    onAddSlot,
-    onGenerate,
-    onExportSTL,
-    onExportSplitParts,
-    isGenerating,
-    volume,
-    selectedSlotIds,
-    onAddGroup,
-    onRemoveGroup,
-    onUpdateGroupHeight,
-    onUpdateGroupSmoothingOverride,
-    onUpdateGroupSmoothingRadius,
-    onUpdateGroupDisconnectOverride,
-    onUpdateGroupDisconnectDistance,
-    onUpdateGroupSplitPartTarget = () => undefined,
-    onSetActiveGroup,
-    onMoveSelectedSlotsToGroup,
-    onReorderGroups,
-    previewGroupId,
-    onPreviewGroupChange,
-    bridgeWarning,
-    optimizationProposals,
-    isOptimizingLayout,
-    onGenerateOptimizationProposals,
-    onApplyOptimizationProposal,
-    onClearOptimizationProposals,
-    draftActions,
-    onOpenDraftDialog,
-    onSaveDraft,
-    currentDraftId,
-}: SteppedPanelProps) {
+export type SteppedLayoutPanelProps = SteppedPanelSharedProps;
+
+export interface SteppedCadPanelProps extends SteppedPanelSharedProps {
+    // CAD 专属：必填
+    onExportSplitParts: () => void;
+    onUpdateGroupSplitPartTarget: (groupId: string, targetGroupId: string | null) => void;
+}
+
+interface UseSteppedPanelStateOptions {
+    params: SteppedLayoutParams;
+    effectiveDimensions: { width: number; depth: number };
+    volume: number;
+    previewGroupId: string | null;
+    onPreviewGroupChange: (groupId: string | null) => void;
+    setParams: Dispatch<SetStateAction<SteppedLayoutParams>>;
+    onResetParams?: () => void;
+}
+
+interface UseSteppedPanelStateReturn {
+    maxGroupHeight: number;
+    effectiveWidth: number;
+    effectiveDepth: number;
+    isOversized: boolean;
+    pressedPreviewGroupId: string | null;
+    lockedPreviewGroupId: string | null;
+    activePressedPreviewGroupId: string | null;
+    activeLockedPreviewGroupId: string | null;
+    validGroupIds: Set<string>;
+    groupSlotCounts: Map<string, number>;
+    activeGroup: SteppedGroup | null;
+    activeGroupBaseHoleSize: BaseHolePresetKey;
+    activeGroupBaseHolePreset: ReturnType<typeof getBaseHolePreset>;
+    activeGroupMinBottomHeight: number;
+    activeGroupSupportThickness: number;
+    perfEnabled: boolean;
+    steppedPricing: ReturnType<typeof getSteppedPricingBreakdown>;
+    hasGeneratedVolume: boolean;
+    currentArea: number;
+    resolvedDraftActions?: PanelDraftActions;
+    handleReset: () => void;
+    handlePreviewGroupStart: (groupId: string) => void;
+    handlePreviewGroupEnd: () => void;
+    toggleLockedPreviewGroup: (groupId: string) => void;
+    handleLoadPerfFixture: (size: SteppedPerfFixtureSize) => void;
+    handleResetPerfSamples: () => void;
+    formatAreaDelta: (proposalArea: number) => string;
+}
+
+function useSteppedPanelState(options: UseSteppedPanelStateOptions): UseSteppedPanelStateReturn {
+    const {
+        params,
+        effectiveDimensions,
+        volume,
+        previewGroupId,
+        onPreviewGroupChange,
+        setParams,
+        onResetParams,
+    } = options;
     const { toast } = useToast();
     const maxGroupHeight = useMemo(
         () => (params.groups.length > 0
@@ -183,23 +212,6 @@ export default function SteppedPanel({
             : params.baseHoleSize,
         [activeGroup, params],
     );
-    const showSplitAssemblyMode = mode === "stepped-cad";
-    const splitGrooveType = params.splitGrooveType ?? "profile";
-    const splitGrooveLabel = params.enableSplitRecess
-        ? splitGrooveType === "inset" ? "内缩凹槽" : "轮廓凹槽"
-        : "关";
-    const splitFeatureSummary = showSplitAssemblyMode
-        ? ` / 装配:${splitGrooveLabel} / 定位柱${params.enableSplitLocators ? "开" : "关"}`
-        : "";
-    const handleSplitGrooveTypeChange = useCallback((type: SplitGrooveType | "off") => {
-        if (type === "off") {
-            updateParam("enableSplitRecess", false);
-            return;
-        }
-
-        updateParam("enableSplitRecess", true);
-        updateParam("splitGrooveType", type);
-    }, [updateParam]);
     const activeGroupBaseHolePreset = useMemo(
         () => getBaseHolePreset(activeGroupBaseHoleSize),
         [activeGroupBaseHoleSize],
@@ -296,21 +308,116 @@ export default function SteppedPanel({
         const sign = deltaPercent > 0 ? "+" : "";
         return `较当前 ${sign}${deltaPercent.toFixed(1)}%`;
     }, [currentArea]);
-    const resolvedDraftActions = draftActions ?? (
-        onOpenDraftDialog && onSaveDraft
-            ? {
-                currentDraftId: currentDraftId ?? null,
-                hasUnsavedChanges: false,
-                onSaveDraft,
-                onOpenDraftDialog,
-            }
-            : undefined
-    );
 
-    const panelActions = <PanelActionSection onGenerate={onGenerate} onExportSTL={onExportSTL} onReset={handleReset} isGenerating={isGenerating} isOversized={isOversized} mode={mode} params={params} onImport={(p) => { const nextParams = p as SteppedLayoutParams; if (onImportParams) onImportParams(nextParams); else setParams(nextParams); }} showStaleNotice={isPreviewStale} draftActions={resolvedDraftActions} onExportSplitParts={showSplitAssemblyMode ? onExportSplitParts : undefined} canExportSplitParts={Boolean(onExportSplitParts && params.groups.length >= 2 && params.slots.length > 0)} />;
+    return {
+        maxGroupHeight,
+        effectiveWidth,
+        effectiveDepth,
+        isOversized,
+        pressedPreviewGroupId,
+        lockedPreviewGroupId,
+        activePressedPreviewGroupId,
+        activeLockedPreviewGroupId,
+        validGroupIds,
+        groupSlotCounts,
+        activeGroup,
+        activeGroupBaseHoleSize,
+        activeGroupBaseHolePreset,
+        activeGroupMinBottomHeight,
+        activeGroupSupportThickness,
+        perfEnabled,
+        steppedPricing,
+        hasGeneratedVolume,
+        currentArea,
+        handleReset,
+        handlePreviewGroupStart,
+        handlePreviewGroupEnd,
+        toggleLockedPreviewGroup,
+        handleLoadPerfFixture,
+        handleResetPerfSamples,
+        formatAreaDelta,
+    };
+}
+
+/**
+ * 模块内部共享展示组件。两个入口（SteppedLayoutPanel / SteppedCadPanel）
+ * 都把公共 props 透传给它，并通过可选注入点提供 CAD 专属内容。
+ */
+interface SteppedPanelBodyProps extends SteppedPanelSharedProps {
+    actions: ReactNode;
+    structureSummary: string;
+    structureExtras?: ReactNode;
+    renderGroupSplitAssembly?: (group: SteppedGroup) => ReactNode;
+}
+
+function SteppedPanelBody({
+    params,
+    effectiveDimensions,
+    isPreviewStale,
+    updateParam,
+    setParams,
+    onResetParams,
+    onAddSlot,
+    isGenerating,
+    volume,
+    selectedSlotIds,
+    onAddGroup,
+    onRemoveGroup,
+    onUpdateGroupHeight,
+    onUpdateGroupSmoothingOverride,
+    onUpdateGroupSmoothingRadius,
+    onUpdateGroupDisconnectOverride,
+    onUpdateGroupDisconnectDistance,
+    onSetActiveGroup,
+    onMoveSelectedSlotsToGroup,
+    onReorderGroups,
+    previewGroupId,
+    onPreviewGroupChange,
+    bridgeWarning,
+    optimizationProposals,
+    isOptimizingLayout,
+    onGenerateOptimizationProposals,
+    onApplyOptimizationProposal,
+    onClearOptimizationProposals,
+    actions,
+    structureSummary,
+    structureExtras,
+    renderGroupSplitAssembly,
+}: SteppedPanelBodyProps) {
+    const state = useSteppedPanelState({
+        params,
+        effectiveDimensions,
+        volume,
+        previewGroupId,
+        onPreviewGroupChange,
+        setParams,
+        onResetParams,
+    });
+    const {
+        maxGroupHeight,
+        effectiveWidth,
+        effectiveDepth,
+        isOversized,
+        activePressedPreviewGroupId,
+        groupSlotCounts,
+        activeGroup,
+        activeGroupBaseHolePreset,
+        activeGroupMinBottomHeight,
+        activeGroupSupportThickness,
+        activeGroupBaseHoleSize,
+        perfEnabled,
+        steppedPricing,
+        hasGeneratedVolume,
+        handlePreviewGroupStart,
+        handlePreviewGroupEnd,
+        toggleLockedPreviewGroup,
+        handleLoadPerfFixture,
+        handleResetPerfSamples,
+        formatAreaDelta,
+    } = state;
 
     return (
-        <PanelShell summary={<ResultSummary itemLabel={`${params.groups.length} 组 · ${params.slots.length} 槽`} dimensions={[effectiveWidth, effectiveDepth, maxGroupHeight]} price={`¥${steppedPricing.price.toFixed(0)}`} oversized={isOversized} generating={isGenerating} stale={isPreviewStale} />} actions={panelActions}>
+        <PanelShell summary={<ResultSummary itemLabel={`${params.groups.length} 组 · ${params.slots.length} 槽`} dimensions={[effectiveWidth, effectiveDepth, maxGroupHeight]} price={`¥${steppedPricing.price.toFixed(0)}`} oversized={isOversized} generating={isGenerating} stale={isPreviewStale} />} actions={actions}>
         <div className="flex flex-col gap-4 animate-fade-in">
 
             {/* 添加凹槽 */}
@@ -539,45 +646,7 @@ export default function SteppedPanel({
                                                         />
                                                     ) : null}
                                                 </div>
-                                                {showSplitAssemblyMode ? (
-                                                    <div className="rounded border border-[#2e2a24] bg-[#171511] px-2.5 py-2 space-y-2">
-                                                        <div>
-                                                            <div className="text-[11px] font-medium text-foreground/90">拆件归并</div>
-                                                            <div className="text-[10px] text-muted-foreground">
-                                                                可将不同高度的组导出为同一个分件 STL
-                                                            </div>
-                                                        </div>
-                                                        <Select
-                                                            value={group.splitPartGroupId ?? "__solo__"}
-                                                            onValueChange={(value) =>
-                                                                onUpdateGroupSplitPartTarget(
-                                                                    group.id,
-                                                                    value === "__solo__" ? null : value,
-                                                                )
-                                                            }
-                                                        >
-                                                            <SelectTrigger
-                                                                size="sm"
-                                                                onClick={(e) => e.stopPropagation()}
-                                                                onPointerDown={(e) => e.stopPropagation()}
-                                                                className="w-full border-[#2e2a24] bg-[#0f0e0c] text-xs"
-                                                                aria-label={`${group.name} 拆件归并目标`}
-                                                            >
-                                                                <SelectValue placeholder="单独导出" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="__solo__">单独导出</SelectItem>
-                                                                {params.groups
-                                                                    .filter((targetGroup) => targetGroup.id !== group.id)
-                                                                    .map((targetGroup) => (
-                                                                        <SelectItem key={targetGroup.id} value={targetGroup.id}>
-                                                                            并入 {targetGroup.name} ({targetGroup.bottomHeight}mm)
-                                                                        </SelectItem>
-                                                                    ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-                                                ) : null}
+                                                {renderGroupSplitAssembly?.(group) ?? null}
                                             </div>
                                         ) : (
                                             <div className="px-2 pb-1.5">
@@ -605,9 +674,7 @@ export default function SteppedPanel({
             {/* 结构参数 */}
             <div className="iron-panel rounded-sm p-4">
                 <SectionHeader icon={Wrench} title="阶梯结构" collapsible defaultOpen={false}
-                    summary={showSplitAssemblyMode
-                        ? `槽距${params.spacing}mm / 凹槽深度${params.holeDepth}mm / 装配槽${params.splitGrooveDepth}mm${splitFeatureSummary} / 断连${params.disconnectDistance}mm`
-                        : `槽距${params.spacing}mm / 凹槽深度${params.holeDepth}mm / 断连${params.disconnectDistance}mm`}>
+                    summary={structureSummary}>
                     <div className="space-y-4">
                         <ParamSlider
                             label={STEPPED_LIMITS.spacing.label}
@@ -623,52 +690,7 @@ export default function SteppedPanel({
                             onChange={(v) => updateParam("holeDepth", v)}
                             unit={STEPPED_LIMITS.holeDepth.unit}
                         />
-                        {showSplitAssemblyMode ? (
-                            <ParamSlider
-                                label={STEPPED_LIMITS.splitGrooveDepth.label}
-                                value={params.splitGrooveDepth}
-                                config={STEPPED_LIMITS.splitGrooveDepth}
-                                onChange={(v) => updateParam("splitGrooveDepth", v)}
-                                unit={STEPPED_LIMITS.splitGrooveDepth.unit}
-                            />
-                        ) : null}
-                        {showSplitAssemblyMode ? (
-                            <div className="grid gap-2 rounded border border-border/60 bg-card/40 p-3">
-                                <div className="grid grid-cols-3 gap-1">
-                                    {[
-                                        ["off", "关"],
-                                        ["profile", "轮廓凹槽"],
-                                        ["inset", "内缩凹槽"],
-                                    ].map(([value, label]) => {
-                                        const selected = value === "off"
-                                            ? params.enableSplitRecess !== true
-                                            : params.enableSplitRecess === true && splitGrooveType === value;
-                                        return (
-                                            <Button
-                                                key={value}
-                                                type="button"
-                                                size="xs"
-                                                variant={selected ? "default" : "outline"}
-                                                aria-pressed={selected}
-                                                onClick={() =>
-                                                    handleSplitGrooveTypeChange(value as SplitGrooveType | "off")
-                                                }>
-                                                {label}
-                                            </Button>
-                                        );
-                                    })}
-                                </div>
-                                <label className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
-                                    <span>定位柱</span>
-                                    <Switch
-                                        checked={params.enableSplitLocators === true}
-                                        onCheckedChange={(checked) =>
-                                            updateParam("enableSplitLocators", checked)
-                                        }
-                                    />
-                                </label>
-                            </div>
-                        ) : null}
+                        {structureExtras ?? null}
                         <ParamSlider
                             label={STEPPED_LIMITS.smoothingRadius.label}
                             value={params.smoothingRadius}
@@ -1011,5 +1033,231 @@ export default function SteppedPanel({
             </div>
         </div>
         </PanelShell>
+    );
+}
+
+export function SteppedLayoutPanel(props: SteppedLayoutPanelProps) {
+    const {
+        params,
+        effectiveDimensions,
+        isPreviewStale,
+        setParams,
+        onResetParams,
+        onImportParams,
+        onGenerate,
+        onExportSTL,
+        isGenerating,
+    } = props;
+
+    const handleReset = () => {
+        if (onResetParams) {
+            onResetParams();
+            return;
+        }
+        setParams(STEPPED_LAYOUT_DEFAULTS);
+    };
+
+    const actions = (
+        <PanelActionSection
+            onGenerate={onGenerate}
+            onExportSTL={onExportSTL}
+            onReset={handleReset}
+            isGenerating={isGenerating}
+            isOversized={effectiveDimensions.width > MAX_BUILD_SIZE || effectiveDimensions.depth > MAX_BUILD_SIZE}
+            mode="stepped"
+            params={params}
+            onImport={(p) => {
+                const nextParams = p as SteppedLayoutParams;
+                if (onImportParams) onImportParams(nextParams);
+                else setParams(nextParams);
+            }}
+            showStaleNotice={isPreviewStale}
+            draftActions={props.draftActions ?? (props.onOpenDraftDialog && props.onSaveDraft
+                ? {
+                    currentDraftId: props.currentDraftId ?? null,
+                    hasUnsavedChanges: false,
+                    onSaveDraft: props.onSaveDraft,
+                    onOpenDraftDialog: props.onOpenDraftDialog,
+                }
+                : undefined)}
+        />
+    );
+
+    const structureSummary = `槽距${params.spacing}mm / 凹槽深度${params.holeDepth}mm / 断连${params.disconnectDistance}mm`;
+
+    return (
+        <SteppedPanelBody
+            {...props}
+            actions={actions}
+            structureSummary={structureSummary}
+        />
+    );
+}
+
+export function SteppedCadPanel(props: SteppedCadPanelProps) {
+    const {
+        params,
+        effectiveDimensions,
+        isPreviewStale,
+        updateParam,
+        setParams,
+        onResetParams,
+        onImportParams,
+        onGenerate,
+        onExportSTL,
+        onExportSplitParts,
+        onUpdateGroupSplitPartTarget,
+        isGenerating,
+    } = props;
+
+    const handleReset = () => {
+        if (onResetParams) {
+            onResetParams();
+            return;
+        }
+        setParams(STEPPED_LAYOUT_DEFAULTS);
+    };
+
+    const splitGrooveType = params.splitGrooveType ?? "profile";
+    const splitGrooveLabel = params.enableSplitRecess
+        ? splitGrooveType === "inset" ? "内缩凹槽" : "轮廓凹槽"
+        : "关";
+    const splitFeatureSummary = ` / 装配:${splitGrooveLabel} / 定位柱${params.enableSplitLocators ? "开" : "关"}`;
+
+    const handleSplitGrooveTypeChange = useCallback((type: SplitGrooveType | "off") => {
+        if (type === "off") {
+            updateParam("enableSplitRecess", false);
+            return;
+        }
+
+        updateParam("enableSplitRecess", true);
+        updateParam("splitGrooveType", type);
+    }, [updateParam]);
+
+    const actions = (
+        <PanelActionSection
+            onGenerate={onGenerate}
+            onExportSTL={onExportSTL}
+            onReset={handleReset}
+            isGenerating={isGenerating}
+            isOversized={effectiveDimensions.width > MAX_BUILD_SIZE || effectiveDimensions.depth > MAX_BUILD_SIZE}
+            mode="stepped-cad"
+            params={params}
+            onImport={(p) => {
+                const nextParams = p as SteppedLayoutParams;
+                if (onImportParams) onImportParams(nextParams);
+                else setParams(nextParams);
+            }}
+            showStaleNotice={isPreviewStale}
+            draftActions={props.draftActions ?? (props.onOpenDraftDialog && props.onSaveDraft
+                ? {
+                    currentDraftId: props.currentDraftId ?? null,
+                    hasUnsavedChanges: false,
+                    onSaveDraft: props.onSaveDraft,
+                    onOpenDraftDialog: props.onOpenDraftDialog,
+                }
+                : undefined)}
+            onExportSplitParts={onExportSplitParts}
+            canExportSplitParts={params.groups.length >= 2 && params.slots.length > 0}
+        />
+    );
+
+    const structureSummary = `槽距${params.spacing}mm / 凹槽深度${params.holeDepth}mm / 装配槽${params.splitGrooveDepth}mm${splitFeatureSummary} / 断连${params.disconnectDistance}mm`;
+
+    const structureExtras = (
+        <>
+            <ParamSlider
+                label={STEPPED_LIMITS.splitGrooveDepth.label}
+                value={params.splitGrooveDepth}
+                config={STEPPED_LIMITS.splitGrooveDepth}
+                onChange={(v) => updateParam("splitGrooveDepth", v)}
+                unit={STEPPED_LIMITS.splitGrooveDepth.unit}
+            />
+            <div className="grid gap-2 rounded border border-border/60 bg-card/40 p-3">
+                <div className="grid grid-cols-3 gap-1">
+                    {[
+                        ["off", "关"],
+                        ["profile", "轮廓凹槽"],
+                        ["inset", "内缩凹槽"],
+                    ].map(([value, label]) => {
+                        const selected = value === "off"
+                            ? params.enableSplitRecess !== true
+                            : params.enableSplitRecess === true && splitGrooveType === value;
+                        return (
+                            <Button
+                                key={value}
+                                type="button"
+                                size="xs"
+                                variant={selected ? "default" : "outline"}
+                                aria-pressed={selected}
+                                onClick={() =>
+                                    handleSplitGrooveTypeChange(value as SplitGrooveType | "off")
+                                }>
+                                {label}
+                            </Button>
+                        );
+                    })}
+                </div>
+                <label className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                    <span>定位柱</span>
+                    <Switch
+                        checked={params.enableSplitLocators === true}
+                        onCheckedChange={(checked) =>
+                            updateParam("enableSplitLocators", checked)
+                        }
+                    />
+                </label>
+            </div>
+        </>
+    );
+
+    const renderGroupSplitAssembly = useCallback((group: SteppedGroup) => (
+        <div className="rounded border border-[#2e2a24] bg-[#171511] px-2.5 py-2 space-y-2">
+            <div>
+                <div className="text-[11px] font-medium text-foreground/90">拆件归并</div>
+                <div className="text-[10px] text-muted-foreground">
+                    可将不同高度的组导出为同一个分件 STL
+                </div>
+            </div>
+            <Select
+                value={group.splitPartGroupId ?? "__solo__"}
+                onValueChange={(value) =>
+                    onUpdateGroupSplitPartTarget(
+                        group.id,
+                        value === "__solo__" ? null : value,
+                    )
+                }
+            >
+                <SelectTrigger
+                    size="sm"
+                    onClick={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className="w-full border-[#2e2a24] bg-[#0f0e0c] text-xs"
+                    aria-label={`${group.name} 拆件归并目标`}
+                >
+                    <SelectValue placeholder="单独导出" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="__solo__">单独导出</SelectItem>
+                    {params.groups
+                        .filter((targetGroup) => targetGroup.id !== group.id)
+                        .map((targetGroup) => (
+                            <SelectItem key={targetGroup.id} value={targetGroup.id}>
+                                并入 {targetGroup.name} ({targetGroup.bottomHeight}mm)
+                            </SelectItem>
+                        ))}
+                </SelectContent>
+            </Select>
+        </div>
+    ), [onUpdateGroupSplitPartTarget, params.groups]);
+
+    return (
+        <SteppedPanelBody
+            {...props}
+            actions={actions}
+            structureSummary={structureSummary}
+            structureExtras={structureExtras}
+            renderGroupSplitAssembly={renderGroupSplitAssembly}
+        />
     );
 }
