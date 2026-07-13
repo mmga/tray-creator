@@ -8,7 +8,6 @@ import {
 } from "@/lib/config";
 import {
   CUSTOM_BASE_PRESETS,
-  CUSTOM_LAYOUT_DEFAULTS,
   CUSTOM_LIMITS,
   ELLIPSE_PRESETS,
   type EllipsePreset,
@@ -20,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   Plus,
   Wrench,
@@ -32,12 +31,7 @@ import { BaseHoleConfig } from "@/components/BaseHoleConfig";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
 import { calculateWeight, calculateCustomPrice } from "@/lib/pricing";
-import { useAutoPreview } from "@/hooks/useAutoPreview";
 import { useToast } from "@/hooks/useToast";
-import {
-  PanelActionSection,
-  type PanelDraftActions,
-} from "@/components/PanelActionSection";
 import { PanelShell } from "@/components/PanelShell";
 import { ResultSummary } from "@/components/ResultSummary";
 
@@ -47,16 +41,11 @@ interface CustomPanelProps {
   params: CustomLayoutParams;
   effectiveDimensions: { width: number; depth: number };
   updateParam: <K extends keyof CustomLayoutParams>(key: K, value: CustomLayoutParams[K]) => void;
-  setParams: React.Dispatch<React.SetStateAction<CustomLayoutParams>>;
-  onResetParams?: () => void;
-  onImportParams?: (params: CustomLayoutParams) => void;
+  actions: ReactNode;
   onAddSlot: (width: number, height?: number, ellipseConfig?: EllipseSlotConfig) => void;
   onRandomizeSlots?: () => RandomSlotArrangementResult;
-  onGenerate: (options?: { shouldSwitchView?: boolean }) => void;
-  onExportSTL: () => void;
   isGenerating: boolean;
   volume: number;
-  draftActions?: PanelDraftActions;
 }
 
 function getEllipseSlotConfig(preset: EllipsePreset): EllipseSlotConfig {
@@ -71,16 +60,11 @@ export default function CustomPanel({
   params,
   effectiveDimensions,
   updateParam,
-  setParams,
-  onResetParams,
-  onImportParams,
+  actions,
   onAddSlot,
   onRandomizeSlots,
-  onGenerate,
-  onExportSTL,
   isGenerating,
   volume,
-  draftActions,
 }: CustomPanelProps) {
   const { toast } = useToast();
   const dimensions = calculateCustomTrayDimensions(params);
@@ -99,7 +83,6 @@ export default function CustomPanel({
         : params.trayDepth;
   const isOversized =
     displayLength > MAX_BUILD_SIZE || displayWidth > MAX_BUILD_SIZE;
-  const [autoPreview, setAutoPreview] = useState(false);
   const [customCircleDiameter, setCustomCircleDiameter] = useState(10);
   const largestSlotSize = params.slots.reduce(
     (maxSize, slot) => Math.max(maxSize, slot.width, slot.height),
@@ -107,20 +90,6 @@ export default function CustomPanel({
   );
   const resolvedBaseHoleSize = resolveBaseHolePresetKey(largestSlotSize);
 
-  useAutoPreview(params, {
-    enabled: autoPreview,
-    isGenerating,
-    isBlocked: false,
-    onGenerate: () => onGenerate({ shouldSwitchView: false }),
-  });
-
-  const handleReset = () => {
-    if (onResetParams) {
-      onResetParams();
-      return;
-    }
-    setParams(CUSTOM_LAYOUT_DEFAULTS);
-  };
   const handleAddCustomCircleSlot = () => {
     if (!Number.isFinite(customCircleDiameter) || customCircleDiameter <= 0) {
       return;
@@ -139,10 +108,8 @@ export default function CustomPanel({
     toast("error", "固定可用区域无法容纳当前全部凹槽");
   };
 
-  const panelActions = <PanelActionSection autoPreviewId="custom-auto-preview" autoPreview={autoPreview} onAutoPreviewChange={setAutoPreview} onGenerate={() => onGenerate({ shouldSwitchView: true })} onExportSTL={onExportSTL} onReset={handleReset} isGenerating={isGenerating} isOversized={isOversized} mode="custom" params={params} onImport={(nextParams) => { if (onImportParams) onImportParams(nextParams); else setParams(nextParams); }} draftActions={draftActions} />;
-
   return (
-    <PanelShell summary={<ResultSummary itemLabel={`${params.slots.length} 个凹槽`} dimensions={[displayLength, displayWidth, dimensions.height]} price={`¥${calculateCustomPrice(params, volume).toFixed(1)}`} oversized={isOversized} generating={isGenerating} />} actions={panelActions}>
+    <PanelShell summary={<ResultSummary itemLabel={`${params.slots.length} 个凹槽`} dimensions={[displayLength, displayWidth, dimensions.height]} price={`¥${calculateCustomPrice(params, volume).toFixed(1)}`} oversized={isOversized} generating={isGenerating} />} actions={actions}>
     <div className="flex flex-col gap-4 animate-fade-in">
       {/* 布局编辑 */}
       <div className="iron-panel rounded-sm p-3">

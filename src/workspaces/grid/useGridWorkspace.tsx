@@ -1,7 +1,12 @@
 "use client";
 
-import { useCallback, useMemo, type SetStateAction } from "react";
+import { useCallback, useMemo, useState, type SetStateAction } from "react";
 import dynamic from "next/dynamic";
+import {
+  PanelActionSection,
+  type PanelDraftActions,
+} from "@/components/PanelActionSection";
+import { useAutoPreview } from "@/hooks/useAutoPreview";
 import { useWorkspaceDraftSupport } from "@/workspaces/shared";
 import type { ModeWorkspace } from "@/workspaces/types";
 import type { TrayParams } from "@/types/tray";
@@ -13,6 +18,51 @@ const ParameterPanel = dynamic(() => import("@/components/ParameterPanel"), {
 
 interface UseGridWorkspaceOptions {
   model: ReturnType<typeof useTrayModel>;
+}
+
+interface GridDraftActionAreaProps {
+  params: TrayParams;
+  isGenerating: boolean;
+  onGenerate: () => void;
+  onExportSTL: () => void;
+  onReset: () => void;
+  onImport: (params: TrayParams) => void;
+  draftActions: PanelDraftActions;
+}
+
+function GridDraftActionArea({
+  params,
+  isGenerating,
+  onGenerate,
+  onExportSTL,
+  onReset,
+  onImport,
+  draftActions,
+}: GridDraftActionAreaProps) {
+  const [autoPreview, setAutoPreview] = useState(false);
+
+  useAutoPreview(params, {
+    enabled: autoPreview,
+    isGenerating,
+    isBlocked: false,
+    onGenerate,
+  });
+
+  return (
+    <PanelActionSection
+      autoPreviewId="auto-preview"
+      autoPreview={autoPreview}
+      onAutoPreviewChange={setAutoPreview}
+      onGenerate={onGenerate}
+      onExportSTL={onExportSTL}
+      onReset={onReset}
+      isGenerating={isGenerating}
+      mode="grid"
+      params={params}
+      onImport={onImport}
+      draftActions={draftActions}
+    />
+  );
 }
 
 export function useGridWorkspace({
@@ -40,17 +90,15 @@ export function useGridWorkspace({
     clearDraftBinding();
   }, [clearDraftBinding, model]);
 
-  const panel = useMemo(
+  const actions = useMemo(
     () => (
-      <ParameterPanel
+      <GridDraftActionArea
         params={model.params}
-        updateParam={model.updateParam}
-        replaceParams={importIntoWorkspace}
-        resetParams={resetWorkspace}
+        isGenerating={model.isGenerating}
         onGenerate={model.handleGenerate}
         onExportSTL={model.handleExportSTL}
-        isGenerating={model.isGenerating}
-        volume={model.volume}
+        onReset={resetWorkspace}
+        onImport={importIntoWorkspace}
         draftActions={draftActions}
       />
     ),
@@ -61,9 +109,26 @@ export function useGridWorkspace({
       model.handleGenerate,
       model.isGenerating,
       model.params,
+      resetWorkspace,
+    ],
+  );
+
+  const panel = useMemo(
+    () => (
+      <ParameterPanel
+        params={model.params}
+        updateParam={model.updateParam}
+        actions={actions}
+        isGenerating={model.isGenerating}
+        volume={model.volume}
+      />
+    ),
+    [
+      actions,
+      model.isGenerating,
+      model.params,
       model.updateParam,
       model.volume,
-      resetWorkspace,
     ],
   );
 

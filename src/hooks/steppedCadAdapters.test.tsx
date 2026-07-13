@@ -42,7 +42,7 @@ import { useSteppedCadViewportWorkspace } from "@/viewports/stepped-cad/useStepp
 describe("stepped-cad adapters", () => {
   it("自建 stepped-cad workspace 并按 stepped 模式管理草稿", () => {
     const model = {
-      params: {},
+      params: { groups: [], slots: [] },
       setParams: vi.fn(),
       effectiveDimensions: { width: 120, depth: 140 },
       isPreviewStale: false,

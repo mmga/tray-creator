@@ -13,7 +13,7 @@ import {
 } from "@/lib/tray-model";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { useState } from "react";
+import type { ReactNode } from "react";
 import {
   Select,
   SelectContent,
@@ -26,36 +26,23 @@ import { BaseHoleConfig } from "@/components/BaseHoleConfig";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
 import { calculateGridPrice, calculateWeight } from "@/lib/pricing";
-import { useAutoPreview } from "@/hooks/useAutoPreview";
-import {
-  PanelActionSection,
-  type PanelDraftActions,
-} from "@/components/PanelActionSection";
 import { PanelShell } from "@/components/PanelShell";
 import { ResultSummary } from "@/components/ResultSummary";
 
 interface ParameterPanelProps {
   params: TrayParams;
   updateParam: <K extends keyof TrayParams>(key: K, value: TrayParams[K]) => void;
-  replaceParams: (next: TrayParams) => void;
-  resetParams: () => void;
-  onGenerate: (options?: { shouldSwitchView?: boolean }) => void;
-  onExportSTL: () => void;
+  actions: ReactNode;
   isGenerating: boolean;
   volume: number;
-  draftActions?: PanelDraftActions;
 }
 
 export default function ParameterPanel({
   params,
   updateParam,
-  replaceParams,
-  resetParams,
-  onGenerate,
-  onExportSTL,
+  actions,
   isGenerating,
   volume,
-  draftActions,
 }: ParameterPanelProps) {
   const dimensions = calculateTrayDimensions(params);
   const { spacingX, spacingY } = getGridSpacingAxes(params);
@@ -82,7 +69,6 @@ export default function ParameterPanel({
         ? "半圆槽"
         : "完整圆槽";
   const isOversized = dimensions.width > MAX_BUILD_SIZE || dimensions.depth > MAX_BUILD_SIZE;
-  const [autoPreview, setAutoPreview] = useState(false);
   const selectedPresetIndex = BASE_PRESETS.findIndex(
     (preset) => preset.diameter === params.holeDiameter,
   );
@@ -90,23 +76,12 @@ export default function ParameterPanel({
     selectedPresetIndex >= 0 ? String(selectedPresetIndex) : undefined;
   const resolvedBaseHoleSize = resolveBaseHolePresetKey(params.holeDiameter);
 
-  useAutoPreview(params, {
-    enabled: autoPreview,
-    isGenerating,
-    isBlocked: false,
-    onGenerate: () => onGenerate({ shouldSwitchView: false }),
-  });
-
   const handlePresetChange = (value: string) => {
     const index = Number.parseInt(value, 10);
     const preset = BASE_PRESETS[index];
     if (preset) {
       updateParam("holeDiameter", preset.diameter);
     }
-  };
-
-  const handleReset = () => {
-    resetParams();
   };
 
   const handleStructureModeChange = (
@@ -134,7 +109,7 @@ export default function ParameterPanel({
   return (
     <PanelShell
       summary={<ResultSummary itemLabel={`${params.rows * params.columns} 个凹槽`} dimensions={[dimensions.width, dimensions.depth, dimensions.height]} price={`¥${calculateGridPrice(params).toFixed(2)}`} oversized={isOversized} generating={isGenerating} />}
-      actions={<PanelActionSection autoPreviewId="auto-preview" autoPreview={autoPreview} onAutoPreviewChange={setAutoPreview} onGenerate={() => onGenerate({ shouldSwitchView: true })} onExportSTL={onExportSTL} onReset={handleReset} isGenerating={isGenerating} isOversized={isOversized} mode="grid" params={params} onImport={replaceParams} draftActions={draftActions} />}
+      actions={actions}
     >
     <div className="flex flex-col gap-4 animate-fade-in">
       {/* 布局参数 — 移动端默认展开 */}

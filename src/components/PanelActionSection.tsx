@@ -30,7 +30,6 @@ interface PanelActionSectionProps<M extends AppMode> {
   onExportSTL: () => void;
   onReset: () => void;
   isGenerating: boolean;
-  isOversized: boolean;
   mode: M;
   params: ParamsByMode[M];
   onImport: (params: ParamsByMode[M]) => void;

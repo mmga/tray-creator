@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
+import { PanelActionSection } from "@/components/PanelActionSection";
 import type { ModeInteractionState } from "@/hooks/useModeInteractionState";
 import { useWorkspaceDraftSupport } from "@/workspaces/shared";
 import type { ModeWorkspace } from "@/workspaces/types";
@@ -49,6 +50,32 @@ export function useSteppedWorkspace({
     clearDraftBinding();
   }, [clearDraftBinding, model, resetInteractionState]);
 
+  const actions = useMemo(
+    () => (
+      <PanelActionSection
+        onGenerate={model.handleGenerate}
+        onExportSTL={model.handleExportSTL}
+        onReset={resetWorkspace}
+        isGenerating={model.isGenerating}
+        mode="stepped"
+        params={model.params}
+        onImport={importIntoWorkspace}
+        showStaleNotice={model.isPreviewStale}
+        draftActions={draftActions}
+      />
+    ),
+    [
+      draftActions,
+      importIntoWorkspace,
+      model.handleExportSTL,
+      model.handleGenerate,
+      model.isGenerating,
+      model.isPreviewStale,
+      model.params,
+      resetWorkspace,
+    ],
+  );
+
   const panel = useMemo(
     () => (
       <SteppedLayoutPanel
@@ -56,12 +83,9 @@ export function useSteppedWorkspace({
         effectiveDimensions={model.effectiveDimensions}
         isPreviewStale={model.isPreviewStale}
         setParams={model.setParams}
-        onResetParams={resetWorkspace}
-        onImportParams={importIntoWorkspace}
+        actions={actions}
         updateParam={model.updateParam}
         onAddSlot={model.addSlot}
-        onGenerate={model.handleGenerate}
-        onExportSTL={model.handleExportSTL}
         isGenerating={model.isGenerating}
         volume={model.volume}
         selectedSlotIds={selectedSlotIds}
@@ -83,12 +107,10 @@ export function useSteppedWorkspace({
         onGenerateOptimizationProposals={model.generateOptimizationProposals}
         onApplyOptimizationProposal={model.applyOptimizationProposal}
         onClearOptimizationProposals={model.clearOptimizationProposals}
-        draftActions={draftActions}
       />
     ),
     [
-      draftActions,
-      importIntoWorkspace,
+      actions,
       model.addGroup,
       model.addSlot,
       model.applyOptimizationProposal,
@@ -96,8 +118,6 @@ export function useSteppedWorkspace({
       model.clearOptimizationProposals,
       model.effectiveDimensions,
       model.generateOptimizationProposals,
-      model.handleExportSTL,
-      model.handleGenerate,
       model.isGenerating,
       model.isOptimizingLayout,
       model.isPreviewStale,
@@ -116,7 +136,6 @@ export function useSteppedWorkspace({
       model.updateParam,
       model.volume,
       previewGroupId,
-      resetWorkspace,
       setPreviewGroupId,
       selectedSlotIds,
     ],

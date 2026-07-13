@@ -1,23 +1,16 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import type { SimpleSteppedLayoutParams } from "@/types/custom-tray";
 import type { SimpleSteppedDerivedLayout } from "@/lib/simple-stepped-layout";
 import { BASE_PRESETS, MAX_BUILD_SIZE } from "@/lib/config";
-import {
-  SIMPLE_STEPPED_LAYOUT_DEFAULTS,
-  SIMPLE_STEPPED_LIMITS,
-} from "@/lib/simple-stepped-config";
+import { SIMPLE_STEPPED_LIMITS } from "@/lib/simple-stepped-config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
 import { Switch } from "@/components/ui/switch";
-import {
-  PanelActionSection,
-  type PanelDraftActions,
-} from "@/components/PanelActionSection";
 import { PanelShell } from "@/components/PanelShell";
 import { ResultSummary } from "@/components/ResultSummary";
 import {
@@ -39,9 +32,7 @@ interface SimpleSteppedPanelProps {
     depth: number;
     height: number;
   };
-  setParams: React.Dispatch<React.SetStateAction<SimpleSteppedLayoutParams>>;
-  onResetParams?: () => void;
-  onImportParams?: (params: SimpleSteppedLayoutParams) => void;
+  actions: ReactNode;
   updateParam: <K extends keyof SimpleSteppedLayoutParams>(
     key: K,
     value: SimpleSteppedLayoutParams[K],
@@ -53,13 +44,10 @@ interface SimpleSteppedPanelProps {
   onClearRow: (rowId: string) => void;
   onReorderRows: (fromIndex: number, toIndex: number) => void;
   onAddSlotToRow: (rowId: string, diameter: number) => void;
-  onGenerate: () => void;
-  onExportSTL: () => void;
   onTrimTray: () => void;
   isGenerating: boolean;
   isPreviewStale: boolean;
   volume: number;
-  draftActions?: PanelDraftActions;
 }
 
 export default function SimpleSteppedPanel({
@@ -67,9 +55,7 @@ export default function SimpleSteppedPanel({
   derivedLayout,
   activeRowId,
   effectiveDimensions,
-  setParams,
-  onResetParams,
-  onImportParams,
+  actions,
   updateParam,
   onSetActiveRow,
   onAddRow,
@@ -78,13 +64,10 @@ export default function SimpleSteppedPanel({
   onClearRow,
   onReorderRows,
   onAddSlotToRow,
-  onGenerate,
-  onExportSTL,
   onTrimTray,
   isGenerating,
   isPreviewStale,
   volume,
-  draftActions,
 }: SimpleSteppedPanelProps) {
   const rowDerivedById = useMemo(
     () => new Map(derivedLayout.activeRows.map((row) => [row.id, row] as const)),
@@ -103,19 +86,8 @@ export default function SimpleSteppedPanel({
       derivedLayout.trayDepth - derivedLayout.minimumTrayDepth > 0.001);
   const spacingSummary = `槽距${params.spacing}mm / 边距${params.outerMarginIndependent ? params.outerMargin : params.spacing}mm`;
 
-  const handleReset = () => {
-    if (onResetParams) {
-      onResetParams();
-      return;
-    }
-    setParams(SIMPLE_STEPPED_LAYOUT_DEFAULTS);
-    onSetActiveRow(null);
-  };
-
-  const panelActions = <PanelActionSection onGenerate={onGenerate} onExportSTL={onExportSTL} onReset={handleReset} isGenerating={isGenerating} isOversized={isOversized} mode="simple-stepped" params={params} onImport={(nextParams) => { if (onImportParams) onImportParams(nextParams); else setParams(nextParams); }} showStaleNotice={isPreviewStale} draftActions={draftActions} />;
-
   return (
-    <PanelShell summary={<ResultSummary itemLabel={`${params.rows.length} 行 · ${params.slots.length} 槽`} dimensions={[effectiveDimensions.width, effectiveDimensions.depth, effectiveDimensions.height]} price={`¥${calculateSimpleSteppedPrice(params, volume).toFixed(1)}`} oversized={isOversized} generating={isGenerating} stale={isPreviewStale} />} actions={panelActions}>
+    <PanelShell summary={<ResultSummary itemLabel={`${params.rows.length} 行 · ${params.slots.length} 槽`} dimensions={[effectiveDimensions.width, effectiveDimensions.depth, effectiveDimensions.height]} price={`¥${calculateSimpleSteppedPrice(params, volume).toFixed(1)}`} oversized={isOversized} generating={isGenerating} stale={isPreviewStale} />} actions={actions}>
     <div className="flex flex-col gap-4 animate-fade-in">
       <div className="iron-panel rounded-sm p-3">
         <SectionHeader

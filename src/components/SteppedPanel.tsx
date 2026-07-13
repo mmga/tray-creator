@@ -10,7 +10,7 @@ import {
     MAX_BUILD_SIZE,
 } from "@/lib/config";
 import type { BaseHolePresetKey } from "@/types/tray";
-import { STEPPED_LIMITS, STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
+import { STEPPED_LIMITS } from "@/lib/stepped-config";
 import {
     getSteppedGroupMinBottomHeight,
     getSteppedGroupResolvedBaseHoleSize,
@@ -61,10 +61,6 @@ import {
     STEPPED_PERF_FIXTURE_SIZES,
     type SteppedPerfFixtureSize,
 } from "@/lib/stepped-perf-fixtures";
-import {
-    PanelActionSection,
-    type PanelDraftActions,
-} from "@/components/PanelActionSection";
 import { PanelShell } from "@/components/PanelShell";
 import { ResultSummary } from "@/components/ResultSummary";
 import { SteppedPricingFormulaTooltip } from "@/components/SteppedPricingFormulaTooltip";
@@ -80,11 +76,8 @@ interface SteppedPanelSharedProps {
     isPreviewStale: boolean;
     updateParam: <K extends keyof SteppedLayoutParams>(key: K, value: SteppedLayoutParams[K]) => void;
     setParams: Dispatch<SetStateAction<SteppedLayoutParams>>;
-    onResetParams?: () => void;
-    onImportParams?: (params: SteppedLayoutParams) => void;
+    actions: ReactNode;
     onAddSlot: (width: number) => void;
-    onGenerate: () => void;
-    onExportSTL: () => void;
     isGenerating: boolean;
     volume: number;
     selectedSlotIds: string[];
@@ -107,17 +100,12 @@ interface SteppedPanelSharedProps {
     onGenerateOptimizationProposals: () => void;
     onApplyOptimizationProposal: (proposalId: SteppedOptimizationProposal["id"]) => void;
     onClearOptimizationProposals: () => void;
-    draftActions?: PanelDraftActions;
-    onOpenDraftDialog?: () => void;
-    onSaveDraft?: () => void;
-    currentDraftId?: string | null;
 }
 
 export type SteppedLayoutPanelProps = SteppedPanelSharedProps;
 
 export interface SteppedCadPanelProps extends SteppedPanelSharedProps {
     // CAD 专属：必填
-    onExportSplitParts: () => void;
     onUpdateGroupSplitPartTarget: (groupId: string, targetGroupId: string | null) => void;
 }
 
@@ -128,7 +116,6 @@ interface UseSteppedPanelStateOptions {
     previewGroupId: string | null;
     onPreviewGroupChange: (groupId: string | null) => void;
     setParams: Dispatch<SetStateAction<SteppedLayoutParams>>;
-    onResetParams?: () => void;
 }
 
 interface UseSteppedPanelStateReturn {
@@ -151,8 +138,6 @@ interface UseSteppedPanelStateReturn {
     steppedPricing: ReturnType<typeof getSteppedPricingBreakdown>;
     hasGeneratedVolume: boolean;
     currentArea: number;
-    resolvedDraftActions?: PanelDraftActions;
-    handleReset: () => void;
     handlePreviewGroupStart: (groupId: string) => void;
     handlePreviewGroupEnd: () => void;
     toggleLockedPreviewGroup: (groupId: string) => void;
@@ -169,7 +154,6 @@ function useSteppedPanelState(options: UseSteppedPanelStateOptions): UseSteppedP
         previewGroupId,
         onPreviewGroupChange,
         setParams,
-        onResetParams,
     } = options;
     const { toast } = useToast();
     const maxGroupHeight = useMemo(
@@ -259,14 +243,6 @@ function useSteppedPanelState(options: UseSteppedPanelStateOptions): UseSteppedP
         }
     }, [onPreviewGroupChange, previewGroupId, validGroupIds]);
 
-    const handleReset = () => {
-        if (onResetParams) {
-            onResetParams();
-            return;
-        }
-        setParams(STEPPED_LAYOUT_DEFAULTS);
-    };
-
     const handlePreviewGroupStart = (groupId: string) => {
         setPressedPreviewGroupId(groupId);
         onPreviewGroupChange(groupId);
@@ -329,7 +305,6 @@ function useSteppedPanelState(options: UseSteppedPanelStateOptions): UseSteppedP
         steppedPricing,
         hasGeneratedVolume,
         currentArea,
-        handleReset,
         handlePreviewGroupStart,
         handlePreviewGroupEnd,
         toggleLockedPreviewGroup,
@@ -356,7 +331,6 @@ function SteppedPanelBody({
     isPreviewStale,
     updateParam,
     setParams,
-    onResetParams,
     onAddSlot,
     isGenerating,
     volume,
@@ -391,7 +365,6 @@ function SteppedPanelBody({
         previewGroupId,
         onPreviewGroupChange,
         setParams,
-        onResetParams,
     });
     const {
         maxGroupHeight,
@@ -1039,48 +1012,8 @@ function SteppedPanelBody({
 export function SteppedLayoutPanel(props: SteppedLayoutPanelProps) {
     const {
         params,
-        effectiveDimensions,
-        isPreviewStale,
-        setParams,
-        onResetParams,
-        onImportParams,
-        onGenerate,
-        onExportSTL,
-        isGenerating,
+        actions,
     } = props;
-
-    const handleReset = () => {
-        if (onResetParams) {
-            onResetParams();
-            return;
-        }
-        setParams(STEPPED_LAYOUT_DEFAULTS);
-    };
-
-    const actions = (
-        <PanelActionSection
-            onGenerate={onGenerate}
-            onExportSTL={onExportSTL}
-            onReset={handleReset}
-            isGenerating={isGenerating}
-            isOversized={effectiveDimensions.width > MAX_BUILD_SIZE || effectiveDimensions.depth > MAX_BUILD_SIZE}
-            mode="stepped"
-            params={params}
-            onImport={(nextParams) => {
-                if (onImportParams) onImportParams(nextParams);
-                else setParams(nextParams);
-            }}
-            showStaleNotice={isPreviewStale}
-            draftActions={props.draftActions ?? (props.onOpenDraftDialog && props.onSaveDraft
-                ? {
-                    currentDraftId: props.currentDraftId ?? null,
-                    hasUnsavedChanges: false,
-                    onSaveDraft: props.onSaveDraft,
-                    onOpenDraftDialog: props.onOpenDraftDialog,
-                }
-                : undefined)}
-        />
-    );
 
     const structureSummary = `槽距${params.spacing}mm / 凹槽深度${params.holeDepth}mm / 断连${params.disconnectDistance}mm`;
 
@@ -1096,26 +1029,10 @@ export function SteppedLayoutPanel(props: SteppedLayoutPanelProps) {
 export function SteppedCadPanel(props: SteppedCadPanelProps) {
     const {
         params,
-        effectiveDimensions,
-        isPreviewStale,
         updateParam,
-        setParams,
-        onResetParams,
-        onImportParams,
-        onGenerate,
-        onExportSTL,
-        onExportSplitParts,
+        actions,
         onUpdateGroupSplitPartTarget,
-        isGenerating,
     } = props;
-
-    const handleReset = () => {
-        if (onResetParams) {
-            onResetParams();
-            return;
-        }
-        setParams(STEPPED_LAYOUT_DEFAULTS);
-    };
 
     const splitGrooveType = params.splitGrooveType ?? "profile";
     const splitGrooveLabel = params.enableSplitRecess
@@ -1132,33 +1049,6 @@ export function SteppedCadPanel(props: SteppedCadPanelProps) {
         updateParam("enableSplitRecess", true);
         updateParam("splitGrooveType", type);
     }, [updateParam]);
-
-    const actions = (
-        <PanelActionSection
-            onGenerate={onGenerate}
-            onExportSTL={onExportSTL}
-            onReset={handleReset}
-            isGenerating={isGenerating}
-            isOversized={effectiveDimensions.width > MAX_BUILD_SIZE || effectiveDimensions.depth > MAX_BUILD_SIZE}
-            mode="stepped-cad"
-            params={params}
-            onImport={(nextParams) => {
-                if (onImportParams) onImportParams(nextParams);
-                else setParams(nextParams);
-            }}
-            showStaleNotice={isPreviewStale}
-            draftActions={props.draftActions ?? (props.onOpenDraftDialog && props.onSaveDraft
-                ? {
-                    currentDraftId: props.currentDraftId ?? null,
-                    hasUnsavedChanges: false,
-                    onSaveDraft: props.onSaveDraft,
-                    onOpenDraftDialog: props.onOpenDraftDialog,
-                }
-                : undefined)}
-            onExportSplitParts={onExportSplitParts}
-            canExportSplitParts={params.groups.length >= 2 && params.slots.length > 0}
-        />
-    );
 
     const structureSummary = `槽距${params.spacing}mm / 凹槽深度${params.holeDepth}mm / 装配槽${params.splitGrooveDepth}mm${splitFeatureSummary} / 断连${params.disconnectDistance}mm`;
 
