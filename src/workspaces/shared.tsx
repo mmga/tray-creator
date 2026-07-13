@@ -3,7 +3,6 @@
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { DraftManagerDialog } from "@/components/DraftManagerDialog";
 import type { DraftManagerDialogProps } from "@/components/DraftManagerDialog";
-import type { PanelDraftActions } from "@/components/PanelActionSection";
 import { useModeDrafts } from "@/hooks/useModeDrafts";
 import type { UseModeDraftsOptions } from "@/hooks/useModeDrafts";
 import type { AnyDraftListItem, DraftMode } from "@/lib/local-drafts";
@@ -46,8 +45,15 @@ function renderDraftSummary(item: AnyDraftListItem): ReactNode {
   }
 }
 
+export interface WorkspaceDraftActions {
+  currentDraftId: string | null;
+  hasUnsavedChanges: boolean;
+  onSaveDraft: () => void;
+  onOpenDraftDialog: () => void;
+}
+
 interface WorkspaceDraftSupport {
-  draftActions: PanelDraftActions;
+  draftActions: WorkspaceDraftActions;
   overlays: ReactNode;
   clearDraftBinding: () => void;
 }
@@ -88,7 +94,7 @@ export function useWorkspaceDraftSupport<M extends DraftMode>(
     openDialog();
   }, [openDialog, refreshDraftList]);
 
-  const draftActions = useMemo<PanelDraftActions>(
+  const draftActions = useMemo<WorkspaceDraftActions>(
     () => ({
       currentDraftId,
       hasUnsavedChanges,

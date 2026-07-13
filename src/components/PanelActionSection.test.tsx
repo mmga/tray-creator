@@ -1,27 +1,60 @@
-import * as React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { PanelActionSection } from "@/components/PanelActionSection";
-import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
+import type {
+  ManualDraftActionAreaAdapter,
+  SteppedCadDraftActionAreaAdapter,
+} from "@/workspaces/draft-action-area";
+
+const success = { status: "success" } as const;
 
 describe("PanelActionSection", () => {
-  it("固定展示锻造、导出和状态提示", () => {
-    const onGenerate = vi.fn();
-    const onExportSTL = vi.fn();
-    render(<PanelActionSection onGenerate={onGenerate} onExportSTL={onExportSTL} onReset={vi.fn()} isGenerating={false} mode="grid" params={DEFAULT_TRAY_PARAMS} onImport={vi.fn()} showStaleNotice draftActions={{ currentDraftId: null, hasUnsavedChanges: true, onSaveDraft: vi.fn(), onOpenDraftDialog: vi.fn() }} />);
+  it("固定展示锻造、导出和状态提示，并只发送意图", () => {
+    const perform = vi.fn(async () => success);
+    const adapter: ManualDraftActionAreaAdapter = {
+      kind: "manual",
+      state: {
+        currentDraftId: null,
+        hasUnsavedChanges: true,
+        stale: true,
+        generate: { state: "available" },
+        exportWhole: { state: "available" },
+        preview: { kind: "manual" },
+      },
+      perform,
+    };
+
+    render(<PanelActionSection adapter={adapter} />);
     fireEvent.click(screen.getByRole("button", { name: "开始锻造" }));
     fireEvent.click(screen.getByRole("button", { name: "导出" }));
-    expect(onGenerate).toHaveBeenCalledOnce();
-    expect(onExportSTL).toHaveBeenCalledOnce();
+
+    expect(perform).toHaveBeenCalledWith({ type: "generate" });
+    expect(perform).toHaveBeenCalledWith({ type: "export-whole" });
     expect(screen.getByText("当前预览已过期，请重新锻造。")).toBeInTheDocument();
     expect(screen.getByText("有未保存修改")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "更多操作" })).toBeInTheDocument();
   });
 
-  it("CAD 模式将导出收拢为菜单并保留分件禁用条件", async () => {
-    render(<PanelActionSection onGenerate={vi.fn()} onExportSTL={vi.fn()} onExportSplitParts={vi.fn()} canExportSplitParts={false} onReset={vi.fn()} isGenerating={false} mode="stepped-cad" params={{ ...DEFAULT_TRAY_PARAMS, groups: [], slots: [] } as never} onImport={vi.fn()} />);
+  it("CAD 能力将导出收拢为菜单，并直接消费分件 Availability", async () => {
+    const adapter: SteppedCadDraftActionAreaAdapter = {
+      kind: "stepped-cad",
+      state: {
+        currentDraftId: null,
+        hasUnsavedChanges: false,
+        stale: false,
+        generate: { state: "available" },
+        exportWhole: { state: "available" },
+        exportSplit: { state: "blocked", reason: "至少需要两个分组且存在凹槽" },
+        preview: { kind: "manual" },
+      },
+      perform: vi.fn(async () => success),
+    };
+
+    render(<PanelActionSection adapter={adapter} />);
     fireEvent.pointerDown(screen.getByRole("button", { name: "导出" }), { button: 0, ctrlKey: false });
+
     expect(await screen.findByText("完整 STL")).toBeInTheDocument();
-    expect(screen.getByText("分件 STL").closest('[role="menuitem"]')).toHaveAttribute("data-disabled");
+    const splitItem = screen.getByText("分件 STL").closest('[role="menuitem"]');
+    expect(splitItem).toHaveAttribute("data-disabled");
+    expect(splitItem).toHaveAttribute("title", "至少需要两个分组且存在凹槽");
   });
 });

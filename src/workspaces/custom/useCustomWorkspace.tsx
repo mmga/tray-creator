@@ -2,12 +2,11 @@
 
 import { useCallback, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import {
-  PanelActionSection,
-  type PanelDraftActions,
-} from "@/components/PanelActionSection";
+import { PanelActionSection } from "@/components/PanelActionSection";
 import { useAutoPreview } from "@/hooks/useAutoPreview";
-import { useWorkspaceDraftSupport } from "@/workspaces/shared";
+import { useWorkspaceDraftSupport, type WorkspaceDraftActions } from "@/workspaces/shared";
+import { available, generatingAvailability, type AutomaticDraftActionAreaAdapter } from "@/workspaces/draft-action-area";
+import { exportParams, importParams } from "@/lib/param-io";
 import type { ModeWorkspace } from "@/workspaces/types";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import type { CustomLayoutParams } from "@/types/custom-tray";
@@ -28,7 +27,7 @@ interface CustomDraftActionAreaProps {
   onExportSTL: () => void;
   onReset: () => void;
   onImport: (params: CustomLayoutParams) => void;
-  draftActions: PanelDraftActions;
+  draftActions: WorkspaceDraftActions;
 }
 
 function CustomDraftActionArea({
@@ -49,21 +48,36 @@ function CustomDraftActionArea({
     onGenerate,
   });
 
-  return (
-    <PanelActionSection
-      autoPreviewId="custom-auto-preview"
-      autoPreview={autoPreview}
-      onAutoPreviewChange={setAutoPreview}
-      onGenerate={onGenerate}
-      onExportSTL={onExportSTL}
-      onReset={onReset}
-      isGenerating={isGenerating}
-      mode="custom"
-      params={params}
-      onImport={onImport}
-      draftActions={draftActions}
-    />
-  );
+  const adapter = useMemo<AutomaticDraftActionAreaAdapter>(() => ({
+    kind: "automatic",
+    state: {
+      currentDraftId: draftActions.currentDraftId,
+      hasUnsavedChanges: draftActions.hasUnsavedChanges,
+      stale: false,
+      generate: generatingAvailability(isGenerating),
+      exportWhole: available,
+      preview: { kind: "automatic", enabled: autoPreview },
+    },
+    async perform(intent) {
+      try {
+        switch (intent.type) {
+          case "generate": onGenerate(); break;
+          case "export-whole": onExportSTL(); break;
+          case "save-draft": draftActions.onSaveDraft(); break;
+          case "open-drafts": draftActions.onOpenDraftDialog(); break;
+          case "export-params": exportParams("custom", params); break;
+          case "import-params": onImport(await importParams(intent.file, "custom")); break;
+          case "reset": onReset(); break;
+          case "set-auto-preview": setAutoPreview(intent.enabled); break;
+        }
+        return { status: "success" };
+      } catch (error) {
+        return { status: "error", message: `操作失败：${error instanceof Error ? error.message : "未知错误"}` };
+      }
+    },
+  }), [autoPreview, draftActions, isGenerating, onExportSTL, onGenerate, onImport, onReset, params]);
+
+  return <PanelActionSection adapter={adapter} />;
 }
 
 export function useCustomWorkspace({

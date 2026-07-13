@@ -8,6 +8,8 @@ import type { ModeWorkspace } from "@/workspaces/types";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import type { SimpleSteppedLayoutParams } from "@/types/custom-tray";
 import type { useSimpleSteppedLayout } from "@/hooks/useSimpleSteppedLayout";
+import { exportParams, importParams } from "@/lib/param-io";
+import { available, generatingAvailability, type ManualDraftActionAreaAdapter } from "@/workspaces/draft-action-area";
 
 const SimpleSteppedPanel = dynamic(
   () => import("@/components/SimpleSteppedPanel"),
@@ -41,29 +43,37 @@ export function useSimpleSteppedWorkspace({
   }, [clearDraftBinding, model]);
 
   const actions = useMemo(
-    () => (
-      <PanelActionSection
-        onGenerate={model.handleGenerate}
-        onExportSTL={model.handleExportSTL}
-        onReset={resetWorkspace}
-        isGenerating={model.isGenerating}
-        mode="simple-stepped"
-        params={model.params}
-        onImport={importIntoWorkspace}
-        showStaleNotice={model.isPreviewStale}
-        draftActions={draftActions}
-      />
-    ),
-    [
-      draftActions,
-      importIntoWorkspace,
-      model.handleExportSTL,
-      model.handleGenerate,
-      model.isGenerating,
-      model.isPreviewStale,
-      model.params,
-      resetWorkspace,
-    ],
+    () => {
+      const adapter: ManualDraftActionAreaAdapter = {
+        kind: "manual",
+        state: {
+          currentDraftId: draftActions.currentDraftId,
+          hasUnsavedChanges: draftActions.hasUnsavedChanges,
+          stale: model.isPreviewStale,
+          generate: generatingAvailability(model.isGenerating),
+          exportWhole: available,
+          preview: { kind: "manual" },
+        },
+        async perform(intent) {
+          try {
+            switch (intent.type) {
+              case "generate": model.handleGenerate(); break;
+              case "export-whole": model.handleExportSTL(); break;
+              case "save-draft": draftActions.onSaveDraft(); break;
+              case "open-drafts": draftActions.onOpenDraftDialog(); break;
+              case "export-params": exportParams("simple-stepped", model.params); break;
+              case "import-params": importIntoWorkspace(await importParams(intent.file, "simple-stepped")); break;
+              case "reset": resetWorkspace(); break;
+            }
+            return { status: "success" };
+          } catch (error) {
+            return { status: "error", message: `操作失败：${error instanceof Error ? error.message : "未知错误"}` };
+          }
+        },
+      };
+      return <PanelActionSection adapter={adapter} />;
+    },
+    [draftActions, importIntoWorkspace, model, resetWorkspace],
   );
 
   const panel = useMemo(

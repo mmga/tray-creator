@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { fireEvent, render, renderHook, screen } from "@testing-library/react";
+import { fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
@@ -43,51 +43,35 @@ vi.mock("@/hooks/useAutoPreview", () => ({
   useAutoPreview: useAutoPreviewMock,
 }));
 
-vi.mock("@/components/PanelActionSection", () => ({
-  PanelActionSection({
-    mode,
-    autoPreview,
-    onAutoPreviewChange,
-    onGenerate,
-    onExportSTL,
-    onExportSplitParts,
-    canExportSplitParts,
-    onReset,
-    onImport,
-  }: {
-    mode: string;
-    autoPreview?: boolean;
-    onAutoPreviewChange?: (checked: boolean) => void;
-    onGenerate: () => void;
-    onExportSTL: () => void;
-    onExportSplitParts?: () => void;
-    canExportSplitParts?: boolean;
-    onReset: () => void;
-    onImport: (params: unknown) => void;
-  }) {
-    const importedParams =
-      mode === "grid"
-        ? { ...DEFAULT_TRAY_PARAMS, rows: 3 }
-        : mode === "custom"
-          ? { ...CUSTOM_LAYOUT_DEFAULTS, trayWidth: 180 }
-          : mode === "simple-stepped"
-            ? { ...SIMPLE_STEPPED_LAYOUT_DEFAULTS, trayWidth: 180 }
-            : { ...STEPPED_LAYOUT_DEFAULTS, trayWidth: 180 };
+vi.mock("@/lib/param-io", () => ({
+  exportParams: vi.fn(),
+  importParams: vi.fn(async (_file: File, mode: string) =>
+    mode === "grid"
+      ? { ...DEFAULT_TRAY_PARAMS, rows: 3 }
+      : mode === "custom"
+        ? { ...CUSTOM_LAYOUT_DEFAULTS, trayWidth: 180 }
+        : mode === "simple-stepped"
+          ? { ...SIMPLE_STEPPED_LAYOUT_DEFAULTS, trayWidth: 180 }
+          : { ...STEPPED_LAYOUT_DEFAULTS, trayWidth: 180 },
+  ),
+}));
 
+vi.mock("@/components/PanelActionSection", () => ({
+  PanelActionSection({ adapter }: { adapter: import("@/workspaces/draft-action-area").DraftActionAreaAdapter }) {
     return (
-      <div data-testid={`actions-${mode}`} data-can-split={String(canExportSplitParts)}>
-        {onAutoPreviewChange ? (
-          <button type="button" onClick={() => onAutoPreviewChange(!autoPreview)}>
+      <div data-testid={`actions-${adapter.kind}`} data-can-split={adapter.kind === "stepped-cad" ? String(adapter.state.exportSplit.state === "available") : undefined}>
+        {adapter.kind === "automatic" ? (
+          <button type="button" onClick={() => void adapter.perform({ type: "set-auto-preview", enabled: !adapter.state.preview.enabled })}>
             自动预览
           </button>
         ) : null}
-        <button type="button" onClick={onGenerate}>锻造</button>
-        <button type="button" onClick={onExportSTL}>完整导出</button>
-        {onExportSplitParts ? (
-          <button type="button" onClick={onExportSplitParts}>分件导出</button>
+        <button type="button" onClick={() => void adapter.perform({ type: "generate" })}>锻造</button>
+        <button type="button" onClick={() => void adapter.perform({ type: "export-whole" })}>完整导出</button>
+        {adapter.kind === "stepped-cad" ? (
+          <button type="button" onClick={() => void adapter.perform({ type: "export-split" })}>分件导出</button>
         ) : null}
-        <button type="button" onClick={onReset}>重置</button>
-        <button type="button" onClick={() => onImport(importedParams)}>导入</button>
+        <button type="button" onClick={() => void adapter.perform({ type: "reset" })}>重置</button>
+        <button type="button" onClick={() => void adapter.perform({ type: "import-params", file: new File(["{}"], "params.json") })}>导入</button>
       </div>
     );
   },
@@ -110,7 +94,7 @@ describe("Mode Workspace Draft Action Area", () => {
     useWorkspaceDraftSupportMock.mockClear();
   });
 
-  it("grid 仅在活动面板挂载后启用自动预览，并路由重置与导入", () => {
+  it("grid 仅在活动面板挂载后启用自动预览，并路由重置与导入", async () => {
     const model = {
       params: DEFAULT_TRAY_PARAMS,
       replaceParams: vi.fn(),
@@ -141,13 +125,13 @@ describe("Mode Workspace Draft Action Area", () => {
     );
     expect(model.handleGenerate).toHaveBeenCalledTimes(1);
     expect(model.resetParams).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(clearDraftBindingMock).toHaveBeenCalledTimes(2));
     expect(model.replaceParams).toHaveBeenCalledWith(
       expect.objectContaining({ rows: 3 }),
     );
-    expect(clearDraftBindingMock).toHaveBeenCalledTimes(2);
   });
 
-  it("custom 的自动预览状态随 Draft Action Area 挂载，并路由外部参数提交", () => {
+  it("custom 的自动预览状态随 Draft Action Area 挂载，并路由外部参数提交", async () => {
     const model = {
       params: CUSTOM_LAYOUT_DEFAULTS,
       setParams: vi.fn(),
@@ -170,15 +154,15 @@ describe("Mode Workspace Draft Action Area", () => {
       CUSTOM_LAYOUT_DEFAULTS,
       expect.objectContaining({ enabled: true }),
     );
+    await waitFor(() => expect(clearDraftBindingMock).toHaveBeenCalledTimes(2));
     expect(model.setParams).toHaveBeenNthCalledWith(1, CUSTOM_LAYOUT_DEFAULTS);
     expect(model.setParams).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({ trayWidth: 180 }),
     );
-    expect(clearDraftBindingMock).toHaveBeenCalledTimes(2);
   });
 
-  it("simple stepped 在重置和导入后清除活动行与 Draft Binding", () => {
+  it("simple stepped 在重置和导入后清除活动行与 Draft Binding", async () => {
     const model = {
       params: SIMPLE_STEPPED_LAYOUT_DEFAULTS,
       setParams: vi.fn(),
@@ -197,12 +181,13 @@ describe("Mode Workspace Draft Action Area", () => {
     fireEvent.click(screen.getByRole("button", { name: "重置" }));
     fireEvent.click(screen.getByRole("button", { name: "导入" }));
 
+    await waitFor(() => expect(model.setActiveRow).toHaveBeenCalledTimes(2));
     expect(model.setActiveRow).toHaveBeenNthCalledWith(1, null);
     expect(model.setActiveRow).toHaveBeenNthCalledWith(2, null);
     expect(clearDraftBindingMock).toHaveBeenCalledTimes(2);
   });
 
-  it("stepped 在重置和导入后清除 Mode Interaction State", () => {
+  it("stepped 在重置和导入后清除 Mode Interaction State", async () => {
     const resetInteractionState = vi.fn();
     const model = {
       params: STEPPED_LAYOUT_DEFAULTS,
@@ -230,7 +215,7 @@ describe("Mode Workspace Draft Action Area", () => {
     fireEvent.click(screen.getByRole("button", { name: "重置" }));
     fireEvent.click(screen.getByRole("button", { name: "导入" }));
 
-    expect(resetInteractionState).toHaveBeenCalledTimes(2);
+    await waitFor(() => expect(resetInteractionState).toHaveBeenCalledTimes(2));
     expect(clearDraftBindingMock).toHaveBeenCalledTimes(2);
   });
 
