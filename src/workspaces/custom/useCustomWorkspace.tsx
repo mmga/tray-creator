@@ -19,7 +19,7 @@ interface UseCustomWorkspaceOptions {
 export function useCustomWorkspace({
   model,
 }: UseCustomWorkspaceOptions): ModeWorkspace {
-  const { draftActions, draftDialogProps, clearDraftBinding } =
+  const { draftActions, overlays, clearDraftBinding } =
     useWorkspaceDraftSupport({
       mode: "custom",
       params: model.params,
@@ -72,12 +72,7 @@ export function useCustomWorkspace({
   );
 
   return {
-    mode: "custom",
     panel,
-    draftDialogProps,
-    commands: {
-      resetWorkspace,
-      importIntoWorkspace,
-    },
+    overlays,
   };
 }

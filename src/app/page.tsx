@@ -5,7 +5,6 @@ import {
 } from "react";
 import { useModeEditorWorkspaces } from "@/hooks/useModeEditorWorkspaces";
 import { ModeTabs } from "@/components/ModeTabs";
-import { DraftManagerDialog } from "@/components/DraftManagerDialog";
 import type { AppMode } from "@/types/custom-tray";
 import { Boxes } from "lucide-react";
 
@@ -17,9 +16,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-dvh bg-background text-foreground overflow-hidden">
-      <DraftManagerDialog
-        {...activeWorkspace.draftDialogProps}
-      />
+      {activeWorkspace.overlays}
 
       {/* Header */}
       <header className="relative shrink-0">

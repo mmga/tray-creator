@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { DraftManagerDialog } from "@/components/DraftManagerDialog";
 import type { DraftManagerDialogProps } from "@/components/DraftManagerDialog";
 import type { PanelDraftActions } from "@/components/PanelActionSection";
 import { useModeDrafts } from "@/hooks/useModeDrafts";
@@ -47,7 +48,7 @@ function renderDraftSummary(item: AnyDraftListItem): ReactNode {
 
 interface WorkspaceDraftSupport {
   draftActions: PanelDraftActions;
-  draftDialogProps: DraftManagerDialogProps<AnyDraftListItem>;
+  overlays: ReactNode;
   clearDraftBinding: () => void;
 }
 
@@ -156,9 +157,14 @@ export function useWorkspaceDraftSupport<M extends DraftMode>(
     ],
   );
 
+  const overlays = useMemo(
+    () => <DraftManagerDialog {...draftDialogProps} />,
+    [draftDialogProps],
+  );
+
   return {
     draftActions,
-    draftDialogProps,
+    overlays,
     clearDraftBinding,
   };
 }

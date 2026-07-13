@@ -21,7 +21,7 @@ const {
       onSaveDraft: vi.fn(),
       onOpenDraftDialog: vi.fn(),
     },
-    draftDialogProps: { mode: "stepped" },
+    overlays: null,
     clearDraftBinding: vi.fn(),
   },
   useSteppedViewportWorkspaceMock: vi.fn(),
@@ -95,15 +95,9 @@ describe("stepped-cad adapters", () => {
         onAfterLoad: resetInteractionState,
       }),
     );
-    expect(result.current.mode).toBe("stepped-cad");
-    expect(result.current.draftDialogProps).toEqual({ mode: "stepped" });
-    expect(result.current.commands.resetWorkspace).toBeInstanceOf(Function);
-    expect(result.current.commands.importIntoWorkspace).toBeInstanceOf(Function);
-
-    result.current.commands.resetWorkspace();
-    expect(model.setParams).toHaveBeenCalled();
-    expect(resetInteractionState).toHaveBeenCalled();
-    expect(draftSupportReturn.clearDraftBinding).toHaveBeenCalled();
+    // workspace 对外只暴露 panel + overlays，不再暴露 mode/commands/draftDialogProps。
+    expect(result.current.overlays).toBeNull();
+    expect(result.current.panel).not.toBeNull();
   });
 
   it("向 shared Viewport 显式传递 split preview Interface", () => {

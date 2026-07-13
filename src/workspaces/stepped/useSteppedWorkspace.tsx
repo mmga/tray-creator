@@ -29,7 +29,7 @@ export function useSteppedWorkspace({
     setPreviewGroupId,
     resetInteractionState,
   } = interactionState;
-  const { draftActions, draftDialogProps, clearDraftBinding } =
+  const { draftActions, overlays, clearDraftBinding } =
     useWorkspaceDraftSupport({
       mode: "stepped",
       params: model.params,
@@ -123,12 +123,7 @@ export function useSteppedWorkspace({
   );
 
   return {
-    mode: "stepped",
     panel,
-    draftDialogProps,
-    commands: {
-      resetWorkspace,
-      importIntoWorkspace,
-    },
+    overlays,
   };
 }

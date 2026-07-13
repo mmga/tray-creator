@@ -23,7 +23,7 @@ export function useGridWorkspace({
     model.replaceParams(nextParams);
   }, [model]);
 
-  const { draftActions, draftDialogProps, clearDraftBinding } =
+  const { draftActions, overlays, clearDraftBinding } =
     useWorkspaceDraftSupport({
       mode: "grid",
       params: model.params,
@@ -68,12 +68,7 @@ export function useGridWorkspace({
   );
 
   return {
-    mode: "grid",
     panel,
-    draftDialogProps,
-    commands: {
-      resetWorkspace,
-      importIntoWorkspace,
-    },
+    overlays,
   };
 }

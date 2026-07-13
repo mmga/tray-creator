@@ -31,7 +31,7 @@ export function useSteppedCadWorkspace({
   } = interactionState;
   // CAD 草稿与普通阶梯共享同一套存储（DraftMode 不含 "stepped-cad"），
   // 仍按 "stepped" 模式落盘，保持向后兼容。
-  const { draftActions, draftDialogProps, clearDraftBinding } =
+  const { draftActions, overlays, clearDraftBinding } =
     useWorkspaceDraftSupport({
       mode: "stepped",
       params: model.params,
@@ -129,12 +129,7 @@ export function useSteppedCadWorkspace({
   );
 
   return {
-    mode: "stepped-cad",
     panel,
-    draftDialogProps,
-    commands: {
-      resetWorkspace,
-      importIntoWorkspace,
-    },
+    overlays,
   };
 }

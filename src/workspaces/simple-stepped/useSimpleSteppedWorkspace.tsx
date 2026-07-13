@@ -20,7 +20,7 @@ interface UseSimpleSteppedWorkspaceOptions {
 export function useSimpleSteppedWorkspace({
   model,
 }: UseSimpleSteppedWorkspaceOptions): ModeWorkspace {
-  const { draftActions, draftDialogProps, clearDraftBinding } =
+  const { draftActions, overlays, clearDraftBinding } =
     useWorkspaceDraftSupport({
       mode: "simple-stepped",
       params: model.params,
@@ -93,12 +93,7 @@ export function useSimpleSteppedWorkspace({
   );
 
   return {
-    mode: "simple-stepped",
     panel,
-    draftDialogProps,
-    commands: {
-      resetWorkspace,
-      importIntoWorkspace,
-    },
+    overlays,
   };
 }
