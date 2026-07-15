@@ -116,6 +116,26 @@ _Avoid_: Treating ellipse profile shape as a UI-only adjustment.
 The nominal size of the miniature base the slot is intended to hold.
 _Avoid_: Using base size to mean the final generated slot size.
 
+**Conversion Base**:
+A printable adapter with a round or oval outer footprint and a centered shallow recess that locates an existing square or rectangular miniature base.
+_Avoid_: Tray slot, through-hole adapter, four independent clips.
+
+**Source Base Standard**:
+One supported nominal square or rectangular miniature-base size selected as the object held by a Conversion Base.
+_Avoid_: Binding a source size permanently to one target footprint.
+
+**Target Base Standard**:
+One supported nominal round or oval footprint selected as the resulting footprint of a Conversion Base.
+_Avoid_: Treating the target footprint as a recess size or as part of a fixed source-target pair.
+
+**Conversion Recess**:
+The centered, axis-aligned, non-through rectangular lowered area of a Conversion Base, bounded where material exists by four arc-shaped retaining sectors.
+_Avoid_: Through hole, fully enclosed rectangular pocket, removable insert.
+
+**Conversion Clearance**:
+The fixed per-side spacing added around a Source Base Standard to derive the final Conversion Recess width and depth.
+_Avoid_: Baking print clearance into the nominal source-base sizes or applying it only once across a whole axis.
+
 **Mode**:
 One tray editing workflow such as grid, custom, simple stepped, or stepped.
 _Avoid_: Using "feature" when the meaning is the editor mode.
@@ -313,6 +333,18 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A **Slot Definition** includes its **Tolerance**.
 - A circular **Slot Definition** records its **Final Slot Size** directly.
 - An ellipse **Slot Definition** includes base width, base height, **Ellipse Outer Offset**, and **Ellipse Profile Exponent**.
+- The `base-converter` **Mode** owns one editable **Conversion Base** at a time.
+- A Conversion Base independently selects exactly one **Source Base Standard** and exactly one **Target Base Standard**.
+- The first **Source Base Standard** set contains `20×20`, `25×25`, `40×40`, `25×50`, `50×75`, and `50×100` millimetres.
+- The first **Target Base Standard** set contains `Ø25`, `Ø32`, `Ø50`, `35×60`, `42×75`, and `70×105` millimetres.
+- Source and target standards are not stored as seven fixed pairs; a geometrically compatible source-target combination forms a Conversion Base.
+- A source-target combination is compatible only when the final Conversion Recess remains smaller than the target footprint on both principal axes, preserving retaining material in all four cardinal directions.
+- Equal outer width and depth produce a round **Conversion Base**; unequal dimensions produce an oval Conversion Base.
+- A **Conversion Recess** preserves a floor and never cuts through the **Conversion Base**.
+- A **Conversion Recess** may meet the outer footprint at its corners, leaving four separate arc-shaped retaining sectors as shown in the reference drawing instead of forcing a continuous rectangular wall.
+- **Conversion Clearance** is `0.2mm` per side in the first release.
+- Final **Conversion Recess** width and depth equal the selected Source Base Standard dimensions plus `0.4mm` per axis.
+- A Conversion Base's total height equals its floor thickness plus its Conversion Recess depth.
 - CAD stepped mode exposes all seven ellipse **Slot Definitions** already used by custom mode; ordinary stepped mode remains circle-only.
 - A CAD stepped ellipse **Slot Instance** is created from the shared definition and snapshots its width, height, **Ellipse Outer Offset**, **Ellipse Profile Exponent**, and **Slot Definition ID** without maintaining a CAD-only preset copy.
 - A newly added CAD stepped ellipse starts at 0 degrees and uses the existing canvas rotation interaction; rotation changes placement geometry but do not redefine its **Slot Definition**.

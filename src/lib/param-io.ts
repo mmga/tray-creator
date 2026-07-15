@@ -1,6 +1,7 @@
 import type { TrayParams } from "@/types/tray";
 import type {
   AppMode,
+  BaseConverterParams,
   CustomLayoutParams,
   SimpleSteppedLayoutParams,
   SteppedLayoutParams,
@@ -17,6 +18,7 @@ import {
 
 export type ExportableParams =
   | TrayParams
+  | BaseConverterParams
   | CustomLayoutParams
   | SimpleSteppedLayoutParams
   | SteppedLayoutParams;
@@ -24,6 +26,7 @@ export type ExportableParams =
 export type ParamsByMode = {
   grid: TrayParams;
   custom: CustomLayoutParams;
+  "base-converter": BaseConverterParams;
   "simple-stepped": SimpleSteppedLayoutParams;
   stepped: SteppedLayoutParams;
   "stepped-cad": SteppedLayoutParams;
@@ -39,6 +42,7 @@ const CURRENT_VERSION = 1;
 const APP_MODES: readonly AppMode[] = [
   "grid",
   "custom",
+  "base-converter",
   "simple-stepped",
   "stepped",
   "stepped-cad",
@@ -47,6 +51,7 @@ const APP_MODES: readonly AppMode[] = [
 export const APP_MODE_LABELS: Record<AppMode, string> = {
   grid: "网格",
   custom: "自定义",
+  "base-converter": "转换底盘",
   "simple-stepped": "简易阶梯",
   stepped: "普通阶梯",
   "stepped-cad": "CAD 阶梯",
@@ -147,6 +152,12 @@ function cloneJsonValue<T>(value: T): T {
 }
 
 function detectModesFromParamShape(data: Record<string, unknown>): AppMode[] {
+  if (
+    typeof data.sourceStandardId === "string" &&
+    typeof data.targetStandardId === "string"
+  ) {
+    return ["base-converter"];
+  }
   if (
     typeof data.rows === "number" &&
     typeof data.columns === "number"
@@ -319,6 +330,7 @@ export function parseParamFileObject(
 ):
   | TrayParams
   | CustomLayoutParams
+  | BaseConverterParams
   | SimpleSteppedLayoutParams
   | SteppedLayoutParams {
   if (!data || typeof data !== "object") {
@@ -357,6 +369,7 @@ export function parseParamFileObject(
     const modeNames: Record<string, string> = {
       grid: "网格",
       custom: "自定义",
+      "base-converter": "转换底盘",
       "simple-stepped": "简易阶梯",
       stepped: "自定义阶梯底座",
       "stepped-cad": "CAD 阶梯底座",
@@ -377,7 +390,7 @@ export function importParams(
   file: File,
   expectedMode: AppMode,
 ): Promise<
-  TrayParams | CustomLayoutParams | SimpleSteppedLayoutParams | SteppedLayoutParams
+  TrayParams | BaseConverterParams | CustomLayoutParams | SimpleSteppedLayoutParams | SteppedLayoutParams
 > {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

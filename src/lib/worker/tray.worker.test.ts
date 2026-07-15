@@ -2,9 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
+import { BASE_CONVERTER_DEFAULTS } from "@/lib/base-converter-config";
 
 const createTrayModel = vi.fn();
 const createCustomTrayModel = vi.fn();
+const createBaseConverterModel = vi.fn();
 const createSimpleSteppedTrayModel = vi.fn();
 const createSteppedTrayModel = vi.fn();
 const createSteppedCadTrayModel = vi.fn();
@@ -19,6 +21,10 @@ vi.mock("../tray-model", () => ({
 
 vi.mock("../custom-tray-model", () => ({
   createCustomTrayModel,
+}));
+
+vi.mock("../base-converter-model", () => ({
+  createBaseConverterModel,
 }));
 
 vi.mock("../simple-stepped-tray-model", () => ({
@@ -89,6 +95,31 @@ describe("tray worker", () => {
       requestId: "req-grid",
       geometry,
       volumeInfo: 123.4,
+    });
+  });
+
+  it("posts generation success for base converter requests", async () => {
+    const workerSelf = await loadWorkerModule();
+    const geometry = { id: "base-converter-geom" };
+    createBaseConverterModel.mockReturnValue(geometry);
+    measureVolume.mockReturnValue(45.6);
+
+    await workerSelf.onmessage?.({
+      data: {
+        type: "GENERATE_BASE_CONVERTER",
+        requestId: "req-base-converter",
+        params: BASE_CONVERTER_DEFAULTS,
+      },
+    } as MessageEvent);
+
+    expect(createBaseConverterModel).toHaveBeenCalledWith(
+      BASE_CONVERTER_DEFAULTS,
+    );
+    expect(workerSelf.postMessage).toHaveBeenCalledWith({
+      type: "GENERATION_SUCCESS",
+      requestId: "req-base-converter",
+      geometry,
+      volumeInfo: 45.6,
     });
   });
 

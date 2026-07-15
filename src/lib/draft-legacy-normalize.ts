@@ -16,7 +16,12 @@ import type {
 } from "@/lib/draft-summary";
 import type { ExportableParams } from "@/lib/param-io";
 
-export type DraftMode = "grid" | "custom" | "simple-stepped" | "stepped";
+export type DraftMode =
+  | "grid"
+  | "custom"
+  | "base-converter"
+  | "simple-stepped"
+  | "stepped";
 
 export type DraftListItemCompatibilityByMode = {
   grid: {
@@ -29,6 +34,12 @@ export type DraftListItemCompatibilityByMode = {
   };
   custom: {
     slotCount: number;
+    trayWidth: number;
+    trayDepth: number;
+  };
+  "base-converter": {
+    sourceLabel: string;
+    targetLabel: string;
     trayWidth: number;
     trayDepth: number;
   };
@@ -62,11 +73,14 @@ export type UnknownDraftListItem = Partial<{
   columns: unknown;
   structureMode: unknown;
   baseSizeLabel: unknown;
+  sourceLabel: unknown;
+  targetLabel: unknown;
 }>;
 
 export const DRAFT_MODES: DraftMode[] = [
   "grid",
   "custom",
+  "base-converter",
   "simple-stepped",
   "stepped",
 ];
@@ -95,6 +109,13 @@ export function extractCompatibilityFields(
     case "custom":
       return {
         slotCount: summary.slotCount,
+        trayWidth: summary.trayWidth,
+        trayDepth: summary.trayDepth,
+      };
+    case "base-converter":
+      return {
+        sourceLabel: summary.sourceLabel,
+        targetLabel: summary.targetLabel,
         trayWidth: summary.trayWidth,
         trayDepth: summary.trayDepth,
       };
@@ -170,6 +191,24 @@ function normalizeSummaryFromLegacyFields(
       return {
         mode: "custom",
         slotCount: item.slotCount,
+        trayWidth: item.trayWidth,
+        trayDepth: item.trayDepth,
+      };
+    }
+    return null;
+  }
+
+  if (item.mode === "base-converter") {
+    if (
+      typeof item.sourceLabel === "string" &&
+      typeof item.targetLabel === "string" &&
+      isFiniteNumber(item.trayWidth) &&
+      isFiniteNumber(item.trayDepth)
+    ) {
+      return {
+        mode: "base-converter",
+        sourceLabel: item.sourceLabel,
+        targetLabel: item.targetLabel,
         trayWidth: item.trayWidth,
         trayDepth: item.trayDepth,
       };

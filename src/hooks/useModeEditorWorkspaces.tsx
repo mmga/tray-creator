@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { ParamImportDialog } from "@/components/ParamImportDialog";
 import { useCustomLayout } from "@/hooks/useCustomLayout";
+import { useBaseConverter } from "@/hooks/useBaseConverter";
 import { useModeInteractionState } from "@/hooks/useModeInteractionState";
 import { useModeViewportWorkspaces } from "@/hooks/useModeViewportWorkspaces";
 import { useModeWorkspaces } from "@/hooks/useModeWorkspaces";
@@ -46,6 +47,7 @@ export function useModeEditorWorkspaces({
   const [isPreparingImport, setIsPreparingImport] = useState(false);
   const gridModel = useTrayModel();
   const customModel = useCustomLayout();
+  const baseConverterModel = useBaseConverter();
   const simpleSteppedModel = useSimpleSteppedLayout();
   const steppedModel = useSteppedLayout();
   const steppedCadModel = useSteppedCadLayout();
@@ -88,6 +90,7 @@ export function useModeEditorWorkspaces({
     mode,
     gridModel,
     customModel,
+    baseConverterModel,
     simpleSteppedModel,
     steppedModel,
     steppedCadModel,
@@ -98,6 +101,7 @@ export function useModeEditorWorkspaces({
     mode,
     gridModel,
     customModel,
+    baseConverterModel,
     simpleSteppedModel,
     steppedModel,
     steppedCadModel,

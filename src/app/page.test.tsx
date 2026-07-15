@@ -12,6 +12,7 @@ import type { TrayParams } from "@/types/tray";
 const {
   gridModelMock,
   customModelMock,
+  baseConverterModelMock,
   simpleSteppedModelMock,
   steppedModelMock,
   steppedCadModelMock,
@@ -264,6 +265,23 @@ const {
       duplicateSlots: vi.fn(),
       undo: vi.fn(),
       saveSnapshot: vi.fn(),
+    },
+    baseConverterModelMock: {
+      params: {
+        sourceStandardId: "source-20x20",
+        targetStandardId: "target-circle-25",
+        floorThickness: 1.2,
+        recessDepth: 2,
+      },
+      updateParam: vi.fn(),
+      replaceParams: vi.fn(),
+      resetParams: vi.fn(),
+      handleGenerate: vi.fn(),
+      handleExportSTL: vi.fn(),
+      isGenerating: false,
+      volume: 12,
+      threeGeometry: { id: "base-converter-geometry" },
+      isPreviewStale: false,
     },
     steppedModelMock: {
       params: steppedParams,
@@ -548,6 +566,10 @@ vi.mock("@/hooks/useCustomLayout", () => ({
   useCustomLayout: () => customModelMock,
 }));
 
+vi.mock("@/hooks/useBaseConverter", () => ({
+  useBaseConverter: () => baseConverterModelMock,
+}));
+
 vi.mock("@/hooks/useSteppedLayout", () => ({
   useSteppedLayout: () => steppedModelMock,
 }));
@@ -590,6 +612,9 @@ vi.mock("@/components/ModeTabs", () => ({
         </button>
         <button type="button" onClick={() => onModeChange("custom")}>
           切到自定义
+        </button>
+        <button type="button" onClick={() => onModeChange("base-converter")}>
+          切到转换底盘
         </button>
         <button type="button" onClick={() => onModeChange("simple-stepped")}>
           切到简易阶梯
@@ -936,6 +961,8 @@ describe("Home page", { timeout: 15000 }, () => {
   beforeEach(() => {
     gridModelMock.handleGenerate.mockReset();
     customModelMock.handleGenerate.mockReset();
+    baseConverterModelMock.handleGenerate.mockReset();
+    baseConverterModelMock.isPreviewStale = false;
     simpleSteppedModelMock.handleGenerate.mockReset();
     steppedModelMock.handleGenerate.mockReset();
     steppedCadModelMock.handleGenerate.mockReset();
@@ -1023,6 +1050,24 @@ describe("Home page", { timeout: 15000 }, () => {
     expect(screen.getByRole("button", { name: "3D 预览" })).toHaveAttribute(
       "data-state",
       "inactive",
+    );
+  });
+
+  it("wires base converter panel, 2D preview, and 3D generation", async () => {
+    baseConverterModelMock.isPreviewStale = true;
+    render(<Home />);
+
+    fireEvent.click(screen.getByRole("button", { name: "切到转换底盘" }));
+    expect(await screen.findByText("标准转换")).toBeInTheDocument();
+    expect(screen.getByLabelText("转换底盘 2D 图")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "3D 预览" }));
+    await waitFor(() => {
+      expect(baseConverterModelMock.handleGenerate).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.getByTestId("tray-viewer")).toHaveAttribute(
+      "data-geometry-id",
+      "base-converter-geometry",
     );
   });
 

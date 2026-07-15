@@ -1,5 +1,6 @@
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type {
+  BaseConverterParams,
   CustomLayoutParams,
   GroupOutlinePreview,
   SteppedLayoutParams,
@@ -44,6 +45,12 @@ export interface GridWorkerPort extends STLExportWorkerPort {
 export interface CustomWorkerPort extends STLExportWorkerPort {
   generateCustom: (
     params: CustomLayoutParams,
+  ) => Promise<{ geometry: Geom3; volume: number }>;
+}
+
+export interface BaseConverterWorkerPort extends STLExportWorkerPort {
+  generateBaseConverter: (
+    params: BaseConverterParams,
   ) => Promise<{ geometry: Geom3; volume: number }>;
 }
 

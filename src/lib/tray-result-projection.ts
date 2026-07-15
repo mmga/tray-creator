@@ -3,6 +3,7 @@ import { calculateCustomTrayDimensions } from "@/lib/custom-tray-model";
 import type { SimpleSteppedDerivedLayout } from "@/lib/simple-stepped-layout";
 import {
   calculateCustomPrice,
+  calculateBaseConverterPrice,
   calculateGridPrice,
   calculateSimpleSteppedPrice,
   calculateWeight,
@@ -10,7 +11,9 @@ import {
   type SteppedPricingBreakdown,
 } from "@/lib/pricing";
 import { calculateTrayDimensions } from "@/lib/tray-model";
+import { resolveBaseConverterGeometry } from "@/lib/base-converter-config";
 import type {
+  BaseConverterParams,
   CustomLayoutParams,
   SimpleSteppedLayoutParams,
   SteppedLayoutParams,
@@ -72,6 +75,13 @@ export interface SimpleSteppedTrayResultProjection
   minimumBaseplate: { width: number; depth: number };
 }
 
+export interface BaseConverterResultProjection extends TrayResultProjectionBase {
+  mode: "base-converter";
+  sourceLabel: string;
+  targetLabel: string;
+  recess: { width: number; depth: number };
+}
+
 export interface SteppedTrayResultProjection extends TrayResultProjectionBase {
   mode: "stepped" | "stepped-cad";
   groupCount: number;
@@ -88,8 +98,33 @@ export interface SteppedTrayResultProjection extends TrayResultProjectionBase {
 export type TrayResultProjection =
   | GridTrayResultProjection
   | CustomTrayResultProjection
+  | BaseConverterResultProjection
   | SimpleSteppedTrayResultProjection
   | SteppedTrayResultProjection;
+
+export function projectBaseConverterResult(
+  params: BaseConverterParams,
+  state: ResultState,
+): BaseConverterResultProjection {
+  const { source, target, recess, totalHeight } =
+    resolveBaseConverterGeometry(params);
+  return {
+    mode: "base-converter",
+    slotCount: 1,
+    itemLabel: `${source.name} → ${target.name}`,
+    ...projectCommon(
+      { width: target.width, depth: target.depth, height: totalHeight },
+      state,
+    ),
+    quote: {
+      amount: finiteOrZero(calculateBaseConverterPrice(state.volume)),
+      fractionDigits: 1,
+    },
+    sourceLabel: source.name,
+    targetLabel: target.name,
+    recess,
+  };
+}
 
 interface ResultState {
   volume: number;

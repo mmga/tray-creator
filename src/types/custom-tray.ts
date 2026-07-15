@@ -3,9 +3,19 @@ import type { BaseHolePresetKey } from "@/types/tray";
 export type AppMode =
   | "grid"
   | "custom"
+  | "base-converter"
   | "simple-stepped"
   | "stepped"
   | "stepped-cad";
+
+export interface BaseConverterParams {
+  sourceStandardId: string;
+  targetStandardId: string;
+  /** 凹槽底部保留厚度 (mm) */
+  floorThickness: number;
+  /** 从顶面向下挖的凹槽深度，同时也是四向挡边高度 (mm) */
+  recessDepth: number;
+}
 
 export type SplitGrooveType = "profile" | "inset";
 

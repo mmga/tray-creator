@@ -1,11 +1,13 @@
 import type { TrayParams } from "@/types/tray";
 import type {
   AppMode,
+  BaseConverterParams,
   CustomLayoutParams,
   FreeSlot,
   SimpleSteppedLayoutParams,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
+import { normalizeBaseConverterParams } from "@/lib/base-converter-config";
 import { CUSTOM_LAYOUT_DEFAULTS, CUSTOM_LIMITS } from "@/lib/custom-config";
 import { resolveBaseHolePresetKey } from "@/lib/config";
 import { PARAM_CONFIG } from "@/lib/grid-config";
@@ -43,6 +45,7 @@ import {
 
 export type NormalizableParams =
   | TrayParams
+  | BaseConverterParams
   | CustomLayoutParams
   | SimpleSteppedLayoutParams
   | SteppedLayoutParams;
@@ -127,6 +130,31 @@ export function normalizeParamsForMode(
   recorder?: ImportNormalizationRecorder,
 ): NormalizableParams {
   const resolvedMode = resolveNormalizationMode(mode);
+
+  if (resolvedMode === "base-converter") {
+    const raw = params as BaseConverterParams;
+    if (typeof raw.sourceStandardId !== "string") {
+      throw new Error("缺少或无效的字段: sourceStandardId");
+    }
+    if (typeof raw.targetStandardId !== "string") {
+      throw new Error("缺少或无效的字段: targetStandardId");
+    }
+    requireNumber(raw as unknown as Record<string, unknown>, "floorThickness");
+    requireNumber(raw as unknown as Record<string, unknown>, "recessDepth");
+    const normalized = normalizeBaseConverterParams(raw);
+    for (const key of ["sourceStandardId", "targetStandardId", "floorThickness", "recessDepth"] as const) {
+      if (normalized[key] !== raw[key]) {
+        recordValueAdjustment(recorder, {
+          path: key,
+          label: key,
+          previousValue: raw[key],
+          normalizedValue: normalized[key],
+          reason: "已调整为当前支持的转换底盘标准或参数范围",
+        });
+      }
+    }
+    return normalized;
+  }
 
   if (resolvedMode === "grid") {
     return runParamNormalizationPipeline(

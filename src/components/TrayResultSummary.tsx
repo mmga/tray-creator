@@ -42,6 +42,17 @@ function modeSpecificMetrics(result: TrayResultProjection) {
           <ResultMetric label="占地面积" value={`${result.footprintArea.toFixed(0)} mm²`} />
         </>
       );
+    case "base-converter":
+      return (
+        <>
+          <ResultMetric label="原底盘" value={result.sourceLabel} />
+          <ResultMetric label="目标底盘" value={result.targetLabel} />
+          <ResultMetric
+            label="最终凹槽"
+            value={`${result.recess.width.toFixed(1)} × ${result.recess.depth.toFixed(1)} mm`}
+          />
+        </>
+      );
     case "simple-stepped":
       return (
         <>
@@ -113,7 +124,10 @@ export function TrayResultSummary({ result }: TrayResultSummaryProps) {
         <ResultMetric label="高度" value={`${dimensions.height.toFixed(1)} mm`} />
       </div>
       <div className="grid grid-cols-2 gap-1.5">
-        <ResultMetric label="槽位数" value={`${result.slotCount}`} />
+        <ResultMetric
+          label={result.mode === "base-converter" ? "转换件" : "槽位数"}
+          value={`${result.slotCount}`}
+        />
         <ResultMetric label="耗材参考" value={weight} />
         {modeSpecificMetrics(result)}
       </div>

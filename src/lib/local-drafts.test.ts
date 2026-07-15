@@ -3,6 +3,7 @@ import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
+import { BASE_CONVERTER_DEFAULTS } from "@/lib/base-converter-config";
 import type {
   CustomLayoutParams,
   SimpleSteppedLayoutParams,
@@ -149,6 +150,23 @@ describe("local drafts", () => {
 
     expect(listDrafts("stepped")).toEqual([record.item]);
     expect(getDraft("stepped", record.item.id)).toEqual(record);
+  });
+
+  it("stores base converter drafts with source and target standards", () => {
+    vi.spyOn(crypto, "randomUUID").mockReturnValue("converter-1");
+    const record = createDraft(
+      "转换底盘",
+      "base-converter",
+      BASE_CONVERTER_DEFAULTS,
+    );
+    expect(record.item.summary).toEqual({
+      mode: "base-converter",
+      sourceLabel: "20 × 20mm",
+      targetLabel: "Ø25mm",
+      trayWidth: 25,
+      trayDepth: 25,
+    });
+    expect(listDrafts("base-converter")).toEqual([record.item]);
   });
 
   it("stores and lists drafts independently per mode", () => {

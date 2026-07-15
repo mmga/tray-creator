@@ -24,6 +24,13 @@ function renderDraftSummary(item: AnyDraftListItem): ReactNode {
           <span>{item.trayWidth.toFixed(0)}×{item.trayDepth.toFixed(0)}mm</span>
         </>
       );
+    case "base-converter":
+      return (
+        <>
+          <span>{item.sourceLabel} → {item.targetLabel}</span>
+          <span>{item.trayWidth.toFixed(0)}×{item.trayDepth.toFixed(0)}mm</span>
+        </>
+      );
     case "simple-stepped":
       return (
         <>

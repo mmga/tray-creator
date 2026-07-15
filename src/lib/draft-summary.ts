@@ -1,10 +1,12 @@
 import { calculateSimpleSteppedDimensions } from "@/lib/simple-stepped-layout";
 import { calculateTrayDimensions } from "@/lib/tray-model";
 import type {
+  BaseConverterParams,
   CustomLayoutParams,
   SimpleSteppedLayoutParams,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
+import { resolveBaseConverterGeometry } from "@/lib/base-converter-config";
 import type { TrayParams } from "@/types/tray";
 import type { ExportableParams } from "@/lib/param-io";
 
@@ -30,6 +32,13 @@ export type DraftSummary =
       trayDepth: number;
     }
   | {
+      mode: "base-converter";
+      sourceLabel: string;
+      targetLabel: string;
+      trayWidth: number;
+      trayDepth: number;
+    }
+  | {
       mode: "simple-stepped";
       rowCount: number;
       slotCount: number;
@@ -51,6 +60,7 @@ export type DraftSummaryByMode = {
 export type DraftParamsByMode = {
   grid: TrayParams;
   custom: CustomLayoutParams;
+  "base-converter": BaseConverterParams;
   "simple-stepped": SimpleSteppedLayoutParams;
   stepped: SteppedLayoutParams;
 };
@@ -96,6 +106,19 @@ function buildCustomDraftSummary(
   };
 }
 
+function buildBaseConverterDraftSummary(
+  params: BaseConverterParams,
+): DraftSummaryByMode["base-converter"] {
+  const { source, target } = resolveBaseConverterGeometry(params);
+  return {
+    mode: "base-converter",
+    sourceLabel: source.name,
+    targetLabel: target.name,
+    trayWidth: target.width,
+    trayDepth: target.depth,
+  };
+}
+
 function buildSimpleSteppedDraftSummary(
   params: SimpleSteppedLayoutParams,
 ): DraftSummaryByMode["simple-stepped"] {
@@ -131,6 +154,10 @@ export function buildDraftSummary<M extends keyof DraftParamsByMode>(
     case "custom":
       return buildCustomDraftSummary(
         params as CustomLayoutParams,
+      ) as DraftSummaryByMode[M];
+    case "base-converter":
+      return buildBaseConverterDraftSummary(
+        params as BaseConverterParams,
       ) as DraftSummaryByMode[M];
     case "simple-stepped":
       return buildSimpleSteppedDraftSummary(

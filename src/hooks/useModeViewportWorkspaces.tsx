@@ -2,12 +2,14 @@
 
 import { useMemo, useState } from "react";
 import type { useCustomLayout } from "@/hooks/useCustomLayout";
+import type { useBaseConverter } from "@/hooks/useBaseConverter";
 import type { ModeInteractionState } from "@/hooks/useModeInteractionState";
 import type { useSimpleSteppedLayout } from "@/hooks/useSimpleSteppedLayout";
 import type { useSteppedLayout } from "@/hooks/useSteppedLayout";
 import type { useSteppedCadLayout } from "@/hooks/useSteppedCadLayout";
 import type { useTrayModel } from "@/hooks/useTrayModel";
 import { useCustomViewportWorkspace } from "@/viewports/custom/useCustomViewportWorkspace";
+import { useBaseConverterViewportWorkspace } from "@/viewports/base-converter/useBaseConverterViewportWorkspace";
 import { useGridViewportWorkspace } from "@/viewports/grid/useGridViewportWorkspace";
 import { useSimpleSteppedViewportWorkspace } from "@/viewports/simple-stepped/useSimpleSteppedViewportWorkspace";
 import { useSteppedViewportWorkspace } from "@/viewports/stepped/useSteppedViewportWorkspace";
@@ -19,6 +21,7 @@ interface UseModeViewportWorkspacesOptions {
   mode: AppMode;
   gridModel: ReturnType<typeof useTrayModel>;
   customModel: ReturnType<typeof useCustomLayout>;
+  baseConverterModel: ReturnType<typeof useBaseConverter>;
   simpleSteppedModel: ReturnType<typeof useSimpleSteppedLayout>;
   steppedModel: ReturnType<typeof useSteppedLayout>;
   steppedCadModel: ReturnType<typeof useSteppedCadLayout>;
@@ -33,6 +36,7 @@ export function useModeViewportWorkspaces({
   mode,
   gridModel,
   customModel,
+  baseConverterModel,
   simpleSteppedModel,
   steppedModel,
   steppedCadModel,
@@ -47,6 +51,11 @@ export function useModeViewportWorkspaces({
   });
   const customViewport = useCustomViewportWorkspace({
     model: customModel,
+    rightView,
+    onRightViewChange: setRightView,
+  });
+  const baseConverterViewport = useBaseConverterViewportWorkspace({
+    model: baseConverterModel,
     rightView,
     onRightViewChange: setRightView,
   });
@@ -74,6 +83,8 @@ export function useModeViewportWorkspaces({
         return gridViewport;
       case "custom":
         return customViewport;
+      case "base-converter":
+        return baseConverterViewport;
       case "simple-stepped":
         return simpleSteppedViewport;
       case "stepped":
@@ -87,6 +98,7 @@ export function useModeViewportWorkspaces({
     }
   }, [
     customViewport,
+    baseConverterViewport,
     gridViewport,
     mode,
     simpleSteppedViewport,

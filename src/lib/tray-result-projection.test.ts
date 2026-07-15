@@ -4,8 +4,10 @@ import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import { deriveSimpleSteppedLayout } from "@/lib/simple-stepped-layout";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
+import { BASE_CONVERTER_DEFAULTS } from "@/lib/base-converter-config";
 import {
   projectCustomTrayResult,
+  projectBaseConverterResult,
   projectGridTrayResult,
   projectSimpleSteppedTrayResult,
   projectSteppedTrayResult,
@@ -79,6 +81,22 @@ describe("Tray Result Projection", () => {
       width: derived.minimumTrayWidth,
       depth: derived.minimumTrayDepth,
     });
+  });
+
+  it("投影转换底盘标准、凹槽与总高度", () => {
+    const result = projectBaseConverterResult(BASE_CONVERTER_DEFAULTS, {
+      ...idleState,
+      volume: 1000,
+    });
+    expect(result).toMatchObject({
+      mode: "base-converter",
+      sourceLabel: "20 × 20mm",
+      targetLabel: "Ø25mm",
+      recess: { width: 20.4, depth: 20.4 },
+      dimensions: { width: 25, depth: 25, height: 3.2 },
+    });
+    expect(result.weight.status).toBe("available");
+    expect(result.quote.amount).toBeGreaterThan(0);
   });
 
   it("stepped 与 CAD stepped 复用同一份公共投影规则", () => {

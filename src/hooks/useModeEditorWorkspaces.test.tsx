@@ -57,6 +57,7 @@ const {
     modelMocks: {
       gridModel: { kind: "grid" },
       customModel: { kind: "custom" },
+      baseConverterModel: { kind: "base-converter" },
       simpleSteppedModel: { kind: "simple-stepped" },
       steppedModel: { kind: "stepped" },
       steppedCadModel: { kind: "stepped-cad" },
@@ -80,6 +81,10 @@ vi.mock("@/hooks/useTrayModel", () => ({
 
 vi.mock("@/hooks/useCustomLayout", () => ({
   useCustomLayout: () => modelMocks.customModel,
+}));
+
+vi.mock("@/hooks/useBaseConverter", () => ({
+  useBaseConverter: () => modelMocks.baseConverterModel,
 }));
 
 vi.mock("@/hooks/useSimpleSteppedLayout", () => ({

@@ -61,6 +61,7 @@ describe("ModeTabs", { timeout: 15000 }, () => {
 
     const gridButton = screen.getByRole("button", { name: /网格模式/ });
     const customButton = screen.getByRole("button", { name: /自定义模式/ });
+    const baseConverterButton = screen.getByRole("button", { name: /转换底盘/ });
     const steppedButton = screen.getByRole("button", {
       name: /自定义阶梯底座/,
     });
@@ -70,15 +71,18 @@ describe("ModeTabs", { timeout: 15000 }, () => {
 
     expect(gridButton).toHaveAttribute("data-state", "active");
     expect(customButton).toHaveAttribute("data-state", "inactive");
+    expect(baseConverterButton).toHaveAttribute("data-state", "inactive");
     expect(steppedButton).toHaveAttribute("data-state", "inactive");
     expect(steppedCadButton).toHaveAttribute("data-state", "inactive");
 
     fireEvent.click(customButton);
+    fireEvent.click(baseConverterButton);
     fireEvent.click(steppedButton);
     fireEvent.click(steppedCadButton);
 
     expect(onModeChange).toHaveBeenNthCalledWith(1, "custom");
-    expect(onModeChange).toHaveBeenNthCalledWith(2, "stepped");
-    expect(onModeChange).toHaveBeenNthCalledWith(3, "stepped-cad");
+    expect(onModeChange).toHaveBeenNthCalledWith(2, "base-converter");
+    expect(onModeChange).toHaveBeenNthCalledWith(3, "stepped");
+    expect(onModeChange).toHaveBeenNthCalledWith(4, "stepped-cad");
   });
 });

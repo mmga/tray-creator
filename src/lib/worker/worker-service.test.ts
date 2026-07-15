@@ -4,6 +4,7 @@ import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
+import { BASE_CONVERTER_DEFAULTS } from "@/lib/base-converter-config";
 
 class FakeWorker {
   static instances: FakeWorker[] = [];
@@ -56,6 +57,33 @@ describe("worker service", () => {
     });
 
     await expect(promise).resolves.toEqual({ geometry, volume: 321 });
+  });
+
+  it("routes base converter generation requests", async () => {
+    const { trayWorkerService } = await import("@/lib/worker/worker-service");
+    const worker = FakeWorker.instances[0];
+    const promise = trayWorkerService!.generateBaseConverter(
+      BASE_CONVERTER_DEFAULTS,
+    );
+    const request = worker.postMessage.mock.calls[0]?.[0] as {
+      type: string;
+      requestId: string;
+      params: unknown;
+    };
+    expect(request).toMatchObject({
+      type: "GENERATE_BASE_CONVERTER",
+      params: BASE_CONVERTER_DEFAULTS,
+    });
+    worker.emit({
+      type: "GENERATION_SUCCESS",
+      requestId: request.requestId,
+      geometry: { id: "base-converter-geom" } as never,
+      volumeInfo: 42,
+    });
+    await expect(promise).resolves.toEqual({
+      geometry: { id: "base-converter-geom" },
+      volume: 42,
+    });
   });
 
   it("routes custom, simple stepped, stepped, stepped cad, and outline preview requests to their response shapes", async () => {

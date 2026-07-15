@@ -1,5 +1,6 @@
 import { createTrayModel } from "../tray-model";
 import { createCustomTrayModel } from "../custom-tray-model";
+import { createBaseConverterModel } from "../base-converter-model";
 import { createSimpleSteppedTrayModel } from "../simple-stepped-tray-model";
 import {
   createSteppedCadSplitParts,
@@ -13,6 +14,7 @@ import stlSerializer from "@jscad/stl-serializer";
 import { measureVolume } from "@jscad/modeling/src/measurements";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type {
+  BaseConverterParams,
   CustomLayoutParams,
   GroupOutlinePreview,
   SimpleSteppedLayoutParams,
@@ -27,6 +29,11 @@ export type WorkerRequest =
       type: "GENERATE_CUSTOM";
       requestId: string;
       params: CustomLayoutParams;
+    }
+  | {
+      type: "GENERATE_BASE_CONVERTER";
+      requestId: string;
+      params: BaseConverterParams;
     }
   | {
       type: "GENERATE_STEPPED";
@@ -104,6 +111,15 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
       });
     } else if (req.type === "GENERATE_CUSTOM") {
       const geometry = createCustomTrayModel(req.params);
+      const volume = measureVolume(geometry);
+      self.postMessage({
+        type: "GENERATION_SUCCESS",
+        requestId,
+        geometry,
+        volumeInfo: volume,
+      });
+    } else if (req.type === "GENERATE_BASE_CONVERTER") {
+      const geometry = createBaseConverterModel(req.params);
       const volume = measureVolume(geometry);
       self.postMessage({
         type: "GENERATION_SUCCESS",

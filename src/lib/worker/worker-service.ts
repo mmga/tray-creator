@@ -1,6 +1,7 @@
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { TrayParams } from "@/types/tray";
 import type {
+  BaseConverterParams,
   CustomLayoutParams,
   GroupOutlinePreview,
   SimpleSteppedLayoutParams,
@@ -80,6 +81,27 @@ class TrayWorkerService {
       });
       this.pendingRejects.set(requestId, reject);
       this.worker?.postMessage({ type: "GENERATE_CUSTOM", requestId, params });
+    });
+  }
+
+  public async generateBaseConverter(
+    params: BaseConverterParams,
+  ): Promise<{ geometry: Geom3; volume: number }> {
+    const requestId = generateRequestId();
+    return new Promise((resolve, reject) => {
+      this.pendingResolves.set(requestId, (data) => {
+        if (data.type !== "GENERATION_SUCCESS") {
+          reject(new Error(`Unexpected worker response: ${data.type}`));
+          return;
+        }
+        resolve({ geometry: data.geometry, volume: data.volumeInfo });
+      });
+      this.pendingRejects.set(requestId, reject);
+      this.worker?.postMessage({
+        type: "GENERATE_BASE_CONVERTER",
+        requestId,
+        params,
+      });
     });
   }
 

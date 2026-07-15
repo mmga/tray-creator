@@ -301,3 +301,8 @@ export function calculateSimpleSteppedPrice(
   const weight = calculateWeight(volume);
   return weight * 0.4;
 }
+
+export function calculateBaseConverterPrice(volume: number): number {
+  if (volume <= 0) return 0;
+  return calculateWeight(volume) * 0.4;
+}

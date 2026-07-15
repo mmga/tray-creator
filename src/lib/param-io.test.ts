@@ -6,6 +6,7 @@ import {
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
+import { BASE_CONVERTER_DEFAULTS } from "@/lib/base-converter-config";
 import type {
   AppMode,
   CustomLayoutParams,
@@ -67,6 +68,20 @@ describe("param-io", () => {
       STEPPED_LAYOUT_DEFAULTS,
     );
     expect(() => parseParamFileObject(file, "stepped")).toThrow("模式不匹配");
+  });
+
+  it("round-trips declared base converter parameters", () => {
+    const file = buildParamFile("base-converter", BASE_CONVERTER_DEFAULTS);
+    expect(parseParamFileObject(file, "base-converter")).toEqual(
+      BASE_CONVERTER_DEFAULTS,
+    );
+    expect(
+      prepareParamFileObject(file),
+    ).toMatchObject({
+      status: "ready",
+      candidate: { targetMode: "base-converter" },
+    });
+    expect(() => parseParamFileObject(file, "grid")).toThrow("模式不匹配");
   });
 
   it("prepares a normalized candidate with defaults and value adjustments", () => {
