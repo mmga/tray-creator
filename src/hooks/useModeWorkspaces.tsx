@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import type { useCustomLayout } from "@/hooks/useCustomLayout";
 import type { ModeInteractionState } from "@/hooks/useModeInteractionState";
 import type { useSimpleSteppedLayout } from "@/hooks/useSimpleSteppedLayout";
@@ -14,6 +14,8 @@ import { useSteppedWorkspace } from "@/workspaces/stepped/useSteppedWorkspace";
 import { useSteppedCadWorkspace } from "@/workspaces/stepped-cad/useSteppedCadWorkspace";
 import type { ModeWorkspace } from "@/workspaces/types";
 import type { AppMode } from "@/types/custom-tray";
+import type { DraftActionResult } from "@/workspaces/draft-action-area";
+import type { ModeWorkspaceImportTarget } from "@/workspaces/types";
 
 interface UseModeWorkspacesOptions {
   mode: AppMode;
@@ -23,10 +25,12 @@ interface UseModeWorkspacesOptions {
   steppedModel: ReturnType<typeof useSteppedLayout>;
   steppedCadModel: ReturnType<typeof useSteppedCadLayout>;
   steppedInteractionState: ModeInteractionState;
+  onRequestParamImport: (file: File) => Promise<DraftActionResult>;
 }
 
 interface UseModeWorkspacesReturn {
   activeWorkspace: ModeWorkspace;
+  getImportTarget: (mode: AppMode) => ModeWorkspaceImportTarget;
 }
 
 export function useModeWorkspaces({
@@ -37,23 +41,29 @@ export function useModeWorkspaces({
   steppedModel,
   steppedCadModel,
   steppedInteractionState,
+  onRequestParamImport,
 }: UseModeWorkspacesOptions): UseModeWorkspacesReturn {
   const gridWorkspace = useGridWorkspace({
     model: gridModel,
+    onRequestParamImport,
   });
   const customWorkspace = useCustomWorkspace({
     model: customModel,
+    onRequestParamImport,
   });
   const simpleSteppedWorkspace = useSimpleSteppedWorkspace({
     model: simpleSteppedModel,
+    onRequestParamImport,
   });
   const steppedWorkspace = useSteppedWorkspace({
     model: steppedModel,
     interactionState: steppedInteractionState,
+    onRequestParamImport,
   });
   const steppedCadWorkspace = useSteppedCadWorkspace({
     model: steppedCadModel,
     interactionState: steppedInteractionState,
+    onRequestParamImport,
   });
 
   const activeWorkspace = useMemo<ModeWorkspace>(() => {
@@ -82,7 +92,33 @@ export function useModeWorkspaces({
     steppedCadWorkspace,
   ]);
 
+  const getImportTarget = useCallback((targetMode: AppMode) => {
+    switch (targetMode) {
+      case "grid":
+        return gridWorkspace.importTarget;
+      case "custom":
+        return customWorkspace.importTarget;
+      case "simple-stepped":
+        return simpleSteppedWorkspace.importTarget;
+      case "stepped":
+        return steppedWorkspace.importTarget;
+      case "stepped-cad":
+        return steppedCadWorkspace.importTarget;
+      default: {
+        const unreachableMode: never = targetMode;
+        throw new Error(`Unsupported import mode: ${String(unreachableMode)}`);
+      }
+    }
+  }, [
+    customWorkspace.importTarget,
+    gridWorkspace.importTarget,
+    simpleSteppedWorkspace.importTarget,
+    steppedCadWorkspace.importTarget,
+    steppedWorkspace.importTarget,
+  ]);
+
   return {
     activeWorkspace,
+    getImportTarget,
   };
 }

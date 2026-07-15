@@ -5,8 +5,8 @@ import dynamic from "next/dynamic";
 import { PanelActionSection } from "@/components/PanelActionSection";
 import { useAutoPreview } from "@/hooks/useAutoPreview";
 import { useWorkspaceDraftSupport, type WorkspaceDraftActions } from "@/workspaces/shared";
-import { available, generatingAvailability, type AutomaticDraftActionAreaAdapter } from "@/workspaces/draft-action-area";
-import { exportParams, importParams } from "@/lib/param-io";
+import { available, generatingAvailability, type AutomaticDraftActionAreaAdapter, type DraftActionResult } from "@/workspaces/draft-action-area";
+import { exportParams } from "@/lib/param-io";
 import type { ModeWorkspace } from "@/workspaces/types";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import type { CustomLayoutParams } from "@/types/custom-tray";
@@ -18,6 +18,7 @@ const CustomPanel = dynamic(() => import("@/components/CustomPanel"), {
 
 interface UseCustomWorkspaceOptions {
   model: ReturnType<typeof useCustomLayout>;
+  onRequestParamImport: (file: File) => Promise<DraftActionResult>;
 }
 
 interface CustomDraftActionAreaProps {
@@ -26,7 +27,7 @@ interface CustomDraftActionAreaProps {
   onGenerate: () => void;
   onExportSTL: () => void;
   onReset: () => void;
-  onImport: (params: CustomLayoutParams) => void;
+  onRequestParamImport: (file: File) => Promise<DraftActionResult>;
   draftActions: WorkspaceDraftActions;
 }
 
@@ -36,7 +37,7 @@ function CustomDraftActionArea({
   onGenerate,
   onExportSTL,
   onReset,
-  onImport,
+  onRequestParamImport,
   draftActions,
 }: CustomDraftActionAreaProps) {
   const [autoPreview, setAutoPreview] = useState(false);
@@ -66,7 +67,7 @@ function CustomDraftActionArea({
           case "save-draft": draftActions.onSaveDraft(); break;
           case "open-drafts": draftActions.onOpenDraftDialog(); break;
           case "export-params": exportParams("custom", params); break;
-          case "import-params": onImport(await importParams(intent.file, "custom")); break;
+          case "import-params": return onRequestParamImport(intent.file);
           case "reset": onReset(); break;
           case "set-auto-preview": setAutoPreview(intent.enabled); break;
         }
@@ -75,13 +76,14 @@ function CustomDraftActionArea({
         return { status: "error", message: `操作失败：${error instanceof Error ? error.message : "未知错误"}` };
       }
     },
-  }), [autoPreview, draftActions, isGenerating, onExportSTL, onGenerate, onImport, onReset, params]);
+  }), [autoPreview, draftActions, isGenerating, onExportSTL, onGenerate, onRequestParamImport, onReset, params]);
 
   return <PanelActionSection adapter={adapter} />;
 }
 
 export function useCustomWorkspace({
   model,
+  onRequestParamImport,
 }: UseCustomWorkspaceOptions): ModeWorkspace {
   const { draftActions, overlays, clearDraftBinding } =
     useWorkspaceDraftSupport({
@@ -108,17 +110,17 @@ export function useCustomWorkspace({
         onGenerate={model.handleGenerate}
         onExportSTL={model.handleExportSTL}
         onReset={resetWorkspace}
-        onImport={importIntoWorkspace}
+        onRequestParamImport={onRequestParamImport}
         draftActions={draftActions}
       />
     ),
     [
       draftActions,
-      importIntoWorkspace,
       model.handleExportSTL,
       model.handleGenerate,
       model.isGenerating,
       model.params,
+      onRequestParamImport,
       resetWorkspace,
     ],
   );
@@ -153,5 +155,10 @@ export function useCustomWorkspace({
   return {
     panel,
     overlays,
+    importTarget: {
+      currentDraftId: draftActions.currentDraftId,
+      hasUnsavedChanges: draftActions.hasUnsavedChanges,
+      commit: (params) => importIntoWorkspace(params as CustomLayoutParams),
+    },
   };
 }

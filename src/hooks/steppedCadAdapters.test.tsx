@@ -83,6 +83,7 @@ describe("stepped-cad adapters", () => {
       useSteppedCadWorkspace({
         model: model as never,
         interactionState: interactionState as never,
+        onRequestParamImport: vi.fn(async () => ({ status: "success" as const })),
       }),
     );
 
@@ -95,7 +96,7 @@ describe("stepped-cad adapters", () => {
         onAfterLoad: resetInteractionState,
       }),
     );
-    // workspace 对外只暴露 panel + overlays，不再暴露 mode/commands/draftDialogProps。
+    // workspace 渲染 Interface 保持 panel + overlays，导入提交通过内部 importTarget 完成。
     expect(result.current.overlays).toBeNull();
     expect(result.current.panel).not.toBeNull();
   });

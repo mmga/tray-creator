@@ -8,8 +8,8 @@ import type { ModeWorkspace } from "@/workspaces/types";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import type { SimpleSteppedLayoutParams } from "@/types/custom-tray";
 import type { useSimpleSteppedLayout } from "@/hooks/useSimpleSteppedLayout";
-import { exportParams, importParams } from "@/lib/param-io";
-import { available, generatingAvailability, type ManualDraftActionAreaAdapter } from "@/workspaces/draft-action-area";
+import { exportParams } from "@/lib/param-io";
+import { available, generatingAvailability, type DraftActionResult, type ManualDraftActionAreaAdapter } from "@/workspaces/draft-action-area";
 
 const SimpleSteppedPanel = dynamic(
   () => import("@/components/SimpleSteppedPanel"),
@@ -18,10 +18,12 @@ const SimpleSteppedPanel = dynamic(
 
 interface UseSimpleSteppedWorkspaceOptions {
   model: ReturnType<typeof useSimpleSteppedLayout>;
+  onRequestParamImport: (file: File) => Promise<DraftActionResult>;
 }
 
 export function useSimpleSteppedWorkspace({
   model,
+  onRequestParamImport,
 }: UseSimpleSteppedWorkspaceOptions): ModeWorkspace {
   const { draftActions, overlays, clearDraftBinding } =
     useWorkspaceDraftSupport({
@@ -62,7 +64,7 @@ export function useSimpleSteppedWorkspace({
               case "save-draft": draftActions.onSaveDraft(); break;
               case "open-drafts": draftActions.onOpenDraftDialog(); break;
               case "export-params": exportParams("simple-stepped", model.params); break;
-              case "import-params": importIntoWorkspace(await importParams(intent.file, "simple-stepped")); break;
+              case "import-params": return onRequestParamImport(intent.file);
               case "reset": resetWorkspace(); break;
             }
             return { status: "success" };
@@ -73,7 +75,7 @@ export function useSimpleSteppedWorkspace({
       };
       return <PanelActionSection adapter={adapter} />;
     },
-    [draftActions, importIntoWorkspace, model, resetWorkspace],
+    [draftActions, model, onRequestParamImport, resetWorkspace],
   );
 
   const panel = useMemo(
@@ -122,5 +124,10 @@ export function useSimpleSteppedWorkspace({
   return {
     panel,
     overlays,
+    importTarget: {
+      currentDraftId: draftActions.currentDraftId,
+      hasUnsavedChanges: draftActions.hasUnsavedChanges,
+      commit: (params) => importIntoWorkspace(params as SimpleSteppedLayoutParams),
+    },
   };
 }

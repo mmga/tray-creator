@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
@@ -45,15 +45,6 @@ vi.mock("@/hooks/useAutoPreview", () => ({
 
 vi.mock("@/lib/param-io", () => ({
   exportParams: vi.fn(),
-  importParams: vi.fn(async (_file: File, mode: string) =>
-    mode === "grid"
-      ? { ...DEFAULT_TRAY_PARAMS, rows: 3 }
-      : mode === "custom"
-        ? { ...CUSTOM_LAYOUT_DEFAULTS, trayWidth: 180 }
-        : mode === "simple-stepped"
-          ? { ...SIMPLE_STEPPED_LAYOUT_DEFAULTS, trayWidth: 180 }
-          : { ...STEPPED_LAYOUT_DEFAULTS, trayWidth: 180 },
-  ),
 }));
 
 vi.mock("@/components/PanelActionSection", () => ({
@@ -95,6 +86,7 @@ describe("Mode Workspace Draft Action Area", () => {
   });
 
   it("grid 仅在活动面板挂载后启用自动预览，并路由重置与导入", async () => {
+    const onRequestParamImport = vi.fn(async () => ({ status: "success" as const }));
     const model = {
       params: DEFAULT_TRAY_PARAMS,
       replaceParams: vi.fn(),
@@ -105,7 +97,10 @@ describe("Mode Workspace Draft Action Area", () => {
       isGenerating: false,
       volume: 0,
     };
-    const { result } = renderHook(() => useGridWorkspace({ model: model as never }));
+    const { result } = renderHook(() => useGridWorkspace({
+      model: model as never,
+      onRequestParamImport,
+    }));
 
     expect(useAutoPreviewMock).not.toHaveBeenCalled();
     renderWorkspacePanel(result.current.panel);
@@ -125,13 +120,21 @@ describe("Mode Workspace Draft Action Area", () => {
     );
     expect(model.handleGenerate).toHaveBeenCalledTimes(1);
     expect(model.resetParams).toHaveBeenCalledTimes(1);
-    await waitFor(() => expect(clearDraftBindingMock).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(onRequestParamImport).toHaveBeenCalledTimes(1));
+    expect(clearDraftBindingMock).toHaveBeenCalledTimes(1);
+    expect(model.replaceParams).not.toHaveBeenCalled();
+    act(() => result.current.importTarget.commit({
+      ...DEFAULT_TRAY_PARAMS,
+      rows: 3,
+    }));
+    expect(clearDraftBindingMock).toHaveBeenCalledTimes(2);
     expect(model.replaceParams).toHaveBeenCalledWith(
       expect.objectContaining({ rows: 3 }),
     );
   });
 
   it("custom 的自动预览状态随 Draft Action Area 挂载，并路由外部参数提交", async () => {
+    const onRequestParamImport = vi.fn(async () => ({ status: "success" as const }));
     const model = {
       params: CUSTOM_LAYOUT_DEFAULTS,
       setParams: vi.fn(),
@@ -142,7 +145,10 @@ describe("Mode Workspace Draft Action Area", () => {
       isGenerating: false,
       volume: 0,
     };
-    const { result } = renderHook(() => useCustomWorkspace({ model: model as never }));
+    const { result } = renderHook(() => useCustomWorkspace({
+      model: model as never,
+      onRequestParamImport,
+    }));
 
     expect(useAutoPreviewMock).not.toHaveBeenCalled();
     renderWorkspacePanel(result.current.panel);
@@ -154,8 +160,14 @@ describe("Mode Workspace Draft Action Area", () => {
       CUSTOM_LAYOUT_DEFAULTS,
       expect.objectContaining({ enabled: true }),
     );
-    await waitFor(() => expect(clearDraftBindingMock).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(onRequestParamImport).toHaveBeenCalledTimes(1));
+    expect(clearDraftBindingMock).toHaveBeenCalledTimes(1);
     expect(model.setParams).toHaveBeenNthCalledWith(1, CUSTOM_LAYOUT_DEFAULTS);
+    act(() => result.current.importTarget.commit({
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      trayWidth: 180,
+    }));
+    expect(clearDraftBindingMock).toHaveBeenCalledTimes(2);
     expect(model.setParams).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({ trayWidth: 180 }),
@@ -163,6 +175,7 @@ describe("Mode Workspace Draft Action Area", () => {
   });
 
   it("simple stepped 在重置和导入后清除活动行与 Draft Binding", async () => {
+    const onRequestParamImport = vi.fn(async () => ({ status: "success" as const }));
     const model = {
       params: SIMPLE_STEPPED_LAYOUT_DEFAULTS,
       setParams: vi.fn(),
@@ -174,20 +187,30 @@ describe("Mode Workspace Draft Action Area", () => {
       isPreviewStale: true,
     };
     const { result } = renderHook(() =>
-      useSimpleSteppedWorkspace({ model: model as never }),
+      useSimpleSteppedWorkspace({
+        model: model as never,
+        onRequestParamImport,
+      }),
     );
     renderWorkspacePanel(result.current.panel);
 
     fireEvent.click(screen.getByRole("button", { name: "重置" }));
     fireEvent.click(screen.getByRole("button", { name: "导入" }));
 
-    await waitFor(() => expect(model.setActiveRow).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(onRequestParamImport).toHaveBeenCalledTimes(1));
+    expect(model.setActiveRow).toHaveBeenCalledTimes(1);
     expect(model.setActiveRow).toHaveBeenNthCalledWith(1, null);
+    act(() => result.current.importTarget.commit({
+      ...SIMPLE_STEPPED_LAYOUT_DEFAULTS,
+      trayWidth: 180,
+    }));
+    expect(model.setActiveRow).toHaveBeenCalledTimes(2);
     expect(model.setActiveRow).toHaveBeenNthCalledWith(2, null);
     expect(clearDraftBindingMock).toHaveBeenCalledTimes(2);
   });
 
   it("stepped 在重置和导入后清除 Mode Interaction State", async () => {
+    const onRequestParamImport = vi.fn(async () => ({ status: "success" as const }));
     const resetInteractionState = vi.fn();
     const model = {
       params: STEPPED_LAYOUT_DEFAULTS,
@@ -208,6 +231,7 @@ describe("Mode Workspace Draft Action Area", () => {
       useSteppedWorkspace({
         model: model as never,
         interactionState: interactionState as never,
+        onRequestParamImport,
       }),
     );
     renderWorkspacePanel(result.current.panel);
@@ -215,11 +239,15 @@ describe("Mode Workspace Draft Action Area", () => {
     fireEvent.click(screen.getByRole("button", { name: "重置" }));
     fireEvent.click(screen.getByRole("button", { name: "导入" }));
 
-    await waitFor(() => expect(resetInteractionState).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(onRequestParamImport).toHaveBeenCalledTimes(1));
+    expect(resetInteractionState).toHaveBeenCalledTimes(1);
+    act(() => result.current.importTarget.commit(STEPPED_LAYOUT_DEFAULTS));
+    expect(resetInteractionState).toHaveBeenCalledTimes(2);
     expect(clearDraftBindingMock).toHaveBeenCalledTimes(2);
   });
 
   it("CAD stepped 保留分件导出条件与 stepped Draft Compatibility", () => {
+    const onRequestParamImport = vi.fn(async () => ({ status: "success" as const }));
     const model = {
       params: {
         ...STEPPED_LAYOUT_DEFAULTS,
@@ -247,6 +275,7 @@ describe("Mode Workspace Draft Action Area", () => {
           setPreviewGroupId: vi.fn(),
           resetInteractionState,
         } as never,
+        onRequestParamImport,
       }),
     );
     renderWorkspacePanel(result.current.panel);

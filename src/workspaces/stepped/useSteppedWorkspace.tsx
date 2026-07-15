@@ -9,8 +9,8 @@ import type { ModeWorkspace } from "@/workspaces/types";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 import type { UseSteppedLayoutReturn } from "@/hooks/useSteppedLayout";
-import { exportParams, importParams } from "@/lib/param-io";
-import { available, generatingAvailability, type ManualDraftActionAreaAdapter } from "@/workspaces/draft-action-area";
+import { exportParams } from "@/lib/param-io";
+import { available, generatingAvailability, type DraftActionResult, type ManualDraftActionAreaAdapter } from "@/workspaces/draft-action-area";
 
 const SteppedLayoutPanel = dynamic(() =>
   import("@/components/SteppedPanel").then((mod) => mod.SteppedLayoutPanel), {
@@ -20,11 +20,13 @@ const SteppedLayoutPanel = dynamic(() =>
 interface UseSteppedWorkspaceOptions {
   model: UseSteppedLayoutReturn;
   interactionState: ModeInteractionState;
+  onRequestParamImport: (file: File) => Promise<DraftActionResult>;
 }
 
 export function useSteppedWorkspace({
   model,
   interactionState,
+  onRequestParamImport,
 }: UseSteppedWorkspaceOptions): ModeWorkspace {
   const {
     selectedSlotIds,
@@ -72,7 +74,7 @@ export function useSteppedWorkspace({
               case "save-draft": draftActions.onSaveDraft(); break;
               case "open-drafts": draftActions.onOpenDraftDialog(); break;
               case "export-params": exportParams("stepped", model.params); break;
-              case "import-params": importIntoWorkspace(await importParams(intent.file, "stepped")); break;
+              case "import-params": return onRequestParamImport(intent.file);
               case "reset": resetWorkspace(); break;
             }
             return { status: "success" };
@@ -83,7 +85,7 @@ export function useSteppedWorkspace({
       };
       return <PanelActionSection adapter={adapter} />;
     },
-    [draftActions, importIntoWorkspace, model, resetWorkspace],
+    [draftActions, model, onRequestParamImport, resetWorkspace],
   );
 
   const panel = useMemo(
@@ -154,5 +156,10 @@ export function useSteppedWorkspace({
   return {
     panel,
     overlays,
+    importTarget: {
+      currentDraftId: draftActions.currentDraftId,
+      hasUnsavedChanges: draftActions.hasUnsavedChanges,
+      commit: (params) => importIntoWorkspace(params as SteppedLayoutParams),
+    },
   };
 }
