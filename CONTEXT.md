@@ -288,6 +288,8 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - Current-format writing and historical reading are separate Interfaces and Implementations.
 - `stepped` and `stepped-cad` may share the same parameter structure without sharing one persisted Mode identity.
 - A CAD stepped **Persisted Param Artifact** declares `stepped-cad`, including complete-model companion parameters, split-part companion parameters, Draft records, and Draft Summaries.
+- Adding `stepped-cad` as the actual Mode of new **Persisted Param Artifacts** does not change the parameter-file version or Draft storage version because their envelope shapes remain unchanged.
+- Historical differences are handled by the **Historical Param Artifact Reader**, not by a version increase for this Mode identity change.
 - A split manifest may declare its own file type, such as `stepped-cad-split-parts`, without treating that file type as a **Mode**.
 - Only historical read compatibility may treat a declared `stepped` Mode as ambiguous between ordinary stepped and CAD stepped.
 - Newly exported parameter files are not required to remain importable by older application versions.
