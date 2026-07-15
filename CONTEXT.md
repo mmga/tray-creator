@@ -72,6 +72,10 @@ _Avoid_: Using base size to mean the final generated slot size.
 One tray editing workflow such as grid, custom, simple stepped, or stepped.
 _Avoid_: Using "feature" when the meaning is the editor mode.
 
+**Mode Param Snapshot**:
+An indivisible, read-only pairing of one actual Mode and that Mode's current parameters, captured by a Mode Workspace Adapter as the source for one persistence operation.
+_Avoid_: Passing Mode and params as independently selectable writer arguments, inferring Mode from parameter shape, or making the snapshot own storage and download behavior.
+
 **Persisted Param Artifact**:
 A newly written parameter-bearing artifact whose declared Mode identifies the editor workflow that owns its parameters, including exported parameter files, model companion parameter files, split-part companion parameter files, Draft records, and Draft Summaries.
 _Avoid_: Collapsing `stepped-cad` to `stepped`, inferring Mode from parameter shape, deriving Mode independently in each writer, or treating a split-manifest file type as a Mode.
@@ -267,6 +271,9 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - New CAD stepped parameter files declare `stepped-cad` instead of collapsing their Mode to `stepped`.
 - Every newly written **Persisted Param Artifact** records exactly one actual **Mode** matching the editor workflow that owns its parameters.
 - A **Mode Workspace Adapter** supplies the actual **Mode** for newly written **Persisted Param Artifacts**; downstream persistence Implementations do not infer it from parameter structure.
+- A **Mode Workspace Adapter** captures one **Mode Param Snapshot** for a persistence operation.
+- Parameter export, model companion export, split-part companion export, Draft persistence, and Draft Summary construction consume a **Mode Param Snapshot** instead of independently selectable Mode and params arguments.
+- A **Mode Param Snapshot** does not own browser storage, file naming, downloads, or historical read compatibility.
 - `stepped` and `stepped-cad` may share the same parameter structure without sharing one persisted Mode identity.
 - A CAD stepped **Persisted Param Artifact** declares `stepped-cad`, including complete-model companion parameters, split-part companion parameters, Draft records, and Draft Summaries.
 - A split manifest may declare its own file type, such as `stepped-cad-split-parts`, without treating that file type as a **Mode**.
