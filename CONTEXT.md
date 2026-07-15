@@ -344,6 +344,8 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A custom **Draft Summary** may show slot count and resulting width/depth.
 - A simple stepped **Draft Summary** may show row count, slot count, and resulting width/depth.
 - A stepped **Draft Summary** may show group count, slot count, and resulting width/depth.
+- A CAD stepped **Draft Summary** declares `stepped-cad` while showing the same group count, slot count, and resulting width/depth fields as an ordinary stepped Draft Summary.
+- Ordinary stepped and CAD stepped Draft Summaries reuse one stepped-summary calculation Implementation without sharing one Mode identity.
 - Draft titles may be duplicated within the same **Mode**.
 - A **Draft Index** stores **Draft Summary** entries, while full draft records store full mode parameters.
 - Draft limits may be enforced per **Mode**, not only globally.
@@ -351,6 +353,7 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A draft record key may be mode-scoped while the **Draft Index** remains shared.
 - A **Draft Manager Dialog** may be shared across modes while rendering mode-specific summaries.
 - A **Draft Manager Dialog** may show drafts for the current **Mode** only.
+- A **Draft Manager Dialog** labels a `stepped-cad` Draft Summary as a CAD stepped Draft.
 - A **Draft Action Area** should remain broadly consistent across modes.
 - A **Mode Workspace** may own a **Mode**'s **Draft Binding**, **Draft Action Area** inputs, parameter panel inputs, and reset/import side effects.
 - A **Mode Workspace** should not own viewport-specific 2D/3D editing details unless those details become shared across modes.
