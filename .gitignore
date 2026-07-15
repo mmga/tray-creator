@@ -49,3 +49,6 @@ coverage/
 tmp/
 # Added by code-review-graph
 .code-review-graph/
+
+# Understand Anything 临时分析产物
+.understand-anything/.trash-*/
