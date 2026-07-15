@@ -16,21 +16,23 @@ import { calculateSimpleSteppedDimensions, deriveSimpleSteppedLayout } from "@/l
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import { buildSteppedPerfFixture } from "@/lib/stepped-perf-fixtures";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
+import type { SteppedLayoutParams } from "@/types/custom-tray";
+import type { SteppedOptimizationProposal } from "@/lib/stepped-global-optimize";
+
+function expandResultSummary() {
+  fireEvent.click(
+    within(screen.getByTestId("panel-summary")).getByRole("button"),
+  );
+}
 
 const {
-  useAutoPreviewMock,
   toastMock,
   resetPerfMetricsMock,
   isPerfEnabledMock,
 } = vi.hoisted(() => ({
-  useAutoPreviewMock: vi.fn(),
   toastMock: vi.fn(),
   resetPerfMetricsMock: vi.fn(),
   isPerfEnabledMock: vi.fn(() => false),
-}));
-
-vi.mock("@/hooks/useAutoPreview", () => ({
-  useAutoPreview: useAutoPreviewMock,
 }));
 
 vi.mock("@/hooks/useToast", () => ({
@@ -170,105 +172,80 @@ vi.mock("@/components/ui/ParamSlider", () => ({
   },
 }));
 
-vi.mock("@/components/PanelActionSection", () => ({
-  PanelActionSection({
-    autoPreview,
-    onAutoPreviewChange,
-    onGenerate,
-    onExportSTL,
-    onReset,
-    onImport,
-    mode,
-    draftActions,
-    showStaleNotice,
-    isGenerating,
-  }: {
-    autoPreview?: boolean;
-    onAutoPreviewChange?: (checked: boolean) => void;
-    onGenerate: () => void;
-    onExportSTL: () => void;
-    onReset: () => void;
-    onImport: (params: unknown) => void;
-    mode: string;
-    draftActions?: {
-      currentDraftId: string | null;
-      hasUnsavedChanges: boolean;
-      onSaveDraft: () => void;
-      onOpenDraftDialog: () => void;
-    };
-    showStaleNotice?: boolean;
-    isGenerating: boolean;
-    isOversized: boolean;
-  }) {
-    return (
-      <div data-testid={`panel-actions-${mode}`}>
-        {showStaleNotice ? (
-          <div>当前预览已过期，请点击“开始锻造”生成最新模型。</div>
-        ) : null}
-        {onAutoPreviewChange ? (
-          <button
-            type="button"
-            onClick={() => onAutoPreviewChange(!autoPreview)}
-          >
-            启用自动预览
-          </button>
-        ) : null}
-        <button type="button" onClick={onGenerate} disabled={isGenerating}>
-          {isGenerating ? "锻造中..." : "开始锻造"}
-        </button>
-        <button type="button" onClick={onExportSTL}>
-          导出 STL
-        </button>
-        <button type="button" onClick={onReset}>
-          重置参数
-        </button>
-        <button
-          type="button"
-          onClick={() => onImport({ importedMode: mode })}
-        >
-          导入参数
-        </button>
-        {draftActions ? (
-          <>
-            <button type="button" onClick={draftActions.onSaveDraft}>
-              {draftActions.currentDraftId ? "更新草稿" : "保存草稿"}
-            </button>
-            <button type="button" onClick={draftActions.onOpenDraftDialog}>
-              草稿列表
-            </button>
-            {draftActions.hasUnsavedChanges ? <div>有未保存修改</div> : null}
-          </>
-        ) : null}
-      </div>
-    );
-  },
-}));
+import CustomPanelImplementation from "@/components/CustomPanel";
+import ParameterPanelImplementation from "@/components/ParameterPanel";
+import SimpleSteppedPanelImplementation from "@/components/SimpleSteppedPanel";
+import {
+  SteppedCadPanel as SteppedCadPanelImplementation,
+  SteppedLayoutPanel as SteppedLayoutPanelImplementation,
+} from "@/components/SteppedPanel";
 
-vi.mock("@/components/ParamIOButtons", () => ({
-  ParamIOButtons({
-    mode,
-    onImport,
-  }: {
-    mode: string;
-    onImport: (params: unknown) => void;
-  }) {
-    return (
-      <button type="button" onClick={() => onImport({ importedMode: mode })}>
-        导入参数
-      </button>
-    );
-  },
-}));
+const panelActionsStub = <div data-testid="panel-actions-stub" />;
 
-import CustomPanel from "@/components/CustomPanel";
-import ParameterPanel from "@/components/ParameterPanel";
-import SimpleSteppedPanel from "@/components/SimpleSteppedPanel";
-import SteppedPanel from "@/components/SteppedPanel";
+function ParameterPanel(
+  props: Omit<
+    React.ComponentProps<typeof ParameterPanelImplementation>,
+    "actions" | "isPreviewStale" | "replaceParams"
+  > & {
+    actions?: React.ReactNode;
+    isPreviewStale?: boolean;
+    replaceParams?: React.ComponentProps<typeof ParameterPanelImplementation>["replaceParams"];
+  },
+) {
+  const {
+    actions = panelActionsStub,
+    isPreviewStale = false,
+    replaceParams = vi.fn(),
+    ...rest
+  } = props;
+  return (
+    <ParameterPanelImplementation
+      {...rest}
+      actions={actions}
+      isPreviewStale={isPreviewStale}
+      replaceParams={replaceParams}
+    />
+  );
+}
+
+function CustomPanel(
+  props: Omit<
+    React.ComponentProps<typeof CustomPanelImplementation>,
+    "actions" | "isPreviewStale"
+  > & { actions?: React.ReactNode; isPreviewStale?: boolean },
+) {
+  const { actions = panelActionsStub, isPreviewStale = false, ...rest } = props;
+  return <CustomPanelImplementation {...rest} actions={actions} isPreviewStale={isPreviewStale} />;
+}
+
+function SimpleSteppedPanel(
+  props: Omit<React.ComponentProps<typeof SimpleSteppedPanelImplementation>, "actions"> &
+    { actions?: React.ReactNode },
+) {
+  const { actions = panelActionsStub, ...rest } = props;
+  return <SimpleSteppedPanelImplementation {...rest} actions={actions} />;
+}
+
+function SteppedLayoutPanel(
+  props: Omit<React.ComponentProps<typeof SteppedLayoutPanelImplementation>, "actions"> &
+    { actions?: React.ReactNode },
+) {
+  const { actions = panelActionsStub, ...rest } = props;
+  return <SteppedLayoutPanelImplementation {...rest} actions={actions} />;
+}
+
+function SteppedCadPanel(
+  props: Omit<React.ComponentProps<typeof SteppedCadPanelImplementation>, "actions"> &
+    { actions?: React.ReactNode },
+) {
+  const { actions = panelActionsStub, ...rest } = props;
+  return <SteppedCadPanelImplementation {...rest} actions={actions} />;
+}
 
 const HUNDRED_MM_PRESET = BASE_PRESETS.find(
   (preset) => preset.diameter === 100,
 )!;
-function createSteppedParams(overrides?: Partial<React.ComponentProps<typeof SteppedPanel>["params"]>) {
+function createSteppedParams(overrides?: Partial<SteppedLayoutParams>) {
   return {
     ...STEPPED_LAYOUT_DEFAULTS,
     slots: [
@@ -351,9 +328,7 @@ function createSimpleSteppedParams(
   };
 }
 
-function createOptimizationProposals(): React.ComponentProps<
-  typeof SteppedPanel
->["optimizationProposals"] {
+function createOptimizationProposals(): SteppedOptimizationProposal[] {
   return [
     {
       id: "compact",
@@ -374,10 +349,6 @@ function createOptimizationProposals(): React.ComponentProps<
 }
 
 describe("ParameterPanel", { timeout: 15000 }, () => {
-  beforeEach(() => {
-    useAutoPreviewMock.mockReset();
-  });
-
   it("wires preset changes and boundary spacing controls", () => {
     const updateParam = vi.fn();
     const replaceParams = vi.fn();
@@ -387,9 +358,6 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
         params={{ ...DEFAULT_TRAY_PARAMS, boundarySpacingIndependent: true }}
         updateParam={updateParam}
         replaceParams={replaceParams}
-        resetParams={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
       />,
@@ -428,46 +396,21 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
     );
   });
 
-  it("routes panel actions through the expected handlers", () => {
-    const replaceParams = vi.fn();
-    const resetParams = vi.fn();
-    const onGenerate = vi.fn();
-    const onExportSTL = vi.fn();
-
+  it("renders the action area injected by the workspace", () => {
     render(
       <ParameterPanel
         params={DEFAULT_TRAY_PARAMS}
         updateParam={vi.fn()}
-        replaceParams={replaceParams}
-        resetParams={resetParams}
-        onGenerate={onGenerate}
-        onExportSTL={onExportSTL}
+        actions={<button type="button">工作区操作</button>}
         isGenerating={false}
         volume={0}
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "启用自动预览" }));
-    fireEvent.click(screen.getByRole("button", { name: "开始锻造" }));
-    fireEvent.click(screen.getByRole("button", { name: "导出 STL" }));
-    fireEvent.click(screen.getByRole("button", { name: "重置参数" }));
-    fireEvent.click(screen.getByRole("button", { name: "导入参数" }));
-
-    expect(useAutoPreviewMock).toHaveBeenLastCalledWith(
-      DEFAULT_TRAY_PARAMS,
-      expect.objectContaining({
-        enabled: true,
-        isGenerating: false,
-        isBlocked: false,
-      }),
-    );
-    expect(onGenerate).toHaveBeenCalledWith({ shouldSwitchView: true });
-    expect(onExportSTL).toHaveBeenCalledTimes(1);
-    expect(resetParams).toHaveBeenCalledTimes(1);
-    expect(replaceParams).toHaveBeenCalledWith({ importedMode: "grid" });
+    expect(screen.getByRole("button", { name: "工作区操作" })).toBeInTheDocument();
   });
 
-  it("surfaces oversized grid state and blocks auto preview generation", () => {
+  it("surfaces oversized grid state", () => {
     render(
       <ParameterPanel
         params={{
@@ -478,32 +421,16 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
           spacing: 10,
         }}
         updateParam={vi.fn()}
-        replaceParams={vi.fn()}
-        resetParams={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={1000}
       />,
     );
 
-    expect(screen.getByText("超过常规打印尺寸 (260×260mm)，仍可继续建模")).toBeInTheDocument();
-    expect(screen.getByText("PLA估重: 0.7g")).toBeInTheDocument();
+    expect(screen.getByText("超出常规尺寸")).toBeInTheDocument();
+    expandResultSummary();
+    expect(screen.getByText(/超过常规打印尺寸 260 × 260 mm/)).toBeInTheDocument();
+    expect(screen.getByText("0.7 g")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "启用自动预览" }));
-
-    expect(useAutoPreviewMock).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        rows: 6,
-        columns: 6,
-        holeDiameter: 60,
-      }),
-      expect.objectContaining({
-        enabled: true,
-        isBlocked: false,
-        isGenerating: false,
-      }),
-    );
   });
 
   it("updates spacing-independent grid controls and shows an unmatched preset placeholder", () => {
@@ -521,17 +448,13 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
           boundarySpacing: 9,
         }}
         updateParam={updateParam}
-        replaceParams={vi.fn()}
-        resetParams={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
       />,
     );
 
     expect(screen.getByText("选择底座规格")).toBeInTheDocument();
-    expect(screen.getByText("待锻造")).toBeInTheDocument();
+    expect(screen.getByText("可锻造")).toBeInTheDocument();
 
     fireEvent.click(
       screen.getByRole("switch", {
@@ -566,9 +489,6 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
         params={{ ...DEFAULT_TRAY_PARAMS, rows: 1, halfCircleSlots: true }}
         updateParam={vi.fn()}
         replaceParams={replaceParams}
-        resetParams={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
       />,
@@ -606,9 +526,6 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
         }}
         updateParam={vi.fn()}
         replaceParams={vi.fn()}
-        resetParams={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
       />,
@@ -630,16 +547,12 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
           cornerRadius: 4,
         }}
         updateParam={updateParam}
-        replaceParams={vi.fn()}
-        resetParams={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={true}
         volume={0}
       />,
     );
 
-    expect(screen.getByText("图纸生成中...")).toBeInTheDocument();
+    expect(screen.getByText("正在锻造")).toBeInTheDocument();
 
     fireEvent.click(
       screen.getByRole("button", {
@@ -674,21 +587,16 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
           enableBaseHole: true,
         }}
         updateParam={updateParam}
-        replaceParams={vi.fn()}
-        resetParams={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
       />,
     );
 
-    expect(screen.getByText("待锻造")).toBeInTheDocument();
+    expect(screen.getByText("可锻造")).toBeInTheDocument();
   });
 
-  it("updates columns, rows, unified spacing, and reuses the auto-preview generate callback", () => {
+  it("updates columns, rows, and unified spacing", () => {
     const updateParam = vi.fn();
-    const onGenerate = vi.fn();
 
     render(
       <ParameterPanel
@@ -700,16 +608,11 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
           spacing: 5,
         }}
         updateParam={updateParam}
-        replaceParams={vi.fn()}
-        resetParams={vi.fn()}
-        onGenerate={onGenerate}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "启用自动预览" }));
     fireEvent.click(
       screen.getByRole("button", {
         name: `设置${PARAM_CONFIG.columns.label}:${DEFAULT_TRAY_PARAMS.columns}`,
@@ -726,15 +629,9 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
       }),
     );
 
-    const autoPreviewOptions = useAutoPreviewMock.mock.calls.at(-1)?.[1] as
-      | { onGenerate?: () => void }
-      | undefined;
-    autoPreviewOptions?.onGenerate?.();
-
     expect(updateParam).toHaveBeenNthCalledWith(1, "columns", 3);
     expect(updateParam).toHaveBeenNthCalledWith(2, "rows", 6);
     expect(updateParam).toHaveBeenNthCalledWith(3, "spacing", 6);
-    expect(onGenerate).toHaveBeenCalledWith({ shouldSwitchView: false });
   });
 
   it("routes mutually exclusive grid structure modes from advanced settings", () => {
@@ -747,10 +644,6 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
           halfCircleSlots: false,
         }}
         updateParam={updateParam}
-        replaceParams={vi.fn()}
-        resetParams={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
       />,
@@ -769,10 +662,6 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
           halfCircleSlots: true,
         }}
         updateParam={updateParam}
-        replaceParams={vi.fn()}
-        resetParams={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
       />,
@@ -792,10 +681,6 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
           halfCircleSlots: true,
         }}
         updateParam={updateParam}
-        replaceParams={vi.fn()}
-        resetParams={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
       />,
@@ -816,10 +701,6 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
           basePlateOnly: false,
         }}
         updateParam={updateParam}
-        replaceParams={vi.fn()}
-        resetParams={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
       />,
@@ -838,7 +719,6 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
 
 describe("CustomPanel", { timeout: 15000 }, () => {
   beforeEach(() => {
-    useAutoPreviewMock.mockReset();
     toastMock.mockReset();
   });
 
@@ -850,10 +730,7 @@ describe("CustomPanel", { timeout: 15000 }, () => {
         params={CUSTOM_LAYOUT_DEFAULTS}
         effectiveDimensions={{ width: 120, depth: 140 }}
         updateParam={vi.fn()}
-        setParams={vi.fn()}
         onAddSlot={onAddSlot}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
       />,
@@ -900,10 +777,7 @@ describe("CustomPanel", { timeout: 15000 }, () => {
         params={CUSTOM_LAYOUT_DEFAULTS}
         effectiveDimensions={{ width: 120, depth: 140 }}
         updateParam={vi.fn()}
-        setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
       />,
@@ -928,10 +802,7 @@ describe("CustomPanel", { timeout: 15000 }, () => {
         params={CUSTOM_LAYOUT_DEFAULTS}
         effectiveDimensions={{ width: 120, depth: 140 }}
         updateParam={vi.fn()}
-        setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
       />,
@@ -947,10 +818,7 @@ describe("CustomPanel", { timeout: 15000 }, () => {
         params={CUSTOM_LAYOUT_DEFAULTS}
         effectiveDimensions={{ width: 120, depth: 140 }}
         updateParam={updateParam}
-        setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
       />,
@@ -969,10 +837,7 @@ describe("CustomPanel", { timeout: 15000 }, () => {
         params={{ ...CUSTOM_LAYOUT_DEFAULTS, traySizingMode: "fixed" }}
         effectiveDimensions={{ width: 120, depth: 140 }}
         updateParam={updateParam}
-        setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
       />,
@@ -1019,11 +884,8 @@ describe("CustomPanel", { timeout: 15000 }, () => {
         params={fixedParams}
         effectiveDimensions={{ width: 120, depth: 140 }}
         updateParam={vi.fn()}
-        setParams={vi.fn()}
         onAddSlot={vi.fn()}
         onRandomizeSlots={onRandomizeSlots}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
       />,
@@ -1043,11 +905,8 @@ describe("CustomPanel", { timeout: 15000 }, () => {
         params={{ ...fixedParams, traySizingMode: "auto" }}
         effectiveDimensions={{ width: 120, depth: 140 }}
         updateParam={vi.fn()}
-        setParams={vi.fn()}
         onAddSlot={vi.fn()}
         onRandomizeSlots={onRandomizeSlots}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
       />,
@@ -1061,11 +920,8 @@ describe("CustomPanel", { timeout: 15000 }, () => {
         params={{ ...CUSTOM_LAYOUT_DEFAULTS, traySizingMode: "fixed" }}
         effectiveDimensions={{ width: 120, depth: 140 }}
         updateParam={vi.fn()}
-        setParams={vi.fn()}
         onAddSlot={vi.fn()}
         onRandomizeSlots={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
       />,
@@ -1134,40 +990,30 @@ describe("CustomPanel", { timeout: 15000 }, () => {
         params={params}
         effectiveDimensions={dimensions}
         updateParam={vi.fn()}
-        setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
       />,
     );
 
-    expect(
-      screen.getByText(
-        `上沿尺寸: ${dimensions.width.toFixed(1)} × ${dimensions.depth.toFixed(1)} mm`,
-      ),
-    ).toBeInTheDocument();
+    expandResultSummary();
+    expect(screen.getByText(`${dimensions.width.toFixed(1)} mm`)).toBeInTheDocument();
+    expect(screen.getByText(`${dimensions.depth.toFixed(1)} mm`)).toBeInTheDocument();
+    expect(screen.getByText("有效底板")).toBeInTheDocument();
     expect(screen.getByText("长度")).toBeInTheDocument();
     expect(screen.getByText("宽度")).toBeInTheDocument();
-    expect(screen.queryByText("上沿尺寸: 50.0 × 32.0 mm")).not.toBeInTheDocument();
+    expect(screen.queryByText("50.0 mm")).not.toBeInTheDocument();
   });
 
-  it("routes layout actions and reset/import through the panel controls", () => {
+  it("routes custom layout parameter controls", () => {
     const updateParam = vi.fn();
-    const setParams = vi.fn();
-    const onGenerate = vi.fn();
-    const onExportSTL = vi.fn();
 
     render(
       <CustomPanel
         params={{ ...CUSTOM_LAYOUT_DEFAULTS, boundarySpacingIndependent: true }}
         effectiveDimensions={{ width: 120, depth: 140 }}
         updateParam={updateParam}
-        setParams={setParams}
         onAddSlot={vi.fn()}
-        onGenerate={onGenerate}
-        onExportSTL={onExportSTL}
         isGenerating={false}
         volume={0}
       />,
@@ -1188,11 +1034,6 @@ describe("CustomPanel", { timeout: 15000 }, () => {
         name: `设置侧面斜面宽度:${CUSTOM_LAYOUT_DEFAULTS.sideBevelWidth}`,
       }),
     );
-    fireEvent.click(screen.getByRole("button", { name: "启用自动预览" }));
-    fireEvent.click(screen.getByRole("button", { name: "开始锻造" }));
-    fireEvent.click(screen.getByRole("button", { name: "导出 STL" }));
-    fireEvent.click(screen.getByRole("button", { name: "重置参数" }));
-    fireEvent.click(screen.getByRole("button", { name: "导入参数" }));
 
     expect(updateParam).toHaveBeenNthCalledWith(
       1,
@@ -1205,18 +1046,6 @@ describe("CustomPanel", { timeout: 15000 }, () => {
       CUSTOM_LAYOUT_DEFAULTS.boundarySpacing + 1,
     );
     expect(updateParam).toHaveBeenNthCalledWith(3, "sideBevelWidth", 0.5);
-    expect(useAutoPreviewMock).toHaveBeenLastCalledWith(
-      { ...CUSTOM_LAYOUT_DEFAULTS, boundarySpacingIndependent: true },
-      expect.objectContaining({
-        enabled: true,
-        isGenerating: false,
-        isBlocked: false,
-      }),
-    );
-    expect(onGenerate).toHaveBeenCalledWith({ shouldSwitchView: true });
-    expect(onExportSTL).toHaveBeenCalledTimes(1);
-    expect(setParams).toHaveBeenNthCalledWith(1, CUSTOM_LAYOUT_DEFAULTS);
-    expect(setParams).toHaveBeenNthCalledWith(2, { importedMode: "custom" });
   });
 });
 
@@ -1239,7 +1068,6 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
         derivedLayout={derivedLayout}
         activeRowId="row-1"
         effectiveDimensions={effectiveDimensions}
-        setParams={vi.fn()}
         updateParam={vi.fn()}
         onSetActiveRow={onSetActiveRow}
         onAddRow={onAddRow}
@@ -1248,8 +1076,6 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
         onClearRow={onClearRow}
         onReorderRows={onReorderRows}
         onAddSlotToRow={onAddSlotToRow}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         onTrimTray={vi.fn()}
         isGenerating={false}
         isPreviewStale={false}
@@ -1283,7 +1109,7 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
     expect(onAddRow).toHaveBeenCalledTimes(1);
   });
 
-  it("routes structure, trim, generate, export, reset, and import controls", () => {
+  it("routes structure and trim controls", () => {
     const params = createSimpleSteppedParams({
       outerMarginIndependent: true,
       outerMargin: 8,
@@ -1291,9 +1117,6 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
     const derivedLayout = deriveSimpleSteppedLayout(params, "row-1");
     const effectiveDimensions = calculateSimpleSteppedDimensions(params);
     const updateParam = vi.fn();
-    const setParams = vi.fn();
-    const onGenerate = vi.fn();
-    const onExportSTL = vi.fn();
     const onTrimTray = vi.fn();
 
     render(
@@ -1302,7 +1125,6 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
         derivedLayout={derivedLayout}
         activeRowId="row-1"
         effectiveDimensions={effectiveDimensions}
-        setParams={setParams}
         updateParam={updateParam}
         onSetActiveRow={vi.fn()}
         onAddRow={vi.fn()}
@@ -1311,8 +1133,6 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
         onClearRow={vi.fn()}
         onReorderRows={vi.fn()}
         onAddSlotToRow={vi.fn()}
-        onGenerate={onGenerate}
-        onExportSTL={onExportSTL}
         onTrimTray={onTrimTray}
         isGenerating={false}
         isPreviewStale={true}
@@ -1320,9 +1140,10 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
       />,
     );
 
-    expect(screen.getByText("当前预览已过期，请点击“开始锻造”生成最新模型。")).toBeInTheDocument();
-    expect(screen.getByText("¥0.3")).toBeInTheDocument();
-    expect(screen.getByText("估重: 0.7g")).toBeInTheDocument();
+    expect(screen.getByText("预览待更新")).toBeInTheDocument();
+    expect(screen.getByText(/¥0\.3/)).toBeInTheDocument();
+    expandResultSummary();
+    expect(screen.getByText("0.7 g")).toBeInTheDocument();
 
     fireEvent.click(
       screen.getByRole("switch", {
@@ -1337,10 +1158,6 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
     fireEvent.click(screen.getByRole("button", { name: "设置凹槽深度:3" }));
     fireEvent.click(screen.getByRole("button", { name: "设置底板圆角:4" }));
     fireEvent.click(screen.getByRole("button", { name: "Trim 到凹槽占用区域" }));
-    fireEvent.click(screen.getByRole("button", { name: "开始锻造" }));
-    fireEvent.click(screen.getByRole("button", { name: "导出 STL" }));
-    fireEvent.click(screen.getByRole("button", { name: "重置参数" }));
-    fireEvent.click(screen.getByRole("button", { name: "导入参数" }));
 
     expect(updateParam).toHaveBeenNthCalledWith(
       1,
@@ -1355,19 +1172,11 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
     expect(updateParam).toHaveBeenNthCalledWith(7, "holeDepth", 3.2);
     expect(updateParam).toHaveBeenNthCalledWith(8, "cornerRadius", 5);
     expect(onTrimTray).toHaveBeenCalledTimes(1);
-    expect(onGenerate).toHaveBeenCalledTimes(1);
-    expect(onExportSTL).toHaveBeenCalledTimes(1);
-    expect(setParams).toHaveBeenNthCalledWith(1, SIMPLE_STEPPED_LAYOUT_DEFAULTS);
-    expect(setParams).toHaveBeenNthCalledWith(
-      2,
-      { importedMode: "simple-stepped" },
-    );
   });
 
   it("shows disabled states when no row is active, nothing can trim, and the layout is oversized", () => {
     const params = createSimpleSteppedParams();
     const derivedLayout = deriveSimpleSteppedLayout(params, null);
-    const onGenerate = vi.fn();
 
     render(
       <SimpleSteppedPanel
@@ -1379,7 +1188,6 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
         }}
         activeRowId={null}
         effectiveDimensions={{ width: 300, depth: 280, height: 12 }}
-        setParams={vi.fn()}
         updateParam={vi.fn()}
         onSetActiveRow={vi.fn()}
         onAddRow={vi.fn()}
@@ -1388,8 +1196,6 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
         onClearRow={vi.fn()}
         onReorderRows={vi.fn()}
         onAddSlotToRow={vi.fn()}
-        onGenerate={onGenerate}
-        onExportSTL={vi.fn()}
         onTrimTray={vi.fn()}
         isGenerating={false}
         isPreviewStale={false}
@@ -1402,11 +1208,7 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
     expect(
       screen.getByRole("button", { name: "Trim 到凹槽占用区域" }),
     ).toBeDisabled();
-    expect(screen.getByText("超过常规打印尺寸，仍可继续建模")).toBeInTheDocument();
-    const generateButton = screen.getByRole("button", { name: "开始锻造" });
-    expect(generateButton).not.toBeDisabled();
-    fireEvent.click(generateButton);
-    expect(onGenerate).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("超出常规尺寸")).toBeInTheDocument();
   });
 
   it("renders the empty-row state and only allows creating a new row", () => {
@@ -1423,7 +1225,6 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
         derivedLayout={derivedLayout}
         activeRowId={null}
         effectiveDimensions={{ width: 0, depth: 0, height: 0 }}
-        setParams={vi.fn()}
         updateParam={vi.fn()}
         onSetActiveRow={vi.fn()}
         onAddRow={onAddRow}
@@ -1432,8 +1233,6 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
         onClearRow={vi.fn()}
         onReorderRows={vi.fn()}
         onAddSlotToRow={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         onTrimTray={vi.fn()}
         isGenerating={false}
         isPreviewStale={false}
@@ -1477,7 +1276,6 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
         derivedLayout={derivedLayout}
         activeRowId="row-2"
         effectiveDimensions={{ width: 120, depth: 130, height: 9 }}
-        setParams={vi.fn()}
         updateParam={vi.fn()}
         onSetActiveRow={vi.fn()}
         onAddRow={vi.fn()}
@@ -1486,8 +1284,6 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
         onClearRow={vi.fn()}
         onReorderRows={vi.fn()}
         onAddSlotToRow={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         onTrimTray={vi.fn()}
         isGenerating={true}
         isPreviewStale={false}
@@ -1496,14 +1292,13 @@ describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
     );
 
     expect(screen.getByText("0 槽位 / 空行")).toBeInTheDocument();
-    expect(screen.getByText("图纸生成中...")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "锻造中..." })).toBeDisabled();
+    expect(screen.getByText("正在锻造")).toBeInTheDocument();
     expect(screen.getByText("-")).toBeInTheDocument();
     expect(screen.getAllByText("0mm")).toHaveLength(2);
   });
 });
 
-describe("SteppedPanel", { timeout: 15000 }, () => {
+describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
   beforeEach(() => {
     toastMock.mockReset();
     resetPerfMetricsMock.mockReset();
@@ -1519,7 +1314,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const onUpdateGroupDisconnectDistance = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams({
           groups: [
             {
@@ -1549,8 +1344,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         updateParam={vi.fn()}
         setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
         selectedSlotIds={[]}
@@ -1572,9 +1365,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onGenerateOptimizationProposals={vi.fn()}
         onApplyOptimizationProposal={vi.fn()}
         onClearOptimizationProposals={vi.fn()}
-        onOpenDraftDialog={vi.fn()}
-        onSaveDraft={vi.fn()}
-        currentDraftId={null}
       />,
     );
 
@@ -1617,7 +1407,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const onRemoveGroup = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams({
           groups: [
             {
@@ -1647,8 +1437,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         updateParam={vi.fn()}
         setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
         selectedSlotIds={[]}
@@ -1670,9 +1458,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onGenerateOptimizationProposals={vi.fn()}
         onApplyOptimizationProposal={vi.fn()}
         onClearOptimizationProposals={vi.fn()}
-        onOpenDraftDialog={vi.fn()}
-        onSaveDraft={vi.fn()}
-        currentDraftId={null}
       />,
     );
 
@@ -1712,16 +1497,13 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const onUpdateGroupSplitPartTarget = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedCadPanel
         params={createSteppedParams()}
-        mode="stepped-cad"
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
         updateParam={vi.fn()}
         setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
         selectedSlotIds={[]}
@@ -1744,9 +1526,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onGenerateOptimizationProposals={vi.fn()}
         onApplyOptimizationProposal={vi.fn()}
         onClearOptimizationProposals={vi.fn()}
-        onOpenDraftDialog={vi.fn()}
-        onSaveDraft={vi.fn()}
-        currentDraftId={null}
       />,
     );
 
@@ -1765,21 +1544,18 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     );
   });
 
-  it("routes stepped panel actions for add group, moving slots, reset, and import", () => {
-    const setParams = vi.fn();
+  it("routes stepped group and slot controls", () => {
     const onAddGroup = vi.fn();
     const onMoveSelectedSlotsToGroup = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams()}
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={true}
         updateParam={vi.fn()}
-        setParams={setParams}
+        setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
         selectedSlotIds={["slot-1", "slot-2"]}
@@ -1801,24 +1577,17 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onGenerateOptimizationProposals={vi.fn()}
         onApplyOptimizationProposal={vi.fn()}
         onClearOptimizationProposals={vi.fn()}
-        onOpenDraftDialog={vi.fn()}
-        onSaveDraft={vi.fn()}
-        currentDraftId={null}
       />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: "组 2" }));
     fireEvent.click(screen.getByRole("button", { name: "新建组" }));
-    fireEvent.click(screen.getByRole("button", { name: "重置参数" }));
-    fireEvent.click(screen.getByRole("button", { name: "导入参数" }));
 
     expect(onMoveSelectedSlotsToGroup).toHaveBeenCalledWith(
       ["slot-1", "slot-2"],
       "group-2",
     );
     expect(onAddGroup).toHaveBeenCalledTimes(1);
-    expect(setParams).toHaveBeenNthCalledWith(1, STEPPED_LAYOUT_DEFAULTS);
-    expect(setParams).toHaveBeenNthCalledWith(2, { importedMode: "stepped" });
   });
 
   it("adds slots from presets and updates CAD stepped structure controls", () => {
@@ -1826,7 +1595,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const onAddSlot = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedCadPanel
         params={createSteppedParams({
           activeGroupId: "group-2",
           spacing: 5,
@@ -1835,14 +1604,12 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
           smoothingRadius: 14,
           disconnectDistance: 2,
         })}
-        mode="stepped-cad"
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
         updateParam={updateParam}
         setParams={vi.fn()}
         onAddSlot={onAddSlot}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
+        onUpdateGroupSplitPartTarget={vi.fn()}
         isGenerating={false}
         volume={0}
         selectedSlotIds={[]}
@@ -1864,9 +1631,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onGenerateOptimizationProposals={vi.fn()}
         onApplyOptimizationProposal={vi.fn()}
         onClearOptimizationProposals={vi.fn()}
-        onOpenDraftDialog={vi.fn()}
-        onSaveDraft={vi.fn()}
-        currentDraftId={null}
       />,
     );
 
@@ -1901,7 +1665,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
 
   it("hides split controls in non-CAD stepped mode", () => {
     render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams({
           splitGrooveDepth: 2,
         })}
@@ -1910,9 +1674,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         updateParam={vi.fn()}
         setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
-        onExportSplitParts={vi.fn()}
         isGenerating={false}
         volume={0}
         selectedSlotIds={[]}
@@ -1923,7 +1684,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onUpdateGroupSmoothingRadius={vi.fn()}
         onUpdateGroupDisconnectOverride={vi.fn()}
         onUpdateGroupDisconnectDistance={vi.fn()}
-        onUpdateGroupSplitPartTarget={vi.fn()}
         onSetActiveGroup={vi.fn()}
         onMoveSelectedSlotsToGroup={vi.fn()}
         onReorderGroups={vi.fn()}
@@ -1935,18 +1695,16 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onGenerateOptimizationProposals={vi.fn()}
         onApplyOptimizationProposal={vi.fn()}
         onClearOptimizationProposals={vi.fn()}
-        onOpenDraftDialog={vi.fn()}
-        onSaveDraft={vi.fn()}
-        currentDraftId={null}
       />,
     );
 
+    // 类型保证普通阶梯组件没有 CAD 专属字段；这里断言 CAD 专属内容不渲染。
     expect(
       screen.queryByRole("button", { name: "设置装配槽深度:2" }),
     ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "导出分件 STL" }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText("轮廓凹槽")).not.toBeInTheDocument();
+    expect(screen.queryByText("内缩凹槽")).not.toBeInTheDocument();
+    expect(screen.queryByText("定位柱")).not.toBeInTheDocument();
     expect(screen.queryByText("拆件归并")).not.toBeInTheDocument();
   });
 
@@ -1954,20 +1712,18 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const updateParam = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedCadPanel
         params={createSteppedParams({
           enableSplitRecess: false,
           splitGrooveType: "profile",
           enableSplitLocators: false,
         })}
-        mode="stepped-cad"
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
         updateParam={updateParam}
         setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
+        onUpdateGroupSplitPartTarget={vi.fn()}
         isGenerating={false}
         volume={0}
         selectedSlotIds={[]}
@@ -1989,9 +1745,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onGenerateOptimizationProposals={vi.fn()}
         onApplyOptimizationProposal={vi.fn()}
         onClearOptimizationProposals={vi.fn()}
-        onOpenDraftDialog={vi.fn()}
-        onSaveDraft={vi.fn()}
-        currentDraftId={null}
       />,
     );
 
@@ -2018,15 +1771,13 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const updateParam = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams()}
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
         updateParam={updateParam}
         setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
         selectedSlotIds={[]}
@@ -2048,9 +1799,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onGenerateOptimizationProposals={vi.fn()}
         onApplyOptimizationProposal={vi.fn()}
         onClearOptimizationProposals={vi.fn()}
-        onOpenDraftDialog={vi.fn()}
-        onSaveDraft={vi.fn()}
-        currentDraftId={null}
       />,
     );
 
@@ -2063,7 +1811,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
 
   it("shows the stepped pricing formula tooltip on hover", () => {
     render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams({
           slots: [
             {
@@ -2117,8 +1865,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         updateParam={vi.fn()}
         setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={32000}
         selectedSlotIds={[]}
@@ -2140,13 +1886,11 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onGenerateOptimizationProposals={vi.fn()}
         onApplyOptimizationProposal={vi.fn()}
         onClearOptimizationProposals={vi.fn()}
-        onOpenDraftDialog={vi.fn()}
-        onSaveDraft={vi.fn()}
-        currentDraftId={null}
       />,
     );
 
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+    expandResultSummary();
 
     fireEvent.mouseEnter(
       screen.getByRole("button", { name: "查看阶梯底座报价公式" }),
@@ -2164,17 +1908,14 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
 
   it("shows fallback pricing help and generating or oversized status text", () => {
     const tooltipButtonLabel = "查看阶梯底座报价公式";
-    const onGenerate = vi.fn();
     const { rerender } = render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams()}
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
         updateParam={vi.fn()}
         setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={onGenerate}
-        onExportSTL={vi.fn()}
         isGenerating={true}
         volume={0}
         selectedSlotIds={[]}
@@ -2196,18 +1937,14 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onGenerateOptimizationProposals={vi.fn()}
         onApplyOptimizationProposal={vi.fn()}
         onClearOptimizationProposals={vi.fn()}
-        onOpenDraftDialog={vi.fn()}
-        onSaveDraft={vi.fn()}
-        currentDraftId={null}
       />,
     );
 
+    expect(screen.getByText("正在锻造")).toBeInTheDocument();
+    expandResultSummary();
     const tooltipButton = screen.getByRole("button", {
       name: tooltipButtonLabel,
     });
-
-    expect(screen.getByText("图纸生成中...")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "锻造中..." })).toBeDisabled();
 
     fireEvent.mouseEnter(tooltipButton);
     expect(screen.getByRole("tooltip")).toHaveTextContent(
@@ -2227,15 +1964,13 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
 
     rerender(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams()}
         effectiveDimensions={{ width: 280, depth: 270 }}
         isPreviewStale={false}
         updateParam={vi.fn()}
         setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={onGenerate}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
         selectedSlotIds={[]}
@@ -2257,32 +1992,23 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onGenerateOptimizationProposals={vi.fn()}
         onApplyOptimizationProposal={vi.fn()}
         onClearOptimizationProposals={vi.fn()}
-        onOpenDraftDialog={vi.fn()}
-        onSaveDraft={vi.fn()}
-        currentDraftId={null}
       />,
     );
 
-    expect(screen.getByText("超过常规打印尺寸，仍可继续建模")).toBeInTheDocument();
-    const generateButton = screen.getByRole("button", { name: "开始锻造" });
-    expect(generateButton).not.toBeDisabled();
-    fireEvent.click(generateButton);
-    expect(onGenerate).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("超出常规尺寸")).toBeInTheDocument();
   });
 
   it("toggles preview groups through pointer and keyboard interactions", () => {
     const onPreviewGroupChange = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams()}
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
         updateParam={vi.fn()}
         setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
         selectedSlotIds={[]}
@@ -2304,9 +2030,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onGenerateOptimizationProposals={vi.fn()}
         onApplyOptimizationProposal={vi.fn()}
         onClearOptimizationProposals={vi.fn()}
-        onOpenDraftDialog={vi.fn()}
-        onSaveDraft={vi.fn()}
-        currentDraftId={null}
       />,
     );
 
@@ -2332,15 +2055,13 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
   it("clears preview on blur and invalidates preview groups removed from params", () => {
     const onPreviewGroupChange = vi.fn();
     const { rerender } = render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams()}
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
         updateParam={vi.fn()}
         setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
         selectedSlotIds={[]}
@@ -2362,9 +2083,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onGenerateOptimizationProposals={vi.fn()}
         onApplyOptimizationProposal={vi.fn()}
         onClearOptimizationProposals={vi.fn()}
-        onOpenDraftDialog={vi.fn()}
-        onSaveDraft={vi.fn()}
-        currentDraftId={null}
       />,
     );
 
@@ -2385,7 +2103,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const nextParams = createSteppedParams();
 
     rerender(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={{
           ...nextParams,
           slots: [],
@@ -2397,8 +2115,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         updateParam={vi.fn()}
         setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
         selectedSlotIds={[]}
@@ -2420,9 +2136,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onGenerateOptimizationProposals={vi.fn()}
         onApplyOptimizationProposal={vi.fn()}
         onClearOptimizationProposals={vi.fn()}
-        onOpenDraftDialog={vi.fn()}
-        onSaveDraft={vi.fn()}
-        currentDraftId={null}
       />,
     );
 
@@ -2433,15 +2146,13 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const onPreviewGroupChange = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams()}
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
         updateParam={vi.fn()}
         setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
         selectedSlotIds={[]}
@@ -2463,9 +2174,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onGenerateOptimizationProposals={vi.fn()}
         onApplyOptimizationProposal={vi.fn()}
         onClearOptimizationProposals={vi.fn()}
-        onOpenDraftDialog={vi.fn()}
-        onSaveDraft={vi.fn()}
-        currentDraftId={null}
       />,
     );
 
@@ -2496,15 +2204,13 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const onPreviewGroupChange = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams()}
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
         updateParam={vi.fn()}
         setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
         selectedSlotIds={[]}
@@ -2526,9 +2232,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onGenerateOptimizationProposals={vi.fn()}
         onApplyOptimizationProposal={vi.fn()}
         onClearOptimizationProposals={vi.fn()}
-        onOpenDraftDialog={vi.fn()}
-        onSaveDraft={vi.fn()}
-        currentDraftId={null}
       />,
     );
 
@@ -2557,15 +2260,13 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const onPreviewGroupChange = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams()}
         effectiveDimensions={{ width: 0, depth: 0 }}
         isPreviewStale={false}
         updateParam={vi.fn()}
         setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
         selectedSlotIds={[]}
@@ -2595,9 +2296,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onGenerateOptimizationProposals={vi.fn()}
         onApplyOptimizationProposal={vi.fn()}
         onClearOptimizationProposals={vi.fn()}
-        onOpenDraftDialog={vi.fn()}
-        onSaveDraft={vi.fn()}
-        currentDraftId={null}
       />,
     );
 
@@ -2621,15 +2319,13 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const onPreviewGroupChange = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams()}
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
         updateParam={vi.fn()}
         setParams={setParams}
         onAddSlot={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
         selectedSlotIds={[]}
@@ -2651,9 +2347,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onGenerateOptimizationProposals={vi.fn()}
         onApplyOptimizationProposal={vi.fn()}
         onClearOptimizationProposals={vi.fn()}
-        onOpenDraftDialog={vi.fn()}
-        onSaveDraft={vi.fn()}
-        currentDraftId={null}
       />,
     );
 
@@ -2683,7 +2376,7 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
     const onClearOptimizationProposals = vi.fn();
 
     render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams({
           slots: [
             {
@@ -2713,8 +2406,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         updateParam={vi.fn()}
         setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
         selectedSlotIds={[]}
@@ -2736,9 +2427,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onGenerateOptimizationProposals={onGenerateOptimizationProposals}
         onApplyOptimizationProposal={onApplyOptimizationProposal}
         onClearOptimizationProposals={onClearOptimizationProposals}
-        onOpenDraftDialog={vi.fn()}
-        onSaveDraft={vi.fn()}
-        currentDraftId={null}
       />,
     );
 
@@ -2756,15 +2444,13 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
 
   it("disables optimization when there are too few slots or generation is in progress", () => {
     const { rerender } = render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams()}
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
         updateParam={vi.fn()}
         setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
         selectedSlotIds={[]}
@@ -2786,16 +2472,13 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onGenerateOptimizationProposals={vi.fn()}
         onApplyOptimizationProposal={vi.fn()}
         onClearOptimizationProposals={vi.fn()}
-        onOpenDraftDialog={vi.fn()}
-        onSaveDraft={vi.fn()}
-        currentDraftId={null}
       />,
     );
 
     expect(screen.getByRole("button", { name: "全局优化" })).toBeDisabled();
 
     rerender(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams({
           slots: [
             {
@@ -2825,8 +2508,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         updateParam={vi.fn()}
         setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
         selectedSlotIds={[]}
@@ -2848,29 +2529,21 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onGenerateOptimizationProposals={vi.fn()}
         onApplyOptimizationProposal={vi.fn()}
         onClearOptimizationProposals={vi.fn()}
-        onOpenDraftDialog={vi.fn()}
-        onSaveDraft={vi.fn()}
-        currentDraftId={null}
       />,
     );
 
     expect(screen.getByRole("button", { name: "优化中..." })).toBeDisabled();
   });
 
-  it("renders bridge warnings and routes draft actions", () => {
-    const onOpenDraftDialog = vi.fn();
-    const onSaveDraft = vi.fn();
-
+  it("renders bridge warnings", () => {
     render(
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={createSteppedParams()}
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
         updateParam={vi.fn()}
         setParams={vi.fn()}
         onAddSlot={vi.fn()}
-        onGenerate={vi.fn()}
-        onExportSTL={vi.fn()}
         isGenerating={false}
         volume={0}
         selectedSlotIds={[]}
@@ -2898,9 +2571,6 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
         onGenerateOptimizationProposals={vi.fn()}
         onApplyOptimizationProposal={vi.fn()}
         onClearOptimizationProposals={vi.fn()}
-        onOpenDraftDialog={onOpenDraftDialog}
-        onSaveDraft={onSaveDraft}
-        currentDraftId="draft-1"
       />,
     );
 
@@ -2911,10 +2581,5 @@ describe("SteppedPanel", { timeout: 15000 }, () => {
       screen.getByText("可以尝试增大“槽群断连距离”、减小“平滑半径”，或调整槽位位置。"),
     ).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "更新草稿" }));
-    fireEvent.click(screen.getByRole("button", { name: "草稿列表" }));
-
-    expect(onSaveDraft).toHaveBeenCalledTimes(1);
-    expect(onOpenDraftDialog).toHaveBeenCalledTimes(1);
   });
 });

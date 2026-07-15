@@ -2,38 +2,31 @@
 
 import { useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
+import { PanelActionSection } from "@/components/PanelActionSection";
 import type { ModeInteractionState } from "@/hooks/useModeInteractionState";
 import { useWorkspaceDraftSupport } from "@/workspaces/shared";
 import type { ModeWorkspace } from "@/workspaces/types";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
-import type { AppMode } from "@/types/custom-tray";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 import type { UseSteppedLayoutReturn } from "@/hooks/useSteppedLayout";
+import { exportParams } from "@/lib/param-io";
+import { available, generatingAvailability, type DraftActionResult, type ManualDraftActionAreaAdapter } from "@/workspaces/draft-action-area";
 
-const SteppedPanel = dynamic(() => import("@/components/SteppedPanel"), {
+const SteppedLayoutPanel = dynamic(() =>
+  import("@/components/SteppedPanel").then((mod) => mod.SteppedLayoutPanel), {
   ssr: false,
 });
-
-interface SteppedSplitActions {
-  handleExportSplitParts: () => void;
-  updateGroupSplitPartTarget: (
-    groupId: string,
-    targetGroupId: string | null,
-  ) => void;
-}
 
 interface UseSteppedWorkspaceOptions {
   model: UseSteppedLayoutReturn;
   interactionState: ModeInteractionState;
-  mode?: Extract<AppMode, "stepped" | "stepped-cad">;
-  splitActions?: SteppedSplitActions;
+  onRequestParamImport: (file: File) => Promise<DraftActionResult>;
 }
 
 export function useSteppedWorkspace({
   model,
   interactionState,
-  mode = "stepped",
-  splitActions,
+  onRequestParamImport,
 }: UseSteppedWorkspaceOptions): ModeWorkspace {
   const {
     selectedSlotIds,
@@ -41,7 +34,7 @@ export function useSteppedWorkspace({
     setPreviewGroupId,
     resetInteractionState,
   } = interactionState;
-  const { draftActions, draftDialogProps, clearDraftBinding } =
+  const { draftActions, overlays, clearDraftBinding } =
     useWorkspaceDraftSupport({
       mode: "stepped",
       params: model.params,
@@ -55,27 +48,56 @@ export function useSteppedWorkspace({
     clearDraftBinding();
   }, [clearDraftBinding, model, resetInteractionState]);
 
-  const importIntoWorkspace = useCallback((params: unknown) => {
-    model.setParams(params as SteppedLayoutParams);
+  const importIntoWorkspace = useCallback((params: SteppedLayoutParams) => {
+    model.setParams(params);
     resetInteractionState();
     clearDraftBinding();
   }, [clearDraftBinding, model, resetInteractionState]);
 
+  const actions = useMemo(
+    () => {
+      const adapter: ManualDraftActionAreaAdapter = {
+        kind: "manual",
+        state: {
+          currentDraftId: draftActions.currentDraftId,
+          hasUnsavedChanges: draftActions.hasUnsavedChanges,
+          stale: model.isPreviewStale,
+          generate: generatingAvailability(model.isGenerating),
+          exportWhole: available,
+          preview: { kind: "manual" },
+        },
+        async perform(intent) {
+          try {
+            switch (intent.type) {
+              case "generate": model.handleGenerate(); break;
+              case "export-whole": model.handleExportSTL(); break;
+              case "save-draft": draftActions.onSaveDraft(); break;
+              case "open-drafts": draftActions.onOpenDraftDialog(); break;
+              case "export-params": exportParams("stepped", model.params); break;
+              case "import-params": return onRequestParamImport(intent.file);
+              case "reset": resetWorkspace(); break;
+            }
+            return { status: "success" };
+          } catch (error) {
+            return { status: "error", message: `操作失败：${error instanceof Error ? error.message : "未知错误"}` };
+          }
+        },
+      };
+      return <PanelActionSection adapter={adapter} />;
+    },
+    [draftActions, model, onRequestParamImport, resetWorkspace],
+  );
+
   const panel = useMemo(
     () => (
-      <SteppedPanel
+      <SteppedLayoutPanel
         params={model.params}
-        mode={mode}
         effectiveDimensions={model.effectiveDimensions}
         isPreviewStale={model.isPreviewStale}
         setParams={model.setParams}
-        onResetParams={resetWorkspace}
-        onImportParams={importIntoWorkspace}
+        actions={actions}
         updateParam={model.updateParam}
         onAddSlot={model.addSlot}
-        onGenerate={model.handleGenerate}
-        onExportSTL={model.handleExportSTL}
-        onExportSplitParts={splitActions?.handleExportSplitParts}
         isGenerating={model.isGenerating}
         volume={model.volume}
         selectedSlotIds={selectedSlotIds}
@@ -86,7 +108,6 @@ export function useSteppedWorkspace({
         onUpdateGroupSmoothingRadius={model.updateGroupSmoothingRadius}
         onUpdateGroupDisconnectOverride={model.updateGroupDisconnectOverride}
         onUpdateGroupDisconnectDistance={model.updateGroupDisconnectDistance}
-        onUpdateGroupSplitPartTarget={splitActions?.updateGroupSplitPartTarget}
         onSetActiveGroup={model.setActiveGroup}
         onMoveSelectedSlotsToGroup={model.moveSelectedSlotsToGroup}
         onReorderGroups={model.reorderGroups}
@@ -98,12 +119,10 @@ export function useSteppedWorkspace({
         onGenerateOptimizationProposals={model.generateOptimizationProposals}
         onApplyOptimizationProposal={model.applyOptimizationProposal}
         onClearOptimizationProposals={model.clearOptimizationProposals}
-        draftActions={draftActions}
       />
     ),
     [
-      draftActions,
-      importIntoWorkspace,
+      actions,
       model.addGroup,
       model.addSlot,
       model.applyOptimizationProposal,
@@ -111,13 +130,10 @@ export function useSteppedWorkspace({
       model.clearOptimizationProposals,
       model.effectiveDimensions,
       model.generateOptimizationProposals,
-      model.handleExportSTL,
-      model.handleGenerate,
       model.isGenerating,
       model.isOptimizingLayout,
       model.isPreviewStale,
       model.moveSelectedSlotsToGroup,
-      mode,
       model.optimizationProposals,
       model.params,
       model.removeGroup,
@@ -131,22 +147,19 @@ export function useSteppedWorkspace({
       model.updateGroupSmoothingRadius,
       model.updateParam,
       model.volume,
-      splitActions?.handleExportSplitParts,
       previewGroupId,
-      resetWorkspace,
       setPreviewGroupId,
       selectedSlotIds,
-      splitActions?.updateGroupSplitPartTarget,
     ],
   );
 
   return {
-    mode,
     panel,
-    draftDialogProps,
-    commands: {
-      resetWorkspace,
-      importIntoWorkspace,
+    overlays,
+    importTarget: {
+      currentDraftId: draftActions.currentDraftId,
+      hasUnsavedChanges: draftActions.hasUnsavedChanges,
+      commit: (params) => importIntoWorkspace(params as SteppedLayoutParams),
     },
   };
 }

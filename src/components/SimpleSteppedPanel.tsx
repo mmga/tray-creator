@@ -1,23 +1,18 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import type { SimpleSteppedLayoutParams } from "@/types/custom-tray";
 import type { SimpleSteppedDerivedLayout } from "@/lib/simple-stepped-layout";
-import { BASE_PRESETS, MAX_BUILD_SIZE } from "@/lib/config";
-import {
-  SIMPLE_STEPPED_LAYOUT_DEFAULTS,
-  SIMPLE_STEPPED_LIMITS,
-} from "@/lib/simple-stepped-config";
+import { BASE_PRESETS } from "@/lib/config";
+import { SIMPLE_STEPPED_LIMITS } from "@/lib/simple-stepped-config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
 import { Switch } from "@/components/ui/switch";
-import {
-  PanelActionSection,
-  type PanelDraftActions,
-} from "@/components/PanelActionSection";
+import { PanelShell } from "@/components/PanelShell";
+import { TrayResultSummary } from "@/components/TrayResultSummary";
 import {
   ArrowDown,
   ArrowUp,
@@ -26,7 +21,7 @@ import {
   Ruler,
   Trash2,
 } from "lucide-react";
-import { calculateSimpleSteppedPrice, calculateWeight } from "@/lib/pricing";
+import { projectSimpleSteppedTrayResult } from "@/lib/tray-result-projection";
 
 interface SimpleSteppedPanelProps {
   params: SimpleSteppedLayoutParams;
@@ -37,9 +32,7 @@ interface SimpleSteppedPanelProps {
     depth: number;
     height: number;
   };
-  setParams: React.Dispatch<React.SetStateAction<SimpleSteppedLayoutParams>>;
-  onResetParams?: () => void;
-  onImportParams?: (params: SimpleSteppedLayoutParams) => void;
+  actions: ReactNode;
   updateParam: <K extends keyof SimpleSteppedLayoutParams>(
     key: K,
     value: SimpleSteppedLayoutParams[K],
@@ -51,13 +44,10 @@ interface SimpleSteppedPanelProps {
   onClearRow: (rowId: string) => void;
   onReorderRows: (fromIndex: number, toIndex: number) => void;
   onAddSlotToRow: (rowId: string, diameter: number) => void;
-  onGenerate: () => void;
-  onExportSTL: () => void;
   onTrimTray: () => void;
   isGenerating: boolean;
   isPreviewStale: boolean;
   volume: number;
-  draftActions?: PanelDraftActions;
 }
 
 export default function SimpleSteppedPanel({
@@ -65,9 +55,7 @@ export default function SimpleSteppedPanel({
   derivedLayout,
   activeRowId,
   effectiveDimensions,
-  setParams,
-  onResetParams,
-  onImportParams,
+  actions,
   updateParam,
   onSetActiveRow,
   onAddRow,
@@ -76,14 +64,17 @@ export default function SimpleSteppedPanel({
   onClearRow,
   onReorderRows,
   onAddSlotToRow,
-  onGenerate,
-  onExportSTL,
   onTrimTray,
   isGenerating,
   isPreviewStale,
   volume,
-  draftActions,
 }: SimpleSteppedPanelProps) {
+  const result = projectSimpleSteppedTrayResult(
+    params,
+    derivedLayout,
+    effectiveDimensions,
+    { volume, isGenerating, isPreviewStale },
+  );
   const rowDerivedById = useMemo(
     () => new Map(derivedLayout.activeRows.map((row) => [row.id, row] as const)),
     [derivedLayout.activeRows],
@@ -92,25 +83,14 @@ export default function SimpleSteppedPanel({
     () => params.rows.find((row) => row.id === activeRowId) ?? null,
     [activeRowId, params.rows],
   );
-  const isOversized =
-    effectiveDimensions.width > MAX_BUILD_SIZE ||
-    effectiveDimensions.depth > MAX_BUILD_SIZE;
   const canTrim =
     derivedLayout.activeRows.length > 0 &&
     (derivedLayout.trayWidth - derivedLayout.minimumTrayWidth > 0.001 ||
       derivedLayout.trayDepth - derivedLayout.minimumTrayDepth > 0.001);
   const spacingSummary = `槽距${params.spacing}mm / 边距${params.outerMarginIndependent ? params.outerMargin : params.spacing}mm`;
 
-  const handleReset = () => {
-    if (onResetParams) {
-      onResetParams();
-      return;
-    }
-    setParams(SIMPLE_STEPPED_LAYOUT_DEFAULTS);
-    onSetActiveRow(null);
-  };
-
   return (
+    <PanelShell summary={<TrayResultSummary result={result} />} actions={actions}>
     <div className="flex flex-col gap-4 animate-fade-in">
       <div className="iron-panel rounded-sm p-3">
         <SectionHeader
@@ -292,7 +272,7 @@ export default function SimpleSteppedPanel({
       <div className="iron-panel rounded-sm p-4">
         <SectionHeader
           icon={Ruler}
-          title="结构参数"
+          title="阶梯结构"
           collapsible
           defaultOpen={false}
           summary={`首排${params.firstRowHeight}mm / 步进${params.stepHeight}mm / 圆角${params.cornerRadius}mm / ${spacingSummary}`}
@@ -360,122 +340,18 @@ export default function SimpleSteppedPanel({
               onChange={(v) => updateParam("cornerRadius", v)}
               unit={SIMPLE_STEPPED_LIMITS.cornerRadius.unit}
             />
-          </div>
-        </SectionHeader>
-      </div>
-
-      <div className={`iron-panel rounded-sm p-4 transition-all duration-300 ${isOversized ? "border-[#8b1a1a] animate-forge-pulse" : ""}`}>
-        <SectionHeader
-          icon={Ruler}
-          title="统计信息"
-          collapsible
-          defaultOpen={false}
-          summary={`${params.rows.length}行 / ${params.slots.length}槽 / ${effectiveDimensions.width.toFixed(1)}×${effectiveDimensions.depth.toFixed(1)}mm`}
-        >
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-              <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
-                <span className="text-[10px] text-muted-foreground block">行数 / 有效行</span>
-                <span className="text-lg font-mono font-bold text-primary">
-                  {params.rows.length} / {derivedLayout.activeRows.length}
-                </span>
-              </div>
-              <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
-                <span className="text-[10px] text-muted-foreground block">报价 & 耗材参考</span>
-                <div className="flex flex-col items-center mt-0.5">
-                  <span className="text-sm font-mono font-bold text-[#eab308]">
-                    ¥{calculateSimpleSteppedPrice(params, volume).toFixed(1)}
-                  </span>
-                  {volume > 0 ? (
-                    <span className="text-[9px] text-muted-foreground">
-                      估重: {calculateWeight(volume).toFixed(1)}g
-                    </span>
-                  ) : (
-                    <span className="text-[9px] text-muted-foreground">
-                      {isGenerating ? "图纸生成中..." : ""}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { label: "长度", value: effectiveDimensions.width, warn: effectiveDimensions.width > MAX_BUILD_SIZE },
-                { label: "宽度", value: effectiveDimensions.depth, warn: effectiveDimensions.depth > MAX_BUILD_SIZE },
-                { label: "高度", value: effectiveDimensions.height, warn: false },
-              ].map(({ label, value, warn }) => (
-                <div
-                  key={label}
-                  className={`relative text-center p-2.5 transition-colors duration-200 ${
-                    warn
-                      ? "bg-[#8b1a1a15] border border-[#8b1a1a50]"
-                      : "bg-[#1c1a16] border border-[#2e2a24]"
-                  }`}
-                >
-                  <p className="text-[11px] text-muted-foreground/60 mb-0.5">{label}</p>
-                  <p className={`text-sm font-mono font-semibold tabular-nums ${warn ? "text-[#c04040]" : "text-foreground"}`}>
-                    {value.toFixed(1)}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground/40 font-mono">mm</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
-                <span className="text-[10px] text-muted-foreground block">最小底板</span>
-                <span className="text-sm font-mono font-semibold text-foreground">
-                  {derivedLayout.minimumTrayWidth.toFixed(1)} × {derivedLayout.minimumTrayDepth.toFixed(1)} mm
-                </span>
-              </div>
-              <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
-                <span className="text-[10px] text-muted-foreground block">当前打印边框</span>
-                <span className="text-sm font-mono font-semibold text-primary">
-                  {derivedLayout.trayWidth.toFixed(1)} × {derivedLayout.trayDepth.toFixed(1)} mm
-                </span>
-              </div>
-            </div>
-
             <Button
               variant="outline"
               disabled={!canTrim}
               onClick={onTrimTray}
-              className="w-full h-9 text-xs border-[#4a6741] text-[#8cb880] hover:bg-[#1c1a16] hover:text-[#a6d39d] disabled:opacity-40"
+              className="h-9 w-full border-[#4a6741] text-xs text-[#8cb880] hover:bg-[#1c1a16] hover:text-[#a6d39d] disabled:opacity-40"
             >
               Trim 到凹槽占用区域
             </Button>
-
-            {isOversized && (
-              <div className="flex items-center justify-center gap-1.5 text-xs text-[#c04040] animate-fade-in">
-                <span>超过常规打印尺寸，仍可继续建模</span>
-              </div>
-            )}
           </div>
         </SectionHeader>
       </div>
-
-      <div className="wh-divider" />
-
-      <PanelActionSection
-        onGenerate={onGenerate}
-        onExportSTL={onExportSTL}
-        onReset={handleReset}
-        isGenerating={isGenerating}
-        isOversized={isOversized}
-        mode="simple-stepped"
-        params={params}
-        onImport={(p) => {
-          const nextParams = p as SimpleSteppedLayoutParams;
-          if (onImportParams) {
-            onImportParams(nextParams);
-            return;
-          }
-          setParams(nextParams);
-        }}
-        showStaleNotice={isPreviewStale}
-        draftActions={draftActions}
-      />
     </div>
+    </PanelShell>
   );
 }

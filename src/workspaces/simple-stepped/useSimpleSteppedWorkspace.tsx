@@ -2,11 +2,14 @@
 
 import { useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
+import { PanelActionSection } from "@/components/PanelActionSection";
 import { useWorkspaceDraftSupport } from "@/workspaces/shared";
 import type { ModeWorkspace } from "@/workspaces/types";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import type { SimpleSteppedLayoutParams } from "@/types/custom-tray";
 import type { useSimpleSteppedLayout } from "@/hooks/useSimpleSteppedLayout";
+import { exportParams } from "@/lib/param-io";
+import { available, generatingAvailability, type DraftActionResult, type ManualDraftActionAreaAdapter } from "@/workspaces/draft-action-area";
 
 const SimpleSteppedPanel = dynamic(
   () => import("@/components/SimpleSteppedPanel"),
@@ -15,12 +18,14 @@ const SimpleSteppedPanel = dynamic(
 
 interface UseSimpleSteppedWorkspaceOptions {
   model: ReturnType<typeof useSimpleSteppedLayout>;
+  onRequestParamImport: (file: File) => Promise<DraftActionResult>;
 }
 
 export function useSimpleSteppedWorkspace({
   model,
+  onRequestParamImport,
 }: UseSimpleSteppedWorkspaceOptions): ModeWorkspace {
-  const { draftActions, draftDialogProps, clearDraftBinding } =
+  const { draftActions, overlays, clearDraftBinding } =
     useWorkspaceDraftSupport({
       mode: "simple-stepped",
       params: model.params,
@@ -33,11 +38,45 @@ export function useSimpleSteppedWorkspace({
     clearDraftBinding();
   }, [clearDraftBinding, model]);
 
-  const importIntoWorkspace = useCallback((params: unknown) => {
-    model.setParams(params as SimpleSteppedLayoutParams);
+  const importIntoWorkspace = useCallback((params: SimpleSteppedLayoutParams) => {
+    model.setParams(params);
     model.setActiveRow(null);
     clearDraftBinding();
   }, [clearDraftBinding, model]);
+
+  const actions = useMemo(
+    () => {
+      const adapter: ManualDraftActionAreaAdapter = {
+        kind: "manual",
+        state: {
+          currentDraftId: draftActions.currentDraftId,
+          hasUnsavedChanges: draftActions.hasUnsavedChanges,
+          stale: model.isPreviewStale,
+          generate: generatingAvailability(model.isGenerating),
+          exportWhole: available,
+          preview: { kind: "manual" },
+        },
+        async perform(intent) {
+          try {
+            switch (intent.type) {
+              case "generate": model.handleGenerate(); break;
+              case "export-whole": model.handleExportSTL(); break;
+              case "save-draft": draftActions.onSaveDraft(); break;
+              case "open-drafts": draftActions.onOpenDraftDialog(); break;
+              case "export-params": exportParams("simple-stepped", model.params); break;
+              case "import-params": return onRequestParamImport(intent.file);
+              case "reset": resetWorkspace(); break;
+            }
+            return { status: "success" };
+          } catch (error) {
+            return { status: "error", message: `操作失败：${error instanceof Error ? error.message : "未知错误"}` };
+          }
+        },
+      };
+      return <PanelActionSection adapter={adapter} />;
+    },
+    [draftActions, model, onRequestParamImport, resetWorkspace],
+  );
 
   const panel = useMemo(
     () => (
@@ -46,9 +85,7 @@ export function useSimpleSteppedWorkspace({
         derivedLayout={model.derivedLayout}
         activeRowId={model.activeRowId}
         effectiveDimensions={model.effectiveDimensions}
-        setParams={model.setParams}
-        onResetParams={resetWorkspace}
-        onImportParams={importIntoWorkspace}
+        actions={actions}
         updateParam={model.updateParam}
         onSetActiveRow={model.setActiveRow}
         onAddRow={model.addRow}
@@ -57,26 +94,20 @@ export function useSimpleSteppedWorkspace({
         onClearRow={model.clearRow}
         onReorderRows={model.reorderRows}
         onAddSlotToRow={model.addSlotToRow}
-        onGenerate={model.handleGenerate}
-        onExportSTL={model.handleExportSTL}
         onTrimTray={model.trimTray}
         isGenerating={model.isGenerating}
         isPreviewStale={model.isPreviewStale}
         volume={model.volume}
-        draftActions={draftActions}
       />
     ),
     [
-      draftActions,
-      importIntoWorkspace,
+      actions,
       model.activeRowId,
       model.addRow,
       model.addSlotToRow,
       model.clearRow,
       model.derivedLayout,
       model.effectiveDimensions,
-      model.handleExportSTL,
-      model.handleGenerate,
       model.isGenerating,
       model.isPreviewStale,
       model.params,
@@ -84,21 +115,19 @@ export function useSimpleSteppedWorkspace({
       model.renameRow,
       model.reorderRows,
       model.setActiveRow,
-      model.setParams,
       model.trimTray,
       model.updateParam,
       model.volume,
-      resetWorkspace,
     ],
   );
 
   return {
-    mode: "simple-stepped",
     panel,
-    draftDialogProps,
-    commands: {
-      resetWorkspace,
-      importIntoWorkspace,
+    overlays,
+    importTarget: {
+      currentDraftId: draftActions.currentDraftId,
+      hasUnsavedChanges: draftActions.hasUnsavedChanges,
+      commit: (params) => importIntoWorkspace(params as SimpleSteppedLayoutParams),
     },
   };
 }

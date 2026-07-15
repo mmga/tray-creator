@@ -68,6 +68,22 @@ _Avoid_: Mixing parameter file wrapper parsing, browser draft storage, or UI sid
 The compatibility step inside the **Param Normalization Pipeline** that repairs older Mode parameter shapes before Slot Instance normalization and derived-field clamping run.
 _Avoid_: Duplicating old-shape repair logic across import parsing, Draft loading, and runtime editors.
 
+**Import Normalization Report**:
+A user-visible account of the defaults, legacy-field migrations, value adjustments, and behavior changes between imported parameters and their normalized candidate parameters.
+_Avoid_: Calling it a version mapping when the parameter file version does not change.
+
+**Import Candidate**:
+The normalized parameters and Import Normalization Report produced from an imported parameter file before the user accepts or cancels the import.
+_Avoid_: Mutating the active editor state while the import is still awaiting confirmation.
+
+**Import Mode Resolution**:
+The determination of an imported parameter file's Mode from its declared Mode, an unambiguous legacy shape, or an explicit user choice when the legacy shape is ambiguous.
+_Avoid_: Treating Mode identification as parameter conversion.
+
+**Retired Import Field**:
+A recognized legacy parameter field with no current equivalent, retained only as an import-reporting identifier and excluded from normalized parameters.
+_Avoid_: Preserving a retired field in current runtime params or letting it affect current behavior.
+
 **Tolerance**:
 The extra clearance included in a slot definition so the generated slot fits the physical base.
 _Avoid_: Mode-specific tolerance, hidden tolerance.
@@ -91,6 +107,22 @@ _Avoid_: Using base size to mean the final generated slot size.
 **Mode**:
 One tray editing workflow such as grid, custom, simple stepped, or stepped.
 _Avoid_: Using "feature" when the meaning is the editor mode.
+
+**Mode Param Snapshot**:
+An indivisible, read-only pairing of one actual Mode and that Mode's current parameters, captured by a Mode Workspace Adapter as the source for one persistence operation.
+_Avoid_: Passing Mode and params as independently selectable writer arguments, inferring Mode from parameter shape, or making the snapshot own storage and download behavior.
+
+**Persisted Param Artifact**:
+A newly written parameter-bearing artifact whose declared Mode identifies the editor workflow that owns its parameters, including exported parameter files, model companion parameter files, split-part companion parameter files, Draft records, and Draft Summaries.
+_Avoid_: Collapsing `stepped-cad` to `stepped`, inferring Mode from parameter shape, deriving Mode independently in each writer, or treating a split-manifest file type as a Mode.
+
+**Current Param Artifact Encoder**:
+The write-side module that converts a Mode Param Snapshot into the current persisted parameter envelope, JSON, or Blob without applying historical compatibility rules.
+_Avoid_: Owning browser storage, filenames, downloads, legacy Mode ambiguity, migration, or normalization.
+
+**Historical Param Artifact Reader**:
+The read-side module that recognizes historical parameter wrappers and Mode ambiguity, then routes imported files or stored Drafts through their required compatibility and normalization flow.
+_Avoid_: Reusing historical downgrade rules when writing a new Persisted Param Artifact.
 
 **Mode Interaction State**:
 Mode-local transient editor state shared by a **Mode Workspace** and a **Mode Viewport Workspace**, such as selected slot ids or preview focus ids.
@@ -158,7 +190,7 @@ _Avoid_: Treating the draft index as the full source of editable configuration d
 
 **Draft Compatibility**:
 The requirement that existing browser-stored drafts remain usable after draft system changes.
-_Avoid_: Treating stored drafts as disposable implementation detail.
+_Avoid_: Treating stored drafts as disposable implementation detail, or inferring a different Mode when their stored identity is ambiguous.
 
 **Draft Manager Dialog**:
 A reusable draft management UI that supports listing, saving, loading, renaming, deleting, and exporting drafts across modes.
@@ -199,6 +231,10 @@ _Avoid_: Making the canvas infer mode semantics from raw Mode params.
 **Layout Editor Viewport Adapter**:
 A mode-specific adapter that projects Mode-local layout state into a **Layout Editor Viewport**.
 _Avoid_: Passing mode-specific canvas exceptions directly through the page or viewport shell.
+
+**Tray Result Projection**:
+A read-only, mode-specific result derived once from normalized tray state for both the fixed result summary and its expanded details.
+_Avoid_: Recomputing dimensions, quote, weight, slot count, or mode-specific footprint semantics separately in summary and detail views.
 
 **Effective Baseplate**:
 The actual baseplate footprint derived from placed slots and boundary spacing, rather than the raw tray width/depth inputs.
@@ -281,6 +317,57 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A **Param Normalization Pipeline** runs before imported or loaded params become runtime **Mode** params.
 - **Legacy Param Migration** runs inside the **Param Normalization Pipeline** after required-field validation and before **Slot Instance** normalization.
 - **Legacy Param Migration** owns old-shape compatibility repair, while the rest of the **Param Normalization Pipeline** owns validation, Slot Instance normalization, and derived-field clamping.
+- A successful parameter-file parse produces exactly one **Import Candidate** before changing the active editor state.
+- Only an external parameter-file import produces an **Import Candidate**; loading a Draft continues through **Draft Compatibility** without this confirmation flow.
+- **Import Mode Resolution** runs before an **Import Candidate** is normalized.
+- An external parameter-file import may start from any Mode's **Draft Action Area**, independently of the file's resolved target Mode.
+- Every newly exported parameter file records its actual Mode as its declared Mode.
+- New CAD stepped parameter files declare `stepped-cad` instead of collapsing their Mode to `stepped`.
+- Every newly written **Persisted Param Artifact** records exactly one actual **Mode** matching the editor workflow that owns its parameters.
+- A **Mode Workspace Adapter** supplies the actual **Mode** for newly written **Persisted Param Artifacts**; downstream persistence Implementations do not infer it from parameter structure.
+- A **Mode Workspace Adapter** captures one **Mode Param Snapshot** for a persistence operation.
+- Parameter export, model companion export, split-part companion export, Draft persistence, and Draft Summary construction consume a **Mode Param Snapshot** instead of independently selectable Mode and params arguments.
+- A **Mode Param Snapshot** does not own browser storage, file naming, downloads, or historical read compatibility.
+- A **Current Param Artifact Encoder** consumes a **Mode Param Snapshot** and writes only the current parameter format.
+- A **Current Param Artifact Encoder** does not apply historical compatibility or change the Snapshot's Mode identity.
+- A **Historical Param Artifact Reader** owns historical wrapper recognition and ambiguous Mode handling.
+- Current-format writing and historical reading are separate Interfaces and Implementations.
+- `stepped` and `stepped-cad` may share the same parameter structure without sharing one persisted Mode identity.
+- A CAD stepped **Persisted Param Artifact** declares `stepped-cad`, including complete-model companion parameters, split-part companion parameters, Draft records, and Draft Summaries.
+- Adding `stepped-cad` as the actual Mode of new **Persisted Param Artifacts** does not change the parameter-file version or Draft storage version because their envelope shapes remain unchanged.
+- Historical differences are handled by the **Historical Param Artifact Reader**, not by a version increase for this Mode identity change.
+- A split manifest may declare its own file type, such as `stepped-cad-split-parts`, without treating that file type as a **Mode**.
+- Only historical read compatibility may treat a declared `stepped` Mode as ambiguous between ordinary stepped and CAD stepped.
+- Newly exported parameter files are not required to remain importable by older application versions.
+- A historical parameter file declared as `stepped` requires the user to identify whether it belongs to ordinary stepped or CAD stepped because older exports did not preserve that distinction.
+- A legacy parameter file without a declared Mode uses structural inference only when exactly one Mode matches.
+- An ambiguous legacy parameter file requires the user to identify its original Mode before normalization, without converting its parameter semantics.
+- A declared Mode that conflicts with the parameter structure produces an import error and is not silently replaced by an inferred Mode.
+- An **Import Candidate** exists only after parsing, required-field validation, and the full **Param Normalization Pipeline** succeed.
+- A parameter file that cannot be safely normalized produces an import error and cannot be partially confirmed.
+- An **Import Candidate** includes the normalized Mode parameters and one **Import Normalization Report** derived from the same normalization run.
+- An **Import Candidate** targets the Mode identified by the imported parameter file rather than the currently active Mode.
+- An external parameter-file import does not convert parameters between Modes; Mode conversion requires a separate explicit operation.
+- Confirming an **Import Candidate** switches to its target Mode and replaces that Mode's parameters as one import action.
+- The same normalization rules that produce an **Import Candidate** also record its **Import Normalization Report**; a separately reconstructed report is not authoritative.
+- Every successful parameter-file import presents its **Import Normalization Report** for confirmation, including imports that require no compatibility adjustments.
+- An **Import Normalization Report** with no adjustments explicitly states that the imported parameters can be used without compatibility changes.
+- An **Import Normalization Report** groups adjustments as applied defaults, legacy-field migrations, value adjustments, and behavior changes.
+- An import that changes the active Mode is displayed prominently before its field-level adjustments, including the current Mode, target Mode, and resulting workspace change.
+- An **Import Normalization Report** prominently warns when confirmation will replace existing target-Mode edits, identifies **Unsaved Draft Changes**, and states that the target **Draft Binding** will be cleared.
+- An **Import Normalization Report** compares imported parameters with current normalized parameters without implying a parameter-file version upgrade.
+- Each user-facing adjustment identifies the previous or missing value, the normalized value, and why the adjustment was required.
+- A finite value outside the current allowed range may be adjusted to the nearest valid value when the report identifies its original value, normalized value, and allowed range.
+- A value with an invalid type, a non-finite number, or no safe interpretation prevents creation of an **Import Candidate**.
+- Repeated technical adjustments may be aggregated in the user-facing report, while exact field paths remain available in collapsible technical details.
+- A legacy field with a current equivalent is reported as a field migration, while a **Retired Import Field** is listed as ignored with no replacement.
+- A **Retired Import Field** is recognized only to explain the import and is never retained in the **Import Candidate**.
+- An **Import Normalization Report** is read-only; imported values are edited through the normal Mode editor only after confirmation.
+- An **Import Normalization Report** belongs only to its **Import Candidate** and is not stored in a Draft or exported parameter file.
+- Confirming an **Import Candidate** commits its normalized parameters as one import action.
+- Confirming an **Import Candidate** clears the target Mode's **Draft Binding** after its normalized parameters are committed.
+- A confirmed external parameter-file import is not added to Mode undo history.
+- Cancelling an **Import Candidate** leaves the active Mode, active parameters, **Mode Interaction State**, and **Draft Binding** unchanged.
 - A **Param Normalization Pipeline** uses the **Slot Instance Factory** when it writes or repairs **Slot Geometry Snapshots**.
 - Existing **Slot Instances** do not silently change when a **Slot Definition** changes.
 - Updating an existing slot to the latest **Slot Definition** must be an explicit action.
@@ -293,6 +380,9 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A slot definition display name must reflect the actual geometry values in the definition.
 - A **Draft** belongs to exactly one **Mode**.
 - Each **Mode** may have its own independent **Draft** list and storage space.
+- A newly saved CAD stepped **Draft** belongs to `stepped-cad` and uses the `stepped-cad` Draft storage space.
+- An existing **Draft** stored as `stepped` remains an ordinary stepped Draft; it is not automatically inferred, migrated, or displayed again as `stepped-cad`.
+- Reusing an existing `stepped` Draft in CAD stepped mode requires an explicit user export and import that resolves the target Mode as `stepped-cad`.
 - A **Manual Draft Save** does not imply autosave or session recovery.
 - The current editor state may keep a **Draft Binding** even when there are unsaved edits.
 - **Unsaved Draft Changes** may exist while a **Draft Binding** still exists.
@@ -302,6 +392,8 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A custom **Draft Summary** may show slot count and resulting width/depth.
 - A simple stepped **Draft Summary** may show row count, slot count, and resulting width/depth.
 - A stepped **Draft Summary** may show group count, slot count, and resulting width/depth.
+- A CAD stepped **Draft Summary** declares `stepped-cad` while showing the same group count, slot count, and resulting width/depth fields as an ordinary stepped Draft Summary.
+- Ordinary stepped and CAD stepped Draft Summaries reuse one stepped-summary calculation Implementation without sharing one Mode identity.
 - Draft titles may be duplicated within the same **Mode**.
 - A **Draft Index** stores **Draft Summary** entries, while full draft records store full mode parameters.
 - Draft limits may be enforced per **Mode**, not only globally.
@@ -309,6 +401,7 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A draft record key may be mode-scoped while the **Draft Index** remains shared.
 - A **Draft Manager Dialog** may be shared across modes while rendering mode-specific summaries.
 - A **Draft Manager Dialog** may show drafts for the current **Mode** only.
+- A **Draft Manager Dialog** labels a `stepped-cad` Draft Summary as a CAD stepped Draft.
 - A **Draft Action Area** should remain broadly consistent across modes.
 - A **Mode Workspace** may own a **Mode**'s **Draft Binding**, **Draft Action Area** inputs, parameter panel inputs, and reset/import side effects.
 - A **Mode Workspace** should not own viewport-specific 2D/3D editing details unless those details become shared across modes.
@@ -332,6 +425,12 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A **Layout Editor Viewport** is the shape consumed by the layout canvas for 2D editing.
 - A **Layout Editor Viewport Adapter** projects a **Mode**'s local layout state into a **Layout Editor Viewport**.
 - A layout canvas should consume a **Layout Editor Viewport** instead of inferring **Mode** behavior from raw parameters.
+- A **Tray Result Projection** belongs to exactly one **Mode** editor state.
+- A fixed result summary and its expanded details consume the same **Tray Result Projection** instance.
+- A **Tray Result Projection** preserves **Slot Count**, build-limit, generation, and preview-staleness facts independently rather than collapsing them into one lifecycle state.
+- A custom **Tray Result Projection** distinguishes an **Effective Baseplate** from a **Fixed Tray Outer Footprint**.
+- A grid **Tray Result Projection** uses the **Grid Footprint Area** shown to the user.
+- A stepped CAD **Tray Result Projection** reuses the shared **Stepped Layout Core** result and does not expose split-assembly-only behaviour as ordinary tray statistics.
 - In custom mode, the **Effective Baseplate** is derived from placed **Slot Instances** plus boundary spacing.
 - A custom **Tray Sizing Mode** is either automatic, which uses the **Effective Baseplate**, or fixed, which uses the configured tray width and depth as the final tray footprint.
 - In fixed custom **Tray Sizing Mode**, **Slot Instances** use the fixed tray's lower-left corner as their layout origin.
@@ -432,3 +531,4 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - Grid-mode "面积" could have meant nominal hole layout size or the displayed outer dimensions. Resolved: use **Grid Footprint Area**, derived from the displayed width and depth, for migrated grid pricing.
 - "CAD 阶梯模式生成" could mean either per-group solid union or band-by-band CAD construction. Resolved: use **CAD Stepped Construction**, which generates each height band from a sketch before extrusion.
 - "内缩凹槽" could mean an extra toggle layered on top of "轮廓浅槽". Resolved: use **Inset Recess** as a mutually exclusive **Split Assembly Groove Type**.
+- "Mode conversion" was used for both switching to a file's Mode and changing one Mode's parameter semantics into another. Resolved: external import switches to the file's Mode without converting its parameters; parameter conversion is a separate explicit operation.

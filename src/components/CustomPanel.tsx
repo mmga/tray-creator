@@ -2,18 +2,15 @@
 
 import type { CustomLayoutParams } from "@/types/custom-tray";
 import {
-  MAX_BUILD_SIZE,
   SHARED_LAYOUT_LIMITS,
   resolveBaseHolePresetKey,
 } from "@/lib/config";
 import {
   CUSTOM_BASE_PRESETS,
-  CUSTOM_LAYOUT_DEFAULTS,
   CUSTOM_LIMITS,
   ELLIPSE_PRESETS,
   type EllipsePreset,
 } from "@/lib/custom-config";
-import { calculateCustomTrayDimensions } from "@/lib/custom-tray-model";
 import type {
   CircleSlotConfig,
   EllipseSlotConfig,
@@ -23,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   Plus,
   Wrench,
@@ -34,13 +31,10 @@ import {
 import { BaseHoleConfig } from "@/components/BaseHoleConfig";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
-import { calculateWeight, calculateCustomPrice } from "@/lib/pricing";
-import { useAutoPreview } from "@/hooks/useAutoPreview";
 import { useToast } from "@/hooks/useToast";
-import {
-  PanelActionSection,
-  type PanelDraftActions,
-} from "@/components/PanelActionSection";
+import { PanelShell } from "@/components/PanelShell";
+import { TrayResultSummary } from "@/components/TrayResultSummary";
+import { projectCustomTrayResult } from "@/lib/tray-result-projection";
 
 // ── Props ──────────────────────────────
 
@@ -48,9 +42,7 @@ interface CustomPanelProps {
   params: CustomLayoutParams;
   effectiveDimensions: { width: number; depth: number };
   updateParam: <K extends keyof CustomLayoutParams>(key: K, value: CustomLayoutParams[K]) => void;
-  setParams: React.Dispatch<React.SetStateAction<CustomLayoutParams>>;
-  onResetParams?: () => void;
-  onImportParams?: (params: CustomLayoutParams) => void;
+  actions: ReactNode;
   onAddSlot: (
     width: number,
     height?: number,
@@ -58,11 +50,9 @@ interface CustomPanelProps {
     circleConfig?: CircleSlotConfig,
   ) => void;
   onRandomizeSlots?: () => RandomSlotArrangementResult;
-  onGenerate: (options?: { shouldSwitchView?: boolean }) => void;
-  onExportSTL: () => void;
   isGenerating: boolean;
+  isPreviewStale: boolean;
   volume: number;
-  draftActions?: PanelDraftActions;
 }
 
 function getEllipseSlotConfig(preset: EllipsePreset): EllipseSlotConfig {
@@ -77,35 +67,20 @@ export default function CustomPanel({
   params,
   effectiveDimensions,
   updateParam,
-  setParams,
-  onResetParams,
-  onImportParams,
+  actions,
   onAddSlot,
   onRandomizeSlots,
-  onGenerate,
-  onExportSTL,
   isGenerating,
+  isPreviewStale,
   volume,
-  draftActions,
 }: CustomPanelProps) {
   const { toast } = useToast();
-  const dimensions = calculateCustomTrayDimensions(params);
+  const result = projectCustomTrayResult(params, effectiveDimensions, {
+    volume,
+    isGenerating,
+    isPreviewStale,
+  });
   const isFixedTraySize = params.traySizingMode === "fixed";
-  const displayLength =
-    isFixedTraySize
-      ? dimensions.width
-      : effectiveDimensions.width > 0
-        ? effectiveDimensions.width
-        : params.trayWidth;
-  const displayWidth =
-    isFixedTraySize
-      ? dimensions.depth
-      : effectiveDimensions.depth > 0
-        ? effectiveDimensions.depth
-        : params.trayDepth;
-  const isOversized =
-    displayLength > MAX_BUILD_SIZE || displayWidth > MAX_BUILD_SIZE;
-  const [autoPreview, setAutoPreview] = useState(false);
   const [customCircleDiameter, setCustomCircleDiameter] = useState(10);
   const largestSlotSize = params.slots.reduce(
     (maxSize, slot) => Math.max(maxSize, slot.width, slot.height),
@@ -113,20 +88,6 @@ export default function CustomPanel({
   );
   const resolvedBaseHoleSize = resolveBaseHolePresetKey(largestSlotSize);
 
-  useAutoPreview(params, {
-    enabled: autoPreview,
-    isGenerating,
-    isBlocked: false,
-    onGenerate: () => onGenerate({ shouldSwitchView: false }),
-  });
-
-  const handleReset = () => {
-    if (onResetParams) {
-      onResetParams();
-      return;
-    }
-    setParams(CUSTOM_LAYOUT_DEFAULTS);
-  };
   const handleAddCustomCircleSlot = () => {
     if (!Number.isFinite(customCircleDiameter) || customCircleDiameter <= 0) {
       return;
@@ -151,75 +112,11 @@ export default function CustomPanel({
   };
 
   return (
+    <PanelShell summary={<TrayResultSummary result={result} />} actions={actions}>
     <div className="flex flex-col gap-4 animate-fade-in">
-      <div className="iron-panel rounded-sm p-4">
-        <SectionHeader
-          icon={Ruler}
-          title="托盘尺寸"
-          collapsible
-          defaultOpen={true}
-          summary={isFixedTraySize ? "固定外尺寸" : "自动适配凹槽布局"}
-        >
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
-              <div className="space-y-0.5">
-                <Label htmlFor="custom-fixed-tray-size" className="text-sm cursor-pointer text-[#f0d8b8]">
-                  固定托盘大小
-                </Label>
-                <p className="text-[11px] text-muted-foreground">
-                  {isFixedTraySize
-                    ? "外尺寸固定，凹槽可在内部自由排版"
-                    : "托盘外形随凹槽位置与边界间距自动变化"}
-                </p>
-              </div>
-              <Switch
-                id="custom-fixed-tray-size"
-                aria-label="custom-fixed-tray-size"
-                checked={isFixedTraySize}
-                onCheckedChange={(checked) =>
-                  updateParam("traySizingMode", checked ? "fixed" : "auto")
-                }
-                className="data-[state=checked]:bg-[#8cb880]"
-              />
-            </div>
-            {isFixedTraySize && (
-              <div className="space-y-4">
-                <ParamSlider
-                  label={CUSTOM_LIMITS.trayWidth.label}
-                  value={params.trayWidth}
-                  config={CUSTOM_LIMITS.trayWidth}
-                  onChange={(value) => updateParam("trayWidth", value)}
-                  unit={CUSTOM_LIMITS.trayWidth.unit}
-                />
-                <ParamSlider
-                  label={CUSTOM_LIMITS.trayDepth.label}
-                  value={params.trayDepth}
-                  config={CUSTOM_LIMITS.trayDepth}
-                  onChange={(value) => updateParam("trayDepth", value)}
-                  unit={CUSTOM_LIMITS.trayDepth.unit}
-                />
-                <div className="flex justify-end">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={params.slots.length === 0 || !onRandomizeSlots}
-                    onClick={handleRandomizeSlots}
-                    className="border-[#2e2a24] bg-[#120f0c] text-xs hover:bg-[#2e2a24] hover:text-primary"
-                  >
-                    <Shuffle className="mr-1 h-3 w-3" />
-                    随机排列
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        </SectionHeader>
-      </div>
-
-      {/* 添加凹槽 — 移动端默认展开 */}
+      {/* 布局编辑 */}
       <div className="iron-panel rounded-sm p-3">
-        <SectionHeader icon={BoxSelect} title="添加凹槽" collapsible defaultOpen={true}
+        <SectionHeader icon={BoxSelect} title="布局编辑" collapsible defaultOpen={true}
           summary={`已有 ${params.slots.length} 个凹槽`}>
           <div className="space-y-2">
             <div className="text-[10px] text-muted-foreground/70 font-bold tracking-wider uppercase mb-0.5">圆形</div>
@@ -293,9 +190,75 @@ export default function CustomPanel({
         </SectionHeader>
       </div>
 
+      {/* 托盘边界 */}
+      <div className="iron-panel rounded-sm p-4">
+        <SectionHeader
+          icon={Ruler}
+          title="托盘尺寸"
+          collapsible
+          defaultOpen={true}
+          summary={isFixedTraySize ? "固定外尺寸" : "自动适配凹槽布局"}
+        >
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
+              <div className="space-y-0.5">
+                <Label htmlFor="custom-fixed-tray-size" className="text-sm cursor-pointer text-[#f0d8b8]">
+                  固定托盘大小
+                </Label>
+                <p className="text-[11px] text-muted-foreground">
+                  {isFixedTraySize
+                    ? "外尺寸固定，凹槽可在内部自由排版"
+                    : "托盘外形随凹槽位置与边界间距自动变化"}
+                </p>
+              </div>
+              <Switch
+                id="custom-fixed-tray-size"
+                aria-label="custom-fixed-tray-size"
+                checked={isFixedTraySize}
+                onCheckedChange={(checked) =>
+                  updateParam("traySizingMode", checked ? "fixed" : "auto")
+                }
+                className="data-[state=checked]:bg-[#8cb880]"
+              />
+            </div>
+            {isFixedTraySize && (
+              <div className="space-y-4">
+                <ParamSlider
+                  label={CUSTOM_LIMITS.trayWidth.label}
+                  value={params.trayWidth}
+                  config={CUSTOM_LIMITS.trayWidth}
+                  onChange={(value) => updateParam("trayWidth", value)}
+                  unit={CUSTOM_LIMITS.trayWidth.unit}
+                />
+                <ParamSlider
+                  label={CUSTOM_LIMITS.trayDepth.label}
+                  value={params.trayDepth}
+                  config={CUSTOM_LIMITS.trayDepth}
+                  onChange={(value) => updateParam("trayDepth", value)}
+                  unit={CUSTOM_LIMITS.trayDepth.unit}
+                />
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={params.slots.length === 0 || !onRandomizeSlots}
+                    onClick={handleRandomizeSlots}
+                    className="border-[#2e2a24] bg-[#120f0c] text-xs hover:bg-[#2e2a24] hover:text-primary"
+                  >
+                    <Shuffle className="mr-1 h-3 w-3" />
+                    随机排列
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </SectionHeader>
+      </div>
+
       {/* 结构参数 — 移动端默认折叠 */}
       <div className="iron-panel rounded-sm p-4">
-        <SectionHeader icon={Wrench} title="结构参数" collapsible defaultOpen={false}
+        <SectionHeader icon={Wrench} title="制造结构" collapsible defaultOpen={false}
           summary={`槽距${params.spacing}mm / 边距${(params.boundarySpacingIndependent ? params.boundarySpacing : params.spacing)}mm / 斜面${params.sideBevelWidth}mm`}>
           <div className="space-y-4">
             <ParamSlider
@@ -358,100 +321,16 @@ export default function CustomPanel({
       </div>
 
       {/* 底板孔位 — 移动端默认折叠 */}
-      <BaseHoleConfig<CustomLayoutParams>
+      <div><BaseHoleConfig<CustomLayoutParams>
         enableBaseHole={params.enableBaseHole}
         baseThickness={params.baseThickness}
         resolvedBaseHoleSize={resolvedBaseHoleSize}
         updateParam={updateParam}
         collapsible
         defaultOpen={false}
-      />
+      /></div>
 
-      {/* 统计信息 — 移动端默认折叠 */}
-      <div className={`iron-panel rounded-sm p-4 transition-all duration-300 ${isOversized ? 'border-[#8b1a1a] animate-forge-pulse' : ''}`}>
-        <SectionHeader icon={Ruler} title="统计信息" collapsible defaultOpen={false}
-          summary={`${params.slots.length}个凹槽 / ${displayLength.toFixed(1)}×${displayWidth.toFixed(1)}mm`}>
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2 mb-2">
-              <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
-                <span className="text-[10px] text-muted-foreground block">凹槽数量</span>
-                <span className="text-lg font-mono font-bold text-primary">{params.slots.length}</span>
-              </div>
-              <div className="text-center p-2 bg-[#1c1a16] border border-[#2e2a24]">
-                <span className="text-[10px] text-muted-foreground block">预估报价 & 耗材参考</span>
-                <div className="flex flex-col items-center mt-0.5">
-                  <span className="text-sm font-mono font-bold text-[#eab308]">
-                    ¥{calculateCustomPrice(params, volume).toFixed(1)}
-                  </span>
-                  {volume > 0 ? (
-                    <span className="text-[9px] text-muted-foreground">
-                      估重: {calculateWeight(volume).toFixed(1)}g
-                    </span>
-                  ) : (
-                    <span className="text-[9px] text-muted-foreground">
-                      {isGenerating ? "图纸生成中..." : ""}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { label: "长度", value: displayLength, warn: displayLength > MAX_BUILD_SIZE },
-                { label: "宽度", value: displayWidth, warn: displayWidth > MAX_BUILD_SIZE },
-                { label: "高度", value: dimensions.height, warn: false },
-              ].map(({ label, value, warn }) => (
-                <div
-                  key={label}
-                  className={`relative text-center p-2.5 transition-colors duration-200 ${warn
-                    ? 'bg-[#8b1a1a15] border border-[#8b1a1a50]'
-                    : 'bg-[#1c1a16] border border-[#2e2a24]'
-                    }`}
-                >
-                  <p className="text-[11px] text-muted-foreground/60 mb-0.5">{label}</p>
-                  <p className={`text-sm font-mono font-semibold tabular-nums ${warn ? 'text-[#c04040]' : 'text-foreground'}`}>
-                    {value.toFixed(1)}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground/40 font-mono">mm</p>
-                </div>
-              ))}
-            </div>
-            {isOversized && (
-              <div className="flex items-center justify-center gap-1.5 text-xs text-[#c04040] animate-fade-in">
-                <span>超过常规打印尺寸，仍可继续建模</span>
-              </div>
-            )}
-            <div className="text-[11px] text-muted-foreground/80 text-center pt-1">
-              {isFixedTraySize ? "固定外尺寸" : "上沿尺寸"}: {displayLength.toFixed(1)} × {displayWidth.toFixed(1)} mm
-            </div>
-          </div>
-        </SectionHeader>
-      </div>
-
-      <div className="wh-divider" />
-
-      <PanelActionSection
-        autoPreviewId="custom-auto-preview"
-        autoPreview={autoPreview}
-        onAutoPreviewChange={setAutoPreview}
-        onGenerate={() => onGenerate({ shouldSwitchView: true })}
-        onExportSTL={onExportSTL}
-        onReset={handleReset}
-        isGenerating={isGenerating}
-        isOversized={isOversized}
-        mode="custom"
-        params={params}
-        onImport={(p) => {
-          const nextParams = p as CustomLayoutParams;
-          if (onImportParams) {
-            onImportParams(nextParams);
-            return;
-          }
-          setParams(nextParams);
-        }}
-        draftActions={draftActions}
-      />
     </div>
+    </PanelShell>
   );
 }

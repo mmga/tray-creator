@@ -143,10 +143,7 @@ export function useModeDrafts<M extends DraftMode>({
           return;
         }
 
-        const loaded = parseParamFileObject(
-          record.paramFile,
-          mode,
-        ) as DraftParamsByMode[M];
+        const loaded = parseParamFileObject(record.paramFile, mode);
 
         setParams(loaded);
         setDraftSession(bindDraftSession(id, serializeParamFile(mode, loaded)));

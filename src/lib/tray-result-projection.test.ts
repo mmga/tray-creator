@@ -1,0 +1,111 @@
+import { describe, expect, it } from "vitest";
+import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
+import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
+import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
+import { deriveSimpleSteppedLayout } from "@/lib/simple-stepped-layout";
+import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
+import {
+  projectCustomTrayResult,
+  projectGridTrayResult,
+  projectSimpleSteppedTrayResult,
+  projectSteppedTrayResult,
+} from "@/lib/tray-result-projection";
+
+const idleState = {
+  volume: 0,
+  isGenerating: false,
+  isPreviewStale: false,
+};
+
+describe("Tray Result Projection", () => {
+  it("投影 grid 的 Slot Count、Grid Footprint Area 与独立状态", () => {
+    const result = projectGridTrayResult(DEFAULT_TRAY_PARAMS, {
+      ...idleState,
+      isGenerating: true,
+      isPreviewStale: true,
+    });
+
+    expect(result.slotCount).toBe(
+      DEFAULT_TRAY_PARAMS.rows * DEFAULT_TRAY_PARAMS.columns,
+    );
+    expect(result.footprintArea).toBe(
+      result.dimensions.width * result.dimensions.depth,
+    );
+    expect(result.generating).toBe(true);
+    expect(result.stale).toBe(true);
+    expect(result.weight).toEqual({ status: "unavailable" });
+  });
+
+  it("区分 custom 的 Effective Baseplate 与 Fixed Tray Outer Footprint", () => {
+    const automatic = projectCustomTrayResult(
+      CUSTOM_LAYOUT_DEFAULTS,
+      { width: 88, depth: 96 },
+      idleState,
+    );
+    const fixed = projectCustomTrayResult(
+      { ...CUSTOM_LAYOUT_DEFAULTS, traySizingMode: "fixed" },
+      { width: 88, depth: 96 },
+      idleState,
+    );
+
+    expect(automatic.footprintKind).toBe("effective-baseplate");
+    expect(automatic.dimensions).toEqual(
+      expect.objectContaining({ width: 88, depth: 96 }),
+    );
+    expect(fixed.footprintKind).toBe("fixed-outer-footprint");
+    expect(fixed.dimensions).toEqual(
+      expect.objectContaining({
+        width: CUSTOM_LAYOUT_DEFAULTS.trayWidth,
+        depth: CUSTOM_LAYOUT_DEFAULTS.trayDepth,
+      }),
+    );
+  });
+
+  it("投影 simple stepped 的行数、有效行和最小底板", () => {
+    const derived = deriveSimpleSteppedLayout(
+      SIMPLE_STEPPED_LAYOUT_DEFAULTS,
+      null,
+    );
+    const result = projectSimpleSteppedTrayResult(
+      SIMPLE_STEPPED_LAYOUT_DEFAULTS,
+      derived,
+      { width: 120, depth: 130, height: 12 },
+      idleState,
+    );
+
+    expect(result.rowCount).toBe(SIMPLE_STEPPED_LAYOUT_DEFAULTS.rows.length);
+    expect(result.activeRowCount).toBe(derived.activeRows.length);
+    expect(result.minimumBaseplate).toEqual({
+      width: derived.minimumTrayWidth,
+      depth: derived.minimumTrayDepth,
+    });
+  });
+
+  it("stepped 与 CAD stepped 复用同一份公共投影规则", () => {
+    const stepped = projectSteppedTrayResult(
+      "stepped",
+      STEPPED_LAYOUT_DEFAULTS,
+      { width: 120, depth: 140 },
+      idleState,
+    );
+    const cad = projectSteppedTrayResult(
+      "stepped-cad",
+      STEPPED_LAYOUT_DEFAULTS,
+      { width: 120, depth: 140 },
+      idleState,
+    );
+
+    expect(cad).toEqual({ ...stepped, mode: "stepped-cad" });
+  });
+
+  it("不会把非有限尺寸、报价或重量暴露给展示层", () => {
+    const result = projectGridTrayResult(DEFAULT_TRAY_PARAMS, {
+      ...idleState,
+      volume: Number.POSITIVE_INFINITY,
+    });
+
+    expect(result.weight).toEqual({ status: "unavailable" });
+    expect(Object.values(result.dimensions).every(Number.isFinite)).toBe(true);
+    expect(Number.isFinite(result.quote.amount)).toBe(true);
+  });
+});

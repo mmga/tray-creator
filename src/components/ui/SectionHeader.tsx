@@ -37,9 +37,16 @@ export function SectionHeader({
         <div>
             {/* 标题行 */}
             <div
-                className={`relative pb-3 mb-1 ${canCollapse ? 'cursor-pointer select-none active:opacity-80' : ''}`}
+                className={`relative pb-3 mb-1 ${canCollapse ? 'cursor-pointer select-none active:opacity-80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/60' : ''}`}
                 onClick={canCollapse ? () => setIsOpen(prev => !prev) : undefined}
+                onKeyDown={canCollapse ? (event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setIsOpen(prev => !prev);
+                    }
+                } : undefined}
                 role={canCollapse ? "button" : undefined}
+                tabIndex={canCollapse ? 0 : undefined}
                 aria-expanded={canCollapse ? isOpen : undefined}
             >
                 <div className="flex items-center gap-2.5">
@@ -67,11 +74,8 @@ export function SectionHeader({
 
             {/* 可折叠内容区 */}
             {children != null && (
-                <div
-                    className={`transition-all duration-200 ease-in-out overflow-hidden ${canCollapse && !isOpen ? 'max-h-0 opacity-0' : 'max-h-500 opacity-100'
-                        }`}
-                >
-                    {children}
+                <div className={`grid transition-[grid-template-rows,opacity] duration-200 ease-in-out ${canCollapse && !isOpen ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr] opacity-100'}`}>
+                    <div className="min-h-0 overflow-hidden">{children}</div>
                 </div>
             )}
         </div>

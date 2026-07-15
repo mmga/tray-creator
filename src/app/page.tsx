@@ -5,21 +5,20 @@ import {
 } from "react";
 import { useModeEditorWorkspaces } from "@/hooks/useModeEditorWorkspaces";
 import { ModeTabs } from "@/components/ModeTabs";
-import { DraftManagerDialog } from "@/components/DraftManagerDialog";
 import type { AppMode } from "@/types/custom-tray";
 import { Boxes } from "lucide-react";
 
 export default function Home() {
   const [mode, setMode] = useState<AppMode>("grid");
-  const { activeWorkspace, activeViewport } = useModeEditorWorkspaces({
+  const { activeWorkspace, activeViewport, importOverlay } = useModeEditorWorkspaces({
     mode,
+    onModeChange: setMode,
   });
 
   return (
     <div className="flex flex-col h-dvh bg-background text-foreground overflow-hidden">
-      <DraftManagerDialog
-        {...activeWorkspace.draftDialogProps}
-      />
+      {activeWorkspace.overlays}
+      {importOverlay}
 
       {/* Header */}
       <header className="relative shrink-0">
@@ -60,10 +59,8 @@ export default function Home() {
       {/* ===== 主布局: 左右分栏 ===== */}
       <main className="flex flex-row flex-1 overflow-hidden">
         {/* Left Panel */}
-        <aside className="w-[380px] shrink-0 overflow-y-auto bg-[#0e0d0b] [scrollbar-gutter:stable] h-full">
-          <div className="p-4 pb-6 h-full">
-            {activeWorkspace.panel}
-          </div>
+        <aside className="h-full w-[380px] min-w-[320px] shrink-0 overflow-hidden bg-[#0e0d0b]">
+          <div className="h-full min-h-0">{activeWorkspace.panel}</div>
         </aside>
 
         {/* Divider */}
