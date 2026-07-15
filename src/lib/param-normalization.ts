@@ -33,6 +33,13 @@ import {
   createGridSlotSnapshotFromDefinition,
   normalizeFreeSlotInstanceSnapshot,
 } from "@/lib/slot-instance-factory";
+import type { ImportNormalizationRecorder } from "@/lib/param-import-report";
+import {
+  recordBehaviorChange,
+  recordDefault,
+  recordMigration,
+  recordValueAdjustment,
+} from "@/lib/param-import-report";
 
 export type NormalizableParams =
   | TrayParams
@@ -40,7 +47,10 @@ export type NormalizableParams =
   | SimpleSteppedLayoutParams
   | SteppedLayoutParams;
 
-type ParamNormalizationStep<T extends NormalizableParams> = (params: T) => void;
+type ParamNormalizationStep<T extends NormalizableParams> = (
+  params: T,
+  recorder?: ImportNormalizationRecorder,
+) => void;
 
 type ParamNormalizationPipeline<T extends NormalizableParams> = {
   validateRequiredFields: ParamNormalizationStep<T>;
@@ -81,25 +91,40 @@ function clampField(
   obj: Record<string, unknown>,
   key: string,
   config: { min: number; max: number },
+  recorder?: ImportNormalizationRecorder,
+  path = key,
+  label = key,
 ) {
   const value = obj[key] as number;
-  obj[key] = Math.max(config.min, Math.min(config.max, value));
+  const normalizedValue = Math.max(config.min, Math.min(config.max, value));
+  obj[key] = normalizedValue;
+  if (normalizedValue !== value) {
+    recordValueAdjustment(recorder, {
+      path,
+      label,
+      previousValue: value,
+      normalizedValue,
+      reason: `当前允许范围为 ${config.min}–${config.max}`,
+    });
+  }
 }
 
 function runParamNormalizationPipeline<T extends NormalizableParams>(
   params: T,
   pipeline: ParamNormalizationPipeline<T>,
+  recorder?: ImportNormalizationRecorder,
 ): T {
-  pipeline.validateRequiredFields(params);
-  pipeline.migrateLegacyShape(params);
-  pipeline.normalizeSlotInstances(params);
-  pipeline.clampAndFillDerivedFields(params);
+  pipeline.validateRequiredFields(params, recorder);
+  pipeline.migrateLegacyShape(params, recorder);
+  pipeline.normalizeSlotInstances(params, recorder);
+  pipeline.clampAndFillDerivedFields(params, recorder);
   return params;
 }
 
 export function normalizeParamsForMode(
   mode: AppMode,
   params: NormalizableParams,
+  recorder?: ImportNormalizationRecorder,
 ): NormalizableParams {
   const resolvedMode = resolveNormalizationMode(mode);
 
@@ -107,23 +132,27 @@ export function normalizeParamsForMode(
     return runParamNormalizationPipeline(
       params as TrayParams,
       gridParamNormalizationPipeline,
+      recorder,
     );
   }
   if (resolvedMode === "simple-stepped") {
     return runParamNormalizationPipeline(
       params as SimpleSteppedLayoutParams,
       simpleSteppedParamNormalizationPipeline,
+      recorder,
     );
   }
   if (resolvedMode === "stepped") {
     return runParamNormalizationPipeline(
       params as SteppedLayoutParams,
       steppedParamNormalizationPipeline,
+      recorder,
     );
   }
   return runParamNormalizationPipeline(
     params as CustomLayoutParams,
     customParamNormalizationPipeline,
+    recorder,
   );
 }
 
@@ -224,38 +253,85 @@ function validateGridRequiredFields(params: TrayParams) {
   }
 }
 
-function normalizeGridSlotInstances(params: TrayParams) {
+function normalizeGridSlotInstances(
+  params: TrayParams,
+  recorder?: ImportNormalizationRecorder,
+) {
   const obj = params as unknown as Record<string, unknown>;
   const slotSnapshot = createGridSlotSnapshotFromDefinition(
     obj.holeDiameter as number,
   );
+  if (obj.slotDefinitionId !== slotSnapshot.slotDefinitionId) {
+    recordMigration(recorder, {
+      path: "slotDefinitionId",
+      label: "Slot Definition 标识",
+      previousValue: obj.slotDefinitionId,
+      normalizedValue: slotSnapshot.slotDefinitionId,
+      reason: "按当前 Slot Definition 补全网格凹槽身份",
+      technical: true,
+    });
+  }
   obj.slotDefinitionId = slotSnapshot.slotDefinitionId;
+  const previousSlotDiameter = obj.slotDiameter;
   obj.slotDiameter =
     typeof obj.slotDiameter === "number" && Number.isFinite(obj.slotDiameter)
       ? obj.slotDiameter
       : slotSnapshot.slotDiameter;
+  if (previousSlotDiameter !== obj.slotDiameter) {
+    recordDefault(recorder, {
+      path: "slotDiameter",
+      label: "最终凹槽尺寸",
+      normalizedValue: obj.slotDiameter,
+      reason: "旧网格文件未保存 Slot Geometry Snapshot",
+      technical: true,
+    });
+  }
 }
 
-function clampAndFillGridDerivedFields(params: TrayParams) {
+function clampAndFillGridDerivedFields(
+  params: TrayParams,
+  recorder?: ImportNormalizationRecorder,
+) {
   const obj = params as unknown as Record<string, unknown>;
-  clampField(obj, "columns", PARAM_CONFIG.columns);
-  clampField(obj, "rows", PARAM_CONFIG.rows);
-  clampField(obj, "spacing", PARAM_CONFIG.spacing);
-  clampField(obj, "baseThickness", PARAM_CONFIG.baseThickness);
-  clampField(obj, "holeDepth", PARAM_CONFIG.holeDepth);
-  clampField(obj, "cornerRadius", PARAM_CONFIG.cornerRadius);
-  clampField(obj, "sideBevelWidth", PARAM_CONFIG.sideBevelWidth);
+  clampField(obj, "columns", PARAM_CONFIG.columns, recorder, "columns", "列数");
+  clampField(obj, "rows", PARAM_CONFIG.rows, recorder, "rows", "行数");
+  clampField(obj, "spacing", PARAM_CONFIG.spacing, recorder, "spacing", "凹槽间距");
+  clampField(obj, "baseThickness", PARAM_CONFIG.baseThickness, recorder, "baseThickness", "底板厚度");
+  clampField(obj, "holeDepth", PARAM_CONFIG.holeDepth, recorder, "holeDepth", "凹槽深度");
+  clampField(obj, "cornerRadius", PARAM_CONFIG.cornerRadius, recorder, "cornerRadius", "圆角半径");
+  clampField(obj, "sideBevelWidth", PARAM_CONFIG.sideBevelWidth, recorder, "sideBevelWidth", "侧面斜角宽度");
 
-  clampField(obj, "spacingX", PARAM_CONFIG.spacingX);
-  clampField(obj, "spacingY", PARAM_CONFIG.spacingY);
+  clampField(obj, "spacingX", PARAM_CONFIG.spacingX, recorder, "spacingX", "横向间距");
+  clampField(obj, "spacingY", PARAM_CONFIG.spacingY, recorder, "spacingY", "纵向间距");
   if (!obj.spacingIndependent) {
+    const previousX = obj.spacingX;
+    const previousY = obj.spacingY;
     obj.spacingX = obj.spacing;
     obj.spacingY = obj.spacing;
+    if (previousX !== obj.spacingX || previousY !== obj.spacingY) {
+      recordBehaviorChange(recorder, {
+        path: "spacingX,spacingY",
+        label: "横纵间距联动",
+        previousValue: `${String(previousX)}, ${String(previousY)}`,
+        normalizedValue: obj.spacing,
+        reason: "横纵间距未启用独立设置",
+      });
+    }
   }
 
-  clampField(obj, "boundarySpacing", PARAM_CONFIG.boundarySpacing);
+  clampField(obj, "boundarySpacing", PARAM_CONFIG.boundarySpacing, recorder, "boundarySpacing", "边界间距");
   if (!obj.boundarySpacingIndependent) {
+    const previous = obj.boundarySpacing;
     obj.boundarySpacing = obj.spacing;
+    if (previous !== obj.boundarySpacing) {
+      recordBehaviorChange(recorder, {
+        path: "boundarySpacing",
+        label: "边界间距联动",
+        previousValue: previous,
+        normalizedValue: obj.boundarySpacing,
+        reason: "边界间距未启用独立设置",
+      });
+    }
   }
 
   if (obj.rows !== 1 && obj.columns !== 1) {
@@ -318,10 +394,15 @@ function validateCustomRequiredFields(params: CustomLayoutParams) {
   }
 }
 
-function normalizeCustomSlotInstances(params: CustomLayoutParams) {
+function normalizeCustomSlotInstances(
+  params: CustomLayoutParams,
+  recorder?: ImportNormalizationRecorder,
+) {
   const obj = params as unknown as Record<string, unknown>;
   const slots = obj.slots as Record<string, unknown>[];
+  let normalizedSnapshotCount = 0;
   for (const slot of slots) {
+    const before = JSON.stringify(slot);
     Object.assign(
       slot,
       normalizeFreeSlotInstanceSnapshot(slot as unknown as FreeSlot),
@@ -333,28 +414,70 @@ function normalizeCustomSlotInstances(params: CustomLayoutParams) {
       delete slot.outerOffset;
       delete slot.profileExponent;
     }
+    if (JSON.stringify(slot) !== before) {
+      normalizedSnapshotCount += 1;
+    }
+  }
+  if (normalizedSnapshotCount > 0) {
+    recordMigration(recorder, {
+      path: "slots[]",
+      label: "Slot Geometry Snapshot",
+      previousValue: "旧 Slot Instance 几何",
+      normalizedValue: `已规范化 ${normalizedSnapshotCount} 个 Slot Instance`,
+      reason: "保证导入后的模型几何可复现",
+      technical: true,
+      count: normalizedSnapshotCount,
+    });
   }
 }
 
-function clampAndFillCustomDerivedFields(params: CustomLayoutParams) {
+function clampAndFillCustomDerivedFields(
+  params: CustomLayoutParams,
+  recorder?: ImportNormalizationRecorder,
+) {
   const obj = params as unknown as Record<string, unknown>;
   const slots = obj.slots as Record<string, unknown>[];
-  clampField(obj, "trayWidth", CUSTOM_LIMITS.trayWidth);
-  clampField(obj, "trayDepth", CUSTOM_LIMITS.trayDepth);
-  clampField(obj, "spacing", CUSTOM_LIMITS.spacing);
-  clampField(obj, "boundarySpacing", CUSTOM_LIMITS.boundarySpacing);
-  clampField(obj, "baseThickness", CUSTOM_LIMITS.baseThickness);
-  clampField(obj, "holeDepth", CUSTOM_LIMITS.holeDepth);
-  clampField(obj, "cornerRadius", CUSTOM_LIMITS.cornerRadius);
-  clampField(obj, "sideBevelWidth", CUSTOM_LIMITS.sideBevelWidth);
+  clampField(obj, "trayWidth", CUSTOM_LIMITS.trayWidth, recorder, "trayWidth", "托盘宽度");
+  clampField(obj, "trayDepth", CUSTOM_LIMITS.trayDepth, recorder, "trayDepth", "托盘深度");
+  clampField(obj, "spacing", CUSTOM_LIMITS.spacing, recorder, "spacing", "凹槽间距");
+  clampField(obj, "boundarySpacing", CUSTOM_LIMITS.boundarySpacing, recorder, "boundarySpacing", "边界间距");
+  clampField(obj, "baseThickness", CUSTOM_LIMITS.baseThickness, recorder, "baseThickness", "底板厚度");
+  clampField(obj, "holeDepth", CUSTOM_LIMITS.holeDepth, recorder, "holeDepth", "凹槽深度");
+  clampField(obj, "cornerRadius", CUSTOM_LIMITS.cornerRadius, recorder, "cornerRadius", "圆角半径");
+  clampField(obj, "sideBevelWidth", CUSTOM_LIMITS.sideBevelWidth, recorder, "sideBevelWidth", "侧面斜角宽度");
 
+  const previousSizingMode = obj.traySizingMode;
   obj.traySizingMode = obj.traySizingMode === "fixed" ? "fixed" : "auto";
+  if (previousSizingMode !== obj.traySizingMode) {
+    recordDefault(recorder, {
+      path: "traySizingMode",
+      label: "托盘尺寸模式",
+      normalizedValue: obj.traySizingMode,
+      reason: "旧自定义文件默认使用自动尺寸",
+    });
+  }
 
   if (!obj.boundarySpacingIndependent) {
+    const previous = obj.boundarySpacing;
     obj.boundarySpacing = obj.spacing;
+    if (previous !== obj.boundarySpacing) {
+      recordBehaviorChange(recorder, {
+        path: "boundarySpacing",
+        label: "边界间距联动",
+        previousValue: previous,
+        normalizedValue: obj.boundarySpacing,
+        reason: "边界间距未启用独立设置",
+      });
+    }
   }
   if (typeof obj.enableBaseHole !== "boolean") {
     obj.enableBaseHole = CUSTOM_LAYOUT_DEFAULTS.enableBaseHole;
+    recordDefault(recorder, {
+      path: "enableBaseHole",
+      label: "磁吸孔",
+      normalizedValue: obj.enableBaseHole,
+      reason: "旧文件未记录磁吸孔开关",
+    });
   }
   const largestSlotSize = slots.reduce(
     (maxSize, slot) =>
@@ -364,7 +487,10 @@ function clampAndFillCustomDerivedFields(params: CustomLayoutParams) {
   obj.baseHoleSize = resolveBaseHolePresetKey(largestSlotSize);
 }
 
-function validateSimpleSteppedRequiredFields(params: SimpleSteppedLayoutParams) {
+function validateSimpleSteppedRequiredFields(
+  params: SimpleSteppedLayoutParams,
+  recorder?: ImportNormalizationRecorder,
+) {
   const obj = params as unknown as Record<string, unknown>;
 
   if (
@@ -372,18 +498,36 @@ function validateSimpleSteppedRequiredFields(params: SimpleSteppedLayoutParams) 
     !Number.isFinite(obj.firstRowHeight)
   ) {
     obj.firstRowHeight = SIMPLE_STEPPED_LAYOUT_DEFAULTS.firstRowHeight;
+    recordDefault(recorder, {
+      path: "firstRowHeight",
+      label: "首行高度",
+      normalizedValue: obj.firstRowHeight,
+      reason: "旧文件未记录首行高度",
+    });
   }
   if (
     typeof obj.cornerRadius !== "number" ||
     !Number.isFinite(obj.cornerRadius)
   ) {
     obj.cornerRadius = SIMPLE_STEPPED_LAYOUT_DEFAULTS.cornerRadius;
+    recordDefault(recorder, {
+      path: "cornerRadius",
+      label: "圆角半径",
+      normalizedValue: obj.cornerRadius,
+      reason: "旧文件未记录圆角半径",
+    });
   }
   if (typeof obj.outerMarginIndependent !== "boolean") {
     obj.outerMarginIndependent =
       typeof obj.outerMargin === "number" &&
       typeof obj.spacing === "number" &&
       Math.abs((obj.outerMargin as number) - (obj.spacing as number)) > 0.001;
+    recordDefault(recorder, {
+      path: "outerMarginIndependent",
+      label: "外边距独立设置",
+      normalizedValue: obj.outerMarginIndependent,
+      reason: "根据旧文件中的外边距与间距关系恢复设置",
+    });
   }
 
   for (const field of [
@@ -401,12 +545,14 @@ function validateSimpleSteppedRequiredFields(params: SimpleSteppedLayoutParams) 
 
 function normalizeSimpleSteppedSlotInstances(
   params: SimpleSteppedLayoutParams,
+  recorder?: ImportNormalizationRecorder,
 ) {
   const obj = params as unknown as Record<string, unknown>;
   const rows = obj.rows as Record<string, unknown>[];
   const slots = obj.slots as Record<string, unknown>[];
   const rowIds = new Set(rows.map((row) => row.id as string));
 
+  let generatedIdCount = 0;
   for (let index = 0; index < slots.length; index += 1) {
     const slot = slots[index];
     if (!slot || typeof slot !== "object") {
@@ -414,6 +560,7 @@ function normalizeSimpleSteppedSlotInstances(
     }
     if (typeof slot.id !== "string" || !slot.id) {
       slot.id = crypto.randomUUID();
+      generatedIdCount += 1;
     }
     if (slot.shape !== "circle") {
       slot.shape = "circle";
@@ -440,20 +587,32 @@ function normalizeSimpleSteppedSlotInstances(
     }
   }
 
+  if (generatedIdCount > 0) {
+    recordDefault(recorder, {
+      path: "slots[].id",
+      label: "Slot Instance 标识",
+      normalizedValue: `已生成 ${generatedIdCount} 个标识`,
+      reason: "旧 Slot Instance 未记录稳定标识",
+      technical: true,
+      count: generatedIdCount,
+    });
+  }
+
   Object.assign(params, normalizeSimpleSteppedParams(params));
 }
 
 function clampAndFillSimpleSteppedDerivedFields(
   params: SimpleSteppedLayoutParams,
+  recorder?: ImportNormalizationRecorder,
 ) {
   const obj = params as unknown as Record<string, unknown>;
-  clampField(obj, "firstRowHeight", SIMPLE_STEPPED_LIMITS.firstRowHeight);
-  clampField(obj, "stepHeight", SIMPLE_STEPPED_LIMITS.stepHeight);
-  clampField(obj, "rowGap", SIMPLE_STEPPED_LIMITS.rowGap);
-  clampField(obj, "spacing", SIMPLE_STEPPED_LIMITS.spacing);
-  clampField(obj, "outerMargin", SIMPLE_STEPPED_LIMITS.outerMargin);
-  clampField(obj, "holeDepth", SIMPLE_STEPPED_LIMITS.holeDepth);
-  clampField(obj, "cornerRadius", SIMPLE_STEPPED_LIMITS.cornerRadius);
+  clampField(obj, "firstRowHeight", SIMPLE_STEPPED_LIMITS.firstRowHeight, recorder, "firstRowHeight", "首行高度");
+  clampField(obj, "stepHeight", SIMPLE_STEPPED_LIMITS.stepHeight, recorder, "stepHeight", "阶梯高度");
+  clampField(obj, "rowGap", SIMPLE_STEPPED_LIMITS.rowGap, recorder, "rowGap", "行间距");
+  clampField(obj, "spacing", SIMPLE_STEPPED_LIMITS.spacing, recorder, "spacing", "凹槽间距");
+  clampField(obj, "outerMargin", SIMPLE_STEPPED_LIMITS.outerMargin, recorder, "outerMargin", "外边距");
+  clampField(obj, "holeDepth", SIMPLE_STEPPED_LIMITS.holeDepth, recorder, "holeDepth", "凹槽深度");
+  clampField(obj, "cornerRadius", SIMPLE_STEPPED_LIMITS.cornerRadius, recorder, "cornerRadius", "圆角半径");
   Object.assign(params, normalizeSimpleSteppedParams(params));
 }
 
@@ -467,7 +626,10 @@ function validateSteppedRequiredFields(params: SteppedLayoutParams) {
   }
 }
 
-function normalizeSteppedSlotInstances(params: SteppedLayoutParams) {
+function normalizeSteppedSlotInstances(
+  params: SteppedLayoutParams,
+  recorder?: ImportNormalizationRecorder,
+) {
   const obj = params as unknown as Record<string, unknown>;
   const slots = obj.slots as Record<string, unknown>[];
   const groupIds = new Set(
@@ -480,8 +642,10 @@ function normalizeSteppedSlotInstances(params: SteppedLayoutParams) {
     obj.activeGroupId = (obj.groups as { id: string }[])[0]?.id ?? "";
   }
 
+  let normalizedSnapshotCount = 0;
   for (let index = 0; index < slots.length; index += 1) {
     const slot = slots[index];
+    const before = JSON.stringify(slot);
     if (!slot || typeof slot !== "object") {
       throw new Error(`slots[${index}]: 无效的凹槽数据`);
     }
@@ -524,10 +688,27 @@ function normalizeSteppedSlotInstances(params: SteppedLayoutParams) {
       slot.groupId = (obj.groups as { id: string }[])[0]?.id ?? "";
     }
     delete slot.bottomHeight;
+    if (JSON.stringify(slot) !== before) {
+      normalizedSnapshotCount += 1;
+    }
+  }
+  if (normalizedSnapshotCount > 0) {
+    recordMigration(recorder, {
+      path: "slots[]",
+      label: "阶梯 Slot Geometry Snapshot",
+      previousValue: "旧 Slot Instance 几何",
+      normalizedValue: `已规范化 ${normalizedSnapshotCount} 个 Slot Instance`,
+      reason: "保证导入后的模型几何和分组关系可复现",
+      technical: true,
+      count: normalizedSnapshotCount,
+    });
   }
 }
 
-function clampAndFillSteppedDerivedFields(params: SteppedLayoutParams) {
+function clampAndFillSteppedDerivedFields(
+  params: SteppedLayoutParams,
+  recorder?: ImportNormalizationRecorder,
+) {
   const obj = params as unknown as Record<string, unknown>;
   const groups = obj.groups as Record<string, unknown>[];
   const rawSmoothingRadius = getRawSteppedSmoothingRadius(obj);
@@ -536,32 +717,64 @@ function clampAndFillSteppedDerivedFields(params: SteppedLayoutParams) {
   const rawSplitGrooveType = getRawSteppedSplitGrooveType(obj);
   const rawSplitLocatorsEnabled = getRawSteppedSplitLocatorsEnabled(obj);
 
-  for (const group of groups) {
+  for (let index = 0; index < groups.length; index += 1) {
+    const group = groups[index];
     clampField(
       group as Record<string, unknown>,
       "bottomHeight",
       STEPPED_LIMITS.bottomHeight,
+      recorder,
+      `groups[${index}].bottomHeight`,
+      `第 ${index + 1} 个分组高度`,
     );
     clampField(
       group as Record<string, unknown>,
       "groupSmoothingRadius",
       STEPPED_LIMITS.smoothingRadius,
+      recorder,
+      `groups[${index}].groupSmoothingRadius`,
+      `第 ${index + 1} 个分组平滑半径`,
     );
     clampField(
       group as Record<string, unknown>,
       "groupDisconnectDistance",
       STEPPED_LIMITS.disconnectDistance,
+      recorder,
+      `groups[${index}].groupDisconnectDistance`,
+      `第 ${index + 1} 个分组断开距离`,
     );
   }
 
-  clampField(obj, "trayWidth", STEPPED_LIMITS.trayWidth);
-  clampField(obj, "trayDepth", STEPPED_LIMITS.trayDepth);
-  clampField(obj, "spacing", STEPPED_LIMITS.spacing);
-  clampField(obj, "holeDepth", STEPPED_LIMITS.holeDepth);
+  clampField(obj, "trayWidth", STEPPED_LIMITS.trayWidth, recorder, "trayWidth", "托盘宽度");
+  clampField(obj, "trayDepth", STEPPED_LIMITS.trayDepth, recorder, "trayDepth", "托盘深度");
+  clampField(obj, "spacing", STEPPED_LIMITS.spacing, recorder, "spacing", "凹槽间距");
+  clampField(obj, "holeDepth", STEPPED_LIMITS.holeDepth, recorder, "holeDepth", "凹槽深度");
+  if (obj.splitGrooveDepth !== STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth) {
+    recordValueAdjustment(recorder, {
+      path: "splitGrooveDepth",
+      label: "分件装配槽深度",
+      previousValue: obj.splitGrooveDepth,
+      normalizedValue: STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth,
+      reason: "当前 CAD 阶梯构造使用固定装配槽深度",
+    });
+  }
   obj.splitGrooveDepth = STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth;
   obj.enableSplitRecess = rawSplitRecessEnabled;
   obj.splitGrooveType = rawSplitGrooveType;
   obj.enableSplitLocators = rawSplitLocatorsEnabled;
+  if ("splitAssemblyMode" in obj) {
+    recordMigration(recorder, {
+      path: "splitAssemblyMode",
+      label: "分件装配方式",
+      previousValue: obj.splitAssemblyMode,
+      normalizedValue: {
+        enableSplitRecess: rawSplitRecessEnabled,
+        splitGrooveType: rawSplitGrooveType,
+        enableSplitLocators: rawSplitLocatorsEnabled,
+      },
+      reason: "旧装配方式已拆分为装配槽类型与 Locator Pin 设置",
+    });
+  }
   delete obj.splitAssemblyMode;
 
   if (
@@ -569,9 +782,16 @@ function clampAndFillSteppedDerivedFields(params: SteppedLayoutParams) {
     !Number.isFinite(obj.smoothingRadius)
   ) {
     obj.smoothingRadius = rawSmoothingRadius;
+    recordMigration(recorder, {
+      path: "smoothingRadius",
+      label: "全局平滑半径",
+      previousValue: obj.bridgeRadius,
+      normalizedValue: rawSmoothingRadius,
+      reason: "旧 bridgeRadius 已迁移为 smoothingRadius",
+    });
   }
   delete obj.bridgeRadius;
-  clampField(obj, "smoothingRadius", STEPPED_LIMITS.smoothingRadius);
+  clampField(obj, "smoothingRadius", STEPPED_LIMITS.smoothingRadius, recorder, "smoothingRadius", "全局平滑半径");
 
   if (
     typeof obj.disconnectDistance !== "number" ||
@@ -579,7 +799,7 @@ function clampAndFillSteppedDerivedFields(params: SteppedLayoutParams) {
   ) {
     obj.disconnectDistance = rawDisconnectDistance;
   }
-  clampField(obj, "disconnectDistance", STEPPED_LIMITS.disconnectDistance);
+  clampField(obj, "disconnectDistance", STEPPED_LIMITS.disconnectDistance, recorder, "disconnectDistance", "全局断开距离");
 
   const normalized = applySteppedBaseHoleDerivedFields(params);
   Object.assign(params, normalized);

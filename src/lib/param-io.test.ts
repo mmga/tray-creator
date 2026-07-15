@@ -17,6 +17,8 @@ import {
   downloadParamFile,
   importParams,
   parseParamFileObject,
+  prepareParamFileObject,
+  prepareParamImport,
   serializeParamFile,
 } from "@/lib/param-io";
 
@@ -50,6 +52,167 @@ describe("param-io", () => {
     expect(parsed.mode).toBe("grid");
     expect(parsed.params.holeDiameter).toBe(28.512);
     expect(parsed.params.spacing).toBe(5.679);
+  });
+
+  it("preserves the real CAD stepped Mode in newly exported files", () => {
+    const file = buildParamFile("stepped-cad", STEPPED_LAYOUT_DEFAULTS);
+    expect(file).toMatchObject({
+      version: 1,
+      mode: "stepped-cad",
+    });
+    expect(parseParamFileObject(file, "stepped-cad")).toMatchObject(
+      STEPPED_LAYOUT_DEFAULTS,
+    );
+    expect(() => parseParamFileObject(file, "stepped")).toThrow("模式不匹配");
+  });
+
+  it("prepares a normalized candidate with defaults and value adjustments", () => {
+    const preparation = prepareParamFileObject({
+      version: 1,
+      mode: "grid",
+      params: {
+        ...DEFAULT_TRAY_PARAMS,
+        rows: 99,
+        spacing: 99,
+        boundarySpacing: undefined,
+        boundarySpacingIndependent: undefined,
+      },
+    }, { fileName: "legacy-grid.json" });
+
+    expect(preparation.status).toBe("ready");
+    if (preparation.status !== "ready") return;
+
+    expect(preparation.candidate).toMatchObject({
+      fileName: "legacy-grid.json",
+      targetMode: "grid",
+      params: {
+        rows: 30,
+        spacing: 10,
+      },
+      report: {
+        modeResolution: {
+          kind: "declared",
+          targetMode: "grid",
+        },
+      },
+    });
+    expect(preparation.candidate.report.adjustments).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          category: "default",
+          path: "boundarySpacing",
+        }),
+        expect.objectContaining({
+          category: "value-adjustment",
+          path: "rows",
+          previousValue: 99,
+          normalizedValue: 30,
+        }),
+      ]),
+    );
+  });
+
+  it("infers wrapperless Mode and requires a choice for historical stepped files", () => {
+    const inferred = prepareParamFileObject({
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      slots: [],
+    });
+    expect(inferred).toMatchObject({
+      status: "ready",
+      candidate: {
+        targetMode: "custom",
+        report: { modeResolution: { kind: "inferred" } },
+      },
+    });
+
+    const ambiguous = prepareParamFileObject({
+      version: 1,
+      mode: "stepped",
+      params: STEPPED_LAYOUT_DEFAULTS,
+    });
+    expect(ambiguous).toEqual({
+      status: "mode-selection-required",
+      fileName: "参数文件",
+      choices: ["stepped", "stepped-cad"],
+      message: "历史阶梯文件没有区分普通阶梯与 CAD 阶梯，请选择原始 Mode",
+    });
+
+    const selected = prepareParamFileObject(
+      {
+        version: 1,
+        mode: "stepped",
+        params: STEPPED_LAYOUT_DEFAULTS,
+      },
+      { selectedMode: "stepped-cad" },
+    );
+    expect(selected).toMatchObject({
+      status: "ready",
+      candidate: {
+        targetMode: "stepped-cad",
+        report: { modeResolution: { kind: "selected" } },
+      },
+    });
+  });
+
+  it("rejects declared Mode and parameter shape conflicts", () => {
+    expect(() => prepareParamFileObject({
+      version: 1,
+      mode: "grid",
+      params: {
+        ...STEPPED_LAYOUT_DEFAULTS,
+        groups: STEPPED_LAYOUT_DEFAULTS.groups,
+        slots: [],
+      },
+    })).toThrow("声明 Mode「网格」与参数结构不一致");
+  });
+
+  it("reports retired fields without retaining them in the candidate", () => {
+    const preparation = prepareParamFileObject(
+      {
+        version: 1,
+        mode: "stepped",
+        params: {
+          ...STEPPED_LAYOUT_DEFAULTS,
+          groups: STEPPED_LAYOUT_DEFAULTS.groups.map((group, index) => ({
+            ...group,
+            splitPartGroupId: index === 0 ? "legacy-target" : null,
+          })),
+        },
+      },
+      { selectedMode: "stepped" },
+    );
+
+    expect(preparation.status).toBe("ready");
+    if (preparation.status !== "ready") return;
+
+    expect(preparation.candidate.report.retiredFields).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: "groups[0].splitPartGroupId",
+          previousValue: "legacy-target",
+        }),
+      ]),
+    );
+    expect(
+      "splitPartGroupId" in
+        (preparation.candidate.params as SteppedLayoutParams).groups[0],
+    ).toBe(false);
+  });
+
+  it("prepares imported files without committing editor state", async () => {
+    const file = new File(
+      [serializeParamFile("custom", CUSTOM_LAYOUT_DEFAULTS)],
+      "custom.json",
+      { type: "application/json" },
+    );
+
+    await expect(prepareParamImport(file)).resolves.toMatchObject({
+      status: "ready",
+      candidate: {
+        fileName: "custom.json",
+        targetMode: "custom",
+      },
+    });
   });
 
   it("creates blobs and browser downloads for export", async () => {
