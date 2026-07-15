@@ -80,6 +80,14 @@ _Avoid_: Passing Mode and params as independently selectable writer arguments, i
 A newly written parameter-bearing artifact whose declared Mode identifies the editor workflow that owns its parameters, including exported parameter files, model companion parameter files, split-part companion parameter files, Draft records, and Draft Summaries.
 _Avoid_: Collapsing `stepped-cad` to `stepped`, inferring Mode from parameter shape, deriving Mode independently in each writer, or treating a split-manifest file type as a Mode.
 
+**Current Param Artifact Encoder**:
+The write-side module that converts a Mode Param Snapshot into the current persisted parameter envelope, JSON, or Blob without applying historical compatibility rules.
+_Avoid_: Owning browser storage, filenames, downloads, legacy Mode ambiguity, migration, or normalization.
+
+**Historical Param Artifact Reader**:
+The read-side module that recognizes historical parameter wrappers and Mode ambiguity, then routes imported files or stored Drafts through their required compatibility and normalization flow.
+_Avoid_: Reusing historical downgrade rules when writing a new Persisted Param Artifact.
+
 **Mode Interaction State**:
 Mode-local transient editor state shared by a **Mode Workspace** and a **Mode Viewport Workspace**, such as selected slot ids or preview focus ids.
 _Avoid_: Treating shared editor interaction state as page-owned state or as registry-owned state.
@@ -274,6 +282,10 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A **Mode Workspace Adapter** captures one **Mode Param Snapshot** for a persistence operation.
 - Parameter export, model companion export, split-part companion export, Draft persistence, and Draft Summary construction consume a **Mode Param Snapshot** instead of independently selectable Mode and params arguments.
 - A **Mode Param Snapshot** does not own browser storage, file naming, downloads, or historical read compatibility.
+- A **Current Param Artifact Encoder** consumes a **Mode Param Snapshot** and writes only the current parameter format.
+- A **Current Param Artifact Encoder** does not apply historical compatibility or change the Snapshot's Mode identity.
+- A **Historical Param Artifact Reader** owns historical wrapper recognition and ambiguous Mode handling.
+- Current-format writing and historical reading are separate Interfaces and Implementations.
 - `stepped` and `stepped-cad` may share the same parameter structure without sharing one persisted Mode identity.
 - A CAD stepped **Persisted Param Artifact** declares `stepped-cad`, including complete-model companion parameters, split-part companion parameters, Draft records, and Draft Summaries.
 - A split manifest may declare its own file type, such as `stepped-cad-split-parts`, without treating that file type as a **Mode**.
