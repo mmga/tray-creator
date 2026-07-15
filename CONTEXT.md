@@ -138,7 +138,7 @@ _Avoid_: Treating the draft index as the full source of editable configuration d
 
 **Draft Compatibility**:
 The requirement that existing browser-stored drafts remain usable after draft system changes.
-_Avoid_: Treating stored drafts as disposable implementation detail.
+_Avoid_: Treating stored drafts as disposable implementation detail, or inferring a different Mode when their stored identity is ambiguous.
 
 **Draft Manager Dialog**:
 A reusable draft management UI that supports listing, saving, loading, renaming, deleting, and exporting drafts across modes.
@@ -303,6 +303,9 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A slot definition display name must reflect the actual geometry values in the definition.
 - A **Draft** belongs to exactly one **Mode**.
 - Each **Mode** may have its own independent **Draft** list and storage space.
+- A newly saved CAD stepped **Draft** belongs to `stepped-cad` and uses the `stepped-cad` Draft storage space.
+- An existing **Draft** stored as `stepped` remains an ordinary stepped Draft; it is not automatically inferred, migrated, or displayed again as `stepped-cad`.
+- Reusing an existing `stepped` Draft in CAD stepped mode requires an explicit user export and import that resolves the target Mode as `stepped-cad`.
 - A **Manual Draft Save** does not imply autosave or session recovery.
 - The current editor state may keep a **Draft Binding** even when there are unsaved edits.
 - **Unsaved Draft Changes** may exist while a **Draft Binding** still exists.
