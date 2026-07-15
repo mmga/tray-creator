@@ -13,6 +13,7 @@ import { usePreviewLifecycle } from "@/hooks/usePreviewLifecycle";
 import { trayWorkerService } from "@/lib/worker/worker-service";
 import type * as THREE from "three";
 import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
+import type { EllipseSlotInstanceConfig } from "@/lib/slot-instance-factory";
 import { useSteppedOutlinePreview } from "@/hooks/useSteppedOutlinePreview";
 import { buildSteppedBridgeWarning } from "@/lib/stepped-bridge-warning";
 import type { BridgeWarning } from "@/lib/stepped-connectivity";
@@ -65,7 +66,11 @@ export interface UseSteppedLayoutControllerReturn {
     key: K,
     value: SteppedLayoutParams[K],
   ) => void;
-  addSlot: (width: number) => void;
+  addSlot: (
+    width: number,
+    height?: number,
+    ellipseConfig?: EllipseSlotInstanceConfig,
+  ) => void;
   removeSlot: (id: string) => void;
   updateSlotPosition: (id: string, x: number, y: number) => void;
   updateMultipleSlots: (
@@ -278,10 +283,22 @@ export function useSteppedLayoutController<
   );
 
   const addSlot = useCallback(
-    (width: number) => {
+    (
+      width: number,
+      height?: number,
+      ellipseConfig?: EllipseSlotInstanceConfig,
+    ) => {
       internalSetParams((prev) => {
         pushState(prev);
-        return normalizeParams(addSteppedSlot(prev, randomIdFactory, width));
+        return normalizeParams(
+          addSteppedSlot(
+            prev,
+            randomIdFactory,
+            width,
+            height,
+            ellipseConfig,
+          ),
+        );
       });
       invalidatePreview();
     },

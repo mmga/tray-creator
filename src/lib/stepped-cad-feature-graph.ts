@@ -2,7 +2,6 @@ import {
   booleans,
   geometries,
   primitives,
-  transforms,
 } from "@jscad/modeling";
 import type { Geom2 } from "@jscad/modeling/src/geometries/types";
 import type { SteppedLayoutParams, SteppedSlot } from "@/types/custom-tray";
@@ -11,21 +10,25 @@ import { roundLayoutDimensionToTenth } from "@/lib/custom-layout-math";
 import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import {
-  generateOutlineGeom2,
-  type OutlineCircle,
-} from "@/lib/outline-geometry";
-import {
   clusterConnectivityCircles,
   getConnectivityRadius,
   getEffectiveBridgeGap,
   type ConnectivityCircle,
 } from "@/lib/stepped-connectivity";
 import { getEffectiveGroupStructureParams } from "@/lib/stepped-group-params";
+import {
+  buildSteppedClusterFootprint,
+  type SteppedFootprintSlot,
+} from "@/lib/stepped-profile-footprint";
+import {
+  getSteppedGroupMinBottomHeight,
+  resolveMagnetPostHoleDepth,
+  resolveMagnetPostHoleDiameter,
+} from "@/lib/stepped-base-hole";
 
 const { union } = booleans;
 const { geom2 } = geometries;
-const { circle, ellipse } = primitives;
-const { translate } = transforms;
+const { circle } = primitives;
 
 function getSlotBoundingHalfSize(
   width: number,
@@ -33,6 +36,7 @@ function getSlotBoundingHalfSize(
   rotation: number,
   shape: SteppedSlot["shape"],
   offset: number,
+  profileExponent?: number,
 ) {
   const rad = (rotation * Math.PI) / 180;
   const points = sampleSlotProfilePoints(
@@ -41,6 +45,7 @@ function getSlotBoundingHalfSize(
     shape,
     offset,
     RENDER_CONFIG.cylinderSegments,
+    profileExponent,
   );
   let halfW = 0;
   let halfH = 0;
@@ -60,17 +65,11 @@ function createOffsetSlotShape(
   height: number,
   shape: SteppedSlot["shape"],
   offset: number,
+  profileExponent?: number,
 ): Geom2 {
-  if (offset <= 0) {
-    if (shape === "circle") {
-      return circle({
-        radius: width / 2,
-        segments: RENDER_CONFIG.cylinderSegments,
-      });
-    }
-
-    return ellipse({
-      radius: [width / 2, height / 2],
+  if (shape === "circle" && offset <= 0) {
+    return circle({
+      radius: width / 2,
       segments: RENDER_CONFIG.cylinderSegments,
     });
   }
@@ -81,6 +80,7 @@ function createOffsetSlotShape(
     shape,
     offset,
     RENDER_CONFIG.cylinderSegments,
+    profileExponent,
   ).map((point): [number, number] => [point.x, point.y]);
 
   return geom2.fromPoints(points);
@@ -114,6 +114,7 @@ function calculateEffectiveBaseplate(params: SteppedLayoutParams) {
       slot.rotation,
       slot.shape,
       profile.outerOffset,
+      profile.profileExponent,
     );
     minX = Math.min(minX, slot.x - halfW);
     maxX = Math.max(maxX, slot.x + halfW);
@@ -168,6 +169,16 @@ export interface SteppedCadBaseHoleFeature {
   baseThickness: number;
 }
 
+export interface SteppedCadMagnetPostHoleFeature {
+  id: string;
+  groupId: string;
+  cx: number;
+  cy: number;
+  topHeight: number;
+  diameter: number;
+  depth: number;
+}
+
 export interface SteppedCadFeatureGraph {
   trayWidth: number;
   trayDepth: number;
@@ -176,6 +187,7 @@ export interface SteppedCadFeatureGraph {
   layers: SteppedCadLayerFeature[];
   slotHoles: SteppedCadSlotHoleFeature[];
   baseHoles: SteppedCadBaseHoleFeature[];
+  magnetPostHoles: SteppedCadMagnetPostHoleFeature[];
 }
 
 function buildNormalizedSlotData(params: SteppedLayoutParams) {
@@ -196,7 +208,11 @@ function buildNormalizedSlotData(params: SteppedLayoutParams) {
     const cx = normalizedX - trayWidth / 2;
     const cy = normalizedY - trayDepth / 2;
     const profile = getFreeSlotProfileGeometry(slot);
-    const columnHeight = Math.max(group?.bottomHeight ?? 10, 3);
+    const columnHeight = Math.max(
+      group?.bottomHeight ?? 10,
+      group ? getSteppedGroupMinBottomHeight(params, group.id) : 3,
+      3,
+    );
     return {
       slot,
       group,
@@ -214,26 +230,6 @@ function buildNormalizedSlotData(params: SteppedLayoutParams) {
     trayDepth,
     slots,
   };
-}
-
-function buildFallbackClusterFootprint(
-  cluster: ConnectivityCircle[],
-): Geom2 | null {
-  const parts = cluster.map((item) =>
-    translate(
-      [item.cx, item.cy],
-      circle({
-        radius: item.rOuter,
-        segments: RENDER_CONFIG.cylinderSegments,
-      }),
-    )
-  );
-
-  if (parts.length === 0) {
-    return null;
-  }
-
-  return parts.length === 1 ? parts[0] : union(...parts);
 }
 
 function buildClusteredFootprint(
@@ -265,23 +261,29 @@ function buildClusteredFootprint(
       structureParams.disconnectDistance,
     ),
   );
+  const footprintSlotsById = new Map<string, SteppedFootprintSlot>(
+    slotData.map((item) => [
+      item.slot.id,
+      {
+        id: item.slot.id,
+        cx: item.cx,
+        cy: item.cy,
+        rotation: item.rotation,
+        shape: item.slot.shape,
+        profile: item.profile,
+      },
+    ]),
+  );
 
   const outlines = clusters
-    .map((cluster) => {
-      const outline = generateOutlineGeom2(
-        cluster.map(
-          (circleItem): OutlineCircle => ({
-            cx: circleItem.cx,
-            cy: circleItem.cy,
-            rOuter: circleItem.rOuter,
-          }),
-        ),
+    .map((cluster) =>
+      buildSteppedClusterFootprint(
+        cluster,
+        footprintSlotsById,
+        spacing,
         structureParams.smoothingRadius,
-        RENDER_CONFIG.cylinderSegments,
-      );
-
-      return outline ?? buildFallbackClusterFootprint(cluster);
-    })
+      ),
+    )
     .filter((item): item is Geom2 => item !== null);
 
   if (outlines.length === 0) {
@@ -304,6 +306,7 @@ export function buildSteppedCadFeatureGraph(
       layers: [],
       slotHoles: [],
       baseHoles: [],
+      magnetPostHoles: [],
     };
   }
 
@@ -314,7 +317,11 @@ export function buildSteppedCadFeatureGraph(
         return null;
       }
 
-      const columnHeight = Math.max(group.bottomHeight, 3);
+      const columnHeight = Math.max(
+        group.bottomHeight,
+        getSteppedGroupMinBottomHeight(params, group.id),
+        3,
+      );
       const contextSlots = slots.filter((slot) => {
         if (slot.groupId === group.id) {
           return false;
@@ -391,6 +398,7 @@ export function buildSteppedCadFeatureGraph(
         slot.profile.height,
         slot.slot.shape,
         slot.profile.outerOffset,
+        slot.profile.profileExponent,
       ),
     };
   });
@@ -408,6 +416,21 @@ export function buildSteppedCadFeatureGraph(
     };
   });
 
+  const magnetPostHoleDiameter = resolveMagnetPostHoleDiameter(params);
+  const magnetPostHoleDepth = resolveMagnetPostHoleDepth(params);
+  const magnetPostHoles: SteppedCadMagnetPostHoleFeature[] = slots.map((slot) => {
+    const clampedSlotDepth = Math.min(params.holeDepth, slot.columnHeight);
+    return {
+      id: slot.slot.id,
+      groupId: slot.groupId,
+      cx: slot.cx,
+      cy: slot.cy,
+      topHeight: slot.columnHeight - clampedSlotDepth,
+      diameter: magnetPostHoleDiameter,
+      depth: magnetPostHoleDepth,
+    };
+  });
+
   const maxHeight = heights.length > 0 ? heights[heights.length - 1] : 0;
 
   return {
@@ -418,5 +441,6 @@ export function buildSteppedCadFeatureGraph(
     layers,
     slotHoles,
     baseHoles,
+    magnetPostHoles,
   };
 }

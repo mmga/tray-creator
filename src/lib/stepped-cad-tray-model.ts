@@ -15,6 +15,8 @@ import {
   type SteppedCadLayerProfilePlan,
 } from "@/lib/stepped-cad-split-profiles";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
+import { resolveSteppedBaseHoleStructure } from "@/lib/stepped-base-hole";
+import { MAGNET_POST_HOLE_BOTTOM_WALL } from "@/lib/stepped-config";
 import generalizeModule from "@jscad/modeling/src/operations/modifiers/generalize";
 
 const { intersect, subtract, union } = booleans;
@@ -71,16 +73,23 @@ export function createSteppedCadTrayModel(
       ),
     )
   );
+  const magnetPostHoles = graph.magnetPostHoles.map(buildMagnetPostHoleSolid);
+  const baseHoleStructure = resolveSteppedBaseHoleStructure(params);
 
   let tray = baseSolid;
-  if (params.enableBaseHole) {
+  if (baseHoleStructure === "magnetic-base-hole") {
     tray = subtractBaseHoles(tray, graph.baseHoles, 0, params.baseHoleSize);
   }
   if (slotHoles.length > 0) {
     tray = subtract(tray, ...slotHoles);
   }
+  if (baseHoleStructure === "magnet-post-hole" && magnetPostHoles.length > 0) {
+    tray = subtract(tray, ...magnetPostHoles);
+  }
 
-  return orientPositiveVolume(cleanupIfBeneficial(tray));
+  return orientPositiveVolume(
+    cleanupIfBeneficial(tray, baseHoleStructure === "magnet-post-hole"),
+  );
 }
 
 type SteppedCadFeatureGraph = ReturnType<typeof buildSteppedCadFeatureGraph>;
@@ -88,12 +97,40 @@ type SteppedCadGroupFeature = SteppedCadFeatureGraph["groups"][number];
 type SteppedCadLayerFeature = SteppedCadFeatureGraph["layers"][number];
 type SteppedCadSlotHoleFeature = SteppedCadFeatureGraph["slotHoles"][number];
 type SteppedCadBaseHoleFeature = SteppedCadFeatureGraph["baseHoles"][number];
+type SteppedCadMagnetPostHoleFeature = SteppedCadFeatureGraph["magnetPostHoles"][number];
+
+function buildMagnetPostHoleSolid(hole: SteppedCadMagnetPostHoleFeature) {
+  const booleanOverlap = LAYER_OVERLAP;
+  return translate(
+    [hole.cx, hole.cy, hole.topHeight - hole.depth / 2 + booleanOverlap / 2],
+    primitives.cylinder({
+      radius: hole.diameter / 2,
+      height: hole.depth + booleanOverlap,
+      segments: INTERFACE_FOOTPRINT_SEGMENTS,
+    }),
+  );
+}
+
+function buildMagnetPostFloorSolid(
+  slotHole: SteppedCadSlotHoleFeature,
+  postHoleDepth: number,
+) {
+  const floorThickness = postHoleDepth + MAGNET_POST_HOLE_BOTTOM_WALL;
+  return translate(
+    [slotHole.cx, slotHole.cy, slotHole.topHeight - slotHole.depth - floorThickness],
+    rotateZ(
+      slotHole.rotation * DEG_TO_RAD,
+      extrudeLinear({ height: floorThickness }, slotHole.profile),
+    ),
+  );
+}
 
 type SteppedCadSplitUnit = {
   key: string;
   groups: SteppedCadGroupFeature[];
   slotHoles: SteppedCadSlotHoleFeature[];
   baseHoles: SteppedCadBaseHoleFeature[];
+  magnetPostHoles: SteppedCadMagnetPostHoleFeature[];
   minHeight: number;
   maxHeight: number;
 };
@@ -224,6 +261,7 @@ function buildSplitUnits(
   groups: SteppedCadGroupFeature[],
   slotHoles: SteppedCadSlotHoleFeature[],
   baseHoles: SteppedCadBaseHoleFeature[],
+  magnetPostHoles: SteppedCadMagnetPostHoleFeature[],
   splitUnitKeyByGroupId: Map<string, string>,
 ) {
   const unitsByKey = new Map<string, SteppedCadSplitUnit>();
@@ -235,6 +273,7 @@ function buildSplitUnits(
       groups: [],
       slotHoles: [],
       baseHoles: [],
+      magnetPostHoles: [],
       minHeight: group.columnHeight,
       maxHeight: group.columnHeight,
     };
@@ -248,6 +287,7 @@ function buildSplitUnits(
     const groupIds = new Set(unit.groups.map((group) => group.groupId));
     unit.slotHoles = slotHoles.filter((slot) => groupIds.has(slot.groupId));
     unit.baseHoles = baseHoles.filter((slot) => groupIds.has(slot.groupId));
+    unit.magnetPostHoles = magnetPostHoles.filter((slot) => groupIds.has(slot.groupId));
     unit.groups.sort((left, right) => left.columnHeight - right.columnHeight);
   }
 
@@ -361,15 +401,20 @@ function cleanupSplitPartMesh(
   ) as Geom3;
 }
 
-function cleanupIfBeneficial(part: Geom3) {
+function cleanupIfBeneficial(part: Geom3, preserveSmallFeatures = false) {
   const [[, , originalMinZ], [, , originalMaxZ]] = measureBoundingBox(part);
 
-  const cleanupOptions = [
-    { simplify: true, triangulate: false },
-    { simplify: false, triangulate: false },
-    { simplify: true, triangulate: true },
-    { simplify: false, triangulate: true },
-  ];
+  const cleanupOptions = preserveSmallFeatures
+    ? [
+        { simplify: false, triangulate: false },
+        { simplify: false, triangulate: true },
+      ]
+    : [
+        { simplify: true, triangulate: false },
+        { simplify: false, triangulate: false },
+        { simplify: true, triangulate: true },
+        { simplify: false, triangulate: true },
+      ];
 
   for (const { simplify, triangulate } of cleanupOptions) {
     try {
@@ -748,6 +793,7 @@ export function createSteppedCadSplitParts(
     graph.groups,
     graph.slotHoles,
     graph.baseHoles,
+    graph.magnetPostHoles,
     splitUnitKeyByGroupId,
   );
   const partitions = buildSameHeightPartitionMap(
@@ -859,14 +905,45 @@ export function createSteppedCadSplitParts(
       }
     }
 
+    const baseHoleStructure = resolveSteppedBaseHoleStructure(params);
+    if (
+      baseHoleStructure === "magnet-post-hole" &&
+      splitUnit.magnetPostHoles.length > 0
+    ) {
+      const postDepthBySlotId = new Map(
+        splitUnit.magnetPostHoles.map((hole) => [hole.id, hole.depth]),
+      );
+      const floorSolids = splitUnit.slotHoles.flatMap((slotHole) => {
+        const postDepth = postDepthBySlotId.get(slotHole.id);
+        return postDepth === undefined
+          ? []
+          : [buildMagnetPostFloorSolid(slotHole, postDepth)];
+      });
+      if (floorSolids.length > 0) {
+        body = union(body, ...floorSolids) as Geom3;
+      }
+    }
+
     const slotHoles = splitUnit.slotHoles.map(buildSlotHoleSolid);
     let part = slotHoles.length > 0 ? subtract(body, ...slotHoles) : body;
 
-    if (params.enableBaseHole) {
+    if (baseHoleStructure === "magnetic-base-hole") {
       part = subtractBaseHoles(part, splitUnit.baseHoles, 0, params.baseHoleSize);
     }
+    if (
+      baseHoleStructure === "magnet-post-hole" &&
+      splitUnit.magnetPostHoles.length > 0
+    ) {
+      const postSolids = splitUnit.magnetPostHoles.map(buildMagnetPostHoleSolid);
+      part = subtract(
+        part,
+        ...postSolids,
+      );
+    }
 
-    part = orientPositiveVolume(cleanupIfBeneficial(part));
+    part = orientPositiveVolume(
+      cleanupIfBeneficial(part, baseHoleStructure === "magnet-post-hole"),
+    );
     if (Math.abs(measureVolume(part)) <= MIN_VALID_VOLUME) {
       return [];
     }

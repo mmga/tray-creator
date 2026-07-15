@@ -109,4 +109,44 @@ describe("stepped outline preview", () => {
       polygonArea(highGroup.points),
     );
   });
+
+  it("keeps a CAD ellipse outline preview elliptical and rotated", () => {
+    const params = createParams();
+    params.groups = [params.groups[0]];
+    params.activeGroupId = "high";
+    params.slots = [
+      {
+        id: "ellipse-slot",
+        groupId: "high",
+        x: 100,
+        y: 100,
+        width: 60,
+        height: 35.5,
+        rotation: 0,
+        shape: "ellipse",
+        outerOffset: 0.4,
+        profileExponent: 2.05,
+        slotDefinitionId: "ellipse-60x35.5",
+      },
+    ];
+
+    const preview = buildSteppedOutlinePreview(params)![0];
+    const width = Math.max(...preview.points.map((point) => point.x))
+      - Math.min(...preview.points.map((point) => point.x));
+    const depth = Math.max(...preview.points.map((point) => point.y))
+      - Math.min(...preview.points.map((point) => point.y));
+
+    expect(width).toBeCloseTo(70.8, 0);
+    expect(depth).toBeCloseTo(46.3, 0);
+
+    params.slots[0].rotation = 90;
+    const rotatedPreview = buildSteppedOutlinePreview(params)![0];
+    const rotatedWidth = Math.max(...rotatedPreview.points.map((point) => point.x))
+      - Math.min(...rotatedPreview.points.map((point) => point.x));
+    const rotatedDepth = Math.max(...rotatedPreview.points.map((point) => point.y))
+      - Math.min(...rotatedPreview.points.map((point) => point.y));
+
+    expect(rotatedWidth).toBeCloseTo(46.3, 0);
+    expect(rotatedDepth).toBeCloseTo(70.8, 0);
+  });
 });

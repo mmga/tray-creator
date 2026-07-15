@@ -259,7 +259,7 @@ describe("stepped cad user repro", { timeout: 90000 }, () => {
     });
     const magnetModel = createSteppedCadTrayModel({
       ...USER_REPRO_PARAMS,
-      enableBaseHole: true,
+      baseHoleStructure: "magnetic-base-hole",
     });
 
     expect(measureVolume(magnetModel)).toBeLessThan(measureVolume(plainModel));
@@ -374,7 +374,7 @@ describe("stepped cad user repro", { timeout: 90000 }, () => {
   it("keeps CAD split assembly interfaces from fragmenting into tiny coplanar faces", () => {
     const parts = createSteppedCadSplitParts({
       ...USER_REPRO_PARAMS,
-      enableBaseHole: true,
+      baseHoleStructure: "magnetic-base-hole",
       splitGrooveDepth: 2,
     });
     const group1Part = parts.find((part) => part.label === "组 1");

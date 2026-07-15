@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { buildSteppedCadFeatureGraph } from "@/lib/stepped-cad-feature-graph";
+import { geometries, measurements } from "@jscad/modeling";
+import { RENDER_CONFIG } from "@/lib/config";
+import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 
 function createParams(): SteppedLayoutParams {
@@ -56,7 +59,9 @@ function createParams(): SteppedLayoutParams {
     splitGrooveDepth: 2,
     smoothingRadius: 60,
     disconnectDistance: 0,
-    enableBaseHole: false,
+    baseHoleStructure: "none",
+    magnetPostHoleDiameter: 5,
+    magnetPostHoleDepth: 2,
     baseHoleSize: "25",
   };
 }
@@ -87,6 +92,81 @@ describe("stepped cad feature graph", () => {
       "slot-high",
     ]);
     expect(graph.baseHoles).toHaveLength(2);
+    expect(graph.magnetPostHoles).toHaveLength(2);
     expect(graph.maxHeight).toBe(20);
+  });
+
+  it("uses the ellipse snapshot profile exponent for CAD hole geometry", () => {
+    const params = createParams();
+    params.slots = [
+      {
+        id: "ellipse-slot",
+        x: 100,
+        y: 100,
+        shape: "ellipse",
+        width: 60,
+        height: 35.5,
+        rotation: 27,
+        outerOffset: 0.4,
+        profileExponent: 2.05,
+        slotDefinitionId: "ellipse-60x35.5",
+        groupId: "group-low",
+      },
+    ];
+
+    const graph = buildSteppedCadFeatureGraph(params);
+    const actual = geometries.geom2.toPoints(graph.slotHoles[0].profile);
+    const expected = sampleSlotProfilePoints(
+      60,
+      35.5,
+      "ellipse",
+      0.4,
+      RENDER_CONFIG.cylinderSegments,
+      2.05,
+    ).map((point) => [point.x, point.y]);
+
+    expect(actual).toEqual(expected);
+    expect(graph.slotHoles[0].rotation).toBe(27);
+  });
+
+  it("keeps the outer footprint elliptical for a single ellipse slot", () => {
+    const params = createParams();
+    params.slots = [
+      {
+        id: "ellipse-slot",
+        x: 100,
+        y: 100,
+        shape: "ellipse",
+        width: 60,
+        height: 35.5,
+        rotation: 0,
+        outerOffset: 0.4,
+        profileExponent: 2.05,
+        slotDefinitionId: "ellipse-60x35.5",
+        groupId: "group-low",
+      },
+    ];
+
+    const graph = buildSteppedCadFeatureGraph(params);
+    const [min, max] = measurements.measureBoundingBox(
+      graph.groups[0].footprint,
+    );
+    const width = max[0] - min[0];
+    const depth = max[1] - min[1];
+
+    expect(width).toBeCloseTo(70.8, 0);
+    expect(depth).toBeCloseTo(46.3, 0);
+    expect(width - depth).toBeGreaterThan(20);
+
+    params.slots[0].rotation = 90;
+    const rotatedGraph = buildSteppedCadFeatureGraph(params);
+    const [rotatedMin, rotatedMax] = measurements.measureBoundingBox(
+      rotatedGraph.groups[0].footprint,
+    );
+    const rotatedWidth = rotatedMax[0] - rotatedMin[0];
+    const rotatedDepth = rotatedMax[1] - rotatedMin[1];
+
+    expect(rotatedWidth).toBeCloseTo(46.3, 0);
+    expect(rotatedDepth).toBeCloseTo(70.8, 0);
   });
 });

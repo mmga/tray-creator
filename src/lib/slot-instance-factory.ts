@@ -40,7 +40,9 @@ export interface CreateSteppedSlotInstanceOptions {
   x: number;
   y: number;
   width: number;
+  height?: number;
   rotation?: number;
+  ellipseConfig?: EllipseSlotInstanceConfig;
   groupId: string;
 }
 
@@ -121,18 +123,21 @@ export function createSteppedSlotInstance({
   x,
   y,
   width,
+  height,
   rotation = 0,
+  ellipseConfig,
   groupId,
 }: CreateSteppedSlotInstanceOptions): SteppedSlot {
   return {
-    id,
-    x,
-    y,
-    shape: "circle",
-    width,
-    height: width,
-    ...createCircleSlotSnapshot(width),
-    rotation: normalizeRotation(rotation),
+    ...createFreeSlotInstance({
+      id,
+      x,
+      y,
+      width,
+      height,
+      rotation,
+      ellipseConfig,
+    }),
     groupId,
   };
 }

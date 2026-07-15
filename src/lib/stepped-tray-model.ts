@@ -19,6 +19,7 @@ import {
   subtractBaseHoles,
   type SlotCenter,
 } from "@/lib/model-utils";
+import { resolveSteppedBaseHoleStructure } from "@/lib/stepped-base-hole";
 import {
   generateOutlineGeom2,
   type OutlineCircle,
@@ -47,6 +48,7 @@ function getSlotBoundingHalfSize(
   rotation: number,
   shape: SteppedSlot["shape"],
   offset: number,
+  profileExponent?: number,
 ) {
   const rad = (rotation * Math.PI) / 180;
   const points = sampleSlotProfilePoints(
@@ -55,6 +57,7 @@ function getSlotBoundingHalfSize(
     shape,
     offset,
     RENDER_CONFIG.cylinderSegments,
+    profileExponent,
   );
   let halfW = 0;
   let halfH = 0;
@@ -74,8 +77,9 @@ function createOffsetSlotShape(
   height: number,
   shape: SteppedSlot["shape"],
   offset: number,
+  profileExponent?: number,
 ): Geom2 {
-  if (offset <= 0) {
+  if (shape === "circle" && offset <= 0) {
     return ellipse({
       radius: [width / 2, height / 2],
       segments: RENDER_CONFIG.cylinderSegments,
@@ -88,6 +92,7 @@ function createOffsetSlotShape(
     shape,
     offset,
     RENDER_CONFIG.cylinderSegments,
+    profileExponent,
   ).map((point): [number, number] => [point.x, point.y]);
 
   return geom2.fromPoints(points);
@@ -121,6 +126,7 @@ function calculateEffectiveBaseplate(params: SteppedLayoutParams) {
       slot.rotation,
       slot.shape,
       profile.outerOffset,
+      profile.profileExponent,
     );
     minX = Math.min(minX, slot.x - halfW);
     maxX = Math.max(maxX, slot.x + halfW);
@@ -273,6 +279,7 @@ function buildSteppedSlotHoles(
       d.profile.height,
       d.slot.shape,
       d.profile.outerOffset,
+      d.profile.profileExponent,
     );
     const hole3D = extrudeLinear(
       { height: clampedHoleDepth + SPLIT_EPSILON },
@@ -412,7 +419,7 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
   const baseHoleCenters = buildSteppedBaseHoleCenters(slotData, holeDepth);
 
   let tray = holes.length > 0 ? subtract(solid, ...holes) : solid;
-  if (params.enableBaseHole) {
+  if (resolveSteppedBaseHoleStructure(params) === "magnetic-base-hole") {
     tray = subtractBaseHoles(tray, baseHoleCenters, 0, params.baseHoleSize);
   }
 

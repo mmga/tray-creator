@@ -15,7 +15,7 @@ import { calculateCustomEffectiveDimensions } from "@/lib/custom-layout-math";
 import { calculateSimpleSteppedDimensions, deriveSimpleSteppedLayout } from "@/lib/simple-stepped-layout";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import { buildSteppedPerfFixture } from "@/lib/stepped-perf-fixtures";
-import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
+import { STEPPED_LAYOUT_DEFAULTS, STEPPED_LIMITS } from "@/lib/stepped-config";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 import type { SteppedOptimizationProposal } from "@/lib/stepped-global-optimize";
 
@@ -1656,6 +1656,19 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
     );
 
     expect(onAddSlot).toHaveBeenCalledWith(HUNDRED_MM_PRESET.diameter);
+    const ellipsePreset = ELLIPSE_PRESETS[0];
+    fireEvent.click(
+      screen.getByRole("button", { name: ellipsePreset.name }),
+    );
+    expect(onAddSlot).toHaveBeenLastCalledWith(
+      ellipsePreset.width,
+      ellipsePreset.height,
+      {
+        slotDefinitionId: ellipsePreset.id,
+        outerOffset: ellipsePreset.outerOffset,
+        profileExponent: ellipsePreset.profileExponent,
+      },
+    );
     expect(updateParam).toHaveBeenNthCalledWith(1, "spacing", 6);
     expect(updateParam).toHaveBeenNthCalledWith(2, "holeDepth", 3.2);
     expect(updateParam).toHaveBeenNthCalledWith(3, "splitGrooveDepth", 2.2);
@@ -1706,6 +1719,9 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
     expect(screen.queryByText("内缩凹槽")).not.toBeInTheDocument();
     expect(screen.queryByText("定位柱")).not.toBeInTheDocument();
     expect(screen.queryByText("拆件归并")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: ELLIPSE_PRESETS[0].name }),
+    ).not.toBeInTheDocument();
   });
 
   it("routes CAD split groove type and locator controls", () => {
@@ -1805,8 +1821,61 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
     fireEvent.click(screen.getByRole("button", { name: "磁吸孔" }));
     fireEvent.click(screen.getByRole("button", { name: "普通托盘" }));
 
-    expect(updateParam).toHaveBeenNthCalledWith(1, "enableBaseHole", true);
-    expect(updateParam).toHaveBeenNthCalledWith(2, "enableBaseHole", false);
+    expect(updateParam).toHaveBeenNthCalledWith(1, "baseHoleStructure", "magnetic-base-hole");
+    expect(updateParam).toHaveBeenNthCalledWith(2, "baseHoleStructure", "none");
+  });
+
+  it("exposes exact magnet post hole controls only in CAD stepped mode", () => {
+    const updateParam = vi.fn();
+    const commonProps = {
+      params: createSteppedParams({ baseHoleStructure: "magnet-post-hole" }),
+      effectiveDimensions: { width: 120, depth: 140 },
+      isPreviewStale: false,
+      updateParam,
+      setParams: vi.fn(),
+      onAddSlot: vi.fn(),
+      isGenerating: false,
+      volume: 0,
+      selectedSlotIds: [],
+      onAddGroup: vi.fn(),
+      onRemoveGroup: vi.fn(),
+      onUpdateGroupHeight: vi.fn(),
+      onUpdateGroupSmoothingOverride: vi.fn(),
+      onUpdateGroupSmoothingRadius: vi.fn(),
+      onUpdateGroupDisconnectOverride: vi.fn(),
+      onUpdateGroupDisconnectDistance: vi.fn(),
+      onSetActiveGroup: vi.fn(),
+      onMoveSelectedSlotsToGroup: vi.fn(),
+      onReorderGroups: vi.fn(),
+      previewGroupId: null,
+      onPreviewGroupChange: vi.fn(),
+      bridgeWarning: null,
+      optimizationProposals: [],
+      isOptimizingLayout: false,
+      onGenerateOptimizationProposals: vi.fn(),
+      onApplyOptimizationProposal: vi.fn(),
+      onClearOptimizationProposals: vi.fn(),
+    };
+
+    const { unmount } = render(
+      <SteppedCadPanel
+        {...commonProps}
+        onUpdateGroupSplitPartTarget={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "磁铁桩孔" })).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: `设置${STEPPED_LIMITS.magnetPostHoleDiameter.label}:5` }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: `设置${STEPPED_LIMITS.magnetPostHoleDepth.label}:2` }),
+    );
+    expect(updateParam).toHaveBeenNthCalledWith(1, "magnetPostHoleDiameter", 5.1);
+    expect(updateParam).toHaveBeenNthCalledWith(2, "magnetPostHoleDepth", 2.1);
+    unmount();
+
+    render(<SteppedLayoutPanel {...commonProps} />);
+    expect(screen.queryByRole("button", { name: "磁铁桩孔" })).toBeNull();
   });
 
   it("shows the stepped pricing formula tooltip on hover", () => {

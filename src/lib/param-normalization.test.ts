@@ -172,7 +172,8 @@ describe("param normalization", () => {
       slotWidth: 40.4,
       slotHeight: 40.4,
     });
-    expect(migrated.enableBaseHole).toBe(customParams.enableBaseHole);
+    expect(migrated.baseHoleStructure).toBe("none");
+    expect(migrated.enableBaseHole).toBeUndefined();
     expect(migrated.baseHoleSize).toBe("25");
   });
 
@@ -435,6 +436,7 @@ describe("param normalization", () => {
     const normalized = normalizeParamsForMode("stepped", {
       ...STEPPED_LAYOUT_DEFAULTS,
       holeDepth: 4,
+      baseHoleStructure: undefined,
       enableBaseHole: true,
       baseHoleSize: "25",
       groups: [
@@ -460,10 +462,37 @@ describe("param normalization", () => {
     } as SteppedLayoutParams) as SteppedLayoutParams;
 
     expect(normalized.baseHoleSize).toBe("40");
+    expect(normalized.baseHoleStructure).toBe("magnetic-base-hole");
+    expect(normalized.enableBaseHole).toBeUndefined();
     expect(normalized.groups[0].bottomHeight).toBeCloseTo(
       4 + getBaseHoleMinBaseThickness("40"),
       5,
     );
+  });
+
+  it("fills and clamps CAD magnet post hole params while preserving a 1mm bottom wall", () => {
+    const normalized = normalizeParamsForMode("stepped-cad", {
+      ...STEPPED_LAYOUT_DEFAULTS,
+      holeDepth: 3,
+      baseHoleStructure: "magnet-post-hole",
+      magnetPostHoleDiameter: 99,
+      magnetPostHoleDepth: 4,
+      groups: [{ ...STEPPED_LAYOUT_DEFAULTS.groups[0], bottomHeight: 5 }],
+      slots: [{
+        id: "ellipse-slot",
+        x: 100,
+        y: 100,
+        shape: "ellipse",
+        width: 40,
+        height: 25,
+        rotation: 0,
+        groupId: STEPPED_LAYOUT_DEFAULTS.groups[0].id,
+      }],
+    } as SteppedLayoutParams) as SteppedLayoutParams;
+
+    expect(normalized.magnetPostHoleDiameter).toBe(10);
+    expect(normalized.magnetPostHoleDepth).toBe(4);
+    expect(normalized.groups[0].bottomHeight).toBe(8);
   });
 
   it("resets stepped split groove depth to the default", () => {

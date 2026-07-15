@@ -193,7 +193,11 @@ export function migrateCustomParamsToStepped(
     enableSplitLocators: STEPPED_LAYOUT_DEFAULTS.enableSplitLocators,
     smoothingRadius: STEPPED_LAYOUT_DEFAULTS.smoothingRadius,
     disconnectDistance: STEPPED_LAYOUT_DEFAULTS.disconnectDistance,
-    enableBaseHole: customParams.enableBaseHole,
+    baseHoleStructure: customParams.enableBaseHole
+      ? "magnetic-base-hole"
+      : "none",
+    magnetPostHoleDiameter: STEPPED_LAYOUT_DEFAULTS.magnetPostHoleDiameter,
+    magnetPostHoleDepth: STEPPED_LAYOUT_DEFAULTS.magnetPostHoleDepth,
     baseHoleSize: customParams.baseHoleSize,
   };
   return runParamNormalizationPipeline(
@@ -744,6 +748,62 @@ function clampAndFillSteppedDerivedFields(
   clampField(obj, "trayDepth", STEPPED_LIMITS.trayDepth, recorder, "trayDepth", "托盘深度");
   clampField(obj, "spacing", STEPPED_LIMITS.spacing, recorder, "spacing", "凹槽间距");
   clampField(obj, "holeDepth", STEPPED_LIMITS.holeDepth, recorder, "holeDepth", "凹槽深度");
+  const hasCurrentBaseHoleStructure =
+    obj.baseHoleStructure === "none" ||
+    obj.baseHoleStructure === "magnetic-base-hole" ||
+    obj.baseHoleStructure === "magnet-post-hole";
+  if (!hasCurrentBaseHoleStructure) {
+    const legacyEnabled = obj.enableBaseHole === true;
+    obj.baseHoleStructure = legacyEnabled ? "magnetic-base-hole" : "none";
+    recordMigration(recorder, {
+      path: "baseHoleStructure",
+      label: "底板孔位结构",
+      previousValue: obj.enableBaseHole,
+      normalizedValue: obj.baseHoleStructure,
+      reason: "旧磁吸孔开关已迁移为互斥的底板孔位结构",
+    });
+  }
+  delete obj.enableBaseHole;
+  if (
+    typeof obj.magnetPostHoleDiameter !== "number" ||
+    !Number.isFinite(obj.magnetPostHoleDiameter)
+  ) {
+    obj.magnetPostHoleDiameter = STEPPED_LAYOUT_DEFAULTS.magnetPostHoleDiameter;
+    recordDefault(recorder, {
+      path: "magnetPostHoleDiameter",
+      label: "磁铁桩孔直径",
+      normalizedValue: obj.magnetPostHoleDiameter,
+      reason: "旧文件未记录磁铁桩孔尺寸",
+    });
+  }
+  if (
+    typeof obj.magnetPostHoleDepth !== "number" ||
+    !Number.isFinite(obj.magnetPostHoleDepth)
+  ) {
+    obj.magnetPostHoleDepth = STEPPED_LAYOUT_DEFAULTS.magnetPostHoleDepth;
+    recordDefault(recorder, {
+      path: "magnetPostHoleDepth",
+      label: "磁铁桩孔深度",
+      normalizedValue: obj.magnetPostHoleDepth,
+      reason: "旧文件未记录磁铁桩孔尺寸",
+    });
+  }
+  clampField(
+    obj,
+    "magnetPostHoleDiameter",
+    STEPPED_LIMITS.magnetPostHoleDiameter,
+    recorder,
+    "magnetPostHoleDiameter",
+    "磁铁桩孔直径",
+  );
+  clampField(
+    obj,
+    "magnetPostHoleDepth",
+    STEPPED_LIMITS.magnetPostHoleDepth,
+    recorder,
+    "magnetPostHoleDepth",
+    "磁铁桩孔深度",
+  );
   if (obj.splitGrooveDepth !== STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth) {
     recordValueAdjustment(recorder, {
       path: "splitGrooveDepth",

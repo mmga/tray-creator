@@ -62,7 +62,9 @@ function createParams(): SteppedLayoutParams {
     splitGrooveDepth: 2,
     smoothingRadius: 60,
     disconnectDistance: 0,
-    enableBaseHole: false,
+    baseHoleStructure: "none",
+    magnetPostHoleDiameter: 5,
+    magnetPostHoleDepth: 2,
     baseHoleSize: "25",
   };
 }
@@ -192,11 +194,11 @@ describe("stepped cad tray model", () => {
     };
     const plainModel = createSteppedCadTrayModel({
       ...params,
-      enableBaseHole: false,
+      baseHoleStructure: "none",
     });
     const magnetModel = createSteppedCadTrayModel({
       ...params,
-      enableBaseHole: true,
+      baseHoleStructure: "magnetic-base-hole",
     });
 
     expect(measureVolume(magnetModel)).toBeLessThan(measureVolume(plainModel));
@@ -224,11 +226,11 @@ describe("stepped cad tray model", () => {
     const highBaseHole = graph.baseHoles.find((hole) => hole.groupId === "group-high");
     const plainParts = createSteppedCadSplitParts({
       ...params,
-      enableBaseHole: false,
+      baseHoleStructure: "none",
     });
     const magnetParts = createSteppedCadSplitParts({
       ...params,
-      enableBaseHole: true,
+      baseHoleStructure: "magnetic-base-hole",
     });
 
     expect(lowBaseHole).toBeDefined();
@@ -247,6 +249,77 @@ describe("stepped cad tray model", () => {
       magnetParts[1].geometry as unknown as { polygons: { vertices: number[][] }[] },
       highBaseHole!,
     );
+  });
+
+  it("cuts exact magnet post holes from circular and elliptical slot floors", () => {
+    const baseParams = createParams();
+    const params: SteppedLayoutParams = {
+      ...baseParams,
+      baseHoleStructure: "magnet-post-hole",
+      magnetPostHoleDiameter: 6,
+      magnetPostHoleDepth: 4,
+      groups: baseParams.groups.map((group) => ({ ...group, bottomHeight: 6 })),
+      slots: [
+        baseParams.slots[0],
+        {
+          ...baseParams.slots[1],
+          shape: "ellipse",
+          width: 40,
+          height: 25,
+        },
+      ],
+    };
+    const graph = buildSteppedCadFeatureGraph(params);
+    const plainModel = createSteppedCadTrayModel({
+      ...params,
+      baseHoleStructure: "none",
+      groups: params.groups.map((group) => ({ ...group, bottomHeight: 8 })),
+    });
+    const postModel = createSteppedCadTrayModel(params);
+
+    expect(graph.magnetPostHoles).toHaveLength(2);
+    expect(graph.magnetPostHoles).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ diameter: 6, depth: 4, topHeight: 5 }),
+      ]),
+    );
+    expect(graph.groups.every((group) => group.columnHeight >= 8)).toBe(true);
+    expect(measureVolume(postModel)).toBeLessThan(measureVolume(plainModel));
+  });
+
+  it("cuts magnet post holes from every owning CAD split part", () => {
+    const params: SteppedLayoutParams = {
+      ...createParams(),
+      baseHoleStructure: "magnet-post-hole",
+      magnetPostHoleDiameter: 5,
+      magnetPostHoleDepth: 2,
+    };
+    const plainParts = createSteppedCadSplitParts({
+      ...params,
+      baseHoleStructure: "none",
+    });
+    const postParts = createSteppedCadSplitParts(params);
+    const graph = buildSteppedCadFeatureGraph(params);
+
+    expect(postParts).toHaveLength(plainParts.length);
+    postParts.forEach((part, index) => {
+      expect(measureVolume(part.geometry)).toBeLessThan(
+        measureVolume(plainParts[index].geometry),
+      );
+      const hole = graph.magnetPostHoles.find(
+        (candidate) => candidate.groupId === params.groups[index].id,
+      );
+      expect(hole).toBeDefined();
+      expect(
+        countCavityWallFacesNear(
+          part.geometry as unknown as { polygons: { vertices: number[][] }[] },
+          { x: hole!.cx, y: hole!.cy },
+          hole!.diameter / 2,
+          hole!.topHeight - hole!.depth,
+          hole!.topHeight,
+        ),
+      ).toBeGreaterThan(0);
+    });
   });
 
   it("builds inset assembly pockets on lower parts and 2mm tenons on upper parts by default", () => {

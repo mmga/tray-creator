@@ -58,7 +58,7 @@ function createParams(): SteppedLayoutParams {
 function createMagnetParams(): SteppedLayoutParams {
   return {
     ...STEPPED_LAYOUT_DEFAULTS,
-    enableBaseHole: true,
+    baseHoleStructure: "magnetic-base-hole",
     groups: [
       {
         ...STEPPED_LAYOUT_DEFAULTS.groups[0],
@@ -167,7 +167,7 @@ describe("stepped tray model", { timeout: 90000 }, () => {
   it("cuts base magnetic holes using each group's available support thickness", () => {
     const plainModel = createSteppedTrayModel({
       ...createMagnetParams(),
-      enableBaseHole: false,
+      baseHoleStructure: "none",
     });
     const magnetModel = createSteppedTrayModel(createMagnetParams());
 

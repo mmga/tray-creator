@@ -37,15 +37,33 @@ export const STEPPED_LAYOUT_DEFAULTS: SteppedLayoutParams = {
   enableSplitLocators: false,
   smoothingRadius: STEPPED_DEFAULT_SMOOTHING_RADIUS,
   disconnectDistance: STEPPED_DEFAULT_DISCONNECT_DISTANCE,
-  enableBaseHole: false,
+  baseHoleStructure: "none",
+  magnetPostHoleDiameter: 5,
+  magnetPostHoleDepth: 2,
   baseHoleSize: "25",
 };
+
+export const MAGNET_POST_HOLE_BOTTOM_WALL = 1;
 
 export const STEPPED_LIMITS = {
   trayWidth: { label: "长度", min: 50, max: MAX_TRAY_SIZE, step: 1, unit: "mm" },
   trayDepth: { label: "宽度", min: 50, max: MAX_TRAY_SIZE, step: 1, unit: "mm" },
   spacing: { label: "凹槽间距", min: 0, max: 20, step: 1, unit: "mm" },
   holeDepth: { label: "凹槽深度", min: 0.2, max: 20, step: 0.2, unit: "mm" },
+  magnetPostHoleDiameter: {
+    label: "磁铁桩孔直径",
+    min: 1,
+    max: 10,
+    step: 0.1,
+    unit: "mm",
+  },
+  magnetPostHoleDepth: {
+    label: "磁铁桩孔深度",
+    min: 0.5,
+    max: 10,
+    step: 0.1,
+    unit: "mm",
+  },
   splitGrooveDepth: { label: "装配槽深度", min: 0, max: 10, step: 0.2, unit: "mm" },
   bottomHeight: { label: "圆柱高度", min: 3, max: 100, step: 1, unit: "mm" },
   smoothingRadius: { label: "平滑半径", min: 1, max: 150, step: 1, unit: "mm" },

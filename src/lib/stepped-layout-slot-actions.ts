@@ -1,4 +1,3 @@
-import { getSlotOuterOffset } from "@/lib/config";
 import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
 import {
   applyFreeSlotUpdates,
@@ -10,7 +9,10 @@ import {
   updateFreeSlotRotation,
   type FreeSlotUpdate,
 } from "@/lib/free-slot-editing";
-import { createSteppedSlotInstance } from "@/lib/slot-instance-factory";
+import {
+  createSteppedSlotInstance,
+  type EllipseSlotInstanceConfig,
+} from "@/lib/slot-instance-factory";
 import {
   getFreeSlotProfileGeometry,
 } from "@/lib/slot-definitions";
@@ -46,8 +48,27 @@ export function addSteppedSlot(
   params: SteppedLayoutParams,
   idFactory: IdFactory,
   width: number,
+  height?: number,
+  ellipseConfig?: EllipseSlotInstanceConfig,
 ): SteppedLayoutParams {
-  const newSlotHalfW = width / 2 + getSlotOuterOffset(width);
+  const newSlot = createSteppedSlotInstance({
+    id: idFactory.createId(),
+    x: 0,
+    y: 0,
+    width,
+    height,
+    ellipseConfig,
+    groupId: params.activeGroupId,
+  });
+  const newProfile = getFreeSlotProfileGeometry(newSlot);
+  const newHalf = getEllipseBoundingBox(
+    newProfile.width,
+    newProfile.height,
+    newSlot.rotation,
+    newSlot.shape,
+    newProfile.profileExponent,
+    newProfile.outerOffset,
+  );
 
   let nextX = params.trayWidth / 2;
   let nextY = params.trayDepth / 2;
@@ -63,21 +84,13 @@ export function addSteppedSlot(
       lastProfile.profileExponent,
       lastProfile.outerOffset,
     );
-    nextX = lastSlot.x + lastHalf.halfW + params.spacing + newSlotHalfW;
+    nextX = lastSlot.x + lastHalf.halfW + params.spacing + newHalf.halfW;
     nextY = lastSlot.y;
   }
 
-  const newSlot: SteppedSlot = createSteppedSlotInstance({
-    id: idFactory.createId(),
-    x: nextX,
-    y: nextY,
-    width,
-    groupId: params.activeGroupId,
-  });
-
   return {
     ...params,
-    slots: [...params.slots, newSlot],
+    slots: [...params.slots, { ...newSlot, x: nextX, y: nextY }],
   };
 }
 
@@ -132,6 +145,12 @@ export function insertSteppedSlots(
       slotWidth: slot.slotWidth,
       slotHeight: slot.slotHeight,
       rotation: slot.rotation,
+      ...(slot.shape === "ellipse"
+        ? {
+            outerOffset: slot.outerOffset,
+            profileExponent: slot.profileExponent,
+          }
+        : {}),
       groupId: slot.groupId ?? params.activeGroupId,
     }),
   );

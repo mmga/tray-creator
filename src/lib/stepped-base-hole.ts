@@ -2,8 +2,15 @@ import {
   getBaseHoleMinBaseThickness,
   resolveBaseHolePresetKey,
 } from "@/lib/config";
-import { STEPPED_LIMITS } from "@/lib/stepped-config";
-import type { SteppedLayoutParams } from "@/types/custom-tray";
+import {
+  MAGNET_POST_HOLE_BOTTOM_WALL,
+  STEPPED_LAYOUT_DEFAULTS,
+  STEPPED_LIMITS,
+} from "@/lib/stepped-config";
+import type {
+  BaseHoleStructure,
+  SteppedLayoutParams,
+} from "@/types/custom-tray";
 import type { BaseHolePresetKey } from "@/types/tray";
 
 function getLargestSlotSizeForGroup(
@@ -41,8 +48,22 @@ export function getSteppedGroupMinBottomHeight(
   params: SteppedLayoutParams,
   groupId: string,
 ): number {
+  const structure = resolveSteppedBaseHoleStructure(params);
+  if (structure === "magnet-post-hole") {
+    return Math.max(
+      STEPPED_LIMITS.bottomHeight.min,
+      params.holeDepth +
+        resolveMagnetPostHoleDepth(params) +
+        MAGNET_POST_HOLE_BOTTOM_WALL,
+    );
+  }
+
   const largestSlotSize = getLargestSlotSizeForGroup(params, groupId);
   if (largestSlotSize <= 0) {
+    return STEPPED_LIMITS.bottomHeight.min;
+  }
+
+  if (structure !== "magnetic-base-hole") {
     return STEPPED_LIMITS.bottomHeight.min;
   }
 
@@ -53,26 +74,69 @@ export function getSteppedGroupMinBottomHeight(
   );
 }
 
+export function resolveSteppedBaseHoleStructure(
+  params: SteppedLayoutParams,
+): BaseHoleStructure {
+  if (
+    params.baseHoleStructure === "none" ||
+    params.baseHoleStructure === "magnetic-base-hole" ||
+    params.baseHoleStructure === "magnet-post-hole"
+  ) {
+    return params.baseHoleStructure;
+  }
+  return params.enableBaseHole ? "magnetic-base-hole" : "none";
+}
+
+export function resolveMagnetPostHoleDiameter(params: SteppedLayoutParams) {
+  const value = params.magnetPostHoleDiameter;
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return STEPPED_LAYOUT_DEFAULTS.magnetPostHoleDiameter!;
+  }
+  return Math.max(
+    STEPPED_LIMITS.magnetPostHoleDiameter.min,
+    Math.min(STEPPED_LIMITS.magnetPostHoleDiameter.max, value),
+  );
+}
+
+export function resolveMagnetPostHoleDepth(params: SteppedLayoutParams) {
+  const value = params.magnetPostHoleDepth;
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return STEPPED_LAYOUT_DEFAULTS.magnetPostHoleDepth!;
+  }
+  return Math.max(
+    STEPPED_LIMITS.magnetPostHoleDepth.min,
+    Math.min(STEPPED_LIMITS.magnetPostHoleDepth.max, value),
+  );
+}
+
 export function applySteppedBaseHoleDerivedFields(
   params: SteppedLayoutParams,
 ): SteppedLayoutParams {
   const resolvedBaseHoleSize = getSteppedResolvedBaseHoleSize(params);
-  const enableBaseHole =
-    typeof params.enableBaseHole === "boolean" ? params.enableBaseHole : false;
+  const baseHoleStructure = resolveSteppedBaseHoleStructure(params);
+  const magnetPostHoleDiameter = resolveMagnetPostHoleDiameter(params);
+  const magnetPostHoleDepth = resolveMagnetPostHoleDepth(params);
   let nextParams = params;
 
   if (
     params.baseHoleSize !== resolvedBaseHoleSize ||
-    params.enableBaseHole !== enableBaseHole
+    params.baseHoleStructure !== baseHoleStructure ||
+    params.magnetPostHoleDiameter !== magnetPostHoleDiameter ||
+    params.magnetPostHoleDepth !== magnetPostHoleDepth ||
+    "enableBaseHole" in params
   ) {
+    const currentParams = { ...nextParams };
+    delete currentParams.enableBaseHole;
     nextParams = {
-      ...nextParams,
-      enableBaseHole,
+      ...currentParams,
+      baseHoleStructure,
+      magnetPostHoleDiameter,
+      magnetPostHoleDepth,
       baseHoleSize: resolvedBaseHoleSize,
     };
   }
 
-  if (!enableBaseHole) {
+  if (baseHoleStructure === "none") {
     return nextParams;
   }
 

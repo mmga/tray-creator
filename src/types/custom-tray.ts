@@ -9,6 +9,11 @@ export type AppMode =
 
 export type SplitGrooveType = "profile" | "inset";
 
+export type BaseHoleStructure =
+  | "none"
+  | "magnetic-base-hole"
+  | "magnet-post-hole";
+
 /** 阶梯底座分组（一组凹槽统一高度，并形成阶梯结构的一层） */
 export interface SlotGroup {
   id: string;
@@ -169,8 +174,14 @@ export interface SteppedLayoutParams {
   smoothingRadius: number;
   /** 为 0 时沿用平滑半径的自然桥接行为；大于 0 时按显式边缘距离阈值断开槽群 */
   disconnectDistance: number;
-  /** 是否启用底板磁吸孔 */
-  enableBaseHole: boolean;
+  /** 底板孔位结构；旧参数缺失时由 enableBaseHole 迁移。 */
+  baseHoleStructure?: BaseHoleStructure;
+  /** 磁铁桩孔最终成品直径 (mm)，不追加内置容差。 */
+  magnetPostHoleDiameter?: number;
+  /** 磁铁桩孔从凹槽底面向下的深度 (mm)。 */
+  magnetPostHoleDepth?: number;
+  /** @deprecated 仅用于兼容旧参数导入。 */
+  enableBaseHole?: boolean;
   /** 兼容导入/导出保留字段；实际规格由配置自动匹配 */
   baseHoleSize: BaseHolePresetKey;
   /** 调试开关：输出面朝向/体积日志（仅开发调试） */

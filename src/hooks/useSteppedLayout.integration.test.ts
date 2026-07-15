@@ -282,7 +282,7 @@ describe("useSteppedLayout", () => {
             groupId: "group-1",
           },
         ],
-        enableBaseHole: true,
+        baseHoleStructure: "magnetic-base-hole",
         baseHoleSize: "25",
       });
     });

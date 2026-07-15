@@ -88,6 +88,18 @@ _Avoid_: Preserving a retired field in current runtime params or letting it affe
 The extra clearance included in a slot definition so the generated slot fits the physical base.
 _Avoid_: Mode-specific tolerance, hidden tolerance.
 
+**Base-hole Structure**:
+The mutually exclusive tray choice between no base hole, an automatically matched Magnetic Base Hole, and an explicitly sized Magnet Post Hole.
+_Avoid_: Independent boolean switches that allow multiple base-hole structures to be active together.
+
+**Magnetic Base Hole**:
+A preset-driven cylindrical cavity centred beneath a slot and separated from the slot floor by a top wall.
+_Avoid_: Magnet Post Hole, or treating its automatically selected dimensions as editable final dimensions.
+
+**Magnet Post Hole**:
+A cylindrical recess centred on a circular or elliptical slot, opening at the slot floor and terminating at its explicitly configured depth without penetrating the tray underside or adding built-in tolerance.
+_Avoid_: Magnet post when referring to a solid protrusion, or Magnetic Base Hole when referring to the automatically matched enclosed baseplate cavity.
+
 **Final Slot Size**:
 The exact generated slot dimension after tolerance has already been applied.
 _Avoid_: Recomputing final slot size from base size in each mode.
@@ -301,6 +313,12 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A **Slot Definition** includes its **Tolerance**.
 - A circular **Slot Definition** records its **Final Slot Size** directly.
 - An ellipse **Slot Definition** includes base width, base height, **Ellipse Outer Offset**, and **Ellipse Profile Exponent**.
+- CAD stepped mode exposes all seven ellipse **Slot Definitions** already used by custom mode; ordinary stepped mode remains circle-only.
+- A CAD stepped ellipse **Slot Instance** is created from the shared definition and snapshots its width, height, **Ellipse Outer Offset**, **Ellipse Profile Exponent**, and **Slot Definition ID** without maintaining a CAD-only preset copy.
+- A newly added CAD stepped ellipse starts at 0 degrees and uses the existing canvas rotation interaction; rotation changes placement geometry but do not redefine its **Slot Definition**.
+- CAD stepped automatic placement uses the ellipse's final profile bounds and does not automatically rotate the ellipse to make it fit.
+- Duplicating or symmetry-inserting a CAD stepped ellipse preserves its complete **Slot Geometry Snapshot** and rotation.
+- CAD stepped preview, complete-model generation, and split-part generation consume the snapshot's **Ellipse Outer Offset** and **Ellipse Profile Exponent**, so their final ellipse profile matches custom mode.
 - An **Old World Rectangular Slot Definition** records nominal width and depth, with each **Final Slot Size** axis 0.4mm larger than its nominal axis.
 - An **Old World Grid Orientation** maps a rectangular slot’s width to grid columns and depth to grid rows.
 - An **Old World Full-Slot Grid** uses complete **Old World Rectangular Slot Definitions** only.
@@ -473,8 +491,12 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - Grid, custom, simple stepped, and stepped modes all expose the 100mm circular **Slot Definition**.
 - The 100mm circular **Slot Definition** has a 100mm **Base Size** and a 100.4mm **Final Slot Size**.
 - A **Base Size** is not enough to reproduce a slot unless its **Tolerance** and shape-specific geometry are also known.
+- A **Magnet Post Hole** applies to circular and elliptical slots and starts at each slot floor rather than using the automatically matched **Magnetic Base Hole** geometry.
+- One tray uses one shared **Magnet Post Hole** diameter and depth for all of its circular and elliptical slots, without per-group or per-slot overrides.
+- Enabling a **Magnet Post Hole** raises each affected stepped group as needed to preserve the configured recess depth and at least 1mm of material beneath it.
+- A tray selects exactly one **Base-hole Structure**.
 - **CAD Stepped Construction** builds one extruded body per height band.
-- **CAD Stepped Construction** applies slot holes and magnetic base holes after the stepped height bands are assembled.
+- **CAD Stepped Construction** applies slot holes and the selected **Base-hole Structure** after the stepped height bands are assembled.
 - A stepped CAD split part has at most one active **Split Assembly Groove Type**.
 - A **Profile Recess** uses the full upper contact-face outline as the male tenon profile.
 - The user-facing label for **Profile Recess** is "轮廓凹槽".

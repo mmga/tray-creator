@@ -10,9 +10,14 @@ import {
 } from "@/lib/config";
 import type { BaseHolePresetKey } from "@/types/tray";
 import { STEPPED_LIMITS } from "@/lib/stepped-config";
+import { ELLIPSE_SLOT_DEFINITIONS } from "@/lib/slot-definitions";
+import type { EllipseSlotInstanceConfig } from "@/lib/slot-instance-factory";
 import {
     getSteppedGroupMinBottomHeight,
     getSteppedGroupResolvedBaseHoleSize,
+    resolveMagnetPostHoleDepth,
+    resolveMagnetPostHoleDiameter,
+    resolveSteppedBaseHoleStructure,
 } from "@/lib/stepped-base-hole";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -76,7 +81,11 @@ interface SteppedPanelSharedProps {
     updateParam: <K extends keyof SteppedLayoutParams>(key: K, value: SteppedLayoutParams[K]) => void;
     setParams: Dispatch<SetStateAction<SteppedLayoutParams>>;
     actions: ReactNode;
-    onAddSlot: (width: number) => void;
+    onAddSlot: (
+        width: number,
+        height?: number,
+        ellipseConfig?: EllipseSlotInstanceConfig,
+    ) => void;
     isGenerating: boolean;
     volume: number;
     selectedSlotIds: string[];
@@ -360,6 +369,13 @@ function SteppedPanelBody({
         onPreviewGroupChange,
         setParams,
     });
+    const resolvedBaseHoleStructure = resolveSteppedBaseHoleStructure(params);
+    const baseHoleStructure =
+        mode === "stepped" && resolvedBaseHoleStructure === "magnet-post-hole"
+            ? "none"
+            : resolvedBaseHoleStructure;
+    const magnetPostHoleDiameter = resolveMagnetPostHoleDiameter(params);
+    const magnetPostHoleDepth = resolveMagnetPostHoleDepth(params);
     const {
         result,
         activePressedPreviewGroupId,
@@ -409,6 +425,33 @@ function SteppedPanelBody({
                                 </Button>
                             ))}
                         </div>
+                        {mode === "stepped-cad" && (
+                            <>
+                                <div className="text-[10px] text-muted-foreground/70 font-bold tracking-wider uppercase mb-0.5 mt-1.5">椭圆</div>
+                                <div className="grid grid-cols-2 gap-1.5">
+                                    {ELLIPSE_SLOT_DEFINITIONS.map((preset) => (
+                                        <Button
+                                            key={preset.id}
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => onAddSlot(
+                                                preset.width,
+                                                preset.height,
+                                                {
+                                                    slotDefinitionId: preset.id,
+                                                    outerOffset: preset.outerOffset,
+                                                    profileExponent: preset.profileExponent,
+                                                },
+                                            )}
+                                            className="h-10 lg:h-7 text-xs lg:text-[11px] border-[#2e2a24] bg-[#1c1a16] hover:bg-[#2e2a24] hover:text-primary transition-all"
+                                        >
+                                            <Plus className="w-3 h-3 mr-1" />
+                                            {preset.name}
+                                        </Button>
+                                    ))}
+                                </div>
+                            </>
+                        )}
                     </div>
                 </SectionHeader>
             </div>
@@ -545,7 +588,7 @@ function SteppedPanelBody({
                                                     value={group.bottomHeight}
                                                     config={{
                                                         ...STEPPED_LIMITS.bottomHeight,
-                                                        min: params.enableBaseHole
+                                                        min: baseHoleStructure !== "none"
                                                             ? getSteppedGroupMinBottomHeight(params, group.id)
                                                             : STEPPED_LIMITS.bottomHeight.min,
                                                     }}
@@ -688,34 +731,37 @@ function SteppedPanelBody({
 
             <div className="iron-panel rounded-sm p-4">
                 <SectionHeader icon={Circle} title="底板孔位" collapsible defaultOpen={false}
-                    summary={params.enableBaseHole ? "磁吸孔 按各组最大槽径自动匹配" : "普通托盘"}>
+                    summary={baseHoleStructure === "magnetic-base-hole"
+                        ? "磁吸孔 按各组最大槽径自动匹配"
+                        : baseHoleStructure === "magnet-post-hole"
+                            ? `磁铁桩孔 ⌀${magnetPostHoleDiameter}mm × ${magnetPostHoleDepth}mm`
+                            : "普通托盘"}>
                     <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-2">
-                            <button
-                                type="button"
-                                onClick={() => updateParam("enableBaseHole", false)}
-                                className={`px-3 py-2 text-xs font-bold tracking-wider uppercase border transition-all duration-200 cursor-pointer ${
-                                    !params.enableBaseHole
-                                        ? "bg-primary/15 text-primary border-primary/50 shadow-inner"
-                                        : "bg-[#1c1a16] text-muted-foreground border-[#2e2a24] hover:border-[#3d372e]"
-                                }`}
-                            >
-                                普通托盘
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => updateParam("enableBaseHole", true)}
-                                className={`px-3 py-2 text-xs font-bold tracking-wider uppercase border transition-all duration-200 cursor-pointer ${
-                                    params.enableBaseHole
-                                        ? "bg-primary/15 text-primary border-primary/50 shadow-inner"
-                                        : "bg-[#1c1a16] text-muted-foreground border-[#2e2a24] hover:border-[#3d372e]"
-                                }`}
-                            >
-                                磁吸孔
-                            </button>
+                        <div className={`grid ${mode === "stepped-cad" ? "grid-cols-3" : "grid-cols-2"} gap-2`}>
+                            {[
+                                { value: "none" as const, label: "普通托盘" },
+                                { value: "magnetic-base-hole" as const, label: "磁吸孔" },
+                                ...(mode === "stepped-cad"
+                                    ? [{ value: "magnet-post-hole" as const, label: "磁铁桩孔" }]
+                                    : []),
+                            ].map(({ value, label }) => (
+                                <button
+                                    key={value}
+                                    type="button"
+                                    aria-pressed={baseHoleStructure === value}
+                                    onClick={() => updateParam("baseHoleStructure", value)}
+                                    className={`px-2 py-2 text-xs font-bold tracking-wider uppercase border transition-all duration-200 cursor-pointer ${
+                                        baseHoleStructure === value
+                                            ? "bg-primary/15 text-primary border-primary/50 shadow-inner"
+                                            : "bg-[#1c1a16] text-muted-foreground border-[#2e2a24] hover:border-[#3d372e]"
+                                    }`}
+                                >
+                                    {label}
+                                </button>
+                            ))}
                         </div>
 
-                        {params.enableBaseHole ? (
+                        {baseHoleStructure === "magnetic-base-hole" ? (
                             <div className="space-y-3">
                                 <div className="dashed-hint rounded-sm px-3 py-2 text-[11px] text-muted-foreground/70">
                                     各组会按本组最大槽径自动匹配磁吸孔规格，并自动抬高圆柱高度以保留足够底厚。
@@ -759,6 +805,27 @@ function SteppedPanelBody({
                                         </span>
                                     </div>
                                 </div>
+                            </div>
+                        ) : null}
+                        {baseHoleStructure === "magnet-post-hole" ? (
+                            <div className="space-y-3">
+                                <div className="dashed-hint rounded-sm px-3 py-2 text-[11px] text-muted-foreground/70">
+                                    从每个圆形或椭圆凹槽底面中心向下开槽；成品孔径不追加容差，并自动抬高不足的分组以保留 1mm 底壁。
+                                </div>
+                                <ParamSlider
+                                    label={STEPPED_LIMITS.magnetPostHoleDiameter.label}
+                                    value={magnetPostHoleDiameter}
+                                    config={STEPPED_LIMITS.magnetPostHoleDiameter}
+                                    onChange={(value) => updateParam("magnetPostHoleDiameter", value)}
+                                    unit={STEPPED_LIMITS.magnetPostHoleDiameter.unit}
+                                />
+                                <ParamSlider
+                                    label={STEPPED_LIMITS.magnetPostHoleDepth.label}
+                                    value={magnetPostHoleDepth}
+                                    config={STEPPED_LIMITS.magnetPostHoleDepth}
+                                    onChange={(value) => updateParam("magnetPostHoleDepth", value)}
+                                    unit={STEPPED_LIMITS.magnetPostHoleDepth.unit}
+                                />
                             </div>
                         ) : null}
                     </div>

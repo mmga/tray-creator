@@ -12,6 +12,7 @@ import {
   updateSteppedSlotPosition,
   updateSteppedSlotRotation,
 } from "@/lib/stepped-layout-slot-actions";
+import { ELLIPSE_SLOT_DEFINITIONS } from "@/lib/slot-definitions";
 
 function createIdFactory(...ids: string[]): IdFactory {
   let index = 0;
@@ -54,6 +55,37 @@ describe("stepped slot actions", () => {
       id: "slot-2",
       x: 130.2,
       y: 80,
+      groupId: STEPPED_LAYOUT_DEFAULTS.activeGroupId,
+    });
+  });
+
+  it("adds a shared ellipse definition with its complete geometry snapshot", () => {
+    const preset = ELLIPSE_SLOT_DEFINITIONS[0];
+    const added = addSteppedSlot(
+      createParams(),
+      createIdFactory("ellipse-1"),
+      preset.width,
+      preset.height,
+      {
+        slotDefinitionId: preset.id,
+        outerOffset: preset.outerOffset,
+        profileExponent: preset.profileExponent,
+      },
+    );
+
+    const rotated = updateSteppedSlotRotation(added, "ellipse-1", 42);
+
+    expect(rotated.slots[1]).toMatchObject({
+      id: "ellipse-1",
+      x: 148,
+      y: 80,
+      shape: "ellipse",
+      width: preset.width,
+      height: preset.height,
+      rotation: 42,
+      slotDefinitionId: preset.id,
+      outerOffset: preset.outerOffset,
+      profileExponent: preset.profileExponent,
       groupId: STEPPED_LAYOUT_DEFAULTS.activeGroupId,
     });
   });
@@ -118,6 +150,36 @@ describe("stepped slot actions", () => {
         { id: "slot-1", x: 110, y: 90 },
         { id: "slot-2", x: 40, y: 40 },
       ],
+    });
+  });
+
+  it("preserves ellipse snapshots when symmetry slots are inserted", () => {
+    const preset = ELLIPSE_SLOT_DEFINITIONS[1];
+    const inserted = insertSteppedSlots(
+      createParams(),
+      createIdFactory("ellipse-mirror"),
+      [
+        {
+          x: 40,
+          y: 50,
+          shape: "ellipse",
+          width: preset.width,
+          height: preset.height,
+          rotation: 35,
+          slotDefinitionId: preset.id,
+          outerOffset: preset.outerOffset,
+          profileExponent: preset.profileExponent,
+        },
+      ],
+    );
+
+    expect(inserted.slots[1]).toMatchObject({
+      id: "ellipse-mirror",
+      shape: "ellipse",
+      rotation: 35,
+      slotDefinitionId: preset.id,
+      outerOffset: preset.outerOffset,
+      profileExponent: preset.profileExponent,
     });
   });
 });

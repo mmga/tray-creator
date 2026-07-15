@@ -3,15 +3,42 @@ import type {
   SteppedLayoutParams,
   SteppedSlot,
 } from "@/types/custom-tray";
+import { geometries } from "@jscad/modeling";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import { getEffectiveGroupStructureParams } from "@/lib/stepped-group-params";
-import { generateOutline } from "@/lib/outline-geometry";
+import {
+  buildSteppedClusterFootprint,
+  type SteppedFootprintSlot,
+} from "@/lib/stepped-profile-footprint";
 import {
   clusterConnectivityCircles,
   getConnectivityRadius,
   getEffectiveBridgeGap,
   type ConnectivityCircle,
 } from "@/lib/stepped-connectivity";
+
+const { geom2 } = geometries;
+
+function getLargestOutlinePoints(footprint: Parameters<typeof geom2.toOutlines>[0]) {
+  const outlines = geom2.toOutlines(footprint);
+  let largest: [number, number][] | null = null;
+  let largestArea = 0;
+
+  for (const outline of outlines) {
+    let area = 0;
+    for (let index = 0; index < outline.length; index += 1) {
+      const next = outline[(index + 1) % outline.length];
+      area += outline[index][0] * next[1] - next[0] * outline[index][1];
+    }
+    const absoluteArea = Math.abs(area / 2);
+    if (absoluteArea > largestArea) {
+      largest = outline;
+      largestArea = absoluteArea;
+    }
+  }
+
+  return largest?.map(([x, y]) => ({ x, y })) ?? null;
+}
 
 export function buildSteppedOutlinePreview(
   params: SteppedLayoutParams,
@@ -68,11 +95,20 @@ export function buildSteppedOutlinePreview(
     const effectiveParams = getEffectiveGroupStructureParams(group, params);
 
     const higherSlotsForGroup = higherSlotsByGroupId.get(group.id) ?? [];
+    const footprintSlotsById = new Map<string, SteppedFootprintSlot>();
     const connectivityCircles: ConnectivityCircle[] = [
       ...ownSlots,
       ...higherSlotsForGroup,
     ].map((slot) => {
       const profile = getFreeSlotProfileGeometry(slot);
+      footprintSlotsById.set(slot.id, {
+        id: slot.id,
+        cx: slot.x,
+        cy: slot.y,
+        rotation: slot.rotation,
+        shape: slot.shape,
+        profile,
+      });
       return {
         id: slot.id,
         cx: slot.x,
@@ -99,23 +135,21 @@ export function buildSteppedOutlinePreview(
       const clusterKey =
         cluster.map((circle) => circle.id).sort().join("-") ||
         `${group.id}-${clusterIndex}`;
-      const outline = generateOutline(
-        cluster.map((circle) => ({
-          cx: circle.cx,
-          cy: circle.cy,
-          rOuter: circle.rOuter,
-        })),
+      const footprint = buildSteppedClusterFootprint(
+        cluster,
+        footprintSlotsById,
+        params.spacing,
         effectiveParams.smoothingRadius,
-        64,
       );
+      const points = footprint ? getLargestOutlinePoints(footprint) : null;
 
-      if (outline && outline.points.length >= 3) {
+      if (points && points.length >= 3) {
         result.push({
           key: `${group.id}-${clusterKey}`,
           groupId: group.id,
           color: group.color,
           bottomHeight: group.bottomHeight,
-          points: outline.points,
+          points,
         });
       }
     });
