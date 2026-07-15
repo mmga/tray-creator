@@ -72,6 +72,10 @@ _Avoid_: Using base size to mean the final generated slot size.
 One tray editing workflow such as grid, custom, simple stepped, or stepped.
 _Avoid_: Using "feature" when the meaning is the editor mode.
 
+**Persisted Param Artifact**:
+A newly written parameter-bearing artifact whose declared Mode identifies the editor workflow that owns its parameters, including exported parameter files, model companion parameter files, split-part companion parameter files, Draft records, and Draft Summaries.
+_Avoid_: Collapsing `stepped-cad` to `stepped`, deriving Mode independently in each writer, or treating a split-manifest file type as a Mode.
+
 **Mode Interaction State**:
 Mode-local transient editor state shared by a **Mode Workspace** and a **Mode Viewport Workspace**, such as selected slot ids or preview focus ids.
 _Avoid_: Treating shared editor interaction state as page-owned state or as registry-owned state.
@@ -261,6 +265,10 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - An external parameter-file import may start from any Mode's **Draft Action Area**, independently of the file's resolved target Mode.
 - Every newly exported parameter file records its actual Mode as its declared Mode.
 - New CAD stepped parameter files declare `stepped-cad` instead of collapsing their Mode to `stepped`.
+- Every newly written **Persisted Param Artifact** records exactly one actual **Mode** matching the editor workflow that owns its parameters.
+- A CAD stepped **Persisted Param Artifact** declares `stepped-cad`, including complete-model companion parameters, split-part companion parameters, Draft records, and Draft Summaries.
+- A split manifest may declare its own file type, such as `stepped-cad-split-parts`, without treating that file type as a **Mode**.
+- Only historical read compatibility may treat a declared `stepped` Mode as ambiguous between ordinary stepped and CAD stepped.
 - Newly exported parameter files are not required to remain importable by older application versions.
 - A historical parameter file declared as `stepped` requires the user to identify whether it belongs to ordinary stepped or CAD stepped because older exports did not preserve that distinction.
 - A legacy parameter file without a declared Mode uses structural inference only when exactly one Mode matches.
