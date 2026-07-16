@@ -595,6 +595,9 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - Selecting no base hole or **Magnet Post Hole** while **Magnetic Base Plate Only** is active restores the grid's complete slot structure.
 - Grid, custom, simple stepped, stepped, and CAD stepped Modes each persist exactly one **Base-hole Structure** plus the shared **Magnet Post Hole** diameter and depth values.
 - A legacy `enableBaseHole` value migrates to **Magnetic Base Hole** when true and no base hole when false; newly written Persisted Param Artifacts do not retain that legacy field.
+- A new grid tray defaults to **Magnetic Base Hole**, while new custom, simple stepped, stepped, and CAD stepped trays default to no base hole.
+- A historical tray artifact with neither a Base-hole Structure nor a legacy `enableBaseHole` defaults to no base hole so import never adds a manufacturing hole implicitly.
+- A historical grid artifact marked as **Magnetic Base Plate Only** always migrates to **Magnetic Base Hole**, even when its legacy magnetic-hole switch is absent.
 - A tray selects exactly one **Base-hole Structure**.
 - **CAD Stepped Construction** builds one extruded body per height band.
 - **CAD Stepped Construction** applies slot holes and the selected **Base-hole Structure** after the stepped height bands are assembled.
