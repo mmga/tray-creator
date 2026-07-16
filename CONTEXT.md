@@ -96,6 +96,10 @@ _Avoid_: Independent boolean switches that allow multiple base-hole structures t
 A preset-driven cylindrical cavity centred beneath a slot and separated from the slot floor by a top wall.
 _Avoid_: Magnet Post Hole, or treating its automatically selected dimensions as editable final dimensions.
 
+**Magnetic Base Hole Matching Rule**:
+The shape-aware rule that selects the large Magnetic Base Hole for a circular slot at 60mm diameter or above, and for a non-circular slot only when its shorter nominal dimension is greater than 40mm.
+_Avoid_: Selecting a non-circular slot's magnet from its longer dimension.
+
 **Magnet Post Hole**:
 A cylindrical recess centred on a Slot Instance of any supported shape, opening at the slot floor and terminating at its explicitly configured depth without penetrating the tray underside or adding built-in tolerance.
 _Avoid_: Magnet post when referring to a solid protrusion, or Magnetic Base Hole when referring to the automatically matched enclosed baseplate cavity.
@@ -557,6 +561,7 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - The 100mm circular **Slot Definition** has a 100mm **Base Size** and a 100.4mm **Final Slot Size**.
 - A **Base Size** is not enough to reproduce a slot unless its **Tolerance** and shape-specific geometry are also known.
 - A **Magnet Post Hole** applies to every supported Slot Instance shape, including Old World rectangular slots, and starts at each slot floor rather than using the automatically matched **Magnetic Base Hole** geometry.
+- Every Mode that supports a **Magnetic Base Hole** uses the same **Magnetic Base Hole Matching Rule**.
 - One tray uses one shared **Magnet Post Hole** diameter and depth for all of its Slot Instances, without per-group or per-slot overrides.
 - Enabling a **Magnet Post Hole** raises each affected stepped group as needed to preserve the configured recess depth and at least 1mm of material beneath it.
 - A **Conversion Base** is a thin-bottom model and supports neither a **Magnetic Base Hole** nor a **Magnet Post Hole**.
