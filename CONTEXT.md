@@ -112,6 +112,10 @@ _Avoid_: Using the tray's total height or slot depth as the available supporting
 The invalid state where the configured Magnet Post Hole diameter exceeds a Slot Instance's shortest Final Slot Size.
 _Avoid_: Silently shrinking the configured magnet diameter or omitting only the incompatible hole.
 
+**Magnetic Base Hole Fit Violation**:
+The invalid state where a Magnetic Base Hole cannot remain laterally enclosed by the tray body at its cavity height.
+_Avoid_: Treating a side-opening cavity as a valid magnetic hole, silently selecting another preset, or omitting only the incompatible hole.
+
 **Final Slot Size**:
 The exact generated slot dimension after tolerance has already been applied.
 _Avoid_: Recomputing final slot size from base size in each mode.
@@ -574,6 +578,8 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A **Magnet Post Hole** diameter is explicitly configurable from 1mm through 15mm in every supporting Mode.
 - A **Magnet Post Hole** depth is explicitly configurable from 0.5mm through 3mm in every supporting Mode.
 - A **Magnet Post Hole Fit Violation** identifies every incompatible Slot Instance and blocks model generation and export until the diameter or layout is corrected.
+- A **Magnetic Base Hole Fit Violation** identifies every incompatible Slot Instance and blocks model generation and export until its surrounding material, position, or Base-hole Structure is corrected.
+- A **Magnetic Base Hole Fit Violation** is a manufacturing error distinct from a warning-only **Slot Boundary Violation**.
 - Enabling a **Magnet Post Hole** raises each affected stepped group as needed to preserve the configured recess depth and at least 1mm of material beneath it.
 - A selected **Magnetic Base Hole** requires at least 2.4mm of **Base-hole Supporting Thickness**.
 - A selected **Magnet Post Hole** requires **Base-hole Supporting Thickness** equal to its configured depth plus at least 1mm beneath it.
