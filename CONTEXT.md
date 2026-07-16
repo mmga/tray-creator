@@ -156,6 +156,10 @@ _Avoid_: Owning browser storage, filenames, downloads, legacy Mode ambiguity, mi
 The read-side module that recognizes historical parameter wrappers and Mode ambiguity, then routes imported files or stored Drafts through their required compatibility and normalization flow.
 _Avoid_: Reusing historical downgrade rules when writing a new Persisted Param Artifact.
 
+**Param Artifact Read Error**:
+A Historical Param Artifact Reader failure with a stable semantic code, a user-readable message, and an optional underlying normalization cause.
+_Avoid_: Requiring callers or tests to parse localized error text, or representing a required Import Mode choice as an error.
+
 **Mode Interaction State**:
 Mode-local transient editor state shared by a **Mode Workspace** and a **Mode Viewport Workspace**, such as selected slot ids or preview focus ids.
 _Avoid_: Treating shared editor interaction state as page-owned state or as registry-owned state.
@@ -388,6 +392,9 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A **Historical Param Artifact Reader** consumes already-parsed unknown data and does not own browser File reading, JSON text parsing, or Draft storage access.
 - External-file and Draft-source Adapters obtain parsed data and delegate wrapper recognition, version checks, Mode validation, ambiguity handling, and normalization to the same **Historical Param Artifact Reader** Implementation.
 - An external-file Adapter may receive an **Import Candidate** or an Import Mode selection requirement, while a Draft-source Adapter receives normalized parameters for the Draft's stored Mode without creating an Import Candidate or Import Normalization Report.
+- A **Historical Param Artifact Reader** reports invalid content, unsupported versions, invalid or conflicting Mode identity, unrecognized parameter structure, expected-Mode mismatch, and normalization failure as distinct **Param Artifact Read Error** codes.
+- A **Param Artifact Read Error** retains a user-readable Chinese message and preserves an underlying normalization failure as its cause.
+- A required Import Mode choice is a normal reader result rather than a **Param Artifact Read Error**.
 - **Draft Compatibility** reads a Draft according to its stored Mode identity and does not implicitly convert it into another Mode.
 - Current-format writing and historical reading are separate Interfaces and Implementations.
 - `stepped` and `stepped-cad` may share the same parameter structure without sharing one persisted Mode identity.
