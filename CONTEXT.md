@@ -584,6 +584,9 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A **Magnet Post Hole Fit Violation** identifies every incompatible Slot Instance and blocks model generation and export until the diameter or layout is corrected.
 - A **Magnetic Base Hole Fit Violation** identifies every incompatible Slot Instance and blocks model generation and export until its surrounding material, position, or Base-hole Structure is corrected.
 - A **Magnetic Base Hole Fit Violation** is a manufacturing error distinct from a warning-only **Slot Boundary Violation**.
+- A base-hole fit violation does not reject an imported artifact or prevent saving a Draft, so the owning Mode can retain and repair the layout.
+- Import and Draft loading preserve the selected Base-hole Structure and Slot Instance positions when a base-hole fit violation exists; they never disable the hole, resize it, or move a slot implicitly.
+- A loaded base-hole fit violation remains visible in the editor and continues to block model generation and export until repaired.
 - Enabling a **Magnet Post Hole** raises each affected stepped group as needed to preserve the configured recess depth and at least 1mm of material beneath it.
 - A selected **Magnetic Base Hole** requires at least 2.4mm of **Base-hole Supporting Thickness**.
 - A selected **Magnet Post Hole** requires **Base-hole Supporting Thickness** equal to its configured depth plus at least 1mm beneath it.
