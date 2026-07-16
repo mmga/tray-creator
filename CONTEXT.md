@@ -619,3 +619,4 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - "CAD 阶梯模式生成" could mean either per-group solid union or band-by-band CAD construction. Resolved: use **CAD Stepped Construction**, which generates each height band from a sketch before extrusion.
 - "内缩凹槽" could mean an extra toggle layered on top of "轮廓浅槽". Resolved: use **Inset Recess** as a mutually exclusive **Split Assembly Groove Type**.
 - "Mode conversion" was used for both switching to a file's Mode and changing one Mode's parameter semantics into another. Resolved: external import switches to the file's Mode without converting its parameters; parameter conversion is a separate explicit operation.
+- "磁铁桩位" could mean either a solid locating post or a recess for a magnet. Resolved: use **Magnet Post Hole（磁铁桩孔）** for the cylindrical recess cut downward from a slot floor; it is never a solid protruding post.
