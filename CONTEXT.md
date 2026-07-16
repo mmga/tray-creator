@@ -385,6 +385,9 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A **Current Param Artifact Encoder** does not apply historical compatibility or change the Snapshot's Mode identity.
 - A **Historical Param Artifact Reader** owns historical wrapper recognition and ambiguous Mode handling.
 - A **Historical Param Artifact Reader** never converts parameters between Modes; it only identifies the owning Mode and applies compatibility within that Mode.
+- A **Historical Param Artifact Reader** consumes already-parsed unknown data and does not own browser File reading, JSON text parsing, or Draft storage access.
+- External-file and Draft-source Adapters obtain parsed data and delegate wrapper recognition, version checks, Mode validation, ambiguity handling, and normalization to the same **Historical Param Artifact Reader** Implementation.
+- An external-file Adapter may receive an **Import Candidate** or an Import Mode selection requirement, while a Draft-source Adapter receives normalized parameters for the Draft's stored Mode without creating an Import Candidate or Import Normalization Report.
 - **Draft Compatibility** reads a Draft according to its stored Mode identity and does not implicitly convert it into another Mode.
 - Current-format writing and historical reading are separate Interfaces and Implementations.
 - `stepped` and `stepped-cad` may share the same parameter structure without sharing one persisted Mode identity.
