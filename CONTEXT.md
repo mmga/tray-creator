@@ -396,6 +396,10 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A **Model Geometry Fingerprint** is transient model-lifecycle state and is not part of a **Persisted Param Artifact**.
 - If any file in a **Model Artifact Bundle** cannot be prepared, the export triggers no downloads.
 - A **Model Artifact Bundle** keeps its files separate and downloads them in a deterministic order after preparation succeeds.
+- A **Model Artifact Bundle** owns companion parameter encoding, complete-file collection, preparation success, deterministic download triggering, and aggregated download-trigger failure reporting.
+- Mode-specific model Implementations own geometry generation, STL serialization, model filenames, and optional manifest content, then contribute their named files to the **Model Artifact Bundle**.
+- A **Model Artifact Bundle** does not own model geometry algorithms, Mode-specific naming rules, CAD split manifest semantics, or preview-cache lifecycle.
+- If a browser download trigger fails after bundle preparation, remaining files are still attempted because earlier browser downloads cannot be rolled back; the export reports the collected trigger failures afterward.
 - Capturing a **Mode Param Snapshot** does not migrate, normalize, or perform business validation; an uncopyable runtime value is a program error rather than a compatibility error.
 - Parameter export, model companion export, split-part companion export, Draft persistence, and Draft Summary construction consume a **Mode Param Snapshot** instead of independently selectable Mode and params arguments.
 - A **Mode Param Snapshot** does not own browser storage, file naming, downloads, or historical read compatibility.
