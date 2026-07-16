@@ -7,6 +7,18 @@ import type {
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import {
+  CURRENT_PARAM_ARTIFACT_VERSION,
+  buildCurrentParamArtifact,
+  createCurrentParamArtifactBlob,
+  serializeCurrentParamArtifact,
+  type CurrentParamArtifact,
+} from "@/lib/current-param-artifact-encoder";
+import {
+  captureModeParamSnapshot,
+  type ExportableParams,
+  type ParamsByMode,
+} from "@/lib/mode-param-snapshot";
+import {
   migrateCustomParamsToStepped,
   normalizeParamsForMode,
 } from "@/lib/param-normalization";
@@ -16,29 +28,11 @@ import {
   type ImportNormalizationReport,
 } from "@/lib/param-import-report";
 
-export type ExportableParams =
-  | TrayParams
-  | BaseConverterParams
-  | CustomLayoutParams
-  | SimpleSteppedLayoutParams
-  | SteppedLayoutParams;
+export type { ExportableParams, ParamsByMode } from "@/lib/mode-param-snapshot";
 
-export type ParamsByMode = {
-  grid: TrayParams;
-  custom: CustomLayoutParams;
-  "base-converter": BaseConverterParams;
-  "simple-stepped": SimpleSteppedLayoutParams;
-  stepped: SteppedLayoutParams;
-  "stepped-cad": SteppedLayoutParams;
-};
+export type ParamFile = CurrentParamArtifact;
 
-export interface ParamFile {
-  version: number;
-  mode: AppMode;
-  params: ExportableParams;
-}
-
-const CURRENT_VERSION = 1;
+const CURRENT_VERSION = CURRENT_PARAM_ARTIFACT_VERSION;
 const APP_MODES: readonly AppMode[] = [
   "grid",
   "custom",
@@ -79,31 +73,28 @@ function resolveParamMode(mode: AppMode): AppMode {
   return mode === "stepped-cad" ? "stepped" : mode;
 }
 
-function precisionReplacer(_key: string, value: unknown) {
-  if (typeof value === "number") {
-    return Math.round(value * 1000) / 1000;
-  }
-  return value;
-}
-
 export function buildParamFile(
   mode: AppMode,
   params: ExportableParams,
 ): ParamFile {
-  return { version: CURRENT_VERSION, mode, params };
+  return buildCurrentParamArtifact(
+    captureModeParamSnapshot(mode, params as ParamsByMode[typeof mode]),
+  );
 }
 
 export function serializeParamFile(
   mode: AppMode,
   params: ExportableParams,
 ): string {
-  return JSON.stringify(buildParamFile(mode, params), precisionReplacer, 2);
+  return serializeCurrentParamArtifact(
+    captureModeParamSnapshot(mode, params as ParamsByMode[typeof mode]),
+  );
 }
 
 export function createParamBlob(mode: AppMode, params: ExportableParams): Blob {
-  return new Blob([serializeParamFile(mode, params)], {
-    type: "application/json",
-  });
+  return createCurrentParamArtifactBlob(
+    captureModeParamSnapshot(mode, params as ParamsByMode[typeof mode]),
+  );
 }
 
 export function downloadParamFile(
