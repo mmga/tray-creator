@@ -578,6 +578,8 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A **Base Size** is not enough to reproduce a slot unless its **Tolerance** and shape-specific geometry are also known.
 - A **Magnet Post Hole** applies to every supported Slot Instance shape, including Old World rectangular slots, and starts at each slot floor rather than using the automatically matched **Magnetic Base Hole** geometry.
 - Every Mode that supports a **Magnetic Base Hole** uses the same **Magnetic Base Hole Matching Rule**.
+- Each Slot Instance independently applies the **Magnetic Base Hole Matching Rule**, so one tray or stepped group may contain both standard and large Magnetic Base Hole presets.
+- A Base-hole Structure editor shows the selected Slot Instance's matched Magnetic Base Hole preset and summarizes every preset currently used by the tray; it never describes a stepped group's largest slot as the shared preset.
 - One tray uses one shared **Magnet Post Hole** diameter and depth for all of its Slot Instances, without per-group or per-slot overrides.
 - A **Magnet Post Hole** diameter is explicitly configurable from 1mm through 15mm in every supporting Mode.
 - A **Magnet Post Hole** depth is explicitly configurable from 0.5mm through 3mm in every supporting Mode.
