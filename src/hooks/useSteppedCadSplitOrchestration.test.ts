@@ -180,7 +180,7 @@ describe("useSteppedCadSplitOrchestration", () => {
     expect(result.current.isGeneratingSplitPreview).toBe(false);
   });
 
-  it("使用有效尺寸导出分件并保留成功提示", async () => {
+  it("使用 CAD Mode Snapshot 导出分件并保留成功提示", async () => {
     const params = createParams();
     exportSplitPartsMock.mockResolvedValue(undefined);
     const { result } = renderHook(() =>
@@ -196,10 +196,9 @@ describe("useSteppedCadSplitOrchestration", () => {
     });
 
     expect(exportSplitPartsMock).toHaveBeenCalledWith(
-      params,
       expect.objectContaining({
-        width: expect.any(Number),
-        depth: expect.any(Number),
+        mode: "stepped-cad",
+        params,
       }),
       trayWorkerServiceMock,
       browserDownloadPortMock,

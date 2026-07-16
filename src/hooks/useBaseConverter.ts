@@ -14,6 +14,11 @@ import {
 import { browserDownloadPort } from "@/lib/download-port";
 import { trayWorkerService } from "@/lib/worker/worker-service";
 import { useEditableParams } from "@/hooks/useEditableParams";
+import {
+  captureModeParamSnapshot,
+  createModelGeometryFingerprint,
+  type ModeParamSnapshot,
+} from "@/lib/mode-param-snapshot";
 
 interface UseBaseConverterReturn {
   params: BaseConverterParams;
@@ -32,15 +37,21 @@ interface UseBaseConverterReturn {
 }
 
 export function useBaseConverter(): UseBaseConverterReturn {
-  const model = useEditableParams<BaseConverterParams>({
+  const model = useEditableParams<
+    BaseConverterParams,
+    ModeParamSnapshot<"base-converter">
+  >({
     initialState: BASE_CONVERTER_DEFAULTS,
+    captureSnapshot: (params) =>
+      captureModeParamSnapshot("base-converter", params),
+    fingerprintSnapshot: createModelGeometryFingerprint,
     normalize: normalizeBaseConverterParams,
     guard: () => trayWorkerService !== null,
-    generatePreview: async (params) =>
-      generateBaseConverterPreview(params, trayWorkerService!),
-    exportModel: async (params, geometry) =>
+    generatePreview: async (snapshot) =>
+      generateBaseConverterPreview(snapshot.params, trayWorkerService!),
+    exportModel: async (snapshot, geometry) =>
       exportBaseConverterModelFiles(
-        params,
+        snapshot,
         geometry,
         trayWorkerService!,
         browserDownloadPort,

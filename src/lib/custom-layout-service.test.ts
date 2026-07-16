@@ -12,7 +12,6 @@ vi.mock("@/lib/jscad-to-three", () => ({
 }));
 
 import {
-  buildCustomParamsBlob,
   exportCustomModelFiles,
   generateCustomPreview,
   getCustomSTLFilename,
@@ -100,16 +99,8 @@ describe("custom layout service", () => {
       "tray_custom_150x90_2slots.stl",
     );
 
-    const paramsBlob = buildCustomParamsBlob(
-      captureModeParamSnapshot("custom", params),
-    );
-    await expect(paramsBlob.text()).resolves.toContain('"version": 1');
-    await expect(paramsBlob.text()).resolves.toContain('"mode": "custom"');
-    await expect(paramsBlob.text()).resolves.toContain('"trayWidth": 260');
-
     await exportCustomModelFiles(
-      fixedParams,
-      effectiveDimensions,
+      captureModeParamSnapshot("custom", fixedParams),
       geometry,
       workerPort,
       downloadPort,

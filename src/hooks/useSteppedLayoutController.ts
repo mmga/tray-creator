@@ -58,6 +58,11 @@ import {
   type SteppedOptimizationProposal,
 } from "@/lib/stepped-global-optimize";
 import type { SteppedPreviewResult } from "@/lib/stepped-model-service";
+import {
+  captureModeParamSnapshot,
+  createModelGeometryFingerprint,
+  type ModeParamSnapshot,
+} from "@/lib/mode-param-snapshot";
 
 export interface UseSteppedLayoutControllerReturn {
   params: SteppedLayoutParams;
@@ -119,15 +124,16 @@ export interface UseSteppedLayoutControllerReturn {
 }
 
 interface UseSteppedLayoutControllerOptions<
+  M extends "stepped" | "stepped-cad",
   TWorkerPort extends STLExportWorkerPort & SteppedOutlinePreviewPort,
 > {
+  mode: M;
   generatePreview: (
     params: SteppedLayoutParams,
     workerPort: TWorkerPort,
   ) => Promise<SteppedPreviewResult>;
   exportModel: (
-    params: SteppedLayoutParams,
-    effectiveDimensions: SteppedLayoutExtents,
+    snapshot: ModeParamSnapshot<M>,
     geometry: Geom3,
     workerPort: TWorkerPort,
     downloadPort: DownloadPort,
@@ -135,11 +141,13 @@ interface UseSteppedLayoutControllerOptions<
 }
 
 export function useSteppedLayoutController<
+  M extends "stepped" | "stepped-cad",
   TWorkerPort extends STLExportWorkerPort & SteppedOutlinePreviewPort,
 >({
+  mode,
   generatePreview,
   exportModel,
-}: UseSteppedLayoutControllerOptions<TWorkerPort>): UseSteppedLayoutControllerReturn {
+}: UseSteppedLayoutControllerOptions<M, TWorkerPort>): UseSteppedLayoutControllerReturn {
   const [params, internalSetParams] = useState<SteppedLayoutParams>(
     () => applySteppedBaseHoleDerivedFields(STEPPED_LAYOUT_DEFAULTS),
   );
@@ -200,23 +208,28 @@ export function useSteppedLayoutController<
     invalidatePreview,
     handleGenerate,
     handleExportSTL,
-  } = usePreviewLifecycle({
+  } = usePreviewLifecycle<
+    SteppedLayoutParams,
+    ModeParamSnapshot<M>
+  >({
     getParams: () => paramsRef.current,
-    generatePreview: async (currentParams) => {
+    captureSnapshot: (currentParams) =>
+      captureModeParamSnapshot(mode, currentParams),
+    fingerprintSnapshot: createModelGeometryFingerprint,
+    generatePreview: async (snapshot) => {
       const workerPort = trayWorkerService as unknown as TWorkerPort | null;
       if (!workerPort) {
         return null;
       }
-      return generatePreview(currentParams, workerPort);
+      return generatePreview(snapshot.params, workerPort);
     },
-    exportModel: async (currentParams, geometry) => {
+    exportModel: async (snapshot, geometry) => {
       const workerPort = trayWorkerService as unknown as TWorkerPort | null;
       if (!workerPort) {
         return;
       }
       await exportModel(
-        currentParams,
-        calculateSteppedEffectiveDimensions(currentParams),
+        snapshot,
         geometry,
         workerPort,
         browserDownloadPort,

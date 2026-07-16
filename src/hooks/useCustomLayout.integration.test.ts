@@ -317,8 +317,7 @@ describe("useCustomLayout", () => {
       await result.current.handleExportSTL();
     });
     expect(exportCustomModelFilesMock).toHaveBeenCalledWith(
-      result.current.params,
-      result.current.effectiveDimensions,
+      { mode: "custom", params: result.current.params },
       geometry,
       trayWorkerServiceMock,
       browserDownloadPort,
@@ -332,8 +331,7 @@ describe("useCustomLayout", () => {
     });
 
     expect(exportCustomModelFilesMock).toHaveBeenLastCalledWith(
-      result.current.params,
-      result.current.effectiveDimensions,
+      { mode: "custom", params: result.current.params },
       refreshedGeometry,
       trayWorkerServiceMock,
       browserDownloadPort,

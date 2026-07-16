@@ -37,3 +37,30 @@ export function captureModeParamSnapshot<M extends AppMode>(
     params: structuredClone(params),
   };
 }
+
+function canonicalizeFingerprintValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(canonicalizeFingerprintValue);
+  }
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([key, entryValue]) => [
+          key,
+          canonicalizeFingerprintValue(entryValue),
+        ]),
+    );
+  }
+  return value;
+}
+
+/**
+ * 标识缓存几何由哪一个 Mode Param Snapshot 生成。
+ * 指纹仅存在于运行时，不进入持久化参数产物。
+ */
+export function createModelGeometryFingerprint<M extends AppMode>(
+  snapshot: ModeParamSnapshot<M>,
+): string {
+  return JSON.stringify(canonicalizeFingerprintValue(snapshot));
+}

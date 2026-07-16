@@ -9,9 +9,9 @@ import type {
 } from "@/lib/model-ports";
 import type { SteppedCadSplitPreviewPart } from "@/lib/stepped-cad-model-service";
 import {
-  calculateSteppedEffectiveDimensions,
-  type SteppedLayoutExtents,
-} from "@/lib/stepped-layout-math";
+  captureModeParamSnapshot,
+  type ModeParamSnapshot,
+} from "@/lib/mode-param-snapshot";
 import { trayWorkerService } from "@/lib/worker/worker-service";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 
@@ -22,8 +22,7 @@ interface UseSteppedCadSplitOrchestrationOptions {
     workerPort: SteppedCadWorkerPort,
   ) => Promise<SteppedCadSplitPreviewPart[]>;
   exportSplitParts: (
-    params: SteppedLayoutParams,
-    effectiveDimensions: SteppedLayoutExtents,
+    snapshot: ModeParamSnapshot<"stepped-cad">,
     workerPort: SteppedCadWorkerPort,
     downloadPort: DownloadPort,
   ) => Promise<void>;
@@ -133,8 +132,7 @@ export function useSteppedCadSplitOrchestration(
 
     try {
       await exportSplitParts(
-        currentParams,
-        calculateSteppedEffectiveDimensions(currentParams),
+        captureModeParamSnapshot("stepped-cad", currentParams),
         workerPort,
         browserDownloadPort,
       );

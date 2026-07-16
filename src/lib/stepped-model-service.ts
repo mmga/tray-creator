@@ -1,13 +1,16 @@
 import type * as THREE from "three";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
-import { createCurrentParamArtifactBlob } from "@/lib/current-param-artifact-encoder";
-import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
+import type { ModeParamSnapshot } from "@/lib/mode-param-snapshot";
+import { exportModelArtifactBundle } from "@/lib/model-artifact-bundle";
 import type {
   DownloadPort,
   SteppedSplitPartResult,
   SteppedWorkerPort,
 } from "@/lib/model-ports";
-import type { SteppedLayoutExtents } from "@/lib/stepped-layout-math";
+import {
+  calculateSteppedEffectiveDimensions,
+  type SteppedLayoutExtents,
+} from "@/lib/stepped-layout-math";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 
@@ -52,20 +55,19 @@ export function getSteppedSTLFilename(
 }
 
 export async function exportSteppedModelFiles(
-  params: SteppedLayoutParams,
-  effectiveDimensions: SteppedLayoutExtents,
+  snapshot: ModeParamSnapshot<"stepped">,
   geometry: Geom3,
   workerPort: SteppedWorkerPort,
   downloadPort: DownloadPort,
 ): Promise<void> {
-  const snapshot = captureModeParamSnapshot("stepped", params);
+  const effectiveDimensions = calculateSteppedEffectiveDimensions(snapshot.params);
   const stlFilename = getSteppedSTLFilename(snapshot.params, effectiveDimensions);
-  const stlResult = await workerPort.exportSTL(geometry, stlFilename);
-  downloadPort.downloadBlob(stlResult.blob, stlResult.filename);
-
-  const jsonFilename = stlFilename.replace(/\.stl$/i, ".json");
-  downloadPort.downloadBlob(
-    createCurrentParamArtifactBlob(snapshot),
-    jsonFilename,
+  await exportModelArtifactBundle(
+    snapshot,
+    async () => ({
+      files: [await workerPort.exportSTL(geometry, stlFilename)],
+      companionParamFilename: stlFilename.replace(/\.stl$/i, ".json"),
+    }),
+    downloadPort,
   );
 }

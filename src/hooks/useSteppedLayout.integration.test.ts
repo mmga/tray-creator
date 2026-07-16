@@ -484,8 +484,7 @@ describe("useSteppedLayout", () => {
       await result.current.handleExportSTL();
     });
     expect(exportSteppedModelFilesMock).toHaveBeenCalledWith(
-      result.current.params,
-      result.current.effectiveDimensions,
+      { mode: "stepped", params: result.current.params },
       freshGeometry,
       trayWorkerServiceMock,
       browserDownloadPort,

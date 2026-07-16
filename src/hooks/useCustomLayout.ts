@@ -19,9 +19,7 @@ import {
   updateCustomSlotRotation,
   type CustomSlotUpdate,
 } from "@/lib/custom-layout-actions";
-import {
-  calculateCustomEffectiveDimensions,
-} from "@/lib/custom-layout-math";
+import { calculateCustomEffectiveDimensions } from "@/lib/custom-layout-math";
 import {
   randomizeCustomSlotArrangement,
   type RandomSlotArrangementResult,
@@ -34,6 +32,11 @@ import { useEditableParams } from "@/hooks/useEditableParams";
 import { trayWorkerService } from "@/lib/worker/worker-service";
 import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
 import type * as THREE from "three";
+import {
+  captureModeParamSnapshot,
+  createModelGeometryFingerprint,
+  type ModeParamSnapshot,
+} from "@/lib/mode-param-snapshot";
 
 interface UseCustomLayoutReturn {
   params: CustomLayoutParams;
@@ -105,15 +108,19 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     isPreviewStale,
     handleGenerate,
     handleExportSTL,
-  } = useEditableParams<CustomLayoutParams>({
+  } = useEditableParams<
+    CustomLayoutParams,
+    ModeParamSnapshot<"custom">
+  >({
     initialState: CUSTOM_LAYOUT_DEFAULTS,
+    captureSnapshot: (params) => captureModeParamSnapshot("custom", params),
+    fingerprintSnapshot: createModelGeometryFingerprint,
     guard: () => trayWorkerService !== null,
-    generatePreview: async (currentParams) =>
-      generateCustomPreview(currentParams, trayWorkerService!),
-    exportModel: async (currentParams, geometry) => {
+    generatePreview: async (snapshot) =>
+      generateCustomPreview(snapshot.params, trayWorkerService!),
+    exportModel: async (snapshot, geometry) => {
       await exportCustomModelFiles(
-        currentParams,
-        calculateCustomEffectiveDimensions(currentParams),
+        snapshot,
         geometry,
         trayWorkerService!,
         browserDownloadPort,
@@ -125,7 +132,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     (current: CustomLayoutParams = paramsRef.current) => {
       return calculateCustomEffectiveDimensions(current);
     },
-    [],
+    [paramsRef],
   );
 
   const effectiveDimensions = useMemo(

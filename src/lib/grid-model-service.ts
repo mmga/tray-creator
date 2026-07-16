@@ -1,9 +1,8 @@
 import type * as THREE from "three";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
-import { createCurrentParamArtifactBlob } from "@/lib/current-param-artifact-encoder";
-import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import type { ModeParamSnapshot } from "@/lib/mode-param-snapshot";
+import { exportModelArtifactBundle } from "@/lib/model-artifact-bundle";
 import type { DownloadPort, GridWorkerPort } from "@/lib/model-ports";
 import { generateSTLFilename } from "@/lib/stl-export";
 import type { TrayParams } from "@/types/tray";
@@ -31,23 +30,22 @@ export function getGridSTLFilename(params: TrayParams): string {
   return generateSTLFilename(params.rows, params.columns, params.holeDiameter);
 }
 
-export function buildGridParamsBlob(
-  snapshot: ModeParamSnapshot<"grid">,
-): Blob {
-  return createCurrentParamArtifactBlob(snapshot);
-}
-
 export async function exportGridModelFiles(
-  params: TrayParams,
+  snapshot: ModeParamSnapshot<"grid">,
   geometry: Geom3,
   workerPort: GridWorkerPort,
   downloadPort: DownloadPort,
 ): Promise<void> {
-  const snapshot = captureModeParamSnapshot("grid", params);
   const stlFilename = getGridSTLFilename(snapshot.params);
-  const stlResult = await workerPort.exportSTL(geometry, stlFilename);
-  downloadPort.downloadBlob(stlResult.blob, stlResult.filename);
-
-  const jsonFilename = stlFilename.replace(/\.stl$/i, ".json");
-  downloadPort.downloadBlob(buildGridParamsBlob(snapshot), jsonFilename);
+  await exportModelArtifactBundle(
+    snapshot,
+    async () => {
+      const stlResult = await workerPort.exportSTL(geometry, stlFilename);
+      return {
+        files: [stlResult],
+        companionParamFilename: stlFilename.replace(/\.stl$/i, ".json"),
+      };
+    },
+    downloadPort,
+  );
 }

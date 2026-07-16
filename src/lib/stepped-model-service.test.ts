@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
+import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 
 const { jscadToThreeGeometryMock } = vi.hoisted(() => ({
   jscadToThreeGeometryMock: vi.fn(),
@@ -46,7 +47,7 @@ describe("stepped model service", () => {
       generateSteppedOutlinePreview: vi.fn(),
       exportSTL: vi.fn().mockResolvedValue({
         blob: stlBlob,
-        filename: "tray_stepped_100x90_0slots.stl",
+        filename: "tray_stepped_260x260_0slots.stl",
       }),
     };
     const downloadPort = {
@@ -65,15 +66,7 @@ describe("stepped model service", () => {
     ).toBe("tray_stepped_100x90_0slots.stl");
 
     await exportSteppedModelFiles(
-      STEPPED_LAYOUT_DEFAULTS,
-      {
-        width: 100,
-        depth: 90,
-        minX: 0,
-        maxX: 0,
-        minY: 0,
-        maxY: 0,
-      },
+      captureModeParamSnapshot("stepped", STEPPED_LAYOUT_DEFAULTS),
       geometry,
       workerPort,
       downloadPort,
@@ -81,16 +74,16 @@ describe("stepped model service", () => {
 
     expect(workerPort.exportSTL).toHaveBeenCalledWith(
       geometry,
-      "tray_stepped_100x90_0slots.stl",
+      "tray_stepped_260x260_0slots.stl",
     );
     expect(downloadPort.downloadBlob).toHaveBeenCalledTimes(2);
     expect(downloadPort.downloadBlob).toHaveBeenNthCalledWith(
       1,
       stlBlob,
-      "tray_stepped_100x90_0slots.stl",
+      "tray_stepped_260x260_0slots.stl",
     );
     expect(downloadPort.downloadBlob.mock.calls[1]?.[1]).toBe(
-      "tray_stepped_100x90_0slots.json",
+      "tray_stepped_260x260_0slots.json",
     );
     await expect(downloadPort.downloadBlob.mock.calls[1]?.[0].text()).resolves.toContain(
       '"mode": "stepped"',

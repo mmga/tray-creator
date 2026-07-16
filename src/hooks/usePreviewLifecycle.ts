@@ -12,10 +12,12 @@ export interface PreviewLifecycleResult {
   volume: number;
 }
 
-interface UsePreviewLifecycleOptions<P> {
+interface UsePreviewLifecycleOptions<P, S> {
   getParams: () => P;
-  generatePreview: (params: P) => Promise<PreviewLifecycleResult | null>;
-  exportModel: (params: P, geometry: Geom3) => Promise<void>;
+  captureSnapshot: (params: P) => S;
+  fingerprintSnapshot: (snapshot: S) => string;
+  generatePreview: (snapshot: S) => Promise<PreviewLifecycleResult | null>;
+  exportModel: (snapshot: S, geometry: Geom3) => Promise<void>;
   onInvalidate?: () => void;
 }
 
@@ -29,12 +31,14 @@ interface UsePreviewLifecycleReturn {
   handleExportSTL: () => Promise<void>;
 }
 
-export function usePreviewLifecycle<P>({
+export function usePreviewLifecycle<P, S>({
   getParams,
+  captureSnapshot,
+  fingerprintSnapshot,
   generatePreview,
   exportModel,
   onInvalidate,
-}: UsePreviewLifecycleOptions<P>): UsePreviewLifecycleReturn {
+}: UsePreviewLifecycleOptions<P, S>): UsePreviewLifecycleReturn {
   const { toast } = useToast();
   const [threeGeometry, setThreeGeometry] =
     useState<THREE.BufferGeometry | null>(null);
@@ -42,21 +46,25 @@ export function usePreviewLifecycle<P>({
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPreviewStale, setIsPreviewStale] = useState(false);
   const geometryRef = useRef<Geom3 | null>(null);
+  const geometryFingerprintRef = useRef<string | null>(null);
   const { nextSeq, isStale } = useRequestSequence();
 
   const invalidatePreview = useCallback(() => {
     nextSeq();
     geometryRef.current = null;
+    geometryFingerprintRef.current = null;
     setVolume(0);
     setIsPreviewStale(true);
     onInvalidate?.();
   }, [nextSeq, onInvalidate]);
 
-  const generateCurrentPreview = useCallback(async (): Promise<Geom3 | null> => {
+  const generateCurrentPreview = useCallback(async (
+    snapshot: S,
+  ): Promise<Geom3 | null> => {
     const seq = nextSeq();
     setIsGenerating(true);
     try {
-      const result = await generatePreview(getParams());
+      const result = await generatePreview(snapshot);
       if (!result) {
         return null;
       }
@@ -67,6 +75,7 @@ export function usePreviewLifecycle<P>({
       }
 
       geometryRef.current = result.geometry;
+      geometryFingerprintRef.current = fingerprintSnapshot(snapshot);
       setVolume(result.volume);
       setThreeGeometry((prev) => {
         prev?.dispose();
@@ -84,16 +93,21 @@ export function usePreviewLifecycle<P>({
     } finally {
       setIsGenerating(false);
     }
-  }, [generatePreview, getParams, isStale, nextSeq, toast]);
+  }, [fingerprintSnapshot, generatePreview, isStale, nextSeq, toast]);
 
   const handleGenerate = useCallback(async () => {
-    await generateCurrentPreview();
-  }, [generateCurrentPreview]);
+    await generateCurrentPreview(captureSnapshot(getParams()));
+  }, [captureSnapshot, generateCurrentPreview, getParams]);
 
   const handleExportSTL = useCallback(async () => {
-    const needsFreshPreview = isPreviewStale || !geometryRef.current;
+    const snapshot = captureSnapshot(getParams());
+    const fingerprint = fingerprintSnapshot(snapshot);
+    const needsFreshPreview =
+      !geometryRef.current || geometryFingerprintRef.current !== fingerprint;
     const geometry =
-      needsFreshPreview ? await generateCurrentPreview() : geometryRef.current;
+      needsFreshPreview
+        ? await generateCurrentPreview(snapshot)
+        : geometryRef.current;
 
     if (!geometry) {
       if (!needsFreshPreview) {
@@ -103,7 +117,7 @@ export function usePreviewLifecycle<P>({
     }
 
     try {
-      await exportModel(getParams(), geometry);
+      await exportModel(snapshot, geometry);
     } catch (err) {
       console.error("STL导出失败:", err);
       toast(
@@ -111,7 +125,14 @@ export function usePreviewLifecycle<P>({
         `STL 导出失败：${err instanceof Error ? err.message : "未知错误"}`,
       );
     }
-  }, [exportModel, generateCurrentPreview, getParams, isPreviewStale, toast]);
+  }, [
+    captureSnapshot,
+    exportModel,
+    fingerprintSnapshot,
+    generateCurrentPreview,
+    getParams,
+    toast,
+  ]);
 
   return {
     threeGeometry,

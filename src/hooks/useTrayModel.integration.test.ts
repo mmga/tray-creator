@@ -202,7 +202,7 @@ describe("useTrayModel", () => {
     });
 
     expect(exportGridModelFilesMock).toHaveBeenCalledWith(
-      result.current.params,
+      { mode: "grid", params: result.current.params },
       geometry,
       trayWorkerServiceMock,
       browserDownloadPort,
@@ -216,7 +216,7 @@ describe("useTrayModel", () => {
     });
 
     expect(exportGridModelFilesMock).toHaveBeenLastCalledWith(
-      result.current.params,
+      { mode: "grid", params: result.current.params },
       refreshedGeometry,
       trayWorkerServiceMock,
       browserDownloadPort,

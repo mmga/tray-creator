@@ -22,12 +22,16 @@ import {
 } from "@/lib/simple-stepped-projection";
 import type { CanvasSlotUpdate } from "@/lib/canvas-types";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
-import { generateSimpleSteppedSTLFilename } from "@/lib/stl-export";
 import { useUndoHistory } from "@/hooks/useUndoHistory";
 import { usePreviewLifecycle } from "@/hooks/usePreviewLifecycle";
 import { trayWorkerService } from "@/lib/worker/worker-service";
-import { downloadParamFile } from "@/lib/param-download";
-import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
+import {
+  captureModeParamSnapshot,
+  createModelGeometryFingerprint,
+  type ModeParamSnapshot,
+} from "@/lib/mode-param-snapshot";
+import { browserDownloadPort } from "@/lib/download-port";
+import { exportSimpleSteppedModelFiles } from "@/lib/simple-stepped-model-service";
 
 export interface UseSimpleSteppedLayoutReturn {
   params: SimpleSteppedLayoutParams;
@@ -93,44 +97,37 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
     invalidatePreview,
     handleGenerate,
     handleExportSTL,
-  } = usePreviewLifecycle({
+  } = usePreviewLifecycle<
+    SimpleSteppedLayoutParams,
+    ModeParamSnapshot<"simple-stepped">
+  >({
     getParams: () => paramsRef.current,
-    generatePreview: async (currentParams) => {
+    captureSnapshot: (currentParams) =>
+      captureModeParamSnapshot("simple-stepped", currentParams),
+    fingerprintSnapshot: createModelGeometryFingerprint,
+    generatePreview: async (snapshot) => {
       if (!trayWorkerService) {
         return null;
       }
-      const result = await trayWorkerService.generateSimpleStepped(currentParams);
+      const result = await trayWorkerService.generateSimpleStepped(
+        snapshot.params,
+      );
       return {
         geometry: result.geometry,
         threeGeometry: jscadToThreeGeometry(result.geometry),
         volume: result.volume,
       };
     },
-    exportModel: async (currentParams, geometry) => {
+    exportModel: async (snapshot, geometry) => {
       if (!trayWorkerService) {
         return;
       }
-
-      const snapshot = captureModeParamSnapshot("simple-stepped", currentParams);
-      const currentDerived = deriveSimpleSteppedLayout(snapshot.params);
-      const filename = generateSimpleSteppedSTLFilename(
-        Math.round(currentDerived.trayWidth),
-        Math.round(currentDerived.trayDepth),
-        currentDerived.activeRows.length,
-        snapshot.params.slots.length,
+      await exportSimpleSteppedModelFiles(
+        snapshot,
+        geometry,
+        trayWorkerService,
+        browserDownloadPort,
       );
-      const result = await trayWorkerService.exportSTL(geometry, filename);
-      const url = URL.createObjectURL(result.blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      const jsonFilename = filename.replace(/\.stl$/i, ".json");
-      downloadParamFile(snapshot, jsonFilename);
     },
   });
 

@@ -15,6 +15,11 @@ import {
 } from "@/lib/grid-model-state";
 import { trayWorkerService } from "@/lib/worker/worker-service";
 import { useEditableParams } from "@/hooks/useEditableParams";
+import {
+  captureModeParamSnapshot,
+  createModelGeometryFingerprint,
+  type ModeParamSnapshot,
+} from "@/lib/mode-param-snapshot";
 
 interface UseTrayModelReturn {
   params: TrayParams;
@@ -42,14 +47,16 @@ export function useTrayModel(): UseTrayModelReturn {
     isPreviewStale,
     handleGenerate,
     handleExportSTL,
-  } = useEditableParams<TrayParams>({
+  } = useEditableParams<TrayParams, ModeParamSnapshot<"grid">>({
     initialState: () => resetGridParamsState(),
+    captureSnapshot: (params) => captureModeParamSnapshot("grid", params),
+    fingerprintSnapshot: createModelGeometryFingerprint,
     guard: () => trayWorkerService !== null,
-    generatePreview: async (currentParams) =>
-      generateGridPreview(currentParams, trayWorkerService!),
-    exportModel: async (currentParams, geometry) => {
+    generatePreview: async (snapshot) =>
+      generateGridPreview(snapshot.params, trayWorkerService!),
+    exportModel: async (snapshot, geometry) => {
       await exportGridModelFiles(
-        currentParams,
+        snapshot,
         geometry,
         trayWorkerService!,
         browserDownloadPort,

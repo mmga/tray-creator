@@ -11,12 +11,14 @@ export type UseSteppedLayoutReturn = Omit<
 
 export function useSteppedLayout(): UseSteppedLayoutReturn {
   const {
-    updateGroupSplitPartTarget: _updateGroupSplitPartTarget,
+    updateGroupSplitPartTarget,
     ...steppedModel
   } = useSteppedLayoutController({
+    mode: "stepped",
     generatePreview: generateSteppedPreview,
     exportModel: exportSteppedModelFiles,
   });
+  void updateGroupSplitPartTarget;
 
   return steppedModel;
 }

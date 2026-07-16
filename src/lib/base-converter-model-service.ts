@@ -1,8 +1,8 @@
 import type * as THREE from "three";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
-import { createCurrentParamArtifactBlob } from "@/lib/current-param-artifact-encoder";
-import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
+import type { ModeParamSnapshot } from "@/lib/mode-param-snapshot";
+import { exportModelArtifactBundle } from "@/lib/model-artifact-bundle";
 import type {
   BaseConverterWorkerPort,
   DownloadPort,
@@ -32,17 +32,18 @@ export function getBaseConverterSTLFilename(params: BaseConverterParams) {
 }
 
 export async function exportBaseConverterModelFiles(
-  params: BaseConverterParams,
+  snapshot: ModeParamSnapshot<"base-converter">,
   geometry: Geom3,
   workerPort: BaseConverterWorkerPort,
   downloadPort: DownloadPort,
 ) {
-  const snapshot = captureModeParamSnapshot("base-converter", params);
   const stlFilename = getBaseConverterSTLFilename(snapshot.params);
-  const stlResult = await workerPort.exportSTL(geometry, stlFilename);
-  downloadPort.downloadBlob(stlResult.blob, stlResult.filename);
-  downloadPort.downloadBlob(
-    createCurrentParamArtifactBlob(snapshot),
-    stlFilename.replace(/\.stl$/i, ".json"),
+  await exportModelArtifactBundle(
+    snapshot,
+    async () => ({
+      files: [await workerPort.exportSTL(geometry, stlFilename)],
+      companionParamFilename: stlFilename.replace(/\.stl$/i, ".json"),
+    }),
+    downloadPort,
   );
 }

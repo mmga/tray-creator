@@ -11,7 +11,6 @@ vi.mock("@/lib/jscad-to-three", () => ({
 }));
 
 import {
-  buildGridParamsBlob,
   exportGridModelFiles,
   generateGridPreview,
   getGridSTLFilename,
@@ -54,16 +53,8 @@ describe("grid model service", () => {
 
     expect(getGridSTLFilename(DEFAULT_TRAY_PARAMS)).toBe("tray_2x5_32mm.stl");
 
-    const paramsBlob = buildGridParamsBlob(
-      captureModeParamSnapshot("grid", DEFAULT_TRAY_PARAMS),
-    );
-    expect(paramsBlob.type).toBe("application/json");
-    await expect(paramsBlob.text()).resolves.toContain('"version": 1');
-    await expect(paramsBlob.text()).resolves.toContain('"mode": "grid"');
-    await expect(paramsBlob.text()).resolves.toContain('"rows": 5');
-
     await exportGridModelFiles(
-      DEFAULT_TRAY_PARAMS,
+      captureModeParamSnapshot("grid", DEFAULT_TRAY_PARAMS),
       geometry,
       workerPort,
       downloadPort,

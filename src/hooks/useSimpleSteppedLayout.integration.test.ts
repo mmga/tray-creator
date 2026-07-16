@@ -6,7 +6,7 @@ import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 const {
   toastMock,
   trayWorkerServiceMock,
-  downloadParamFileMock,
+  exportSimpleSteppedModelFilesMock,
   jscadToThreeGeometryMock,
 } = vi.hoisted(() => ({
   toastMock: vi.fn(),
@@ -14,7 +14,7 @@ const {
     generateSimpleStepped: vi.fn().mockResolvedValue(null),
     exportSTL: vi.fn(),
   },
-  downloadParamFileMock: vi.fn(),
+  exportSimpleSteppedModelFilesMock: vi.fn(),
   jscadToThreeGeometryMock: vi.fn(),
 }));
 
@@ -26,13 +26,9 @@ vi.mock("@/lib/worker/worker-service", () => ({
   trayWorkerService: trayWorkerServiceMock,
 }));
 
-vi.mock("@/lib/param-download", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/param-download")>(
-    "@/lib/param-download",
-  );
+vi.mock("@/lib/simple-stepped-model-service", () => {
   return {
-    ...actual,
-    downloadParamFile: downloadParamFileMock,
+    exportSimpleSteppedModelFiles: exportSimpleSteppedModelFilesMock,
   };
 });
 
@@ -65,7 +61,8 @@ describe("useSimpleSteppedLayout", () => {
       blob: new Blob(["stl"]),
       filename: "default.stl",
     });
-    downloadParamFileMock.mockReset();
+    exportSimpleSteppedModelFilesMock.mockReset();
+    exportSimpleSteppedModelFilesMock.mockResolvedValue(undefined);
     jscadToThreeGeometryMock.mockReset();
     jscadToThreeGeometryMock.mockReturnValue({ dispose: vi.fn() } as never);
     vi.spyOn(console, "error").mockImplementation(() => {});
@@ -240,12 +237,6 @@ describe("useSimpleSteppedLayout", () => {
     vi.spyOn(crypto, "randomUUID")
       .mockReturnValueOnce("row-1")
       .mockReturnValueOnce("slot-1");
-    const anchor = document.createElement("a");
-    const clickSpy = vi.spyOn(anchor, "click").mockImplementation(() => {});
-    const createElementSpy = vi
-      .spyOn(document, "createElement")
-      .mockReturnValue(anchor);
-
     const geometry = { id: "geom-1" } as never;
     const deferred = createDeferred<{ geometry: never; volume: number }>();
     const firstThreeGeometry = { dispose: vi.fn() };
@@ -292,18 +283,12 @@ describe("useSimpleSteppedLayout", () => {
     await act(async () => {
       await result.current.handleExportSTL();
     });
-    expect(trayWorkerServiceMock.exportSTL).toHaveBeenCalledWith(
+    expect(exportSimpleSteppedModelFilesMock).toHaveBeenCalledWith(
+      { mode: "simple-stepped", params: result.current.params },
       geometry,
-      expect.stringMatching(/^tray_simple_stepped_.*\.stl$/),
+      trayWorkerServiceMock,
+      expect.objectContaining({ downloadBlob: expect.any(Function) }),
     );
-    expect(downloadParamFileMock).toHaveBeenCalledWith(
-      {
-        mode: "simple-stepped",
-        params: result.current.params,
-      },
-      expect.stringMatching(/^tray_simple_stepped_.*\.json$/),
-    );
-    expect(clickSpy).toHaveBeenCalledTimes(1);
 
     act(() => {
       result.current.updateParam("spacing", 9);
@@ -314,7 +299,6 @@ describe("useSimpleSteppedLayout", () => {
     expect(firstThreeGeometry.dispose).toHaveBeenCalledTimes(1);
     expect(result.current.threeGeometry).toBe(secondThreeGeometry as never);
 
-    createElementSpy.mockRestore();
   });
 
   it("surfaces generation and export failures through toast messages", async () => {
@@ -354,7 +338,9 @@ describe("useSimpleSteppedLayout", () => {
       volume: 12,
     });
     jscadToThreeGeometryMock.mockReturnValueOnce({ dispose: vi.fn() } as never);
-    trayWorkerServiceMock.exportSTL.mockRejectedValueOnce(new Error("export failed"));
+    exportSimpleSteppedModelFilesMock.mockRejectedValueOnce(
+      new Error("export failed"),
+    );
     await act(async () => {
       await result.current.handleGenerate();
     });
