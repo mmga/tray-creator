@@ -26,7 +26,8 @@ describe("BaseHoleConfig", () => {
     expect(screen.getByRole("button", { name: "磁吸孔" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "磁铁桩孔" })).toBeInTheDocument();
     expect(screen.getByText("当前设置无法生成或导出模型")).toBeInTheDocument();
-    expect(screen.getByText("磁铁桩孔直径超过槽位最短成品尺寸")).toBeInTheDocument();
+    expect(screen.getByText("slot-1")).toBeInTheDocument();
+    expect(screen.getByText(/磁铁桩孔直径超过槽位最短成品尺寸/)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "磁吸孔" }));
     expect(updateParam).toHaveBeenCalledWith(

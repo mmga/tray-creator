@@ -175,7 +175,10 @@ export function BaseHoleConfig<TParams extends BaseHoleParams>({
               <ul className="list-disc space-y-1 pl-5">
                 {fitViolations.map((violation, index) => (
                   <li key={`${violation.kind}-${violation.slotIds.join("-")}-${index}`}>
-                    {violation.message}
+                    <span className="font-mono text-red-100">
+                      {violation.slotIds.join("、")}
+                    </span>
+                    ：{violation.message}
                   </li>
                 ))}
               </ul>

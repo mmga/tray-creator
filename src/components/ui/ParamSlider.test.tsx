@@ -30,6 +30,7 @@ vi.mock("@/components/ui/slider", () => ({
         />
         <div
           role="slider"
+          aria-valuenow={value[0]}
           tabIndex={0}
           onKeyDownCapture={onKeyDownCapture}
         />
