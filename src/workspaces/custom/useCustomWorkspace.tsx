@@ -12,6 +12,7 @@ import type { ModeWorkspace } from "@/workspaces/types";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import type { CustomLayoutParams } from "@/types/custom-tray";
 import type { useCustomLayout } from "@/hooks/useCustomLayout";
+import type { ModeInteractionState } from "@/hooks/useModeInteractionState";
 
 const CustomPanel = dynamic(() => import("@/components/CustomPanel"), {
   ssr: false,
@@ -19,6 +20,7 @@ const CustomPanel = dynamic(() => import("@/components/CustomPanel"), {
 
 interface UseCustomWorkspaceOptions {
   model: ReturnType<typeof useCustomLayout>;
+  interactionState: ModeInteractionState;
   onRequestParamImport: (file: File) => Promise<DraftActionResult>;
 }
 
@@ -88,6 +90,7 @@ function CustomDraftActionArea({
 
 export function useCustomWorkspace({
   model,
+  interactionState,
   onRequestParamImport,
 }: UseCustomWorkspaceOptions): ModeWorkspace {
   const { draftActions, overlays, clearDraftBinding } =
@@ -147,6 +150,7 @@ export function useCustomWorkspace({
         isPreviewStale={model.isPreviewStale}
         volume={model.volume}
         baseHoleFitViolations={model.baseHoleFitViolations}
+        selectedSlotIds={interactionState.selectedSlotIds}
       />
     ),
     [
@@ -160,6 +164,7 @@ export function useCustomWorkspace({
       model.updateParam,
       model.volume,
       model.baseHoleFitViolations,
+      interactionState.selectedSlotIds,
     ],
   );
 

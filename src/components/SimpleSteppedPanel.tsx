@@ -25,6 +25,7 @@ import { projectSimpleSteppedTrayResult } from "@/lib/tray-result-projection";
 import { BaseHoleConfig } from "@/components/BaseHoleConfig";
 import {
   getResolvedMagneticBaseHolePresets,
+  resolveMagneticBaseHolePreset,
   type BaseHoleFitViolation,
 } from "@/lib/base-hole-rules";
 
@@ -54,6 +55,7 @@ interface SimpleSteppedPanelProps {
   isPreviewStale: boolean;
   volume: number;
   baseHoleFitViolations?: BaseHoleFitViolation[];
+  selectedSlotIds?: string[];
 }
 
 export default function SimpleSteppedPanel({
@@ -75,6 +77,7 @@ export default function SimpleSteppedPanel({
   isPreviewStale,
   volume,
   baseHoleFitViolations = [],
+  selectedSlotIds = [],
 }: SimpleSteppedPanelProps) {
   const result = projectSimpleSteppedTrayResult(
     params,
@@ -99,6 +102,15 @@ export default function SimpleSteppedPanel({
     "simple-stepped",
     params,
   );
+  const selectedSlot = params.slots.find((slot) => slot.id === selectedSlotIds[0]);
+  const selectedSlotMatch = selectedSlot ? {
+    label: `槽位 ${params.slots.indexOf(selectedSlot) + 1}`,
+    presetKey: resolveMagneticBaseHolePreset(
+      "circle",
+      selectedSlot.diameter,
+      selectedSlot.diameter,
+    ),
+  } : null;
 
   return (
     <PanelShell summary={<TrayResultSummary result={result} />} actions={actions}>
@@ -370,6 +382,7 @@ export default function SimpleSteppedPanel({
         supportingThickness={params.firstRowHeight - params.holeDepth}
         supportingThicknessLabel="首行承载厚度"
         resolvedBaseHoleSizes={resolvedBaseHoleSizes}
+        selectedSlotMatch={selectedSlotMatch}
         fitViolations={baseHoleFitViolations}
         updateParam={updateParam}
         collapsible

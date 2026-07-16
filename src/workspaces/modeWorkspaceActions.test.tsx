@@ -194,6 +194,7 @@ describe("Mode Workspace Draft Action Area", () => {
     };
     const { result } = renderHook(() => useCustomWorkspace({
       model: model as never,
+      interactionState: { selectedSlotIds: [] } as never,
       onRequestParamImport,
     }));
 
@@ -240,6 +241,7 @@ describe("Mode Workspace Draft Action Area", () => {
     const { result } = renderHook(() =>
       useSimpleSteppedWorkspace({
         model: model as never,
+        interactionState: { selectedSlotIds: [] } as never,
         onRequestParamImport,
       }),
     );

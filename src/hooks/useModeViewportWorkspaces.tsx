@@ -25,6 +25,8 @@ interface UseModeViewportWorkspacesOptions {
   simpleSteppedModel: ReturnType<typeof useSimpleSteppedLayout>;
   steppedModel: ReturnType<typeof useSteppedLayout>;
   steppedCadModel: ReturnType<typeof useSteppedCadLayout>;
+  customInteractionState: ModeInteractionState;
+  simpleSteppedInteractionState: ModeInteractionState;
   steppedInteractionState: ModeInteractionState;
 }
 
@@ -40,6 +42,8 @@ export function useModeViewportWorkspaces({
   simpleSteppedModel,
   steppedModel,
   steppedCadModel,
+  customInteractionState,
+  simpleSteppedInteractionState,
   steppedInteractionState,
 }: UseModeViewportWorkspacesOptions): UseModeViewportWorkspacesReturn {
   const [rightView, setRightView] = useState<"2d" | "3d">("2d");
@@ -51,6 +55,7 @@ export function useModeViewportWorkspaces({
   });
   const customViewport = useCustomViewportWorkspace({
     model: customModel,
+    interactionState: customInteractionState,
     rightView,
     onRightViewChange: setRightView,
   });
@@ -61,6 +66,7 @@ export function useModeViewportWorkspaces({
   });
   const simpleSteppedViewport = useSimpleSteppedViewportWorkspace({
     model: simpleSteppedModel,
+    interactionState: simpleSteppedInteractionState,
     rightView,
     onRightViewChange: setRightView,
   });

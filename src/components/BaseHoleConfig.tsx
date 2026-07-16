@@ -26,6 +26,10 @@ interface BaseHoleConfigProps<TParams extends BaseHoleParams> {
   magnetPostHoleDiameter: number;
   magnetPostHoleDepth: number;
   resolvedBaseHoleSizes: readonly BaseHolePresetKey[];
+  selectedSlotMatch?: {
+    label: string;
+    presetKey: BaseHolePresetKey;
+  } | null;
   supportingThickness: number;
   supportingThicknessLabel?: string;
   fitViolations?: readonly BaseHoleFitViolation[];
@@ -48,6 +52,7 @@ export function BaseHoleConfig<TParams extends BaseHoleParams>({
   magnetPostHoleDiameter,
   magnetPostHoleDepth,
   resolvedBaseHoleSizes,
+  selectedSlotMatch = null,
   supportingThickness,
   supportingThicknessLabel = "当前承载厚度",
   fitViolations = [],
@@ -102,6 +107,20 @@ export function BaseHoleConfig<TParams extends BaseHoleParams>({
               <div className="dashed-hint rounded-sm px-3 py-2 text-[11px] text-muted-foreground/70">
                 每个 Slot Instance 按自身形状和名义尺寸自动匹配规格；同一托盘可混用规格。
               </div>
+              {selectedSlotMatch ? (
+                <div className="border border-primary/30 bg-primary/5 px-3 py-2 font-mono text-[11px]">
+                  <div className="flex justify-between gap-3">
+                    <span className="text-muted-foreground/70">当前选中槽位</span>
+                    <span className="text-foreground/90">{selectedSlotMatch.label}</span>
+                  </div>
+                  <div className="mt-1 flex justify-between gap-3">
+                    <span className="text-muted-foreground/70">匹配规格</span>
+                    <span className="text-primary">
+                      {getBaseHolePreset(selectedSlotMatch.presetKey).label}
+                    </span>
+                  </div>
+                </div>
+              ) : null}
               <div className="space-y-1.5 border border-[#2e2a24] bg-[#1c1a16] p-2.5 font-mono text-[11px] text-muted-foreground/70">
                 {resolvedBaseHoleSizes.map((presetKey) => {
                   const preset = getBaseHolePreset(presetKey);

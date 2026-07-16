@@ -3,6 +3,7 @@
 import { useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
 import type { useSimpleSteppedLayout } from "@/hooks/useSimpleSteppedLayout";
+import type { ModeInteractionState } from "@/hooks/useModeInteractionState";
 import { resolveSimpleSteppedSlotMoveScope } from "@/lib/simple-stepped-projection";
 import { buildSimpleSteppedLayoutEditorViewportModel } from "@/viewports/layout-editor/simpleSteppedViewportModel";
 import { ViewportTabs } from "@/viewports/shared/ViewportTabs";
@@ -14,16 +15,18 @@ const LayoutCanvas = dynamic(() => import("@/components/LayoutCanvas"), {
 
 interface UseSimpleSteppedViewportWorkspaceOptions {
   model: ReturnType<typeof useSimpleSteppedLayout>;
+  interactionState: ModeInteractionState;
   rightView: "2d" | "3d";
   onRightViewChange: (next: "2d" | "3d") => void;
 }
 
 export function useSimpleSteppedViewportWorkspace({
   model,
+  interactionState,
   rightView,
   onRightViewChange,
 }: UseSimpleSteppedViewportWorkspaceOptions): ModeViewportWorkspace {
-  const resetTransientState = useCallback(() => {}, []);
+  const resetTransientState = interactionState.resetInteractionState;
 
   const slotMoveScopeResolver = useCallback(
     (draggingId: string, selectedIds: string[]) =>
@@ -63,6 +66,7 @@ export function useSimpleSteppedViewportWorkspace({
           duplicateSlots: model.duplicateSlots,
           undo: model.undo,
           saveSnapshot: model.saveSnapshot,
+          selectionChanged: interactionState.setSelectedSlotIds,
         }}
       />
     ),
@@ -79,6 +83,7 @@ export function useSimpleSteppedViewportWorkspace({
       model.updateMultipleSlotsLive,
       model.updateSlotPosition,
       model.updateSlotRotation,
+      interactionState.setSelectedSlotIds,
       rightView,
       slotHeightById,
       slotMoveScopeResolver,

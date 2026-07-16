@@ -35,4 +35,22 @@ describe("BaseHoleConfig", () => {
       "magnetic-base-hole",
     );
   });
+
+  it("展示当前选中槽位匹配的磁吸孔规格", () => {
+    render(
+      <BaseHoleConfig<TrayParams>
+        baseHoleStructure="magnetic-base-hole"
+        magnetPostHoleDiameter={5}
+        magnetPostHoleDepth={2}
+        resolvedBaseHoleSizes={["25", "40"]}
+        selectedSlotMatch={{ label: "槽位 2", presetKey: "40" }}
+        supportingThickness={6}
+        updateParam={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("当前选中槽位")).toBeInTheDocument();
+    expect(screen.getByText("槽位 2")).toBeInTheDocument();
+    expect(screen.getAllByText(/40/).length).toBeGreaterThan(0);
+  });
 });

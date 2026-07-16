@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import dynamic from "next/dynamic";
 import type { useCustomLayout } from "@/hooks/useCustomLayout";
+import type { ModeInteractionState } from "@/hooks/useModeInteractionState";
 import { buildCustomLayoutEditorViewportModel } from "@/viewports/layout-editor/customViewportModel";
 import { ViewportTabs } from "@/viewports/shared/ViewportTabs";
 import type { ModeViewportWorkspace } from "@/viewports/types";
@@ -13,16 +14,18 @@ const LayoutCanvas = dynamic(() => import("@/components/LayoutCanvas"), {
 
 interface UseCustomViewportWorkspaceOptions {
   model: ReturnType<typeof useCustomLayout>;
+  interactionState: ModeInteractionState;
   rightView: "2d" | "3d";
   onRightViewChange: (next: "2d" | "3d") => void;
 }
 
 export function useCustomViewportWorkspace({
   model,
+  interactionState,
   rightView,
   onRightViewChange,
 }: UseCustomViewportWorkspaceOptions): ModeViewportWorkspace {
-  const resetTransientState = useCallback(() => {}, []);
+  const resetTransientState = interactionState.resetInteractionState;
 
   const canvas = useMemo(
     () => (
@@ -40,6 +43,7 @@ export function useCustomViewportWorkspace({
           duplicateSlots: model.duplicateSlots,
           undo: model.undo,
           saveSnapshot: model.saveSnapshot,
+          selectionChanged: interactionState.setSelectedSlotIds,
         }}
       />
     ),
@@ -54,6 +58,7 @@ export function useCustomViewportWorkspace({
       model.updateMultipleSlotsLive,
       model.updateSlotPosition,
       model.updateSlotRotation,
+      interactionState.setSelectedSlotIds,
       rightView,
     ],
   );

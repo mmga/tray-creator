@@ -53,6 +53,8 @@ export function useModeEditorWorkspaces({
   const simpleSteppedModel = useSimpleSteppedLayout();
   const steppedModel = useSteppedLayout();
   const steppedCadModel = useSteppedCadLayout();
+  const customInteractionState = useModeInteractionState();
+  const simpleSteppedInteractionState = useModeInteractionState();
   const steppedInteractionState = useModeInteractionState();
 
   const clearPendingImport = useCallback(() => {
@@ -96,6 +98,8 @@ export function useModeEditorWorkspaces({
     simpleSteppedModel,
     steppedModel,
     steppedCadModel,
+    customInteractionState,
+    simpleSteppedInteractionState,
     steppedInteractionState,
   });
 
@@ -107,6 +111,8 @@ export function useModeEditorWorkspaces({
     simpleSteppedModel,
     steppedModel,
     steppedCadModel,
+    customInteractionState,
+    simpleSteppedInteractionState,
     steppedInteractionState,
     onRequestParamImport: requestParamImport,
   });

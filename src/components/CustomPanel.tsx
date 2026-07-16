@@ -36,6 +36,7 @@ import { TrayResultSummary } from "@/components/TrayResultSummary";
 import { projectCustomTrayResult } from "@/lib/tray-result-projection";
 import {
   getResolvedMagneticBaseHolePresets,
+  resolveMagneticBaseHolePreset,
   type BaseHoleFitViolation,
 } from "@/lib/base-hole-rules";
 
@@ -57,6 +58,7 @@ interface CustomPanelProps {
   isPreviewStale: boolean;
   volume: number;
   baseHoleFitViolations?: BaseHoleFitViolation[];
+  selectedSlotIds?: string[];
 }
 
 function getEllipseSlotConfig(preset: EllipsePreset): EllipseSlotConfig {
@@ -78,6 +80,7 @@ export default function CustomPanel({
   isPreviewStale,
   volume,
   baseHoleFitViolations = [],
+  selectedSlotIds = [],
 }: CustomPanelProps) {
   const { toast } = useToast();
   const result = projectCustomTrayResult(params, effectiveDimensions, {
@@ -91,6 +94,15 @@ export default function CustomPanel({
     "custom",
     params,
   );
+  const selectedSlot = params.slots.find((slot) => slot.id === selectedSlotIds[0]);
+  const selectedSlotMatch = selectedSlot ? {
+    label: `槽位 ${params.slots.indexOf(selectedSlot) + 1}`,
+    presetKey: resolveMagneticBaseHolePreset(
+      selectedSlot.shape,
+      selectedSlot.width,
+      selectedSlot.height,
+    ),
+  } : null;
 
   const handleAddCustomCircleSlot = () => {
     if (!Number.isFinite(customCircleDiameter) || customCircleDiameter <= 0) {
@@ -331,6 +343,7 @@ export default function CustomPanel({
         magnetPostHoleDepth={params.magnetPostHoleDepth}
         supportingThickness={params.baseThickness}
         resolvedBaseHoleSizes={resolvedBaseHoleSizes}
+        selectedSlotMatch={selectedSlotMatch}
         fitViolations={baseHoleFitViolations}
         updateParam={updateParam}
         collapsible

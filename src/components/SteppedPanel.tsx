@@ -15,6 +15,7 @@ import {
     getSteppedGroupMinBottomHeight,
     getSteppedGroupResolvedBaseHoleSize,
 } from "@/lib/stepped-base-hole";
+import { resolveMagneticBaseHolePreset } from "@/lib/base-hole-rules";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -389,6 +390,15 @@ function SteppedPanelBody({
         mode,
         params,
     );
+    const selectedSlot = params.slots.find((slot) => slot.id === selectedSlotIds[0]);
+    const selectedSlotMatch = selectedSlot ? {
+        label: `槽位 ${params.slots.indexOf(selectedSlot) + 1}`,
+        presetKey: resolveMagneticBaseHolePreset(
+            selectedSlot.shape,
+            selectedSlot.width,
+            selectedSlot.height,
+        ),
+    } : null;
 
     return (
         <PanelShell summary={<TrayResultSummary result={result} />} actions={actions}>
@@ -730,6 +740,7 @@ function SteppedPanelBody({
                 magnetPostHoleDiameter={params.magnetPostHoleDiameter}
                 magnetPostHoleDepth={params.magnetPostHoleDepth}
                 resolvedBaseHoleSizes={resolvedBaseHoleSizes}
+                selectedSlotMatch={selectedSlotMatch}
                 supportingThickness={activeGroupSupportThickness}
                 supportingThicknessLabel={`当前组${activeGroup ? `（${activeGroup.name}）` : ""}承载厚度`}
                 fitViolations={baseHoleFitViolations}

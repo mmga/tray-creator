@@ -27,6 +27,8 @@ interface UseModeWorkspacesOptions {
   simpleSteppedModel: ReturnType<typeof useSimpleSteppedLayout>;
   steppedModel: ReturnType<typeof useSteppedLayout>;
   steppedCadModel: ReturnType<typeof useSteppedCadLayout>;
+  customInteractionState: ModeInteractionState;
+  simpleSteppedInteractionState: ModeInteractionState;
   steppedInteractionState: ModeInteractionState;
   onRequestParamImport: (file: File) => Promise<DraftActionResult>;
 }
@@ -44,6 +46,8 @@ export function useModeWorkspaces({
   simpleSteppedModel,
   steppedModel,
   steppedCadModel,
+  customInteractionState,
+  simpleSteppedInteractionState,
   steppedInteractionState,
   onRequestParamImport,
 }: UseModeWorkspacesOptions): UseModeWorkspacesReturn {
@@ -53,6 +57,7 @@ export function useModeWorkspaces({
   });
   const customWorkspace = useCustomWorkspace({
     model: customModel,
+    interactionState: customInteractionState,
     onRequestParamImport,
   });
   const baseConverterWorkspace = useBaseConverterWorkspace({
@@ -61,6 +66,7 @@ export function useModeWorkspaces({
   });
   const simpleSteppedWorkspace = useSimpleSteppedWorkspace({
     model: simpleSteppedModel,
+    interactionState: simpleSteppedInteractionState,
     onRequestParamImport,
   });
   const steppedWorkspace = useSteppedWorkspace({

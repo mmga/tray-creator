@@ -8,6 +8,7 @@ import type { ModeWorkspace } from "@/workspaces/types";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import type { SimpleSteppedLayoutParams } from "@/types/custom-tray";
 import type { useSimpleSteppedLayout } from "@/hooks/useSimpleSteppedLayout";
+import type { ModeInteractionState } from "@/hooks/useModeInteractionState";
 import { exportParams } from "@/lib/param-download";
 import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import { modelExportAvailability, modelGenerationAvailability, type DraftActionResult, type ManualDraftActionAreaAdapter } from "@/workspaces/draft-action-area";
@@ -19,11 +20,13 @@ const SimpleSteppedPanel = dynamic(
 
 interface UseSimpleSteppedWorkspaceOptions {
   model: ReturnType<typeof useSimpleSteppedLayout>;
+  interactionState: ModeInteractionState;
   onRequestParamImport: (file: File) => Promise<DraftActionResult>;
 }
 
 export function useSimpleSteppedWorkspace({
   model,
+  interactionState,
   onRequestParamImport,
 }: UseSimpleSteppedWorkspaceOptions): ModeWorkspace {
   const { draftActions, overlays, clearDraftBinding } =
@@ -100,6 +103,7 @@ export function useSimpleSteppedWorkspace({
         isPreviewStale={model.isPreviewStale}
         volume={model.volume}
         baseHoleFitViolations={model.baseHoleFitViolations}
+        selectedSlotIds={interactionState.selectedSlotIds}
       />
     ),
     [
@@ -121,6 +125,7 @@ export function useSimpleSteppedWorkspace({
       model.updateParam,
       model.volume,
       model.baseHoleFitViolations,
+      interactionState.selectedSlotIds,
     ],
   );
 
