@@ -231,6 +231,45 @@ describe("useSteppedCadSplitOrchestration", () => {
     );
   });
 
+  it("底板孔位不适配时阻断拆件预览和导出", async () => {
+    const params: SteppedLayoutParams = {
+      ...createParams(),
+      baseHoleStructure: "magnet-post-hole",
+      magnetPostHoleDiameter: 15,
+      slots: [{
+        id: "small-slot",
+        groupId: "group-1",
+        x: 30,
+        y: 30,
+        shape: "circle",
+        width: 10,
+        height: 10,
+        slotWidth: 10.4,
+        slotHeight: 10.4,
+        rotation: 0,
+      }],
+    };
+    const { result } = renderHook(() =>
+      useSteppedCadSplitOrchestration({
+        params,
+        generateSplitPreview: generateSplitPreviewMock,
+        exportSplitParts: exportSplitPartsMock,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.handleGenerateSplitPreview();
+      await result.current.handleExportSplitParts();
+    });
+
+    expect(generateSplitPreviewMock).not.toHaveBeenCalled();
+    expect(exportSplitPartsMock).not.toHaveBeenCalled();
+    expect(toastMock).toHaveBeenCalledWith(
+      "error",
+      expect.stringContaining("底板孔位不适配"),
+    );
+  });
+
   it("报告分件导出失败", async () => {
     exportSplitPartsMock.mockRejectedValue(new Error("export failed"));
     const { result } = renderHook(() =>

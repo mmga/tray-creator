@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { PanelActionSection } from "@/components/PanelActionSection";
 import { useAutoPreview } from "@/hooks/useAutoPreview";
 import { useWorkspaceDraftSupport, type WorkspaceDraftActions } from "@/workspaces/shared";
-import { available, generatingAvailability, type AutomaticDraftActionAreaAdapter, type DraftActionResult } from "@/workspaces/draft-action-area";
+import { modelExportAvailability, modelGenerationAvailability, type AutomaticDraftActionAreaAdapter, type DraftActionResult } from "@/workspaces/draft-action-area";
 import { exportParams } from "@/lib/param-download";
 import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import type { ModeWorkspace } from "@/workspaces/types";
@@ -24,6 +24,7 @@ interface UseGridWorkspaceOptions {
 interface GridDraftActionAreaProps {
   params: TrayParams;
   isGenerating: boolean;
+  blockingReason: string | null;
   onGenerate: () => void;
   onExportSTL: () => void;
   onReset: () => void;
@@ -34,6 +35,7 @@ interface GridDraftActionAreaProps {
 function GridDraftActionArea({
   params,
   isGenerating,
+  blockingReason,
   onGenerate,
   onExportSTL,
   onReset,
@@ -45,7 +47,7 @@ function GridDraftActionArea({
   useAutoPreview(params, {
     enabled: autoPreview,
     isGenerating,
-    isBlocked: false,
+    isBlocked: Boolean(blockingReason),
     onGenerate,
   });
 
@@ -55,8 +57,8 @@ function GridDraftActionArea({
       currentDraftId: draftActions.currentDraftId,
       hasUnsavedChanges: draftActions.hasUnsavedChanges,
       stale: false,
-      generate: generatingAvailability(isGenerating),
-      exportWhole: available,
+      generate: modelGenerationAvailability(isGenerating, blockingReason),
+      exportWhole: modelExportAvailability(blockingReason),
       preview: { kind: "automatic", enabled: autoPreview },
     },
     async perform(intent) {
@@ -76,7 +78,7 @@ function GridDraftActionArea({
         return { status: "error", message: `操作失败：${error instanceof Error ? error.message : "未知错误"}` };
       }
     },
-  }), [autoPreview, draftActions, isGenerating, onExportSTL, onGenerate, onRequestParamImport, onReset, params]);
+  }), [autoPreview, blockingReason, draftActions, isGenerating, onExportSTL, onGenerate, onRequestParamImport, onReset, params]);
 
   return <PanelActionSection adapter={adapter} />;
 }
@@ -112,6 +114,7 @@ export function useGridWorkspace({
       <GridDraftActionArea
         params={model.params}
         isGenerating={model.isGenerating}
+        blockingReason={model.baseHoleFitBlockingReason}
         onGenerate={model.handleGenerate}
         onExportSTL={model.handleExportSTL}
         onReset={resetWorkspace}
@@ -123,6 +126,7 @@ export function useGridWorkspace({
       draftActions,
       model.handleExportSTL,
       model.handleGenerate,
+      model.baseHoleFitBlockingReason,
       model.isGenerating,
       model.params,
       onRequestParamImport,
@@ -140,6 +144,7 @@ export function useGridWorkspace({
         isGenerating={model.isGenerating}
         isPreviewStale={model.isPreviewStale}
         volume={model.volume}
+        baseHoleFitViolations={model.baseHoleFitViolations}
       />
     ),
     [
@@ -150,6 +155,7 @@ export function useGridWorkspace({
       model.replaceParams,
       model.updateParam,
       model.volume,
+      model.baseHoleFitViolations,
     ],
   );
 

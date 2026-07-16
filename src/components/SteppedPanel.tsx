@@ -5,7 +5,6 @@ import type { BridgeWarning } from "@/lib/stepped-connectivity";
 import type { SteppedOptimizationProposal } from "@/lib/stepped-global-optimize";
 import {
     BASE_PRESETS,
-    getBaseHoleMinBaseThickness,
     getBaseHolePreset,
 } from "@/lib/config";
 import type { BaseHolePresetKey } from "@/types/tray";
@@ -15,9 +14,6 @@ import type { EllipseSlotInstanceConfig } from "@/lib/slot-instance-factory";
 import {
     getSteppedGroupMinBottomHeight,
     getSteppedGroupResolvedBaseHoleSize,
-    resolveMagnetPostHoleDepth,
-    resolveMagnetPostHoleDiameter,
-    resolveSteppedBaseHoleStructure,
 } from "@/lib/stepped-base-hole";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -51,7 +47,6 @@ import {
     ChevronDown,
     Eye,
     AlertTriangle,
-    Circle,
 } from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
@@ -68,6 +63,11 @@ import {
     projectSteppedTrayResult,
     type SteppedTrayResultProjection,
 } from "@/lib/tray-result-projection";
+import { BaseHoleConfig } from "@/components/BaseHoleConfig";
+import {
+    getResolvedMagneticBaseHolePresets,
+    type BaseHoleFitViolation,
+} from "@/lib/base-hole-rules";
 
 type SteppedGroup = SteppedLayoutParams["groups"][number];
 
@@ -88,6 +88,7 @@ interface SteppedPanelSharedProps {
     ) => void;
     isGenerating: boolean;
     volume: number;
+    baseHoleFitViolations?: BaseHoleFitViolation[];
     selectedSlotIds: string[];
     // 分组管理
     onAddGroup: () => void;
@@ -334,6 +335,7 @@ function SteppedPanelBody({
     onAddSlot,
     isGenerating,
     volume,
+    baseHoleFitViolations = [],
     selectedSlotIds,
     onAddGroup,
     onRemoveGroup,
@@ -369,22 +371,12 @@ function SteppedPanelBody({
         onPreviewGroupChange,
         setParams,
     });
-    const resolvedBaseHoleStructure = resolveSteppedBaseHoleStructure(params);
-    const baseHoleStructure =
-        mode === "stepped" && resolvedBaseHoleStructure === "magnet-post-hole"
-            ? "none"
-            : resolvedBaseHoleStructure;
-    const magnetPostHoleDiameter = resolveMagnetPostHoleDiameter(params);
-    const magnetPostHoleDepth = resolveMagnetPostHoleDepth(params);
     const {
         result,
         activePressedPreviewGroupId,
         groupSlotCounts,
         activeGroup,
-        activeGroupBaseHolePreset,
-        activeGroupMinBottomHeight,
         activeGroupSupportThickness,
-        activeGroupBaseHoleSize,
         perfEnabled,
         handlePreviewGroupStart,
         handlePreviewGroupEnd,
@@ -393,6 +385,10 @@ function SteppedPanelBody({
         handleResetPerfSamples,
         formatAreaDelta,
     } = state;
+    const resolvedBaseHoleSizes = getResolvedMagneticBaseHolePresets(
+        mode,
+        params,
+    );
 
     return (
         <PanelShell summary={<TrayResultSummary result={result} />} actions={actions}>
@@ -588,7 +584,7 @@ function SteppedPanelBody({
                                                     value={group.bottomHeight}
                                                     config={{
                                                         ...STEPPED_LIMITS.bottomHeight,
-                                                        min: baseHoleStructure !== "none"
+                                                        min: params.baseHoleStructure !== "none"
                                                             ? getSteppedGroupMinBottomHeight(params, group.id)
                                                             : STEPPED_LIMITS.bottomHeight.min,
                                                     }}
@@ -729,108 +725,18 @@ function SteppedPanelBody({
                 </SectionHeader>
             </div>
 
-            <div className="iron-panel rounded-sm p-4">
-                <SectionHeader icon={Circle} title="底板孔位" collapsible defaultOpen={false}
-                    summary={baseHoleStructure === "magnetic-base-hole"
-                        ? "磁吸孔 按各组最大槽径自动匹配"
-                        : baseHoleStructure === "magnet-post-hole"
-                            ? `磁铁桩孔 ⌀${magnetPostHoleDiameter}mm × ${magnetPostHoleDepth}mm`
-                            : "普通托盘"}>
-                    <div className="space-y-4">
-                        <div className={`grid ${mode === "stepped-cad" ? "grid-cols-3" : "grid-cols-2"} gap-2`}>
-                            {[
-                                { value: "none" as const, label: "普通托盘" },
-                                { value: "magnetic-base-hole" as const, label: "磁吸孔" },
-                                ...(mode === "stepped-cad"
-                                    ? [{ value: "magnet-post-hole" as const, label: "磁铁桩孔" }]
-                                    : []),
-                            ].map(({ value, label }) => (
-                                <button
-                                    key={value}
-                                    type="button"
-                                    aria-pressed={baseHoleStructure === value}
-                                    onClick={() => updateParam("baseHoleStructure", value)}
-                                    className={`px-2 py-2 text-xs font-bold tracking-wider uppercase border transition-all duration-200 cursor-pointer ${
-                                        baseHoleStructure === value
-                                            ? "bg-primary/15 text-primary border-primary/50 shadow-inner"
-                                            : "bg-[#1c1a16] text-muted-foreground border-[#2e2a24] hover:border-[#3d372e]"
-                                    }`}
-                                >
-                                    {label}
-                                </button>
-                            ))}
-                        </div>
-
-                        {baseHoleStructure === "magnetic-base-hole" ? (
-                            <div className="space-y-3">
-                                <div className="dashed-hint rounded-sm px-3 py-2 text-[11px] text-muted-foreground/70">
-                                    各组会按本组最大槽径自动匹配磁吸孔规格，并自动抬高圆柱高度以保留足够底厚。
-                                </div>
-
-                                <div className="space-y-1.5 text-[11px] font-mono text-muted-foreground/70 bg-[#1c1a16] border border-[#2e2a24] p-2.5">
-                                    <div className="flex justify-between">
-                                        <span>当前组</span>
-                                        <span className="text-foreground/80">
-                                            {activeGroup?.name ?? "未选择"}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span>自动规格</span>
-                                        <span className="text-foreground/80">
-                                            {activeGroupBaseHolePreset.label}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span>磁铁孔</span>
-                                        <span className="text-foreground/80">
-                                            ⌀{activeGroupBaseHolePreset.diameter}mm × {activeGroupBaseHolePreset.depth}mm
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span>当前支撑厚度</span>
-                                        <span className="text-foreground/80">
-                                            {activeGroupSupportThickness.toFixed(1)}mm
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span>当前组最小圆柱高度</span>
-                                        <span className="text-foreground/80">
-                                            {activeGroupMinBottomHeight.toFixed(1)}mm
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span>最小支撑厚度</span>
-                                        <span className="text-foreground/80">
-                                            {getBaseHoleMinBaseThickness(activeGroupBaseHoleSize).toFixed(1)}mm
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        ) : null}
-                        {baseHoleStructure === "magnet-post-hole" ? (
-                            <div className="space-y-3">
-                                <div className="dashed-hint rounded-sm px-3 py-2 text-[11px] text-muted-foreground/70">
-                                    从每个圆形或椭圆凹槽底面中心向下开槽；成品孔径不追加容差，并自动抬高不足的分组以保留 1mm 底壁。
-                                </div>
-                                <ParamSlider
-                                    label={STEPPED_LIMITS.magnetPostHoleDiameter.label}
-                                    value={magnetPostHoleDiameter}
-                                    config={STEPPED_LIMITS.magnetPostHoleDiameter}
-                                    onChange={(value) => updateParam("magnetPostHoleDiameter", value)}
-                                    unit={STEPPED_LIMITS.magnetPostHoleDiameter.unit}
-                                />
-                                <ParamSlider
-                                    label={STEPPED_LIMITS.magnetPostHoleDepth.label}
-                                    value={magnetPostHoleDepth}
-                                    config={STEPPED_LIMITS.magnetPostHoleDepth}
-                                    onChange={(value) => updateParam("magnetPostHoleDepth", value)}
-                                    unit={STEPPED_LIMITS.magnetPostHoleDepth.unit}
-                                />
-                            </div>
-                        ) : null}
-                    </div>
-                </SectionHeader>
-            </div>
+            <BaseHoleConfig<SteppedLayoutParams>
+                baseHoleStructure={params.baseHoleStructure}
+                magnetPostHoleDiameter={params.magnetPostHoleDiameter}
+                magnetPostHoleDepth={params.magnetPostHoleDepth}
+                resolvedBaseHoleSizes={resolvedBaseHoleSizes}
+                supportingThickness={activeGroupSupportThickness}
+                supportingThicknessLabel={`当前组${activeGroup ? `（${activeGroup.name}）` : ""}承载厚度`}
+                fitViolations={baseHoleFitViolations}
+                updateParam={updateParam}
+                collapsible
+                defaultOpen={false}
+            />
 
             {/* 操作按钮 */}
             <div className="flex flex-col gap-2.5 pb-4">

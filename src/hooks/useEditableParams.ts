@@ -28,6 +28,7 @@ interface UseEditableParamsOptions<P, S> {
   fingerprintSnapshot: (snapshot: S) => string;
   generatePreview: (snapshot: S) => Promise<PreviewLifecycleResult | null>;
   exportModel: (snapshot: S, geometry: Geom3) => Promise<void>;
+  validateSnapshot?: (snapshot: S) => string | null;
   /**
    * 可选守卫：返回 false 时 generatePreview/exportModel 不执行
    * （用于统一吸收"worker service 不可用则优雅降级"的重复检查）。
@@ -78,6 +79,7 @@ export function useEditableParams<P, S>({
   fingerprintSnapshot,
   generatePreview,
   exportModel,
+  validateSnapshot,
   guard,
   normalize,
   onInvalidate,
@@ -125,6 +127,7 @@ export function useEditableParams<P, S>({
     fingerprintSnapshot,
     generatePreview: guardedGeneratePreview,
     exportModel: guardedExportModel,
+    validateSnapshot,
     onInvalidate,
   });
 

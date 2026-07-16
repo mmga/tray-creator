@@ -46,7 +46,7 @@ export function PanelActionSection({ adapter }: { adapter: DraftActionAreaAdapte
       <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleFileChange} />
 
       <div className="grid grid-cols-[1fr_0.82fr_2.75rem] gap-2">
-        <Button onClick={() => void perform({ type: "generate" })} disabled={isDisabled(state.generate)} className="h-11 min-w-0 blood-red px-2 text-xs font-bold tracking-wider text-[#f0d8b8] border border-[#a02020] shadow-lg shadow-[#8b1a1a30] hover:brightness-125 disabled:opacity-50">
+        <Button title={state.generate.state === "blocked" ? state.generate.reason : undefined} onClick={() => void perform({ type: "generate" })} disabled={isDisabled(state.generate)} className="h-11 min-w-0 blood-red px-2 text-xs font-bold tracking-wider text-[#f0d8b8] border border-[#a02020] shadow-lg shadow-[#8b1a1a30] hover:brightness-125 disabled:opacity-50">
           {state.generate.state === "busy" ? <Loader2 className="size-4 animate-spin" /> : <Play className="size-4" />}
           {state.generate.state === "busy" ? state.generate.label : "开始锻造"}
         </Button>
@@ -56,12 +56,12 @@ export function PanelActionSection({ adapter }: { adapter: DraftActionAreaAdapte
             <DropdownMenuTrigger asChild><Button className="h-11 min-w-0 bg-[#2a3528] px-2 text-xs text-[#8cb880] border border-[#4a6741] hover:bg-[#354530]"><Download className="size-4" />导出</Button></DropdownMenuTrigger>
             <DropdownMenuContent align="end" side="top">
               <DropdownMenuLabel>导出模型</DropdownMenuLabel>
-              <DropdownMenuItem disabled={isDisabled(state.exportWhole)} onSelect={() => void perform({ type: "export-whole" })}><Download className="size-4" />完整 STL</DropdownMenuItem>
+              <DropdownMenuItem disabled={isDisabled(state.exportWhole)} title={state.exportWhole.state === "blocked" ? state.exportWhole.reason : undefined} onSelect={() => void perform({ type: "export-whole" })}><Download className="size-4" />完整 STL</DropdownMenuItem>
               <DropdownMenuItem disabled={isDisabled(adapter.state.exportSplit)} title={adapter.state.exportSplit.state === "blocked" ? adapter.state.exportSplit.reason : undefined} onSelect={() => void adapter.perform({ type: "export-split" }).then(reportResult)}><Download className="size-4" />分件 STL</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <Button disabled={isDisabled(state.exportWhole)} onClick={() => void perform({ type: "export-whole" })} className="h-11 min-w-0 bg-[#2a3528] px-2 text-xs font-semibold tracking-wider text-[#8cb880] border border-[#4a6741] hover:bg-[#354530]"><Download className="size-4" />导出</Button>
+          <Button title={state.exportWhole.state === "blocked" ? state.exportWhole.reason : undefined} disabled={isDisabled(state.exportWhole)} onClick={() => void perform({ type: "export-whole" })} className="h-11 min-w-0 bg-[#2a3528] px-2 text-xs font-semibold tracking-wider text-[#8cb880] border border-[#4a6741] hover:bg-[#354530]"><Download className="size-4" />导出</Button>
         )}
 
         <DropdownMenu>

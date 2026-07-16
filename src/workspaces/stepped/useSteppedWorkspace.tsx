@@ -11,7 +11,7 @@ import type { SteppedLayoutParams } from "@/types/custom-tray";
 import type { UseSteppedLayoutReturn } from "@/hooks/useSteppedLayout";
 import { exportParams } from "@/lib/param-download";
 import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
-import { available, generatingAvailability, type DraftActionResult, type ManualDraftActionAreaAdapter } from "@/workspaces/draft-action-area";
+import { modelExportAvailability, modelGenerationAvailability, type DraftActionResult, type ManualDraftActionAreaAdapter } from "@/workspaces/draft-action-area";
 
 const SteppedLayoutPanel = dynamic(() =>
   import("@/components/SteppedPanel").then((mod) => mod.SteppedLayoutPanel), {
@@ -63,8 +63,8 @@ export function useSteppedWorkspace({
           currentDraftId: draftActions.currentDraftId,
           hasUnsavedChanges: draftActions.hasUnsavedChanges,
           stale: model.isPreviewStale,
-          generate: generatingAvailability(model.isGenerating),
-          exportWhole: available,
+          generate: modelGenerationAvailability(model.isGenerating, model.baseHoleFitBlockingReason),
+          exportWhole: modelExportAvailability(model.baseHoleFitBlockingReason),
           preview: { kind: "manual" },
         },
         async perform(intent) {
@@ -101,6 +101,7 @@ export function useSteppedWorkspace({
         onAddSlot={model.addSlot}
         isGenerating={model.isGenerating}
         volume={model.volume}
+        baseHoleFitViolations={model.baseHoleFitViolations}
         selectedSlotIds={selectedSlotIds}
         onAddGroup={model.addGroup}
         onRemoveGroup={model.removeGroup}
@@ -148,6 +149,7 @@ export function useSteppedWorkspace({
       model.updateGroupSmoothingRadius,
       model.updateParam,
       model.volume,
+      model.baseHoleFitViolations,
       previewGroupId,
       setPreviewGroupId,
       selectedSlotIds,

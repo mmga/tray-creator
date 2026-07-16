@@ -62,8 +62,28 @@ vi.mock("@/components/ui/SectionHeader", () => ({
 }));
 
 vi.mock("@/components/BaseHoleConfig", () => ({
-  BaseHoleConfig() {
-    return <div data-testid="base-hole-config" />;
+  BaseHoleConfig({
+    magnetPostHoleDiameter,
+    magnetPostHoleDepth,
+    updateParam,
+  }: {
+    magnetPostHoleDiameter: number;
+    magnetPostHoleDepth: number;
+    updateParam: (key: string, value: unknown) => void;
+  }) {
+    return (
+      <div data-testid="base-hole-config">
+        <button onClick={() => updateParam("baseHoleStructure", "none")}>无</button>
+        <button onClick={() => updateParam("baseHoleStructure", "magnetic-base-hole")}>磁吸孔</button>
+        <button onClick={() => updateParam("baseHoleStructure", "magnet-post-hole")}>磁铁桩孔</button>
+        <button onClick={() => updateParam("magnetPostHoleDiameter", magnetPostHoleDiameter + 0.1)}>
+          设置{STEPPED_LIMITS.magnetPostHoleDiameter.label}:{magnetPostHoleDiameter}
+        </button>
+        <button onClick={() => updateParam("magnetPostHoleDepth", magnetPostHoleDepth + 0.1)}>
+          设置{STEPPED_LIMITS.magnetPostHoleDepth.label}:{magnetPostHoleDepth}
+        </button>
+      </div>
+    );
   },
 }));
 
@@ -1819,13 +1839,13 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "磁吸孔" }));
-    fireEvent.click(screen.getByRole("button", { name: "普通托盘" }));
+    fireEvent.click(screen.getByRole("button", { name: "无" }));
 
     expect(updateParam).toHaveBeenNthCalledWith(1, "baseHoleStructure", "magnetic-base-hole");
     expect(updateParam).toHaveBeenNthCalledWith(2, "baseHoleStructure", "none");
   });
 
-  it("exposes exact magnet post hole controls only in CAD stepped mode", () => {
+  it("在普通阶梯和 CAD 阶梯中都提供磁铁桩孔控件", () => {
     const updateParam = vi.fn();
     const commonProps = {
       params: createSteppedParams({ baseHoleStructure: "magnet-post-hole" }),
@@ -1875,7 +1895,7 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
     unmount();
 
     render(<SteppedLayoutPanel {...commonProps} />);
-    expect(screen.queryByRole("button", { name: "磁铁桩孔" })).toBeNull();
+    expect(screen.getByRole("button", { name: "磁铁桩孔" })).toBeInTheDocument();
   });
 
   it("shows the stepped pricing formula tooltip on hover", () => {

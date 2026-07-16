@@ -57,4 +57,27 @@ describe("PanelActionSection", () => {
     expect(splitItem).toHaveAttribute("data-disabled");
     expect(splitItem).toHaveAttribute("title", "至少需要两个分组且存在凹槽");
   });
+
+  it("展示适配阻断原因并禁用锻造与完整导出", () => {
+    const reason = "底板孔位不适配：侧壁不足";
+    const adapter: ManualDraftActionAreaAdapter = {
+      kind: "manual",
+      state: {
+        currentDraftId: null,
+        hasUnsavedChanges: false,
+        stale: false,
+        generate: { state: "blocked", reason },
+        exportWhole: { state: "blocked", reason },
+        preview: { kind: "manual" },
+      },
+      perform: vi.fn(async () => success),
+    };
+
+    render(<PanelActionSection adapter={adapter} />);
+
+    expect(screen.getByRole("button", { name: "开始锻造" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "开始锻造" })).toHaveAttribute("title", reason);
+    expect(screen.getByRole("button", { name: "导出" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "导出" })).toHaveAttribute("title", reason);
+  });
 });

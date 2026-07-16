@@ -37,7 +37,12 @@ import {
   createModelGeometryFingerprint,
   type ModeParamSnapshot,
 } from "@/lib/mode-param-snapshot";
-import { applyFlatTrayBaseHoleSupportingThickness } from "@/lib/base-hole-rules";
+import {
+  applyFlatTrayBaseHoleSupportingThickness,
+  getBaseHoleFitBlockingReason,
+  validateBaseHoleFit,
+  type BaseHoleFitViolation,
+} from "@/lib/base-hole-rules";
 
 interface UseCustomLayoutReturn {
   params: CustomLayoutParams;
@@ -90,6 +95,8 @@ interface UseCustomLayoutReturn {
   volume: number; // in mm^3
   isGenerating: boolean;
   isPreviewStale: boolean;
+  baseHoleFitViolations: BaseHoleFitViolation[];
+  baseHoleFitBlockingReason: string | null;
   handleGenerate: () => void;
   handleExportSTL: () => void;
 }
@@ -128,7 +135,19 @@ export function useCustomLayout(): UseCustomLayoutReturn {
         browserDownloadPort,
       );
     },
+    validateSnapshot: (snapshot) =>
+      getBaseHoleFitBlockingReason(
+        validateBaseHoleFit("custom", snapshot.params),
+      ),
   });
+
+  const baseHoleFitViolations = useMemo(
+    () => validateBaseHoleFit("custom", params),
+    [params],
+  );
+  const baseHoleFitBlockingReason = getBaseHoleFitBlockingReason(
+    baseHoleFitViolations,
+  );
 
   const calculateEffectiveDimensions = useCallback(
     (current: CustomLayoutParams = paramsRef.current) => {
@@ -276,6 +295,8 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     volume,
     isGenerating,
     isPreviewStale,
+    baseHoleFitViolations,
+    baseHoleFitBlockingReason,
     handleGenerate,
     handleExportSTL,
   };

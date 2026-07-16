@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { PanelActionSection } from "@/components/PanelActionSection";
 import { useAutoPreview } from "@/hooks/useAutoPreview";
 import { useWorkspaceDraftSupport, type WorkspaceDraftActions } from "@/workspaces/shared";
-import { available, generatingAvailability, type AutomaticDraftActionAreaAdapter, type DraftActionResult } from "@/workspaces/draft-action-area";
+import { modelExportAvailability, modelGenerationAvailability, type AutomaticDraftActionAreaAdapter, type DraftActionResult } from "@/workspaces/draft-action-area";
 import { exportParams } from "@/lib/param-download";
 import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import type { ModeWorkspace } from "@/workspaces/types";
@@ -25,6 +25,7 @@ interface UseCustomWorkspaceOptions {
 interface CustomDraftActionAreaProps {
   params: CustomLayoutParams;
   isGenerating: boolean;
+  blockingReason: string | null;
   onGenerate: () => void;
   onExportSTL: () => void;
   onReset: () => void;
@@ -35,6 +36,7 @@ interface CustomDraftActionAreaProps {
 function CustomDraftActionArea({
   params,
   isGenerating,
+  blockingReason,
   onGenerate,
   onExportSTL,
   onReset,
@@ -46,7 +48,7 @@ function CustomDraftActionArea({
   useAutoPreview(params, {
     enabled: autoPreview,
     isGenerating,
-    isBlocked: false,
+    isBlocked: Boolean(blockingReason),
     onGenerate,
   });
 
@@ -56,8 +58,8 @@ function CustomDraftActionArea({
       currentDraftId: draftActions.currentDraftId,
       hasUnsavedChanges: draftActions.hasUnsavedChanges,
       stale: false,
-      generate: generatingAvailability(isGenerating),
-      exportWhole: available,
+      generate: modelGenerationAvailability(isGenerating, blockingReason),
+      exportWhole: modelExportAvailability(blockingReason),
       preview: { kind: "automatic", enabled: autoPreview },
     },
     async perform(intent) {
@@ -77,7 +79,7 @@ function CustomDraftActionArea({
         return { status: "error", message: `操作失败：${error instanceof Error ? error.message : "未知错误"}` };
       }
     },
-  }), [autoPreview, draftActions, isGenerating, onExportSTL, onGenerate, onRequestParamImport, onReset, params]);
+  }), [autoPreview, blockingReason, draftActions, isGenerating, onExportSTL, onGenerate, onRequestParamImport, onReset, params]);
 
   return <PanelActionSection adapter={adapter} />;
 }
@@ -108,6 +110,7 @@ export function useCustomWorkspace({
       <CustomDraftActionArea
         params={model.params}
         isGenerating={model.isGenerating}
+        blockingReason={model.baseHoleFitBlockingReason}
         onGenerate={model.handleGenerate}
         onExportSTL={model.handleExportSTL}
         onReset={resetWorkspace}
@@ -119,6 +122,7 @@ export function useCustomWorkspace({
       draftActions,
       model.handleExportSTL,
       model.handleGenerate,
+      model.baseHoleFitBlockingReason,
       model.isGenerating,
       model.params,
       onRequestParamImport,
@@ -138,6 +142,7 @@ export function useCustomWorkspace({
         isGenerating={model.isGenerating}
         isPreviewStale={model.isPreviewStale}
         volume={model.volume}
+        baseHoleFitViolations={model.baseHoleFitViolations}
       />
     ),
     [
@@ -150,6 +155,7 @@ export function useCustomWorkspace({
       model.randomizeSlots,
       model.updateParam,
       model.volume,
+      model.baseHoleFitViolations,
     ],
   );
 

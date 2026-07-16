@@ -10,7 +10,7 @@ import type { SimpleSteppedLayoutParams } from "@/types/custom-tray";
 import type { useSimpleSteppedLayout } from "@/hooks/useSimpleSteppedLayout";
 import { exportParams } from "@/lib/param-download";
 import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
-import { available, generatingAvailability, type DraftActionResult, type ManualDraftActionAreaAdapter } from "@/workspaces/draft-action-area";
+import { modelExportAvailability, modelGenerationAvailability, type DraftActionResult, type ManualDraftActionAreaAdapter } from "@/workspaces/draft-action-area";
 
 const SimpleSteppedPanel = dynamic(
   () => import("@/components/SimpleSteppedPanel"),
@@ -53,8 +53,8 @@ export function useSimpleSteppedWorkspace({
           currentDraftId: draftActions.currentDraftId,
           hasUnsavedChanges: draftActions.hasUnsavedChanges,
           stale: model.isPreviewStale,
-          generate: generatingAvailability(model.isGenerating),
-          exportWhole: available,
+          generate: modelGenerationAvailability(model.isGenerating, model.baseHoleFitBlockingReason),
+          exportWhole: modelExportAvailability(model.baseHoleFitBlockingReason),
           preview: { kind: "manual" },
         },
         async perform(intent) {
@@ -99,6 +99,7 @@ export function useSimpleSteppedWorkspace({
         isGenerating={model.isGenerating}
         isPreviewStale={model.isPreviewStale}
         volume={model.volume}
+        baseHoleFitViolations={model.baseHoleFitViolations}
       />
     ),
     [
@@ -119,6 +120,7 @@ export function useSimpleSteppedWorkspace({
       model.trimTray,
       model.updateParam,
       model.volume,
+      model.baseHoleFitViolations,
     ],
   );
 

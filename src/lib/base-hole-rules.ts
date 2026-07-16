@@ -413,19 +413,72 @@ function validateSlots(params: BaseHoleParams, slots: BaseHoleSlot[]) {
   return violations;
 }
 
+function buildSlotsForMode(
+  mode: Exclude<AppMode, "base-converter">,
+  params: TrayParams | CustomLayoutParams | SimpleSteppedLayoutParams | SteppedLayoutParams,
+): BaseHoleSlot[] {
+  switch (mode) {
+    case "grid":
+      return buildGridSlots(params as TrayParams);
+    case "custom":
+      return buildCustomSlots(params as CustomLayoutParams);
+    case "simple-stepped":
+      return buildSimpleSteppedSlots(params as SimpleSteppedLayoutParams);
+    case "stepped":
+    case "stepped-cad":
+      return buildSteppedSlots(params as SteppedLayoutParams);
+  }
+}
+
+export function getResolvedMagneticBaseHolePresets(
+  mode: Exclude<AppMode, "base-converter">,
+  params: TrayParams | CustomLayoutParams | SimpleSteppedLayoutParams | SteppedLayoutParams,
+): BaseHolePresetKey[] {
+  let presets: Set<BaseHolePresetKey>;
+  if (mode === "grid") {
+    const slot = getGridSlotGeometry(params as TrayParams);
+    presets = new Set([
+      resolveMagneticBaseHolePreset(
+        slot.shape,
+        slot.baseWidth,
+        slot.baseHeight,
+      ),
+    ]);
+  } else if (mode === "simple-stepped") {
+    presets = new Set(
+      (params as SimpleSteppedLayoutParams).slots.map((slot) =>
+        resolveMagneticBaseHolePreset(
+          "circle",
+          slot.diameter,
+          slot.diameter,
+        )
+      ),
+    );
+  } else {
+    presets = new Set(
+      (params as CustomLayoutParams | SteppedLayoutParams).slots.map((slot) =>
+        resolveMagneticBaseHolePreset(
+          slot.shape,
+          slot.width,
+          slot.height,
+        )
+      ),
+    );
+  }
+  return presets.size > 0 ? [...presets].sort() : [BASE_HOLE_CONFIG.defaultPreset];
+}
+
+export function getBaseHoleFitBlockingReason(
+  violations: readonly BaseHoleFitViolation[],
+): string | null {
+  if (violations.length === 0) return null;
+  const remaining = violations.length - 1;
+  return `底板孔位不适配：${violations[0].message}${remaining > 0 ? `（另有 ${remaining} 项）` : ""}`;
+}
+
 export function validateBaseHoleFit(
   mode: Exclude<AppMode, "base-converter">,
   params: TrayParams | CustomLayoutParams | SimpleSteppedLayoutParams | SteppedLayoutParams,
 ): BaseHoleFitViolation[] {
-  switch (mode) {
-    case "grid":
-      return validateSlots(params as TrayParams, buildGridSlots(params as TrayParams));
-    case "custom":
-      return validateSlots(params as CustomLayoutParams, buildCustomSlots(params as CustomLayoutParams));
-    case "simple-stepped":
-      return validateSlots(params as SimpleSteppedLayoutParams, buildSimpleSteppedSlots(params as SimpleSteppedLayoutParams));
-    case "stepped":
-    case "stepped-cad":
-      return validateSlots(params as SteppedLayoutParams, buildSteppedSlots(params as SteppedLayoutParams));
-  }
+  return validateSlots(params, buildSlotsForMode(mode, params));
 }

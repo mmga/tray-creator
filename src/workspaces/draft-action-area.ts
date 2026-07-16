@@ -65,3 +65,20 @@ export function generatingAvailability(isGenerating: boolean): Availability {
     ? { state: "busy", label: "锻造中" }
     : available;
 }
+
+export function modelGenerationAvailability(
+  isGenerating: boolean,
+  blockingReason: string | null,
+): Availability {
+  return blockingReason
+    ? { state: "blocked", reason: blockingReason }
+    : generatingAvailability(isGenerating);
+}
+
+export function modelExportAvailability(
+  blockingReason: string | null,
+): Availability {
+  return blockingReason
+    ? { state: "blocked", reason: blockingReason }
+    : available;
+}

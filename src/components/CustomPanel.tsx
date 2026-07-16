@@ -3,7 +3,6 @@
 import type { CustomLayoutParams } from "@/types/custom-tray";
 import {
   SHARED_LAYOUT_LIMITS,
-  resolveBaseHolePresetKey,
 } from "@/lib/config";
 import {
   CUSTOM_BASE_PRESETS,
@@ -35,6 +34,10 @@ import { useToast } from "@/hooks/useToast";
 import { PanelShell } from "@/components/PanelShell";
 import { TrayResultSummary } from "@/components/TrayResultSummary";
 import { projectCustomTrayResult } from "@/lib/tray-result-projection";
+import {
+  getResolvedMagneticBaseHolePresets,
+  type BaseHoleFitViolation,
+} from "@/lib/base-hole-rules";
 
 // ── Props ──────────────────────────────
 
@@ -53,6 +56,7 @@ interface CustomPanelProps {
   isGenerating: boolean;
   isPreviewStale: boolean;
   volume: number;
+  baseHoleFitViolations?: BaseHoleFitViolation[];
 }
 
 function getEllipseSlotConfig(preset: EllipsePreset): EllipseSlotConfig {
@@ -73,6 +77,7 @@ export default function CustomPanel({
   isGenerating,
   isPreviewStale,
   volume,
+  baseHoleFitViolations = [],
 }: CustomPanelProps) {
   const { toast } = useToast();
   const result = projectCustomTrayResult(params, effectiveDimensions, {
@@ -82,11 +87,10 @@ export default function CustomPanel({
   });
   const isFixedTraySize = params.traySizingMode === "fixed";
   const [customCircleDiameter, setCustomCircleDiameter] = useState(10);
-  const largestSlotSize = params.slots.reduce(
-    (maxSize, slot) => Math.max(maxSize, slot.width, slot.height),
-    0,
+  const resolvedBaseHoleSizes = getResolvedMagneticBaseHolePresets(
+    "custom",
+    params,
   );
-  const resolvedBaseHoleSize = resolveBaseHolePresetKey(largestSlotSize);
 
   const handleAddCustomCircleSlot = () => {
     if (!Number.isFinite(customCircleDiameter) || customCircleDiameter <= 0) {
@@ -323,8 +327,11 @@ export default function CustomPanel({
       {/* 底板孔位 — 移动端默认折叠 */}
       <div><BaseHoleConfig<CustomLayoutParams>
         baseHoleStructure={params.baseHoleStructure}
-        baseThickness={params.baseThickness}
-        resolvedBaseHoleSize={resolvedBaseHoleSize}
+        magnetPostHoleDiameter={params.magnetPostHoleDiameter}
+        magnetPostHoleDepth={params.magnetPostHoleDepth}
+        supportingThickness={params.baseThickness}
+        resolvedBaseHoleSizes={resolvedBaseHoleSizes}
+        fitViolations={baseHoleFitViolations}
         updateParam={updateParam}
         collapsible
         defaultOpen={false}

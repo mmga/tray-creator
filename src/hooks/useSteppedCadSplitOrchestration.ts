@@ -14,6 +14,10 @@ import {
 } from "@/lib/mode-param-snapshot";
 import { trayWorkerService } from "@/lib/worker/worker-service";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
+import {
+  getBaseHoleFitBlockingReason,
+  validateBaseHoleFit,
+} from "@/lib/base-hole-rules";
 
 interface UseSteppedCadSplitOrchestrationOptions {
   params: SteppedLayoutParams;
@@ -94,6 +98,13 @@ export function useSteppedCadSplitOrchestration(
     }
 
     const currentParams = paramsRef.current;
+    const blockingReason = getBaseHoleFitBlockingReason(
+      validateBaseHoleFit("stepped-cad", currentParams),
+    );
+    if (blockingReason) {
+      toast("error", blockingReason);
+      return;
+    }
     if (currentParams.groups.length < 2) {
       toast("error", "至少需要两个分组才能预览拆件");
       return;
@@ -125,6 +136,13 @@ export function useSteppedCadSplitOrchestration(
     }
 
     const currentParams = paramsRef.current;
+    const blockingReason = getBaseHoleFitBlockingReason(
+      validateBaseHoleFit("stepped-cad", currentParams),
+    );
+    if (blockingReason) {
+      toast("error", blockingReason);
+      return;
+    }
     if (currentParams.groups.length < 2) {
       toast("error", "至少需要两个分组才能导出分件");
       return;

@@ -18,6 +18,7 @@ interface UsePreviewLifecycleOptions<P, S> {
   fingerprintSnapshot: (snapshot: S) => string;
   generatePreview: (snapshot: S) => Promise<PreviewLifecycleResult | null>;
   exportModel: (snapshot: S, geometry: Geom3) => Promise<void>;
+  validateSnapshot?: (snapshot: S) => string | null;
   onInvalidate?: () => void;
 }
 
@@ -37,6 +38,7 @@ export function usePreviewLifecycle<P, S>({
   fingerprintSnapshot,
   generatePreview,
   exportModel,
+  validateSnapshot,
   onInvalidate,
 }: UsePreviewLifecycleOptions<P, S>): UsePreviewLifecycleReturn {
   const { toast } = useToast();
@@ -61,6 +63,11 @@ export function usePreviewLifecycle<P, S>({
   const generateCurrentPreview = useCallback(async (
     snapshot: S,
   ): Promise<Geom3 | null> => {
+    const blockingReason = validateSnapshot?.(snapshot);
+    if (blockingReason) {
+      toast("error", blockingReason);
+      return null;
+    }
     const seq = nextSeq();
     setIsGenerating(true);
     try {
@@ -93,7 +100,7 @@ export function usePreviewLifecycle<P, S>({
     } finally {
       setIsGenerating(false);
     }
-  }, [fingerprintSnapshot, generatePreview, isStale, nextSeq, toast]);
+  }, [fingerprintSnapshot, generatePreview, isStale, nextSeq, toast, validateSnapshot]);
 
   const handleGenerate = useCallback(async () => {
     await generateCurrentPreview(captureSnapshot(getParams()));
@@ -101,6 +108,11 @@ export function usePreviewLifecycle<P, S>({
 
   const handleExportSTL = useCallback(async () => {
     const snapshot = captureSnapshot(getParams());
+    const blockingReason = validateSnapshot?.(snapshot);
+    if (blockingReason) {
+      toast("error", blockingReason);
+      return;
+    }
     const fingerprint = fingerprintSnapshot(snapshot);
     const needsFreshPreview =
       !geometryRef.current || geometryFingerprintRef.current !== fingerprint;
@@ -132,6 +144,7 @@ export function usePreviewLifecycle<P, S>({
     generateCurrentPreview,
     getParams,
     toast,
+    validateSnapshot,
   ]);
 
   return {

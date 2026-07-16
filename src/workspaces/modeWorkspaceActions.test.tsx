@@ -50,7 +50,12 @@ vi.mock("@/lib/param-download", () => ({
 vi.mock("@/components/PanelActionSection", () => ({
   PanelActionSection({ adapter }: { adapter: import("@/workspaces/draft-action-area").DraftActionAreaAdapter }) {
     return (
-      <div data-testid={`actions-${adapter.kind}`} data-can-split={adapter.kind === "stepped-cad" ? String(adapter.state.exportSplit.state === "available") : undefined}>
+      <div
+        data-testid={`actions-${adapter.kind}`}
+        data-generate-state={adapter.state.generate.state}
+        data-export-state={adapter.state.exportWhole.state}
+        data-can-split={adapter.kind === "stepped-cad" ? String(adapter.state.exportSplit.state === "available") : undefined}
+      >
         {adapter.kind === "automatic" ? (
           <button type="button" onClick={() => void adapter.perform({ type: "set-auto-preview", enabled: !adapter.state.preview.enabled })}>
             自动预览
@@ -130,6 +135,40 @@ describe("Mode Workspace Draft Action Area", () => {
     expect(clearDraftBindingMock).toHaveBeenCalledTimes(2);
     expect(model.replaceParams).toHaveBeenCalledWith(
       expect.objectContaining({ rows: 3 }),
+    );
+  });
+
+  it("grid 适配违规会阻断自动预览、锻造和完整导出", () => {
+    const model = {
+      params: DEFAULT_TRAY_PARAMS,
+      replaceParams: vi.fn(),
+      resetParams: vi.fn(),
+      updateParam: vi.fn(),
+      handleGenerate: vi.fn(),
+      handleExportSTL: vi.fn(),
+      isGenerating: false,
+      volume: 0,
+      baseHoleFitViolations: [],
+      baseHoleFitBlockingReason: "底板孔位不适配",
+    };
+    const { result } = renderHook(() => useGridWorkspace({
+      model: model as never,
+      onRequestParamImport: vi.fn(async () => ({ status: "success" as const })),
+    }));
+
+    renderWorkspacePanel(result.current.panel);
+
+    expect(useAutoPreviewMock).toHaveBeenCalledWith(
+      DEFAULT_TRAY_PARAMS,
+      expect.objectContaining({ isBlocked: true }),
+    );
+    expect(screen.getByTestId("actions-automatic")).toHaveAttribute(
+      "data-generate-state",
+      "blocked",
+    );
+    expect(screen.getByTestId("actions-automatic")).toHaveAttribute(
+      "data-export-state",
+      "blocked",
     );
   });
 

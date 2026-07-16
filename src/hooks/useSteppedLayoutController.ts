@@ -63,6 +63,11 @@ import {
   createModelGeometryFingerprint,
   type ModeParamSnapshot,
 } from "@/lib/mode-param-snapshot";
+import {
+  getBaseHoleFitBlockingReason,
+  validateBaseHoleFit,
+  type BaseHoleFitViolation,
+} from "@/lib/base-hole-rules";
 
 export interface UseSteppedLayoutControllerReturn {
   params: SteppedLayoutParams;
@@ -110,6 +115,8 @@ export interface UseSteppedLayoutControllerReturn {
   volume: number;
   isGenerating: boolean;
   isPreviewStale: boolean;
+  baseHoleFitViolations: BaseHoleFitViolation[];
+  baseHoleFitBlockingReason: string | null;
   bridgeWarning: BridgeWarning | null;
   optimizationProposals: SteppedOptimizationProposal[];
   isOptimizingLayout: boolean;
@@ -235,11 +242,23 @@ export function useSteppedLayoutController<
         browserDownloadPort,
       );
     },
+    validateSnapshot: (snapshot) =>
+      getBaseHoleFitBlockingReason(
+        validateBaseHoleFit(mode, snapshot.params),
+      ),
     onInvalidate: () => {
       optimizationVariantRef.current = 0;
       clearOptimizationProposals();
     },
   });
+
+  const baseHoleFitViolations = useMemo(
+    () => validateBaseHoleFit(mode, params),
+    [mode, params],
+  );
+  const baseHoleFitBlockingReason = getBaseHoleFitBlockingReason(
+    baseHoleFitViolations,
+  );
 
   const setParams = useCallback<
     React.Dispatch<React.SetStateAction<SteppedLayoutParams>>
@@ -629,6 +648,8 @@ export function useSteppedLayoutController<
     volume,
     isGenerating,
     isPreviewStale,
+    baseHoleFitViolations,
+    baseHoleFitBlockingReason,
     bridgeWarning,
     optimizationProposals,
     isOptimizingLayout,

@@ -11,7 +11,7 @@ import type { SteppedLayoutParams } from "@/types/custom-tray";
 import type { UseSteppedCadLayoutReturn } from "@/hooks/useSteppedCadLayout";
 import { exportParams } from "@/lib/param-download";
 import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
-import { available, generatingAvailability, type DraftActionResult, type SteppedCadDraftActionAreaAdapter } from "@/workspaces/draft-action-area";
+import { available, modelExportAvailability, modelGenerationAvailability, type DraftActionResult, type SteppedCadDraftActionAreaAdapter } from "@/workspaces/draft-action-area";
 
 const SteppedCadPanel = dynamic(() =>
   import("@/components/SteppedPanel").then((mod) => mod.SteppedCadPanel), {
@@ -64,9 +64,13 @@ export function useSteppedCadWorkspace({
           currentDraftId: draftActions.currentDraftId,
           hasUnsavedChanges: draftActions.hasUnsavedChanges,
           stale: model.isPreviewStale,
-          generate: generatingAvailability(model.isGenerating),
-          exportWhole: available,
-          exportSplit: canExportSplit ? available : { state: "blocked", reason: "至少需要两个分组且存在凹槽" },
+          generate: modelGenerationAvailability(model.isGenerating, model.baseHoleFitBlockingReason),
+          exportWhole: modelExportAvailability(model.baseHoleFitBlockingReason),
+          exportSplit: model.baseHoleFitBlockingReason
+            ? { state: "blocked", reason: model.baseHoleFitBlockingReason }
+            : canExportSplit
+              ? available
+              : { state: "blocked", reason: "至少需要两个分组且存在凹槽" },
           preview: { kind: "manual" },
         },
         async perform(intent) {
@@ -105,6 +109,7 @@ export function useSteppedCadWorkspace({
         onUpdateGroupSplitPartTarget={model.updateGroupSplitPartTarget}
         isGenerating={model.isGenerating}
         volume={model.volume}
+        baseHoleFitViolations={model.baseHoleFitViolations}
         selectedSlotIds={selectedSlotIds}
         onAddGroup={model.addGroup}
         onRemoveGroup={model.removeGroup}
@@ -153,6 +158,7 @@ export function useSteppedCadWorkspace({
       model.updateGroupSplitPartTarget,
       model.updateParam,
       model.volume,
+      model.baseHoleFitViolations,
       previewGroupId,
       setPreviewGroupId,
       selectedSlotIds,

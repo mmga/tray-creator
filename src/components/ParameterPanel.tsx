@@ -30,6 +30,7 @@ import { ParamSlider } from "@/components/ui/ParamSlider";
 import { PanelShell } from "@/components/PanelShell";
 import { TrayResultSummary } from "@/components/TrayResultSummary";
 import { projectGridTrayResult } from "@/lib/tray-result-projection";
+import type { BaseHoleFitViolation } from "@/lib/base-hole-rules";
 
 interface ParameterPanelProps {
   params: TrayParams;
@@ -39,6 +40,7 @@ interface ParameterPanelProps {
   isGenerating: boolean;
   isPreviewStale: boolean;
   volume: number;
+  baseHoleFitViolations?: BaseHoleFitViolation[];
 }
 
 export default function ParameterPanel({
@@ -49,6 +51,7 @@ export default function ParameterPanel({
   isGenerating,
   isPreviewStale,
   volume,
+  baseHoleFitViolations = [],
 }: ParameterPanelProps) {
   const slotGeometry = getGridSlotGeometry(params);
   const isRectangularSlot = isRectangularGridSlot(params);
@@ -312,8 +315,11 @@ export default function ParameterPanel({
       {/* 底板孔位 — 移动端默认折叠 */}
       <BaseHoleConfig<TrayParams>
         baseHoleStructure={params.baseHoleStructure}
-        baseThickness={params.baseThickness}
-        resolvedBaseHoleSize={resolvedBaseHoleSize}
+        magnetPostHoleDiameter={params.magnetPostHoleDiameter}
+        magnetPostHoleDepth={params.magnetPostHoleDepth}
+        supportingThickness={params.baseThickness}
+        resolvedBaseHoleSizes={[resolvedBaseHoleSize]}
+        fitViolations={baseHoleFitViolations}
         updateParam={updateParam}
         collapsible
         defaultOpen={false}

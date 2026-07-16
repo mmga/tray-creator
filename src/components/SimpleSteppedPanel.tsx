@@ -22,6 +22,11 @@ import {
   Trash2,
 } from "lucide-react";
 import { projectSimpleSteppedTrayResult } from "@/lib/tray-result-projection";
+import { BaseHoleConfig } from "@/components/BaseHoleConfig";
+import {
+  getResolvedMagneticBaseHolePresets,
+  type BaseHoleFitViolation,
+} from "@/lib/base-hole-rules";
 
 interface SimpleSteppedPanelProps {
   params: SimpleSteppedLayoutParams;
@@ -48,6 +53,7 @@ interface SimpleSteppedPanelProps {
   isGenerating: boolean;
   isPreviewStale: boolean;
   volume: number;
+  baseHoleFitViolations?: BaseHoleFitViolation[];
 }
 
 export default function SimpleSteppedPanel({
@@ -68,6 +74,7 @@ export default function SimpleSteppedPanel({
   isGenerating,
   isPreviewStale,
   volume,
+  baseHoleFitViolations = [],
 }: SimpleSteppedPanelProps) {
   const result = projectSimpleSteppedTrayResult(
     params,
@@ -88,6 +95,10 @@ export default function SimpleSteppedPanel({
     (derivedLayout.trayWidth - derivedLayout.minimumTrayWidth > 0.001 ||
       derivedLayout.trayDepth - derivedLayout.minimumTrayDepth > 0.001);
   const spacingSummary = `槽距${params.spacing}mm / 边距${params.outerMarginIndependent ? params.outerMargin : params.spacing}mm`;
+  const resolvedBaseHoleSizes = getResolvedMagneticBaseHolePresets(
+    "simple-stepped",
+    params,
+  );
 
   return (
     <PanelShell summary={<TrayResultSummary result={result} />} actions={actions}>
@@ -351,6 +362,19 @@ export default function SimpleSteppedPanel({
           </div>
         </SectionHeader>
       </div>
+
+      <BaseHoleConfig<SimpleSteppedLayoutParams>
+        baseHoleStructure={params.baseHoleStructure}
+        magnetPostHoleDiameter={params.magnetPostHoleDiameter}
+        magnetPostHoleDepth={params.magnetPostHoleDepth}
+        supportingThickness={params.firstRowHeight - params.holeDepth}
+        supportingThicknessLabel="首行承载厚度"
+        resolvedBaseHoleSizes={resolvedBaseHoleSizes}
+        fitViolations={baseHoleFitViolations}
+        updateParam={updateParam}
+        collapsible
+        defaultOpen={false}
+      />
     </div>
     </PanelShell>
   );

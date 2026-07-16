@@ -3,6 +3,7 @@ import {
   applyFlatTrayBaseHoleSupportingThickness,
   applySimpleSteppedBaseHoleSupportingThickness,
   getRequiredBaseHoleSupportingThickness,
+  getResolvedMagneticBaseHolePresets,
   resolveMagneticBaseHolePreset,
   validateBaseHoleFit,
 } from "@/lib/base-hole-rules";
@@ -18,6 +19,16 @@ describe("base hole rules", () => {
     expect(resolveMagneticBaseHolePreset("ellipse", 75, 42)).toBe("40");
     expect(resolveMagneticBaseHolePreset("rectangle", 40, 100)).toBe("25");
     expect(resolveMagneticBaseHolePreset("rectangle", 50, 75)).toBe("40");
+  });
+
+  it("返回同一托盘逐槽位匹配后的混合磁吸孔规格", () => {
+    expect(getResolvedMagneticBaseHolePresets("custom", {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      slots: [
+        { id: "small", x: 30, y: 30, shape: "circle", width: 25, height: 25, rotation: 0 },
+        { id: "large", x: 90, y: 30, shape: "ellipse", width: 75, height: 42, rotation: 0 },
+      ],
+    })).toEqual(["25", "40"]);
   });
 
   it("计算两种孔位结构的最小承载厚度", () => {

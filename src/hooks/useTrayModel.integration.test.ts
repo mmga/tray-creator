@@ -174,6 +174,29 @@ describe("useTrayModel", () => {
     );
   });
 
+  it("底板孔位不适配时阻断模型生成和导出", async () => {
+    const { result } = renderHook(() => useTrayModel());
+
+    act(() => result.current.updateParam("holeDiameter", 10));
+    act(() => result.current.updateParam("baseHoleStructure", "magnet-post-hole"));
+    act(() => result.current.updateParam("magnetPostHoleDiameter", 15));
+
+    expect(result.current.baseHoleFitViolations).not.toHaveLength(0);
+    expect(result.current.baseHoleFitBlockingReason).toContain("底板孔位不适配");
+
+    await act(async () => {
+      await result.current.handleGenerate();
+      await result.current.handleExportSTL();
+    });
+
+    expect(generateGridPreviewMock).not.toHaveBeenCalled();
+    expect(exportGridModelFilesMock).not.toHaveBeenCalled();
+    expect(toastMock).toHaveBeenCalledWith(
+      "error",
+      expect.stringContaining("磁铁桩孔直径 15mm"),
+    );
+  });
+
   it("exports generated geometry with the worker service and browser download port", async () => {
     const geometry = { id: "geom" } as never;
     const threeGeometry = { dispose: vi.fn() };

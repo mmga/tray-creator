@@ -33,6 +33,11 @@ import {
 import { browserDownloadPort } from "@/lib/download-port";
 import { exportSimpleSteppedModelFiles } from "@/lib/simple-stepped-model-service";
 import { BASE_HOLE_PARAM_DEFAULTS } from "@/lib/base-hole-config";
+import {
+  getBaseHoleFitBlockingReason,
+  validateBaseHoleFit,
+  type BaseHoleFitViolation,
+} from "@/lib/base-hole-rules";
 
 export interface UseSimpleSteppedLayoutReturn {
   params: SimpleSteppedLayoutParams;
@@ -71,6 +76,8 @@ export interface UseSimpleSteppedLayoutReturn {
   volume: number;
   isGenerating: boolean;
   isPreviewStale: boolean;
+  baseHoleFitViolations: BaseHoleFitViolation[];
+  baseHoleFitBlockingReason: string | null;
   handleGenerate: () => void;
   handleExportSTL: () => void;
 }
@@ -130,7 +137,19 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
         browserDownloadPort,
       );
     },
+    validateSnapshot: (snapshot) =>
+      getBaseHoleFitBlockingReason(
+        validateBaseHoleFit("simple-stepped", snapshot.params),
+      ),
   });
+
+  const baseHoleFitViolations = useMemo(
+    () => validateBaseHoleFit("simple-stepped", params),
+    [params],
+  );
+  const baseHoleFitBlockingReason = getBaseHoleFitBlockingReason(
+    baseHoleFitViolations,
+  );
 
   const normalizeParams = useCallback(
     (next: SimpleSteppedLayoutParams) => normalizeSimpleSteppedParams(next),
@@ -573,6 +592,8 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
     volume,
     isGenerating,
     isPreviewStale,
+    baseHoleFitViolations,
+    baseHoleFitBlockingReason,
     handleGenerate,
     handleExportSTL,
   };

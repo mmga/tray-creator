@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import type * as THREE from "three";
 import type { TrayParams } from "@/types/tray";
 import { browserDownloadPort } from "@/lib/download-port";
@@ -20,6 +20,11 @@ import {
   createModelGeometryFingerprint,
   type ModeParamSnapshot,
 } from "@/lib/mode-param-snapshot";
+import {
+  getBaseHoleFitBlockingReason,
+  validateBaseHoleFit,
+  type BaseHoleFitViolation,
+} from "@/lib/base-hole-rules";
 
 interface UseTrayModelReturn {
   params: TrayParams;
@@ -33,6 +38,8 @@ interface UseTrayModelReturn {
   volume: number;
   isGenerating: boolean;
   isPreviewStale: boolean;
+  baseHoleFitViolations: BaseHoleFitViolation[];
+  baseHoleFitBlockingReason: string | null;
   handleGenerate: () => void;
   handleExportSTL: () => void;
 }
@@ -62,7 +69,19 @@ export function useTrayModel(): UseTrayModelReturn {
         browserDownloadPort,
       );
     },
+    validateSnapshot: (snapshot) =>
+      getBaseHoleFitBlockingReason(
+        validateBaseHoleFit("grid", snapshot.params),
+      ),
   });
+
+  const baseHoleFitViolations = useMemo(
+    () => validateBaseHoleFit("grid", params),
+    [params],
+  );
+  const baseHoleFitBlockingReason = getBaseHoleFitBlockingReason(
+    baseHoleFitViolations,
+  );
 
   // grid 模式无 undo，所有操作用 history: "skip"
   const updateParam = useCallback(
@@ -92,6 +111,8 @@ export function useTrayModel(): UseTrayModelReturn {
     volume,
     isGenerating,
     isPreviewStale,
+    baseHoleFitViolations,
+    baseHoleFitBlockingReason,
     handleGenerate,
     handleExportSTL,
   };

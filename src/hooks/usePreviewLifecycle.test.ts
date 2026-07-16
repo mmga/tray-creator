@@ -54,4 +54,28 @@ describe("usePreviewLifecycle", () => {
     expect(generatePreview).toHaveBeenLastCalledWith({ rows: 2 });
     expect(exportModel).toHaveBeenCalledWith({ rows: 2 }, secondGeometry);
   });
+
+  it("Snapshot 校验失败时同时阻断生成和导出", async () => {
+    const generatePreview = vi.fn();
+    const exportModel = vi.fn();
+    const { result } = renderHook(() =>
+      usePreviewLifecycle({
+        getParams: () => ({ rows: 1 }),
+        captureSnapshot: (current) => current,
+        fingerprintSnapshot: JSON.stringify,
+        generatePreview,
+        exportModel,
+        validateSnapshot: () => "底板孔位不适配",
+      }),
+    );
+
+    await act(async () => {
+      await result.current.handleGenerate();
+      await result.current.handleExportSTL();
+    });
+
+    expect(generatePreview).not.toHaveBeenCalled();
+    expect(exportModel).not.toHaveBeenCalled();
+    expect(toastMock).toHaveBeenCalledWith("error", "底板孔位不适配");
+  });
 });
