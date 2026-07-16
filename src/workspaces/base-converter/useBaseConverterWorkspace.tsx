@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { PanelActionSection } from "@/components/PanelActionSection";
 import { useAutoPreview } from "@/hooks/useAutoPreview";
 import type { useBaseConverter } from "@/hooks/useBaseConverter";
-import { exportParams } from "@/lib/param-io";
+import { exportParams } from "@/lib/param-download";
 import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import type { BaseConverterParams } from "@/types/custom-tray";
 import {

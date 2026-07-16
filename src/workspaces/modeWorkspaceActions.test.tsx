@@ -43,7 +43,7 @@ vi.mock("@/hooks/useAutoPreview", () => ({
   useAutoPreview: useAutoPreviewMock,
 }));
 
-vi.mock("@/lib/param-io", () => ({
+vi.mock("@/lib/param-download", () => ({
   exportParams: vi.fn(),
 }));
 

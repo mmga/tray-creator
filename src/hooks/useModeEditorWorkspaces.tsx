@@ -15,11 +15,13 @@ import type { AppMode } from "@/types/custom-tray";
 import type { ModeViewportWorkspace } from "@/viewports/types";
 import type { ModeWorkspace } from "@/workspaces/types";
 import {
-  APP_MODE_LABELS,
   prepareParamImport,
+} from "@/lib/param-io";
+import {
+  APP_MODE_LABELS,
   type ImportCandidate,
   type ImportModeSelectionRequired,
-} from "@/lib/param-io";
+} from "@/lib/historical-param-artifact-reader";
 import type { DraftActionResult } from "@/workspaces/draft-action-area";
 import { useToast } from "@/hooks/useToast";
 

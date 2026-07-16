@@ -22,7 +22,7 @@ import {
   APP_MODE_LABELS,
   type ImportCandidate,
   type ImportModeSelectionRequired,
-} from "@/lib/param-io";
+} from "@/lib/historical-param-artifact-reader";
 import type {
   ImportAdjustment,
   ImportAdjustmentCategory,

@@ -15,7 +15,7 @@ import {
   type DraftMode,
   type UnknownDraftListItem,
 } from "@/lib/draft-legacy-normalize";
-import { downloadParamFile } from "@/lib/param-io";
+import { downloadParamFile } from "@/lib/param-download";
 import {
   captureModeParamSnapshot,
   type ModeParamSnapshot,

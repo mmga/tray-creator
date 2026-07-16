@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { ExportableParams } from "@/lib/param-io";
+import type { ExportableParams } from "@/lib/mode-param-snapshot";
 
 export interface ModeWorkspaceImportTarget {
   currentDraftId: string | null;

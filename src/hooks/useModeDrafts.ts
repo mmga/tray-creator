@@ -22,7 +22,7 @@ import {
   removeDraftSessionBinding,
   type DraftSession,
 } from "@/lib/draft-session";
-import { parseParamFileObject } from "@/lib/param-io";
+import { readDraftParamArtifact } from "@/lib/historical-param-artifact-reader";
 import { serializeCurrentParamArtifact } from "@/lib/current-param-artifact-encoder";
 import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import type { DraftParamsByMode } from "@/lib/draft-summary";
@@ -149,7 +149,7 @@ export function useModeDrafts<M extends DraftMode>({
           return;
         }
 
-        const loaded = parseParamFileObject(record.paramFile, mode);
+        const loaded = readDraftParamArtifact(record.paramFile, mode);
 
         setParams(loaded);
         setDraftSession(bindDraftSession(

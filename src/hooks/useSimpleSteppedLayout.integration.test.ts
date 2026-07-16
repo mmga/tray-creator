@@ -26,9 +26,9 @@ vi.mock("@/lib/worker/worker-service", () => ({
   trayWorkerService: trayWorkerServiceMock,
 }));
 
-vi.mock("@/lib/param-io", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/param-io")>(
-    "@/lib/param-io",
+vi.mock("@/lib/param-download", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/param-download")>(
+    "@/lib/param-download",
   );
   return {
     ...actual,

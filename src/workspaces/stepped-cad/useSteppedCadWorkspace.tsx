@@ -9,7 +9,7 @@ import type { ModeWorkspace } from "@/workspaces/types";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 import type { UseSteppedCadLayoutReturn } from "@/hooks/useSteppedCadLayout";
-import { exportParams } from "@/lib/param-io";
+import { exportParams } from "@/lib/param-download";
 import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import { available, generatingAvailability, type DraftActionResult, type SteppedCadDraftActionAreaAdapter } from "@/workspaces/draft-action-area";
 

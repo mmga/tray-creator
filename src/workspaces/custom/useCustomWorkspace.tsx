@@ -6,7 +6,7 @@ import { PanelActionSection } from "@/components/PanelActionSection";
 import { useAutoPreview } from "@/hooks/useAutoPreview";
 import { useWorkspaceDraftSupport, type WorkspaceDraftActions } from "@/workspaces/shared";
 import { available, generatingAvailability, type AutomaticDraftActionAreaAdapter, type DraftActionResult } from "@/workspaces/draft-action-area";
-import { exportParams } from "@/lib/param-io";
+import { exportParams } from "@/lib/param-download";
 import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import type { ModeWorkspace } from "@/workspaces/types";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";

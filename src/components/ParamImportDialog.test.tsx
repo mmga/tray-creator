@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ParamImportDialog } from "@/components/ParamImportDialog";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
-import type { ImportCandidate } from "@/lib/param-io";
+import type { ImportCandidate } from "@/lib/historical-param-artifact-reader";
 
 function createCandidate(): ImportCandidate {
   return {

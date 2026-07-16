@@ -26,7 +26,7 @@ import { generateSimpleSteppedSTLFilename } from "@/lib/stl-export";
 import { useUndoHistory } from "@/hooks/useUndoHistory";
 import { usePreviewLifecycle } from "@/hooks/usePreviewLifecycle";
 import { trayWorkerService } from "@/lib/worker/worker-service";
-import { downloadParamFile } from "@/lib/param-io";
+import { downloadParamFile } from "@/lib/param-download";
 import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 
 export interface UseSimpleSteppedLayoutReturn {

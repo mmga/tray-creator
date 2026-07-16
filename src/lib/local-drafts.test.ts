@@ -18,9 +18,9 @@ const { downloadParamFileMock } = vi.hoisted(() => ({
   downloadParamFileMock: vi.fn(),
 }));
 
-vi.mock("@/lib/param-io", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/param-io")>(
-    "@/lib/param-io",
+vi.mock("@/lib/param-download", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/param-download")>(
+    "@/lib/param-download",
   );
   return {
     ...actual,

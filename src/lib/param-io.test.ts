@@ -16,12 +16,14 @@ import type {
 import type { TrayParams } from "@/types/tray";
 import { calculateSimpleSteppedDimensions } from "@/lib/simple-stepped-layout";
 import {
-  downloadParamFile,
-  importParams,
-  parseParamFileObject,
-  prepareParamFileObject,
   prepareParamImport,
 } from "@/lib/param-io";
+import { downloadParamFile } from "@/lib/param-download";
+import {
+  ParamArtifactReadError,
+  prepareParamFileObject,
+  readDraftParamArtifact as parseParamFileObject,
+} from "@/lib/historical-param-artifact-reader";
 import {
   buildCurrentParamArtifact,
   createCurrentParamArtifactBlob,
@@ -438,7 +440,7 @@ describe("param-io", () => {
     expect(parsed.enableBaseHole).toBe(true);
   });
 
-  it("migrates custom files into stepped params", () => {
+  it("rejects implicit custom to stepped conversion", () => {
     const customParams: CustomLayoutParams = {
       ...CUSTOM_LAYOUT_DEFAULTS,
       trayWidth: 220,
@@ -458,31 +460,12 @@ describe("param-io", () => {
       ],
     };
 
-    const migrated = parseParamFileObject(
-      { version: 1, mode: "custom", params: customParams },
-      "stepped",
-    ) as SteppedLayoutParams;
-
-    expect(migrated.trayWidth).toBe(220);
-    expect(migrated.trayDepth).toBe(210);
-    expect(migrated.spacing).toBe(7);
-    expect(migrated.holeDepth).toBe(4);
-    expect(migrated.groups).toHaveLength(1);
-    expect(migrated.activeGroupId).toBe("test-uuid");
-    expect(migrated.slots[0]).toMatchObject({
-      id: "slot-1",
-      shape: "circle",
-      width: 28,
-      height: 28,
-      groupId: "test-uuid",
-    });
-    expect(migrated.groups[0]).toMatchObject({
-      id: "test-uuid",
-      name: "组 1",
-      bottomHeight: 10,
-      useGroupSmoothingRadius: false,
-      useGroupDisconnectDistance: false,
-    });
+    expect(() =>
+      parseParamFileObject(
+        { version: 1, mode: "custom", params: customParams },
+        "stepped",
+      ),
+    ).toThrow(expect.objectContaining({ code: "mode-mismatch" }));
   });
 
   it("imports legacy raw custom exports without a wrapper", () => {
@@ -640,11 +623,11 @@ describe("param-io", () => {
     expect("bottomHeight" in parsed.slots[0]).toBe(false);
   });
 
-  it("migrates legacy CAD locator-recess assembly mode into split feature toggles", () => {
+  it("migrates legacy CAD assembly fields after explicit external Mode selection", () => {
     const legacySteppedParams = { ...STEPPED_LAYOUT_DEFAULTS };
     delete legacySteppedParams.enableSplitRecess;
     delete legacySteppedParams.enableSplitLocators;
-    const parsed = parseParamFileObject(
+    const preparation = prepareParamFileObject(
       {
         version: 1,
         mode: "stepped",
@@ -653,8 +636,11 @@ describe("param-io", () => {
           splitAssemblyMode: "locator-recess",
         },
       },
-      "stepped-cad",
-    ) as SteppedLayoutParams;
+      { selectedMode: "stepped-cad" },
+    );
+    expect(preparation.status).toBe("ready");
+    if (preparation.status !== "ready") return;
+    const parsed = preparation.candidate.params as SteppedLayoutParams;
 
     expect(parsed.enableSplitRecess).toBe(true);
     expect(parsed.splitGrooveType).toBe("profile");
@@ -732,6 +718,57 @@ describe("param-io", () => {
     ).toThrow("模式不匹配");
   });
 
+  it("reports stable semantic read error codes", () => {
+    const readError = (action: () => unknown) => {
+      try {
+        action();
+        throw new Error("expected read failure");
+      } catch (error) {
+        expect(error).toBeInstanceOf(ParamArtifactReadError);
+        return error as ParamArtifactReadError;
+      }
+    };
+
+    expect(readError(() => prepareParamFileObject(null)).code).toBe(
+      "invalid-content",
+    );
+    expect(readError(() => prepareParamFileObject({
+      version: 2,
+      mode: "grid",
+      params: DEFAULT_TRAY_PARAMS,
+    })).code).toBe("unsupported-version");
+    expect(readError(() => prepareParamFileObject({
+      version: 1,
+      mode: "unknown",
+      params: DEFAULT_TRAY_PARAMS,
+    })).code).toBe("invalid-mode");
+    expect(readError(() => prepareParamFileObject({
+      version: 1,
+      mode: "grid",
+      params: null,
+    })).code).toBe("invalid-params");
+    expect(readError(() => prepareParamFileObject({ value: true })).code).toBe(
+      "unrecognized-structure",
+    );
+    expect(readError(() => prepareParamFileObject({
+      version: 1,
+      mode: "grid",
+      params: STEPPED_LAYOUT_DEFAULTS,
+    })).code).toBe("mode-structure-conflict");
+    expect(readError(() => parseParamFileObject(
+      { version: 1, mode: "custom", params: CUSTOM_LAYOUT_DEFAULTS },
+      "grid",
+    )).code).toBe("mode-mismatch");
+
+    const normalizationError = readError(() => prepareParamFileObject({
+      version: 1,
+      mode: "grid",
+      params: { rows: 2, columns: 2 },
+    }));
+    expect(normalizationError.code).toBe("normalization-failed");
+    expect(normalizationError.cause).toBeInstanceOf(Error);
+  });
+
   it("imports files through FileReader and surfaces reader failures", async () => {
     const file = new File(
       [serializeParamFile("grid", DEFAULT_TRAY_PARAMS)],
@@ -739,9 +776,13 @@ describe("param-io", () => {
       { type: "application/json" },
     );
 
-    await expect(importParams(file, "grid")).resolves.toMatchObject(
-      DEFAULT_TRAY_PARAMS,
-    );
+    await expect(prepareParamImport(file)).resolves.toMatchObject({
+      status: "ready",
+      candidate: {
+        targetMode: "grid",
+        params: DEFAULT_TRAY_PARAMS,
+      },
+    });
 
     class FailingFileReader {
       result: string | ArrayBuffer | null = null;
@@ -761,7 +802,10 @@ describe("param-io", () => {
       value: FailingFileReader,
     });
 
-    await expect(importParams(file, "grid")).rejects.toThrow("文件读取失败");
+    await expect(prepareParamImport(file)).rejects.toMatchObject({
+      code: "invalid-content",
+      message: "文件读取失败",
+    });
 
     Object.defineProperty(globalThis, "FileReader", {
       configurable: true,
