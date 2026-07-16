@@ -384,6 +384,8 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A **Current Param Artifact Encoder** consumes a **Mode Param Snapshot** and writes only the current parameter format.
 - A **Current Param Artifact Encoder** does not apply historical compatibility or change the Snapshot's Mode identity.
 - A **Historical Param Artifact Reader** owns historical wrapper recognition and ambiguous Mode handling.
+- A **Historical Param Artifact Reader** never converts parameters between Modes; it only identifies the owning Mode and applies compatibility within that Mode.
+- **Draft Compatibility** reads a Draft according to its stored Mode identity and does not implicitly convert it into another Mode.
 - Current-format writing and historical reading are separate Interfaces and Implementations.
 - `stepped` and `stepped-cad` may share the same parameter structure without sharing one persisted Mode identity.
 - A CAD stepped **Persisted Param Artifact** declares `stepped-cad`, including complete-model companion parameters, split-part companion parameters, Draft records, and Draft Summaries.
