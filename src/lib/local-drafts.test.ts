@@ -152,6 +152,35 @@ describe("local drafts", () => {
     expect(getDraft("stepped", record.item.id)).toEqual(record);
   });
 
+  it("stores CAD stepped drafts under an independent Mode identity", () => {
+    vi.spyOn(crypto, "randomUUID")
+      .mockReturnValueOnce("ordinary-stepped")
+      .mockReturnValueOnce("cad-stepped");
+    const ordinary = createDraft("普通阶梯", "stepped", createSteppedParams());
+    const cad = createDraft("CAD 阶梯", "stepped-cad", createSteppedParams());
+
+    expect(cad.item.mode).toBe("stepped-cad");
+    expect(cad.item.summary).toEqual({
+      mode: "stepped-cad",
+      groupCount: 1,
+      slotCount: 1,
+      trayWidth: 260,
+      trayDepth: 260,
+    });
+    expect(cad.paramFile.mode).toBe("stepped-cad");
+    expect(localStorage.getItem(
+      `tray-creator:drafts:stepped-cad:${cad.item.id}:v1`,
+    )).not.toBeNull();
+    expect(listDrafts("stepped-cad").map((item) => item.id)).toEqual([
+      cad.item.id,
+    ]);
+    expect(listDrafts("stepped").map((item) => item.id)).toEqual([
+      ordinary.item.id,
+    ]);
+    expect(getDraft("stepped-cad", ordinary.item.id)).toBeNull();
+    expect(getDraft("stepped", cad.item.id)).toBeNull();
+  });
+
   it("stores base converter drafts with source and target standards", () => {
     vi.spyOn(crypto, "randomUUID").mockReturnValue("converter-1");
     const record = createDraft(

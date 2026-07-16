@@ -21,7 +21,8 @@ export type DraftMode =
   | "custom"
   | "base-converter"
   | "simple-stepped"
-  | "stepped";
+  | "stepped"
+  | "stepped-cad";
 
 export type DraftListItemCompatibilityByMode = {
   grid: {
@@ -55,6 +56,12 @@ export type DraftListItemCompatibilityByMode = {
     trayWidth: number;
     trayDepth: number;
   };
+  "stepped-cad": {
+    groupCount: number;
+    slotCount: number;
+    trayWidth: number;
+    trayDepth: number;
+  };
 };
 
 export type UnknownDraftListItem = Partial<{
@@ -83,6 +90,7 @@ export const DRAFT_MODES: DraftMode[] = [
   "base-converter",
   "simple-stepped",
   "stepped",
+  "stepped-cad",
 ];
 
 export function isDraftMode(value: unknown): value is DraftMode {
@@ -127,6 +135,7 @@ export function extractCompatibilityFields(
         trayDepth: summary.trayDepth,
       };
     case "stepped":
+    case "stepped-cad":
       return {
         groupCount: summary.groupCount,
         slotCount: summary.slotCount,

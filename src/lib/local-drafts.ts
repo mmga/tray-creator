@@ -347,6 +347,7 @@ export function defaultDraftTitle(mode: DraftMode = "stepped"): string {
     "base-converter": "转换底盘草稿",
     "simple-stepped": "简易阶梯草稿",
     stepped: "阶梯草稿",
+    "stepped-cad": "CAD 阶梯草稿",
   }[mode];
 
   return `${label} ${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
