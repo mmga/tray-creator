@@ -68,9 +68,16 @@ describe("layout symmetry", () => {
     });
   });
 
-  it("builds mirrored insert slots and move updates preserving group ids", () => {
+  it("builds mirrored insert slots preserving ownership and geometry snapshots", () => {
     const selected = [
-      { ...baseSlot, groupId: "group-a" },
+      {
+        ...baseSlot,
+        groupId: "group-a",
+        rowId: "row-a",
+        slotDefinitionId: "ellipse-30x20",
+        slotWidth: 30.8,
+        slotHeight: 20.8,
+      },
       { ...baseSlot, id: "slot-2", x: 30, y: 35, rotation: 0 },
     ];
 
@@ -94,6 +101,10 @@ describe("layout symmetry", () => {
       y: 25,
       rotation: 150,
       groupId: "group-a",
+      rowId: "row-a",
+      slotDefinitionId: "ellipse-30x20",
+      slotWidth: 30.8,
+      slotHeight: 20.8,
     });
     expect(updates[1]).toMatchObject({
       id: "slot-2",

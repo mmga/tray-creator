@@ -6,7 +6,7 @@ const STEP = 0.2;
 
 export type SymmetryAxisSource = "selection" | "tray";
 export type SymmetryMode = "mirror-x" | "mirror-y";
-export type SymmetrySlot = FreeSlot & { groupId?: string };
+export type SymmetrySlot = FreeSlot & { groupId?: string; rowId?: string };
 export type SymmetryBoundsSlot = Pick<
   FreeSlot,
   | "x"
@@ -23,6 +23,7 @@ export type SymmetryBoundsSlot = Pick<
 
 export interface SymmetryInsertSlot extends Omit<FreeSlot, "id"> {
   groupId?: string;
+  rowId?: string;
 }
 
 export interface SlotPositionUpdate {
@@ -143,6 +144,9 @@ export function buildMirrorInsertSlots(
       shape: mirrored.shape,
       width: mirrored.width,
       height: mirrored.height,
+      slotDefinitionId: mirrored.slotDefinitionId,
+      slotWidth: mirrored.slotWidth,
+      slotHeight: mirrored.slotHeight,
       rotation: mirrored.rotation,
       ...(mirrored.shape === "ellipse"
         ? {
@@ -151,6 +155,7 @@ export function buildMirrorInsertSlots(
           }
         : {}),
       ...(mirrored.groupId ? { groupId: mirrored.groupId } : {}),
+      ...(mirrored.rowId ? { rowId: mirrored.rowId } : {}),
     };
   });
 }

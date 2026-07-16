@@ -11,10 +11,13 @@ import type {
   SimpleSteppedSlot,
 } from "@/types/custom-tray";
 import type { CanvasSlotUpdate } from "@/lib/canvas-types";
+import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
+import type { IdFactory } from "@/lib/model-ports";
 import { createSimpleSteppedSlotInstance } from "@/lib/slot-instance-factory";
 import {
   calculateSimpleSteppedMinimumTraySize,
   clampSimpleSteppedSlotUpdates,
+  deriveSimpleSteppedLayout,
   getSimpleSteppedEffectiveDiameter,
   mapSimpleSteppedCanvasUpdatesToLocal,
 } from "@/lib/simple-stepped-projection";
@@ -119,6 +122,35 @@ export function duplicateSimpleSteppedSlots(
   });
 
   return { ...params, slots: nextSlots };
+}
+
+export function insertSimpleSteppedSlots(
+  params: SimpleSteppedLayoutParams,
+  idFactory: IdFactory,
+  slotsToInsert: SymmetryInsertSlot[],
+): SimpleSteppedLayoutParams {
+  const derived = deriveSimpleSteppedLayout(params);
+  const rowById = new Map(
+    derived.activeRows.map((row) => [row.id, row] as const),
+  );
+  const inserts = slotsToInsert.flatMap((slot) => {
+    const row = slot.rowId ? rowById.get(slot.rowId) : undefined;
+    if (!row || slot.shape !== "circle") {
+      return [];
+    }
+
+    return [createSimpleSteppedSlotInstance({
+      id: idFactory.createId(),
+      rowId: row.id,
+      diameter: slot.width,
+      x: slot.x - derived.trayWidth / 2 + row.holeCenterX,
+      y: slot.y - row.centerY,
+    })];
+  });
+
+  return inserts.length === 0
+    ? params
+    : { ...params, slots: [...params.slots, ...inserts] };
 }
 
 export function trimSimpleSteppedBaseplate(

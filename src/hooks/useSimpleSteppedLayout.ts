@@ -21,6 +21,9 @@ import {
   type SimpleSteppedDerivedLayout,
 } from "@/lib/simple-stepped-projection";
 import type { CanvasSlotUpdate } from "@/lib/canvas-types";
+import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
+import { randomIdFactory } from "@/lib/id-factory";
+import { insertSimpleSteppedSlots } from "@/lib/simple-stepped-slot-actions";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
 import { useUndoHistory } from "@/hooks/useUndoHistory";
 import { usePreviewLifecycle } from "@/hooks/usePreviewLifecycle";
@@ -59,6 +62,7 @@ export interface UseSimpleSteppedLayoutReturn {
   updateMultipleSlots: (updates: CanvasSlotUpdate[]) => void;
   updateMultipleSlotsLive: (updates: CanvasSlotUpdate[]) => void;
   updateSlotRotation: (id: string, rotation: number) => void;
+  insertSlots: (slots: SymmetryInsertSlot[]) => void;
   duplicateSlots: (ids: string[]) => string[];
   derivedLayout: SimpleSteppedDerivedLayout;
   canvasParams: CustomLayoutParams;
@@ -190,7 +194,7 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
   );
 
   const canvasParams = useMemo<CustomLayoutParams>(() => {
-    const slots: FreeSlot[] = derivedLayout.activeRows.flatMap((row) =>
+    const slots: Array<FreeSlot & { rowId: string }> = derivedLayout.activeRows.flatMap((row) =>
       row.slots.map((slot) => ({
         id: slot.id,
         x: slot.globalX,
@@ -203,6 +207,7 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
         slotWidth: slot.effectiveDiameter,
         slotHeight: slot.effectiveDiameter,
         rotation: 0,
+        rowId: row.id,
       })),
     );
 
@@ -488,6 +493,20 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
     void rotation;
   }, []);
 
+  const insertSlots = useCallback(
+    (slotsToInsert: SymmetryInsertSlot[]) => {
+      if (slotsToInsert.length === 0) return;
+      internalSetParams((prev) => {
+        pushState(prev);
+        return normalizeParams(
+          insertSimpleSteppedSlots(prev, randomIdFactory, slotsToInsert),
+        );
+      });
+      invalidatePreview();
+    },
+    [invalidatePreview, normalizeParams, pushState],
+  );
+
   const duplicateSlots = useCallback(
     (ids: string[]) => {
       const current = paramsRef.current;
@@ -579,6 +598,7 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
     updateMultipleSlots,
     updateMultipleSlotsLive,
     updateSlotRotation,
+    insertSlots,
     duplicateSlots,
     derivedLayout,
     canvasParams,
