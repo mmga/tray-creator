@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
+import {
+  createOldWorldGridSlotSnapshot,
+  DEFAULT_TRAY_PARAMS,
+  OLD_WORLD_RECTANGULAR_PRESETS,
+} from "@/lib/grid-config";
 import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 
 const { jscadToThreeGeometryMock } = vi.hoisted(() => ({
@@ -79,5 +83,16 @@ describe("grid model service", () => {
     await expect(
       downloadPort.downloadBlob.mock.calls[1]?.[0].text(),
     ).resolves.toContain('"columns": 2');
+  });
+
+  it("includes both nominal dimensions in rectangular grid filenames", () => {
+    const rectangularParams = {
+      ...DEFAULT_TRAY_PARAMS,
+      ...createOldWorldGridSlotSnapshot(OLD_WORLD_RECTANGULAR_PRESETS[2]),
+    };
+
+    expect(getGridSTLFilename(rectangularParams)).toBe(
+      "tray_2x5_rectangle_30x60mm.stl",
+    );
   });
 });

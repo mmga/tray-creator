@@ -6,6 +6,10 @@ import { exportModelArtifactBundle } from "@/lib/model-artifact-bundle";
 import type { DownloadPort, GridWorkerPort } from "@/lib/model-ports";
 import { generateSTLFilename } from "@/lib/stl-export";
 import type { TrayParams } from "@/types/tray";
+import {
+  getGridSlotGeometry,
+  isRectangularGridSlot,
+} from "@/lib/grid-config";
 
 export interface GridPreviewResult {
   geometry: Geom3;
@@ -27,6 +31,10 @@ export async function generateGridPreview(
 }
 
 export function getGridSTLFilename(params: TrayParams): string {
+  if (isRectangularGridSlot(params)) {
+    const slot = getGridSlotGeometry(params);
+    return `tray_${params.columns}x${params.rows}_rectangle_${slot.baseWidth}x${slot.baseHeight}mm.stl`;
+  }
   return generateSTLFilename(params.rows, params.columns, params.holeDiameter);
 }
 
