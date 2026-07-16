@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
+import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 
 const { jscadToThreeGeometryMock } = vi.hoisted(() => ({
   jscadToThreeGeometryMock: vi.fn(),
@@ -78,7 +79,7 @@ describe("stepped cad model service", () => {
     ]);
   });
 
-  it("builds cad filenames and exports stepped-compatible params", async () => {
+  it("builds cad filenames and exports CAD Mode params", async () => {
     const geometry = { id: "stepped-cad-geom" } as never;
     const stlBlob = new Blob(["stl"], { type: "application/sla" });
     const workerPort = {
@@ -106,7 +107,7 @@ describe("stepped cad model service", () => {
     ).toBe("tray_stepped_cad_100x90_0slots.stl");
 
     await exportSteppedCadModelFiles(
-      STEPPED_LAYOUT_DEFAULTS,
+      captureModeParamSnapshot("stepped-cad", STEPPED_LAYOUT_DEFAULTS),
       {
         width: 100,
         depth: 90,
@@ -126,7 +127,7 @@ describe("stepped cad model service", () => {
     );
     expect(downloadPort.downloadBlob).toHaveBeenCalledTimes(2);
     await expect(downloadPort.downloadBlob.mock.calls[1]?.[0].text()).resolves.toContain(
-      '"mode": "stepped"',
+      '"mode": "stepped-cad"',
     );
   });
 
@@ -169,7 +170,7 @@ describe("stepped cad model service", () => {
     ).toBe("tray_stepped_cad_split_100x90_0slots");
 
     await exportSteppedCadSplitPartFiles(
-      STEPPED_LAYOUT_DEFAULTS,
+      captureModeParamSnapshot("stepped-cad", STEPPED_LAYOUT_DEFAULTS),
       {
         width: 100,
         depth: 90,
@@ -189,6 +190,9 @@ describe("stepped cad model service", () => {
     expect(downloadPort.downloadBlob).toHaveBeenCalledTimes(3);
     await expect(downloadPort.downloadBlob.mock.calls[1]?.[0].text()).resolves.toContain(
       "feature graph",
+    );
+    await expect(downloadPort.downloadBlob.mock.calls[2]?.[0].text()).resolves.toContain(
+      '"mode": "stepped-cad"',
     );
   });
 });

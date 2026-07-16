@@ -1,6 +1,7 @@
 import type * as THREE from "three";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
-import { createParamBlob } from "@/lib/param-io";
+import { createCurrentParamArtifactBlob } from "@/lib/current-param-artifact-encoder";
+import type { ModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import type {
   DownloadPort,
   SteppedSplitPartResult,
@@ -79,26 +80,31 @@ export function getSteppedCadSplitBaseFilename(
 }
 
 export async function exportSteppedCadModelFiles(
-  params: SteppedLayoutParams,
+  snapshot: ModeParamSnapshot<"stepped-cad">,
   effectiveDimensions: SteppedLayoutExtents,
   geometry: Geom3,
   workerPort: SteppedCadWorkerPort,
   downloadPort: DownloadPort,
 ): Promise<void> {
+  const { params } = snapshot;
   const stlFilename = getSteppedCadSTLFilename(params, effectiveDimensions);
   const stlResult = await workerPort.exportSTL(geometry, stlFilename);
   downloadPort.downloadBlob(stlResult.blob, stlResult.filename);
 
   const jsonFilename = stlFilename.replace(/\.stl$/i, ".json");
-  downloadPort.downloadBlob(createParamBlob("stepped", params), jsonFilename);
+  downloadPort.downloadBlob(
+    createCurrentParamArtifactBlob(snapshot),
+    jsonFilename,
+  );
 }
 
 export async function exportSteppedCadSplitPartFiles(
-  params: SteppedLayoutParams,
+  snapshot: ModeParamSnapshot<"stepped-cad">,
   effectiveDimensions: SteppedLayoutExtents,
   workerPort: SteppedCadWorkerPort,
   downloadPort: DownloadPort,
 ): Promise<void> {
+  const { params } = snapshot;
   const { parts } = await workerPort.generateSteppedCadSplitParts(params);
   if (parts.length === 0) {
     throw new Error("当前模型没有可导出的分件");
@@ -133,7 +139,7 @@ export async function exportSteppedCadSplitPartFiles(
   );
 
   downloadPort.downloadBlob(
-    createParamBlob("stepped", params),
+    createCurrentParamArtifactBlob(snapshot),
     `${baseFilename}_params.json`,
   );
 }
