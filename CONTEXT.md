@@ -108,6 +108,10 @@ _Avoid_: Magnet post when referring to a solid protrusion, or Magnetic Base Hole
 The material thickness between a Slot Instance floor and the tray underside that contains the selected Base-hole Structure.
 _Avoid_: Using the tray's total height or slot depth as the available supporting thickness.
 
+**Magnetic Base Plate Only**:
+The grid-only structure that omits upper slot recesses and produces a base plate containing enclosed Magnetic Base Holes.
+_Avoid_: Treating it as a generic plate for Magnet Post Holes or exposing it in another Mode.
+
 **Magnet Post Hole Fit Violation**:
 The invalid state where the configured Magnet Post Hole diameter exceeds a Slot Instance's shortest Final Slot Size.
 _Avoid_: Silently shrinking the configured magnet diameter or omitting only the incompatible hole.
@@ -587,6 +591,8 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A selected Base-hole Structure must be present in generated geometry and must never silently degrade to no hole because supporting material is insufficient.
 - An imported parameter artifact that requires automatic supporting-thickness adjustment reports that adjustment in its **Import Normalization Report**.
 - A **Conversion Base** is a thin-bottom model and supports neither a **Magnetic Base Hole** nor a **Magnet Post Hole**.
+- Selecting **Magnetic Base Plate Only** selects **Magnetic Base Hole** and disables half-circle slots.
+- Selecting no base hole or **Magnet Post Hole** while **Magnetic Base Plate Only** is active restores the grid's complete slot structure.
 - Grid, custom, simple stepped, stepped, and CAD stepped Modes each persist exactly one **Base-hole Structure** plus the shared **Magnet Post Hole** diameter and depth values.
 - A legacy `enableBaseHole` value migrates to **Magnetic Base Hole** when true and no base hole when false; newly written Persisted Param Artifacts do not retain that legacy field.
 - A tray selects exactly one **Base-hole Structure**.
