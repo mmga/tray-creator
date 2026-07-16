@@ -6,14 +6,13 @@ import { useState, type ReactNode } from "react";
 interface ResultSummaryProps {
   itemLabel: string;
   dimensions: [number, number, number];
-  price: string;
   oversized?: boolean;
   generating?: boolean;
   stale?: boolean;
   details?: ReactNode;
 }
 
-export function ResultSummary({ itemLabel, dimensions, price, oversized = false, generating = false, stale = false, details }: ResultSummaryProps) {
+export function ResultSummary({ itemLabel, dimensions, oversized = false, generating = false, stale = false, details }: ResultSummaryProps) {
   const [open, setOpen] = useState(false);
   const status = oversized ? "超出常规尺寸" : generating ? "正在锻造" : stale ? "预览待更新" : "可锻造";
   return (
@@ -24,7 +23,7 @@ export function ResultSummary({ itemLabel, dimensions, price, oversized = false,
         </div>
         <div className="min-w-0 flex-1">
           <div className="truncate text-[11px] font-semibold text-[#e6ded0]">{itemLabel} · {dimensions.map((value) => value.toFixed(1)).join(" × ")} mm</div>
-          <div className="mt-0.5 flex items-center gap-2 text-[10px]"><span className="font-mono font-bold text-[#eab308]">报价 {price}</span><span className={oversized ? "text-[#d75b5b]" : stale ? "text-[#d7b95d]" : "text-muted-foreground"}>{status}</span></div>
+          <div className={`mt-0.5 text-[10px] ${oversized ? "text-[#d75b5b]" : stale ? "text-[#d7b95d]" : "text-muted-foreground"}`}>{status}</div>
         </div>
         {details ? <ChevronDown className={`size-4 text-primary/60 transition-transform ${open ? "rotate-180" : ""}`} /> : null}
       </button>

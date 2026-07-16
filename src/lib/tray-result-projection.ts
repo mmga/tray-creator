@@ -1,15 +1,6 @@
 import { MAX_BUILD_SIZE } from "@/lib/config";
 import { calculateCustomTrayDimensions } from "@/lib/custom-tray-model";
 import type { SimpleSteppedDerivedLayout } from "@/lib/simple-stepped-layout";
-import {
-  calculateCustomPrice,
-  calculateBaseConverterPrice,
-  calculateGridPrice,
-  calculateSimpleSteppedPrice,
-  calculateWeight,
-  getSteppedPricingBreakdown,
-  type SteppedPricingBreakdown,
-} from "@/lib/pricing";
 import { calculateTrayDimensions } from "@/lib/tray-model";
 import { resolveBaseConverterGeometry } from "@/lib/base-converter-config";
 import type {
@@ -24,11 +15,6 @@ export interface TrayResultDimensions {
   width: number;
   depth: number;
   height: number;
-}
-
-export interface TrayResultQuote {
-  amount: number;
-  fractionDigits: number;
 }
 
 export type TrayResultWeight =
@@ -46,7 +32,6 @@ interface TrayResultProjectionBase {
   slotCount: number;
   itemLabel: string;
   dimensions: TrayResultDimensions;
-  quote: TrayResultQuote;
   weight: TrayResultWeight;
   buildLimit: TrayResultBuildLimit;
   generating: boolean;
@@ -92,7 +77,6 @@ export interface SteppedTrayResultProjection extends TrayResultProjectionBase {
     bottomHeight: number;
     slotCount: number;
   }>;
-  pricing: SteppedPricingBreakdown;
 }
 
 export type TrayResultProjection =
@@ -116,10 +100,6 @@ export function projectBaseConverterResult(
       { width: target.width, depth: target.depth, height: totalHeight },
       state,
     ),
-    quote: {
-      amount: finiteOrZero(calculateBaseConverterPrice(state.volume)),
-      fractionDigits: 1,
-    },
     sourceLabel: source.name,
     targetLabel: target.name,
     recess,
@@ -150,7 +130,8 @@ function projectWeight(volume: number): TrayResultWeight {
   if (!Number.isFinite(volume) || volume <= 0) {
     return { status: "unavailable" };
   }
-  return { status: "available", grams: finiteOrZero(calculateWeight(volume)) };
+  const grams = (volume / 1000) * 1.24 * 0.6;
+  return { status: "available", grams: finiteOrZero(grams) };
 }
 
 function projectBuildLimit(
@@ -192,7 +173,6 @@ export function projectGridTrayResult(
     slotCount,
     itemLabel: `${slotCount} 个凹槽`,
     ...common,
-    quote: { amount: finiteOrZero(calculateGridPrice(params)), fractionDigits: 2 },
     rows: params.rows,
     columns: params.columns,
     footprintArea: finiteOrZero(common.dimensions.width * common.dimensions.depth),
@@ -227,10 +207,6 @@ export function projectCustomTrayResult(
     slotCount: params.slots.length,
     itemLabel: `${params.slots.length} 个凹槽`,
     ...common,
-    quote: {
-      amount: finiteOrZero(calculateCustomPrice(params, state.volume)),
-      fractionDigits: 1,
-    },
     sizingMode,
     footprintKind:
       sizingMode === "fixed"
@@ -252,10 +228,6 @@ export function projectSimpleSteppedTrayResult(
     slotCount: params.slots.length,
     itemLabel: `${params.rows.length} 行 · ${params.slots.length} 槽`,
     ...common,
-    quote: {
-      amount: finiteOrZero(calculateSimpleSteppedPrice(params, state.volume)),
-      fractionDigits: 1,
-    },
     rowCount: params.rows.length,
     activeRowCount: derivedLayout.activeRows.length,
     minimumBaseplate: {
@@ -277,7 +249,6 @@ export function projectSteppedTrayResult(
           ...params.groups.map((group) => Math.max(group.bottomHeight, 3)),
         )
       : 0;
-  const pricing = getSteppedPricingBreakdown(params, state.volume);
   const common = projectCommon(
     { ...effectiveDimensions, height },
     state,
@@ -291,11 +262,6 @@ export function projectSteppedTrayResult(
     slotCount: params.slots.length,
     itemLabel: `${params.groups.length} 组 · ${params.slots.length} 槽`,
     ...common,
-    quote: { amount: finiteOrZero(pricing.price), fractionDigits: 0 },
-    weight:
-      state.volume > 0 && params.slots.length > 0
-        ? { status: "available", grams: finiteOrZero(pricing.estimatedWeight) }
-        : { status: "unavailable" },
     groupCount: params.groups.length,
     groups: params.groups.map((group) => ({
       id: group.id,
@@ -304,6 +270,5 @@ export function projectSteppedTrayResult(
       bottomHeight: finiteOrZero(group.bottomHeight),
       slotCount: slotCounts.get(group.id) ?? 0,
     })),
-    pricing,
   };
 }

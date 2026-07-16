@@ -11,7 +11,6 @@ const gridResult: GridTrayResultProjection = {
   slotCount: 6,
   itemLabel: "6 个凹槽",
   dimensions: { width: 120, depth: 80, height: 6 },
-  quote: { amount: 12.5, fractionDigits: 2 },
   weight: { status: "unavailable" },
   buildLimit: {
     maxSize: 260,
@@ -47,7 +46,6 @@ describe("TrayResultSummary", () => {
       slotCount: 3,
       itemLabel: "2 组 · 3 槽",
       dimensions: { width: 280, depth: 120, height: 16 },
-      quote: { amount: 20, fractionDigits: 0 },
       weight: { status: "available", grams: 8.4 },
       buildLimit: {
         maxSize: 260,
@@ -62,27 +60,6 @@ describe("TrayResultSummary", () => {
         { id: "front", name: "前排", color: "#8cb880", bottomHeight: 8, slotCount: 2 },
         { id: "back", name: "后排", color: "#d7b95d", bottomHeight: 16, slotCount: 1 },
       ],
-      pricing: {
-        price: 20,
-        rawPrice: 20,
-        baseFee: 1,
-        materialFee: 1,
-        printFee: 16,
-        footprintFee: 1,
-        complexityFee: 1,
-        estimatedWeight: 8.4,
-        estimatedPrintHours: 2.5,
-        materialDensityGPerCm3: 0.34,
-        effectiveWidth: 280,
-        effectiveDepth: 120,
-        footprintAreaMm2: 33600,
-        heightLevelCount: 2,
-        diameterTypeCount: 1,
-        slotCount40to59: 0,
-        slotCount60Plus: 0,
-        hasWideSmoothing: false,
-        hasDisconnectDistance: false,
-      },
     };
 
     render(<TrayResultSummary result={result} />);
@@ -91,6 +68,6 @@ describe("TrayResultSummary", () => {
     expect(screen.getByText("前排")).toBeInTheDocument();
     expect(screen.getByText("后排")).toBeInTheDocument();
     expect(screen.getByText(/超过常规打印尺寸 260 × 260 mm/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "查看阶梯底座报价公式" })).toBeInTheDocument();
+    expect(screen.getByText("2 个分组")).toBeInTheDocument();
   });
 });

@@ -298,7 +298,7 @@ _Avoid_: Passing mode-specific canvas exceptions directly through the page or vi
 
 **Tray Result Projection**:
 A read-only, mode-specific result derived once from normalized tray state for both the fixed result summary and its expanded details.
-_Avoid_: Recomputing dimensions, quote, weight, slot count, or mode-specific footprint semantics separately in summary and detail views.
+_Avoid_: Recomputing dimensions, weight, slot count, or mode-specific footprint semantics separately in summary and detail views.
 
 **Effective Baseplate**:
 The actual baseplate footprint derived from placed slots and boundary spacing, rather than the raw tray width/depth inputs.
@@ -314,7 +314,7 @@ _Avoid_: Using the upper edge size as the fixed size when a side bevel is presen
 
 **Fixed Tray Footprint Area**:
 The width-by-depth area of a **Fixed Tray Outer Footprint**, used as the custom tray's business footprint while fixed sizing is active.
-_Avoid_: Pricing, naming, or summarizing a fixed tray from only its occupied slot bounds.
+_Avoid_: Naming or summarizing a fixed tray from only its occupied slot bounds.
 
 **Slot Boundary Violation**:
 A fixed-mode state where a slot's final profile crosses the usable upper footprint after side-bevel and boundary-spacing insets are applied.
@@ -334,31 +334,15 @@ _Avoid_: Treating it as a corner radius, slot clearance, stepped split groove, o
 
 **Effective Baseplate Area**:
 The footprint area of the **Effective Baseplate**, calculated as derived width multiplied by derived depth.
-_Avoid_: Using model volume or raw tray area when the meaning is the derived custom-mode footprint used for pricing.
+_Avoid_: Using model volume or raw tray area when the meaning is the derived custom-mode footprint.
 
 **Slot Count**:
 The number of placed slot instances in the current tray layout.
 _Avoid_: Mixing slot count with magnet-hole count or with distinct slot-size types.
 
-**Custom Quote Baseline**:
-The current custom-mode quoting rule used as the adjustable pricing baseline before later recalibration from representative layouts, with the final quote rounded up to the next integer yuan.
-_Avoid_: Treating one-off historical prices as an exact formula fit when they are only reference points.
-
-**Per-Slot Increment**:
-The fixed amount added to a custom-mode quote for each placed slot instance.
-_Avoid_: Folding this fixed increment into the area coefficient when the meaning is a separate per-slot charge.
-
-**Legacy Grid Quote Ladder**:
-The previous grid-mode quoting rule that priced trays from slot-diameter tiers plus optional magnet-hole surcharges.
-_Avoid_: Mixing the retired grid ladder with the newer area-and-slot-count baseline once grid pricing is migrated.
-
 **Grid Footprint Area**:
 The grid-mode tray footprint area calculated from the displayed theoretical outer width and depth, including actual slot size, spacing, and boundary spacing.
 _Avoid_: Using nominal hole diameter alone when the meaning is the printed footprint shown to the user.
-
-**Grid Quote Baseline**:
-The grid-mode quoting rule after migration, reusing the same coefficients and final upward-integer rounding rule as the custom quote baseline.
-_Avoid_: Maintaining a separate grid-only coefficient set when grid and custom are intentionally aligned.
 
 ## Relationships
 
@@ -390,7 +374,6 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - The **Old World Preset Set** contains exactly seven **Old World Rectangular Slot Definitions** in its first release.
 - A **Grid Slot Definition Switch** preserves grid and base parameters while changing the selected Slot Definition and derived footprint.
 - A grid tray has exactly one **Uniform Grid Slot Definition**.
-- An **Old World Full-Slot Grid** uses the existing **Grid Quote Baseline** without a rectangular-slot surcharge.
 - **Grid Draft Shape Compatibility** preserves circular geometry for legacy grid drafts and imports.
 - An **Old World Rectangular Slot Definition** uses **Old World Rectangular Slot Corners**.
 - A **Slot Instance** is created from exactly one **Slot Definition** and records its **Slot Definition ID**.
@@ -548,7 +531,7 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A fixed-mode **Slot Boundary Violation** is visibly reported but does not prevent model generation or export.
 - A **Slot Boundary Violation** is shown as persistent canvas status and error count feedback, not as an interrupting confirmation or transient message.
 - A **Fixed Tray Footprint Area** belongs to exactly one **Fixed Tray Outer Footprint**.
-- A fixed custom tray's quote, displayed dimensions, exported file name, and **Draft Summary** use its **Fixed Tray Outer Footprint** and **Fixed Tray Footprint Area**.
+- A fixed custom tray's displayed dimensions, exported file name, and **Draft Summary** use its **Fixed Tray Outer Footprint** and **Fixed Tray Footprint Area**.
 - A fixed custom tray may have zero **Slot Instances** and can still be generated or exported as an empty tray using its **Fixed Tray Outer Footprint**.
 - A **Random Slot Arrangement** applies only to the existing **Slot Instances** of a fixed custom tray and preserves each slot's identity, geometry, and rotation.
 - A successful **Random Slot Arrangement** has no **Slot Boundary Violations** and no slot-overlap or slot-spacing collision.
@@ -559,12 +542,7 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A **Side Bevel** keeps the upper edge as the slot boundary-spacing reference and expands the lower edge outward by the configured bevel width.
 - A 2D view that displays a **Side Bevel** should keep the ordinary tray outline for the lower edge and mark only the inset upper edge.
 - An **Effective Baseplate Area** belongs to exactly one **Effective Baseplate**.
-- A tray quote may use **Effective Baseplate Area** and **Slot Count** instead of model volume.
-- The current **Custom Quote Baseline** computes `2 + 0.2 × Slot Count + Effective Baseplate Area / 2560`, then rounds the final quote up to the next integer yuan.
-- A **Per-Slot Increment** belongs to each placed **Slot Instance** in the quote calculation.
-- Grid pricing may fully replace the **Legacy Grid Quote Ladder** with the same area-and-slot-count baseline used by custom pricing.
 - A **Grid Footprint Area** belongs to exactly one grid tray footprint derived from the displayed outer width and depth.
-- The current **Grid Quote Baseline** reuses the custom coefficients and final rounding rule: compute `2 + 0.2 × Slot Count + Grid Footprint Area / 2560`, then round the final quote up to the next integer yuan.
 - Loading a different draft replaces the current **Draft Binding**.
 - Saving as a new draft replaces the current **Draft Binding** with the new draft.
 - Deleting the currently bound draft clears the current **Draft Binding**.
@@ -654,17 +632,14 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - "旧世界方底盘模式" might imply arbitrary rectangular dimensions. Resolved: the first release exposes only the seven-size **Old World Preset Set**.
 - "切换底盘类型" could imply resetting the layout. Resolved: a **Grid Slot Definition Switch** preserves grid and base parameters.
 - "网格模式" could imply arbitrary mixed base layouts. Resolved: a grid tray has one **Uniform Grid Slot Definition**; mixed layouts belong to custom mode.
-- "旧世界矩形凹槽" could imply a new quote tier. Resolved: an **Old World Full-Slot Grid** uses the existing **Grid Quote Baseline** without a surcharge.
 - "旧版网格配置" could be interpreted as an Old World layout after the feature is added. Resolved: **Grid Draft Shape Compatibility** keeps it circular unless it explicitly selects a non-circular Slot Definition.
 - "矩形凹槽圆角" could be conflated with the tray’s outer corner radius. Resolved: **Old World Rectangular Slot Corners** are straight 90-degree corners.
-- "底盘" was ambiguous between raw tray width/depth inputs and the derived printable footprint in custom mode. Resolved: use **Effective Baseplate** for the derived custom-mode footprint used in pricing.
+- "底盘" was ambiguous between raw tray width/depth inputs and the derived printable footprint in custom mode. Resolved: use **Effective Baseplate** for the derived custom-mode footprint.
 - "固定托盘大小" could mean a canvas-only frame or the generated model footprint. Resolved: fixed **Tray Sizing Mode** uses the configured width and depth as the final generated tray footprint.
 - "固定尺寸" could mean the bottom outer edge or the side-bevel-inset upper edge. Resolved: it means the **Fixed Tray Outer Footprint**.
 - "凹槽越界" could mean a hard editing constraint or a warning-only state. Resolved: use **Slot Boundary Violation** for a red, warning-only state that keeps generation and export available.
 - "随机排列" could mean arbitrary positions that may require manual repair. Resolved: use **Random Slot Arrangement** only for an all-valid layout that satisfies both fixed-boundary and slot-spacing constraints.
-- Historical custom-mode prices may be used as reference points, not as an exact fitted law. Resolved: treat them as sanity checks around the **Custom Quote Baseline**, then adjust after reviewing representative layouts.
-- Grid mode previously mixed a diameter-tier quote ladder with a newer area-based custom quote baseline. Resolved: when grid pricing migrates, it fully replaces the old ladder rather than combining both rules.
-- Grid-mode "面积" could have meant nominal hole layout size or the displayed outer dimensions. Resolved: use **Grid Footprint Area**, derived from the displayed width and depth, for migrated grid pricing.
+- Grid-mode "面积" means **Grid Footprint Area**, derived from the displayed outer width and depth.
 - "CAD 阶梯模式生成" could mean either per-group solid union or band-by-band CAD construction. Resolved: use **CAD Stepped Construction**, which generates each height band from a sketch before extrusion.
 - "内缩凹槽" could mean an extra toggle layered on top of "轮廓浅槽". Resolved: use **Inset Recess** as a mutually exclusive **Split Assembly Groove Type**.
 - "Mode conversion" was used for both switching to a file's Mode and changing one Mode's parameter semantics into another. Resolved: external import switches to the file's Mode without converting its parameters; parameter conversion is a separate explicit operation.

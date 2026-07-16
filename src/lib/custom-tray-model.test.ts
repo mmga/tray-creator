@@ -134,7 +134,7 @@ describe("custom tray model", () => {
     expect(dimensions.height).toBe(6);
   });
 
-  it("exports the effective custom baseplate footprint for pricing reuse", () => {
+  it("exports the effective custom baseplate footprint for shared reuse", () => {
     const params = {
       ...CUSTOM_LAYOUT_DEFAULTS,
       spacing: 5,

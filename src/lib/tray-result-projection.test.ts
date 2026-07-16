@@ -96,7 +96,6 @@ describe("Tray Result Projection", () => {
       dimensions: { width: 25, depth: 25, height: 3.2 },
     });
     expect(result.weight.status).toBe("available");
-    expect(result.quote.amount).toBeGreaterThan(0);
   });
 
   it("stepped 与 CAD stepped 复用同一份公共投影规则", () => {
@@ -116,7 +115,7 @@ describe("Tray Result Projection", () => {
     expect(cad).toEqual({ ...stepped, mode: "stepped-cad" });
   });
 
-  it("不会把非有限尺寸、报价或重量暴露给展示层", () => {
+  it("不会把非有限尺寸或重量暴露给展示层", () => {
     const result = projectGridTrayResult(DEFAULT_TRAY_PARAMS, {
       ...idleState,
       volume: Number.POSITIVE_INFINITY,
@@ -124,6 +123,5 @@ describe("Tray Result Projection", () => {
 
     expect(result.weight).toEqual({ status: "unavailable" });
     expect(Object.values(result.dimensions).every(Number.isFinite)).toBe(true);
-    expect(Number.isFinite(result.quote.amount)).toBe(true);
   });
 });

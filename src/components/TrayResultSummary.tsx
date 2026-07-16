@@ -1,7 +1,6 @@
 "use client";
 
 import { ResultSummary } from "@/components/ResultSummary";
-import { SteppedPricingFormulaTooltip } from "@/components/SteppedPricingFormulaTooltip";
 import type { TrayResultProjection } from "@/lib/tray-result-projection";
 
 interface TrayResultSummaryProps {
@@ -69,20 +68,10 @@ function modeSpecificMetrics(result: TrayResultProjection) {
     case "stepped":
     case "stepped-cad":
       return (
-        <>
-          <ResultMetric label="分组" value={`${result.groupCount}`} />
-          <ResultMetric
-            label="预估机时"
-            value={`${result.pricing.estimatedPrintHours.toFixed(1)} h`}
-          />
-          <div className="col-span-2 space-y-1.5 border border-[#2e2a24] bg-[#1c1a16] p-2">
-            <div className="flex items-center justify-center gap-1 text-[9px] text-muted-foreground/60">
-              <span>报价公式</span>
-              <SteppedPricingFormulaTooltip
-                breakdown={result.pricing}
-                hasGeneratedVolume={result.weight.status === "available"}
-              />
-            </div>
+        <div className="col-span-2 space-y-1.5 border border-[#2e2a24] bg-[#1c1a16] p-2">
+          <div className="text-center text-[9px] text-muted-foreground/60">
+            {result.groupCount} 个分组
+          </div>
             {result.groups.length > 1 ? (
               <div className="space-y-1">
                 {result.groups.map((group) => (
@@ -100,15 +89,13 @@ function modeSpecificMetrics(result: TrayResultProjection) {
                 ))}
               </div>
             ) : null}
-          </div>
-        </>
+        </div>
       );
   }
 }
 
 export function TrayResultSummary({ result }: TrayResultSummaryProps) {
   const { dimensions } = result;
-  const price = `¥${result.quote.amount.toFixed(result.quote.fractionDigits)}`;
   const weight =
     result.weight.status === "available"
       ? `${result.weight.grams.toFixed(1)} g`
@@ -143,7 +130,6 @@ export function TrayResultSummary({ result }: TrayResultSummaryProps) {
     <ResultSummary
       itemLabel={result.itemLabel}
       dimensions={[dimensions.width, dimensions.depth, dimensions.height]}
-      price={price}
       oversized={result.buildLimit.oversized}
       generating={result.generating}
       stale={result.stale}
