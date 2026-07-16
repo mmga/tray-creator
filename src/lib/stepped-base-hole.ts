@@ -1,6 +1,5 @@
 import {
   getBaseHoleMinBaseThickness,
-  resolveBaseHolePresetKey,
 } from "@/lib/config";
 import {
   STEPPED_LAYOUT_DEFAULTS,
@@ -9,6 +8,7 @@ import {
 import {
   MAGNET_POST_HOLE_BOTTOM_WALL,
   normalizeBaseHoleParams,
+  resolveMagneticBaseHolePreset,
 } from "@/lib/base-hole-config";
 import type {
   BaseHoleStructure,
@@ -16,41 +16,43 @@ import type {
 } from "@/types/custom-tray";
 import type { BaseHolePresetKey } from "@/types/tray";
 
-function getLargestSlotSizeForGroup(
+function resolveLargestPresetForSlots(
+  slots: SteppedLayoutParams["slots"],
+): BaseHolePresetKey {
+  return slots.some((slot) =>
+    resolveMagneticBaseHolePreset(slot.shape, slot.width, slot.height) === "40"
+  ) ? "40" : "25";
+}
+
+function getSlotsForGroup(
   params: SteppedLayoutParams,
   groupId: string,
-): number {
-  return params.slots.reduce((maxSize, slot) => {
-    if (slot.groupId !== groupId) {
-      return maxSize;
-    }
-
-    return Math.max(maxSize, slot.width, slot.height);
-  }, 0);
+): SteppedLayoutParams["slots"] {
+  return params.slots.filter((slot) => slot.groupId === groupId);
 }
 
 export function getSteppedResolvedBaseHoleSize(
   params: SteppedLayoutParams,
 ): BaseHolePresetKey {
-  const largestSlotSize = params.slots.reduce(
-    (maxSize, slot) => Math.max(maxSize, slot.width, slot.height),
-    0,
-  );
-
-  return resolveBaseHolePresetKey(largestSlotSize);
+  return resolveLargestPresetForSlots(params.slots);
 }
 
 export function getSteppedGroupResolvedBaseHoleSize(
   params: SteppedLayoutParams,
   groupId: string,
 ): BaseHolePresetKey {
-  return resolveBaseHolePresetKey(getLargestSlotSizeForGroup(params, groupId));
+  return resolveLargestPresetForSlots(getSlotsForGroup(params, groupId));
 }
 
 export function getSteppedGroupMinBottomHeight(
   params: SteppedLayoutParams,
   groupId: string,
 ): number {
+  const slots = getSlotsForGroup(params, groupId);
+  if (slots.length === 0) {
+    return STEPPED_LIMITS.bottomHeight.min;
+  }
+
   const structure = resolveSteppedBaseHoleStructure(params);
   if (structure === "magnet-post-hole") {
     return Math.max(
@@ -61,16 +63,11 @@ export function getSteppedGroupMinBottomHeight(
     );
   }
 
-  const largestSlotSize = getLargestSlotSizeForGroup(params, groupId);
-  if (largestSlotSize <= 0) {
-    return STEPPED_LIMITS.bottomHeight.min;
-  }
-
   if (structure !== "magnetic-base-hole") {
     return STEPPED_LIMITS.bottomHeight.min;
   }
 
-  const baseHoleSize = resolveBaseHolePresetKey(largestSlotSize);
+  const baseHoleSize = resolveLargestPresetForSlots(slots);
   return Math.max(
     STEPPED_LIMITS.bottomHeight.min,
     params.holeDepth + getBaseHoleMinBaseThickness(baseHoleSize),

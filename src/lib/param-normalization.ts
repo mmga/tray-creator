@@ -9,7 +9,6 @@ import type {
 } from "@/types/custom-tray";
 import { normalizeBaseConverterParams } from "@/lib/base-converter-config";
 import { CUSTOM_LIMITS } from "@/lib/custom-config";
-import { resolveBaseHolePresetKey } from "@/lib/config";
 import { PARAM_CONFIG } from "@/lib/grid-config";
 import { normalizeGridParams } from "@/lib/grid-model-state";
 import {
@@ -46,8 +45,13 @@ import {
   isBaseHoleStructure,
   MAGNET_POST_HOLE_LIMITS,
   normalizeBaseHoleParams,
+  resolveMagneticBaseHolePreset,
 } from "@/lib/base-hole-config";
 import type { BaseHoleStructure } from "@/types/tray";
+import {
+  applyFlatTrayBaseHoleSupportingThickness,
+  applySimpleSteppedBaseHoleSupportingThickness,
+} from "@/lib/base-hole-rules";
 
 export type NormalizableParams =
   | TrayParams
@@ -355,12 +359,22 @@ function normalizeGridSlotInstances(
   const obj = params as unknown as Record<string, unknown>;
   const previousSlotDefinitionId = obj.slotDefinitionId;
   const previousSlotDiameter = obj.slotDiameter;
+  const previousBaseThickness = obj.baseThickness;
   normalizeReportedBaseHoleParams(obj, "none", recorder);
   if (obj.basePlateOnly) {
     obj.baseHoleStructure = "magnetic-base-hole";
   }
   const normalized = normalizeGridParams(params);
   Object.assign(params, normalized);
+  if (normalized.baseThickness !== previousBaseThickness) {
+    recordBehaviorChange(recorder, {
+      path: "baseThickness",
+      label: "底板厚度",
+      previousValue: previousBaseThickness,
+      normalizedValue: normalized.baseThickness,
+      reason: "已自动提高以容纳底板孔位并保留最小底壁",
+    });
+  }
   if (previousSlotDefinitionId !== normalized.slotDefinitionId) {
     recordMigration(recorder, {
       path: "slotDefinitionId",
@@ -562,12 +576,24 @@ function clampAndFillCustomDerivedFields(
     }
   }
   normalizeReportedBaseHoleParams(obj, "none", recorder);
-  const largestSlotSize = slots.reduce(
-    (maxSize, slot) =>
-      Math.max(maxSize, slot.width as number, slot.height as number),
-    0,
-  );
-  obj.baseHoleSize = resolveBaseHolePresetKey(largestSlotSize);
+  obj.baseHoleSize = slots.some((slot) =>
+    resolveMagneticBaseHolePreset(
+      slot.shape === "ellipse" ? "ellipse" : "circle",
+      slot.width as number,
+      slot.height as number,
+    ) === "40"
+  ) ? "40" : "25";
+  const previousBaseThickness = obj.baseThickness;
+  Object.assign(params, applyFlatTrayBaseHoleSupportingThickness(params));
+  if (params.baseThickness !== previousBaseThickness) {
+    recordBehaviorChange(recorder, {
+      path: "baseThickness",
+      label: "底板厚度",
+      previousValue: previousBaseThickness,
+      normalizedValue: params.baseThickness,
+      reason: "已自动提高以容纳底板孔位并保留最小底壁",
+    });
+  }
 }
 
 function validateSimpleSteppedRequiredFields(
@@ -682,7 +708,17 @@ function normalizeSimpleSteppedSlotInstances(
   }
 
   normalizeReportedBaseHoleParams(obj, "none", recorder);
+  const previousFirstRowHeight = params.firstRowHeight;
   Object.assign(params, normalizeSimpleSteppedParams(params));
+  if (params.firstRowHeight !== previousFirstRowHeight) {
+    recordBehaviorChange(recorder, {
+      path: "firstRowHeight",
+      label: "首行高度",
+      previousValue: previousFirstRowHeight,
+      normalizedValue: params.firstRowHeight,
+      reason: "已自动提高以容纳凹槽深度、底板孔位并保留最小底壁",
+    });
+  }
 }
 
 function clampAndFillSimpleSteppedDerivedFields(
@@ -697,7 +733,7 @@ function clampAndFillSimpleSteppedDerivedFields(
   clampField(obj, "outerMargin", SIMPLE_STEPPED_LIMITS.outerMargin, recorder, "outerMargin", "外边距");
   clampField(obj, "holeDepth", SIMPLE_STEPPED_LIMITS.holeDepth, recorder, "holeDepth", "凹槽深度");
   clampField(obj, "cornerRadius", SIMPLE_STEPPED_LIMITS.cornerRadius, recorder, "cornerRadius", "圆角半径");
-  Object.assign(params, normalizeSimpleSteppedParams(params));
+  Object.assign(params, applySimpleSteppedBaseHoleSupportingThickness(params));
 }
 
 function validateSteppedRequiredFields(params: SteppedLayoutParams) {
@@ -886,6 +922,21 @@ function clampAndFillSteppedDerivedFields(
   }
   clampField(obj, "disconnectDistance", STEPPED_LIMITS.disconnectDistance, recorder, "disconnectDistance", "全局断开距离");
 
+  const previousGroupHeights = new Map(
+    params.groups.map((group) => [group.id, group.bottomHeight]),
+  );
   const normalized = applySteppedBaseHoleDerivedFields(params);
   Object.assign(params, normalized);
+  normalized.groups.forEach((group, index) => {
+    const previousValue = previousGroupHeights.get(group.id);
+    if (previousValue !== undefined && group.bottomHeight !== previousValue) {
+      recordBehaviorChange(recorder, {
+        path: `groups[${index}].bottomHeight`,
+        label: `第 ${index + 1} 个分组高度`,
+        previousValue,
+        normalizedValue: group.bottomHeight,
+        reason: "已自动提高以容纳凹槽深度、底板孔位并保留最小底壁",
+      });
+    }
+  });
 }

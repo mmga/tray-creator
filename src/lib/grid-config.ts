@@ -1,11 +1,13 @@
 import type { BaseHolePresetKey, TrayParams } from "@/types/tray";
 import {
   BASE_PRESETS,
-  resolveBaseHolePresetKey,
   SHARED_LAYOUT_LIMITS,
 } from "@/lib/config";
 import { createGridSlotSnapshotFromDefinition } from "@/lib/slot-instance-factory";
-import { BASE_HOLE_PARAM_DEFAULTS } from "@/lib/base-hole-config";
+import {
+  BASE_HOLE_PARAM_DEFAULTS,
+  resolveMagneticBaseHolePreset,
+} from "@/lib/base-hole-config";
 
 export const DEFAULT_PRESET_INDEX = 2;
 const DEFAULT_SLOT_SNAPSHOT = createGridSlotSnapshotFromDefinition(
@@ -122,11 +124,11 @@ export function resolveGridBaseHolePresetKey(
   params: TrayParams,
 ): BaseHolePresetKey {
   const slot = getGridSlotGeometry(params);
-  if (slot.shape === "rectangle") {
-    return Math.min(slot.baseWidth, slot.baseHeight) > 40 ? "40" : "25";
-  }
-
-  return resolveBaseHolePresetKey(params.holeDiameter);
+  return resolveMagneticBaseHolePreset(
+    slot.shape,
+    slot.baseWidth,
+    slot.baseHeight,
+  );
 }
 
 export const PARAM_CONFIG = {

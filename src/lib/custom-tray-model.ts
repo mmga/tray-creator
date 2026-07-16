@@ -5,9 +5,7 @@ import {
 } from "@jscad/modeling";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { CustomLayoutParams } from "@/types/custom-tray";
-import {
-  resolveBaseHolePresetKey,
-} from "@/lib/config";
+import { resolveMagneticBaseHolePreset } from "@/lib/base-hole-config";
 import {
   calculateCustomEffectiveDimensions,
   calculateCustomTrayFootprint,
@@ -107,7 +105,11 @@ export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
     centers.push({
       cx,
       cy,
-      baseHoleSize: resolveBaseHolePresetKey(Math.max(width, height)),
+      baseHoleSize: resolveMagneticBaseHolePreset(
+        slot.shape,
+        slot.width,
+        slot.height,
+      ),
     });
 
     // 2D 椭圆 → 等距外扩 → 拉伸 → 旋转 → 平移

@@ -28,6 +28,17 @@ export function isBaseHoleStructure(value: unknown): value is BaseHoleStructure 
     value === "magnet-post-hole";
 }
 
+export function resolveMagneticBaseHolePreset(
+  shape: "circle" | "ellipse" | "rectangle",
+  nominalWidth: number,
+  nominalHeight: number,
+): "25" | "40" {
+  if (shape === "circle") {
+    return nominalWidth >= 60 ? "40" : "25";
+  }
+  return Math.min(nominalWidth, nominalHeight) > 40 ? "40" : "25";
+}
+
 export function normalizeBaseHoleParams(
   value: Record<string, unknown>,
   defaultStructure: BaseHoleStructure,

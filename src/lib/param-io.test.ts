@@ -155,6 +155,37 @@ describe("param-io", () => {
     );
   });
 
+  it("在导入报告中列出底板孔位触发的自动增厚", () => {
+    const preparation = prepareParamFileObject({
+      version: 1,
+      mode: "grid",
+      params: {
+        ...DEFAULT_TRAY_PARAMS,
+        baseHoleStructure: undefined,
+        enableBaseHole: true,
+        baseThickness: 1,
+      },
+    });
+
+    expect(preparation.status).toBe("ready");
+    if (preparation.status !== "ready") return;
+
+    expect(preparation.candidate.params).toMatchObject({
+      baseHoleStructure: "magnetic-base-hole",
+      baseThickness: 2.4,
+    });
+    expect(preparation.candidate.report.adjustments).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          category: "behavior",
+          path: "baseThickness",
+          previousValue: 1,
+          normalizedValue: 2.4,
+        }),
+      ]),
+    );
+  });
+
   it("infers wrapperless Mode and requires a choice for historical stepped files", () => {
     const inferred = prepareParamFileObject({
       ...CUSTOM_LAYOUT_DEFAULTS,

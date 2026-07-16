@@ -8,10 +8,8 @@ import {
 } from "@jscad/modeling";
 import type { Geom2, Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { SteppedLayoutParams, SteppedSlot } from "@/types/custom-tray";
-import {
-  RENDER_CONFIG,
-  resolveBaseHolePresetKey,
-} from "@/lib/config";
+import { RENDER_CONFIG } from "@/lib/config";
+import { resolveMagneticBaseHolePreset } from "@/lib/base-hole-config";
 import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
 import { roundLayoutDimensionToTenth } from "@/lib/custom-layout-math";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
@@ -34,7 +32,7 @@ import { getEffectiveGroupStructureParams } from "@/lib/stepped-group-params";
 
 const { subtract, union } = booleans;
 const { translate, rotateZ } = transforms;
-const { cuboid, ellipse, circle } = primitives;
+const { ellipse, circle } = primitives;
 const { extrudeLinear } = extrusions;
 const { measureVolume } = measurements;
 const { geom2 } = geometries;
@@ -302,8 +300,10 @@ function buildSteppedBaseHoleCenters(
     return {
       cx: d.cx,
       cy: d.cy,
-      baseHoleSize: resolveBaseHolePresetKey(
-        Math.max(d.profile.width, d.profile.height),
+      baseHoleSize: resolveMagneticBaseHolePreset(
+        d.slot.shape,
+        d.slot.width,
+        d.slot.height,
       ),
       baseThickness: Math.max(d.columnHeight - clampedHoleDepth, 0),
     };

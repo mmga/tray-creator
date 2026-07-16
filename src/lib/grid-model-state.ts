@@ -8,6 +8,7 @@ import { findCircleSlotDefinitionById } from "@/lib/slot-definitions";
 import { createGridSlotSnapshotFromDefinition } from "@/lib/slot-instance-factory";
 import type { TrayParams } from "@/types/tray";
 import { normalizeBaseHoleParams } from "@/lib/base-hole-config";
+import { applyFlatTrayBaseHoleSupportingThickness } from "@/lib/base-hole-rules";
 
 function getFiniteOr(value: unknown, fallback: number) {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
@@ -82,7 +83,7 @@ export function normalizeGridParams(next: TrayParams): TrayParams {
     DEFAULT_TRAY_PARAMS.sideBevelWidth,
   );
 
-  return {
+  return applyFlatTrayBaseHoleSupportingThickness({
     ...current,
     spacing,
     spacingIndependent,
@@ -103,7 +104,7 @@ export function normalizeGridParams(next: TrayParams): TrayParams {
       ? "magnetic-base-hole"
       : baseHoleParams.baseHoleStructure,
     baseHoleSize,
-  };
+  });
 }
 
 export function replaceGridParams(next: TrayParams): TrayParams {

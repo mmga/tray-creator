@@ -5,7 +5,8 @@ import {
 } from "@jscad/modeling";
 import type { Geom2 } from "@jscad/modeling/src/geometries/types";
 import type { SteppedLayoutParams, SteppedSlot } from "@/types/custom-tray";
-import { RENDER_CONFIG, resolveBaseHolePresetKey } from "@/lib/config";
+import { RENDER_CONFIG } from "@/lib/config";
+import { resolveMagneticBaseHolePreset } from "@/lib/base-hole-config";
 import { roundLayoutDimensionToTenth } from "@/lib/custom-layout-math";
 import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
@@ -165,7 +166,7 @@ export interface SteppedCadBaseHoleFeature {
   groupId: string;
   cx: number;
   cy: number;
-  baseHoleSize: ReturnType<typeof resolveBaseHolePresetKey>;
+  baseHoleSize: ReturnType<typeof resolveMagneticBaseHolePreset>;
   baseThickness: number;
 }
 
@@ -409,8 +410,10 @@ export function buildSteppedCadFeatureGraph(
       groupId: slot.groupId,
       cx: slot.cx,
       cy: slot.cy,
-      baseHoleSize: resolveBaseHolePresetKey(
-        Math.max(slot.profile.width, slot.profile.height),
+      baseHoleSize: resolveMagneticBaseHolePreset(
+        slot.slot.shape,
+        slot.slot.width,
+        slot.slot.height,
       ),
       baseThickness: Math.max(slot.columnHeight - clampedDepth, 0),
     };

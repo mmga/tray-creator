@@ -132,7 +132,7 @@ describe("param normalization", () => {
     expect(normalized.slotDiameter).toBeCloseTo(32.4, 5);
   });
 
-  it("keeps 1mm grid base thickness when magnetic holes are enabled", () => {
+  it("磁吸孔启用时自动提高网格底板厚度", () => {
     const normalized = normalizeParamsForMode("grid", {
       ...DEFAULT_TRAY_PARAMS,
       enableBaseHole: true,
@@ -141,7 +141,7 @@ describe("param normalization", () => {
 
     expect(normalized.baseHoleStructure).toBe("magnetic-base-hole");
     expect(normalized.enableBaseHole).toBeUndefined();
-    expect(normalized.baseThickness).toBe(1);
+    expect(normalized.baseThickness).toBe(2.4);
   });
 
   it("migrates custom params into normalized stepped params", () => {
@@ -180,7 +180,7 @@ describe("param normalization", () => {
     expect(migrated.baseHoleSize).toBe("25");
   });
 
-  it("keeps 1mm custom base thickness when magnetic holes are enabled", () => {
+  it("磁吸孔启用时自动提高自定义底板厚度", () => {
     const normalized = normalizeParamsForMode("custom", {
       ...CUSTOM_LAYOUT_DEFAULTS,
       baseHoleStructure: undefined,
@@ -202,7 +202,7 @@ describe("param normalization", () => {
     expect(normalized.baseHoleStructure).toBe("magnetic-base-hole");
     expect(normalized.enableBaseHole).toBeUndefined();
     expect(normalized.baseHoleSize).toBe("40");
-    expect(normalized.baseThickness).toBe(1);
+    expect(normalized.baseThickness).toBe(2.4);
   });
 
   it("normalizes simple stepped legacy rows before slot snapshots and derived size", () => {

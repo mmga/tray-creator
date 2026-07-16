@@ -12,6 +12,7 @@ import { MAX_BUILD_SIZE } from "@/lib/config";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import { normalizeSimpleSteppedSlotInstanceSnapshot } from "@/lib/slot-instance-factory";
 import { normalizeBaseHoleParams } from "@/lib/base-hole-config";
+import { applySimpleSteppedBaseHoleSupportingThickness } from "@/lib/base-hole-rules";
 
 export {
   buildSimpleSteppedRowBands,
@@ -115,7 +116,7 @@ export function normalizeSimpleSteppedParams(
       ? withRowIds.trayDepth
       : SIMPLE_STEPPED_LAYOUT_DEFAULTS.trayDepth;
 
-  return {
+  return applySimpleSteppedBaseHoleSupportingThickness({
     ...withRowIds,
     trayWidth: normalizeSimpleSteppedTraySize(
       withRowIds.trayWidth,
@@ -127,7 +128,7 @@ export function normalizeSimpleSteppedParams(
       minimumDims.depth,
       fallbackDepth,
     ),
-  };
+  });
 }
 
 export function mapSimpleSteppedCanvasUpdatesToLocal(

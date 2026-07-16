@@ -37,6 +37,7 @@ import {
   createModelGeometryFingerprint,
   type ModeParamSnapshot,
 } from "@/lib/mode-param-snapshot";
+import { applyFlatTrayBaseHoleSupportingThickness } from "@/lib/base-hole-rules";
 
 interface UseCustomLayoutReturn {
   params: CustomLayoutParams;
@@ -113,6 +114,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     ModeParamSnapshot<"custom">
   >({
     initialState: CUSTOM_LAYOUT_DEFAULTS,
+    normalize: applyFlatTrayBaseHoleSupportingThickness,
     captureSnapshot: (params) => captureModeParamSnapshot("custom", params),
     fingerprintSnapshot: createModelGeometryFingerprint,
     guard: () => trayWorkerService !== null,
