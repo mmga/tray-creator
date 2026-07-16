@@ -567,6 +567,7 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A **Magnet Post Hole** applies to every supported Slot Instance shape, including Old World rectangular slots, and starts at each slot floor rather than using the automatically matched **Magnetic Base Hole** geometry.
 - Every Mode that supports a **Magnetic Base Hole** uses the same **Magnetic Base Hole Matching Rule**.
 - One tray uses one shared **Magnet Post Hole** diameter and depth for all of its Slot Instances, without per-group or per-slot overrides.
+- A **Magnet Post Hole** depth is explicitly configurable from 0.5mm through 3mm in every supporting Mode.
 - Enabling a **Magnet Post Hole** raises each affected stepped group as needed to preserve the configured recess depth and at least 1mm of material beneath it.
 - A selected **Magnetic Base Hole** requires at least 2.4mm of **Base-hole Supporting Thickness**.
 - A selected **Magnet Post Hole** requires **Base-hole Supporting Thickness** equal to its configured depth plus at least 1mm beneath it.
