@@ -117,7 +117,7 @@ The invalid state where the configured Magnet Post Hole diameter exceeds a Slot 
 _Avoid_: Silently shrinking the configured magnet diameter or omitting only the incompatible hole.
 
 **Magnetic Base Hole Fit Violation**:
-The invalid state where a Magnetic Base Hole cannot remain laterally enclosed by the tray body at its cavity height.
+The invalid state where a Magnetic Base Hole cannot retain at least 0.6mm of enclosing tray material laterally throughout its cavity depth.
 _Avoid_: Treating a side-opening cavity as a valid magnetic hole, silently selecting another preset, or omitting only the incompatible hole.
 
 **Final Slot Size**:
@@ -585,6 +585,7 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A **Magnet Post Hole** depth is explicitly configurable from 0.5mm through 3mm in every supporting Mode.
 - A **Magnet Post Hole Fit Violation** identifies every incompatible Slot Instance and blocks model generation and export until the diameter or layout is corrected.
 - A **Magnetic Base Hole Fit Violation** identifies every incompatible Slot Instance and blocks model generation and export until its surrounding material, position, or Base-hole Structure is corrected.
+- A **Magnetic Base Hole** retains at least 0.6mm of solid side wall from every exterior or disconnected body edge throughout the cavity depth.
 - A **Magnetic Base Hole Fit Violation** is a manufacturing error distinct from a warning-only **Slot Boundary Violation**.
 - A base-hole fit violation does not reject an imported artifact or prevent saving a Draft, so the owning Mode can retain and repair the layout.
 - Import and Draft loading preserve the selected Base-hole Structure and Slot Instance positions when a base-hole fit violation exists; they never disable the hole, resize it, or move a slot implicitly.
