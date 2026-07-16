@@ -54,6 +54,7 @@ vi.mock("@/components/PanelActionSection", () => ({
         data-testid={`actions-${adapter.kind}`}
         data-generate-state={adapter.state.generate.state}
         data-export-state={adapter.state.exportWhole.state}
+        data-stale={String(adapter.state.stale)}
         data-can-split={adapter.kind === "stepped-cad" ? String(adapter.state.exportSplit.state === "available") : undefined}
       >
         {adapter.kind === "automatic" ? (
@@ -100,6 +101,7 @@ describe("Mode Workspace Draft Action Area", () => {
       handleGenerate: vi.fn(),
       handleExportSTL: vi.fn(),
       isGenerating: false,
+      isPreviewStale: true,
       volume: 0,
     };
     const { result } = renderHook(() => useGridWorkspace({
@@ -109,6 +111,10 @@ describe("Mode Workspace Draft Action Area", () => {
 
     expect(useAutoPreviewMock).not.toHaveBeenCalled();
     renderWorkspacePanel(result.current.panel);
+    expect(screen.getByTestId("actions-automatic")).toHaveAttribute(
+      "data-stale",
+      "true",
+    );
     expect(useAutoPreviewMock).toHaveBeenLastCalledWith(
       DEFAULT_TRAY_PARAMS,
       expect.objectContaining({ enabled: false, isBlocked: false }),
@@ -147,6 +153,7 @@ describe("Mode Workspace Draft Action Area", () => {
       handleGenerate: vi.fn(),
       handleExportSTL: vi.fn(),
       isGenerating: false,
+      isPreviewStale: true,
       volume: 0,
       baseHoleFitViolations: [],
       baseHoleFitBlockingReason: "底板孔位不适配",
@@ -182,6 +189,7 @@ describe("Mode Workspace Draft Action Area", () => {
       handleGenerate: vi.fn(),
       handleExportSTL: vi.fn(),
       isGenerating: false,
+      isPreviewStale: true,
       volume: 0,
     };
     const { result } = renderHook(() => useCustomWorkspace({
@@ -191,6 +199,10 @@ describe("Mode Workspace Draft Action Area", () => {
 
     expect(useAutoPreviewMock).not.toHaveBeenCalled();
     renderWorkspacePanel(result.current.panel);
+    expect(screen.getByTestId("actions-automatic")).toHaveAttribute(
+      "data-stale",
+      "true",
+    );
     fireEvent.click(screen.getByRole("button", { name: "自动预览" }));
     fireEvent.click(screen.getByRole("button", { name: "重置" }));
     fireEvent.click(screen.getByRole("button", { name: "导入" }));

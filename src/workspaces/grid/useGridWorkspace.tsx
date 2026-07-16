@@ -24,6 +24,7 @@ interface UseGridWorkspaceOptions {
 interface GridDraftActionAreaProps {
   params: TrayParams;
   isGenerating: boolean;
+  isPreviewStale: boolean;
   blockingReason: string | null;
   onGenerate: () => void;
   onExportSTL: () => void;
@@ -35,6 +36,7 @@ interface GridDraftActionAreaProps {
 function GridDraftActionArea({
   params,
   isGenerating,
+  isPreviewStale,
   blockingReason,
   onGenerate,
   onExportSTL,
@@ -56,7 +58,7 @@ function GridDraftActionArea({
     state: {
       currentDraftId: draftActions.currentDraftId,
       hasUnsavedChanges: draftActions.hasUnsavedChanges,
-      stale: false,
+      stale: isPreviewStale,
       generate: modelGenerationAvailability(isGenerating, blockingReason),
       exportWhole: modelExportAvailability(blockingReason),
       preview: { kind: "automatic", enabled: autoPreview },
@@ -78,7 +80,7 @@ function GridDraftActionArea({
         return { status: "error", message: `操作失败：${error instanceof Error ? error.message : "未知错误"}` };
       }
     },
-  }), [autoPreview, blockingReason, draftActions, isGenerating, onExportSTL, onGenerate, onRequestParamImport, onReset, params]);
+  }), [autoPreview, blockingReason, draftActions, isGenerating, isPreviewStale, onExportSTL, onGenerate, onRequestParamImport, onReset, params]);
 
   return <PanelActionSection adapter={adapter} />;
 }
@@ -114,6 +116,7 @@ export function useGridWorkspace({
       <GridDraftActionArea
         params={model.params}
         isGenerating={model.isGenerating}
+        isPreviewStale={model.isPreviewStale}
         blockingReason={model.baseHoleFitBlockingReason}
         onGenerate={model.handleGenerate}
         onExportSTL={model.handleExportSTL}
@@ -128,6 +131,7 @@ export function useGridWorkspace({
       model.handleGenerate,
       model.baseHoleFitBlockingReason,
       model.isGenerating,
+      model.isPreviewStale,
       model.params,
       onRequestParamImport,
       resetWorkspace,

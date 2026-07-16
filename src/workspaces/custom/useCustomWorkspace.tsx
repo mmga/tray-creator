@@ -25,6 +25,7 @@ interface UseCustomWorkspaceOptions {
 interface CustomDraftActionAreaProps {
   params: CustomLayoutParams;
   isGenerating: boolean;
+  isPreviewStale: boolean;
   blockingReason: string | null;
   onGenerate: () => void;
   onExportSTL: () => void;
@@ -36,6 +37,7 @@ interface CustomDraftActionAreaProps {
 function CustomDraftActionArea({
   params,
   isGenerating,
+  isPreviewStale,
   blockingReason,
   onGenerate,
   onExportSTL,
@@ -57,7 +59,7 @@ function CustomDraftActionArea({
     state: {
       currentDraftId: draftActions.currentDraftId,
       hasUnsavedChanges: draftActions.hasUnsavedChanges,
-      stale: false,
+      stale: isPreviewStale,
       generate: modelGenerationAvailability(isGenerating, blockingReason),
       exportWhole: modelExportAvailability(blockingReason),
       preview: { kind: "automatic", enabled: autoPreview },
@@ -79,7 +81,7 @@ function CustomDraftActionArea({
         return { status: "error", message: `操作失败：${error instanceof Error ? error.message : "未知错误"}` };
       }
     },
-  }), [autoPreview, blockingReason, draftActions, isGenerating, onExportSTL, onGenerate, onRequestParamImport, onReset, params]);
+  }), [autoPreview, blockingReason, draftActions, isGenerating, isPreviewStale, onExportSTL, onGenerate, onRequestParamImport, onReset, params]);
 
   return <PanelActionSection adapter={adapter} />;
 }
@@ -110,6 +112,7 @@ export function useCustomWorkspace({
       <CustomDraftActionArea
         params={model.params}
         isGenerating={model.isGenerating}
+        isPreviewStale={model.isPreviewStale}
         blockingReason={model.baseHoleFitBlockingReason}
         onGenerate={model.handleGenerate}
         onExportSTL={model.handleExportSTL}
@@ -124,6 +127,7 @@ export function useCustomWorkspace({
       model.handleGenerate,
       model.baseHoleFitBlockingReason,
       model.isGenerating,
+      model.isPreviewStale,
       model.params,
       onRequestParamImport,
       resetWorkspace,
