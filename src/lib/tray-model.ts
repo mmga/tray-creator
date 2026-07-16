@@ -209,7 +209,7 @@ export function createTrayModel(params: TrayParams): Geom3 {
   let tray = params.basePlateOnly ? body : subtract(body, ...holes);
 
   // 5. 底板磁吸孔
-  if (params.enableBaseHole || params.basePlateOnly) {
+  if (params.baseHoleStructure === "magnetic-base-hole" || params.basePlateOnly) {
     tray = subtractBaseHoles(tray, centers, baseThickness);
   }
 

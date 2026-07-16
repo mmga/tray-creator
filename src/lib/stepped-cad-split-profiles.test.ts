@@ -75,6 +75,9 @@ function buildBaseParams(): SteppedLayoutParams {
     disconnectDistance: 0,
     enableBaseHole: false,
     baseHoleSize: "25",
+    baseHoleStructure: "none",
+    magnetPostHoleDiameter: 5,
+    magnetPostHoleDepth: 2,
   };
 }
 
@@ -237,7 +240,7 @@ describe("stepped cad split profiles", () => {
       splitGrooveDepth: 2,
       enableSplitRecess: true,
       enableSplitLocators: false,
-    } as SteppedLayoutParams;
+    } as unknown as SteppedLayoutParams;
     const plan = buildPlan(params);
     const lowUnit = plan.units.find((unit) =>
       unit.groupIds.includes("9424be58-80a2-4faf-b54d-b447aede6cb7"),

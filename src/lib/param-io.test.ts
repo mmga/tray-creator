@@ -306,6 +306,7 @@ describe("param-io", () => {
         cornerRadius: 99,
         boundarySpacing: undefined,
         boundarySpacingIndependent: undefined,
+        baseHoleStructure: undefined,
         enableBaseHole: undefined,
         basePlateOnly: undefined,
       },
@@ -323,7 +324,8 @@ describe("param-io", () => {
     expect(parsed.boundarySpacingIndependent).toBe(false);
     expect(parsed.halfCircleSlots).toBe(false);
     expect(parsed.basePlateOnly).toBe(false);
-    expect(parsed.enableBaseHole).toBe(true);
+    expect(parsed.baseHoleStructure).toBe("none");
+    expect(parsed.enableBaseHole).toBeUndefined();
     expect(parsed.slotDefinitionId).toBe("circle-32");
     expect(parsed.slotDiameter).toBeCloseTo(32.4, 5);
   });
@@ -437,7 +439,8 @@ describe("param-io", () => {
 
     expect(parsed.basePlateOnly).toBe(true);
     expect(parsed.halfCircleSlots).toBe(false);
-    expect(parsed.enableBaseHole).toBe(true);
+    expect(parsed.baseHoleStructure).toBe("magnetic-base-hole");
+    expect(parsed.enableBaseHole).toBeUndefined();
   });
 
   it("rejects implicit custom to stepped conversion", () => {

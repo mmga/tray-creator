@@ -22,10 +22,14 @@ function precisionReplacer(_key: string, value: unknown) {
 export function buildCurrentParamArtifact<M extends AppMode>(
   snapshot: ModeParamSnapshot<M>,
 ): CurrentParamArtifact<M> {
+  const params = { ...snapshot.params } as ParamsByMode[M] & {
+    enableBaseHole?: boolean;
+  };
+  delete params.enableBaseHole;
   return {
     version: CURRENT_PARAM_ARTIFACT_VERSION,
     mode: snapshot.mode,
-    params: snapshot.params,
+    params,
   };
 }
 

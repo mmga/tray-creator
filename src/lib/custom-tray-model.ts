@@ -130,7 +130,7 @@ export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
   let tray = holes.length > 0 ? subtract(body, ...holes) : body;
 
   // 4. 底板磁吸孔
-  if (params.enableBaseHole) {
+  if (params.baseHoleStructure === "magnetic-base-hole") {
     tray = subtractBaseHoles(tray, centers, baseThickness);
   }
 

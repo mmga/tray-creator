@@ -45,11 +45,11 @@ describe("grid model state", () => {
       boundarySpacing: 7,
     });
 
-    expect(resetGridParams()).toEqual({
+    expect(resetGridParams()).toMatchObject({
       ...DEFAULT_TRAY_PARAMS,
       boundarySpacing: DEFAULT_TRAY_PARAMS.spacing,
-      enableBaseHole: true,
     });
+    expect(resetGridParams().enableBaseHole).toBeUndefined();
   });
 
   it("selects Old World rectangular presets without resetting grid parameters", () => {
@@ -159,7 +159,7 @@ describe("grid model state", () => {
     ).toMatchObject({
       basePlateOnly: true,
       halfCircleSlots: false,
-      enableBaseHole: true,
+      baseHoleStructure: "magnetic-base-hole",
     });
 
     expect(
@@ -193,7 +193,7 @@ describe("grid model state", () => {
     ).toMatchObject({
       basePlateOnly: true,
       halfCircleSlots: false,
-      enableBaseHole: true,
+      baseHoleStructure: "magnetic-base-hole",
     });
   });
 });

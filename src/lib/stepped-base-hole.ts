@@ -3,10 +3,13 @@ import {
   resolveBaseHolePresetKey,
 } from "@/lib/config";
 import {
-  MAGNET_POST_HOLE_BOTTOM_WALL,
   STEPPED_LAYOUT_DEFAULTS,
   STEPPED_LIMITS,
 } from "@/lib/stepped-config";
+import {
+  MAGNET_POST_HOLE_BOTTOM_WALL,
+  normalizeBaseHoleParams,
+} from "@/lib/base-hole-config";
 import type {
   BaseHoleStructure,
   SteppedLayoutParams,
@@ -77,20 +80,16 @@ export function getSteppedGroupMinBottomHeight(
 export function resolveSteppedBaseHoleStructure(
   params: SteppedLayoutParams,
 ): BaseHoleStructure {
-  if (
-    params.baseHoleStructure === "none" ||
-    params.baseHoleStructure === "magnetic-base-hole" ||
-    params.baseHoleStructure === "magnet-post-hole"
-  ) {
-    return params.baseHoleStructure;
-  }
-  return params.enableBaseHole ? "magnetic-base-hole" : "none";
+  return normalizeBaseHoleParams(
+    params as unknown as Record<string, unknown>,
+    "none",
+  ).baseHoleStructure;
 }
 
 export function resolveMagnetPostHoleDiameter(params: SteppedLayoutParams) {
   const value = params.magnetPostHoleDiameter;
   if (typeof value !== "number" || !Number.isFinite(value)) {
-    return STEPPED_LAYOUT_DEFAULTS.magnetPostHoleDiameter!;
+    return STEPPED_LAYOUT_DEFAULTS.magnetPostHoleDiameter;
   }
   return Math.max(
     STEPPED_LIMITS.magnetPostHoleDiameter.min,
@@ -101,7 +100,7 @@ export function resolveMagnetPostHoleDiameter(params: SteppedLayoutParams) {
 export function resolveMagnetPostHoleDepth(params: SteppedLayoutParams) {
   const value = params.magnetPostHoleDepth;
   if (typeof value !== "number" || !Number.isFinite(value)) {
-    return STEPPED_LAYOUT_DEFAULTS.magnetPostHoleDepth!;
+    return STEPPED_LAYOUT_DEFAULTS.magnetPostHoleDepth;
   }
   return Math.max(
     STEPPED_LIMITS.magnetPostHoleDepth.min,
@@ -125,7 +124,9 @@ export function applySteppedBaseHoleDerivedFields(
     params.magnetPostHoleDepth !== magnetPostHoleDepth ||
     "enableBaseHole" in params
   ) {
-    const currentParams = { ...nextParams };
+    const currentParams = { ...nextParams } as SteppedLayoutParams & {
+      enableBaseHole?: boolean;
+    };
     delete currentParams.enableBaseHole;
     nextParams = {
       ...currentParams,

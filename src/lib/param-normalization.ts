@@ -8,7 +8,7 @@ import type {
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import { normalizeBaseConverterParams } from "@/lib/base-converter-config";
-import { CUSTOM_LAYOUT_DEFAULTS, CUSTOM_LIMITS } from "@/lib/custom-config";
+import { CUSTOM_LIMITS } from "@/lib/custom-config";
 import { resolveBaseHolePresetKey } from "@/lib/config";
 import { PARAM_CONFIG } from "@/lib/grid-config";
 import { normalizeGridParams } from "@/lib/grid-model-state";
@@ -42,6 +42,12 @@ import {
   recordMigration,
   recordValueAdjustment,
 } from "@/lib/param-import-report";
+import {
+  isBaseHoleStructure,
+  MAGNET_POST_HOLE_LIMITS,
+  normalizeBaseHoleParams,
+} from "@/lib/base-hole-config";
+import type { BaseHoleStructure } from "@/types/tray";
 
 export type NormalizableParams =
   | TrayParams
@@ -110,6 +116,65 @@ function clampField(
       reason: `当前允许范围为 ${config.min}–${config.max}`,
     });
   }
+}
+
+function normalizeReportedBaseHoleParams(
+  obj: Record<string, unknown>,
+  defaultStructure: BaseHoleStructure,
+  recorder?: ImportNormalizationRecorder,
+) {
+  const previousStructure = obj.baseHoleStructure;
+  const previousLegacyEnabled = obj.enableBaseHole;
+  const previousDiameter = obj.magnetPostHoleDiameter;
+  const previousDepth = obj.magnetPostHoleDepth;
+  const normalized = normalizeBaseHoleParams(obj, defaultStructure);
+
+  if (!isBaseHoleStructure(previousStructure)) {
+    if (typeof previousLegacyEnabled === "boolean") {
+      recordMigration(recorder, {
+        path: "baseHoleStructure",
+        label: "底板孔位结构",
+        previousValue: previousLegacyEnabled,
+        normalizedValue: normalized.baseHoleStructure,
+        reason: "旧磁吸孔开关已迁移为互斥的底板孔位结构",
+      });
+    } else {
+      recordDefault(recorder, {
+        path: "baseHoleStructure",
+        label: "底板孔位结构",
+        normalizedValue: normalized.baseHoleStructure,
+        reason: "旧文件未记录底板孔位结构",
+      });
+    }
+  }
+
+  for (const [key, previousValue, normalizedValue] of [
+    ["magnetPostHoleDiameter", previousDiameter, normalized.magnetPostHoleDiameter],
+    ["magnetPostHoleDepth", previousDepth, normalized.magnetPostHoleDepth],
+  ] as const) {
+    if (typeof previousValue !== "number" || !Number.isFinite(previousValue)) {
+      recordDefault(recorder, {
+        path: key,
+        label: key === "magnetPostHoleDiameter" ? "磁铁桩孔直径" : "磁铁桩孔深度",
+        normalizedValue,
+        reason: "旧文件未记录磁铁桩孔尺寸",
+      });
+    } else if (previousValue !== normalizedValue) {
+      const limits = key === "magnetPostHoleDiameter"
+        ? MAGNET_POST_HOLE_LIMITS.diameter
+        : MAGNET_POST_HOLE_LIMITS.depth;
+      recordValueAdjustment(recorder, {
+        path: key,
+        label: limits.label,
+        previousValue,
+        normalizedValue,
+        reason: `当前允许范围为 ${limits.min}–${limits.max}`,
+      });
+    }
+  }
+
+  Object.assign(obj, normalized);
+  delete obj.enableBaseHole;
 }
 
 function runParamNormalizationPipeline<T extends NormalizableParams>(
@@ -221,9 +286,7 @@ export function migrateCustomParamsToStepped(
     enableSplitLocators: STEPPED_LAYOUT_DEFAULTS.enableSplitLocators,
     smoothingRadius: STEPPED_LAYOUT_DEFAULTS.smoothingRadius,
     disconnectDistance: STEPPED_LAYOUT_DEFAULTS.disconnectDistance,
-    baseHoleStructure: customParams.enableBaseHole
-      ? "magnetic-base-hole"
-      : "none",
+    baseHoleStructure: customParams.baseHoleStructure,
     magnetPostHoleDiameter: STEPPED_LAYOUT_DEFAULTS.magnetPostHoleDiameter,
     magnetPostHoleDepth: STEPPED_LAYOUT_DEFAULTS.magnetPostHoleDepth,
     baseHoleSize: customParams.baseHoleSize,
@@ -292,6 +355,10 @@ function normalizeGridSlotInstances(
   const obj = params as unknown as Record<string, unknown>;
   const previousSlotDefinitionId = obj.slotDefinitionId;
   const previousSlotDiameter = obj.slotDiameter;
+  normalizeReportedBaseHoleParams(obj, "none", recorder);
+  if (obj.basePlateOnly) {
+    obj.baseHoleStructure = "magnetic-base-hole";
+  }
   const normalized = normalizeGridParams(params);
   Object.assign(params, normalized);
   if (previousSlotDefinitionId !== normalized.slotDefinitionId) {
@@ -366,9 +433,6 @@ function clampAndFillGridDerivedFields(
   }
   if (obj.basePlateOnly) {
     obj.halfCircleSlots = false;
-  }
-  if (obj.basePlateOnly) {
-    obj.enableBaseHole = true;
   }
   Object.assign(params, normalizeGridParams(params));
 }
@@ -497,15 +561,7 @@ function clampAndFillCustomDerivedFields(
       });
     }
   }
-  if (typeof obj.enableBaseHole !== "boolean") {
-    obj.enableBaseHole = CUSTOM_LAYOUT_DEFAULTS.enableBaseHole;
-    recordDefault(recorder, {
-      path: "enableBaseHole",
-      label: "磁吸孔",
-      normalizedValue: obj.enableBaseHole,
-      reason: "旧文件未记录磁吸孔开关",
-    });
-  }
+  normalizeReportedBaseHoleParams(obj, "none", recorder);
   const largestSlotSize = slots.reduce(
     (maxSize, slot) =>
       Math.max(maxSize, slot.width as number, slot.height as number),
@@ -625,6 +681,7 @@ function normalizeSimpleSteppedSlotInstances(
     });
   }
 
+  normalizeReportedBaseHoleParams(obj, "none", recorder);
   Object.assign(params, normalizeSimpleSteppedParams(params));
 }
 
@@ -776,62 +833,7 @@ function clampAndFillSteppedDerivedFields(
   clampField(obj, "trayDepth", STEPPED_LIMITS.trayDepth, recorder, "trayDepth", "托盘深度");
   clampField(obj, "spacing", STEPPED_LIMITS.spacing, recorder, "spacing", "凹槽间距");
   clampField(obj, "holeDepth", STEPPED_LIMITS.holeDepth, recorder, "holeDepth", "凹槽深度");
-  const hasCurrentBaseHoleStructure =
-    obj.baseHoleStructure === "none" ||
-    obj.baseHoleStructure === "magnetic-base-hole" ||
-    obj.baseHoleStructure === "magnet-post-hole";
-  if (!hasCurrentBaseHoleStructure) {
-    const legacyEnabled = obj.enableBaseHole === true;
-    obj.baseHoleStructure = legacyEnabled ? "magnetic-base-hole" : "none";
-    recordMigration(recorder, {
-      path: "baseHoleStructure",
-      label: "底板孔位结构",
-      previousValue: obj.enableBaseHole,
-      normalizedValue: obj.baseHoleStructure,
-      reason: "旧磁吸孔开关已迁移为互斥的底板孔位结构",
-    });
-  }
-  delete obj.enableBaseHole;
-  if (
-    typeof obj.magnetPostHoleDiameter !== "number" ||
-    !Number.isFinite(obj.magnetPostHoleDiameter)
-  ) {
-    obj.magnetPostHoleDiameter = STEPPED_LAYOUT_DEFAULTS.magnetPostHoleDiameter;
-    recordDefault(recorder, {
-      path: "magnetPostHoleDiameter",
-      label: "磁铁桩孔直径",
-      normalizedValue: obj.magnetPostHoleDiameter,
-      reason: "旧文件未记录磁铁桩孔尺寸",
-    });
-  }
-  if (
-    typeof obj.magnetPostHoleDepth !== "number" ||
-    !Number.isFinite(obj.magnetPostHoleDepth)
-  ) {
-    obj.magnetPostHoleDepth = STEPPED_LAYOUT_DEFAULTS.magnetPostHoleDepth;
-    recordDefault(recorder, {
-      path: "magnetPostHoleDepth",
-      label: "磁铁桩孔深度",
-      normalizedValue: obj.magnetPostHoleDepth,
-      reason: "旧文件未记录磁铁桩孔尺寸",
-    });
-  }
-  clampField(
-    obj,
-    "magnetPostHoleDiameter",
-    STEPPED_LIMITS.magnetPostHoleDiameter,
-    recorder,
-    "magnetPostHoleDiameter",
-    "磁铁桩孔直径",
-  );
-  clampField(
-    obj,
-    "magnetPostHoleDepth",
-    STEPPED_LIMITS.magnetPostHoleDepth,
-    recorder,
-    "magnetPostHoleDepth",
-    "磁铁桩孔深度",
-  );
+  normalizeReportedBaseHoleParams(obj, "none", recorder);
   if (obj.splitGrooveDepth !== STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth) {
     recordValueAdjustment(recorder, {
       path: "splitGrooveDepth",

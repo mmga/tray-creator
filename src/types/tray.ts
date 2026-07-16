@@ -1,10 +1,24 @@
 export type BaseHolePresetKey = "25" | "40";
 export type GridSlotShape = "circle" | "rectangle";
+export type BaseHoleStructure =
+  | "none"
+  | "magnetic-base-hole"
+  | "magnet-post-hole";
+
+export interface BaseHoleParams {
+  baseHoleStructure: BaseHoleStructure;
+  magnetPostHoleDiameter: number;
+  magnetPostHoleDepth: number;
+  /** 兼容导入/导出保留字段；实际规格按每个 Slot Instance 自动匹配。 */
+  baseHoleSize: BaseHolePresetKey;
+  /** @deprecated 仅作为历史参数输入，由规范化流程迁移后删除。 */
+  enableBaseHole?: boolean;
+}
 
 /**
  * 托盘参数接口
  */
-export interface TrayParams {
+export interface TrayParams extends BaseHoleParams {
   /** 行数（凹槽行数） */
   rows: number;
   /** 列数（每行凹槽数量） */
@@ -49,10 +63,6 @@ export interface TrayParams {
   halfCircleSlots: boolean;
   /** 是否只生成带底板磁吸孔的底板，不生成上层凹槽 */
   basePlateOnly: boolean;
-  /** 是否启用底板磁吸孔 */
-  enableBaseHole: boolean;
-  /** 兼容导入/导出保留字段；实际规格由配置自动匹配 */
-  baseHoleSize: BaseHolePresetKey;
 }
 
 /**

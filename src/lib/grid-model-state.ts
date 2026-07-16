@@ -7,6 +7,7 @@ import {
 import { findCircleSlotDefinitionById } from "@/lib/slot-definitions";
 import { createGridSlotSnapshotFromDefinition } from "@/lib/slot-instance-factory";
 import type { TrayParams } from "@/types/tray";
+import { normalizeBaseHoleParams } from "@/lib/base-hole-config";
 
 function getFiniteOr(value: unknown, fallback: number) {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
@@ -49,6 +50,12 @@ function getNormalizedSlotSnapshot(next: TrayParams) {
 }
 
 export function normalizeGridParams(next: TrayParams): TrayParams {
+  const current = { ...next } as TrayParams & { enableBaseHole?: boolean };
+  const baseHoleParams = normalizeBaseHoleParams(
+    current as unknown as Record<string, unknown>,
+    "none",
+  );
+  delete current.enableBaseHole;
   const spacing = getFiniteOr(next.spacing, DEFAULT_TRAY_PARAMS.spacing);
   const spacingIndependent = Boolean(next.spacingIndependent);
   const spacingX = spacingIndependent
@@ -68,7 +75,6 @@ export function normalizeGridParams(next: TrayParams): TrayParams {
     next.slotShape !== "rectangle" &&
     (next.rows === 1 || next.columns === 1) &&
     Boolean(next.halfCircleSlots);
-  const enableBaseHole = basePlateOnly ? true : Boolean(next.enableBaseHole);
   const normalizedSlotParams = { ...next, ...slotSnapshot } as TrayParams;
   const baseHoleSize = resolveGridBaseHolePresetKey(normalizedSlotParams);
   const sideBevelWidth = getFiniteOr(
@@ -77,7 +83,7 @@ export function normalizeGridParams(next: TrayParams): TrayParams {
   );
 
   return {
-    ...next,
+    ...current,
     spacing,
     spacingIndependent,
     spacingX,
@@ -92,7 +98,10 @@ export function normalizeGridParams(next: TrayParams): TrayParams {
     halfCircleSlots,
     basePlateOnly,
     sideBevelWidth,
-    enableBaseHole,
+    ...baseHoleParams,
+    baseHoleStructure: basePlateOnly
+      ? "magnetic-base-hole"
+      : baseHoleParams.baseHoleStructure,
     baseHoleSize,
   };
 }
@@ -137,6 +146,18 @@ export function updateGridParam<K extends keyof TrayParams>(
   key: K,
   value: TrayParams[K],
 ): TrayParams {
+  if (key === "baseHoleStructure") {
+    const nextStructure = value as TrayParams["baseHoleStructure"];
+    return normalizeGridParams({
+      ...params,
+      baseHoleStructure: nextStructure,
+      basePlateOnly:
+        nextStructure === "magnetic-base-hole"
+          ? params.basePlateOnly
+          : false,
+    });
+  }
+
   if (key === "spacingIndependent") {
     const nextIndependent = value as TrayParams["spacingIndependent"];
     if (nextIndependent) {
@@ -203,7 +224,9 @@ export function updateGridParam<K extends keyof TrayParams>(
       ...params,
       basePlateOnly: nextBasePlateOnly,
       halfCircleSlots: nextBasePlateOnly ? false : params.halfCircleSlots,
-      enableBaseHole: nextBasePlateOnly ? true : params.enableBaseHole,
+      baseHoleStructure: nextBasePlateOnly
+        ? "magnetic-base-hole"
+        : params.baseHoleStructure,
     });
   }
 

@@ -147,7 +147,9 @@ export function buildSteppedPerfFixture(
     splitGrooveDepth: 2,
     smoothingRadius: config.smoothingRadius,
     disconnectDistance: config.disconnectDistance,
-    enableBaseHole: false,
+    baseHoleStructure: "none",
+    magnetPostHoleDiameter: 5,
+    magnetPostHoleDepth: 2,
     baseHoleSize: "25",
   };
 }

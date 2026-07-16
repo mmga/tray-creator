@@ -5,6 +5,7 @@ import {
   SHARED_LAYOUT_LIMITS,
 } from "@/lib/config";
 import { createGridSlotSnapshotFromDefinition } from "@/lib/slot-instance-factory";
+import { BASE_HOLE_PARAM_DEFAULTS } from "@/lib/base-hole-config";
 
 export const DEFAULT_PRESET_INDEX = 2;
 const DEFAULT_SLOT_SNAPSHOT = createGridSlotSnapshotFromDefinition(
@@ -29,8 +30,8 @@ export const DEFAULT_TRAY_PARAMS: TrayParams = {
   holeDepth: 3,
   cornerRadius: 4,
   sideBevelWidth: 0,
-  enableBaseHole: true,
-  baseHoleSize: "25",
+  ...BASE_HOLE_PARAM_DEFAULTS,
+  baseHoleStructure: "magnetic-base-hole",
 };
 
 export interface OldWorldRectangularPreset {

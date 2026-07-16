@@ -1,5 +1,6 @@
 import type { SimpleSteppedLayoutParams } from "@/types/custom-tray";
 import { MAX_TRAY_SIZE } from "@/lib/config";
+import { BASE_HOLE_PARAM_DEFAULTS } from "@/lib/base-hole-config";
 
 const SIMPLE_STEPPED_EMPTY_SIZE = 120;
 
@@ -16,6 +17,8 @@ export const SIMPLE_STEPPED_LAYOUT_DEFAULTS: SimpleSteppedLayoutParams = {
   outerMargin: 5,
   holeDepth: 3,
   cornerRadius: 4,
+  ...BASE_HOLE_PARAM_DEFAULTS,
+  baseHoleStructure: "none",
 };
 
 export const SIMPLE_STEPPED_LIMITS = {

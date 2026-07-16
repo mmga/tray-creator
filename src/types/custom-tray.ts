@@ -1,4 +1,5 @@
-import type { BaseHolePresetKey } from "@/types/tray";
+import type { BaseHoleParams } from "@/types/tray";
+export type { BaseHoleStructure } from "@/types/tray";
 
 export type AppMode =
   | "grid"
@@ -18,11 +19,6 @@ export interface BaseConverterParams {
 }
 
 export type SplitGrooveType = "profile" | "inset";
-
-export type BaseHoleStructure =
-  | "none"
-  | "magnetic-base-hole"
-  | "magnet-post-hole";
 
 /** 阶梯底座分组（一组凹槽统一高度，并形成阶梯结构的一层） */
 export interface SlotGroup {
@@ -125,7 +121,7 @@ export interface SimpleSteppedRowBand {
 }
 
 /** 自定义布局参数（完全独立） */
-export interface CustomLayoutParams {
+export interface CustomLayoutParams extends BaseHoleParams {
   /** 托盘尺寸模式；缺失时按自动尺寸兼容旧配置。 */
   traySizingMode?: "auto" | "fixed";
   /** 托盘宽度 (mm) */
@@ -148,14 +144,10 @@ export interface CustomLayoutParams {
   cornerRadius: number;
   /** 侧面斜面宽度 (mm)，下沿保持有效底板尺寸，上沿向内收缩 */
   sideBevelWidth: number;
-  /** 是否启用底板磁吸孔 */
-  enableBaseHole: boolean;
-  /** 兼容导入/导出保留字段；实际规格由配置自动匹配 */
-  baseHoleSize: BaseHolePresetKey;
 }
 
 /** 阶梯底座布局参数 */
-export interface SteppedLayoutParams {
+export interface SteppedLayoutParams extends BaseHoleParams {
   /** 托盘宽度 (mm) */
   trayWidth: number;
   /** 托盘深度 (mm) */
@@ -184,22 +176,12 @@ export interface SteppedLayoutParams {
   smoothingRadius: number;
   /** 为 0 时沿用平滑半径的自然桥接行为；大于 0 时按显式边缘距离阈值断开槽群 */
   disconnectDistance: number;
-  /** 底板孔位结构；旧参数缺失时由 enableBaseHole 迁移。 */
-  baseHoleStructure?: BaseHoleStructure;
-  /** 磁铁桩孔最终成品直径 (mm)，不追加内置容差。 */
-  magnetPostHoleDiameter?: number;
-  /** 磁铁桩孔从凹槽底面向下的深度 (mm)。 */
-  magnetPostHoleDepth?: number;
-  /** @deprecated 仅用于兼容旧参数导入。 */
-  enableBaseHole?: boolean;
-  /** 兼容导入/导出保留字段；实际规格由配置自动匹配 */
-  baseHoleSize: BaseHolePresetKey;
   /** 调试开关：输出面朝向/体积日志（仅开发调试） */
   debugOrientation?: boolean;
 }
 
 /** 简易阶梯模式参数 */
-export interface SimpleSteppedLayoutParams {
+export interface SimpleSteppedLayoutParams extends BaseHoleParams {
   /** 当前底板长度（mm），至少不小于内容推导出的最小长度。 */
   trayWidth: number;
   /** 当前底板深度（mm），至少不小于内容推导出的最小深度。 */

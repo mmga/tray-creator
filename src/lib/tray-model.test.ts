@@ -181,10 +181,10 @@ describe("tray model", () => {
       columns: 2,
       baseThickness: 3.2,
       holeDepth: 3,
-      enableBaseHole: true as const,
+      baseHoleStructure: "magnetic-base-hole" as const,
       baseHoleSize: "25" as const,
     };
-    const plainModel = createTrayModel({ ...params, enableBaseHole: false });
+    const plainModel = createTrayModel({ ...params, baseHoleStructure: "none" });
     const baseHoleModel = createTrayModel(params);
 
     const plainVolume = measureVolume(plainModel);
@@ -208,7 +208,7 @@ describe("tray model", () => {
       columns: 1,
       holeDiameter: 90,
       baseThickness: 4,
-      enableBaseHole: true as const,
+      baseHoleStructure: "magnetic-base-hole" as const,
       baseHoleSize: "25" as const,
     };
 
@@ -231,11 +231,11 @@ describe("tray model", () => {
       columns: 1,
       holeDiameter: 65,
       baseThickness: 2.4,
-      enableBaseHole: true as const,
+      baseHoleStructure: "magnetic-base-hole" as const,
       baseHoleSize: "25" as const,
     };
 
-    const plainModel = createTrayModel({ ...params, enableBaseHole: false });
+    const plainModel = createTrayModel({ ...params, baseHoleStructure: "none" });
     const baseHoleModel = createTrayModel(params);
 
     expect(measureVolume(baseHoleModel)).toBeLessThan(measureVolume(plainModel));
@@ -248,10 +248,10 @@ describe("tray model", () => {
       columns: 1,
       holeDiameter: 65,
       baseThickness: 2.4,
-      enableBaseHole: true as const,
+      baseHoleStructure: "magnetic-base-hole" as const,
     };
 
-    const plainModel = createTrayModel({ ...params, enableBaseHole: false });
+    const plainModel = createTrayModel({ ...params, baseHoleStructure: "none" });
     const baseHoleModel = createTrayModel(params);
 
     expect(getSerializedStlByteLength(baseHoleModel)).toBeGreaterThan(
@@ -327,7 +327,7 @@ describe("tray model", () => {
       columns: 2,
       baseThickness: 3.2,
       holeDepth: 4,
-      enableBaseHole: true as const,
+      baseHoleStructure: "magnetic-base-hole" as const,
       basePlateOnly: true,
       halfCircleSlots: true,
     };
@@ -339,7 +339,7 @@ describe("tray model", () => {
     const baseOnlyModel = createTrayModel(params);
     const noMagnetBaseOnlyModel = createTrayModel({
       ...params,
-      enableBaseHole: false,
+      baseHoleStructure: "none",
     });
     const [[minX, minY, minZ], [maxX, maxY, maxZ]] =
       measureBoundingBox(baseOnlyModel);

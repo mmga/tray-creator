@@ -50,4 +50,17 @@ describe("Current Param Artifact Encoder", () => {
     expect(blob.type).toBe("application/json");
     expect(await blob.text()).toBe(serialized);
   });
+
+  it("不把旧磁吸孔布尔字段写入当前产物", () => {
+    const params = {
+      ...STEPPED_LAYOUT_DEFAULTS,
+      enableBaseHole: true,
+    };
+    const artifact = buildCurrentParamArtifact(
+      captureModeParamSnapshot("stepped", params),
+    );
+
+    expect(artifact.params).not.toHaveProperty("enableBaseHole");
+    expect(artifact.params.baseHoleStructure).toBe("none");
+  });
 });

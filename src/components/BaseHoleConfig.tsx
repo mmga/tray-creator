@@ -11,7 +11,7 @@ import { Circle } from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 
 interface BaseHoleConfigFields {
-  enableBaseHole: boolean;
+  baseHoleStructure: "none" | "magnetic-base-hole" | "magnet-post-hole";
   baseThickness: number;
 }
 
@@ -27,13 +27,14 @@ interface BaseHoleConfigProps<TParams extends BaseHoleConfigFields>
 }
 
 export function BaseHoleConfig<TParams extends BaseHoleConfigFields>({
-  enableBaseHole,
+  baseHoleStructure,
   resolvedBaseHoleSize,
   baseThickness,
   updateParam,
   collapsible = false,
   defaultOpen = true,
 }: BaseHoleConfigProps<TParams>) {
+  const enableBaseHole = baseHoleStructure === "magnetic-base-hole";
   const preset = getBaseHolePreset(resolvedBaseHoleSize);
   const minBaseThickness = getBaseHoleMinBaseThickness(resolvedBaseHoleSize);
   const minBottomWall = getBaseHoleMinBottomWall(resolvedBaseHoleSize);
@@ -55,7 +56,7 @@ export function BaseHoleConfig<TParams extends BaseHoleConfigFields>({
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
-              onClick={() => updateParam("enableBaseHole", false as TParams["enableBaseHole"])}
+              onClick={() => updateParam("baseHoleStructure", "none" as TParams["baseHoleStructure"])}
               className={`px-3 py-2 text-xs font-bold tracking-wider uppercase border transition-all duration-200 cursor-pointer ${
                 !enableBaseHole
                   ? "bg-primary/15 text-primary border-primary/50 shadow-inner"
@@ -66,7 +67,7 @@ export function BaseHoleConfig<TParams extends BaseHoleConfigFields>({
             </button>
             <button
               type="button"
-              onClick={() => updateParam("enableBaseHole", true as TParams["enableBaseHole"])}
+              onClick={() => updateParam("baseHoleStructure", "magnetic-base-hole" as TParams["baseHoleStructure"])}
               className={`px-3 py-2 text-xs font-bold tracking-wider uppercase border transition-all duration-200 cursor-pointer ${
                 enableBaseHole
                   ? "bg-primary/15 text-primary border-primary/50 shadow-inner"

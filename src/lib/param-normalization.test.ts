@@ -36,7 +36,7 @@ describe("param normalization", () => {
           rotation: 0,
         },
       ],
-    } as CustomLayoutParams) as CustomLayoutParams;
+    } as unknown as CustomLayoutParams) as CustomLayoutParams;
     const simpleStepped = normalizeParamsForMode("simple-stepped", {
       ...SIMPLE_STEPPED_LAYOUT_DEFAULTS,
       rows: [{ id: "row-1", name: "前排", slotIds: ["simple-100"] }],
@@ -65,7 +65,7 @@ describe("param normalization", () => {
           groupId: STEPPED_LAYOUT_DEFAULTS.activeGroupId,
         },
       ],
-    } as SteppedLayoutParams) as SteppedLayoutParams;
+    } as unknown as SteppedLayoutParams) as SteppedLayoutParams;
 
     expect(grid).toMatchObject({
       slotDefinitionId: "circle-100",
@@ -120,12 +120,14 @@ describe("param normalization", () => {
       slotDiameter: undefined,
       halfCircleSlots: true,
       basePlateOnly: undefined,
+      baseHoleStructure: undefined,
       enableBaseHole: undefined,
     } as unknown as TrayParams) as TrayParams;
 
     expect(normalized.halfCircleSlots).toBe(false);
     expect(normalized.basePlateOnly).toBe(false);
-    expect(normalized.enableBaseHole).toBe(true);
+    expect(normalized.baseHoleStructure).toBe("none");
+    expect(normalized.enableBaseHole).toBeUndefined();
     expect(normalized.slotDefinitionId).toBe("circle-32");
     expect(normalized.slotDiameter).toBeCloseTo(32.4, 5);
   });
@@ -137,7 +139,8 @@ describe("param normalization", () => {
       baseThickness: 1,
     } as TrayParams) as TrayParams;
 
-    expect(normalized.enableBaseHole).toBe(true);
+    expect(normalized.baseHoleStructure).toBe("magnetic-base-hole");
+    expect(normalized.enableBaseHole).toBeUndefined();
     expect(normalized.baseThickness).toBe(1);
   });
 
@@ -180,6 +183,7 @@ describe("param normalization", () => {
   it("keeps 1mm custom base thickness when magnetic holes are enabled", () => {
     const normalized = normalizeParamsForMode("custom", {
       ...CUSTOM_LAYOUT_DEFAULTS,
+      baseHoleStructure: undefined,
       enableBaseHole: true,
       baseThickness: 1,
       slots: [
@@ -193,9 +197,10 @@ describe("param normalization", () => {
           rotation: 0,
         },
       ],
-    } as CustomLayoutParams) as CustomLayoutParams;
+    } as unknown as CustomLayoutParams) as CustomLayoutParams;
 
-    expect(normalized.enableBaseHole).toBe(true);
+    expect(normalized.baseHoleStructure).toBe("magnetic-base-hole");
+    expect(normalized.enableBaseHole).toBeUndefined();
     expect(normalized.baseHoleSize).toBe("40");
     expect(normalized.baseThickness).toBe(1);
   });
@@ -345,7 +350,7 @@ describe("param normalization", () => {
     const stepped = normalizeParamsForMode("stepped", {
       ...STEPPED_LAYOUT_DEFAULTS,
       spacing: 0,
-    } as SteppedLayoutParams) as SteppedLayoutParams;
+    } as unknown as SteppedLayoutParams) as SteppedLayoutParams;
 
     expect(custom.spacing).toBe(0);
     expect(custom.boundarySpacing).toBe(0);
@@ -414,7 +419,7 @@ describe("param normalization", () => {
       disconnectDistance: 0,
       enableBaseHole: false,
       baseHoleSize: "25",
-    } as SteppedLayoutParams) as SteppedLayoutParams;
+    } as unknown as SteppedLayoutParams) as SteppedLayoutParams;
 
     expect(normalized.groups.map((group) => group.id)).toEqual([
       "low",
@@ -459,7 +464,7 @@ describe("param normalization", () => {
           groupId: "group-1",
         },
       ],
-    } as SteppedLayoutParams) as SteppedLayoutParams;
+    } as unknown as SteppedLayoutParams) as SteppedLayoutParams;
 
     expect(normalized.baseHoleSize).toBe("40");
     expect(normalized.baseHoleStructure).toBe("magnetic-base-hole");
@@ -490,9 +495,9 @@ describe("param normalization", () => {
       }],
     } as SteppedLayoutParams) as SteppedLayoutParams;
 
-    expect(normalized.magnetPostHoleDiameter).toBe(10);
-    expect(normalized.magnetPostHoleDepth).toBe(4);
-    expect(normalized.groups[0].bottomHeight).toBe(8);
+    expect(normalized.magnetPostHoleDiameter).toBe(15);
+    expect(normalized.magnetPostHoleDepth).toBe(3);
+    expect(normalized.groups[0].bottomHeight).toBe(7);
   });
 
   it("resets stepped split groove depth to the default", () => {

@@ -32,6 +32,7 @@ import {
 } from "@/lib/mode-param-snapshot";
 import { browserDownloadPort } from "@/lib/download-port";
 import { exportSimpleSteppedModelFiles } from "@/lib/simple-stepped-model-service";
+import { BASE_HOLE_PARAM_DEFAULTS } from "@/lib/base-hole-config";
 
 export interface UseSimpleSteppedLayoutReturn {
   params: SimpleSteppedLayoutParams;
@@ -199,8 +200,8 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
       holeDepth: params.holeDepth,
       cornerRadius: params.cornerRadius,
       sideBevelWidth: 0,
-      enableBaseHole: false,
-      baseHoleSize: "25",
+      ...BASE_HOLE_PARAM_DEFAULTS,
+      baseHoleStructure: "none",
     };
   }, [
     derivedLayout,

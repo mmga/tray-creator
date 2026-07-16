@@ -6,6 +6,7 @@ import {
   ELLIPSE_SLOT_DEFINITIONS,
   type EllipseSlotDefinition,
 } from "@/lib/slot-definitions";
+import { BASE_HOLE_PARAM_DEFAULTS } from "@/lib/base-hole-config";
 
 export const CUSTOM_BASE_PRESETS: BasePreset[] = CIRCLE_SLOT_DEFINITIONS.map(
   (definition) => ({
@@ -30,8 +31,8 @@ export const CUSTOM_LAYOUT_DEFAULTS: CustomLayoutParams = {
   holeDepth: 3,
   cornerRadius: 4,
   sideBevelWidth: 0,
-  enableBaseHole: false,
-  baseHoleSize: "25",
+  ...BASE_HOLE_PARAM_DEFAULTS,
+  baseHoleStructure: "none",
 };
 
 export const CUSTOM_LIMITS = {

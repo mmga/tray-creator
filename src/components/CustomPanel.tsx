@@ -322,7 +322,7 @@ export default function CustomPanel({
 
       {/* 底板孔位 — 移动端默认折叠 */}
       <div><BaseHoleConfig<CustomLayoutParams>
-        enableBaseHole={params.enableBaseHole}
+        baseHoleStructure={params.baseHoleStructure}
         baseThickness={params.baseThickness}
         resolvedBaseHoleSize={resolvedBaseHoleSize}
         updateParam={updateParam}

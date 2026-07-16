@@ -284,9 +284,11 @@ function createCustomParams(
     holeDepth: 3,
     cornerRadius: 6,
     sideBevelWidth: 0,
-    enableBaseHole: false,
     baseHoleSize: "25",
     ...overrides,
+    baseHoleStructure: overrides.baseHoleStructure ?? "none",
+    magnetPostHoleDiameter: overrides.magnetPostHoleDiameter ?? 5,
+    magnetPostHoleDepth: overrides.magnetPostHoleDepth ?? 2,
   };
 }
 
@@ -326,9 +328,11 @@ function createSteppedParams(
     splitGrooveDepth: 2,
     smoothingRadius: 60,
     disconnectDistance: 0,
-    enableBaseHole: false,
     baseHoleSize: "25",
     ...overrides,
+    baseHoleStructure: overrides.baseHoleStructure ?? "none",
+    magnetPostHoleDiameter: overrides.magnetPostHoleDiameter ?? 5,
+    magnetPostHoleDepth: overrides.magnetPostHoleDepth ?? 2,
   };
 }
 

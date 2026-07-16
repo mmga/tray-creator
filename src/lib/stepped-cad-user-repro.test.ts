@@ -32,11 +32,11 @@ const MERGED_GROUP_IDS = new Set([
 ]);
 
 const USER_REPRO_PARAMS =
-  traySteppedCadUserReproFixture.params as SteppedLayoutParams;
+  traySteppedCadUserReproFixture.params as unknown as SteppedLayoutParams;
 const DOWNLOADED_REPRO_PARAMS =
-  twoHeightRecessFixture.params as SteppedLayoutParams;
+  twoHeightRecessFixture.params as unknown as SteppedLayoutParams;
 const DOWNLOADED_RAW_REPRO_PARAMS =
-  downloadedTwoHeightRecessFixture.params as SteppedLayoutParams;
+  downloadedTwoHeightRecessFixture.params as unknown as SteppedLayoutParams;
 
 function buildExpectedMergedPartGeometry(grooveDepth: number) {
   const graph = buildSteppedCadFeatureGraph(USER_REPRO_PARAMS);

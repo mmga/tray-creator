@@ -37,7 +37,9 @@ const {
     holeDepth: 3,
     cornerRadius: 4,
     sideBevelWidth: 0,
-    enableBaseHole: true,
+    baseHoleStructure: "magnetic-base-hole",
+    magnetPostHoleDiameter: 5,
+    magnetPostHoleDepth: 2,
     baseHoleSize: "25",
   };
 
@@ -62,7 +64,9 @@ const {
     holeDepth: 3,
     cornerRadius: 4,
     sideBevelWidth: 0,
-    enableBaseHole: false,
+    baseHoleStructure: "none",
+    magnetPostHoleDiameter: 5,
+    magnetPostHoleDepth: 2,
     baseHoleSize: "25",
   };
 
@@ -105,7 +109,9 @@ const {
     holeDepth: 3,
     cornerRadius: 4,
     sideBevelWidth: 0,
-    enableBaseHole: false,
+    baseHoleStructure: "none",
+    magnetPostHoleDiameter: 5,
+    magnetPostHoleDepth: 2,
     baseHoleSize: "25",
   };
 
@@ -142,7 +148,9 @@ const {
     splitGrooveDepth: 2,
     smoothingRadius: 60,
     disconnectDistance: 0,
-    enableBaseHole: false,
+    baseHoleStructure: "none",
+    magnetPostHoleDiameter: 5,
+    magnetPostHoleDepth: 2,
     baseHoleSize: "25",
   };
 

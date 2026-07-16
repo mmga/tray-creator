@@ -166,7 +166,7 @@ describe("custom tray model", () => {
     const params = {
       ...CUSTOM_LAYOUT_DEFAULTS,
       baseThickness: 3.2,
-      enableBaseHole: true as const,
+      baseHoleStructure: "magnetic-base-hole" as const,
       baseHoleSize: "25" as const,
       slots: [
         {
@@ -180,7 +180,7 @@ describe("custom tray model", () => {
         },
       ],
     };
-    const plainModel = createCustomTrayModel({ ...params, enableBaseHole: false });
+    const plainModel = createCustomTrayModel({ ...params, baseHoleStructure: "none" });
     const baseHoleModel = createCustomTrayModel(params);
 
     const plainVolume = measureVolume(plainModel);
@@ -201,7 +201,7 @@ describe("custom tray model", () => {
     const params = {
       ...CUSTOM_LAYOUT_DEFAULTS,
       baseThickness: 4,
-      enableBaseHole: true as const,
+      baseHoleStructure: "magnetic-base-hole" as const,
       baseHoleSize: "25" as const,
       slots: [
         {
@@ -232,7 +232,7 @@ describe("custom tray model", () => {
     const params = {
       ...CUSTOM_LAYOUT_DEFAULTS,
       baseThickness: 2.4,
-      enableBaseHole: true as const,
+      baseHoleStructure: "magnetic-base-hole" as const,
       baseHoleSize: "25" as const,
       slots: [
         {
@@ -247,7 +247,7 @@ describe("custom tray model", () => {
       ],
     };
 
-    const plainModel = createCustomTrayModel({ ...params, enableBaseHole: false });
+    const plainModel = createCustomTrayModel({ ...params, baseHoleStructure: "none" });
     const baseHoleModel = createCustomTrayModel(params);
 
     expect(measureVolume(baseHoleModel)).toBeLessThan(measureVolume(plainModel));

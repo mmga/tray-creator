@@ -137,15 +137,6 @@ export function migrateGridLegacyShape(
       reason: "旧文件未记录侧面斜角宽度",
     });
   }
-  if (typeof obj.enableBaseHole !== "boolean") {
-    obj.enableBaseHole = DEFAULT_TRAY_PARAMS.enableBaseHole;
-    recordDefault(recorder, {
-      path: "enableBaseHole",
-      label: "磁吸孔",
-      normalizedValue: obj.enableBaseHole,
-      reason: "旧文件未记录磁吸孔开关",
-    });
-  }
 }
 
 export function migrateCustomLegacyShape(

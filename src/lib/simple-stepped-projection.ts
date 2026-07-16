@@ -11,6 +11,7 @@ import type {
 import { MAX_BUILD_SIZE } from "@/lib/config";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import { normalizeSimpleSteppedSlotInstanceSnapshot } from "@/lib/slot-instance-factory";
+import { normalizeBaseHoleParams } from "@/lib/base-hole-config";
 
 export {
   buildSimpleSteppedRowBands,
@@ -64,9 +65,17 @@ function rebuildRowSlotIds(
 export function normalizeSimpleSteppedParams(
   next: SimpleSteppedLayoutParams,
 ): SimpleSteppedLayoutParams {
-  const rows = next.rows.length > 0
-    ? next.rows
-    : next.slots.length > 0
+  const current = { ...next } as SimpleSteppedLayoutParams & {
+    enableBaseHole?: boolean;
+  };
+  const baseHoleParams = normalizeBaseHoleParams(
+    current as unknown as Record<string, unknown>,
+    "none",
+  );
+  delete current.enableBaseHole;
+  const rows = current.rows.length > 0
+    ? current.rows
+    : current.slots.length > 0
       ? [
           {
             id: crypto.randomUUID(),
@@ -77,7 +86,7 @@ export function normalizeSimpleSteppedParams(
       : [];
   const rowIds = new Set(rows.map((row) => row.id));
   const fallbackRowId = rows[0]?.id ?? "";
-  const normalizedSlots = next.slots.map((slot) =>
+  const normalizedSlots = current.slots.map((slot) =>
     normalizeSimpleSteppedSlotInstanceSnapshot({
       ...slot,
       rowId: rowIds.has(slot.rowId) ? slot.rowId : fallbackRowId,
@@ -87,11 +96,14 @@ export function normalizeSimpleSteppedParams(
   );
   const rebuiltRows = rebuildRowSlotIds(rows, normalizedSlots);
   const withRowIds: SimpleSteppedLayoutParams = {
-    ...next,
+    ...current,
+    ...baseHoleParams,
     rows: rebuiltRows,
     slots: normalizedSlots,
-    outerMarginIndependent: Boolean(next.outerMarginIndependent),
-    outerMargin: next.outerMarginIndependent ? next.outerMargin : next.spacing,
+    outerMarginIndependent: Boolean(current.outerMarginIndependent),
+    outerMargin: current.outerMarginIndependent
+      ? current.outerMargin
+      : current.spacing,
   };
   const minimumDims = calculateSimpleSteppedMinimumTraySize(withRowIds);
   const fallbackWidth =
