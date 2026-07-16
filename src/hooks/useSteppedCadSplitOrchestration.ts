@@ -154,7 +154,7 @@ export function useSteppedCadSplitOrchestration(
         workerPort,
         browserDownloadPort,
       );
-      toast("success", "分件 STL、定位孔清单和参数文件已导出");
+      toast("success", "CAD 拆件文件已导出");
     } catch (err) {
       console.error("分件导出失败:", err);
       toast(

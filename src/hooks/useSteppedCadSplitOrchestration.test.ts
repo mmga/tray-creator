@@ -205,7 +205,7 @@ describe("useSteppedCadSplitOrchestration", () => {
     );
     expect(toastMock).toHaveBeenCalledWith(
       "success",
-      "分件 STL、定位孔清单和参数文件已导出",
+      "CAD 拆件文件已导出",
     );
   });
 
