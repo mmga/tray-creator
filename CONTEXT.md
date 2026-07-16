@@ -104,6 +104,10 @@ _Avoid_: Selecting a non-circular slot's magnet from its longer dimension.
 A cylindrical recess centred on a Slot Instance of any supported shape, opening at the slot floor and terminating at its explicitly configured depth without penetrating the tray underside or adding built-in tolerance.
 _Avoid_: Magnet post when referring to a solid protrusion, or Magnetic Base Hole when referring to the automatically matched enclosed baseplate cavity.
 
+**Base-hole Supporting Thickness**:
+The material thickness between a Slot Instance floor and the tray underside that contains the selected Base-hole Structure.
+_Avoid_: Using the tray's total height or slot depth as the available supporting thickness.
+
 **Final Slot Size**:
 The exact generated slot dimension after tolerance has already been applied.
 _Avoid_: Recomputing final slot size from base size in each mode.
@@ -564,6 +568,11 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - Every Mode that supports a **Magnetic Base Hole** uses the same **Magnetic Base Hole Matching Rule**.
 - One tray uses one shared **Magnet Post Hole** diameter and depth for all of its Slot Instances, without per-group or per-slot overrides.
 - Enabling a **Magnet Post Hole** raises each affected stepped group as needed to preserve the configured recess depth and at least 1mm of material beneath it.
+- A selected **Magnetic Base Hole** requires at least 2.4mm of **Base-hole Supporting Thickness**.
+- A selected **Magnet Post Hole** requires **Base-hole Supporting Thickness** equal to its configured depth plus at least 1mm beneath it.
+- Selecting a Base-hole Structure automatically raises grid and custom base thickness, simple stepped first-row height, or affected stepped group heights until the required **Base-hole Supporting Thickness** exists.
+- A selected Base-hole Structure must be present in generated geometry and must never silently degrade to no hole because supporting material is insufficient.
+- An imported parameter artifact that requires automatic supporting-thickness adjustment reports that adjustment in its **Import Normalization Report**.
 - A **Conversion Base** is a thin-bottom model and supports neither a **Magnetic Base Hole** nor a **Magnet Post Hole**.
 - Grid, custom, simple stepped, stepped, and CAD stepped Modes each persist exactly one **Base-hole Structure** plus the shared **Magnet Post Hole** diameter and depth values.
 - A legacy `enableBaseHole` value migrates to **Magnetic Base Hole** when true and no base hole when false; newly written Persisted Param Artifacts do not retain that legacy field.
