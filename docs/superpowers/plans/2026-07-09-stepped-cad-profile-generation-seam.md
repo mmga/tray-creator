@@ -28,7 +28,7 @@
 **文件：**
 - 修改：`src/lib/stepped-cad-split-profiles.test.ts`
 
-- [ ] **步骤 1：加强 empty inset 的 suppressed layer 断言**
+- [x] **步骤 1：加强 empty inset 的 suppressed layer 断言**
 
 在测试 `suppresses inset recess interfaces when the upper contact outline vanishes after inset` 中，紧接现有 `plan.issues` 断言后加入：
 
@@ -48,7 +48,7 @@ expect(
 
 这锁定 suppressed **Split Interface Profile** 不会泄漏到 final body layers。
 
-- [ ] **步骤 2：加强 two-height fixture 的 tenon band 断言**
+- [x] **步骤 2：加强 two-height fixture 的 tenon band 断言**
 
 在测试 `keeps the two-height recess lower shell as one planned shell band` 中，将 unit 查询改为：
 
@@ -82,7 +82,7 @@ expect(highUnit?.layerProfiles).toEqual(
 );
 ```
 
-- [ ] **步骤 3：运行 profile plan characterization**
+- [x] **步骤 3：运行 profile plan characterization**
 
 运行：
 
@@ -92,7 +92,7 @@ expect(highUnit?.layerProfiles).toEqual(
 
 预期：PASS，3 tests passed。这里是行为保持重构的 characterization，不要求先出现行为 RED。
 
-- [ ] **步骤 4：提交 profile plan contract**
+- [x] **步骤 4：提交 profile plan contract**
 
 ```bash
 git add src/lib/stepped-cad-split-profiles.test.ts
@@ -107,7 +107,7 @@ git commit -m "test: 锁定 stepped cad final layer profiles"
 - 验证：`src/lib/stepped-cad-tray-model.test.ts`
 - 验证：`src/lib/stepped-cad-user-repro.test.ts`
 
-- [ ] **步骤 1：运行 architecture RED 并确认旧 path 仍存在**
+- [x] **步骤 1：运行 architecture RED 并确认旧 path 仍存在**
 
 运行：
 
@@ -117,7 +117,7 @@ rg -n "buildBodyFromInterfaceProfiles|buildSplitUnitBody|buildInterfacePocketMap
 
 预期：命中 `buildBodyFromInterfaceProfiles` 定义与调用、未使用的 `buildSplitUnitBody`、旧 pocket/recess helpers 以及 male/female footprint 读取。这是本轮 architecture RED。
 
-- [ ] **步骤 2：收窄 imports、constants 与 local types**
+- [x] **步骤 2：收窄 imports、constants 与 local types**
 
 把 `src/lib/stepped-cad-tray-model.ts` 顶部 JSCAD import 改为：
 
@@ -181,7 +181,7 @@ type InterfacePocket = {
 
 `PartitionedGroupFootprint` 必须保留，因为 Locator Pin contact clipping 仍通过 `buildSupportFootprint()` 使用它。
 
-- [ ] **步骤 3：新增只消费 layer plan 的 body builder**
+- [x] **步骤 3：新增只消费 layer plan 的 body builder**
 
 在 `buildSolidFromFootprint()` 后加入：
 
@@ -211,7 +211,7 @@ function buildBodyFromLayerProfiles(
 
 该 helper 不读取 `kind`、interface depth、partitions、groove type 或 params。
 
-- [ ] **步骤 4：让 split generation 使用 `profileUnit.layerProfiles`**
+- [x] **步骤 4：让 split generation 使用 `profileUnit.layerProfiles`**
 
 在 `createSteppedCadSplitParts()` 的 `flatMap` 中，保留 `splitUnitBaseHeight` 和 `profileUnit` 查询，把：
 
@@ -232,7 +232,7 @@ let body = buildBodyFromLayerProfiles(profileUnit.layerProfiles);
 
 不要修改随后的 Locator Pin、slot holes、base holes、cleanup、volume validation 和 metadata 代码。
 
-- [ ] **步骤 5：删除旧 body derivation Implementation**
+- [x] **步骤 5：删除旧 body derivation Implementation**
 
 从 `src/lib/stepped-cad-tray-model.ts` 完整删除以下函数：
 
@@ -261,7 +261,7 @@ buildLocatorBandSolids
 buildLocatorSolid
 ```
 
-- [ ] **步骤 6：收窄 assembly mode return**
+- [x] **步骤 6：收窄 assembly mode return**
 
 将 `resolveSplitAssemblyMode()` 替换为：
 
@@ -280,7 +280,7 @@ function resolveSplitAssemblyMode(params: SteppedLayoutParams) {
 
 groove type 只由 split profile Module 解释，tray model 不再拥有该规则。
 
-- [ ] **步骤 7：运行聚焦 geometry regression**
+- [x] **步骤 7：运行聚焦 geometry regression**
 
 运行：
 
@@ -299,7 +299,7 @@ groove type 只由 split profile Module 解释，tray model 不再拥有该规�
 - two-height fixture 的 horizontal/vertical face thresholds。
 - downloaded fixture 的 full-outline upper tab。
 
-- [ ] **步骤 8：运行 TypeScript 与目标 ESLint**
+- [x] **步骤 8：运行 TypeScript 与目标 ESLint**
 
 运行：
 
@@ -310,7 +310,7 @@ groove type 只由 split profile Module 解释，tray model 不再拥有该规�
 
 预期：两条命令都退出 0。原 `buildSplitUnitBody` unused warning 消失。
 
-- [ ] **步骤 9：运行 architecture GREEN**
+- [x] **步骤 9：运行 architecture GREEN**
 
 运行：
 
@@ -328,7 +328,7 @@ rg -n "buildBodyFromLayerProfiles|profileUnit\\.layerProfiles" src/lib/stepped-c
 
 预期：命中 `buildBodyFromLayerProfiles` 定义、函数内 layer extrusion 和 `profileUnit.layerProfiles` 调用。
 
-- [ ] **步骤 10：提交 generation Seam**
+- [x] **步骤 10：提交 generation Seam**
 
 ```bash
 git add src/lib/stepped-cad-tray-model.ts
@@ -342,7 +342,7 @@ git commit -m "refactor: 以 layer profiles 生成 stepped cad split body"
 - 检查：`src/lib/stepped-cad-tray-model.ts`
 - 检查：相关测试与文档
 
-- [ ] **步骤 1：运行完整 unit Vitest**
+- [x] **步骤 1：运行完整 unit Vitest**
 
 运行：
 
@@ -352,7 +352,7 @@ git commit -m "refactor: 以 layer profiles 生成 stepped cad split body"
 
 预期：68 test files、329 tests passed。
 
-- [ ] **步骤 2：运行 integration Vitest**
+- [x] **步骤 2：运行 integration Vitest**
 
 运行：
 
@@ -362,7 +362,7 @@ git commit -m "refactor: 以 layer profiles 生成 stepped cad split body"
 
 预期：5 test files、27 tests passed。JSDOM 可能输出既有 `Not implemented: navigation to another Document` 提示，但退出码必须为 0。
 
-- [ ] **步骤 3：运行 TypeScript**
+- [x] **步骤 3：运行 TypeScript**
 
 运行：
 
@@ -372,7 +372,7 @@ git commit -m "refactor: 以 layer profiles 生成 stepped cad split body"
 
 预期：无输出，退出码 0。
 
-- [ ] **步骤 4：运行全量 ESLint**
+- [x] **步骤 4：运行全量 ESLint**
 
 运行：
 
@@ -382,7 +382,7 @@ git commit -m "refactor: 以 layer profiles 生成 stepped cad split body"
 
 预期：本轮不新增 warning；`buildSplitUnitBody` 的既有 warning 消失。若命令仍因其他既有 warning 退出非 0，应准确记录剩余文件、规则和数量，不报告为通过。
 
-- [ ] **步骤 5：审计 Split Interface Profile ownership**
+- [x] **步骤 5：审计 Split Interface Profile ownership**
 
 运行：
 
@@ -400,7 +400,7 @@ rg -n "maleFootprint|femaleFootprint|buildUnitLayerProfiles|layerProfiles" src/l
 
 预期：male/female derivation 与 final layer planning 只在 split profile Module 中命中。
 
-- [ ] **步骤 6：检查 diff、工作区与提交历史**
+- [x] **步骤 6：检查 diff、工作区与提交历史**
 
 运行：
 
@@ -412,7 +412,7 @@ git log -5 --oneline
 
 预期：`git diff --check` 和 `git status --short` 无输出；最新提交依次包含 profile layer contract 与 generation Seam。用户原有修改如存在必须保留并单独报告。
 
-- [ ] **步骤 7：必要时提交验证修正**
+- [x] **步骤 7：必要时提交验证修正**
 
 只有完整验证暴露并修复了遗漏时，暂存本候选涉及的精确文件：
 
@@ -422,3 +422,5 @@ git commit -m "test: 完成 stepped cad profile generation 验证"
 ```
 
 若无额外修正，不创建空提交。
+
+本次完整验证未发现代码遗漏，因此没有创建验证修正提交；仅提交本计划的完成记录。当前验证结果为：单元测试 90 个文件、453 个测试通过；集成测试 5 个文件、30 个测试通过；TypeScript 与全量 ESLint 均通过。ownership 审计确认 tray model 只消费 `profileUnit.layerProfiles` 构造主体，male/female footprint 的推导与 layer planning 仅存在于 split profile Module。
