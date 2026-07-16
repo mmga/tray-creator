@@ -559,7 +559,7 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - A **Magnet Post Hole** applies to circular and elliptical slots and starts at each slot floor rather than using the automatically matched **Magnetic Base Hole** geometry.
 - One tray uses one shared **Magnet Post Hole** diameter and depth for all of its circular and elliptical slots, without per-group or per-slot overrides.
 - Enabling a **Magnet Post Hole** raises each affected stepped group as needed to preserve the configured recess depth and at least 1mm of material beneath it.
-- A **Conversion Base** is a thin-bottom model and does not support a **Magnetic Base Hole**.
+- A **Conversion Base** is a thin-bottom model and supports neither a **Magnetic Base Hole** nor a **Magnet Post Hole**.
 - A tray selects exactly one **Base-hole Structure**.
 - **CAD Stepped Construction** builds one extruded body per height band.
 - **CAD Stepped Construction** applies slot holes and the selected **Base-hole Structure** after the stepped height bands are assembled.
