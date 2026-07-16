@@ -8,14 +8,12 @@ import type {
 } from "@/types/custom-tray";
 import {
   CURRENT_PARAM_ARTIFACT_VERSION,
-  buildCurrentParamArtifact,
   createCurrentParamArtifactBlob,
-  serializeCurrentParamArtifact,
   type CurrentParamArtifact,
 } from "@/lib/current-param-artifact-encoder";
 import {
-  captureModeParamSnapshot,
   type ExportableParams,
+  type ModeParamSnapshot,
   type ParamsByMode,
 } from "@/lib/mode-param-snapshot";
 import {
@@ -73,36 +71,11 @@ function resolveParamMode(mode: AppMode): AppMode {
   return mode === "stepped-cad" ? "stepped" : mode;
 }
 
-export function buildParamFile(
-  mode: AppMode,
-  params: ExportableParams,
-): ParamFile {
-  return buildCurrentParamArtifact(
-    captureModeParamSnapshot(mode, params as ParamsByMode[typeof mode]),
-  );
-}
-
-export function serializeParamFile(
-  mode: AppMode,
-  params: ExportableParams,
-): string {
-  return serializeCurrentParamArtifact(
-    captureModeParamSnapshot(mode, params as ParamsByMode[typeof mode]),
-  );
-}
-
-export function createParamBlob(mode: AppMode, params: ExportableParams): Blob {
-  return createCurrentParamArtifactBlob(
-    captureModeParamSnapshot(mode, params as ParamsByMode[typeof mode]),
-  );
-}
-
-export function downloadParamFile(
-  mode: AppMode,
-  params: ExportableParams,
-  filename: string = `tray-${mode}-config.json`,
+export function downloadParamFile<M extends AppMode>(
+  snapshot: ModeParamSnapshot<M>,
+  filename: string = `tray-${snapshot.mode}-config.json`,
 ) {
-  const blob = createParamBlob(mode, params);
+  const blob = createCurrentParamArtifactBlob(snapshot);
   const url = URL.createObjectURL(blob);
 
   const anchor = document.createElement("a");
@@ -114,8 +87,8 @@ export function downloadParamFile(
   URL.revokeObjectURL(url);
 }
 
-export function exportParams(mode: AppMode, params: ExportableParams) {
-  downloadParamFile(mode, params);
+export function exportParams<M extends AppMode>(snapshot: ModeParamSnapshot<M>) {
+  downloadParamFile(snapshot);
 }
 
 function hasWrappedParamFileShape(

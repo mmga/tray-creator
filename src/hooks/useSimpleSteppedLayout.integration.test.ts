@@ -297,8 +297,10 @@ describe("useSimpleSteppedLayout", () => {
       expect.stringMatching(/^tray_simple_stepped_.*\.stl$/),
     );
     expect(downloadParamFileMock).toHaveBeenCalledWith(
-      "simple-stepped",
-      result.current.params,
+      {
+        mode: "simple-stepped",
+        params: result.current.params,
+      },
       expect.stringMatching(/^tray_simple_stepped_.*\.json$/),
     );
     expect(clickSpy).toHaveBeenCalledTimes(1);

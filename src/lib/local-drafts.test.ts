@@ -10,6 +10,9 @@ import type {
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import type { TrayParams } from "@/types/tray";
+import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
+import type { DraftParamsByMode } from "@/lib/draft-summary";
+import type { DraftMode } from "@/lib/local-drafts";
 
 const { downloadParamFileMock } = vi.hoisted(() => ({
   downloadParamFileMock: vi.fn(),
@@ -27,7 +30,7 @@ vi.mock("@/lib/param-io", async () => {
 
 import {
   MAX_DRAFTS_PER_MODE,
-  createDraft,
+  createDraft as createDraftFromSnapshot,
   defaultDraftTitle,
   deleteDraft,
   exportDraft,
@@ -35,8 +38,32 @@ import {
   getDraft,
   listDrafts,
   renameDraft,
-  updateDraft,
+  updateDraft as updateDraftFromSnapshot,
 } from "@/lib/local-drafts";
+
+function createDraft<M extends DraftMode>(
+  title: string,
+  mode: M,
+  params: DraftParamsByMode[M],
+) {
+  return createDraftFromSnapshot(
+    title,
+    captureModeParamSnapshot(mode, params),
+  );
+}
+
+function updateDraft<M extends DraftMode>(
+  mode: M,
+  id: string,
+  title: string,
+  params: DraftParamsByMode[M],
+) {
+  return updateDraftFromSnapshot(
+    id,
+    title,
+    captureModeParamSnapshot(mode, params),
+  );
+}
 
 function createGridParams(overrides: Partial<TrayParams> = {}): TrayParams {
   return {
@@ -318,8 +345,10 @@ describe("local drafts", () => {
 
     exportDraft("stepped", initial.item.id);
     expect(downloadParamFileMock).toHaveBeenCalledWith(
-      "stepped",
-      nextParams,
+      {
+        mode: "stepped",
+        params: nextParams,
+      },
       "stepped-draft-final-draft.json",
     );
 

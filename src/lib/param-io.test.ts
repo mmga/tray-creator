@@ -16,15 +16,38 @@ import type {
 import type { TrayParams } from "@/types/tray";
 import { calculateSimpleSteppedDimensions } from "@/lib/simple-stepped-layout";
 import {
-  buildParamFile,
-  createParamBlob,
   downloadParamFile,
   importParams,
   parseParamFileObject,
   prepareParamFileObject,
   prepareParamImport,
-  serializeParamFile,
 } from "@/lib/param-io";
+import {
+  buildCurrentParamArtifact,
+  createCurrentParamArtifactBlob,
+  serializeCurrentParamArtifact,
+} from "@/lib/current-param-artifact-encoder";
+import {
+  captureModeParamSnapshot,
+  type ParamsByMode,
+} from "@/lib/mode-param-snapshot";
+
+function buildParamFile<M extends AppMode>(mode: M, params: ParamsByMode[M]) {
+  return buildCurrentParamArtifact(captureModeParamSnapshot(mode, params));
+}
+
+function serializeParamFile<M extends AppMode>(
+  mode: M,
+  params: ParamsByMode[M],
+) {
+  return serializeCurrentParamArtifact(captureModeParamSnapshot(mode, params));
+}
+
+function createParamBlob<M extends AppMode>(mode: M, params: ParamsByMode[M]) {
+  return createCurrentParamArtifactBlob(
+    captureModeParamSnapshot(mode, params),
+  );
+}
 
 function readBlobText(blob: Blob) {
   return new Promise<string>((resolve, reject) => {
@@ -252,7 +275,10 @@ describe("param-io", () => {
       params,
     });
 
-    downloadParamFile("grid", params, "grid.json");
+    downloadParamFile(
+      captureModeParamSnapshot("grid", params),
+      "grid.json",
+    );
 
     expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
     expect(anchor.download).toBe("grid.json");

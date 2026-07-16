@@ -7,7 +7,9 @@ import {
 } from "@/lib/custom-layout-math";
 import type { CustomWorkerPort, DownloadPort } from "@/lib/model-ports";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
-import { createParamBlob } from "@/lib/param-io";
+import { createCurrentParamArtifactBlob } from "@/lib/current-param-artifact-encoder";
+import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
+import type { ModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import { generateCustomSTLFilename } from "@/lib/stl-export";
 import type { CustomLayoutParams } from "@/types/custom-tray";
 
@@ -53,8 +55,10 @@ export function getCustomSTLFilename(
   );
 }
 
-export function buildCustomParamsBlob(params: CustomLayoutParams): Blob {
-  return createParamBlob("custom", params);
+export function buildCustomParamsBlob(
+  snapshot: ModeParamSnapshot<"custom">,
+): Blob {
+  return createCurrentParamArtifactBlob(snapshot);
 }
 
 export async function exportCustomModelFiles(
@@ -64,10 +68,11 @@ export async function exportCustomModelFiles(
   workerPort: CustomWorkerPort,
   downloadPort: DownloadPort,
 ): Promise<void> {
-  const stlFilename = getCustomSTLFilename(params, effectiveDimensions);
+  const snapshot = captureModeParamSnapshot("custom", params);
+  const stlFilename = getCustomSTLFilename(snapshot.params, effectiveDimensions);
   const stlResult = await workerPort.exportSTL(geometry, stlFilename);
   downloadPort.downloadBlob(stlResult.blob, stlResult.filename);
 
   const jsonFilename = stlFilename.replace(/\.stl$/i, ".json");
-  downloadPort.downloadBlob(buildCustomParamsBlob(params), jsonFilename);
+  downloadPort.downloadBlob(buildCustomParamsBlob(snapshot), jsonFilename);
 }

@@ -10,6 +10,7 @@ import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 import type { UseSteppedLayoutReturn } from "@/hooks/useSteppedLayout";
 import { exportParams } from "@/lib/param-io";
+import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import { available, generatingAvailability, type DraftActionResult, type ManualDraftActionAreaAdapter } from "@/workspaces/draft-action-area";
 
 const SteppedLayoutPanel = dynamic(() =>
@@ -73,7 +74,7 @@ export function useSteppedWorkspace({
               case "export-whole": model.handleExportSTL(); break;
               case "save-draft": draftActions.onSaveDraft(); break;
               case "open-drafts": draftActions.onOpenDraftDialog(); break;
-              case "export-params": exportParams("stepped", model.params); break;
+              case "export-params": exportParams(captureModeParamSnapshot("stepped", model.params)); break;
               case "import-params": return onRequestParamImport(intent.file);
               case "reset": resetWorkspace(); break;
             }

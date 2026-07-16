@@ -246,7 +246,7 @@ describe("Mode Workspace Draft Action Area", () => {
     expect(clearDraftBindingMock).toHaveBeenCalledTimes(2);
   });
 
-  it("CAD stepped 保留分件导出条件与 stepped Draft Compatibility", () => {
+  it("CAD stepped 保留分件导出条件与独立 Draft Mode", () => {
     const onRequestParamImport = vi.fn(async () => ({ status: "success" as const }));
     const model = {
       params: {
@@ -290,7 +290,7 @@ describe("Mode Workspace Draft Action Area", () => {
     expect(model.handleExportSTL).toHaveBeenCalledTimes(1);
     expect(model.handleExportSplitParts).toHaveBeenCalledTimes(1);
     expect(useWorkspaceDraftSupportMock).toHaveBeenCalledWith(
-      expect.objectContaining({ mode: "stepped" }),
+      expect.objectContaining({ mode: "stepped-cad" }),
     );
   });
 });

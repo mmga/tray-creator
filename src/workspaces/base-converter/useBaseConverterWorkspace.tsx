@@ -6,6 +6,7 @@ import { PanelActionSection } from "@/components/PanelActionSection";
 import { useAutoPreview } from "@/hooks/useAutoPreview";
 import type { useBaseConverter } from "@/hooks/useBaseConverter";
 import { exportParams } from "@/lib/param-io";
+import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import type { BaseConverterParams } from "@/types/custom-tray";
 import {
   available,
@@ -68,7 +69,7 @@ function BaseConverterActionArea({
           case "export-whole": onExportSTL(); break;
           case "save-draft": draftActions.onSaveDraft(); break;
           case "open-drafts": draftActions.onOpenDraftDialog(); break;
-          case "export-params": exportParams("base-converter", params); break;
+          case "export-params": exportParams(captureModeParamSnapshot("base-converter", params)); break;
           case "import-params": return onRequestParamImport(intent.file);
           case "reset": onReset(); break;
           case "set-auto-preview": setAutoPreview(intent.enabled); break;

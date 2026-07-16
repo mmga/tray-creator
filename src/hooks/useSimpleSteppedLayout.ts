@@ -27,6 +27,7 @@ import { useUndoHistory } from "@/hooks/useUndoHistory";
 import { usePreviewLifecycle } from "@/hooks/usePreviewLifecycle";
 import { trayWorkerService } from "@/lib/worker/worker-service";
 import { downloadParamFile } from "@/lib/param-io";
+import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 
 export interface UseSimpleSteppedLayoutReturn {
   params: SimpleSteppedLayoutParams;
@@ -110,12 +111,13 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
         return;
       }
 
-      const currentDerived = deriveSimpleSteppedLayout(currentParams);
+      const snapshot = captureModeParamSnapshot("simple-stepped", currentParams);
+      const currentDerived = deriveSimpleSteppedLayout(snapshot.params);
       const filename = generateSimpleSteppedSTLFilename(
         Math.round(currentDerived.trayWidth),
         Math.round(currentDerived.trayDepth),
         currentDerived.activeRows.length,
-        currentParams.slots.length,
+        snapshot.params.slots.length,
       );
       const result = await trayWorkerService.exportSTL(geometry, filename);
       const url = URL.createObjectURL(result.blob);
@@ -128,7 +130,7 @@ export function useSimpleSteppedLayout(): UseSimpleSteppedLayoutReturn {
       URL.revokeObjectURL(url);
 
       const jsonFilename = filename.replace(/\.stl$/i, ".json");
-      downloadParamFile("simple-stepped", currentParams, jsonFilename);
+      downloadParamFile(snapshot, jsonFilename);
     },
   });
 

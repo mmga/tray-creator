@@ -40,7 +40,7 @@ import { useSteppedCadWorkspace } from "@/workspaces/stepped-cad/useSteppedCadWo
 import { useSteppedCadViewportWorkspace } from "@/viewports/stepped-cad/useSteppedCadViewportWorkspace";
 
 describe("stepped-cad adapters", () => {
-  it("自建 stepped-cad workspace 并按 stepped 模式管理草稿", () => {
+  it("自建 stepped-cad workspace 并按实际 CAD Mode 管理草稿", () => {
     const model = {
       params: { groups: [], slots: [] },
       setParams: vi.fn(),
@@ -87,10 +87,9 @@ describe("stepped-cad adapters", () => {
       }),
     );
 
-    // 草稿以 stepped 模式落盘（DraftMode 不含 stepped-cad）。
     expect(useWorkspaceDraftSupportMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        mode: "stepped",
+        mode: "stepped-cad",
         params: model.params,
         setParams: model.setParams,
         onAfterLoad: resetInteractionState,

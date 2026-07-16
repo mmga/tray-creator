@@ -15,6 +15,7 @@ import type {
   GridDraftStructureMode,
 } from "@/lib/draft-summary";
 import type { ExportableParams } from "@/lib/param-io";
+import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 
 export type DraftMode =
   | "grid"
@@ -272,7 +273,14 @@ export function normalizeListItem<M extends DraftMode>(
     item.summary && typeof item.summary === "object" && item.summary !== null
       ? (item.summary as DraftSummary)
       : normalizeSummaryFromLegacyFields(item) ??
-        (fallbackParams ? buildDraftSummary(mode, fallbackParams) : null);
+        (fallbackParams
+          ? buildDraftSummary(
+              captureModeParamSnapshot(
+                mode,
+                fallbackParams as DraftParamsByMode[typeof mode],
+              ),
+            )
+          : null);
 
   if (!summary || summary.mode !== mode) {
     return null;

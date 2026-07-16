@@ -1,6 +1,7 @@
 import type * as THREE from "three";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
-import { createParamBlob } from "@/lib/param-io";
+import { createCurrentParamArtifactBlob } from "@/lib/current-param-artifact-encoder";
+import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import type {
   DownloadPort,
   SteppedSplitPartResult,
@@ -57,10 +58,14 @@ export async function exportSteppedModelFiles(
   workerPort: SteppedWorkerPort,
   downloadPort: DownloadPort,
 ): Promise<void> {
-  const stlFilename = getSteppedSTLFilename(params, effectiveDimensions);
+  const snapshot = captureModeParamSnapshot("stepped", params);
+  const stlFilename = getSteppedSTLFilename(snapshot.params, effectiveDimensions);
   const stlResult = await workerPort.exportSTL(geometry, stlFilename);
   downloadPort.downloadBlob(stlResult.blob, stlResult.filename);
 
   const jsonFilename = stlFilename.replace(/\.stl$/i, ".json");
-  downloadPort.downloadBlob(createParamBlob("stepped", params), jsonFilename);
+  downloadPort.downloadBlob(
+    createCurrentParamArtifactBlob(snapshot),
+    jsonFilename,
+  );
 }

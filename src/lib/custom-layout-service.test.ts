@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { calculateCustomEffectiveDimensions } from "@/lib/custom-layout-math";
 
@@ -99,7 +100,9 @@ describe("custom layout service", () => {
       "tray_custom_150x90_2slots.stl",
     );
 
-    const paramsBlob = buildCustomParamsBlob(params);
+    const paramsBlob = buildCustomParamsBlob(
+      captureModeParamSnapshot("custom", params),
+    );
     await expect(paramsBlob.text()).resolves.toContain('"version": 1');
     await expect(paramsBlob.text()).resolves.toContain('"mode": "custom"');
     await expect(paramsBlob.text()).resolves.toContain('"trayWidth": 260');

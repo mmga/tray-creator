@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
+import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 
 const { jscadToThreeGeometryMock } = vi.hoisted(() => ({
   jscadToThreeGeometryMock: vi.fn(),
@@ -53,7 +54,9 @@ describe("grid model service", () => {
 
     expect(getGridSTLFilename(DEFAULT_TRAY_PARAMS)).toBe("tray_2x5_32mm.stl");
 
-    const paramsBlob = buildGridParamsBlob(DEFAULT_TRAY_PARAMS);
+    const paramsBlob = buildGridParamsBlob(
+      captureModeParamSnapshot("grid", DEFAULT_TRAY_PARAMS),
+    );
     expect(paramsBlob.type).toBe("application/json");
     await expect(paramsBlob.text()).resolves.toContain('"version": 1');
     await expect(paramsBlob.text()).resolves.toContain('"mode": "grid"');

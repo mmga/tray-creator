@@ -10,6 +10,7 @@ import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 import type { UseSteppedCadLayoutReturn } from "@/hooks/useSteppedCadLayout";
 import { exportParams } from "@/lib/param-io";
+import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import { available, generatingAvailability, type DraftActionResult, type SteppedCadDraftActionAreaAdapter } from "@/workspaces/draft-action-area";
 
 const SteppedCadPanel = dynamic(() =>
@@ -34,11 +35,9 @@ export function useSteppedCadWorkspace({
     setPreviewGroupId,
     resetInteractionState,
   } = interactionState;
-  // CAD 草稿与普通阶梯共享同一套存储（DraftMode 不含 "stepped-cad"），
-  // 仍按 "stepped" 模式落盘，保持向后兼容。
   const { draftActions, overlays, clearDraftBinding } =
     useWorkspaceDraftSupport({
-      mode: "stepped",
+      mode: "stepped-cad",
       params: model.params,
       setParams: model.setParams,
       onAfterLoad: resetInteractionState,
@@ -78,7 +77,7 @@ export function useSteppedCadWorkspace({
               case "export-split": model.handleExportSplitParts(); break;
               case "save-draft": draftActions.onSaveDraft(); break;
               case "open-drafts": draftActions.onOpenDraftDialog(); break;
-              case "export-params": exportParams("stepped-cad", model.params); break;
+              case "export-params": exportParams(captureModeParamSnapshot("stepped-cad", model.params)); break;
               case "import-params": return onRequestParamImport(intent.file);
               case "reset": resetWorkspace(); break;
             }

@@ -8,7 +8,7 @@ import type {
 } from "@/types/custom-tray";
 import { resolveBaseConverterGeometry } from "@/lib/base-converter-config";
 import type { TrayParams } from "@/types/tray";
-import type { ExportableParams } from "@/lib/param-io";
+import type { ModeParamSnapshot } from "@/lib/mode-param-snapshot";
 
 export type GridDraftStructureMode =
   | "full"
@@ -154,9 +154,9 @@ function buildSteppedDraftSummary<M extends "stepped" | "stepped-cad">(
 }
 
 export function buildDraftSummary<M extends keyof DraftParamsByMode>(
-  mode: M,
-  params: DraftParamsByMode[M] | ExportableParams,
+  snapshot: ModeParamSnapshot<M>,
 ): DraftSummaryByMode[M] {
+  const { mode, params } = snapshot;
   switch (mode) {
     case "grid":
       return buildGridDraftSummary(params as TrayParams) as DraftSummaryByMode[M];

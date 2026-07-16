@@ -16,6 +16,10 @@ import {
   type UnknownDraftListItem,
 } from "@/lib/draft-legacy-normalize";
 import { downloadParamFile } from "@/lib/param-io";
+import {
+  captureModeParamSnapshot,
+  type ModeParamSnapshot,
+} from "@/lib/mode-param-snapshot";
 
 export type { DraftMode } from "@/lib/draft-legacy-normalize";
 export type { DraftListItemCompatibilityByMode } from "@/lib/draft-legacy-normalize";
@@ -89,14 +93,14 @@ function writeIndex(items: AnyDraftListItem[]): void {
 }
 
 function buildListItem<M extends DraftMode>(
-  mode: M,
+  snapshot: ModeParamSnapshot<M>,
   id: string,
   title: string,
   createdAt: string,
   updatedAt: string,
-  params: DraftParamsByMode[M],
 ): DraftListItem<M> {
-  const summary = buildDraftSummary(mode, params);
+  const { mode } = snapshot;
+  const summary = buildDraftSummary(snapshot);
   return {
     id,
     mode: mode as M,
@@ -238,9 +242,9 @@ export function getDraft<M extends DraftMode>(
 
 export function createDraft<M extends DraftMode>(
   title: string,
-  mode: M,
-  params: DraftParamsByMode[M],
+  snapshot: ModeParamSnapshot<M>,
 ): DraftRecord<M> {
+  const { mode, params } = snapshot;
   const existing = readIndex().filter((item) => item.mode === mode);
   if (existing.length >= MAX_DRAFTS_PER_MODE) {
     throw new Error(
@@ -251,18 +255,18 @@ export function createDraft<M extends DraftMode>(
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
   const cleanTitle = title.trim() || defaultDraftTitle(mode);
-  const item = buildListItem(mode, id, cleanTitle, now, now, params);
+  const item = buildListItem(snapshot, id, cleanTitle, now, now);
 
   // 创建场景：index 写失败时删除 record（回滚为"从未创建"）
   return commitDraft(mode, id, { item, params }, "remove", null);
 }
 
 export function updateDraft<M extends DraftMode>(
-  mode: M,
   id: string,
   title: string,
-  params: DraftParamsByMode[M],
+  snapshot: ModeParamSnapshot<M>,
 ): DraftRecord<M> {
+  const { mode, params } = snapshot;
   const key = draftRecordKey(mode, id);
   const existingRaw = safeGetItem(key);
   if (!existingRaw) throw new Error(`草稿不存在: ${id}`);
@@ -273,12 +277,11 @@ export function updateDraft<M extends DraftMode>(
   const now = new Date().toISOString();
   const cleanTitle = title.trim() || existing.item.title;
   const updatedItem = buildListItem(
-    mode,
+    snapshot,
     id,
     cleanTitle,
     existing.item.createdAt,
     now,
-    params,
   );
 
   // 更新场景：index 写失败时还原旧 record
@@ -335,7 +338,10 @@ export function exportDraft<M extends DraftMode>(
     .replace(/^-+|-+$/g, "")
     .toLowerCase();
   const filename = `${mode}-draft-${slug || id.slice(0, 8)}.json`;
-  downloadParamFile(mode, record.paramFile.params, filename);
+  downloadParamFile(
+    captureModeParamSnapshot(mode, record.paramFile.params),
+    filename,
+  );
 }
 
 export function defaultDraftTitle(mode: DraftMode = "stepped"): string {

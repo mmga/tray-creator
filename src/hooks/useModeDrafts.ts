@@ -22,7 +22,9 @@ import {
   removeDraftSessionBinding,
   type DraftSession,
 } from "@/lib/draft-session";
-import { parseParamFileObject, serializeParamFile } from "@/lib/param-io";
+import { parseParamFileObject } from "@/lib/param-io";
+import { serializeCurrentParamArtifact } from "@/lib/current-param-artifact-encoder";
+import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import type { DraftParamsByMode } from "@/lib/draft-summary";
 import { useToast } from "@/hooks/useToast";
 
@@ -67,9 +69,13 @@ export function useModeDrafts<M extends DraftMode>({
   );
   const currentDraftId = draftSession.currentDraftId;
 
-  const serializedParams = useMemo(
-    () => serializeParamFile(mode, params),
+  const snapshot = useMemo(
+    () => captureModeParamSnapshot(mode, params),
     [mode, params],
+  );
+  const serializedParams = useMemo(
+    () => serializeCurrentParamArtifact(snapshot),
+    [snapshot],
   );
 
   const hasUnsavedChanges = hasUnsavedDraftChanges(
@@ -102,7 +108,7 @@ export function useModeDrafts<M extends DraftMode>({
     try {
       const existing = getDraft(mode, currentDraftId);
       const title = existing?.item.title ?? defaultDraftTitle(mode);
-      updateDraft(mode, currentDraftId, title, params);
+      updateDraft(currentDraftId, title, snapshot);
       setDraftSession(bindDraftSession(currentDraftId, serializedParams));
       toast("success", `草稿「${title}」已更新`);
     } catch (error) {
@@ -111,7 +117,7 @@ export function useModeDrafts<M extends DraftMode>({
         `保存失败：${error instanceof Error ? error.message : String(error)}`,
       );
     }
-  }, [currentDraftId, mode, params, serializedParams, toast]);
+  }, [currentDraftId, mode, serializedParams, snapshot, toast]);
 
   const saveAsNewDraft = useCallback(
     (title?: string) => {
@@ -119,7 +125,7 @@ export function useModeDrafts<M extends DraftMode>({
         (title ?? draftNameInput).trim() || defaultDraftTitle(mode);
 
       try {
-        const record = createDraft(cleanTitle, mode, params);
+        const record = createDraft(cleanTitle, snapshot);
         setDraftSession(bindDraftSession(record.item.id, serializedParams));
         setDraftNameInput(defaultDraftTitle(mode));
         setIsDialogOpen(false);
@@ -131,7 +137,7 @@ export function useModeDrafts<M extends DraftMode>({
         );
       }
     },
-    [draftNameInput, mode, params, serializedParams, toast],
+    [draftNameInput, mode, serializedParams, snapshot, toast],
   );
 
   const loadDraft = useCallback(
@@ -146,7 +152,12 @@ export function useModeDrafts<M extends DraftMode>({
         const loaded = parseParamFileObject(record.paramFile, mode);
 
         setParams(loaded);
-        setDraftSession(bindDraftSession(id, serializeParamFile(mode, loaded)));
+        setDraftSession(bindDraftSession(
+          id,
+          serializeCurrentParamArtifact(
+            captureModeParamSnapshot(mode, loaded),
+          ),
+        ));
         setIsDialogOpen(false);
         onAfterLoad?.();
         toast("success", `已加载草稿「${record.item.title}」`);
