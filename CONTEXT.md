@@ -152,6 +152,10 @@ _Avoid_: Collapsing `stepped-cad` to `stepped`, inferring Mode from parameter sh
 The complete ordered set of separately named model files prepared from one Mode Param Snapshot for one export operation, including STL files and any companion parameter or manifest files.
 _Avoid_: Triggering downloads while later bundle files are still being generated, treating a partially prepared set as success, or requiring a ZIP container.
 
+**Model Geometry Fingerprint**:
+A deterministic transient identity derived from the Mode parameters used to generate one cached model geometry, compared with an export's Mode Param Snapshot before that geometry may be reused.
+_Avoid_: Persisting the fingerprint in parameter files or Drafts, treating a generic stale flag as proof of parameter identity, or reusing geometry after a fingerprint mismatch.
+
 **Current Param Artifact Encoder**:
 The write-side module that converts a Mode Param Snapshot into the current persisted parameter envelope, JSON, or Blob without applying historical compatibility rules.
 _Avoid_: Owning browser storage, filenames, downloads, legacy Mode ambiguity, migration, or normalization.
@@ -387,6 +391,9 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - Capturing a **Mode Param Snapshot** copies the current normalized runtime parameters so later editor changes cannot alter an in-progress persistence operation.
 - Model generation and its companion parameter encoding consume the same **Mode Param Snapshot**.
 - A model export prepares one complete **Model Artifact Bundle** from one **Mode Param Snapshot** before triggering any browser download.
+- Cached model geometry records a **Model Geometry Fingerprint** for the parameters that generated it.
+- A complete-model export reuses cached geometry only when its **Model Geometry Fingerprint** matches the export's **Mode Param Snapshot**; otherwise it regenerates geometry from that Snapshot.
+- A **Model Geometry Fingerprint** is transient model-lifecycle state and is not part of a **Persisted Param Artifact**.
 - If any file in a **Model Artifact Bundle** cannot be prepared, the export triggers no downloads.
 - A **Model Artifact Bundle** keeps its files separate and downloads them in a deterministic order after preparation succeeds.
 - Capturing a **Mode Param Snapshot** does not migrate, normalize, or perform business validation; an uncopyable runtime value is a program error rather than a compatibility error.
