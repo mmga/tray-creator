@@ -141,8 +141,8 @@ One tray editing workflow such as grid, custom, simple stepped, or stepped.
 _Avoid_: Using "feature" when the meaning is the editor mode.
 
 **Mode Param Snapshot**:
-An indivisible, read-only pairing of one actual Mode and that Mode's current parameters, captured by a Mode Workspace Adapter as the source for one persistence operation.
-_Avoid_: Passing Mode and params as independently selectable writer arguments, inferring Mode from parameter shape, or making the snapshot own storage and download behavior.
+An indivisible, read-only pairing of one actual Mode and a copied value of that Mode's current normalized runtime parameters, captured by a Mode Workspace Adapter as the stable source for one persistence operation.
+_Avoid_: Retaining a mutable editor-state reference, passing Mode and params as independently selectable writer arguments, inferring Mode from parameter shape, or making the snapshot own storage and download behavior.
 
 **Persisted Param Artifact**:
 A newly written parameter-bearing artifact whose declared Mode identifies the editor workflow that owns its parameters, including exported parameter files, model companion parameter files, split-part companion parameter files, Draft records, and Draft Summaries.
@@ -376,6 +376,9 @@ _Avoid_: Maintaining a separate grid-only coefficient set when grid and custom a
 - Every newly written **Persisted Param Artifact** records exactly one actual **Mode** matching the editor workflow that owns its parameters.
 - A **Mode Workspace Adapter** supplies the actual **Mode** for newly written **Persisted Param Artifacts**; downstream persistence Implementations do not infer it from parameter structure.
 - A **Mode Workspace Adapter** captures one **Mode Param Snapshot** for a persistence operation.
+- Capturing a **Mode Param Snapshot** copies the current normalized runtime parameters so later editor changes cannot alter an in-progress persistence operation.
+- Model generation and its companion parameter encoding consume the same **Mode Param Snapshot**.
+- Capturing a **Mode Param Snapshot** does not migrate, normalize, or perform business validation; an uncopyable runtime value is a program error rather than a compatibility error.
 - Parameter export, model companion export, split-part companion export, Draft persistence, and Draft Summary construction consume a **Mode Param Snapshot** instead of independently selectable Mode and params arguments.
 - A **Mode Param Snapshot** does not own browser storage, file naming, downloads, or historical read compatibility.
 - A **Current Param Artifact Encoder** consumes a **Mode Param Snapshot** and writes only the current parameter format.
