@@ -400,8 +400,8 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - If any file in a **Model Artifact Bundle** cannot be prepared, the export triggers no downloads.
 - A **Model Artifact Bundle** keeps its files separate and downloads them in a deterministic order after preparation succeeds.
 - A **Model Artifact Bundle** owns companion parameter encoding, complete-file collection, preparation success, deterministic download triggering, and aggregated download-trigger failure reporting.
-- Mode-specific model Implementations own geometry generation, STL serialization, model filenames, and optional manifest content, then contribute their named files to the **Model Artifact Bundle**.
-- A **Model Artifact Bundle** does not own model geometry algorithms, Mode-specific naming rules, CAD split manifest semantics, or preview-cache lifecycle.
+- Mode-specific model Implementations own geometry generation, STL serialization, model filenames, and optional companion content, then contribute their named files to the **Model Artifact Bundle**.
+- A **Model Artifact Bundle** does not own model geometry algorithms, Mode-specific naming rules, companion artifact semantics, or preview-cache lifecycle.
 - If a browser download trigger fails after bundle preparation, remaining files are still attempted because earlier browser downloads cannot be rolled back; the export reports the collected trigger failures afterward.
 - Capturing a **Mode Param Snapshot** does not migrate, normalize, or perform business validation; an uncopyable runtime value is a program error rather than a compatibility error.
 - Parameter export, model companion export, split-part companion export, Draft persistence, and Draft Summary construction consume a **Mode Param Snapshot** instead of independently selectable Mode and params arguments.
@@ -422,7 +422,7 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - A CAD stepped **Persisted Param Artifact** declares `stepped-cad`, including complete-model companion parameters, split-part companion parameters, Draft records, and Draft Summaries.
 - Adding `stepped-cad` as the actual Mode of new **Persisted Param Artifacts** does not change the parameter-file version or Draft storage version because their envelope shapes remain unchanged.
 - Historical differences are handled by the **Historical Param Artifact Reader**, not by a version increase for this Mode identity change.
-- A split manifest may declare its own file type, such as `stepped-cad-split-parts`, without treating that file type as a **Mode**.
+- A companion artifact may declare its own file type without treating that file type as a **Mode**.
 - Only historical read compatibility may treat a declared `stepped` Mode as ambiguous between ordinary stepped and CAD stepped.
 - Newly exported parameter files are not required to remain importable by older application versions.
 - A historical parameter file declared as `stepped` requires the user to identify whether it belongs to ordinary stepped or CAD stepped because older exports did not preserve that distinction.

@@ -125,27 +125,8 @@ export async function exportSteppedCadSplitPartFiles(
           ),
         ),
       );
-      const manifest = {
-        mode: "stepped-cad-split-parts",
-        generatedAt: new Date().toISOString(),
-        note: "CAD 阶梯模式拆件，按统一 feature graph 生成整面 2mm 公母装配槽。",
-        parts: parts.map((part) => ({
-          file: `${baseFilename}_${part.filenameLabel}.stl`,
-          label: part.label,
-          fromHeight: part.fromHeight,
-          toHeight: part.toHeight,
-        })),
-      };
       return {
-        files: [
-          ...stlFiles,
-          {
-            blob: new Blob([JSON.stringify(manifest, null, 2)], {
-              type: "application/json",
-            }),
-            filename: `${baseFilename}_manifest.json`,
-          },
-        ],
+        files: stlFiles,
         companionParamFilename: `${baseFilename}_params.json`,
       };
     },

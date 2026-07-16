@@ -123,7 +123,7 @@ describe("stepped cad model service", () => {
     );
   });
 
-  it("exports cad split part stls with manifest and params", async () => {
+  it("exports cad split part stls with params", async () => {
     const partGeometry = { id: "cad-part-geom" } as never;
     const stlBlob = new Blob(["part-stl"], { type: "application/sla" });
     const workerPort = {
@@ -171,11 +171,8 @@ describe("stepped cad model service", () => {
       partGeometry,
       "tray_stepped_cad_split_260x260_0slots_part_01_cad_low.stl",
     );
-    expect(downloadPort.downloadBlob).toHaveBeenCalledTimes(3);
+    expect(downloadPort.downloadBlob).toHaveBeenCalledTimes(2);
     await expect(downloadPort.downloadBlob.mock.calls[1]?.[0].text()).resolves.toContain(
-      "feature graph",
-    );
-    await expect(downloadPort.downloadBlob.mock.calls[2]?.[0].text()).resolves.toContain(
       '"mode": "stepped-cad"',
     );
   });
