@@ -7,12 +7,19 @@ import {
 } from "@jscad/modeling";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import { RENDER_CONFIG } from "@/lib/config";
+import { resolveMagneticBaseHolePreset } from "@/lib/base-hole-config";
 import {
   calculateSimpleSteppedDimensions,
   deriveSimpleSteppedLayout,
   getSimpleSteppedEffectiveDiameter,
 } from "@/lib/simple-stepped-layout";
-import { createBaseBody } from "@/lib/model-utils";
+import {
+  createBaseBody,
+  subtractBaseHoles,
+  subtractMagnetPostHoles,
+  type MagnetPostHoleCenter,
+  type SlotCenter,
+} from "@/lib/model-utils";
 import type { SimpleSteppedLayoutParams } from "@/types/custom-tray";
 
 const { subtract, union } = booleans;
@@ -64,10 +71,26 @@ export function createSimpleSteppedTrayModel(
     solid = union(solid, rowSolid);
   });
 
+  const baseHoleCenters: SlotCenter[] = [];
+  const magnetPostHoleCenters: MagnetPostHoleCenter[] = [];
   const holes: Geom3[] = rows.flatMap((row) =>
     row.slots.map((slot) => {
       const topHeight = row.topHeight;
       const clampedDepth = Math.min(params.holeDepth, topHeight);
+      const floorHeight = topHeight - clampedDepth;
+      const cx = slot.globalX - derived.trayWidth / 2;
+      const cy = slot.globalY - derived.trayDepth / 2;
+      baseHoleCenters.push({
+        cx,
+        cy,
+        baseHoleSize: resolveMagneticBaseHolePreset(
+          "circle",
+          slot.diameter,
+          slot.diameter,
+        ),
+        baseThickness: floorHeight,
+      });
+      magnetPostHoleCenters.push({ cx, cy, floorHeight });
       const hole = extrudeLinear(
         { height: clampedDepth + 0.02 },
         circle({
@@ -78,16 +101,27 @@ export function createSimpleSteppedTrayModel(
 
       return translate(
         [
-          slot.globalX - derived.trayWidth / 2,
-          slot.globalY - derived.trayDepth / 2,
-          topHeight - clampedDepth,
+          cx,
+          cy,
+          floorHeight,
         ],
         hole,
       );
     }),
   );
 
-  return holes.length > 0 ? subtract(solid, ...holes) : solid;
+  let tray = holes.length > 0 ? subtract(solid, ...holes) : solid;
+  if (params.baseHoleStructure === "magnetic-base-hole") {
+    tray = subtractBaseHoles(tray, baseHoleCenters, 0, params.baseHoleSize);
+  } else if (params.baseHoleStructure === "magnet-post-hole") {
+    tray = subtractMagnetPostHoles(
+      tray,
+      magnetPostHoleCenters,
+      params.magnetPostHoleDiameter,
+      params.magnetPostHoleDepth,
+    );
+  }
+  return tray;
 }
 
 export function calculateSimpleSteppedTrayDimensions(

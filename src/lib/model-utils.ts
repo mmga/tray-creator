@@ -28,6 +28,49 @@ export interface SlotCenter {
     baseThickness?: number;
 }
 
+/** 磁铁桩孔中心；floorHeight 是 Slot Floor 的 Z 高度。 */
+export interface MagnetPostHoleCenter {
+    cx: number;
+    cy: number;
+    floorHeight: number;
+}
+
+export function createMagnetPostHoleSolid(
+    center: MagnetPostHoleCenter,
+    diameter: number,
+    depth: number,
+    overlap: number = 0.02,
+    segments: number = RENDER_CONFIG.cylinderSegments,
+): Geom3 {
+    return translate(
+        [
+            center.cx,
+            center.cy,
+            center.floorHeight - depth / 2 + overlap / 2,
+        ],
+        cylinder({
+            radius: diameter / 2,
+            height: depth + overlap,
+            segments,
+        }),
+    );
+}
+
+export function subtractMagnetPostHoles(
+    tray: Geom3,
+    centers: MagnetPostHoleCenter[],
+    diameter: number,
+    depth: number,
+): Geom3 {
+    if (centers.length === 0) return tray;
+    return subtract(
+        tray,
+        ...centers.map((center) =>
+            createMagnetPostHoleSolid(center, diameter, depth)
+        ),
+    );
+}
+
 /**
  * 创建底板实体：圆角矩形 → 线性拉伸
  *

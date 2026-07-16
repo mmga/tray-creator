@@ -197,6 +197,21 @@ describe("custom tray model", () => {
     expect(maxZ - minZ).toBeCloseTo(dimensions.height, 1);
   });
 
+  it("从每个自定义槽底向下切出磁铁桩孔", () => {
+    const params = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      baseThickness: 3,
+      baseHoleStructure: "magnet-post-hole" as const,
+      magnetPostHoleDiameter: 5,
+      magnetPostHoleDepth: 2,
+      slots: [createCustomCircleSlot("slot-post", 40, 40, 25)],
+    };
+    const plainModel = createCustomTrayModel({ ...params, baseHoleStructure: "none" });
+    const postModel = createCustomTrayModel(params);
+
+    expect(measureVolume(postModel)).toBeLessThan(measureVolume(plainModel));
+  });
+
   it("auto-selects the magnet hole preset from the largest slot size instead of the stored field", () => {
     const params = {
       ...CUSTOM_LAYOUT_DEFAULTS,

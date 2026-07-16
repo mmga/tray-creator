@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import {
+  createSimpleSteppedTrayModel,
   calculateSimpleSteppedTrayDimensions,
   calculateSimpleSteppedTrayVolume,
 } from "@/lib/simple-stepped-tray-model";
+import { measurements } from "@jscad/modeling";
+
+const { measureVolume } = measurements;
 
 function createSimpleSteppedParams() {
   return {
@@ -80,5 +84,24 @@ describe("simple stepped tray model", () => {
     expect(deepVolume).toBeGreaterThan(0);
     expect(deepVolume).toBeLessThan(shallowVolume);
     expect(deepVolume).toBeLessThan(outerBoxVolume);
+  });
+
+  it.each([
+    "magnetic-base-hole",
+    "magnet-post-hole",
+  ] as const)("为简易阶梯的每个槽位生成 %s", (baseHoleStructure) => {
+    const params = {
+      ...createSimpleSteppedParams(),
+      baseHoleStructure,
+      magnetPostHoleDiameter: 5,
+      magnetPostHoleDepth: 2,
+    };
+    const plainModel = createSimpleSteppedTrayModel({
+      ...params,
+      baseHoleStructure: "none",
+    });
+    const holeModel = createSimpleSteppedTrayModel(params);
+
+    expect(measureVolume(holeModel)).toBeLessThan(measureVolume(plainModel));
   });
 });

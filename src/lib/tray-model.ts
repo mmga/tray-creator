@@ -10,6 +10,7 @@ import {
 import {
   createBaseBody,
   subtractBaseHoles,
+  subtractMagnetPostHoles,
   type SlotCenter,
 } from "@/lib/model-utils";
 
@@ -211,6 +212,13 @@ export function createTrayModel(params: TrayParams): Geom3 {
   // 5. 底板磁吸孔
   if (params.baseHoleStructure === "magnetic-base-hole" || params.basePlateOnly) {
     tray = subtractBaseHoles(tray, centers, baseThickness);
+  } else if (params.baseHoleStructure === "magnet-post-hole") {
+    tray = subtractMagnetPostHoles(
+      tray,
+      centers.map(({ cx, cy }) => ({ cx, cy, floorHeight: baseThickness })),
+      params.magnetPostHoleDiameter,
+      params.magnetPostHoleDepth,
+    );
   }
 
   return tray;

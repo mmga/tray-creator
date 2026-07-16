@@ -173,4 +173,20 @@ describe("stepped tray model", { timeout: 90000 }, () => {
 
     expect(measureVolume(magnetModel)).toBeLessThan(measureVolume(plainModel));
   });
+
+  it("从普通阶梯的每个槽底向下切出磁铁桩孔", () => {
+    const params = {
+      ...createMagnetParams(),
+      baseHoleStructure: "magnet-post-hole" as const,
+      magnetPostHoleDiameter: 5,
+      magnetPostHoleDepth: 2,
+    };
+    const plainModel = createSteppedTrayModel({
+      ...params,
+      baseHoleStructure: "none",
+    });
+    const postModel = createSteppedTrayModel(params);
+
+    expect(measureVolume(postModel)).toBeLessThan(measureVolume(plainModel));
+  });
 });

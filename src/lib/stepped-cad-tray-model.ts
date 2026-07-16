@@ -8,7 +8,10 @@ import {
 } from "@jscad/modeling";
 import type { Geom2, Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { SteppedSplitPartResult } from "@/lib/model-ports";
-import { subtractBaseHoles } from "@/lib/model-utils";
+import {
+  createMagnetPostHoleSolid,
+  subtractBaseHoles,
+} from "@/lib/model-utils";
 import { buildSteppedCadFeatureGraph } from "@/lib/stepped-cad-feature-graph";
 import {
   buildSteppedCadSplitProfilePlan,
@@ -100,14 +103,12 @@ type SteppedCadBaseHoleFeature = SteppedCadFeatureGraph["baseHoles"][number];
 type SteppedCadMagnetPostHoleFeature = SteppedCadFeatureGraph["magnetPostHoles"][number];
 
 function buildMagnetPostHoleSolid(hole: SteppedCadMagnetPostHoleFeature) {
-  const booleanOverlap = LAYER_OVERLAP;
-  return translate(
-    [hole.cx, hole.cy, hole.topHeight - hole.depth / 2 + booleanOverlap / 2],
-    primitives.cylinder({
-      radius: hole.diameter / 2,
-      height: hole.depth + booleanOverlap,
-      segments: INTERFACE_FOOTPRINT_SEGMENTS,
-    }),
+  return createMagnetPostHoleSolid(
+    { cx: hole.cx, cy: hole.cy, floorHeight: hole.topHeight },
+    hole.diameter,
+    hole.depth,
+    LAYER_OVERLAP,
+    INTERFACE_FOOTPRINT_SEGMENTS,
   );
 }
 

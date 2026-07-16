@@ -15,6 +15,7 @@ import { roundLayoutDimensionToTenth } from "@/lib/custom-layout-math";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import {
   subtractBaseHoles,
+  subtractMagnetPostHoles,
   type SlotCenter,
 } from "@/lib/model-utils";
 import { resolveSteppedBaseHoleStructure } from "@/lib/stepped-base-hole";
@@ -421,6 +422,17 @@ export function createSteppedTrayModel(params: SteppedLayoutParams): Geom3 {
   let tray = holes.length > 0 ? subtract(solid, ...holes) : solid;
   if (resolveSteppedBaseHoleStructure(params) === "magnetic-base-hole") {
     tray = subtractBaseHoles(tray, baseHoleCenters, 0, params.baseHoleSize);
+  } else if (resolveSteppedBaseHoleStructure(params) === "magnet-post-hole") {
+    tray = subtractMagnetPostHoles(
+      tray,
+      slotData.map((slot) => ({
+        cx: slot.cx,
+        cy: slot.cy,
+        floorHeight: slot.columnHeight - Math.min(holeDepth, slot.columnHeight),
+      })),
+      params.magnetPostHoleDiameter,
+      params.magnetPostHoleDepth,
+    );
   }
 
   return tray;

@@ -201,6 +201,22 @@ describe("tray model", () => {
     expect(maxZ - minZ).toBeCloseTo(dimensions.height, 1);
   });
 
+  it("从每个网格槽底向下切出磁铁桩孔", () => {
+    const params = {
+      ...DEFAULT_TRAY_PARAMS,
+      rows: 1,
+      columns: 2,
+      baseThickness: 3,
+      baseHoleStructure: "magnet-post-hole" as const,
+      magnetPostHoleDiameter: 5,
+      magnetPostHoleDepth: 2,
+    };
+    const plainModel = createTrayModel({ ...params, baseHoleStructure: "none" });
+    const postModel = createTrayModel(params);
+
+    expect(measureVolume(postModel)).toBeLessThan(measureVolume(plainModel));
+  });
+
   it("auto-selects the magnet hole preset from the slot diameter instead of the stored field", () => {
     const params = {
       ...DEFAULT_TRAY_PARAMS,

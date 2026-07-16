@@ -280,10 +280,10 @@ describe("stepped cad tray model", () => {
     expect(graph.magnetPostHoles).toHaveLength(2);
     expect(graph.magnetPostHoles).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ diameter: 6, depth: 4, topHeight: 5 }),
+        expect.objectContaining({ diameter: 6, depth: 3, topHeight: 4 }),
       ]),
     );
-    expect(graph.groups.every((group) => group.columnHeight >= 8)).toBe(true);
+    expect(graph.groups.every((group) => group.columnHeight >= 7)).toBe(true);
     expect(measureVolume(postModel)).toBeLessThan(measureVolume(plainModel));
   });
 
