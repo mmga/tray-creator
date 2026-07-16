@@ -21,6 +21,10 @@ const MORPH_EPSILON_MAX = 0.005;
 const MORPH_TANGENCY_OUTER_TOLERANCE = MORPH_EPSILON_MAX * 2;
 const MORPH_TANGENCY_INNER_TOLERANCE = 0.01;
 
+// JSCAD union 偶尔会在本应相同的端点间留下微小量化裂缝，随后
+// toOutlines 会按坐标字符串精确匹配并误判为开放几何。
+const OUTLINE_CLOSURE_TOLERANCE = 0.01;
+
 // 多边形逼近圆弧的最大弦距容差 (mm)
 // 0.1mm 低于常见 FDM 打印公差，同时避免布尔运算后生成不可见的极薄顶面条带。
 const ARC_TOLERANCE = 0.1;
@@ -115,6 +119,105 @@ export interface OutlineData {
   segments: ArcSegment[];
   /** 采样后的闭合多边形点列 */
   points: Vec2[];
+}
+
+type OutlinePoint = [number, number];
+type OutlineSide = [OutlinePoint, OutlinePoint];
+
+function pointKey(point: OutlinePoint): string {
+  return `${point[0]},${point[1]}`;
+}
+
+/**
+ * 仅修复布尔运算后小于容差的未配对端点，不缝合真实几何缺口。
+ */
+function repairSubToleranceOutlineCracks(geometry: Geom2): Geom2 | null {
+  const sides = geom2.toSides(geometry) as OutlineSide[];
+  const startsByKey = new Map<string, number[]>();
+  const endsByKey = new Map<string, number[]>();
+
+  sides.forEach((side, index) => {
+    const startKey = pointKey(side[0]);
+    const endKey = pointKey(side[1]);
+    startsByKey.set(startKey, [...(startsByKey.get(startKey) ?? []), index]);
+    endsByKey.set(endKey, [...(endsByKey.get(endKey) ?? []), index]);
+  });
+
+  const unmatchedStarts: number[] = [];
+  const unmatchedEnds: number[] = [];
+  for (const [key, indices] of startsByKey) {
+    unmatchedStarts.push(...indices.slice(endsByKey.get(key)?.length ?? 0));
+  }
+  for (const [key, indices] of endsByKey) {
+    unmatchedEnds.push(...indices.slice(startsByKey.get(key)?.length ?? 0));
+  }
+
+  if (
+    unmatchedStarts.length === 0 ||
+    unmatchedStarts.length !== unmatchedEnds.length
+  ) {
+    return null;
+  }
+
+  const repairedSides = sides.map(
+    (side): OutlineSide => [
+      [...side[0]] as OutlinePoint,
+      [...side[1]] as OutlinePoint,
+    ],
+  );
+  const availableStarts = new Set(unmatchedStarts);
+
+  for (const endIndex of unmatchedEnds) {
+    const end = repairedSides[endIndex][1];
+    let nearestStartIndex: number | null = null;
+    let nearestDistance = Infinity;
+
+    for (const startIndex of availableStarts) {
+      const start = repairedSides[startIndex][0];
+      const distance = Math.hypot(end[0] - start[0], end[1] - start[1]);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestStartIndex = startIndex;
+      }
+    }
+
+    if (
+      nearestStartIndex === null ||
+      nearestDistance > OUTLINE_CLOSURE_TOLERANCE
+    ) {
+      return null;
+    }
+
+    const start = repairedSides[nearestStartIndex][0];
+    const sharedPoint: OutlinePoint = [
+      (end[0] + start[0]) / 2,
+      (end[1] + start[1]) / 2,
+    ];
+    repairedSides[endIndex][1] = sharedPoint;
+    repairedSides[nearestStartIndex][0] = sharedPoint;
+    availableStarts.delete(nearestStartIndex);
+  }
+
+  return geom2.create(repairedSides);
+}
+
+function toClosedOutlines(geometry: Geom2): OutlinePoint[][] {
+  try {
+    return geom2.toOutlines(geometry) as OutlinePoint[][];
+  } catch (error) {
+    if (
+      !(error instanceof Error) ||
+      !error.message.startsWith("geometry is not closed at vertex")
+    ) {
+      throw error;
+    }
+
+    const repaired = repairSubToleranceOutlineCracks(geometry);
+    if (!repaired) {
+      throw error;
+    }
+    return geom2.toOutlines(repaired) as OutlinePoint[][];
+  }
 }
 
 // ── 纯数学多边形内缩 ──────────────────────
@@ -415,7 +518,7 @@ export function generateOutlineGeom2(
   if (totalSmoothing <= 0) return merged;
 
   // 2. 提取合并后的多边形轮廓
-  const outlines = geom2.toOutlines(merged);
+  const outlines = toClosedOutlines(merged);
   if (outlines.length === 0) return null;
 
   // 取面积最大的轮廓
@@ -486,7 +589,7 @@ export function insetGeom2(
     return geometry;
   }
 
-  const outlines = geom2.toOutlines(geometry);
+  const outlines = toClosedOutlines(geometry);
   if (outlines.length === 0) {
     return null;
   }
@@ -662,7 +765,7 @@ export function generateOutline(
   if (!geom) return null;
 
   // 提取轮廓点列
-  const outlines = geom2.toOutlines(geom);
+  const outlines = toClosedOutlines(geom);
   if (outlines.length === 0) return null;
 
   // 多轮廓时取面积最大的（忽略内孔和小碎片）
