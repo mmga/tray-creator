@@ -328,6 +328,10 @@ _Avoid_: Treating random arrangement as adding, deleting, or redefining slots.
 An all-or-nothing candidate layout produced by a **Random Slot Arrangement** that either relocates every slot successfully or leaves the current layout unchanged.
 _Avoid_: Applying a partially placed random layout.
 
+**Layout Arrangement Proposal（布局编排建议）**:
+A previewable candidate that aesthetically rearranges the tray's existing Slot Instances within the owning Mode's structural constraints before the user explicitly applies it.
+_Avoid_: Random placement, silently reflowing slots after an ordinary add or manual edit, or treating the proposal as already committed editor state.
+
 **Side Bevel**:
 The continuous side-wall slope from the tray's bottom edge footprint to its top edge footprint. Its width is the horizontal inset from the lower edge to the upper edge.
 _Avoid_: Treating it as a corner radius, slot clearance, stepped split groove, or a decorative 2D-only annotation.
@@ -539,6 +543,9 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - A **Random Arrangement Result** is atomic: failure preserves every current slot position, while success replaces every slot position as one undoable edit.
 - Repeating a successful **Random Slot Arrangement** produces a fresh candidate layout; no random seed is stored in a Draft or exported parameter file.
 - A **Random Slot Arrangement** reports its success or capacity failure as action feedback, while ordinary **Slot Boundary Violations** remain persistent canvas status rather than transient feedback.
+- A **Layout Arrangement Proposal** is distinct from a **Random Slot Arrangement** and is generated only when the user explicitly requests arrangement.
+- Generating a **Layout Arrangement Proposal** does not change the current layout; applying a selected proposal replaces Slot Instance positions as one explicit action.
+- Adding or manually editing a Slot Instance never implicitly regenerates or applies a **Layout Arrangement Proposal**.
 - A **Side Bevel** keeps the upper edge as the slot boundary-spacing reference and expands the lower edge outward by the configured bevel width.
 - A 2D view that displays a **Side Bevel** should keep the ordinary tray outline for the lower edge and mark only the inset upper edge.
 - An **Effective Baseplate Area** belongs to exactly one **Effective Baseplate**.
@@ -621,6 +628,9 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 >
 > **Dev:** "Should ordinary stepped mode expose split preview because it shares its editor with CAD stepped mode?"
 > **Domain expert:** "No. Split preview and split-part export belong to Stepped CAD Split Orchestration, which composes the shared Stepped Layout Core."
+>
+> **Dev:** "Should adding another slot automatically rearrange the layout?"
+> **Domain expert:** "No. The user explicitly requests a Layout Arrangement Proposal, previews it, and chooses whether to apply it before continuing manual edits."
 
 ## Flagged Ambiguities
 
@@ -639,6 +649,7 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - "固定尺寸" could mean the bottom outer edge or the side-bevel-inset upper edge. Resolved: it means the **Fixed Tray Outer Footprint**.
 - "凹槽越界" could mean a hard editing constraint or a warning-only state. Resolved: use **Slot Boundary Violation** for a red, warning-only state that keeps generation and export available.
 - "随机排列" could mean arbitrary positions that may require manual repair. Resolved: use **Random Slot Arrangement** only for an all-valid layout that satisfies both fixed-boundary and slot-spacing constraints.
+- "自动优化布局" was used for both random placement and an automatically committed reflow. Resolved: use **Layout Arrangement Proposal** for an explicitly requested, previewed candidate that remains unapplied until the user confirms it.
 - Grid-mode "面积" means **Grid Footprint Area**, derived from the displayed outer width and depth.
 - "CAD 阶梯模式生成" could mean either per-group solid union or band-by-band CAD construction. Resolved: use **CAD Stepped Construction**, which generates each height band from a sketch before extrusion.
 - "内缩凹槽" could mean an extra toggle layered on top of "轮廓浅槽". Resolved: use **Inset Recess** as a mutually exclusive **Split Assembly Groove Type**.
