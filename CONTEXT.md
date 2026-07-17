@@ -332,6 +332,10 @@ _Avoid_: Applying a partially placed random layout.
 A previewable candidate that aesthetically rearranges the tray's existing Slot Instances within the owning Mode's structural constraints before the user explicitly applies it.
 _Avoid_: Random placement, silently reflowing slots after an ordinary add or manual edit, or treating the proposal as already committed editor state.
 
+**Layout Arrangement Quality（布局编排质量）**:
+The ordered business evaluation of a Layout Arrangement Proposal by validity, alignment rhythm, visual balance, compact whitespace, edge regularity, then original-position displacement.
+_Avoid_: Treating minimum area, minimum movement, or one fixed aspect ratio as the sole meaning of an attractive layout.
+
 **Side Bevel**:
 The continuous side-wall slope from the tray's bottom edge footprint to its top edge footprint. Its width is the horizontal inset from the lower edge to the upper edge.
 _Avoid_: Treating it as a corner radius, slot clearance, stepped split groove, or a decorative 2D-only annotation.
@@ -552,6 +556,10 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - A **Layout Arrangement Proposal** evaluates all participating Slot Instances as one arrangement set and does not preserve simple-stepped row or stepped-group boundaries as layout partitions.
 - In stepped workflows, every Slot Instance retains its required row or group identity while a **Layout Arrangement Proposal** ignores those identities as arrangement partitions and leaves them unchanged.
 - A stepped workflow needs no unassigned or staging Slot Instance state; after applying a proposal, the user may manually revise row or group assignments from the arranged positions.
+- A candidate with a slot collision, insufficient spacing, fixed-footprint boundary violation, or base-hole manufacturing violation is not a valid **Layout Arrangement Proposal**.
+- **Layout Arrangement Quality** compares valid candidates in this order: alignment rhythm, visual balance, compact whitespace, edge regularity, then original-position displacement.
+- Automatic custom sizing rewards compact use of area, while fixed custom sizing preserves the **Fixed Tray Outer Footprint** and rewards balanced whitespace within it.
+- **Layout Arrangement Quality** derives a suitable footprint from the participating Slot Instances and owning Mode constraints rather than targeting a fixed width-to-depth ratio.
 - A **Side Bevel** keeps the upper edge as the slot boundary-spacing reference and expands the lower edge outward by the configured bevel width.
 - A 2D view that displays a **Side Bevel** should keep the ordinary tray outline for the lower edge and mark only the inset upper edge.
 - An **Effective Baseplate Area** belongs to exactly one **Effective Baseplate**.
@@ -658,6 +666,7 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - "自动优化布局" was used for both random placement and an automatically committed reflow. Resolved: use **Layout Arrangement Proposal** for an explicitly requested, previewed candidate that remains unapplied until the user confirms it.
 - "几种自定义布局" could mean only Custom Mode or every Mode with manually positioned Slot Instances. Resolved: **Layout Arrangement Proposals** apply to custom, simple stepped, ordinary stepped, and CAD stepped Modes, but not grid or Conversion Base Modes.
 - "按分组优化" could mean that existing rows or groups constrain aesthetic arrangement. Resolved: a **Layout Arrangement Proposal** arranges all participating Slot Instances together while preserving—but not partitioning by—their existing row or group identities; the user may revise those identities afterward.
+- "美观布局" could mean the smallest area, the least movement, or a fixed wide rectangle. Resolved: **Layout Arrangement Quality** first requires a valid layout, then prioritises alignment rhythm, visual balance, compact whitespace, edge regularity, and finally original-position displacement.
 - Grid-mode "面积" means **Grid Footprint Area**, derived from the displayed outer width and depth.
 - "CAD 阶梯模式生成" could mean either per-group solid union or band-by-band CAD construction. Resolved: use **CAD Stepped Construction**, which generates each height band from a sketch before extrusion.
 - "内缩凹槽" could mean an extra toggle layered on top of "轮廓浅槽". Resolved: use **Inset Recess** as a mutually exclusive **Split Assembly Groove Type**.
