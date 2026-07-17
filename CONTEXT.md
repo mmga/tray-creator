@@ -550,7 +550,8 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - Grid Mode and Conversion Base Mode do not support **Layout Arrangement Proposals** because neither owns a freely arranged set of Slot Instances.
 - Custom Mode supports **Layout Arrangement Proposals** in both automatic and fixed **Tray Sizing Modes**; a fixed-size proposal must keep every Slot Instance within the existing **Fixed Tray Outer Footprint**.
 - A **Layout Arrangement Proposal** evaluates all participating Slot Instances as one arrangement set and does not preserve simple-stepped row or stepped-group boundaries as layout partitions.
-- In stepped workflows, arranging Slot Instances precedes the user's manual assignment of row or group structure.
+- In stepped workflows, every Slot Instance retains its required row or group identity while a **Layout Arrangement Proposal** ignores those identities as arrangement partitions and leaves them unchanged.
+- A stepped workflow needs no unassigned or staging Slot Instance state; after applying a proposal, the user may manually revise row or group assignments from the arranged positions.
 - A **Side Bevel** keeps the upper edge as the slot boundary-spacing reference and expands the lower edge outward by the configured bevel width.
 - A 2D view that displays a **Side Bevel** should keep the ordinary tray outline for the lower edge and mark only the inset upper edge.
 - An **Effective Baseplate Area** belongs to exactly one **Effective Baseplate**.
@@ -656,7 +657,7 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - "随机排列" could mean arbitrary positions that may require manual repair. Resolved: use **Random Slot Arrangement** only for an all-valid layout that satisfies both fixed-boundary and slot-spacing constraints.
 - "自动优化布局" was used for both random placement and an automatically committed reflow. Resolved: use **Layout Arrangement Proposal** for an explicitly requested, previewed candidate that remains unapplied until the user confirms it.
 - "几种自定义布局" could mean only Custom Mode or every Mode with manually positioned Slot Instances. Resolved: **Layout Arrangement Proposals** apply to custom, simple stepped, ordinary stepped, and CAD stepped Modes, but not grid or Conversion Base Modes.
-- "按分组优化" could mean that existing rows or groups constrain aesthetic arrangement. Resolved: a **Layout Arrangement Proposal** arranges all participating Slot Instances together before the user manually assigns stepped structure.
+- "按分组优化" could mean that existing rows or groups constrain aesthetic arrangement. Resolved: a **Layout Arrangement Proposal** arranges all participating Slot Instances together while preserving—but not partitioning by—their existing row or group identities; the user may revise those identities afterward.
 - Grid-mode "面积" means **Grid Footprint Area**, derived from the displayed outer width and depth.
 - "CAD 阶梯模式生成" could mean either per-group solid union or band-by-band CAD construction. Resolved: use **CAD Stepped Construction**, which generates each height band from a sketch before extrusion.
 - "内缩凹槽" could mean an extra toggle layered on top of "轮廓浅槽". Resolved: use **Inset Recess** as a mutually exclusive **Split Assembly Groove Type**.
