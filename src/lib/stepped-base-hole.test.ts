@@ -32,6 +32,10 @@ function createParams(
 describe("stepped base hole", () => {
   it("按非圆形短边匹配分组磁吸孔规格", () => {
     expect(getSteppedGroupResolvedBaseHoleSize(
+      createParams({ shape: "circle", width: 25, height: 25 }),
+      STEPPED_LAYOUT_DEFAULTS.groups[0].id,
+    )).toBe("20");
+    expect(getSteppedGroupResolvedBaseHoleSize(
       createParams({ shape: "ellipse", width: 75, height: 35 }),
       STEPPED_LAYOUT_DEFAULTS.groups[0].id,
     )).toBe("25");
@@ -53,7 +57,7 @@ describe("stepped base hole", () => {
       groups: [...params.groups, emptyGroup],
     });
 
-    expect(normalized.groups[0].bottomHeight).toBe(5.4);
+    expect(normalized.groups[0].bottomHeight).toBe(5.2);
     expect(normalized.groups[1].bottomHeight).toBe(3);
   });
 });

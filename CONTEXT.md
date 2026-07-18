@@ -16,16 +16,20 @@ _Avoid_: Calling the whole family “方底盘模式”, because it also include
 The fixed grid convention where an Old World Rectangular Slot Definition’s first dimension follows the X-axis columns and its second dimension follows the Y-axis rows, with no per-layout rotation option.
 _Avoid_: Interpreting `30×60` as a rotatable or orientation-free size.
 
+**Old World Ranked Base Spacing**:
+The edge-to-edge gap between nominal Old World base footprints, whose centre pitch excludes Slot Definition tolerance so clearance is applied only around the whole ranked array.
+_Avoid_: Repeating each slot's tolerance inside the grid pitch or treating this value as the gap between final slot edges.
+
 **Old World Full-Slot Grid**:
 A grid of Old World Rectangular Slot Definitions that permits only complete rectangular slots and never exposes the circular half-slot structure.
 _Avoid_: Half rectangular slot, rectangular half-slot mode.
 
 **Old World Magnetic Hole Rule**:
-The magnet-hole rule for an Old World Rectangular Slot Definition that selects the large magnet only when its shorter nominal side is greater than 40mm.
-_Avoid_: Selecting the magnet from the longer side or treating a 40mm short side as large.
+The magnet-hole rule for an Old World Rectangular Slot Definition that selects a 20mm diameter × 0.8mm magnetic sheet for a 25mm shorter nominal side, the standard magnet through 40mm, and the large magnet above 40mm.
+_Avoid_: Selecting the magnet from the longer side, treating a 40mm short side as large, or using the standard magnet for a 25mm short side.
 
 **Old World Preset Set**:
-The fixed first-release set of Old World Rectangular Slot Definitions: 25×25, 30×30, 30×60, 40×40, 50×50, 50×75, and 60×100mm, without custom width-and-depth entry.
+The fixed set of eleven official Old World Rectangular Slot Definitions: 25×25, 25×50, 30×30, 30×60, 40×40, 40×60, 50×50, 50×75, 50×100, 60×100, and 100×150mm, without custom width-and-depth entry.
 _Avoid_: Treating this release as a general custom rectangular-slot editor.
 
 **Grid Slot Definition Switch**:
@@ -97,7 +101,7 @@ A preset-driven cylindrical cavity centred beneath a slot and separated from the
 _Avoid_: Magnet Post Hole, or treating its automatically selected dimensions as editable final dimensions.
 
 **Magnetic Base Hole Matching Rule**:
-The shape-aware rule that selects the large Magnetic Base Hole for a circular slot at 60mm diameter or above, and for a non-circular slot only when its shorter nominal dimension is greater than 40mm.
+The shape-aware rule that selects the 20mm Magnetic Base Hole for a 25mm shortest nominal dimension, the large Magnetic Base Hole for a circular slot at 60mm diameter or above, and for another non-circular slot only when its shorter nominal dimension is greater than 40mm.
 _Avoid_: Selecting a non-circular slot's magnet from its longer dimension.
 
 **Magnet Post Hole**:
@@ -369,9 +373,10 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - CAD stepped preview, complete-model generation, and split-part generation consume the snapshot's **Ellipse Outer Offset** and **Ellipse Profile Exponent**, so their final ellipse profile matches custom mode.
 - An **Old World Rectangular Slot Definition** records nominal width and depth, with each **Final Slot Size** axis 0.4mm larger than its nominal axis.
 - An **Old World Grid Orientation** maps a rectangular slot’s width to grid columns and depth to grid rows.
+- **Old World Ranked Base Spacing** derives centre pitch from nominal base dimensions while Final Slot Size supplies clearance around the ranked array.
 - An **Old World Full-Slot Grid** uses complete **Old World Rectangular Slot Definitions** only.
-- An **Old World Magnetic Hole Rule** uses the shorter nominal axis of an **Old World Rectangular Slot Definition**.
-- The **Old World Preset Set** contains exactly seven **Old World Rectangular Slot Definitions** in its first release.
+- An **Old World Magnetic Hole Rule** uses the shorter nominal axis of an **Old World Rectangular Slot Definition**, including the dedicated 20mm hole for a 25mm short side.
+- The **Old World Preset Set** contains exactly eleven official **Old World Rectangular Slot Definitions**.
 - A **Grid Slot Definition Switch** preserves grid and base parameters while changing the selected Slot Definition and derived footprint.
 - A grid tray has exactly one **Uniform Grid Slot Definition**.
 - **Grid Draft Shape Compatibility** preserves circular geometry for legacy grid drafts and imports.
@@ -556,7 +561,7 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - A **Base Size** is not enough to reproduce a slot unless its **Tolerance** and shape-specific geometry are also known.
 - A **Magnet Post Hole** applies to every supported Slot Instance shape, including Old World rectangular slots, and starts at each slot floor rather than using the automatically matched **Magnetic Base Hole** geometry.
 - Every Mode that supports a **Magnetic Base Hole** uses the same **Magnetic Base Hole Matching Rule**.
-- Each Slot Instance independently applies the **Magnetic Base Hole Matching Rule**, so one tray or stepped group may contain both standard and large Magnetic Base Hole presets.
+- Each Slot Instance independently applies the **Magnetic Base Hole Matching Rule**, so one tray or stepped group may contain 20mm, standard, and large Magnetic Base Hole presets.
 - A Base-hole Structure editor shows the selected Slot Instance's matched Magnetic Base Hole preset and summarizes every preset currently used by the tray; it never describes a stepped group's largest slot as the shared preset.
 - One tray uses one shared **Magnet Post Hole** diameter and depth for all of its Slot Instances, without per-group or per-slot overrides.
 - A **Magnet Post Hole** diameter is explicitly configurable from 1mm through 15mm in every supporting Mode.
@@ -573,7 +578,7 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - Grid, custom, simple stepped, stepped, and CAD stepped Modes expose the same mutually exclusive Base-hole Structure choices and the same Magnet Post Hole diameter and depth controls; Conversion Base exposes none of them.
 - A supporting Mode displays every base-hole fit violation persistently beside its Base-hole Structure controls, keeps 2D editing and Draft persistence available, and disables model generation and export with a visible reason until all such violations are repaired.
 - Enabling a **Magnet Post Hole** raises each affected stepped group as needed to preserve the configured recess depth and at least 1mm of material beneath it.
-- A selected **Magnetic Base Hole** requires at least 2.4mm of **Base-hole Supporting Thickness**.
+- A selected **Magnetic Base Hole** requires its preset cavity depth plus 0.6mm top wall and 0.6mm bottom wall: 2.2mm for the 20mm preset and 2.4mm for the standard or large preset.
 - A selected **Magnet Post Hole** requires **Base-hole Supporting Thickness** equal to its configured depth plus at least 1mm beneath it.
 - Selecting a Base-hole Structure automatically raises grid and custom base thickness, simple stepped first-row height, or affected stepped group heights until the required **Base-hole Supporting Thickness** exists.
 - A selected Base-hole Structure must be present in generated geometry and must never silently degrade to no hole because supporting material is insufficient.
@@ -629,7 +634,7 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - "30×60" could mean either grid orientation. Resolved: the first dimension follows X-axis columns and the second follows Y-axis rows.
 - "半圆槽" could be mistaken for a generic grid feature. Resolved: it applies only to circular Slot Definitions, never to an **Old World Full-Slot Grid**.
 - "矩形磁吸孔规格" could be chosen from either side. Resolved: use the shorter nominal side, and select the large magnet only above 40mm.
-- "旧世界方底盘模式" might imply arbitrary rectangular dimensions. Resolved: the first release exposes only the seven-size **Old World Preset Set**.
+- "旧世界方底盘模式" might imply arbitrary rectangular dimensions. Resolved: grid mode exposes only the eleven-size **Old World Preset Set** and groups it as "旧世界方形/矩形底盘".
 - "切换底盘类型" could imply resetting the layout. Resolved: a **Grid Slot Definition Switch** preserves grid and base parameters.
 - "网格模式" could imply arbitrary mixed base layouts. Resolved: a grid tray has one **Uniform Grid Slot Definition**; mixed layouts belong to custom mode.
 - "旧版网格配置" could be interpreted as an Old World layout after the feature is added. Resolved: **Grid Draft Shape Compatibility** keeps it circular unless it explicitly selects a non-circular Slot Definition.

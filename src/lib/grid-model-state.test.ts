@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
+import {
+  DEFAULT_TRAY_PARAMS,
+  OLD_WORLD_RECTANGULAR_PRESETS,
+  createOldWorldGridSlotSnapshot,
+} from "@/lib/grid-config";
 import {
   normalizeGridParams,
   replaceGridParams,
@@ -9,6 +13,33 @@ import {
 } from "@/lib/grid-model-state";
 
 describe("grid model state", () => {
+  it("exposes all official Old World rectangular base presets with 0.2mm clearance per side", () => {
+    expect(
+      OLD_WORLD_RECTANGULAR_PRESETS.map(({ width, height }) =>
+        `${width}x${height}`,
+      ),
+    ).toEqual([
+      "25x25",
+      "25x50",
+      "30x30",
+      "30x60",
+      "40x40",
+      "40x60",
+      "50x50",
+      "50x75",
+      "50x100",
+      "60x100",
+      "100x150",
+    ]);
+
+    for (const preset of OLD_WORLD_RECTANGULAR_PRESETS) {
+      expect(createOldWorldGridSlotSnapshot(preset)).toMatchObject({
+        slotWidth: preset.width + 0.4,
+        slotHeight: preset.height + 0.4,
+      });
+    }
+  });
+
   it("normalizes boundary spacing when it follows spacing", () => {
     expect(
       normalizeGridParams({
@@ -86,6 +117,10 @@ describe("grid model state", () => {
       selectGridSlotDefinition(DEFAULT_TRAY_PARAMS, "old-world-50x75")
         .baseHoleSize,
     ).toBe("40");
+    expect(
+      selectGridSlotDefinition(DEFAULT_TRAY_PARAMS, "old-world-25x50")
+        .baseHoleSize,
+    ).toBe("20");
   });
 
   it("keeps legacy grid params circular when no rectangular shape is specified", () => {

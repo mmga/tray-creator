@@ -8,6 +8,32 @@ import {
 } from "@/lib/grid-config";
 
 describe("GridLayoutPreview", () => {
+  it("uses nominal Old World base pitch for zero-spacing ranked arrays", () => {
+    const { container, getByText } = render(
+      <GridLayoutPreview
+        params={{
+          ...DEFAULT_TRAY_PARAMS,
+          ...createOldWorldGridSlotSnapshot({
+            id: "old-world-25x25",
+            name: "旧世界 25×25mm",
+            width: 25,
+            height: 25,
+          }),
+          rows: 1,
+          columns: 2,
+          spacing: 0,
+        }}
+      />,
+    );
+
+    const slots = [...container.querySelectorAll('rect[fill="#eab308"]')];
+    const firstX = Number(slots[0]?.getAttribute("x"));
+    const secondX = Number(slots[1]?.getAttribute("x"));
+
+    expect(secondX - firstX).toBeCloseTo(25, 5);
+    expect(getByText("50.4 × 25.4 mm")).toBeInTheDocument();
+  });
+
   it("renders Old World slots as rectangles instead of circles", () => {
     const { container } = render(
       <GridLayoutPreview

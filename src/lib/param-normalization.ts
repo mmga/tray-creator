@@ -45,7 +45,7 @@ import {
   isBaseHoleStructure,
   MAGNET_POST_HOLE_LIMITS,
   normalizeBaseHoleParams,
-  resolveMagneticBaseHolePreset,
+  resolveLargestMagneticBaseHolePreset,
 } from "@/lib/base-hole-config";
 import type { BaseHoleStructure } from "@/types/tray";
 import {
@@ -576,13 +576,11 @@ function clampAndFillCustomDerivedFields(
     }
   }
   normalizeReportedBaseHoleParams(obj, "none", recorder);
-  obj.baseHoleSize = slots.some((slot) =>
-    resolveMagneticBaseHolePreset(
-      slot.shape === "ellipse" ? "ellipse" : "circle",
-      slot.width as number,
-      slot.height as number,
-    ) === "40"
-  ) ? "40" : "25";
+  obj.baseHoleSize = resolveLargestMagneticBaseHolePreset(slots.map((slot) => ({
+    shape: slot.shape === "ellipse" ? "ellipse" as const : "circle" as const,
+    width: slot.width as number,
+    height: slot.height as number,
+  })));
   const previousBaseThickness = obj.baseThickness;
   Object.assign(params, applyFlatTrayBaseHoleSupportingThickness(params));
   if (params.baseThickness !== previousBaseThickness) {

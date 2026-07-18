@@ -1,4 +1,4 @@
-export type BaseHolePresetKey = "25" | "40";
+export type BaseHolePresetKey = "20" | "25" | "40";
 export type GridSlotShape = "circle" | "rectangle";
 export type BaseHoleStructure =
   | "none"

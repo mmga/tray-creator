@@ -48,6 +48,21 @@ export function getGridBoundarySpacingAxes(params: TrayParams) {
   };
 }
 
+/**
+ * 网格槽中心距。旧世界矩形底盘按名义底盘尺寸排列，避免单槽容差
+ * 在紧密阵列中逐格累积；圆形网格保留既有的成品槽边缘间距语义。
+ */
+export function getGridSlotPitchAxes(params: TrayParams) {
+  const slot = getGridSlotGeometry(params);
+  const { spacingX, spacingY } = getGridSpacingAxes(params);
+  return {
+    pitchX:
+      (slot.shape === "rectangle" ? slot.baseWidth : slot.slotWidth) + spacingX,
+    pitchY:
+      (slot.shape === "rectangle" ? slot.baseHeight : slot.slotHeight) + spacingY,
+  };
+}
+
 function createHalfCircleTrayBody(
   width: number,
   depth: number,
@@ -114,19 +129,19 @@ export function createTrayModel(params: TrayParams): Geom3 {
   } = params;
 
   const slot = getGridSlotGeometry(params);
-  const { spacingX, spacingY } = getGridSpacingAxes(params);
+  const { pitchX, pitchY } = getGridSlotPitchAxes(params);
   const { boundarySpacingX, boundarySpacingY } =
     getGridBoundarySpacingAxes(params);
   const baseHoleSize = resolveGridBaseHolePresetKey(params);
 
-  // 计算总尺寸：2 * 边界间距 + (N-1) 段凹槽间距 + N 个凹槽
+  // 总尺寸由首尾槽位外沿与槽位中心距决定；矩形槽的中心距按底盘标称尺寸计算。
   const safeSideBevelWidth = Math.max(0, sideBevelWidth);
   const topWidth =
     2 * boundarySpacingX +
-    (columns - 1) * spacingX +
-    columns * slot.slotWidth;
+    slot.slotWidth +
+    (columns - 1) * pitchX;
   const topDepth =
-    2 * boundarySpacingY + (rows - 1) * spacingY + rows * slot.slotHeight;
+    2 * boundarySpacingY + slot.slotHeight + (rows - 1) * pitchY;
   const totalWidth = topWidth + safeSideBevelWidth * 2;
   const totalDepth = topDepth + safeSideBevelWidth * 2;
   const totalHeight = params.basePlateOnly ? baseThickness : baseThickness + holeDepth;
@@ -174,13 +189,13 @@ export function createTrayModel(params: TrayParams): Geom3 {
           safeSideBevelWidth +
           boundarySpacingX +
           slot.slotWidth / 2 +
-          col * (slot.slotWidth + spacingX),
+          col * pitchX,
         cy:
           -totalDepth / 2 +
           safeSideBevelWidth +
           boundarySpacingY +
           slot.slotHeight / 2 +
-          row * (slot.slotHeight + spacingY),
+          row * pitchY,
         baseHoleSize,
       });
     }
@@ -235,19 +250,19 @@ export function calculateTrayDimensions(params: TrayParams) {
     holeDepth,
   } = params;
   const slot = getGridSlotGeometry(params);
-  const { spacingX, spacingY } = getGridSpacingAxes(params);
+  const { pitchX, pitchY } = getGridSlotPitchAxes(params);
   const { boundarySpacingX, boundarySpacingY } =
     getGridBoundarySpacingAxes(params);
   return {
     width:
       2 * boundarySpacingX +
-      (columns - 1) * spacingX +
-      columns * slot.slotWidth +
+      slot.slotWidth +
+      (columns - 1) * pitchX +
       Math.max(0, params.sideBevelWidth) * 2,
     depth:
       2 * boundarySpacingY +
-      (rows - 1) * spacingY +
-      rows * slot.slotHeight +
+      slot.slotHeight +
+      (rows - 1) * pitchY +
       Math.max(0, params.sideBevelWidth) * 2,
     height: params.basePlateOnly ? baseThickness : baseThickness + holeDepth,
   };

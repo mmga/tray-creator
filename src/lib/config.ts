@@ -56,6 +56,7 @@ export function getSlotOuterOffset(
 export const BASE_HOLE_CONFIG = {
   defaultPreset: "25" as BaseHolePresetKey,
   presets: {
+    "20": { label: "20mm 磁片", diameter: 20.2, depth: 1, minBottomWall: 0.6 },
     "25": { label: "标准磁片", diameter: 25.2, depth: 1.2, minBottomWall: 0.6 },
     "40": { label: "大地盘磁片", diameter: 40.4, depth: 1.4, minBottomWall: 0.4 },
   },
@@ -72,6 +73,10 @@ export function resolveBaseHolePresetKey(
   const normalized = typeof slotSize === "number" && Number.isFinite(slotSize)
     ? slotSize
     : 0;
+
+  if (Math.abs(normalized - 25) < 0.001) {
+    return "20";
+  }
 
   return (
     BASE_HOLE_CONFIG.autoSelectRules.find((rule) => normalized >= rule.minSlotSize)

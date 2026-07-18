@@ -13,6 +13,9 @@ import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 
 describe("base hole rules", () => {
   it("按圆形直径或非圆形短边匹配磁吸孔", () => {
+    expect(resolveMagneticBaseHolePreset("circle", 25, 25)).toBe("20");
+    expect(resolveMagneticBaseHolePreset("rectangle", 25, 50)).toBe("20");
+    expect(resolveMagneticBaseHolePreset("circle", 32, 32)).toBe("25");
     expect(resolveMagneticBaseHolePreset("circle", 59, 59)).toBe("25");
     expect(resolveMagneticBaseHolePreset("circle", 60, 60)).toBe("40");
     expect(resolveMagneticBaseHolePreset("ellipse", 60, 35)).toBe("25");
@@ -28,7 +31,7 @@ describe("base hole rules", () => {
         { id: "small", x: 30, y: 30, shape: "circle", width: 25, height: 25, rotation: 0 },
         { id: "large", x: 90, y: 30, shape: "ellipse", width: 75, height: 42, rotation: 0 },
       ],
-    })).toEqual(["25", "40"]);
+    })).toEqual(["20", "40"]);
   });
 
   it("计算两种孔位结构的最小承载厚度", () => {

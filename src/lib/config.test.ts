@@ -17,7 +17,7 @@ describe("base presets", () => {
 
 describe("base hole config", () => {
   it("resolves the large preset for larger slot sizes", () => {
-    expect(resolveBaseHolePresetKey(25)).toBe("25");
+    expect(resolveBaseHolePresetKey(25)).toBe("20");
     expect(resolveBaseHolePresetKey(59.9)).toBe("25");
     expect(resolveBaseHolePresetKey(60)).toBe("40");
     expect(resolveBaseHolePresetKey(100)).toBe("40");
@@ -25,6 +25,10 @@ describe("base hole config", () => {
   });
 
   it("derives the minimum base thickness from the resolved preset depth", () => {
+    expect(getBaseHolePreset("20")).toMatchObject({
+      diameter: 20.2,
+      depth: 1,
+    });
     expect(getBaseHolePreset("25")).toMatchObject({
       diameter: 25.2,
       depth: 1.2,
@@ -33,8 +37,10 @@ describe("base hole config", () => {
       diameter: 40.4,
       depth: 1.4,
     });
+    expect(getBaseHoleMinBottomWall("20")).toBeCloseTo(0.6, 5);
     expect(getBaseHoleMinBottomWall("25")).toBeCloseTo(0.6, 5);
     expect(getBaseHoleMinBottomWall("40")).toBeCloseTo(0.4, 5);
+    expect(getBaseHoleMinBaseThickness("20")).toBeCloseTo(2.2, 5);
     expect(getBaseHoleMinBaseThickness("25")).toBeCloseTo(2.4, 5);
     expect(getBaseHoleMinBaseThickness("40")).toBeCloseTo(2.4, 5);
   });

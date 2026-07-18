@@ -150,6 +150,15 @@ vi.mock("@/components/ui/select", async () => {
     SelectContent({ children }: { children: React.ReactNode }) {
       return <div>{children}</div>;
     },
+    SelectGroup({ children }: { children: React.ReactNode }) {
+      return <div>{children}</div>;
+    },
+    SelectLabel({ children }: { children: React.ReactNode }) {
+      return <div>{children}</div>;
+    },
+    SelectSeparator() {
+      return <hr />;
+    },
     SelectItem({
       value,
       children,
@@ -384,7 +393,7 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
     );
 
     fireEvent.click(
-      screen.getByRole("button", { name: `圆形 · ${HUNDRED_MM_PRESET.name}` }),
+      screen.getByRole("button", { name: HUNDRED_MM_PRESET.name }),
     );
     fireEvent.click(
       screen.getByRole("switch", {
@@ -514,7 +523,10 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "旧世界 30×60mm" }));
+    expect(screen.getByText("圆形底盘")).toBeInTheDocument();
+    expect(screen.getByText("旧世界方形/矩形底盘")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "30×60mm" }));
 
     expect(replaceParams).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -553,6 +565,7 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
 
     expect(screen.getByRole("button", { name: "完整矩形槽" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "半圆槽" })).toBeNull();
+    expect(screen.getByText("底盘间距")).toBeInTheDocument();
   });
 
   it("routes structure controls when base holes are enabled and shows generating text without volume", () => {

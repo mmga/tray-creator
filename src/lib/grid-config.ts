@@ -45,12 +45,16 @@ export interface OldWorldRectangularPreset {
 
 export const OLD_WORLD_RECTANGULAR_PRESETS = [
   { id: "old-world-25x25", name: "旧世界 25×25mm", width: 25, height: 25 },
+  { id: "old-world-25x50", name: "旧世界 25×50mm", width: 25, height: 50 },
   { id: "old-world-30x30", name: "旧世界 30×30mm", width: 30, height: 30 },
   { id: "old-world-30x60", name: "旧世界 30×60mm", width: 30, height: 60 },
   { id: "old-world-40x40", name: "旧世界 40×40mm", width: 40, height: 40 },
+  { id: "old-world-40x60", name: "旧世界 40×60mm", width: 40, height: 60 },
   { id: "old-world-50x50", name: "旧世界 50×50mm", width: 50, height: 50 },
   { id: "old-world-50x75", name: "旧世界 50×75mm", width: 50, height: 75 },
+  { id: "old-world-50x100", name: "旧世界 50×100mm", width: 50, height: 100 },
   { id: "old-world-60x100", name: "旧世界 60×100mm", width: 60, height: 100 },
+  { id: "old-world-100x150", name: "旧世界 100×150mm", width: 100, height: 150 },
 ] as const satisfies readonly OldWorldRectangularPreset[];
 
 const OLD_WORLD_SLOT_TOLERANCE = 0.4;
