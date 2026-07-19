@@ -14,7 +14,6 @@ import type {
   CircleSlotConfig,
   EllipseSlotConfig,
 } from "@/lib/custom-layout-actions";
-import type { RandomSlotArrangementResult } from "@/lib/custom-random-layout";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -25,12 +24,10 @@ import {
   Wrench,
   Ruler,
   BoxSelect,
-  Shuffle,
 } from "lucide-react";
 import { BaseHoleConfig } from "@/components/BaseHoleConfig";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
-import { useToast } from "@/hooks/useToast";
 import { PanelShell } from "@/components/PanelShell";
 import { TrayResultSummary } from "@/components/TrayResultSummary";
 import { projectCustomTrayResult } from "@/lib/tray-result-projection";
@@ -53,7 +50,6 @@ interface CustomPanelProps {
     ellipseConfig?: EllipseSlotConfig,
     circleConfig?: CircleSlotConfig,
   ) => void;
-  onRandomizeSlots?: () => RandomSlotArrangementResult;
   isGenerating: boolean;
   isPreviewStale: boolean;
   volume: number;
@@ -75,14 +71,12 @@ export default function CustomPanel({
   updateParam,
   actions,
   onAddSlot,
-  onRandomizeSlots,
   isGenerating,
   isPreviewStale,
   volume,
   baseHoleFitViolations = [],
   selectedSlotIds = [],
 }: CustomPanelProps) {
-  const { toast } = useToast();
   const result = projectCustomTrayResult(params, effectiveDimensions, {
     volume,
     isGenerating,
@@ -115,18 +109,6 @@ export default function CustomPanel({
       { applyTolerance: false },
     );
   };
-  const handleRandomizeSlots = () => {
-    if (!onRandomizeSlots) return;
-
-    const result = onRandomizeSlots();
-    if (result.status === "success") {
-      toast("success", `已随机排列 ${result.updates.length} 个凹槽`);
-      return;
-    }
-
-    toast("error", "固定可用区域无法容纳当前全部凹槽");
-  };
-
   return (
     <PanelShell summary={<TrayResultSummary result={result} />} actions={actions}>
     <div className="flex flex-col gap-4 animate-fade-in">
@@ -253,19 +235,6 @@ export default function CustomPanel({
                   onChange={(value) => updateParam("trayDepth", value)}
                   unit={CUSTOM_LIMITS.trayDepth.unit}
                 />
-                <div className="flex justify-end">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={params.slots.length === 0 || !onRandomizeSlots}
-                    onClick={handleRandomizeSlots}
-                    className="border-[#2e2a24] bg-[#120f0c] text-xs hover:bg-[#2e2a24] hover:text-primary"
-                  >
-                    <Shuffle className="mr-1 h-3 w-3" />
-                    随机排列
-                  </Button>
-                </div>
               </div>
             )}
           </div>

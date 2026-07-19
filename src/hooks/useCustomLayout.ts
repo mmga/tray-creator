@@ -21,10 +21,6 @@ import {
 } from "@/lib/custom-layout-actions";
 import { calculateCustomEffectiveDimensions } from "@/lib/custom-layout-math";
 import {
-  randomizeCustomSlotArrangement,
-  type RandomSlotArrangementResult,
-} from "@/lib/custom-random-layout";
-import {
   exportCustomModelFiles,
   generateCustomPreview,
 } from "@/lib/custom-layout-service";
@@ -69,7 +65,6 @@ interface UseCustomLayoutReturn {
   insertSlots: (slots: SymmetryInsertSlot[]) => void;
   duplicateSlots: (ids: string[]) => string[];
   trimBaseplate: () => void;
-  randomizeSlots: () => RandomSlotArrangementResult;
   calculateEffectiveDimensions: () => {
     width: number;
     depth: number;
@@ -150,15 +145,13 @@ export function useCustomLayout(): UseCustomLayoutReturn {
   );
 
   const calculateEffectiveDimensions = useCallback(
-    (current: CustomLayoutParams = paramsRef.current) => {
-      return calculateCustomEffectiveDimensions(current);
-    },
+    () => calculateCustomEffectiveDimensions(paramsRef.current),
     [paramsRef],
   );
 
   const effectiveDimensions = useMemo(
-    () => calculateEffectiveDimensions(params),
-    [calculateEffectiveDimensions, params],
+    () => calculateCustomEffectiveDimensions(params),
+    [params],
   );
 
   const updateParam = useCallback(
@@ -264,14 +257,6 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     });
   }, [applyChange]);
 
-  const randomizeSlots = useCallback(() => {
-    const result = randomizeCustomSlotArrangement(paramsRef.current);
-    if (result.status === "success") {
-      applyChange((prev) => applyCustomSlotUpdates(prev, result.updates));
-    }
-    return result;
-  }, [applyChange, paramsRef]);
-
   return {
     params,
     setParams,
@@ -285,7 +270,6 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     insertSlots,
     duplicateSlots,
     trimBaseplate,
-    randomizeSlots,
     calculateEffectiveDimensions,
     effectiveDimensions,
     saveSnapshot,
