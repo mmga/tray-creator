@@ -122,28 +122,7 @@ class TrayWorkerService {
     });
   }
 
-  public async generateSteppedCad(
-    params: SteppedLayoutParams,
-  ): Promise<{ geometry: Geom3; volume: number }> {
-    const requestId = generateRequestId();
-    return new Promise((resolve, reject) => {
-      this.pendingResolves.set(requestId, (data) => {
-        if (data.type !== "GENERATION_SUCCESS") {
-          reject(new Error(`Unexpected worker response: ${data.type}`));
-          return;
-        }
-        resolve({ geometry: data.geometry, volume: data.volumeInfo });
-      });
-      this.pendingRejects.set(requestId, reject);
-      this.worker?.postMessage({
-        type: "GENERATE_STEPPED_CAD",
-        requestId,
-        params,
-      });
-    });
-  }
-
-  public async generateSteppedCadSplitParts(
+  public async generateSteppedSplitParts(
     params: SteppedLayoutParams,
   ): Promise<{ parts: {
     index: number;
@@ -164,7 +143,7 @@ class TrayWorkerService {
       });
       this.pendingRejects.set(requestId, reject);
       this.worker?.postMessage({
-        type: "GENERATE_STEPPED_CAD_SPLIT_PARTS",
+        type: "GENERATE_STEPPED_SPLIT_PARTS",
         requestId,
         params,
       });

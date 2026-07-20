@@ -179,33 +179,40 @@ describe("local drafts", () => {
     expect(getDraft("stepped", record.item.id)).toEqual(record);
   });
 
-  it("stores CAD stepped drafts under an independent Mode identity", () => {
-    vi.spyOn(crypto, "randomUUID")
-      .mockReturnValueOnce("ordinary-stepped")
-      .mockReturnValueOnce("cad-stepped");
-    const ordinary = createDraft("普通阶梯", "stepped", createSteppedParams());
-    const cad = createDraft("CAD 阶梯", "stepped-cad", createSteppedParams());
-
-    expect(cad.item.mode).toBe("stepped-cad");
-    expect(cad.item.summary).toEqual({
+  it("读取历史 CAD 草稿为统一阶梯，并在更新时迁移存储键", () => {
+    const id = "cad-stepped";
+    const params = createSteppedParams();
+    const item = {
+      id,
       mode: "stepped-cad",
+      title: "CAD 阶梯",
+      createdAt: "2026-04-08T10:20:00.000Z",
+      updatedAt: "2026-04-08T10:20:00.000Z",
       groupCount: 1,
       slotCount: 1,
       trayWidth: 260,
       trayDepth: 260,
-    });
-    expect(cad.paramFile.mode).toBe("stepped-cad");
-    expect(localStorage.getItem(
-      `tray-creator:drafts:stepped-cad:${cad.item.id}:v1`,
-    )).not.toBeNull();
-    expect(listDrafts("stepped-cad").map((item) => item.id)).toEqual([
-      cad.item.id,
-    ]);
-    expect(listDrafts("stepped").map((item) => item.id)).toEqual([
-      ordinary.item.id,
-    ]);
-    expect(getDraft("stepped-cad", ordinary.item.id)).toBeNull();
-    expect(getDraft("stepped", cad.item.id)).toBeNull();
+    };
+    localStorage.setItem("tray-creator:drafts:index:v1", JSON.stringify([item]));
+    localStorage.setItem(
+      `tray-creator:drafts:stepped-cad:${id}:v1`,
+      JSON.stringify({
+        storageVersion: 1,
+        item,
+        paramFile: {
+          version: 1,
+          mode: "stepped-cad",
+          params: { ...params, enableSplitAssembly: undefined },
+        },
+      }),
+    );
+
+    expect(listDrafts("stepped").map((draft) => draft.id)).toEqual([id]);
+    expect(getDraft("stepped", id)?.paramFile.params.enableSplitAssembly).toBe(true);
+
+    updateDraft("stepped", id, "已迁移", params);
+    expect(localStorage.getItem(`tray-creator:drafts:stepped:${id}:v1`)).not.toBeNull();
+    expect(localStorage.getItem(`tray-creator:drafts:stepped-cad:${id}:v1`)).toBeNull();
   });
 
   it("stores base converter drafts with source and target standards", () => {

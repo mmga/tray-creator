@@ -13,7 +13,6 @@ export type ParamsByMode = {
   "base-converter": BaseConverterParams;
   "simple-stepped": SimpleSteppedLayoutParams;
   stepped: SteppedLayoutParams;
-  "stepped-cad": SteppedLayoutParams;
 };
 
 export type ExportableParams = ParamsByMode[AppMode];

@@ -20,6 +20,7 @@ import {
   captureModeParamSnapshot,
   type ModeParamSnapshot,
 } from "@/lib/mode-param-snapshot";
+import { readDraftParamArtifact } from "@/lib/historical-param-artifact-reader";
 
 export type { DraftMode } from "@/lib/draft-legacy-normalize";
 export type { DraftListItemCompatibilityByMode } from "@/lib/draft-legacy-normalize";
@@ -42,7 +43,7 @@ export interface DraftRecord<M extends DraftMode = "stepped"> {
 
 const DRAFT_INDEX_KEY = "tray-creator:drafts:index:v1";
 
-const draftRecordKey = (mode: DraftMode, id: string): string =>
+const draftRecordKey = (mode: DraftMode | "stepped-cad", id: string): string =>
   `tray-creator:drafts:${mode}:${id}:v1`;
 
 export const MAX_DRAFTS_PER_MODE = 30;
@@ -116,7 +117,10 @@ function getDraftInternal<M extends DraftMode>(
   mode: M,
   id: string,
 ): DraftRecord<M> | null {
-  const raw = safeGetItem(draftRecordKey(mode, id));
+  const raw = safeGetItem(draftRecordKey(mode, id)) ??
+    (mode === "stepped"
+      ? safeGetItem(draftRecordKey("stepped-cad", id))
+      : null);
   if (!raw) return null;
 
   try {
@@ -134,17 +138,29 @@ function getDraftInternal<M extends DraftMode>(
       return null;
     }
 
-    const recordMode = isDraftMode(parsed.paramFile.mode)
-      ? parsed.paramFile.mode
-      : mode;
-    if (recordMode !== mode || parsed.paramFile.version !== 1) {
+    const recordMode = parsed.paramFile.mode === "stepped-cad"
+      ? "stepped-cad"
+      : isDraftMode(parsed.paramFile.mode)
+        ? parsed.paramFile.mode
+        : mode;
+    const canonicalRecordMode = recordMode === "stepped-cad" ? "stepped" : recordMode;
+    if (canonicalRecordMode !== mode || parsed.paramFile.version !== 1) {
       return null;
     }
 
-    const params = parsed.paramFile.params;
-    if (!params || typeof params !== "object") {
+    const rawParams = parsed.paramFile.params;
+    if (!rawParams || typeof rawParams !== "object") {
       return null;
     }
+    const params = (recordMode === "stepped-cad"
+      ? readDraftParamArtifact(
+          { version: 1, mode: recordMode, params: rawParams },
+          mode,
+        )
+      : mode === "stepped" &&
+          !("enableSplitAssembly" in (rawParams as object))
+        ? { ...rawParams, enableSplitAssembly: false }
+        : rawParams) as DraftParamsByMode[M];
 
     const item = normalizeListItem(
       parsed.item ?? {},
@@ -268,7 +284,11 @@ export function updateDraft<M extends DraftMode>(
 ): DraftRecord<M> {
   const { mode, params } = snapshot;
   const key = draftRecordKey(mode, id);
-  const existingRaw = safeGetItem(key);
+  const legacyKey = mode === "stepped"
+    ? draftRecordKey("stepped-cad", id)
+    : null;
+  const currentRaw = safeGetItem(key);
+  const existingRaw = currentRaw ?? (legacyKey ? safeGetItem(legacyKey) : null);
   if (!existingRaw) throw new Error(`草稿不存在: ${id}`);
 
   const existing = getDraftInternal(mode, id);
@@ -285,7 +305,15 @@ export function updateDraft<M extends DraftMode>(
   );
 
   // 更新场景：index 写失败时还原旧 record
-  return commitDraft(mode, id, { item: updatedItem, params }, "restore", existingRaw);
+  const updated = commitDraft(
+    mode,
+    id,
+    { item: updatedItem, params },
+    currentRaw ? "restore" : "remove",
+    currentRaw,
+  );
+  if (!currentRaw && legacyKey) safeRemoveItem(legacyKey);
+  return updated;
 }
 
 export function renameDraft<M extends DraftMode>(
@@ -294,7 +322,11 @@ export function renameDraft<M extends DraftMode>(
   title: string,
 ): DraftRecord<M> {
   const key = draftRecordKey(mode, id);
-  const existingRaw = safeGetItem(key);
+  const legacyKey = mode === "stepped"
+    ? draftRecordKey("stepped-cad", id)
+    : null;
+  const currentRaw = safeGetItem(key);
+  const existingRaw = currentRaw ?? (legacyKey ? safeGetItem(legacyKey) : null);
   if (!existingRaw) throw new Error(`草稿不存在: ${id}`);
 
   const existing = getDraftInternal(mode, id);
@@ -309,17 +341,22 @@ export function renameDraft<M extends DraftMode>(
     updatedAt: new Date().toISOString(),
   };
 
-  return commitDraft(
+  const renamed = commitDraft(
     mode,
     id,
     { item: updatedItem, params: existing.paramFile.params },
-    "restore",
-    existingRaw,
+    currentRaw ? "restore" : "remove",
+    currentRaw,
   );
+  if (!currentRaw && legacyKey) safeRemoveItem(legacyKey);
+  return renamed;
 }
 
 export function deleteDraft<M extends DraftMode>(mode: M, id: string): void {
   safeRemoveItem(draftRecordKey(mode, id));
+  if (mode === "stepped") {
+    safeRemoveItem(draftRecordKey("stepped-cad", id));
+  }
   const index = readIndex().filter((item) => item.id !== id);
   writeIndex(index);
 }
@@ -353,7 +390,6 @@ export function defaultDraftTitle(mode: DraftMode = "stepped"): string {
     "base-converter": "转换底盘草稿",
     "simple-stepped": "简易阶梯草稿",
     stepped: "阶梯草稿",
-    "stepped-cad": "CAD 阶梯草稿",
   }[mode];
 
   return `${label} ${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;

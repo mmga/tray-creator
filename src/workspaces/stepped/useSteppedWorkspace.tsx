@@ -11,7 +11,7 @@ import type { SteppedLayoutParams } from "@/types/custom-tray";
 import type { UseSteppedLayoutReturn } from "@/hooks/useSteppedLayout";
 import { exportParams } from "@/lib/param-download";
 import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
-import { modelExportAvailability, modelGenerationAvailability, type DraftActionResult, type ManualDraftActionAreaAdapter } from "@/workspaces/draft-action-area";
+import { available, modelExportAvailability, modelGenerationAvailability, type DraftActionResult, type SteppedDraftActionAreaAdapter } from "@/workspaces/draft-action-area";
 
 const SteppedLayoutPanel = dynamic(() =>
   import("@/components/SteppedPanel").then((mod) => mod.SteppedLayoutPanel), {
@@ -57,14 +57,22 @@ export function useSteppedWorkspace({
 
   const actions = useMemo(
     () => {
-      const adapter: ManualDraftActionAreaAdapter = {
-        kind: "manual",
+      const canExportSplit = model.params.enableSplitAssembly && model.params.groups.length >= 2 && model.params.slots.length > 0;
+      const adapter: SteppedDraftActionAreaAdapter = {
+        kind: "stepped",
         state: {
           currentDraftId: draftActions.currentDraftId,
           hasUnsavedChanges: draftActions.hasUnsavedChanges,
           stale: model.isPreviewStale,
           generate: modelGenerationAvailability(model.isGenerating, model.baseHoleFitBlockingReason),
           exportWhole: modelExportAvailability(model.baseHoleFitBlockingReason),
+          exportSplit: model.baseHoleFitBlockingReason
+            ? { state: "blocked", reason: model.baseHoleFitBlockingReason }
+            : canExportSplit
+              ? available
+              : { state: "blocked", reason: model.params.enableSplitAssembly
+                ? "至少需要两个分组且存在凹槽"
+                : "请先启用分件与装配" },
           preview: { kind: "manual" },
         },
         async perform(intent) {
@@ -72,6 +80,7 @@ export function useSteppedWorkspace({
             switch (intent.type) {
               case "generate": model.handleGenerate(); break;
               case "export-whole": model.handleExportSTL(); break;
+              case "export-split": model.handleExportSplitParts(); break;
               case "save-draft": draftActions.onSaveDraft(); break;
               case "open-drafts": draftActions.onOpenDraftDialog(); break;
               case "export-params": exportParams(captureModeParamSnapshot("stepped", model.params)); break;
@@ -113,6 +122,7 @@ export function useSteppedWorkspace({
         onSetActiveGroup={model.setActiveGroup}
         onMoveSelectedSlotsToGroup={model.moveSelectedSlotsToGroup}
         onReorderGroups={model.reorderGroups}
+        onUpdateGroupSplitPartTarget={model.updateGroupSplitPartTarget}
         previewGroupId={previewGroupId}
         onPreviewGroupChange={setPreviewGroupId}
         bridgeWarning={model.bridgeWarning}
@@ -147,6 +157,7 @@ export function useSteppedWorkspace({
       model.updateGroupHeight,
       model.updateGroupSmoothingOverride,
       model.updateGroupSmoothingRadius,
+      model.updateGroupSplitPartTarget,
       model.updateParam,
       model.volume,
       model.baseHoleFitViolations,

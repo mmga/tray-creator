@@ -1,24 +1,32 @@
 "use client";
 
+import {
+  useSteppedCadSplitOrchestration,
+  type UseSteppedCadSplitOrchestrationReturn,
+} from "@/hooks/useSteppedCadSplitOrchestration";
 import { useSteppedLayoutController } from "@/hooks/useSteppedLayoutController";
 import type { UseSteppedLayoutControllerReturn } from "@/hooks/useSteppedLayoutController";
-import { exportSteppedModelFiles, generateSteppedPreview } from "@/lib/stepped-model-service";
+import {
+  exportSteppedModelFiles,
+  exportSteppedSplitPartFiles,
+  generateSteppedPreview,
+  generateSteppedSplitPreview,
+} from "@/lib/stepped-model-service";
 
-export type UseSteppedLayoutReturn = Omit<
-  UseSteppedLayoutControllerReturn,
-  "updateGroupSplitPartTarget"
->;
+export type UseSteppedLayoutReturn = UseSteppedLayoutControllerReturn &
+  UseSteppedCadSplitOrchestrationReturn;
 
 export function useSteppedLayout(): UseSteppedLayoutReturn {
-  const {
-    updateGroupSplitPartTarget,
-    ...steppedModel
-  } = useSteppedLayoutController({
+  const steppedModel = useSteppedLayoutController({
     mode: "stepped",
     generatePreview: generateSteppedPreview,
     exportModel: exportSteppedModelFiles,
   });
-  void updateGroupSplitPartTarget;
+  const splitModel = useSteppedCadSplitOrchestration({
+    params: steppedModel.params,
+    generateSplitPreview: generateSteppedSplitPreview,
+    exportSplitParts: exportSteppedSplitPartFiles,
+  });
 
-  return steppedModel;
+  return { ...steppedModel, ...splitModel };
 }

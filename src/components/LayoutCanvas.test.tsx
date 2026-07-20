@@ -330,6 +330,7 @@ function createSteppedParams(
     disconnectDistance: 0,
     baseHoleSize: "25",
     ...overrides,
+    enableSplitAssembly: overrides.enableSplitAssembly ?? false,
     baseHoleStructure: overrides.baseHoleStructure ?? "none",
     magnetPostHoleDiameter: overrides.magnetPostHoleDiameter ?? 5,
     magnetPostHoleDepth: overrides.magnetPostHoleDepth ?? 2,

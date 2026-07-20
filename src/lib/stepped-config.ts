@@ -37,6 +37,7 @@ export const STEPPED_LAYOUT_DEFAULTS: SteppedLayoutParams = {
   spacing: 5,
   holeDepth: 3,
   splitGrooveDepth: 2,
+  enableSplitAssembly: false,
   enableSplitRecess: false,
   splitGrooveType: "profile",
   enableSplitLocators: false,

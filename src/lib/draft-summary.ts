@@ -51,13 +51,6 @@ export type DraftSummary =
       slotCount: number;
       trayWidth: number;
       trayDepth: number;
-    }
-  | {
-      mode: "stepped-cad";
-      groupCount: number;
-      slotCount: number;
-      trayWidth: number;
-      trayDepth: number;
     };
 
 export type DraftSummaryByMode = {
@@ -70,7 +63,6 @@ export type DraftParamsByMode = {
   "base-converter": BaseConverterParams;
   "simple-stepped": SimpleSteppedLayoutParams;
   stepped: SteppedLayoutParams;
-  "stepped-cad": SteppedLayoutParams;
 };
 
 function formatBaseSizeLabel(size: number) {
@@ -140,7 +132,7 @@ function buildSimpleSteppedDraftSummary(
   };
 }
 
-function buildSteppedDraftSummary<M extends "stepped" | "stepped-cad">(
+function buildSteppedDraftSummary<M extends "stepped">(
   mode: M,
   params: SteppedLayoutParams,
 ): DraftSummaryByMode[M] {
@@ -175,11 +167,6 @@ export function buildDraftSummary<M extends keyof DraftParamsByMode>(
     case "stepped":
       return buildSteppedDraftSummary(
         "stepped",
-        params as SteppedLayoutParams,
-      ) as DraftSummaryByMode[M];
-    case "stepped-cad":
-      return buildSteppedDraftSummary(
-        "stepped-cad",
         params as SteppedLayoutParams,
       ) as DraftSummaryByMode[M];
     default: {

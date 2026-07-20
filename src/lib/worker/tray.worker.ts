@@ -6,9 +6,6 @@ import {
   createSteppedCadSplitParts,
   createSteppedCadTrayModel,
 } from "../stepped-cad-tray-model";
-import {
-  createSteppedTrayModel,
-} from "../stepped-tray-model";
 import { buildSteppedOutlinePreview } from "../stepped-outline-preview";
 import stlSerializer from "@jscad/stl-serializer";
 import { measureVolume } from "@jscad/modeling/src/measurements";
@@ -41,12 +38,7 @@ export type WorkerRequest =
       params: SteppedLayoutParams;
     }
   | {
-      type: "GENERATE_STEPPED_CAD";
-      requestId: string;
-      params: SteppedLayoutParams;
-    }
-  | {
-      type: "GENERATE_STEPPED_CAD_SPLIT_PARTS";
+      type: "GENERATE_STEPPED_SPLIT_PARTS";
       requestId: string;
       params: SteppedLayoutParams;
     }
@@ -143,7 +135,7 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
         });
       }
 
-      const geometry = createSteppedTrayModel(req.params);
+      const geometry = createSteppedCadTrayModel(req.params);
       const volume = measureVolume(geometry);
       if (shouldDebug) {
         console.info("[STEPPED_ORIENT]", "worker_result", {
@@ -157,16 +149,7 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
         geometry,
         volumeInfo: volume,
       });
-    } else if (req.type === "GENERATE_STEPPED_CAD") {
-      const geometry = createSteppedCadTrayModel(req.params);
-      const volume = measureVolume(geometry);
-      self.postMessage({
-        type: "GENERATION_SUCCESS",
-        requestId,
-        geometry,
-        volumeInfo: volume,
-      });
-    } else if (req.type === "GENERATE_STEPPED_CAD_SPLIT_PARTS") {
+    } else if (req.type === "GENERATE_STEPPED_SPLIT_PARTS") {
       const parts = createSteppedCadSplitParts(req.params);
       self.postMessage({
         type: "STEPPED_SPLIT_PARTS_SUCCESS",

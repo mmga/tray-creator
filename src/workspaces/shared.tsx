@@ -40,7 +40,6 @@ function renderDraftSummary(item: AnyDraftListItem): ReactNode {
         </>
       );
     case "stepped":
-    case "stepped-cad":
       return (
         <>
           <span>{item.groupCount} 组</span>

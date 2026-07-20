@@ -14,7 +14,9 @@ import {
   type ImportNormalizationReport,
 } from "@/lib/param-import-report";
 
-const APP_MODES: readonly AppMode[] = [
+type HistoricalMode = AppMode | "stepped-cad";
+
+const HISTORICAL_MODES: readonly HistoricalMode[] = [
   "grid",
   "custom",
   "base-converter",
@@ -28,9 +30,12 @@ export const APP_MODE_LABELS: Record<AppMode, string> = {
   custom: "自定义",
   "base-converter": "转换底盘",
   "simple-stepped": "简易阶梯",
-  stepped: "普通阶梯",
-  "stepped-cad": "CAD 阶梯",
+  stepped: "自定义阶梯",
 };
+
+function getModeLabel(mode: HistoricalMode): string {
+  return mode === "stepped-cad" ? "CAD 阶梯" : APP_MODE_LABELS[mode];
+}
 
 export interface ImportCandidate {
   fileName: string;
@@ -73,7 +78,7 @@ export class ParamArtifactReadError extends Error {
 
 interface DecodedParamArtifact {
   rawParams: Record<string, unknown>;
-  declaredMode: AppMode | null;
+  declaredMode: HistoricalMode | null;
   detectedModes: AppMode[];
 }
 
@@ -87,8 +92,8 @@ function hasWrappedParamFileShape(
   return "version" in data || "mode" in data || "params" in data;
 }
 
-function isAppMode(value: unknown): value is AppMode {
-  return typeof value === "string" && APP_MODES.includes(value as AppMode);
+function isHistoricalMode(value: unknown): value is HistoricalMode {
+  return typeof value === "string" && HISTORICAL_MODES.includes(value as HistoricalMode);
 }
 
 function cloneParamValue(value: Record<string, unknown>): ExportableParams {
@@ -108,7 +113,7 @@ function detectModesFromParamShape(data: Record<string, unknown>): AppMode[] {
     return ["grid"];
   }
   if (Array.isArray(data.groups) && Array.isArray(data.slots)) {
-    return ["stepped", "stepped-cad"];
+    return ["stepped"];
   }
   if (Array.isArray(data.rows) && Array.isArray(data.slots)) {
     return ["simple-stepped"];
@@ -123,7 +128,7 @@ function detectModesFromParamShape(data: Record<string, unknown>): AppMode[] {
       )
     )
   ) {
-    return ["stepped", "stepped-cad"];
+    return ["stepped"];
   }
   if (Array.isArray(data.slots)) {
     return ["custom"];
@@ -131,8 +136,26 @@ function detectModesFromParamShape(data: Record<string, unknown>): AppMode[] {
   return [];
 }
 
-function compatibleModesForDeclaredMode(mode: AppMode): AppMode[] {
-  return mode === "stepped" ? ["stepped", "stepped-cad"] : [mode];
+function compatibleModesForDeclaredMode(mode: HistoricalMode): AppMode[] {
+  return mode === "stepped" || mode === "stepped-cad" ? ["stepped"] : [mode];
+}
+
+function applyHistoricalSteppedCapabilityDefault(
+  rawParams: Record<string, unknown>,
+  targetMode: AppMode,
+  declaredMode: HistoricalMode | null,
+): Record<string, unknown> {
+  if (
+    targetMode !== "stepped" ||
+    typeof rawParams.enableSplitAssembly === "boolean"
+  ) {
+    return rawParams;
+  }
+
+  return {
+    ...rawParams,
+    enableSplitAssembly: declaredMode === "stepped-cad",
+  };
 }
 
 function decodeParamArtifact(data: unknown): DecodedParamArtifact {
@@ -154,7 +177,7 @@ function decodeParamArtifact(data: unknown): DecodedParamArtifact {
       `不支持的版本号: ${String(data.version)}`,
     );
   }
-  if (!isAppMode(data.mode)) {
+  if (!isHistoricalMode(data.mode)) {
     throw new ParamArtifactReadError(
       "invalid-mode",
       "参数文件缺少有效的 Mode",
@@ -171,18 +194,18 @@ function decodeParamArtifact(data: unknown): DecodedParamArtifact {
   if (
     detectedModes.length > 0 &&
     !detectedModes.some((mode) =>
-      compatibleModesForDeclaredMode(data.mode as AppMode).includes(mode),
+      compatibleModesForDeclaredMode(data.mode as HistoricalMode).includes(mode),
     )
   ) {
     throw new ParamArtifactReadError(
       "mode-structure-conflict",
-      `声明 Mode「${APP_MODE_LABELS[data.mode as AppMode]}」与参数结构不一致`,
+      `声明 Mode「${getModeLabel(data.mode as HistoricalMode)}」与参数结构不一致`,
     );
   }
 
   return {
     rawParams: data.params,
-    declaredMode: data.mode as AppMode,
+    declaredMode: data.mode as HistoricalMode,
     detectedModes,
   };
 }
@@ -213,6 +236,7 @@ function normalizeForMode<M extends AppMode>(
 function createImportCandidate(
   rawParams: Record<string, unknown>,
   targetMode: AppMode,
+  declaredMode: HistoricalMode | null,
   modeResolution: ImportNormalizationReport["modeResolution"],
   fileName: string,
 ): ImportCandidate {
@@ -232,7 +256,15 @@ function createImportCandidate(
   return {
     fileName,
     targetMode,
-    params: normalizeForMode(targetMode, rawParams, recorder),
+    params: normalizeForMode(
+      targetMode,
+      applyHistoricalSteppedCapabilityDefault(
+        rawParams,
+        targetMode,
+        declaredMode,
+      ),
+      recorder,
+    ),
     report: {
       modeResolution,
       adjustments,
@@ -263,9 +295,7 @@ export function prepareParamFileObject(
       status: "mode-selection-required",
       fileName,
       choices,
-      message: decoded.declaredMode === "stepped"
-        ? "历史阶梯文件没有区分普通阶梯与 CAD 阶梯，请选择原始 Mode"
-        : "旧参数结构可能属于多个 Mode，请选择文件原本所属的 Mode",
+      message: "旧参数结构可能属于多个 Mode，请选择文件原本所属的 Mode",
     };
   }
 
@@ -293,6 +323,7 @@ export function prepareParamFileObject(
     candidate: createImportCandidate(
       decoded.rawParams,
       targetMode,
+      decoded.declaredMode,
       { kind, targetMode, message },
       fileName,
     ),
@@ -305,10 +336,13 @@ export function readDraftParamArtifact<M extends AppMode>(
 ): ParamsByMode[M] {
   const decoded = decodeParamArtifact(data);
 
-  if (decoded.declaredMode && decoded.declaredMode !== expectedMode) {
+  if (
+    decoded.declaredMode &&
+    !compatibleModesForDeclaredMode(decoded.declaredMode).includes(expectedMode)
+  ) {
     throw new ParamArtifactReadError(
       "mode-mismatch",
-      `模式不匹配：文件为「${APP_MODE_LABELS[decoded.declaredMode]}」模式，当前为「${APP_MODE_LABELS[expectedMode]}」模式`,
+      `模式不匹配：文件为「${getModeLabel(decoded.declaredMode)}」模式，当前为「${APP_MODE_LABELS[expectedMode]}」模式`,
     );
   }
   if (
@@ -321,5 +355,12 @@ export function readDraftParamArtifact<M extends AppMode>(
     );
   }
 
-  return normalizeForMode(expectedMode, decoded.rawParams);
+  return normalizeForMode(
+    expectedMode,
+    applyHistoricalSteppedCapabilityDefault(
+      decoded.rawParams,
+      expectedMode,
+      decoded.declaredMode,
+    ),
+  );
 }

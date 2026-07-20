@@ -143,34 +143,17 @@ describe("worker service", () => {
       volume: 222,
     });
 
-    const steppedCadPromise = service.generateSteppedCad(STEPPED_LAYOUT_DEFAULTS);
-    const steppedCadRequest = worker.postMessage.mock.calls[3]?.[0] as {
-      requestId: string;
-      type: string;
-    };
-    expect(steppedCadRequest.type).toBe("GENERATE_STEPPED_CAD");
-    worker.emit({
-      type: "GENERATION_SUCCESS",
-      requestId: steppedCadRequest.requestId,
-      geometry: { id: "stepped-cad-geom" } as never,
-      volumeInfo: 205,
-    });
-    await expect(steppedCadPromise).resolves.toEqual({
-      geometry: { id: "stepped-cad-geom" },
-      volume: 205,
-    });
-
-    const steppedCadSplitPromise = service.generateSteppedCadSplitParts(
+    const steppedSplitPromise = service.generateSteppedSplitParts(
       STEPPED_LAYOUT_DEFAULTS,
     );
-    const steppedCadSplitRequest = worker.postMessage.mock.calls[4]?.[0] as {
+    const steppedSplitRequest = worker.postMessage.mock.calls[3]?.[0] as {
       requestId: string;
       type: string;
     };
-    expect(steppedCadSplitRequest.type).toBe("GENERATE_STEPPED_CAD_SPLIT_PARTS");
+    expect(steppedSplitRequest.type).toBe("GENERATE_STEPPED_SPLIT_PARTS");
     worker.emit({
       type: "STEPPED_SPLIT_PARTS_SUCCESS",
-      requestId: steppedCadSplitRequest.requestId,
+      requestId: steppedSplitRequest.requestId,
       parts: [
         {
           index: 0,
@@ -182,7 +165,7 @@ describe("worker service", () => {
         },
       ],
     });
-    await expect(steppedCadSplitPromise).resolves.toEqual({
+    await expect(steppedSplitPromise).resolves.toEqual({
       parts: [
         {
           index: 0,
@@ -197,7 +180,7 @@ describe("worker service", () => {
 
     const previewPromise =
       service.generateSteppedOutlinePreview(STEPPED_LAYOUT_DEFAULTS);
-    const previewRequest = worker.postMessage.mock.calls[5]?.[0] as {
+    const previewRequest = worker.postMessage.mock.calls[4]?.[0] as {
       requestId: string;
       type: string;
     };

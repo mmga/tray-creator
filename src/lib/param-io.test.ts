@@ -83,16 +83,15 @@ describe("param-io", () => {
     expect(parsed.params.spacing).toBe(5.679);
   });
 
-  it("preserves the real CAD stepped Mode in newly exported files", () => {
-    const file = buildParamFile("stepped-cad", STEPPED_LAYOUT_DEFAULTS);
+  it("新导出的阶梯文件只使用统一 Mode", () => {
+    const file = buildParamFile("stepped", STEPPED_LAYOUT_DEFAULTS);
     expect(file).toMatchObject({
       version: 1,
-      mode: "stepped-cad",
+      mode: "stepped",
     });
-    expect(parseParamFileObject(file, "stepped-cad")).toMatchObject(
+    expect(parseParamFileObject(file, "stepped")).toMatchObject(
       STEPPED_LAYOUT_DEFAULTS,
     );
-    expect(() => parseParamFileObject(file, "stepped")).toThrow("模式不匹配");
   });
 
   it("round-trips declared base converter parameters", () => {
@@ -186,7 +185,7 @@ describe("param-io", () => {
     );
   });
 
-  it("infers wrapperless Mode and requires a choice for historical stepped files", () => {
+  it("推断无包装 Mode，并将历史阶梯文件直接归一为统一 Mode", () => {
     const inferred = prepareParamFileObject({
       ...CUSTOM_LAYOUT_DEFAULTS,
       slots: [],
@@ -199,31 +198,33 @@ describe("param-io", () => {
       },
     });
 
-    const ambiguous = prepareParamFileObject({
+    const historicalStepped = prepareParamFileObject({
       version: 1,
       mode: "stepped",
       params: STEPPED_LAYOUT_DEFAULTS,
     });
-    expect(ambiguous).toEqual({
-      status: "mode-selection-required",
-      fileName: "参数文件",
-      choices: ["stepped", "stepped-cad"],
-      message: "历史阶梯文件没有区分普通阶梯与 CAD 阶梯，请选择原始 Mode",
-    });
-
-    const selected = prepareParamFileObject(
-      {
-        version: 1,
-        mode: "stepped",
-        params: STEPPED_LAYOUT_DEFAULTS,
-      },
-      { selectedMode: "stepped-cad" },
-    );
-    expect(selected).toMatchObject({
+    expect(historicalStepped).toMatchObject({
       status: "ready",
       candidate: {
-        targetMode: "stepped-cad",
-        report: { modeResolution: { kind: "selected" } },
+        targetMode: "stepped",
+        params: { enableSplitAssembly: false },
+      },
+    });
+
+    const historicalCadParams: Partial<SteppedLayoutParams> = {
+      ...STEPPED_LAYOUT_DEFAULTS,
+    };
+    delete historicalCadParams.enableSplitAssembly;
+    const historicalCad = prepareParamFileObject({
+      version: 1,
+      mode: "stepped-cad",
+      params: historicalCadParams,
+    });
+    expect(historicalCad).toMatchObject({
+      status: "ready",
+      candidate: {
+        targetMode: "stepped",
+        params: { enableSplitAssembly: true },
       },
     });
   });
@@ -644,7 +645,7 @@ describe("param-io", () => {
     expect(parsed.groups[0].groupDisconnectDistance).toBe(0);
     expect(parsed.slots[0]).toMatchObject({
       id: "test-uuid",
-      shape: "circle",
+      shape: "ellipse",
       height: 25,
       rotation: 270,
       groupId: parsed.groups[0].id,
@@ -657,26 +658,29 @@ describe("param-io", () => {
     expect("bottomHeight" in parsed.slots[0]).toBe(false);
   });
 
-  it("migrates legacy CAD assembly fields after explicit external Mode selection", () => {
-    const legacySteppedParams = { ...STEPPED_LAYOUT_DEFAULTS };
+  it("迁移历史 CAD 装配字段并默认开启分件能力", () => {
+    const legacySteppedParams: Partial<SteppedLayoutParams> = {
+      ...STEPPED_LAYOUT_DEFAULTS,
+    };
+    delete legacySteppedParams.enableSplitAssembly;
     delete legacySteppedParams.enableSplitRecess;
     delete legacySteppedParams.enableSplitLocators;
     const preparation = prepareParamFileObject(
       {
         version: 1,
-        mode: "stepped",
+        mode: "stepped-cad",
         params: {
           ...legacySteppedParams,
           splitAssemblyMode: "locator-recess",
         },
       },
-      { selectedMode: "stepped-cad" },
     );
     expect(preparation.status).toBe("ready");
     if (preparation.status !== "ready") return;
     const parsed = preparation.candidate.params as SteppedLayoutParams;
 
     expect(parsed.enableSplitRecess).toBe(true);
+    expect(parsed.enableSplitAssembly).toBe(true);
     expect(parsed.splitGrooveType).toBe("profile");
     expect(parsed.enableSplitLocators).toBe(true);
     expect(parsed.splitAssemblyMode).toBeUndefined();

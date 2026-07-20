@@ -8,7 +8,6 @@ const createTrayModel = vi.fn();
 const createCustomTrayModel = vi.fn();
 const createBaseConverterModel = vi.fn();
 const createSimpleSteppedTrayModel = vi.fn();
-const createSteppedTrayModel = vi.fn();
 const createSteppedCadTrayModel = vi.fn();
 const createSteppedCadSplitParts = vi.fn();
 const buildSteppedOutlinePreview = vi.fn();
@@ -34,10 +33,6 @@ vi.mock("../simple-stepped-tray-model", () => ({
 vi.mock("../stepped-cad-tray-model", () => ({
   createSteppedCadSplitParts,
   createSteppedCadTrayModel,
-}));
-
-vi.mock("../stepped-tray-model", () => ({
-  createSteppedTrayModel,
 }));
 
 vi.mock("../stepped-outline-preview", () => ({
@@ -127,7 +122,7 @@ describe("tray worker", () => {
     const workerSelf = await loadWorkerModule();
     const geometry = { id: "stepped-geom" };
     const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
-    createSteppedTrayModel.mockReturnValue(geometry);
+    createSteppedCadTrayModel.mockReturnValue(geometry);
     measureVolume.mockReturnValue(88);
 
     await workerSelf.onmessage?.({
@@ -141,7 +136,7 @@ describe("tray worker", () => {
       },
     } as MessageEvent);
 
-    expect(createSteppedTrayModel).toHaveBeenCalled();
+    expect(createSteppedCadTrayModel).toHaveBeenCalled();
     expect(infoSpy).toHaveBeenNthCalledWith(
       1,
       "[STEPPED_ORIENT]",
@@ -166,7 +161,7 @@ describe("tray worker", () => {
     });
   });
 
-  it("posts generation success for stepped cad requests", async () => {
+  it("uses the CAD height-band backend for stepped requests", async () => {
     const workerSelf = await loadWorkerModule();
     const geometry = { id: "stepped-cad-geom" };
     createSteppedCadTrayModel.mockReturnValue(geometry);
@@ -174,7 +169,7 @@ describe("tray worker", () => {
 
     await workerSelf.onmessage?.({
       data: {
-        type: "GENERATE_STEPPED_CAD",
+        type: "GENERATE_STEPPED",
         requestId: "req-stepped-cad",
         params: STEPPED_LAYOUT_DEFAULTS,
       },
@@ -217,7 +212,7 @@ describe("tray worker", () => {
     });
   });
 
-  it("posts stepped cad split parts for split preview requests", async () => {
+  it("posts stepped split parts for split preview requests", async () => {
     const workerSelf = await loadWorkerModule();
     const parts = [
       {
@@ -233,7 +228,7 @@ describe("tray worker", () => {
 
     await workerSelf.onmessage?.({
       data: {
-        type: "GENERATE_STEPPED_CAD_SPLIT_PARTS",
+        type: "GENERATE_STEPPED_SPLIT_PARTS",
         requestId: "req-cad-split",
         params: STEPPED_LAYOUT_DEFAULTS,
       },

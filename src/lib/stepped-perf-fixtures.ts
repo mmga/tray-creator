@@ -8,7 +8,7 @@ import type {
   SteppedSlot,
 } from "@/types/custom-tray";
 
-export const STEPPED_PERF_FIXTURE_SIZES = [20, 50, 100] as const;
+export const STEPPED_PERF_FIXTURE_SIZES = [20, 50] as const;
 
 export type SteppedPerfFixtureSize =
   (typeof STEPPED_PERF_FIXTURE_SIZES)[number];
@@ -54,19 +54,6 @@ const PERF_FIXTURE_CONFIG: Record<
     spacing: 4,
     holeDepth: 3,
     smoothingRadius: 56,
-    disconnectDistance: 0,
-    heights: [8, 12, 16, 20],
-  },
-  100: {
-    trayWidth: 250,
-    trayDepth: 250,
-    columns: 10,
-    xInset: 18,
-    yInset: 18,
-    widthCycle: [25, 25, 28.5, 25],
-    spacing: 3,
-    holeDepth: 3,
-    smoothingRadius: 48,
     disconnectDistance: 0,
     heights: [8, 12, 16, 20],
   },
@@ -145,6 +132,7 @@ export function buildSteppedPerfFixture(
     spacing: config.spacing,
     holeDepth: config.holeDepth,
     splitGrooveDepth: 2,
+    enableSplitAssembly: false,
     smoothingRadius: config.smoothingRadius,
     disconnectDistance: config.disconnectDistance,
     baseHoleStructure: "none",

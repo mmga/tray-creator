@@ -98,21 +98,14 @@ describe("Tray Result Projection", () => {
     expect(result.weight.status).toBe("available");
   });
 
-  it("stepped 与 CAD stepped 复用同一份公共投影规则", () => {
+  it("投影统一后的阶梯模式", () => {
     const stepped = projectSteppedTrayResult(
       "stepped",
       STEPPED_LAYOUT_DEFAULTS,
       { width: 120, depth: 140 },
       idleState,
     );
-    const cad = projectSteppedTrayResult(
-      "stepped-cad",
-      STEPPED_LAYOUT_DEFAULTS,
-      { width: 120, depth: 140 },
-      idleState,
-    );
-
-    expect(cad).toEqual({ ...stepped, mode: "stepped-cad" });
+    expect(stepped).toMatchObject({ mode: "stepped", groupCount: 1 });
   });
 
   it("不会把非有限尺寸或重量暴露给展示层", () => {

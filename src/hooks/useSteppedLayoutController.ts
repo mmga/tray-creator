@@ -131,7 +131,7 @@ export interface UseSteppedLayoutControllerReturn {
 }
 
 interface UseSteppedLayoutControllerOptions<
-  M extends "stepped" | "stepped-cad",
+  M extends "stepped",
   TWorkerPort extends STLExportWorkerPort & SteppedOutlinePreviewPort,
 > {
   mode: M;
@@ -148,7 +148,7 @@ interface UseSteppedLayoutControllerOptions<
 }
 
 export function useSteppedLayoutController<
-  M extends "stepped" | "stepped-cad",
+  M extends "stepped",
   TWorkerPort extends STLExportWorkerPort & SteppedOutlinePreviewPort,
 >({
   mode,

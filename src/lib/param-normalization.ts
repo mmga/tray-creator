@@ -72,15 +72,17 @@ type ParamNormalizationPipeline<T extends NormalizableParams> = {
   clampAndFillDerivedFields: ParamNormalizationStep<T>;
 };
 
-function resolveNormalizationMode(mode: AppMode): Exclude<AppMode, "stepped-cad"> | "stepped" {
-  return mode === "stepped-cad" ? "stepped" : mode;
-}
-
 function getRawSteppedSplitRecessEnabled(obj: Record<string, unknown>) {
   if (typeof obj.enableSplitRecess === "boolean") {
     return obj.enableSplitRecess;
   }
   return obj.splitAssemblyMode === "locator-recess";
+}
+
+function getRawSteppedSplitAssemblyEnabled(obj: Record<string, unknown>) {
+  return typeof obj.enableSplitAssembly === "boolean"
+    ? obj.enableSplitAssembly
+    : STEPPED_LAYOUT_DEFAULTS.enableSplitAssembly;
 }
 
 function getRawSteppedSplitGrooveType(obj: Record<string, unknown>) {
@@ -198,7 +200,7 @@ export function normalizeParamsForMode(
   params: NormalizableParams,
   recorder?: ImportNormalizationRecorder,
 ): NormalizableParams {
-  const resolvedMode = resolveNormalizationMode(mode);
+  const resolvedMode = mode;
 
   if (resolvedMode === "base-converter") {
     const raw = params as BaseConverterParams;
@@ -285,6 +287,7 @@ export function migrateCustomParamsToStepped(
     spacing: customParams.spacing,
     holeDepth: customParams.holeDepth || 3,
     splitGrooveDepth: STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth,
+    enableSplitAssembly: STEPPED_LAYOUT_DEFAULTS.enableSplitAssembly,
     enableSplitRecess: STEPPED_LAYOUT_DEFAULTS.enableSplitRecess,
     splitGrooveType: STEPPED_LAYOUT_DEFAULTS.splitGrooveType,
     enableSplitLocators: STEPPED_LAYOUT_DEFAULTS.enableSplitLocators,
@@ -780,8 +783,9 @@ function normalizeSteppedSlotInstances(
     if (slot.shape !== "circle" && slot.shape !== "ellipse") {
       slot.shape = "circle";
     }
-    slot.shape = "circle";
-    slot.height = slot.width;
+    if (slot.shape === "circle") {
+      slot.height = slot.width;
+    }
     const width = slot.width as number;
     const height = slot.height as number;
     if (width <= 0 || width > 200) {
@@ -797,8 +801,10 @@ function normalizeSteppedSlotInstances(
       slot,
       normalizeFreeSlotInstanceSnapshot(slot as unknown as FreeSlot),
     );
-    delete slot.outerOffset;
-    delete slot.profileExponent;
+    if (slot.shape === "circle") {
+      delete slot.outerOffset;
+      delete slot.profileExponent;
+    }
     if (
       typeof slot.groupId !== "string" ||
       !groupIds.has(slot.groupId as string)
@@ -831,6 +837,7 @@ function clampAndFillSteppedDerivedFields(
   const groups = obj.groups as Record<string, unknown>[];
   const rawSmoothingRadius = getRawSteppedSmoothingRadius(obj);
   const rawDisconnectDistance = getRawSteppedDisconnectDistance(obj);
+  const rawSplitAssemblyEnabled = getRawSteppedSplitAssemblyEnabled(obj);
   const rawSplitRecessEnabled = getRawSteppedSplitRecessEnabled(obj);
   const rawSplitGrooveType = getRawSteppedSplitGrooveType(obj);
   const rawSplitLocatorsEnabled = getRawSteppedSplitLocatorsEnabled(obj);
@@ -874,10 +881,11 @@ function clampAndFillSteppedDerivedFields(
       label: "分件装配槽深度",
       previousValue: obj.splitGrooveDepth,
       normalizedValue: STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth,
-      reason: "当前 CAD 阶梯构造使用固定装配槽深度",
+      reason: "当前阶梯构造使用固定装配槽深度",
     });
   }
   obj.splitGrooveDepth = STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth;
+  obj.enableSplitAssembly = rawSplitAssemblyEnabled;
   obj.enableSplitRecess = rawSplitRecessEnabled;
   obj.splitGrooveType = rawSplitGrooveType;
   obj.enableSplitLocators = rawSplitLocatorsEnabled;

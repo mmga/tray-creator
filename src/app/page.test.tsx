@@ -15,7 +15,6 @@ const {
   baseConverterModelMock,
   simpleSteppedModelMock,
   steppedModelMock,
-  steppedCadModelMock,
   gridDraftsMock,
   customDraftsMock,
   simpleSteppedDraftsMock,
@@ -146,6 +145,7 @@ const {
     spacing: 5,
     holeDepth: 3,
     splitGrooveDepth: 2,
+    enableSplitAssembly: false,
     smoothingRadius: 60,
     disconnectDistance: 0,
     baseHoleStructure: "none",
@@ -582,10 +582,6 @@ vi.mock("@/hooks/useSteppedLayout", () => ({
   useSteppedLayout: () => steppedModelMock,
 }));
 
-vi.mock("@/hooks/useSteppedCadLayout", () => ({
-  useSteppedCadLayout: () => steppedCadModelMock,
-}));
-
 vi.mock("@/hooks/useSimpleSteppedLayout", () => ({
   useSimpleSteppedLayout: () => simpleSteppedModelMock,
 }));
@@ -630,9 +626,6 @@ vi.mock("@/components/ModeTabs", () => ({
         <button type="button" onClick={() => onModeChange("stepped")}>
           切到阶梯
         </button>
-        <button type="button" onClick={() => onModeChange("stepped-cad")}>
-          切到 CAD 阶梯
-        </button>
       </div>
     );
   },
@@ -658,9 +651,6 @@ vi.mock("@/components/SimpleSteppedPanel", () => ({
 
 vi.mock("@/components/SteppedPanel", () => ({
   SteppedLayoutPanel(props: SteppedPanelMockProps) {
-    return SteppedPanelMock(props);
-  },
-  SteppedCadPanel(props: SteppedPanelMockProps) {
     return SteppedPanelMock(props);
   },
 }));
@@ -973,21 +963,13 @@ describe("Home page", { timeout: 15000 }, () => {
     baseConverterModelMock.isPreviewStale = false;
     simpleSteppedModelMock.handleGenerate.mockReset();
     steppedModelMock.handleGenerate.mockReset();
-    steppedCadModelMock.handleGenerate.mockReset();
     steppedModelMock.setActiveGroup.mockReset();
-    steppedCadModelMock.setActiveGroup.mockReset();
     steppedModelMock.pauseOutlinePreview.mockReset();
     steppedModelMock.resumeOutlinePreview.mockReset();
-    steppedCadModelMock.pauseOutlinePreview.mockReset();
-    steppedCadModelMock.resumeOutlinePreview.mockReset();
     steppedModelMock.generateOptimizationProposals.mockReset();
     steppedModelMock.applyOptimizationProposal.mockReset();
     steppedModelMock.clearOptimizationProposals.mockReset();
-    steppedCadModelMock.generateOptimizationProposals.mockReset();
-    steppedCadModelMock.applyOptimizationProposal.mockReset();
-    steppedCadModelMock.clearOptimizationProposals.mockReset();
     steppedModelMock.isOptimizingLayout = false;
-    steppedCadModelMock.isOptimizingLayout = false;
     for (const draftMock of [
       gridDraftsMock,
       customDraftsMock,
@@ -1195,23 +1177,6 @@ describe("Home page", { timeout: 15000 }, () => {
     );
     expect(steppedModelMock.clearOptimizationProposals).toHaveBeenCalledTimes(
       1,
-    );
-  });
-
-  it("wires stepped cad mode through the stepped panel and 3D regenerate flow", async () => {
-    render(<Home />);
-
-    fireEvent.click(screen.getByRole("button", { name: "切到 CAD 阶梯" }));
-    await screen.findByTestId("stepped-panel");
-
-    fireEvent.click(screen.getByRole("button", { name: "3D 预览" }));
-
-    await waitFor(() => {
-      expect(steppedCadModelMock.handleGenerate).toHaveBeenCalledTimes(1);
-    });
-    expect(screen.getByTestId("tray-viewer")).toHaveAttribute(
-      "data-geometry-id",
-      "stepped-cad-geometry",
     );
   });
 

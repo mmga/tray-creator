@@ -8,7 +8,6 @@ import type { TrayViewerSplitPart } from "@/components/TrayViewer";
 import { buildSteppedLayoutEditorViewportModel } from "@/viewports/layout-editor/steppedViewportModel";
 import { ViewportTabs } from "@/viewports/shared/ViewportTabs";
 import type { ModeViewportWorkspace } from "@/viewports/types";
-import type { AppMode } from "@/types/custom-tray";
 
 const LayoutCanvas = dynamic(() => import("@/components/LayoutCanvas"), {
   ssr: false,
@@ -25,7 +24,6 @@ interface UseSteppedViewportWorkspaceOptions {
   interactionState: ModeInteractionState;
   rightView: "2d" | "3d";
   onRightViewChange: (next: "2d" | "3d") => void;
-  mode?: Extract<AppMode, "stepped" | "stepped-cad">;
   splitPreview?: SteppedSplitPreview;
 }
 
@@ -38,7 +36,6 @@ export function useSteppedViewportWorkspace({
   interactionState,
   rightView,
   onRightViewChange,
-  mode = "stepped",
   splitPreview,
 }: UseSteppedViewportWorkspaceOptions): UseSteppedViewportWorkspaceReturn {
   const {
@@ -66,7 +63,7 @@ export function useSteppedViewportWorkspace({
   const canvas = useMemo(
     () => (
       <LayoutCanvas
-        key={mode}
+        key="stepped"
         isActive={rightView === "2d"}
         model={buildSteppedLayoutEditorViewportModel({
           params: model.params,
@@ -94,7 +91,7 @@ export function useSteppedViewportWorkspace({
         }}
       />
     ),
-    [mode, model, previewGroupId, rightView, setSelectedSlotIds],
+    [model, previewGroupId, rightView, setSelectedSlotIds],
   );
 
   const viewport = useMemo(
@@ -128,7 +125,7 @@ export function useSteppedViewportWorkspace({
 
   return {
     workspace: {
-      mode,
+      mode: "stepped",
       viewport,
       resetTransientState,
     },

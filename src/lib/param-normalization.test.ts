@@ -317,15 +317,13 @@ describe("param normalization", () => {
     });
     expect(normalized.groups[0].splitPartGroupId).toBeUndefined();
     expect(normalized.slots[0]).toMatchObject({
-      shape: "circle",
+      shape: "ellipse",
       width: 40,
-      height: 40,
+      height: 25,
       rotation: 315,
       groupId: normalized.groups[0].id,
-      slotDefinitionId: "circle-40",
-      slotWidth: 40.4,
-      slotHeight: 40.4,
     });
+    expect(normalized.slots[0].slotDefinitionId).toBeUndefined();
     expect("bottomHeight" in normalized.slots[0]).toBe(false);
     expect("bridgeRadius" in (normalized as unknown as Record<string, unknown>)).toBe(
       false,
@@ -475,8 +473,8 @@ describe("param normalization", () => {
     );
   });
 
-  it("fills and clamps CAD magnet post hole params while preserving a 1mm bottom wall", () => {
-    const normalized = normalizeParamsForMode("stepped-cad", {
+  it("fills and clamps stepped magnet post hole params while preserving a 1mm bottom wall", () => {
+    const normalized = normalizeParamsForMode("stepped", {
       ...STEPPED_LAYOUT_DEFAULTS,
       holeDepth: 3,
       baseHoleStructure: "magnet-post-hole",

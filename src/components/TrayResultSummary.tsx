@@ -66,7 +66,6 @@ function modeSpecificMetrics(result: TrayResultProjection) {
         </>
       );
     case "stepped":
-    case "stepped-cad":
       return (
         <div className="col-span-2 space-y-1.5 border border-[#2e2a24] bg-[#1c1a16] p-2">
           <div className="text-center text-[9px] text-muted-foreground/60">

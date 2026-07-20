@@ -12,6 +12,7 @@ function createParams(): SteppedLayoutParams {
   return {
     trayWidth: 260,
     trayDepth: 260,
+    enableSplitAssembly: true,
     slots: [
       {
         id: "slot-low",

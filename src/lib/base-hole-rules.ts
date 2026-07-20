@@ -425,7 +425,6 @@ function buildSlotsForMode(
     case "simple-stepped":
       return buildSimpleSteppedSlots(params as SimpleSteppedLayoutParams);
     case "stepped":
-    case "stepped-cad":
       return buildSteppedSlots(params as SteppedLayoutParams);
   }
 }

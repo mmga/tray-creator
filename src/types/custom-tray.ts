@@ -6,8 +6,7 @@ export type AppMode =
   | "custom"
   | "base-converter"
   | "simple-stepped"
-  | "stepped"
-  | "stepped-cad";
+  | "stepped";
 
 export interface BaseConverterParams {
   sourceStandardId: string;
@@ -164,6 +163,8 @@ export interface SteppedLayoutParams extends BaseHoleParams {
   holeDepth: number;
   /** 拆件装配槽深度 (mm)；0 表示不生成公母装配槽 */
   splitGrooveDepth: number;
+  /** 是否启用分件预览、分件导出与装配配置；关闭时保留配置但不生效 */
+  enableSplitAssembly: boolean;
   /** CAD 拆件时在下方实体生成上方实体轮廓浅槽 */
   enableSplitRecess?: boolean;
   /** CAD 拆件装配槽型：完整轮廓或内缩轮廓 */

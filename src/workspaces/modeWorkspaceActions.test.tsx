@@ -55,7 +55,7 @@ vi.mock("@/components/PanelActionSection", () => ({
         data-generate-state={adapter.state.generate.state}
         data-export-state={adapter.state.exportWhole.state}
         data-stale={String(adapter.state.stale)}
-        data-can-split={adapter.kind === "stepped-cad" ? String(adapter.state.exportSplit.state === "available") : undefined}
+        data-can-split={adapter.kind === "stepped" ? String(adapter.state.exportSplit.state === "available") : undefined}
       >
         {adapter.kind === "automatic" ? (
           <button type="button" onClick={() => void adapter.perform({ type: "set-auto-preview", enabled: !adapter.state.preview.enabled })}>
@@ -64,7 +64,7 @@ vi.mock("@/components/PanelActionSection", () => ({
         ) : null}
         <button type="button" onClick={() => void adapter.perform({ type: "generate" })}>锻造</button>
         <button type="button" onClick={() => void adapter.perform({ type: "export-whole" })}>完整导出</button>
-        {adapter.kind === "stepped-cad" ? (
+        {adapter.kind === "stepped" ? (
           <button type="button" onClick={() => void adapter.perform({ type: "export-split" })}>分件导出</button>
         ) : null}
         <button type="button" onClick={() => void adapter.perform({ type: "reset" })}>重置</button>
@@ -78,7 +78,6 @@ import { useGridWorkspace } from "@/workspaces/grid/useGridWorkspace";
 import { useCustomWorkspace } from "@/workspaces/custom/useCustomWorkspace";
 import { useSimpleSteppedWorkspace } from "@/workspaces/simple-stepped/useSimpleSteppedWorkspace";
 import { useSteppedWorkspace } from "@/workspaces/stepped/useSteppedWorkspace";
-import { useSteppedCadWorkspace } from "@/workspaces/stepped-cad/useSteppedCadWorkspace";
 
 function renderWorkspacePanel(panel: ReactNode) {
   return render(<>{panel}</>);
@@ -299,11 +298,12 @@ describe("Mode Workspace Draft Action Area", () => {
     expect(clearDraftBindingMock).toHaveBeenCalledTimes(2);
   });
 
-  it("CAD stepped 保留分件导出条件与独立 Draft Mode", () => {
+  it("统一阶梯模式保留分件导出条件", () => {
     const onRequestParamImport = vi.fn(async () => ({ status: "success" as const }));
     const model = {
       params: {
         ...STEPPED_LAYOUT_DEFAULTS,
+        enableSplitAssembly: true,
         groups: [
           ...STEPPED_LAYOUT_DEFAULTS.groups,
           { ...STEPPED_LAYOUT_DEFAULTS.groups[0], id: "group-2" },
@@ -320,7 +320,7 @@ describe("Mode Workspace Draft Action Area", () => {
     };
     const resetInteractionState = vi.fn();
     const { result } = renderHook(() =>
-      useSteppedCadWorkspace({
+      useSteppedWorkspace({
         model: model as never,
         interactionState: {
           selectedSlotIds: [],
@@ -333,7 +333,7 @@ describe("Mode Workspace Draft Action Area", () => {
     );
     renderWorkspacePanel(result.current.panel);
 
-    expect(screen.getByTestId("actions-stepped-cad")).toHaveAttribute(
+    expect(screen.getByTestId("actions-stepped")).toHaveAttribute(
       "data-can-split",
       "true",
     );
@@ -343,7 +343,7 @@ describe("Mode Workspace Draft Action Area", () => {
     expect(model.handleExportSTL).toHaveBeenCalledTimes(1);
     expect(model.handleExportSplitParts).toHaveBeenCalledTimes(1);
     expect(useWorkspaceDraftSupportMock).toHaveBeenCalledWith(
-      expect.objectContaining({ mode: "stepped-cad" }),
+      expect.objectContaining({ mode: "stepped" }),
     );
   });
 });

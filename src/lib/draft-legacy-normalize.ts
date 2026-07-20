@@ -17,13 +17,8 @@ import type {
 import type { ExportableParams } from "@/lib/mode-param-snapshot";
 import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 
-export type DraftMode =
-  | "grid"
-  | "custom"
-  | "base-converter"
-  | "simple-stepped"
-  | "stepped"
-  | "stepped-cad";
+export type DraftMode = keyof DraftParamsByMode;
+type HistoricalDraftMode = DraftMode | "stepped-cad";
 
 export type DraftListItemCompatibilityByMode = {
   grid: {
@@ -57,12 +52,6 @@ export type DraftListItemCompatibilityByMode = {
     trayWidth: number;
     trayDepth: number;
   };
-  "stepped-cad": {
-    groupCount: number;
-    slotCount: number;
-    trayWidth: number;
-    trayDepth: number;
-  };
 };
 
 export type UnknownDraftListItem = Partial<{
@@ -91,11 +80,14 @@ export const DRAFT_MODES: DraftMode[] = [
   "base-converter",
   "simple-stepped",
   "stepped",
-  "stepped-cad",
 ];
 
 export function isDraftMode(value: unknown): value is DraftMode {
   return DRAFT_MODES.includes(value as DraftMode);
+}
+
+function isHistoricalDraftMode(value: unknown): value is HistoricalDraftMode {
+  return value === "stepped-cad" || isDraftMode(value);
 }
 
 function isFiniteNumber(value: unknown): value is number {
@@ -136,7 +128,6 @@ export function extractCompatibilityFields(
         trayDepth: summary.trayDepth,
       };
     case "stepped":
-    case "stepped-cad":
       return {
         groupCount: summary.groupCount,
         slotCount: summary.slotCount,
@@ -152,7 +143,7 @@ export function extractCompatibilityFields(
 function normalizeSummaryFromLegacyFields(
   item: UnknownDraftListItem,
 ): DraftSummary | null {
-  if (item.mode === "stepped") {
+  if (item.mode === "stepped" || item.mode === "stepped-cad") {
     if (
       isFiniteNumber(item.slotCount) &&
       isFiniteNumber(item.groupCount) &&
@@ -258,7 +249,8 @@ export function normalizeListItem<M extends DraftMode>(
   fallbackMode?: M,
   fallbackParams?: DraftParamsByMode[M] | ExportableParams,
 ): (DraftListItemShape<M>) | null {
-  const mode = isDraftMode(item.mode) ? item.mode : fallbackMode;
+  const historicalMode = isHistoricalDraftMode(item.mode) ? item.mode : fallbackMode;
+  const mode = historicalMode === "stepped-cad" ? "stepped" : historicalMode;
   if (
     !mode ||
     typeof item.id !== "string" ||
@@ -269,7 +261,7 @@ export function normalizeListItem<M extends DraftMode>(
     return null;
   }
 
-  const summary =
+  const rawSummary =
     item.summary && typeof item.summary === "object" && item.summary !== null
       ? (item.summary as DraftSummary)
       : normalizeSummaryFromLegacyFields(item) ??
@@ -281,6 +273,9 @@ export function normalizeListItem<M extends DraftMode>(
               ),
             )
           : null);
+  const summary = rawSummary && (rawSummary as { mode?: unknown }).mode === "stepped-cad"
+    ? { ...rawSummary, mode: "stepped" } as DraftSummary
+    : rawSummary;
 
   if (!summary || summary.mode !== mode) {
     return null;

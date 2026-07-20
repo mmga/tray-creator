@@ -68,7 +68,7 @@ export interface BaseConverterResultProjection extends TrayResultProjectionBase 
 }
 
 export interface SteppedTrayResultProjection extends TrayResultProjectionBase {
-  mode: "stepped" | "stepped-cad";
+  mode: "stepped";
   groupCount: number;
   groups: Array<{
     id: string;
@@ -238,7 +238,7 @@ export function projectSimpleSteppedTrayResult(
 }
 
 export function projectSteppedTrayResult(
-  mode: "stepped" | "stepped-cad",
+  mode: "stepped",
   params: SteppedLayoutParams,
   effectiveDimensions: { width: number; depth: number },
   state: ResultState,

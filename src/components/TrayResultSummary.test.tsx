@@ -40,9 +40,9 @@ describe("TrayResultSummary", () => {
     expect(screen.getByText("3 × 2")).toBeInTheDocument();
   });
 
-  it("阶梯与 CAD 共用分组详情和超尺寸提示", () => {
+  it("阶梯模式展示分组详情和超尺寸提示", () => {
     const result: SteppedTrayResultProjection = {
-      mode: "stepped-cad",
+      mode: "stepped",
       slotCount: 3,
       itemLabel: "2 组 · 3 槽",
       dimensions: { width: 280, depth: 120, height: 16 },

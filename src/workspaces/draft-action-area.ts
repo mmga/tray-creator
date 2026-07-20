@@ -42,8 +42,8 @@ export interface AutomaticDraftActionAreaAdapter {
   ): Promise<DraftActionResult>;
 }
 
-export interface SteppedCadDraftActionAreaAdapter {
-  kind: "stepped-cad";
+export interface SteppedDraftActionAreaAdapter {
+  kind: "stepped";
   state: DraftActionAreaStateBase & {
     preview: { kind: "manual" };
     exportSplit: Availability;
@@ -56,7 +56,7 @@ export interface SteppedCadDraftActionAreaAdapter {
 export type DraftActionAreaAdapter =
   | ManualDraftActionAreaAdapter
   | AutomaticDraftActionAreaAdapter
-  | SteppedCadDraftActionAreaAdapter;
+  | SteppedDraftActionAreaAdapter;
 
 export const available: Availability = { state: "available" };
 

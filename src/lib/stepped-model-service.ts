@@ -71,3 +71,60 @@ export async function exportSteppedModelFiles(
     downloadPort,
   );
 }
+
+export async function generateSteppedSplitPreview(
+  params: SteppedLayoutParams,
+  workerPort: SteppedWorkerPort,
+): Promise<SteppedSplitPreviewPart[]> {
+  const { parts } = await workerPort.generateSteppedSplitParts(params);
+
+  return parts.map(({ geometry, ...part }) => ({
+    ...part,
+    threeGeometry: jscadToThreeGeometry(geometry),
+  }));
+}
+
+export function getSteppedSplitBaseFilename(
+  params: SteppedLayoutParams,
+  effectiveDimensions: SteppedLayoutExtents,
+): string {
+  const exportWidth = effectiveDimensions.width > 0
+    ? effectiveDimensions.width
+    : params.trayWidth;
+  const exportDepth = effectiveDimensions.depth > 0
+    ? effectiveDimensions.depth
+    : params.trayDepth;
+
+  return `tray_stepped_split_${exportWidth}x${exportDepth}_${params.slots.length}slots`;
+}
+
+export async function exportSteppedSplitPartFiles(
+  snapshot: ModeParamSnapshot<"stepped">,
+  workerPort: SteppedWorkerPort,
+  downloadPort: DownloadPort,
+): Promise<void> {
+  const { params } = snapshot;
+  const { parts } = await workerPort.generateSteppedSplitParts(params);
+  if (parts.length === 0) {
+    throw new Error("当前模型没有可导出的分件");
+  }
+
+  const effectiveDimensions = calculateSteppedEffectiveDimensions(params);
+  const baseFilename = getSteppedSplitBaseFilename(params, effectiveDimensions);
+  await exportModelArtifactBundle(
+    snapshot,
+    async () => {
+      const stlFiles = await Promise.all(
+        parts.map((part) => workerPort.exportSTL(
+          part.geometry,
+          `${baseFilename}_${part.filenameLabel}.stl`,
+        )),
+      );
+      return {
+        files: stlFiles,
+        companionParamFilename: `${baseFilename}_params.json`,
+      };
+    },
+    downloadPort,
+  );
+}

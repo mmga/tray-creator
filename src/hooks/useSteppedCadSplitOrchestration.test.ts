@@ -15,7 +15,7 @@ const {
   generateSplitPreviewMock: vi.fn(),
   exportSplitPartsMock: vi.fn(),
   trayWorkerServiceMock: {
-    generateSteppedCadSplitParts: vi.fn(),
+    generateSteppedSplitParts: vi.fn(),
     generateSteppedOutlinePreview: vi.fn(),
     exportSTL: vi.fn(),
   },
@@ -41,6 +41,7 @@ import { useSteppedCadSplitOrchestration } from "@/hooks/useSteppedCadSplitOrche
 function createParams(): SteppedLayoutParams {
   return {
     ...STEPPED_LAYOUT_DEFAULTS,
+    enableSplitAssembly: true,
     groups: [
       { ...STEPPED_LAYOUT_DEFAULTS.groups[0], id: "group-1" },
       {
@@ -70,6 +71,26 @@ describe("useSteppedCadSplitOrchestration", () => {
     toastMock.mockReset();
     generateSplitPreviewMock.mockReset();
     exportSplitPartsMock.mockReset();
+  });
+
+  it("总开关关闭时阻断分件预览和导出", async () => {
+    const params = { ...createParams(), enableSplitAssembly: false };
+    const { result } = renderHook(() =>
+      useSteppedCadSplitOrchestration({
+        params,
+        generateSplitPreview: generateSplitPreviewMock,
+        exportSplitParts: exportSplitPartsMock,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.handleGenerateSplitPreview();
+      await result.current.handleExportSplitParts();
+    });
+
+    expect(generateSplitPreviewMock).not.toHaveBeenCalled();
+    expect(exportSplitPartsMock).not.toHaveBeenCalled();
+    expect(toastMock).toHaveBeenCalledWith("error", "请先启用分件与装配");
   });
 
   it("生成拆件预览并在 params 失效时释放旧资源", async () => {
@@ -180,7 +201,7 @@ describe("useSteppedCadSplitOrchestration", () => {
     expect(result.current.isGeneratingSplitPreview).toBe(false);
   });
 
-  it("使用 CAD Mode Snapshot 导出分件并保留成功提示", async () => {
+  it("使用统一阶梯 Mode Snapshot 导出分件并保留成功提示", async () => {
     const params = createParams();
     exportSplitPartsMock.mockResolvedValue(undefined);
     const { result } = renderHook(() =>
@@ -197,7 +218,7 @@ describe("useSteppedCadSplitOrchestration", () => {
 
     expect(exportSplitPartsMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        mode: "stepped-cad",
+        mode: "stepped",
         params,
       }),
       trayWorkerServiceMock,
@@ -205,7 +226,7 @@ describe("useSteppedCadSplitOrchestration", () => {
     );
     expect(toastMock).toHaveBeenCalledWith(
       "success",
-      "CAD 拆件文件已导出",
+      "阶梯分件文件已导出",
     );
   });
 

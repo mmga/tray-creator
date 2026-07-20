@@ -204,10 +204,7 @@ vi.mock("@/components/ui/ParamSlider", () => ({
 import CustomPanelImplementation from "@/components/CustomPanel";
 import ParameterPanelImplementation from "@/components/ParameterPanel";
 import SimpleSteppedPanelImplementation from "@/components/SimpleSteppedPanel";
-import {
-  SteppedCadPanel as SteppedCadPanelImplementation,
-  SteppedLayoutPanel as SteppedLayoutPanelImplementation,
-} from "@/components/SteppedPanel";
+import { SteppedLayoutPanel as SteppedLayoutPanelImplementation } from "@/components/SteppedPanel";
 
 const panelActionsStub = <div data-testid="panel-actions-stub" />;
 
@@ -256,19 +253,28 @@ function SimpleSteppedPanel(
 }
 
 function SteppedLayoutPanel(
-  props: Omit<React.ComponentProps<typeof SteppedLayoutPanelImplementation>, "actions"> &
-    { actions?: React.ReactNode },
+  props: Omit<
+    React.ComponentProps<typeof SteppedLayoutPanelImplementation>,
+    "actions" | "onUpdateGroupSplitPartTarget"
+  > & {
+    actions?: React.ReactNode;
+    onUpdateGroupSplitPartTarget?: React.ComponentProps<
+      typeof SteppedLayoutPanelImplementation
+    >["onUpdateGroupSplitPartTarget"];
+  },
 ) {
-  const { actions = panelActionsStub, ...rest } = props;
-  return <SteppedLayoutPanelImplementation {...rest} actions={actions} />;
-}
-
-function SteppedCadPanel(
-  props: Omit<React.ComponentProps<typeof SteppedCadPanelImplementation>, "actions"> &
-    { actions?: React.ReactNode },
-) {
-  const { actions = panelActionsStub, ...rest } = props;
-  return <SteppedCadPanelImplementation {...rest} actions={actions} />;
+  const {
+    actions = panelActionsStub,
+    onUpdateGroupSplitPartTarget = vi.fn(),
+    ...rest
+  } = props;
+  return (
+    <SteppedLayoutPanelImplementation
+      {...rest}
+      actions={actions}
+      onUpdateGroupSplitPartTarget={onUpdateGroupSplitPartTarget}
+    />
+  );
 }
 
 const HUNDRED_MM_PRESET = BASE_PRESETS.find(
@@ -1529,8 +1535,8 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
     const onUpdateGroupSplitPartTarget = vi.fn();
 
     render(
-      <SteppedCadPanel
-        params={createSteppedParams()}
+      <SteppedLayoutPanel
+        params={createSteppedParams({ enableSplitAssembly: true })}
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
         updateParam={vi.fn()}
@@ -1622,17 +1628,18 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
     expect(onAddGroup).toHaveBeenCalledTimes(1);
   });
 
-  it("adds slots from presets and updates CAD stepped structure controls", () => {
+  it("adds slots from presets and updates stepped structure controls", () => {
     const updateParam = vi.fn();
     const onAddSlot = vi.fn();
 
     render(
-      <SteppedCadPanel
+      <SteppedLayoutPanel
         params={createSteppedParams({
           activeGroupId: "group-2",
           spacing: 5,
           holeDepth: 3,
           splitGrooveDepth: 2,
+          enableSplitAssembly: true,
           smoothingRadius: 14,
           disconnectDistance: 2,
         })}
@@ -1708,7 +1715,7 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
     expect(updateParam).toHaveBeenNthCalledWith(5, "disconnectDistance", 3);
   });
 
-  it("hides split controls in non-CAD stepped mode", () => {
+  it("默认关闭分件能力但始终提供椭圆凹槽", () => {
     render(
       <SteppedLayoutPanel
         params={createSteppedParams({
@@ -1743,7 +1750,7 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
       />,
     );
 
-    // 类型保证普通阶梯组件没有 CAD 专属字段；这里断言 CAD 专属内容不渲染。
+    expect(screen.getByRole("switch", { name: "启用分件与装配" })).not.toBeChecked();
     expect(
       screen.queryByRole("button", { name: "设置装配槽深度:2" }),
     ).not.toBeInTheDocument();
@@ -1752,16 +1759,17 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
     expect(screen.queryByText("定位柱")).not.toBeInTheDocument();
     expect(screen.queryByText("拆件归并")).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: ELLIPSE_PRESETS[0].name }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("button", { name: ELLIPSE_PRESETS[0].name }),
+    ).toBeInTheDocument();
   });
 
-  it("routes CAD split groove type and locator controls", () => {
+  it("启用后路由分件凹槽类型与定位柱控件", () => {
     const updateParam = vi.fn();
 
     render(
-      <SteppedCadPanel
+      <SteppedLayoutPanel
         params={createSteppedParams({
+          enableSplitAssembly: true,
           enableSplitRecess: false,
           splitGrooveType: "profile",
           enableSplitLocators: false,
@@ -1890,7 +1898,7 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
     };
 
     const { unmount } = render(
-      <SteppedCadPanel
+      <SteppedLayoutPanel
         {...commonProps}
         onUpdateGroupSplitPartTarget={vi.fn()}
       />,
