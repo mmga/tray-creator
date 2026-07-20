@@ -170,7 +170,7 @@ _Avoid_: Retaining a mutable editor-state reference, passing Mode and params as 
 
 **Persisted Param Artifact**:
 A newly written parameter-bearing artifact whose declared Mode identifies the editor workflow that owns its parameters, including exported parameter files, model companion parameter files, split-part companion parameter files, Draft records, and Draft Summaries.
-_Avoid_: Collapsing `stepped-cad` to `stepped`, inferring Mode from parameter shape, deriving Mode independently in each writer, or treating a split-manifest file type as a Mode.
+_Avoid_: Writing the historical `stepped-cad` alias, inferring Mode from parameter shape, deriving Mode independently in each writer, or treating a split-manifest file type as a Mode.
 
 **Model Artifact Bundle**:
 The complete ordered set of separately named model files prepared from one Mode Param Snapshot for one export operation, including STL files and any companion parameter or manifest files.
@@ -196,24 +196,40 @@ _Avoid_: Requiring callers or tests to parse localized error text, or representi
 Mode-local transient editor state shared by a **Mode Workspace** and a **Mode Viewport Workspace**, such as selected slot ids or preview focus ids.
 _Avoid_: Treating shared editor interaction state as page-owned state or as registry-owned state.
 
+**Stepped Tray**:
+A tray whose manually placed Slot Instances are assigned to height groups that form one user-visible stepped modeling workflow.
+_Avoid_: Presenting the internal solid-construction algorithm as a user-selectable tray kind.
+
+**Custom Stepped Tray**:
+The user-facing name “自定义阶梯底座” for the Stepped Tray workflow, distinguishing its manual slot and height-group editing from Simple Stepped mode.
+_Avoid_: CAD 阶梯底座, ordinary stepped mode, or using “custom” to imply a separate construction backend.
+
 **CAD Stepped Construction**:
-The CAD stepped-mode modeling contract where each height band is generated from its own 2D sketch and then extruded before cuts are applied.
-_Avoid_: Treating CAD stepped mode as an arbitrary union of per-group solids.
+The Custom Stepped Tray modeling contract where each height band is generated from its own 2D sketch and then extruded before cuts are applied.
+_Avoid_: Treating the unified stepped model as an arbitrary union of per-group solids or exposing this contract as a Mode choice.
 
 **Stepped Layout Core**:
-The shared stepped editing module that owns group and slot editing, undo history, outline preview, whole-model preview/export, base-hole derived fields, and layout optimization for both `stepped` and `stepped-cad`, while excluding split assembly behavior.
-_Avoid_: Letting the shared stepped editing module own CAD-only split preview, split export, split assembly groove, Locator Pin, or split merge rules.
+The stepped editing module that owns group and slot editing, undo history, outline preview, whole-model preview/export, base-hole derived fields, and layout optimization for `stepped`, while excluding split assembly orchestration.
+_Avoid_: Letting the layout core own split preview, split export, split assembly groove, Locator Pin, or split merge lifecycle.
 
-**Stepped CAD Split Orchestration**:
-The `stepped-cad`-only workflow that owns split-preview lifecycle and split-part export while reusing group editing from the **Stepped Layout Core**.
-_Avoid_: Exposing CAD-only split preview or split export through the ordinary `stepped` runtime interface.
+**Stepped Split Orchestration**:
+The optional `stepped` capability that owns split-preview lifecycle and split-part export while composing the **Stepped Layout Core**.
+_Avoid_: Treating split assembly as a separate Mode or making the layout core own its lifecycle.
+
+**Split Assembly Capability**:
+The optional, default-off Custom Stepped Tray capability that reveals split grouping, assembly features, split preview, and split-part export when enabled.
+_Avoid_: A separate Mode, hiding ellipse slots with the capability, or showing its advanced controls in the default workflow.
+
+**Dormant Split Configuration**:
+The preserved split grouping and assembly settings that remain stored but have no effect while Split Assembly Capability is disabled.
+_Avoid_: Clearing advanced settings when the capability is toggled off or applying hidden split settings to whole-model generation.
 
 **Simple Stepped Layout Core**:
 The simple stepped editing module that owns row and slot relationship repair, simple stepped tray size normalization, outer margin synchronization, and canvas-to-row slot update projection for `simple-stepped` mode.
 _Avoid_: Reimplementing simple stepped row membership repair or tray size normalization separately in import normalization, hooks, and viewport adapters.
 
 **Split Assembly Groove Type**:
-The mutually exclusive stepped CAD choice that decides which contact-face outline becomes the male/female split assembly groove profile.
+The mutually exclusive Custom Stepped Tray choice that decides which contact-face outline becomes the male/female split assembly groove profile.
 _Avoid_: Treating groove types as stackable toggles.
 
 **Profile Recess**:
@@ -225,7 +241,7 @@ A split assembly groove type where the upper male tenon uses the upper contact-f
 _Avoid_: Treating it as profile recess plus an extra toggle.
 
 **Split Interface Profile**:
-The derived 2D split-interface contract for one stepped CAD contact height, including a contact footprint plus the corresponding male and female footprints used to build assembly geometry before 3D extrusion.
+The derived 2D split-interface contract for one Custom Stepped Tray contact height, including a contact footprint plus the corresponding male and female footprints used to build assembly geometry before 3D extrusion.
 _Avoid_: Re-deriving male/female assembly geometry separately from finished 3D solids.
 
 **Locator Pin**:
@@ -373,12 +389,12 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - **Conversion Clearance** is `0.2mm` per side in the first release.
 - Final **Conversion Recess** width and depth equal the selected Source Base Standard dimensions plus `0.4mm` per axis.
 - A Conversion Base's total height equals its floor thickness plus its Conversion Recess depth.
-- CAD stepped mode exposes all seven ellipse **Slot Definitions** already used by custom mode; ordinary stepped mode remains circle-only.
-- A CAD stepped ellipse **Slot Instance** is created from the shared definition and snapshots its width, height, **Ellipse Outer Offset**, **Ellipse Profile Exponent**, and **Slot Definition ID** without maintaining a CAD-only preset copy.
-- A newly added CAD stepped ellipse starts at 0 degrees and uses the existing canvas rotation interaction; rotation changes placement geometry but do not redefine its **Slot Definition**.
-- CAD stepped automatic placement uses the ellipse's final profile bounds and does not automatically rotate the ellipse to make it fit.
-- Duplicating or symmetry-inserting a CAD stepped ellipse preserves its complete **Slot Geometry Snapshot** and rotation.
-- CAD stepped preview, complete-model generation, and split-part generation consume the snapshot's **Ellipse Outer Offset** and **Ellipse Profile Exponent**, so their final ellipse profile matches custom mode.
+- **Custom Stepped Tray** exposes all seven ellipse **Slot Definitions** already used by custom mode in addition to its circular definitions.
+- A Custom Stepped Tray ellipse **Slot Instance** is created from the shared definition and snapshots its width, height, **Ellipse Outer Offset**, **Ellipse Profile Exponent**, and **Slot Definition ID** without maintaining a separate preset copy.
+- A newly added Custom Stepped Tray ellipse starts at 0 degrees and uses the existing canvas rotation interaction; rotation changes placement geometry but does not redefine its **Slot Definition**.
+- Custom Stepped Tray automatic placement uses the ellipse's final profile bounds and does not automatically rotate the ellipse to make it fit.
+- Duplicating or symmetry-inserting a Custom Stepped Tray ellipse preserves its complete **Slot Geometry Snapshot** and rotation.
+- Custom Stepped Tray preview, complete-model generation, and split-part generation consume the snapshot's **Ellipse Outer Offset** and **Ellipse Profile Exponent**, so their final ellipse profile matches custom mode.
 - An **Old World Rectangular Slot Definition** records nominal width and depth, with each **Final Slot Size** axis 0.4mm larger than its nominal axis.
 - An **Old World Grid Orientation** maps a rectangular slot’s width to grid columns and depth to grid rows.
 - **Old World Ranked Base Spacing** derives centre pitch from nominal base dimensions while Final Slot Size supplies clearance around the ranked array.
@@ -400,7 +416,7 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - **Import Mode Resolution** runs before an **Import Candidate** is normalized.
 - An external parameter-file import may start from any Mode's **Draft Action Area**, independently of the file's resolved target Mode.
 - Every newly exported parameter file records its actual Mode as its declared Mode.
-- New CAD stepped parameter files declare `stepped-cad` instead of collapsing their Mode to `stepped`.
+- New **Custom Stepped Tray** parameter files declare `stepped`; `stepped-cad` is read only as a historical Mode alias.
 - Every newly written **Persisted Param Artifact** records exactly one actual **Mode** matching the editor workflow that owns its parameters.
 - A **Mode Workspace Adapter** supplies the actual **Mode** for newly written **Persisted Param Artifacts**; downstream persistence Implementations do not infer it from parameter structure.
 - A **Mode Workspace Adapter** captures one **Mode Param Snapshot** for a persistence operation.
@@ -422,25 +438,26 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - A **Current Param Artifact Encoder** consumes a **Mode Param Snapshot** and writes only the current parameter format.
 - A **Current Param Artifact Encoder** does not apply historical compatibility or change the Snapshot's Mode identity.
 - A **Historical Param Artifact Reader** owns historical wrapper recognition and ambiguous Mode handling.
-- A **Historical Param Artifact Reader** never converts parameters between Modes; it only identifies the owning Mode and applies compatibility within that Mode.
+- A **Historical Param Artifact Reader** never converts parameter semantics between Modes; it may canonicalize the historical `stepped-cad` alias to the current `stepped` Mode.
 - A **Historical Param Artifact Reader** consumes already-parsed unknown data and does not own browser File reading, JSON text parsing, or Draft storage access.
 - External-file and Draft-source Adapters obtain parsed data and delegate wrapper recognition, version checks, Mode validation, ambiguity handling, and normalization to the same **Historical Param Artifact Reader** Implementation.
 - An external-file Adapter may receive an **Import Candidate** or an Import Mode selection requirement, while a Draft-source Adapter receives normalized parameters for the Draft's stored Mode without creating an Import Candidate or Import Normalization Report.
 - A **Historical Param Artifact Reader** reports invalid content, unsupported versions, invalid or conflicting Mode identity, unrecognized parameter structure, expected-Mode mismatch, and normalization failure as distinct **Param Artifact Read Error** codes.
 - A **Param Artifact Read Error** retains a user-readable Chinese message and preserves an underlying normalization failure as its cause.
 - A required Import Mode choice is a normal reader result rather than a **Param Artifact Read Error**.
-- **Draft Compatibility** reads a Draft according to its stored Mode identity and does not implicitly convert it into another Mode.
+- **Draft Compatibility** reads a Draft according to its stored Mode identity and canonicalizes historical `stepped-cad` Drafts into the current `stepped` Mode without changing their parameter semantics.
 - Current-format writing and historical reading are separate Interfaces and Implementations.
-- `stepped` and `stepped-cad` may share the same parameter structure without sharing one persisted Mode identity.
-- A CAD stepped **Persisted Param Artifact** declares `stepped-cad`, including complete-model companion parameters, split-part companion parameters, Draft records, and Draft Summaries.
-- Adding `stepped-cad` as the actual Mode of new **Persisted Param Artifacts** does not change the parameter-file version or Draft storage version because their envelope shapes remain unchanged.
-- Historical differences are handled by the **Historical Param Artifact Reader**, not by a version increase for this Mode identity change.
+- `stepped` is the sole runtime and newly persisted Mode identity for **Custom Stepped Tray** parameters, including ellipse and split-assembly capabilities.
+- Historical `stepped` and `stepped-cad` identities both resolve to the current `stepped` Mode.
+- A historical `stepped-cad` artifact without an explicit Split Assembly Capability field migrates with that capability enabled, preserving access to direct split workflows that left no assembly-feature fields behind.
+- A historical `stepped` artifact without an explicit Split Assembly Capability field migrates with that capability disabled.
+- Removing `stepped-cad` from new **Persisted Param Artifacts** does not change the parameter-file version or Draft storage version because their envelope shapes remain unchanged.
+- Historical Mode aliases are handled by the **Historical Param Artifact Reader**, not by a version increase for this Mode identity consolidation.
 - A companion artifact may declare its own file type without treating that file type as a **Mode**.
-- Only historical read compatibility may treat a declared `stepped` Mode as ambiguous between ordinary stepped and CAD stepped.
 - Newly exported parameter files are not required to remain importable by older application versions.
-- A historical parameter file declared as `stepped` requires the user to identify whether it belongs to ordinary stepped or CAD stepped because older exports did not preserve that distinction.
+- A historical parameter file declared as either `stepped` or `stepped-cad` resolves directly to the unified `stepped` Mode without asking the user to identify its original construction backend.
 - A legacy parameter file without a declared Mode uses structural inference only when exactly one Mode matches.
-- An ambiguous legacy parameter file requires the user to identify its original Mode before normalization, without converting its parameter semantics.
+- A legacy parameter file whose structure matches the former ordinary and CAD stepped Modes resolves directly to the unified `stepped` Mode because those identities are no longer distinct.
 - A declared Mode that conflicts with the parameter structure produces an import error and is not silently replaced by an inferred Mode.
 - An **Import Candidate** exists only after parsing, required-field validation, and the full **Param Normalization Pipeline** succeed.
 - A parameter file that cannot be safely normalized produces an import error and cannot be partially confirmed.
@@ -479,9 +496,9 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - A slot definition display name must reflect the actual geometry values in the definition.
 - A **Draft** belongs to exactly one **Mode**.
 - Each **Mode** may have its own independent **Draft** list and storage space.
-- A newly saved CAD stepped **Draft** belongs to `stepped-cad` and uses the `stepped-cad` Draft storage space.
-- An existing **Draft** stored as `stepped` remains an ordinary stepped Draft; it is not automatically inferred, migrated, or displayed again as `stepped-cad`.
-- Reusing an existing `stepped` Draft in CAD stepped mode requires an explicit user export and import that resolves the target Mode as `stepped-cad`.
+- A newly saved **Custom Stepped Tray** Draft belongs to `stepped` and uses the `stepped` Draft storage space.
+- Existing `stepped` and `stepped-cad` Drafts are both listed in the unified **Custom Stepped Tray** workspace.
+- Saving a historical `stepped-cad` Draft writes it to the current `stepped` Draft storage space while preserving its parameters.
 - A **Manual Draft Save** does not imply autosave or session recovery.
 - The current editor state may keep a **Draft Binding** even when there are unsaved edits.
 - **Unsaved Draft Changes** may exist while a **Draft Binding** still exists.
@@ -491,8 +508,7 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - A custom **Draft Summary** may show slot count and resulting width/depth.
 - A simple stepped **Draft Summary** may show row count, slot count, and resulting width/depth.
 - A stepped **Draft Summary** may show group count, slot count, and resulting width/depth.
-- A CAD stepped **Draft Summary** declares `stepped-cad` while showing the same group count, slot count, and resulting width/depth fields as an ordinary stepped Draft Summary.
-- Ordinary stepped and CAD stepped Draft Summaries reuse one stepped-summary calculation Implementation without sharing one Mode identity.
+- A historical `stepped-cad` **Draft Summary** resolves to `stepped` while preserving its group count, slot count, and resulting width/depth fields.
 - Draft titles may be duplicated within the same **Mode**.
 - A **Draft Index** stores **Draft Summary** entries, while full draft records store full mode parameters.
 - Draft limits may be enforced per **Mode**, not only globally.
@@ -500,7 +516,7 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - A draft record key may be mode-scoped while the **Draft Index** remains shared.
 - A **Draft Manager Dialog** may be shared across modes while rendering mode-specific summaries.
 - A **Draft Manager Dialog** may show drafts for the current **Mode** only.
-- A **Draft Manager Dialog** labels a `stepped-cad` Draft Summary as a CAD stepped Draft.
+- A **Draft Manager Dialog** labels historical `stepped-cad` Draft Summaries as **Custom Stepped Tray** Drafts after canonicalization.
 - A **Draft Action Area** should remain broadly consistent across modes.
 - A **Mode Workspace** may own a **Mode**'s **Draft Binding**, **Draft Action Area** inputs, parameter panel inputs, and reset/import side effects.
 - A **Mode Workspace** should not own viewport-specific 2D/3D editing details unless those details become shared across modes.
@@ -508,11 +524,10 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - A **Mode Workspace Registry** selects the active **Mode Workspace Adapter** for the current **Mode**.
 - **Mode Interaction State** belongs to one active **Mode** editing workflow, not to the page shell or a registry.
 - A **Mode Workspace** and **Mode Viewport Workspace** may share **Mode Interaction State** when left-panel controls and viewport interactions both read or write the same transient editor state.
-- A **Stepped Layout Core** may be shared by both `stepped` and `stepped-cad` when the behavior is not split-assembly-specific.
-- A **Stepped Layout Core** should not expose CAD-only split assembly behavior through the ordinary `stepped` runtime interface.
-- **Stepped CAD Split Orchestration** composes the **Stepped Layout Core** rather than being owned by it.
-- **Stepped CAD Split Orchestration** owns split-preview generation, invalidation, disposal, and split-part export for `stepped-cad`.
-- **Stepped CAD Split Orchestration** reuses the **Stepped Layout Core** group action when it changes a group's split-part target.
+- A **Stepped Layout Core** owns behavior shared by whole-model and split-enabled editing while excluding split-assembly-specific lifecycle.
+- **Stepped Split Orchestration** composes the **Stepped Layout Core** rather than being owned by it.
+- **Stepped Split Orchestration** owns split-preview generation, invalidation, disposal, and split-part export within `stepped`.
+- **Stepped Split Orchestration** reuses the **Stepped Layout Core** group action when it changes a group's split-part target.
 - A **Simple Stepped Layout Core** may allow the derived tray size to exceed the maximum build size when row and slot content requires it.
 - In simple stepped mode, the maximum build size is a user warning threshold, not a hard normalization cap.
 - Imported, draft-loaded, and runtime-edited simple stepped params should pass through the same **Simple Stepped Layout Core** normalization rules.
@@ -529,7 +544,18 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - A **Tray Result Projection** preserves **Slot Count**, build-limit, generation, and preview-staleness facts independently rather than collapsing them into one lifecycle state.
 - A custom **Tray Result Projection** distinguishes an **Effective Baseplate** from a **Fixed Tray Outer Footprint**.
 - A grid **Tray Result Projection** uses the **Grid Footprint Area** shown to the user.
-- A stepped CAD **Tray Result Projection** reuses the shared **Stepped Layout Core** result and does not expose split-assembly-only behaviour as ordinary tray statistics.
+- A Custom Stepped Tray **Tray Result Projection** reuses the **Stepped Layout Core** result and does not expose split-assembly-only behaviour as ordinary tray statistics.
+- A **Stepped Tray** with the same circular Slot Instances, height groups, and non-split parameters has the same intended final tray semantics regardless of its internal construction algorithm.
+- A **Stepped Tray** user chooses tray capabilities such as ellipse slots or split assembly, not the internal solid-construction algorithm.
+- **Custom Stepped Tray** is the only user-visible top-level Mode for manually arranged stepped trays; ellipse slots and split assembly appear as capabilities within it.
+- **CAD Stepped Construction** remains an internal modeling contract and is not a user-facing Mode name.
+- **CAD Stepped Construction** is the sole authoritative whole-model backend for **Custom Stepped Tray** after migration validation; the former per-group solid backend is not retained as a runtime fallback.
+- Historical ordinary-stepped fixtures remain regression inputs for critical dimensions, slot placement, height bands, connectivity, and printability rather than selecting a legacy backend.
+- **Split Assembly Capability** is disabled and collapsed by default; enabling it reveals split merge targets, groove settings, Locator Pins, split preview, and split-part export.
+- Ellipse Slot Definitions belong to **Custom Stepped Tray** itself and remain available independently of **Split Assembly Capability**.
+- Disabling **Split Assembly Capability** preserves a **Dormant Split Configuration**, disables split preview and export, and prevents those settings from affecting whole-model generation.
+- Re-enabling **Split Assembly Capability** restores its **Dormant Split Configuration**.
+- A historical ordinary-stepped artifact loaded into the unified **Stepped Tray** workflow preserves its slot dimensions and positions, group heights, recess depths, intended footprint, and printability, but does not preserve STL facets, exact volume, or internal solid topology.
 - In custom mode, the **Effective Baseplate** is derived from placed **Slot Instances** plus boundary spacing.
 - A custom **Tray Sizing Mode** is either automatic, which uses the **Effective Baseplate**, or fixed, which uses the configured tray width and depth as the final tray footprint.
 - In fixed custom **Tray Sizing Mode**, **Slot Instances** use the fixed tray's lower-left corner as their layout origin.
@@ -537,7 +563,7 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - A custom tray retains configured width and depth while in automatic **Tray Sizing Mode**, so switching back to fixed mode restores the chosen size.
 - A custom configuration that does not record a **Tray Sizing Mode** is treated as automatic to preserve legacy behavior.
 - A **Tray Sizing Mode** is an optional additive custom configuration field and does not require a parameter-file version change.
-- **Tray Sizing Mode** applies only to custom **Mode** and does not alter grid, simple stepped, stepped, or CAD stepped size rules.
+- **Tray Sizing Mode** applies only to custom **Mode** and does not alter grid, simple stepped, or Custom Stepped Tray size rules.
 - A fixed custom tray's configured width and depth define its **Fixed Tray Outer Footprint**.
 - A **Side Bevel** reduces the fixed tray's upper usable footprint inward from its **Fixed Tray Outer Footprint**, while boundary spacing is measured from that upper edge.
 - A fixed tray's upper usable footprint follows its rounded-corner geometry, so a **Slot Boundary Violation** may occur at a corner even when a slot fits within the enclosing rectangle.
@@ -555,7 +581,7 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - A **Layout Arrangement Proposal** is distinct from a **Random Slot Arrangement** and is generated only when the user explicitly requests arrangement.
 - Generating a **Layout Arrangement Proposal** does not change the current layout; applying a selected proposal replaces Slot Instance positions as one explicit action.
 - Adding or manually editing a Slot Instance never implicitly regenerates or applies a **Layout Arrangement Proposal**.
-- Custom, simple stepped, ordinary stepped, and CAD stepped Modes support **Layout Arrangement Proposals** because each owns manually positionable Slot Instances.
+- Custom, simple stepped, and **Custom Stepped Tray** Modes support **Layout Arrangement Proposals** because each owns manually positionable Slot Instances.
 - Grid Mode and Conversion Base Mode do not support **Layout Arrangement Proposals** because neither owns a freely arranged set of Slot Instances.
 - Custom Mode supports **Layout Arrangement Proposals** in both automatic and fixed **Tray Sizing Modes**; a fixed-size proposal must keep every Slot Instance within the existing **Fixed Tray Outer Footprint**.
 - A **Layout Arrangement Proposal** evaluates all participating Slot Instances as one arrangement set and does not preserve simple-stepped row or stepped-group boundaries as layout partitions.
@@ -596,7 +622,7 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - Import and Draft loading preserve the selected Base-hole Structure and Slot Instance positions when a base-hole fit violation exists; they never disable the hole, resize it, or move a slot implicitly.
 - A loaded base-hole fit violation remains visible in the editor and continues to block model generation and export until repaired.
 - A base-hole fit violation is not an **Import Normalization Report** entry and does not add another import confirmation step; it appears only in the owning Mode editor after an Import Candidate is accepted.
-- Grid, custom, simple stepped, stepped, and CAD stepped Modes expose the same mutually exclusive Base-hole Structure choices and the same Magnet Post Hole diameter and depth controls; Conversion Base exposes none of them.
+- Grid, custom, simple stepped, and Custom Stepped Tray Modes expose the same mutually exclusive Base-hole Structure choices and the same Magnet Post Hole diameter and depth controls; Conversion Base exposes none of them.
 - A supporting Mode displays every base-hole fit violation persistently beside its Base-hole Structure controls, keeps 2D editing and Draft persistence available, and disables model generation and export with a visible reason until all such violations are repaired.
 - Enabling a **Magnet Post Hole** raises each affected stepped group as needed to preserve the configured recess depth and at least 1mm of material beneath it.
 - A selected **Magnetic Base Hole** requires its preset cavity depth plus 0.6mm top wall and 0.6mm bottom wall: 2.2mm for the 20mm preset and 2.4mm for the standard or large preset.
@@ -607,28 +633,28 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - A **Conversion Base** is a thin-bottom model and supports neither a **Magnetic Base Hole** nor a **Magnet Post Hole**.
 - Selecting **Magnetic Base Plate Only** selects **Magnetic Base Hole** and disables half-circle slots.
 - Selecting no base hole or **Magnet Post Hole** while **Magnetic Base Plate Only** is active restores the grid's complete slot structure.
-- Grid, custom, simple stepped, stepped, and CAD stepped Modes each persist exactly one **Base-hole Structure** plus the shared **Magnet Post Hole** diameter and depth values.
+- Grid, custom, simple stepped, and Custom Stepped Tray Modes each persist exactly one **Base-hole Structure** plus the shared **Magnet Post Hole** diameter and depth values.
 - A legacy `enableBaseHole` value migrates to **Magnetic Base Hole** when true and no base hole when false; newly written Persisted Param Artifacts do not retain that legacy field.
-- A new grid tray defaults to **Magnetic Base Hole**, while new custom, simple stepped, stepped, and CAD stepped trays default to no base hole.
+- A new grid tray defaults to **Magnetic Base Hole**, while new custom, simple stepped, and Custom Stepped Tray trays default to no base hole.
 - A historical tray artifact with neither a Base-hole Structure nor a legacy `enableBaseHole` defaults to no base hole so import never adds a manufacturing hole implicitly.
 - A historical grid artifact marked as **Magnetic Base Plate Only** always migrates to **Magnetic Base Hole**, even when its legacy magnetic-hole switch is absent.
 - A tray selects exactly one **Base-hole Structure**.
 - **CAD Stepped Construction** builds one extruded body per height band.
 - **CAD Stepped Construction** applies slot holes and the selected **Base-hole Structure** after the stepped height bands are assembled.
-- A stepped CAD split part has at most one active **Split Assembly Groove Type**.
+- A Custom Stepped Tray split part has at most one active **Split Assembly Groove Type**.
 - A **Profile Recess** uses the full upper contact-face outline as the male tenon profile.
 - The user-facing label for **Profile Recess** is "轮廓凹槽".
 - An **Inset Recess** uses the upper contact-face outline after a fixed 1mm inward inset as the male tenon profile.
 - The user-facing label for **Inset Recess** is "内缩凹槽".
-- A **Split Interface Profile** belongs to exactly one stepped CAD contact height.
+- A **Split Interface Profile** belongs to exactly one Custom Stepped Tray contact height.
 - A **Split Interface Profile** includes a contact footprint, a male footprint, and a female footprint.
-- A stepped CAD split body must consume profile-derived body, recess-shell, and tenon bands instead of re-deriving male or female geometry from finished 3D solids.
-- **Split Interface Profile** is the sole source of male and female footprint geometry used by stepped CAD split body generation.
+- A Custom Stepped Tray split body must consume profile-derived body, recess-shell, and tenon bands instead of re-deriving male or female geometry from finished 3D solids.
+- **Split Interface Profile** is the sole source of male and female footprint geometry used by Custom Stepped Tray split body generation.
 - A **Profile Recess** derives its male footprint from the full contact footprint.
 - An **Inset Recess** derives its male footprint from the contact footprint after a fixed 1mm inward inset.
 - If an **Inset Recess** profile becomes empty after inset, that interface generates no male tenon or female recess.
 - If an **Inset Recess** profile separates into multiple islands after inset, each island remains part of the split assembly profile.
-- Imported stepped CAD data with split assembly enabled but no explicit **Split Assembly Groove Type** uses **Profile Recess**.
+- Imported historical `stepped-cad` data with split assembly enabled but no explicit **Split Assembly Groove Type** uses **Profile Recess**.
 - A **Locator Pin** may be enabled alongside either **Profile Recess** or **Inset Recess**.
 
 ## Example Dialogue
@@ -639,14 +665,14 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 > **Dev:** "Does the 100mm option generate a 100mm hole?"
 > **Domain expert:** "No. It fits a 100mm base and generates a 100.4mm final slot after tolerance."
 >
-> **Dev:** "Can CAD stepped mode generate each group as a full-height solid and union them?"
-> **Domain expert:** "No. CAD stepped mode should generate the sketch for each height band, extrude that band, then apply the holes."
+> **Dev:** "Can Custom Stepped Tray generate each group as a full-height solid and union them?"
+> **Domain expert:** "No. Its internal CAD Stepped Construction should generate the sketch for each height band, extrude that band, then apply the holes."
 >
 > **Dev:** "Can profile recess and inset recess both be enabled on the same split part?"
 > **Domain expert:** "No. They are alternative split assembly groove types; locator pins are the optional add-on."
 >
-> **Dev:** "Should ordinary stepped mode expose split preview because it shares its editor with CAD stepped mode?"
-> **Domain expert:** "No. Split preview and split-part export belong to Stepped CAD Split Orchestration, which composes the shared Stepped Layout Core."
+> **Dev:** "Does enabling split assembly create another Mode?"
+> **Domain expert:** "No. Split preview and split-part export belong to Stepped Split Orchestration, an optional capability that composes the Stepped Layout Core."
 >
 > **Dev:** "Should adding another slot automatically rearrange the layout?"
 > **Domain expert:** "No. The user explicitly requests a Layout Arrangement Proposal, previews it, and chooses whether to apply it before continuing manual edits."
@@ -669,11 +695,14 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - "凹槽越界" could mean a hard editing constraint or a warning-only state. Resolved: use **Slot Boundary Violation** for a red, warning-only state that keeps generation and export available.
 - "随机排列" could mean arbitrary positions that may require manual repair. Resolved: use **Random Slot Arrangement** only for an all-valid layout that satisfies both fixed-boundary and slot-spacing constraints.
 - "自动优化布局" was used for both random placement and an automatically committed reflow. Resolved: use **Layout Arrangement Proposal** for an explicitly requested, previewed candidate that remains unapplied until the user confirms it.
-- "几种自定义布局" could mean only Custom Mode or every Mode with manually positioned Slot Instances. Resolved: **Layout Arrangement Proposals** apply to custom, simple stepped, ordinary stepped, and CAD stepped Modes, but not grid or Conversion Base Modes.
+- "几种自定义布局" could mean only Custom Mode or every Mode with manually positioned Slot Instances. Resolved: **Layout Arrangement Proposals** apply to custom, simple stepped, and **Custom Stepped Tray** Modes, but not grid or Conversion Base Modes.
 - "按分组优化" could mean that existing rows or groups constrain aesthetic arrangement. Resolved: a **Layout Arrangement Proposal** arranges all participating Slot Instances together while preserving—but not partitioning by—their existing row or group identities; the user may revise those identities afterward.
 - "美观布局" could mean the smallest area, the least movement, or a fixed wide rectangle. Resolved: **Layout Arrangement Quality** first requires a valid layout, then prioritises alignment rhythm, visual balance, compact whitespace, edge regularity, and finally original-position displacement.
 - Grid-mode "面积" means **Grid Footprint Area**, derived from the displayed outer width and depth.
 - "CAD 阶梯模式生成" could mean either per-group solid union or band-by-band CAD construction. Resolved: use **CAD Stepped Construction**, which generates each height band from a sketch before extrusion.
+- "自定义阶梯" and "CAD 阶梯" could imply two user-visible tray products distinguished by their construction algorithms. Resolved: both describe one **Stepped Tray** workflow; identical circular, non-split inputs are intended to produce the same tray semantics, while ellipse and split assembly are capabilities rather than separate tray kinds.
+- "CAD 阶梯底座" could imply that users must understand the modeling implementation before choosing a workflow. Resolved: the only user-facing name is **Custom Stepped Tray（自定义阶梯底座）**; CAD remains internal terminology.
+- "兼容旧阶梯文件" could mean reproducing the old generated mesh exactly. Resolved: compatibility preserves manufacturing semantics and critical dimensions, not STL bytes, facets, exact volume, or construction topology.
 - "内缩凹槽" could mean an extra toggle layered on top of "轮廓浅槽". Resolved: use **Inset Recess** as a mutually exclusive **Split Assembly Groove Type**.
 - "Mode conversion" was used for both switching to a file's Mode and changing one Mode's parameter semantics into another. Resolved: external import switches to the file's Mode without converting its parameters; parameter conversion is a separate explicit operation.
 - "磁铁桩位" could mean either a solid locating post or a recess for a magnet. Resolved: use **Magnet Post Hole（磁铁桩孔）** for the cylindrical recess cut downward from a slot floor; it is never a solid protruding post.
