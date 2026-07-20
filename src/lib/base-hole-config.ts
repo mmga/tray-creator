@@ -32,11 +32,35 @@ export function resolveMagneticBaseHolePreset(
   shape: "circle" | "ellipse" | "rectangle",
   nominalWidth: number,
   nominalHeight: number,
-): "25" | "40" {
+): "20" | "25" | "40" {
+  const shortestNominalSide = Math.min(nominalWidth, nominalHeight);
+  if (Math.abs(shortestNominalSide - 25) < 0.001) {
+    return "20";
+  }
   if (shape === "circle") {
     return nominalWidth >= 60 ? "40" : "25";
   }
-  return Math.min(nominalWidth, nominalHeight) > 40 ? "40" : "25";
+  return shortestNominalSide > 40 ? "40" : "25";
+}
+
+export function resolveLargestMagneticBaseHolePreset(
+  slots: readonly {
+    shape: "circle" | "ellipse" | "rectangle";
+    width: number;
+    height: number;
+  }[],
+): "20" | "25" | "40" {
+  let resolved: "20" | "25" | "40" = "20";
+  for (const slot of slots) {
+    const preset = resolveMagneticBaseHolePreset(
+      slot.shape,
+      slot.width,
+      slot.height,
+    );
+    if (preset === "40") return "40";
+    if (preset === "25") resolved = "25";
+  }
+  return slots.length > 0 ? resolved : "25";
 }
 
 export function normalizeBaseHoleParams(
@@ -65,6 +89,9 @@ export function normalizeBaseHoleParams(
       MAGNET_POST_HOLE_LIMITS.depth.max,
       BASE_HOLE_PARAM_DEFAULTS.magnetPostHoleDepth,
     ),
-    baseHoleSize: value.baseHoleSize === "40" ? "40" : "25",
+    baseHoleSize:
+      value.baseHoleSize === "20" || value.baseHoleSize === "40"
+        ? value.baseHoleSize
+        : "25",
   };
 }

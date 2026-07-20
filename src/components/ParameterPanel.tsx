@@ -19,7 +19,10 @@ import type { ReactNode } from "react";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -64,8 +67,15 @@ export default function ParameterPanel({
   const { boundarySpacingX, boundarySpacingY } =
     getGridBoundarySpacingAxes(params);
   const spacingSummary = params.spacingIndependent
-    ? `槽距 X${spacingX}mm / Y${spacingY}mm`
-    : `槽距${params.spacing}mm`;
+    ? `${isRectangularSlot ? "底盘距" : "槽距"} X${spacingX}mm / Y${spacingY}mm`
+    : `${isRectangularSlot ? "底盘距" : "槽距"}${params.spacing}mm`;
+  const spacingLabel = isRectangularSlot ? "底盘间距" : PARAM_CONFIG.spacing.label;
+  const spacingXLabel = isRectangularSlot
+    ? "X 轴底盘间距"
+    : PARAM_CONFIG.spacingX.label;
+  const spacingYLabel = isRectangularSlot
+    ? "Y 轴底盘间距"
+    : PARAM_CONFIG.spacingY.label;
   const boundarySummary = params.boundarySpacingIndependent
     ? `边距${params.boundarySpacing}mm`
     : params.spacingIndependent
@@ -141,24 +151,35 @@ export default function ParameterPanel({
                   <SelectValue placeholder="选择底座规格" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#16140f] border-[#2e2a24]">
-                  {BASE_PRESETS.map((preset) => (
-                    <SelectItem
-                      key={preset.diameter}
-                      value={`circle-${preset.diameter}`}
-                      className="text-foreground/90 cursor-pointer focus:bg-primary/10 focus:text-primary"
-                    >
-                      圆形 · {preset.name}
-                    </SelectItem>
-                  ))}
-                  {OLD_WORLD_RECTANGULAR_PRESETS.map((preset) => (
-                    <SelectItem
-                      key={preset.id}
-                      value={preset.id}
-                      className="text-foreground/90 cursor-pointer focus:bg-primary/10 focus:text-primary"
-                    >
-                      {preset.name}
-                    </SelectItem>
-                  ))}
+                  <SelectGroup>
+                    <SelectLabel className="font-semibold tracking-wide text-[#b9ad9d]">
+                      圆形底盘
+                    </SelectLabel>
+                    {BASE_PRESETS.map((preset) => (
+                      <SelectItem
+                        key={preset.diameter}
+                        value={`circle-${preset.diameter}`}
+                        className="text-foreground/90 cursor-pointer focus:bg-primary/10 focus:text-primary"
+                      >
+                        {preset.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                  <SelectSeparator className="bg-[#3a342b]" />
+                  <SelectGroup>
+                    <SelectLabel className="font-semibold tracking-wide text-[#d6a84f]">
+                      旧世界方形/矩形底盘
+                    </SelectLabel>
+                    {OLD_WORLD_RECTANGULAR_PRESETS.map((preset) => (
+                      <SelectItem
+                        key={preset.id}
+                        value={preset.id}
+                        className="text-foreground/90 cursor-pointer focus:bg-primary/10 focus:text-primary"
+                      >
+                        {preset.width}×{preset.height}mm
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
@@ -191,14 +212,14 @@ export default function ParameterPanel({
             {params.spacingIndependent ? (
               <>
                 <ParamSlider
-                  label={PARAM_CONFIG.spacingX.label}
+                  label={spacingXLabel}
                   value={params.spacingX}
                   config={PARAM_CONFIG.spacingX}
                   onChange={(v) => updateParam("spacingX", v)}
                   unit={PARAM_CONFIG.spacingX.unit}
                 />
                 <ParamSlider
-                  label={PARAM_CONFIG.spacingY.label}
+                  label={spacingYLabel}
                   value={params.spacingY}
                   config={PARAM_CONFIG.spacingY}
                   onChange={(v) => updateParam("spacingY", v)}
@@ -207,7 +228,7 @@ export default function ParameterPanel({
               </>
             ) : (
               <ParamSlider
-                label={PARAM_CONFIG.spacing.label}
+                label={spacingLabel}
                 value={params.spacing}
                 config={PARAM_CONFIG.spacing}
                 onChange={(v) => updateParam("spacing", v)}

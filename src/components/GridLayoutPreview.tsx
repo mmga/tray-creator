@@ -4,7 +4,7 @@ import type { TrayParams } from "@/types/tray";
 import {
   calculateTrayDimensions,
   getGridBoundarySpacingAxes,
-  getGridSpacingAxes,
+  getGridSlotPitchAxes,
 } from "@/lib/tray-model";
 import {
   getGridSlotGeometry,
@@ -19,7 +19,7 @@ export function GridLayoutPreview({ params }: GridLayoutPreviewProps) {
   const boundaryDash = getCanvasDashAttributes("boundary", 1);
   const dimensions = calculateTrayDimensions(params);
   const slotGeometry = getGridSlotGeometry(params);
-  const { spacingX, spacingY } = getGridSpacingAxes(params);
+  const { pitchX, pitchY } = getGridSlotPitchAxes(params);
   const { boundarySpacingX, boundarySpacingY } =
     getGridBoundarySpacingAxes(params);
   const padding = 24;
@@ -44,12 +44,12 @@ export function GridLayoutPreview({ params }: GridLayoutPreviewProps) {
         safeBevelWidth +
         boundarySpacingX +
         slotGeometry.slotWidth / 2 +
-        col * (slotGeometry.slotWidth + spacingX),
+        col * pitchX,
       y: dimensions.depth - (
         safeBevelWidth +
         boundarySpacingY +
         slotGeometry.slotHeight / 2 +
-        row * (slotGeometry.slotHeight + spacingY)
+        row * pitchY
       ),
     };
   });

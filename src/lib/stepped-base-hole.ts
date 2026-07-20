@@ -8,7 +8,7 @@ import {
 import {
   MAGNET_POST_HOLE_BOTTOM_WALL,
   normalizeBaseHoleParams,
-  resolveMagneticBaseHolePreset,
+  resolveLargestMagneticBaseHolePreset,
 } from "@/lib/base-hole-config";
 import type {
   BaseHoleStructure,
@@ -19,9 +19,7 @@ import type { BaseHolePresetKey } from "@/types/tray";
 function resolveLargestPresetForSlots(
   slots: SteppedLayoutParams["slots"],
 ): BaseHolePresetKey {
-  return slots.some((slot) =>
-    resolveMagneticBaseHolePreset(slot.shape, slot.width, slot.height) === "40"
-  ) ? "40" : "25";
+  return resolveLargestMagneticBaseHolePreset(slots);
 }
 
 function getSlotsForGroup(

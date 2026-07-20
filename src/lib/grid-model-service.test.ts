@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createOldWorldGridSlotSnapshot,
   DEFAULT_TRAY_PARAMS,
-  OLD_WORLD_RECTANGULAR_PRESETS,
+  findOldWorldRectangularPreset,
 } from "@/lib/grid-config";
 import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 
@@ -88,7 +88,9 @@ describe("grid model service", () => {
   it("includes both nominal dimensions in rectangular grid filenames", () => {
     const rectangularParams = {
       ...DEFAULT_TRAY_PARAMS,
-      ...createOldWorldGridSlotSnapshot(OLD_WORLD_RECTANGULAR_PRESETS[2]),
+      ...createOldWorldGridSlotSnapshot(
+        findOldWorldRectangularPreset("old-world-30x60")!,
+      ),
     };
 
     expect(getGridSTLFilename(rectangularParams)).toBe(

@@ -44,6 +44,29 @@ function getSerializedStlByteLength(model: ReturnType<typeof createTrayModel>) {
 }
 
 describe("tray model", () => {
+  it("applies rectangular slot clearance once around a zero-spacing ranked array", () => {
+    const params = {
+      ...DEFAULT_TRAY_PARAMS,
+      ...createOldWorldGridSlotSnapshot({
+        id: "old-world-25x25",
+        name: "旧世界 25×25mm",
+        width: 25,
+        height: 25,
+      }),
+      rows: 1,
+      columns: 10,
+      spacing: 0,
+      sideBevelWidth: 0,
+    };
+
+    const dimensions = calculateTrayDimensions(params);
+    const bounds = measureBoundingBox(createTrayModel(params));
+
+    expect(dimensions.width).toBeCloseTo(250.4, 5);
+    expect(dimensions.depth).toBeCloseTo(25.4, 5);
+    expect(bounds[1][0] - bounds[0][0]).toBeCloseTo(250.4, 5);
+  });
+
   it("creates a rectangular Old World tray with independent slot axes", () => {
     const params = {
       ...DEFAULT_TRAY_PARAMS,
@@ -64,8 +87,8 @@ describe("tray model", () => {
     const model = createTrayModel(params);
     const bounds = measureBoundingBox(model);
 
-    expect(dimensions.width).toBeCloseTo(111.2, 5);
-    expect(dimensions.depth).toBeCloseTo(135.8, 5);
+    expect(dimensions.width).toBeCloseTo(110.4, 5);
+    expect(dimensions.depth).toBeCloseTo(135.4, 5);
     expect(dimensions.height).toBe(6);
     expect(bounds[1][0] - bounds[0][0]).toBeCloseTo(dimensions.width, 5);
     expect(bounds[1][1] - bounds[0][1]).toBeCloseTo(dimensions.depth, 5);
