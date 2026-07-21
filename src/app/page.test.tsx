@@ -13,7 +13,6 @@ const {
   gridModelMock,
   customModelMock,
   baseConverterModelMock,
-  simpleSteppedModelMock,
   steppedModelMock,
   gridDraftsMock,
   customDraftsMock,
@@ -59,51 +58,6 @@ const {
     boundarySpacing: 5,
     boundarySpacingIndependent: false,
     baseThickness: 3,
-    holeDepth: 3,
-    cornerRadius: 4,
-    sideBevelWidth: 0,
-    baseHoleStructure: "none",
-    magnetPostHoleDiameter: 5,
-    magnetPostHoleDepth: 2,
-    baseHoleSize: "25",
-  };
-
-  const simpleSteppedCanvasParams: CustomLayoutParams = {
-    trayWidth: 180,
-    trayDepth: 150,
-    slots: [
-      {
-        id: "simple-slot-1",
-        x: 72,
-        y: 48,
-        shape: "circle",
-        width: 25,
-        height: 25,
-        rotation: 0,
-      },
-      {
-        id: "simple-slot-2",
-        x: 112,
-        y: 48,
-        shape: "circle",
-        width: 25,
-        height: 25,
-        rotation: 0,
-      },
-      {
-        id: "simple-slot-3",
-        x: 90,
-        y: 110,
-        shape: "circle",
-        width: 40,
-        height: 40,
-        rotation: 0,
-      },
-    ],
-    spacing: 5,
-    boundarySpacing: 5,
-    boundarySpacingIndependent: false,
-    baseThickness: 5,
     holeDepth: 3,
     cornerRadius: 4,
     sideBevelWidth: 0,
@@ -373,138 +327,6 @@ const {
       splitPreviewParts: null,
       canUndo: true,
     },
-    simpleSteppedModelMock: {
-      params: {
-        trayWidth: 180,
-        trayDepth: 150,
-        rows: [
-          { id: "row-1", name: "前排", slotIds: ["simple-slot-1", "simple-slot-2"] },
-          { id: "row-2", name: "后排", slotIds: ["simple-slot-3"] },
-        ],
-        slots: [
-          {
-            id: "simple-slot-1",
-            rowId: "row-1",
-            shape: "circle",
-            diameter: 25,
-            x: -20,
-            y: 0,
-          },
-          {
-            id: "simple-slot-2",
-            rowId: "row-1",
-            shape: "circle",
-            diameter: 25,
-            x: 20,
-            y: 0,
-          },
-          {
-            id: "simple-slot-3",
-            rowId: "row-2",
-            shape: "circle",
-            diameter: 40,
-            x: 0,
-            y: 0,
-          },
-        ],
-        firstRowHeight: 5,
-        stepHeight: 5,
-        rowGap: 6,
-        spacing: 5,
-        outerMarginIndependent: false,
-        outerMargin: 5,
-        holeDepth: 3,
-        cornerRadius: 4,
-      },
-      derivedLayout: {
-        trayWidth: 180,
-        trayDepth: 150,
-        minimumTrayWidth: 180,
-        minimumTrayDepth: 150,
-        trayHeight: 10,
-        highestTopHeight: 10,
-        slotCount: 3,
-        activeRows: [
-          {
-            id: "row-1",
-            name: "前排",
-            x: 0,
-            y: 0,
-            length: 180,
-            depth: 50,
-            centerY: 25,
-            holeCenterX: 90,
-            topHeight: 5,
-            extraHeight: 0,
-            slots: [],
-          },
-          {
-            id: "row-2",
-            name: "后排",
-            x: 0,
-            y: 56,
-            length: 180,
-            depth: 94,
-            centerY: 103,
-            holeCenterX: 90,
-            topHeight: 10,
-            extraHeight: 5,
-            slots: [],
-          },
-        ],
-        rowBands: [
-          {
-            id: "row-1",
-            name: "前排",
-            x: 0,
-            y: 0,
-            width: 180,
-            depth: 50,
-            topHeight: 5,
-            isActive: true,
-          },
-          {
-            id: "row-2",
-            name: "后排",
-            x: 0,
-            y: 56,
-            width: 180,
-            depth: 94,
-            topHeight: 10,
-            isActive: false,
-          },
-        ],
-      },
-      activeRowId: "row-1",
-      effectiveDimensions: { width: 180, depth: 150, height: 10 },
-      setParams: vi.fn(),
-      updateParam: vi.fn(),
-      setActiveRow: vi.fn(),
-      addRow: vi.fn(),
-      removeRow: vi.fn(),
-      renameRow: vi.fn(),
-      clearRow: vi.fn(),
-      reorderRows: vi.fn(),
-      addSlotToRow: vi.fn(),
-      removeSlot: vi.fn(),
-      updateSlotPosition: vi.fn(),
-      updateMultipleSlots: vi.fn(),
-      updateMultipleSlotsLive: vi.fn(),
-      updateSlotRotation: vi.fn(),
-      duplicateSlots: vi.fn(),
-      canvasParams: simpleSteppedCanvasParams,
-      saveSnapshot: vi.fn(),
-      undo: vi.fn(),
-      canUndo: true,
-      resizeTray: vi.fn(),
-      trimTray: vi.fn(),
-      threeGeometry: { id: "simple-stepped-geometry" },
-      volume: 30,
-      isGenerating: false,
-      isPreviewStale: true,
-      handleGenerate: vi.fn(),
-      handleExportSTL: vi.fn(),
-    },
     gridDraftsMock: createDraftControllerMock("grid"),
     customDraftsMock: createDraftControllerMock("custom"),
     steppedDraftsMock: createDraftControllerMock("stepped"),
@@ -573,10 +395,6 @@ vi.mock("@/hooks/useSteppedLayout", () => ({
   useSteppedLayout: () => steppedModelMock,
 }));
 
-vi.mock("@/hooks/useSimpleSteppedLayout", () => ({
-  useSimpleSteppedLayout: () => simpleSteppedModelMock,
-}));
-
 vi.mock("@/hooks/useModeDrafts", () => ({
   useModeDrafts: ({ mode }: { mode: AppMode }) => {
     if (mode === "grid") {
@@ -625,12 +443,6 @@ vi.mock("@/components/ParameterPanel", () => ({
 vi.mock("@/components/CustomPanel", () => ({
   default() {
     return <div data-testid="custom-panel" />;
-  },
-}));
-
-vi.mock("@/components/SimpleSteppedPanel", () => ({
-  default() {
-    return <div data-testid="simple-stepped-panel" />;
   },
 }));
 
@@ -946,7 +758,6 @@ describe("Home page", { timeout: 15000 }, () => {
     customModelMock.handleGenerate.mockReset();
     baseConverterModelMock.handleGenerate.mockReset();
     baseConverterModelMock.isPreviewStale = false;
-    simpleSteppedModelMock.handleGenerate.mockReset();
     steppedModelMock.handleGenerate.mockReset();
     steppedModelMock.setActiveGroup.mockReset();
     steppedModelMock.pauseOutlinePreview.mockReset();
@@ -1042,40 +853,6 @@ describe("Home page", { timeout: 15000 }, () => {
     expect(screen.getByTestId("tray-viewer")).toHaveAttribute(
       "data-geometry-id",
       "base-converter-geometry",
-    );
-  });
-
-  it.skip("旧简易阶梯运行时已删除", async () => {
-    render(<Home />);
-
-    fireEvent.click(screen.getByRole("button", { name: "切到简易阶梯" }));
-    await screen.findByTestId("simple-stepped-panel");
-
-    expect(screen.getByTestId("layout-canvas")).toHaveAttribute(
-      "data-row-band-count",
-      "2",
-    );
-    expect(screen.getByTestId("layout-canvas")).toHaveAttribute(
-      "data-has-resize-tray",
-      "true",
-    );
-    expect(screen.getByTestId("layout-canvas")).toHaveAttribute(
-      "data-scoped-drag-ids",
-      "simple-slot-1,simple-slot-2",
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "3D 预览" }));
-
-    await waitFor(() => {
-      expect(simpleSteppedModelMock.handleGenerate).toHaveBeenCalledTimes(1);
-    });
-    expect(screen.getByTestId("tray-viewer")).toHaveAttribute(
-      "data-geometry-id",
-      "simple-stepped-geometry",
-    );
-    expect(screen.getByTestId("tray-viewer")).toHaveAttribute(
-      "data-is-stale",
-      "true",
     );
   });
 
