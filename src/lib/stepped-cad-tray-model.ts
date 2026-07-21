@@ -62,7 +62,10 @@ export function createSteppedCadTrayModel(
     return createEmptyGeom();
   }
 
-  const baseSolid = buildBaseSolid(graph);
+  const baseSolid = buildBaseSolid(
+    graph,
+    params.footprintStyle === "rectangular",
+  );
 
   const slotHoles = graph.slotHoles.map((slotHole) =>
     translate(
@@ -79,22 +82,23 @@ export function createSteppedCadTrayModel(
   const magnetPostHoles = graph.magnetPostHoles.map(buildMagnetPostHoleSolid);
   const baseHoleStructure = resolveSteppedBaseHoleStructure(params);
 
-  let tray = baseSolid;
+  // 先批量切主槽，再切底板孔，与历史后端保持相同的布尔顺序；
+  // 先切小底孔会把实体面数提前放大，随后再切主槽的代价明显更高。
+  let tray = slotHoles.length > 0
+    ? subtract(baseSolid, ...slotHoles)
+    : baseSolid;
   if (baseHoleStructure === "magnetic-base-hole") {
     tray = subtractBaseHoles(tray, graph.baseHoles, 0, params.baseHoleSize);
-  }
-  if (slotHoles.length > 0) {
-    tray = subtract(tray, ...slotHoles);
   }
   if (baseHoleStructure === "magnet-post-hole" && magnetPostHoles.length > 0) {
     tray = subtract(tray, ...magnetPostHoles);
   }
 
-  // Rectangular Stepped Footprint 路径几何干净（矩形拉伸 + 圆柱槽孔），
-  // 跳过昂贵的 mesh cleanup 可显著提升性能（ADR-0002 第 11 段门槛优化）。
+  // Rectangular Stepped Footprint 路径几何干净且由正向拉伸体开始，
+  // 跳过 mesh cleanup 与整模体积方向扫描；后者在含底板孔的小模型中会成为主要成本。
   // Contoured 路径仍需 cleanup 修复 layer union 的相切退化。
   if (params.footprintStyle === "rectangular") {
-    return orientPositiveVolume(tray);
+    return tray;
   }
   return orientPositiveVolume(
     cleanupIfBeneficial(tray, baseHoleStructure === "magnet-post-hole"),
@@ -186,10 +190,18 @@ function buildGroupSolid(group: SteppedCadGroupFeature): Geom3 {
   return orientPositiveVolume(solid);
 }
 
-function buildBaseSolid(graph: SteppedCadFeatureGraph): Geom3 {
+function buildBaseSolid(
+  graph: SteppedCadFeatureGraph,
+  skipCollapsedUnionCheck = false,
+): Geom3 {
   const layerSolids = graph.layers.map((layer) => buildLayerSolid(layer));
   const layeredBase =
     layerSolids.length === 1 ? layerSolids[0] : union(...layerSolids);
+  // 矩形高度带由轴对齐矩形拉伸并带有层间重叠，不会触发相切轮廓塌缩。
+  // 跳过两轮完整体积扫描，避免小型历史模型的固定成本超过旧后端。
+  if (skipCollapsedUnionCheck) {
+    return layeredBase;
+  }
   const layerVolume = layerSolids.reduce(
     (total, solid) => total + Math.abs(measureVolume(solid)),
     0,

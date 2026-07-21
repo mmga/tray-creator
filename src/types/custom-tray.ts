@@ -46,6 +46,17 @@ export interface SlotGroup {
   groupDisconnectDistance: number;
   /** 拆件导出时并入的目标分组；为空时该组单独拆件 */
   splitPartGroupId?: string;
+  /**
+   * 历史 simple-stepped 行带的矩形几何快照。
+   * 仅由历史转换器写入，用于保留旧模型中“所有高层行带等宽”的几何；
+   * 现行阶梯编辑创建的分组不使用该字段，仍由槽位包络自动推导。
+   */
+  legacyRectangularFootprint?: {
+    centerX: number;
+    centerY: number;
+    width: number;
+    depth: number;
+  };
 }
 
 /** 分组轮廓预览（供 2D 编辑器逐组渲染） */

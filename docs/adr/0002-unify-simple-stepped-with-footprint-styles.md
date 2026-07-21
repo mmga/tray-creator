@@ -14,7 +14,7 @@
 
 - 阶段 A–D 已完成：新增 `Baseplate Footprint Style` 类型与默认值；抽出共用 `Contoured Footprint Construction` 与 `Contour Body Count`；custom 与 stepped 双向支持矩形 ↔ 贴合轮廓切换（2D 预览、3D 模型、底板孔位校验、结果摘要均按 style 分流）。
 - 阶段 E1–E3 已完成：新增 simple-stepped → stepped 转换器；Historical Param Artifact Reader 把历史 simple-stepped 文件读取重定向到 stepped 并记录行为变化；ModeTabs 移除 simple-stepped 用户入口。
-- 阶段 F1 性能门槛验证通过：rectangular footprint 路径在 `createSteppedCadTrayModel` 中跳过 `cleanupIfBeneficial`（矩形拉伸几何干净，无需 mesh 修复）；10/30/50 槽样本实测比率分别为 1.094、1.218、1.206，中位数 1.088，全部满足门槛。
+- 阶段 F1 等价性与性能门槛验证通过：新增“不等宽行 + 空行”和“底板磁吸孔”两个历史 version 1 文件，转换后的关键尺寸误差不超过 0.1mm、体积误差不超过 1%。性能测量对短样本采用批量重复以降低 GC/调度噪声；10/30/50 槽与两个历史样本实测比率分别为 0.961、0.995、1.163、0.986、1.054，中位数 0.995，全部满足门槛。矩形后端同时跳过不必要的 mesh cleanup、塌缩体积扫描和最终方向体积扫描，并按“主槽 → 底板孔”顺序执行布尔运算。
 - 阶段 E4 待执行：彻底删除 simple-stepped 运行时后端（model-service、tray-model、row/slot actions、panel、workspace、viewport、worker 分支）。转换器依赖的 simple-stepped-config / simple-stepped-layout / simple-stepped-projection 数据层需保留。E4 因涉及 10+ 文件协同改动与多条测试链路，单独作为后续 PR 执行。
 - simple-stepped 当前用户无法访问（ModeTabs 已移除），仅作为历史读取别名存在；E4 完成前用户行为不受影响。
 

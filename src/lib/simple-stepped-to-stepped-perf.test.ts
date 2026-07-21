@@ -15,6 +15,8 @@ import { createSimpleSteppedTrayModel } from "@/lib/simple-stepped-tray-model";
 import { createSteppedCadTrayModel } from "@/lib/stepped-cad-tray-model";
 import { convertSimpleSteppedToStepped } from "@/lib/simple-stepped-to-stepped";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
+import mixedRowsArtifact from "@/lib/fixtures/historical-simple-stepped-mixed-rows.json";
+import baseHolesArtifact from "@/lib/fixtures/historical-simple-stepped-base-holes.json";
 import type { SimpleSteppedLayoutParams, SimpleSteppedSlot, SimpleSteppedRow } from "@/types/custom-tray";
 
 const { measureVolume } = measurements;
@@ -91,79 +93,106 @@ function buildSimpleSteppedFixture(slotCount: number): SimpleSteppedLayoutParams
  * 测量一个生成函数的中位耗时（ms）。
  * warmup 次预热后测 iterations 次取中位数。
  */
-function measureMedianMs(
-  fn: () => unknown,
-  options: { warmup?: number; iterations?: number } = {},
-): number {
-  const warmup = options.warmup ?? 2;
-  const iterations = options.iterations ?? 3;
-  for (let i = 0; i < warmup; i += 1) {
-    fn();
+function measureOnceMs(fn: () => unknown): number {
+  const start = performance.now();
+  fn();
+  return performance.now() - start;
+}
+
+function measureRepeatedMs(fn: () => unknown, repetitions: number): number {
+  return measureOnceMs(() => {
+    for (let index = 0; index < repetitions; index += 1) {
+      fn();
+    }
+  }) / repetitions;
+}
+
+function median(samples: number[]): number {
+  const sorted = [...samples].sort((left, right) => left - right);
+  return sorted[Math.floor(sorted.length / 2)];
+}
+
+function measureBackendPair(
+  oldBackend: () => unknown,
+  newBackend: () => unknown,
+): { oldMedian: number; newMedian: number; ratio: number } {
+  for (let warmup = 0; warmup < 2; warmup += 1) {
+    oldBackend();
+    newBackend();
   }
-  const samples: number[] = [];
-  for (let i = 0; i < iterations; i += 1) {
-    const start = performance.now();
-    fn();
-    samples.push(performance.now() - start);
+  const probeDuration = Math.max(
+    measureOnceMs(oldBackend),
+    measureOnceMs(newBackend),
+  );
+  const repetitions = Math.min(
+    10,
+    Math.max(1, Math.ceil(250 / Math.max(probeDuration, 1))),
+  );
+  const oldSamples: number[] = [];
+  const newSamples: number[] = [];
+
+  for (let i = 0; i < 3; i += 1) {
+    const oldFirst = i % 2 === 0;
+    if (oldFirst) {
+      oldSamples.push(measureRepeatedMs(oldBackend, repetitions));
+      newSamples.push(measureRepeatedMs(newBackend, repetitions));
+    } else {
+      newSamples.push(measureRepeatedMs(newBackend, repetitions));
+      oldSamples.push(measureRepeatedMs(oldBackend, repetitions));
+    }
   }
-  samples.sort((a, b) => a - b);
-  return samples[Math.floor(samples.length / 2)];
+
+  const oldMedian = median(oldSamples);
+  const newMedian = median(newSamples);
+  return {
+    oldMedian,
+    newMedian,
+    ratio: newMedian / Math.max(oldMedian, 0.001),
+  };
 }
 
 describe("ADR-0002 性能门槛：simple-stepped → stepped rectangular 迁移", () => {
-  // 用 it.each 覆盖 10/30/50 槽样本
-  const slotCounts = [10, 30, 50] as const;
+  it("10/30/50 槽与两个历史文件全部满足性能门槛", () => {
+    const fixtures: Array<[string, SimpleSteppedLayoutParams]> = [
+      ...([10, 30, 50] as const).map(
+        (slotCount): [string, SimpleSteppedLayoutParams] => [
+          `${slotCount} 槽`,
+          buildSimpleSteppedFixture(slotCount),
+        ],
+      ),
+      [
+        "历史不等宽行",
+        structuredClone(mixedRowsArtifact.params) as unknown as SimpleSteppedLayoutParams,
+      ],
+      [
+        "历史底板孔",
+        structuredClone(baseHolesArtifact.params) as unknown as SimpleSteppedLayoutParams,
+      ],
+    ];
+    const results: Array<{ label: string; ratio: number }> = [];
 
-  it.each(slotCounts)(
-    "%d 槽样本：stepped rectangular 相对 simple-stepped 的生成时间比率满足门槛",
-    (slotCount) => {
-      const simpleParams = buildSimpleSteppedFixture(slotCount);
+    fixtures.forEach(([label, simpleParams]) => {
       const { params: steppedParams } = convertSimpleSteppedToStepped(simpleParams);
-
-      // 验证两个后端都产出正体积（语义等价前置检查）
       const simpleGeom = createSimpleSteppedTrayModel(simpleParams);
       const steppedGeom = createSteppedCadTrayModel(steppedParams);
       expect(measureVolume(simpleGeom)).toBeGreaterThan(0);
       expect(measureVolume(steppedGeom)).toBeGreaterThan(0);
-
-      const simpleMedian = measureMedianMs(
+      const result = measureBackendPair(
         () => createSimpleSteppedTrayModel(simpleParams),
-      );
-      const steppedMedian = measureMedianMs(
         () => createSteppedCadTrayModel(steppedParams),
       );
-
-      const ratio = steppedMedian / Math.max(simpleMedian, 0.001);
-
-      // 记录数据便于审查（CI 日志可见）
-      // eslint-disable-next-line no-console
+      results.push({ label, ratio: result.ratio });
       console.log(
-        `[ADR-0002 perf] slotCount=${slotCount} simple=${simpleMedian.toFixed(2)}ms stepped=${steppedMedian.toFixed(2)}ms ratio=${ratio.toFixed(3)}`,
+        `[ADR-0002 perf] sample=${label} simple=${result.oldMedian.toFixed(2)}ms stepped=${result.newMedian.toFixed(2)}ms ratio=${result.ratio.toFixed(3)}`,
       );
+    });
 
-      // ADR-0002 第 11 段：任一样本不得超过 1.5
-      expect(ratio).toBeLessThanOrEqual(1.5);
-    },
-    60000, // 单测试 60s 超时（每个样本包含 warmup+3 次测量）
-  );
-
-  it("所有样本比率的中位数不超过 1.25（ADR-0002 门槛）", () => {
-    const ratios: number[] = [];
-    for (const slotCount of slotCounts) {
-      const simpleParams = buildSimpleSteppedFixture(slotCount);
-      const { params: steppedParams } = convertSimpleSteppedToStepped(simpleParams);
-      const simpleMedian = measureMedianMs(
-        () => createSimpleSteppedTrayModel(simpleParams),
-      );
-      const steppedMedian = measureMedianMs(
-        () => createSteppedCadTrayModel(steppedParams),
-      );
-      ratios.push(steppedMedian / Math.max(simpleMedian, 0.001));
-    }
-    ratios.sort((a, b) => a - b);
-    const median = ratios[Math.floor(ratios.length / 2)];
-    // eslint-disable-next-line no-console
-    console.log(`[ADR-0002 perf] ratios=${ratios.map((r) => r.toFixed(3)).join(",")} median=${median.toFixed(3)}`);
-    expect(median).toBeLessThanOrEqual(1.25);
-  }, 180000); // 中位数汇总测试 180s 超时
+    results.forEach((result) => {
+      expect(result.ratio, `${result.label} 单样本比率`).toBeLessThanOrEqual(1.5);
+    });
+    const ratios = results.map((result) => result.ratio);
+    const medianRatio = median(ratios);
+    console.log(`[ADR-0002 perf] ratios=${ratios.map((ratio) => ratio.toFixed(3)).join(",")} median=${medianRatio.toFixed(3)}`);
+    expect(medianRatio).toBeLessThanOrEqual(1.25);
+  }, 240000);
 });

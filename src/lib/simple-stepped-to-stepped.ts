@@ -54,6 +54,12 @@ export function convertSimpleSteppedToStepped(
     name: row.name || `组 ${index + 1}`,
     color: GROUP_COLORS[index % GROUP_COLORS.length],
     bottomHeight: row.topHeight,
+    legacyRectangularFootprint: {
+      centerX: derived.trayWidth / 2,
+      centerY: row.centerY,
+      width: row.length,
+      depth: row.depth,
+    },
     ...createGroupStructureOverrides({
       smoothingRadius: STEPPED_LAYOUT_DEFAULTS.smoothingRadius,
       disconnectDistance: STEPPED_LAYOUT_DEFAULTS.disconnectDistance,

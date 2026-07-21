@@ -58,6 +58,10 @@ describe("simple-stepped to stepped converter", () => {
     expect(params.groups[1].bottomHeight).toBe(15);
     // 组顺序保持 simple-stepped 行顺序
     expect(params.groups.map((g) => g.id)).toEqual(["row-1", "row-2"]);
+    expect(params.groups.map((group) => group.legacyRectangularFootprint)).toEqual([
+      { centerX: 50, centerY: 17.6, width: 65.2, depth: 35.2 },
+      { centerX: 50, centerY: 54.800000000000004, width: 65.2, depth: 35.2 },
+    ]);
   });
 
   it("空行不生成组且不消耗高度步进（CONTEXT:584）", () => {

@@ -407,7 +407,31 @@ function buildRectangleFootprint(
 function buildRectangularGroupFootprint(
   ownSlotData: NormalizedSlotData[],
   boundarySpacing: number,
+  legacyFootprint?: SteppedLayoutParams["groups"][number]["legacyRectangularFootprint"],
+  trayWidth?: number,
+  trayDepth?: number,
 ): Geom2 | null {
+  if (
+    legacyFootprint &&
+    Number.isFinite(legacyFootprint.centerX) &&
+    Number.isFinite(legacyFootprint.centerY) &&
+    Number.isFinite(legacyFootprint.width) &&
+    Number.isFinite(legacyFootprint.depth) &&
+    legacyFootprint.width > 0 &&
+    legacyFootprint.depth > 0 &&
+    typeof trayWidth === "number" &&
+    typeof trayDepth === "number"
+  ) {
+    const centerX = legacyFootprint.centerX - trayWidth / 2;
+    const centerY = legacyFootprint.centerY - trayDepth / 2;
+    return buildRectangleFootprint({
+      minX: centerX - legacyFootprint.width / 2,
+      maxX: centerX + legacyFootprint.width / 2,
+      minY: centerY - legacyFootprint.depth / 2,
+      maxY: centerY + legacyFootprint.depth / 2,
+    }, 0);
+  }
+
   const bounds = calculateAxisAlignedEnvelope(ownSlotData, boundarySpacing);
   if (!bounds) {
     return null;
@@ -478,6 +502,9 @@ export function buildSteppedCadFeatureGraph(
         footprint = buildRectangularGroupFootprint(
           ownSlots,
           boundarySpacing,
+          group.legacyRectangularFootprint,
+          trayWidth,
+          trayDepth,
         );
       } else {
         footprint = buildClusteredFootprint(
