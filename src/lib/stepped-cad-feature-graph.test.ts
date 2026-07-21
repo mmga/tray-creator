@@ -170,4 +170,60 @@ describe("stepped cad feature graph", () => {
     expect(rotatedWidth).toBeCloseTo(46.3, 0);
     expect(rotatedDepth).toBeCloseTo(70.8, 0);
   });
+
+  it("Rectangular Stepped Footprint：最低层为整体轴对齐包络+圆角，更高层为分组矩形直角", () => {
+    const params = {
+      ...createParams(),
+      footprintStyle: "rectangular" as const,
+      traySizingMode: "auto" as const,
+      cornerRadius: 6,
+      boundarySpacing: 5,
+      boundarySpacingIndependent: true,
+    };
+    const graph = buildSteppedCadFeatureGraph(params);
+
+    expect(graph.groups.length).toBe(2);
+    // 最低 columnHeight=10 对应整体包络；高层=20 对应分组包络
+    const lowGroup = graph.groups.find((g) => g.columnHeight === 10)!;
+    const highGroup = graph.groups.find((g) => g.columnHeight === 20)!;
+
+    // 最低层应包含两个槽位的整体包络（宽度约 25 + 5*(spacing=5) + 35 + 2*5 = ?，至少 > 单槽）
+    const [lowMin, lowMax] = measurements.measureBoundingBox(lowGroup.footprint);
+    const lowWidth = lowMax[0] - lowMin[0];
+    expect(lowWidth).toBeGreaterThan(50);
+
+    // 高层只包含高层组的槽位，宽度更小
+    const [highMin, highMax] = measurements.measureBoundingBox(highGroup.footprint);
+    const highWidth = highMax[0] - highMin[0];
+    expect(highWidth).toBeLessThan(lowWidth);
+    expect(highWidth).toBeGreaterThan(25);
+  });
+
+  it("Rectangular Stepped Footprint：fixed sizing 仅作用于最低连续层", () => {
+    const params = {
+      ...createParams(),
+      footprintStyle: "rectangular" as const,
+      traySizingMode: "fixed" as const,
+      trayWidth: 200,
+      trayDepth: 160,
+      cornerRadius: 4,
+      boundarySpacing: 5,
+      boundarySpacingIndependent: true,
+    };
+    const graph = buildSteppedCadFeatureGraph(params);
+
+    const lowGroup = graph.groups.find((g) => g.columnHeight === 10)!;
+    const highGroup = graph.groups.find((g) => g.columnHeight === 20)!;
+
+    // 最低层使用固定尺寸 200x160
+    const [, lowMax] = measurements.measureBoundingBox(lowGroup.footprint);
+    const [lowMin] = measurements.measureBoundingBox(lowGroup.footprint);
+    expect(lowMax[0] - lowMin[0]).toBeCloseTo(200, 0);
+    expect(lowMax[1] - lowMin[1]).toBeCloseTo(160, 0);
+
+    // 高层不受 fixed sizing 影响（CONTEXT:603），仍由分组槽位包络决定
+    const [, highMax] = measurements.measureBoundingBox(highGroup.footprint);
+    const [highMin] = measurements.measureBoundingBox(highGroup.footprint);
+    expect(highMax[0] - highMin[0]).toBeLessThan(200);
+  });
 });

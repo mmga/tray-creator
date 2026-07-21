@@ -2,6 +2,7 @@ import {
   booleans,
   geometries,
   primitives,
+  transforms,
 } from "@jscad/modeling";
 import type { Geom2 } from "@jscad/modeling/src/geometries/types";
 import type { SteppedLayoutParams, SteppedSlot } from "@/types/custom-tray";
@@ -30,6 +31,7 @@ import {
 const { union } = booleans;
 const { geom2 } = geometries;
 const { circle } = primitives;
+const { translate } = transforms;
 
 function getSlotBoundingHalfSize(
   width: number,
@@ -88,7 +90,11 @@ function createOffsetSlotShape(
 }
 
 function calculateEffectiveBaseplate(params: SteppedLayoutParams) {
-  const boundarySpacing = params.spacing;
+  // boundary spacing 缺失时跟随 spacing（CONTEXT:613）；rectangular 与 contoured 共用此规则
+  const boundarySpacingIndependent = params.boundarySpacingIndependent === true;
+  const boundarySpacing = boundarySpacingIndependent
+    ? (params.boundarySpacing ?? params.spacing)
+    : params.spacing;
 
   if (params.slots.length === 0) {
     return {
@@ -294,6 +300,139 @@ function buildClusteredFootprint(
   return outlines.length === 1 ? outlines[0] : union(...outlines);
 }
 
+/**
+ * 解析阶梯模式的底座轮廓样式；缺失时默认 contoured 以兼容旧阶梯文件（CONTEXT:592）。
+ */
+function resolveSteppedFootprintStyle(
+  params: Pick<SteppedLayoutParams, "footprintStyle">,
+): "rectangular" | "contoured" {
+  return params.footprintStyle === "rectangular" ? "rectangular" : "contoured";
+}
+
+/**
+ * 计算一组 slot 的轴对齐矩形包络（含 boundary spacing 外扩）。
+ * 包络在托盘坐标系中保持轴对齐，并包含旋转后的最终槽位几何（CONTEXT:243-245）。
+ */
+function calculateAxisAlignedEnvelope(
+  slotData: NormalizedSlotData[],
+  boundarySpacing: number,
+): { minX: number; maxX: number; minY: number; maxY: number } | null {
+  if (slotData.length === 0) {
+    return null;
+  }
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (const item of slotData) {
+    const { halfW, halfH } = getSlotBoundingHalfSize(
+      item.profile.width,
+      item.profile.height,
+      item.rotation,
+      item.slot.shape,
+      item.profile.outerOffset,
+      item.profile.profileExponent,
+    );
+    minX = Math.min(minX, item.cx - halfW);
+    maxX = Math.max(maxX, item.cx + halfW);
+    minY = Math.min(minY, item.cy - halfH);
+    maxY = Math.max(maxY, item.cy + halfH);
+  }
+  return {
+    minX: minX - boundarySpacing,
+    maxX: maxX + boundarySpacing,
+    minY: minY - boundarySpacing,
+    maxY: maxY + boundarySpacing,
+  };
+}
+
+/**
+ * 构造矩形 Geom2（轴对齐，可选圆角）。
+ * center 为矩形中心；rotateZ(0) 保证轴对齐。
+ */
+function buildRectangleFootprint(
+  bounds: { minX: number; maxX: number; minY: number; maxY: number },
+  cornerRadius = 0,
+): Geom2 {
+  const width = bounds.maxX - bounds.minX;
+  const depth = bounds.maxY - bounds.minY;
+  const cx = (bounds.minX + bounds.maxX) / 2;
+  const cy = (bounds.minY + bounds.maxY) / 2;
+  const safeRadius = Math.max(0, Math.min(cornerRadius, width / 2 - 0.01, depth / 2 - 0.01));
+
+  if (safeRadius <= 0) {
+    return primitives.rectangle({ size: [width, depth], center: [cx, cy] });
+  }
+
+  // 圆角矩形：用 4 段圆弧 + 4 段直线采样构造闭合多边形
+  const segmentsPerArc = 8;
+  const points: [number, number][] = [];
+  const corners = [
+    { x: bounds.maxX - safeRadius, y: bounds.maxY - safeRadius, startAngle: 0 },
+    { x: bounds.minX + safeRadius, y: bounds.maxY - safeRadius, startAngle: Math.PI / 2 },
+    { x: bounds.minX + safeRadius, y: bounds.minY + safeRadius, startAngle: Math.PI },
+    { x: bounds.maxX - safeRadius, y: bounds.minY + safeRadius, startAngle: -Math.PI / 2 },
+  ];
+  for (const corner of corners) {
+    for (let i = 0; i < segmentsPerArc; i += 1) {
+      const angle = corner.startAngle + (Math.PI / 2) * (i / segmentsPerArc);
+      points.push([
+        corner.x + safeRadius * Math.cos(angle),
+        corner.y + safeRadius * Math.sin(angle),
+      ]);
+    }
+  }
+  return translate([0, 0], geom2.fromPoints(points));
+}
+
+/**
+ * 为阶梯模式构造 Rectangular Stepped Footprint（CONTEXT:235-237,601-603）。
+ *
+ * - 最低连续层：所有槽位的整体轴对齐包络 + boundary spacing；应用模型级 cornerRadius。
+ *   若 traySizingMode=fixed，使用配置的 trayWidth/trayDepth 作为最低层尺寸。
+ * - 更高高度带：每个高度组各自的轴对齐包络 + boundary spacing，直角（不应用 cornerRadius）。
+ * - fixed sizing 仅决定最低层；不传播到更高分组（CONTEXT:603）。
+ */
+function buildRectangularSteppedGroupFootprint(
+  ownSlotData: NormalizedSlotData[],
+  higherSlotData: NormalizedSlotData[],
+  params: SteppedLayoutParams,
+  isLowestLayer: boolean,
+  lowestLayerBounds?: { minX: number; maxX: number; minY: number; maxY: number } | null,
+): Geom2 | null {
+  const boundarySpacingIndependent = params.boundarySpacingIndependent === true;
+  const boundarySpacing = boundarySpacingIndependent
+    ? (params.boundarySpacing ?? params.spacing)
+    : params.spacing;
+
+  // 最低连续层：用整体包络（含所有槽位）或 fixed sizing
+  if (isLowestLayer) {
+    if (params.traySizingMode === "fixed" && params.trayWidth > 0 && params.trayDepth > 0) {
+      return buildRectangleFootprint(
+        {
+          minX: -params.trayWidth / 2,
+          maxX: params.trayWidth / 2,
+          minY: -params.trayDepth / 2,
+          maxY: params.trayDepth / 2,
+        },
+        params.cornerRadius ?? 0,
+      );
+    }
+    if (lowestLayerBounds) {
+      return buildRectangleFootprint(lowestLayerBounds, params.cornerRadius ?? 0);
+    }
+    return null;
+  }
+
+  // 更高高度带：本组包络 + 更高槽位包络的并集；保持直角（CONTEXT:601）
+  const allSlots = [...ownSlotData, ...higherSlotData];
+  const bounds = calculateAxisAlignedEnvelope(allSlots, boundarySpacing);
+  if (!bounds) {
+    return null;
+  }
+  return buildRectangleFootprint(bounds, 0);
+}
+
 export function buildSteppedCadFeatureGraph(
   params: SteppedLayoutParams,
 ): SteppedCadFeatureGraph {
@@ -310,6 +449,25 @@ export function buildSteppedCadFeatureGraph(
       magnetPostHoles: [],
     };
   }
+
+  const footprintStyle = resolveSteppedFootprintStyle(params);
+  const boundarySpacingIndependent = params.boundarySpacingIndependent === true;
+  const boundarySpacing = boundarySpacingIndependent
+    ? (params.boundarySpacing ?? params.spacing)
+    : params.spacing;
+
+  // 预计算最低连续层的整体包络（rectangular 下复用）
+  const lowestLayerBounds = footprintStyle === "rectangular"
+    ? calculateAxisAlignedEnvelope(slots, boundarySpacing)
+    : null;
+
+  // 找出最低 columnHeight，用于判定哪个 group 是"最低连续层"
+  const allColumnHeights = params.groups
+    .map((group) => Math.max(group.bottomHeight, 3))
+    .filter((height, _index, arr) => arr.length > 0);
+  const lowestColumnHeight = allColumnHeights.length > 0
+    ? Math.min(...allColumnHeights)
+    : 0;
 
   const groups = params.groups
     .map<SteppedCadGroupFeature | null>((group) => {
@@ -329,11 +487,25 @@ export function buildSteppedCadFeatureGraph(
         }
         return slot.columnHeight > columnHeight;
       });
-      const footprint = buildClusteredFootprint(
-        [...ownSlots, ...contextSlots],
-        params.spacing,
-        getEffectiveGroupStructureParams(group, params),
-      );
+
+      let footprint: Geom2 | null = null;
+      if (footprintStyle === "rectangular") {
+        // 最低 columnHeight 的分组使用最低连续层包络；其余分组用各自的矩形包络
+        const isLowestLayer = columnHeight <= lowestColumnHeight + 1e-6;
+        footprint = buildRectangularSteppedGroupFootprint(
+          ownSlots,
+          contextSlots,
+          params,
+          isLowestLayer,
+          isLowestLayer ? lowestLayerBounds : null,
+        );
+      } else {
+        footprint = buildClusteredFootprint(
+          [...ownSlots, ...contextSlots],
+          params.spacing,
+          getEffectiveGroupStructureParams(group, params),
+        );
+      }
 
       if (!footprint) {
         return null;
