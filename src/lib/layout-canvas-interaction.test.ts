@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   buildLayoutCanvasDragUpdates,
-  calculateLayoutCanvasMinimumTrayBounds,
   resolveLayoutCanvasDragStart,
 } from "@/lib/layout-canvas-interaction";
 import type { LayoutEditorSlot } from "@/viewports/layout-editor/types";
@@ -61,22 +60,4 @@ describe("layout canvas interaction", () => {
     ]);
   });
 
-  it("calculates minimum tray bounds from row bands or effective baseplate", () => {
-    expect(
-      calculateLayoutCanvasMinimumTrayBounds({
-        rowBands: [
-          { id: "row-1", name: "A", x: 5, y: 10, width: 30, depth: 20, topHeight: 4 },
-          { id: "row-2", name: "B", x: 0, y: 35, width: 40, depth: 15, topHeight: 8 },
-        ],
-        effectiveBaseplate: { width: 100, height: 80 },
-      }),
-    ).toEqual({ width: 40, depth: 40 });
-
-    expect(
-      calculateLayoutCanvasMinimumTrayBounds({
-        rowBands: null,
-        effectiveBaseplate: { width: 100, height: 80 },
-      }),
-    ).toEqual({ width: 100, depth: 80 });
-  });
 });

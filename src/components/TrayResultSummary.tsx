@@ -52,19 +52,6 @@ function modeSpecificMetrics(result: TrayResultProjection) {
           />
         </>
       );
-    case "simple-stepped":
-      return (
-        <>
-          <ResultMetric
-            label="行数 / 有效行"
-            value={`${result.rowCount} / ${result.activeRowCount}`}
-          />
-          <ResultMetric
-            label="最小底板"
-            value={`${result.minimumBaseplate.width.toFixed(1)} × ${result.minimumBaseplate.depth.toFixed(1)} mm`}
-          />
-        </>
-      );
     case "stepped":
       return (
         <div className="col-span-2 space-y-1.5 border border-[#2e2a24] bg-[#1c1a16] p-2">

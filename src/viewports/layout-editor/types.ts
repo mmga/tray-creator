@@ -3,7 +3,6 @@
 import type {
   FreeSlot,
   GroupOutlinePreview,
-  SimpleSteppedRowBand,
   SlotGroup,
   SteppedSlot,
 } from "@/types/custom-tray";
@@ -29,7 +28,6 @@ export interface LayoutEditorViewportModel {
   overlays: {
     focusedGroupId?: string | null;
     groupOutlines?: GroupOutlinePreview[] | null;
-    rowBands?: SimpleSteppedRowBand[] | null;
     slotGroups?: SlotGroup[] | null;
   };
   interactions: {
@@ -44,7 +42,6 @@ export interface LayoutEditorViewportModel {
 export interface LayoutEditorViewportCommands {
   updateSlotPosition: (id: string, x: number, y: number) => void;
   removeSlot: (id: string) => void;
-  resizeTray?: (width: number, depth: number) => void;
   updateSlotRotation?: (id: string, rotation: number) => void;
   updateMultipleSlots?: (updates: CanvasSlotUpdate[]) => void;
   liveUpdateMultipleSlots?: (updates: CanvasSlotUpdate[]) => void;

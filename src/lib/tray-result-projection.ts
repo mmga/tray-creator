@@ -1,14 +1,12 @@
 import { MAX_BUILD_SIZE } from "@/lib/config";
 import { calculateCustomTrayDimensions } from "@/lib/custom-tray-model";
 import { calculateCustomTrayFootprint } from "@/lib/custom-layout-math";
-import type { SimpleSteppedDerivedLayout } from "@/lib/simple-stepped-layout";
 import { calculateTrayDimensions } from "@/lib/tray-model";
 import { resolveBaseConverterGeometry } from "@/lib/base-converter-config";
 import type {
   BaseConverterParams,
   BaseplateFootprintStyle,
   CustomLayoutParams,
-  SimpleSteppedLayoutParams,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import type { TrayParams } from "@/types/tray";
@@ -57,14 +55,6 @@ export interface CustomTrayResultProjection extends TrayResultProjectionBase {
   footprintArea: number;
 }
 
-export interface SimpleSteppedTrayResultProjection
-  extends TrayResultProjectionBase {
-  mode: "simple-stepped";
-  rowCount: number;
-  activeRowCount: number;
-  minimumBaseplate: { width: number; depth: number };
-}
-
 export interface BaseConverterResultProjection extends TrayResultProjectionBase {
   mode: "base-converter";
   sourceLabel: string;
@@ -88,7 +78,6 @@ export type TrayResultProjection =
   | GridTrayResultProjection
   | CustomTrayResultProjection
   | BaseConverterResultProjection
-  | SimpleSteppedTrayResultProjection
   | SteppedTrayResultProjection;
 
 export function projectBaseConverterResult(
@@ -233,27 +222,6 @@ export function projectCustomTrayResult(
     footprintKind,
     contourBodyCount: footprint.contourBodyCount,
     footprintArea: finiteOrZero(common.dimensions.width * common.dimensions.depth),
-  };
-}
-
-export function projectSimpleSteppedTrayResult(
-  params: SimpleSteppedLayoutParams,
-  derivedLayout: SimpleSteppedDerivedLayout,
-  effectiveDimensions: TrayResultDimensions,
-  state: ResultState,
-): SimpleSteppedTrayResultProjection {
-  const common = projectCommon(effectiveDimensions, state);
-  return {
-    mode: "simple-stepped",
-    slotCount: params.slots.length,
-    itemLabel: `${params.rows.length} 行 · ${params.slots.length} 槽`,
-    ...common,
-    rowCount: params.rows.length,
-    activeRowCount: derivedLayout.activeRows.length,
-    minimumBaseplate: {
-      width: finiteOrZero(derivedLayout.minimumTrayWidth),
-      depth: finiteOrZero(derivedLayout.minimumTrayDepth),
-    },
   };
 }
 

@@ -5,7 +5,6 @@ export type AppMode =
   | "grid"
   | "custom"
   | "base-converter"
-  | "simple-stepped"
   | "stepped";
 
 /**

@@ -31,14 +31,6 @@ function renderDraftSummary(item: AnyDraftListItem): ReactNode {
           <span>{item.trayWidth.toFixed(0)}×{item.trayDepth.toFixed(0)}mm</span>
         </>
       );
-    case "simple-stepped":
-      return (
-        <>
-          <span>{item.rowCount} 行</span>
-          <span>{item.slotCount} 槽</span>
-          <span>{item.trayWidth.toFixed(0)}×{item.trayDepth.toFixed(0)}mm</span>
-        </>
-      );
     case "stepped":
       return (
         <>

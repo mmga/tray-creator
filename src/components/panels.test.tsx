@@ -203,7 +203,10 @@ vi.mock("@/components/ui/ParamSlider", () => ({
 
 import CustomPanelImplementation from "@/components/CustomPanel";
 import ParameterPanelImplementation from "@/components/ParameterPanel";
-import SimpleSteppedPanelImplementation from "@/components/SimpleSteppedPanel";
+function SimpleSteppedPanelImplementation(_props: Record<string, unknown>) {
+  void _props;
+  return null;
+}
 import { SteppedLayoutPanel as SteppedLayoutPanelImplementation } from "@/components/SteppedPanel";
 
 const panelActionsStub = <div data-testid="panel-actions-stub" />;
@@ -1114,7 +1117,7 @@ describe("CustomPanel", { timeout: 15000 }, () => {
   });
 });
 
-describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
+describe.skip("旧 SimpleSteppedPanel 已删除", { timeout: 15000 }, () => {
   it("routes row management and slot insertion controls", () => {
     const params = createSimpleSteppedParams();
     const derivedLayout = deriveSimpleSteppedLayout(params, "row-1");

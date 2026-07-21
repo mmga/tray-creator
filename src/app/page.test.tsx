@@ -17,7 +17,6 @@ const {
   steppedModelMock,
   gridDraftsMock,
   customDraftsMock,
-  simpleSteppedDraftsMock,
   steppedDraftsMock,
 } = vi.hoisted(() => {
   const gridParams: TrayParams = {
@@ -209,14 +208,7 @@ const {
                 trayWidth: 260,
                 trayDepth: 260,
               }
-            : mode === "simple-stepped"
-              ? {
-                  rowCount: 2,
-                  slotCount: 3,
-                  trayWidth: 180,
-                  trayDepth: 150,
-                }
-              : {
+            : {
                   slotCount: 1,
                   groupCount: 1,
                   trayWidth: 260,
@@ -515,7 +507,6 @@ const {
     },
     gridDraftsMock: createDraftControllerMock("grid"),
     customDraftsMock: createDraftControllerMock("custom"),
-    simpleSteppedDraftsMock: createDraftControllerMock("simple-stepped"),
     steppedDraftsMock: createDraftControllerMock("stepped"),
   };
 });
@@ -594,9 +585,6 @@ vi.mock("@/hooks/useModeDrafts", () => ({
     if (mode === "custom") {
       return customDraftsMock;
     }
-    if (mode === "simple-stepped") {
-      return simpleSteppedDraftsMock;
-    }
     return steppedDraftsMock;
   },
 }));
@@ -619,9 +607,6 @@ vi.mock("@/components/ModeTabs", () => ({
         </button>
         <button type="button" onClick={() => onModeChange("base-converter")}>
           切到转换底盘
-        </button>
-        <button type="button" onClick={() => onModeChange("simple-stepped")}>
-          切到简易阶梯
         </button>
         <button type="button" onClick={() => onModeChange("stepped")}>
           切到阶梯
@@ -973,7 +958,6 @@ describe("Home page", { timeout: 15000 }, () => {
     for (const draftMock of [
       gridDraftsMock,
       customDraftsMock,
-      simpleSteppedDraftsMock,
       steppedDraftsMock,
     ]) {
       draftMock.getDraftList.mockClear();
@@ -1061,7 +1045,7 @@ describe("Home page", { timeout: 15000 }, () => {
     );
   });
 
-  it("wires simple stepped mode through the panel, canvas, and 3D regenerate flow", async () => {
+  it.skip("旧简易阶梯运行时已删除", async () => {
     render(<Home />);
 
     fireEvent.click(screen.getByRole("button", { name: "切到简易阶梯" }));

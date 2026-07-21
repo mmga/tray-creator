@@ -4,13 +4,11 @@ import { useCallback, useMemo } from "react";
 import type { useCustomLayout } from "@/hooks/useCustomLayout";
 import type { useBaseConverter } from "@/hooks/useBaseConverter";
 import type { ModeInteractionState } from "@/hooks/useModeInteractionState";
-import type { useSimpleSteppedLayout } from "@/hooks/useSimpleSteppedLayout";
 import type { useSteppedLayout } from "@/hooks/useSteppedLayout";
 import type { useTrayModel } from "@/hooks/useTrayModel";
 import { useCustomWorkspace } from "@/workspaces/custom/useCustomWorkspace";
 import { useBaseConverterWorkspace } from "@/workspaces/base-converter/useBaseConverterWorkspace";
 import { useGridWorkspace } from "@/workspaces/grid/useGridWorkspace";
-import { useSimpleSteppedWorkspace } from "@/workspaces/simple-stepped/useSimpleSteppedWorkspace";
 import { useSteppedWorkspace } from "@/workspaces/stepped/useSteppedWorkspace";
 import type { ModeWorkspace } from "@/workspaces/types";
 import type { AppMode } from "@/types/custom-tray";
@@ -22,10 +20,8 @@ interface UseModeWorkspacesOptions {
   gridModel: ReturnType<typeof useTrayModel>;
   customModel: ReturnType<typeof useCustomLayout>;
   baseConverterModel: ReturnType<typeof useBaseConverter>;
-  simpleSteppedModel: ReturnType<typeof useSimpleSteppedLayout>;
   steppedModel: ReturnType<typeof useSteppedLayout>;
   customInteractionState: ModeInteractionState;
-  simpleSteppedInteractionState: ModeInteractionState;
   steppedInteractionState: ModeInteractionState;
   onRequestParamImport: (file: File) => Promise<DraftActionResult>;
 }
@@ -40,10 +36,8 @@ export function useModeWorkspaces({
   gridModel,
   customModel,
   baseConverterModel,
-  simpleSteppedModel,
   steppedModel,
   customInteractionState,
-  simpleSteppedInteractionState,
   steppedInteractionState,
   onRequestParamImport,
 }: UseModeWorkspacesOptions): UseModeWorkspacesReturn {
@@ -60,11 +54,6 @@ export function useModeWorkspaces({
     model: baseConverterModel,
     onRequestParamImport,
   });
-  const simpleSteppedWorkspace = useSimpleSteppedWorkspace({
-    model: simpleSteppedModel,
-    interactionState: simpleSteppedInteractionState,
-    onRequestParamImport,
-  });
   const steppedWorkspace = useSteppedWorkspace({
     model: steppedModel,
     interactionState: steppedInteractionState,
@@ -79,8 +68,6 @@ export function useModeWorkspaces({
         return customWorkspace;
       case "base-converter":
         return baseConverterWorkspace;
-      case "simple-stepped":
-        return simpleSteppedWorkspace;
       case "stepped":
         return steppedWorkspace;
       default: {
@@ -93,7 +80,6 @@ export function useModeWorkspaces({
     baseConverterWorkspace,
     gridWorkspace,
     mode,
-    simpleSteppedWorkspace,
     steppedWorkspace,
   ]);
 
@@ -105,8 +91,6 @@ export function useModeWorkspaces({
         return customWorkspace.importTarget;
       case "base-converter":
         return baseConverterWorkspace.importTarget;
-      case "simple-stepped":
-        return simpleSteppedWorkspace.importTarget;
       case "stepped":
         return steppedWorkspace.importTarget;
       default: {
@@ -118,7 +102,6 @@ export function useModeWorkspaces({
     customWorkspace.importTarget,
     baseConverterWorkspace.importTarget,
     gridWorkspace.importTarget,
-    simpleSteppedWorkspace.importTarget,
     steppedWorkspace.importTarget,
   ]);
 

@@ -43,7 +43,10 @@ export interface DraftRecord<M extends DraftMode = "stepped"> {
 
 const DRAFT_INDEX_KEY = "tray-creator:drafts:index:v1";
 
-const draftRecordKey = (mode: DraftMode | "stepped-cad", id: string): string =>
+const draftRecordKey = (
+  mode: DraftMode | "simple-stepped" | "stepped-cad",
+  id: string,
+): string =>
   `tray-creator:drafts:${mode}:${id}:v1`;
 
 function getCompatibleDraftRecordKeys(mode: DraftMode, id: string): string[] {
@@ -157,8 +160,9 @@ function getDraftInternal<M extends DraftMode>(
       return null;
     }
 
-    const recordMode = parsed.paramFile.mode === "stepped-cad"
-      ? "stepped-cad"
+    const recordMode = parsed.paramFile.mode === "stepped-cad" ||
+        parsed.paramFile.mode === "simple-stepped"
+      ? parsed.paramFile.mode
       : isDraftMode(parsed.paramFile.mode)
         ? parsed.paramFile.mode
         : mode;
@@ -267,15 +271,7 @@ function commitDraft<M extends DraftMode>(
 
 export function listDrafts<M extends DraftMode>(mode: M): DraftListItem<M>[] {
   return readIndex()
-    .filter((item) =>
-      item.mode === mode || (mode === "stepped" && item.mode === "simple-stepped")
-    )
-    .map((item) =>
-      mode === "stepped" && item.mode === "simple-stepped"
-        ? getDraftInternal("stepped", item.id)?.item ?? null
-        : item
-    )
-    .filter((item): item is AnyDraftListItem => item !== null)
+    .filter((item) => item.mode === mode)
     .sort(
       (a, b) =>
         new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
@@ -422,7 +418,6 @@ export function defaultDraftTitle(mode: DraftMode = "stepped"): string {
     grid: "网格草稿",
     custom: "自定义草稿",
     "base-converter": "转换底盘草稿",
-    "simple-stepped": "简易阶梯草稿",
     stepped: "阶梯草稿",
   }[mode];
 

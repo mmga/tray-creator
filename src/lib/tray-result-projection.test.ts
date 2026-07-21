@@ -1,15 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
-import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
-import { deriveSimpleSteppedLayout } from "@/lib/simple-stepped-layout";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import { BASE_CONVERTER_DEFAULTS } from "@/lib/base-converter-config";
 import {
   projectCustomTrayResult,
   projectBaseConverterResult,
   projectGridTrayResult,
-  projectSimpleSteppedTrayResult,
   projectSteppedTrayResult,
 } from "@/lib/tray-result-projection";
 
@@ -83,26 +80,6 @@ describe("Tray Result Projection", () => {
     expect(contoured.footprintKind).toBe("contoured-footprint");
     expect(contoured.contourBodyCount).toBe(2);
     expect(contoured.dimensions.width).toBeGreaterThan(0);
-  });
-
-  it("投影 simple stepped 的行数、有效行和最小底板", () => {
-    const derived = deriveSimpleSteppedLayout(
-      SIMPLE_STEPPED_LAYOUT_DEFAULTS,
-      null,
-    );
-    const result = projectSimpleSteppedTrayResult(
-      SIMPLE_STEPPED_LAYOUT_DEFAULTS,
-      derived,
-      { width: 120, depth: 130, height: 12 },
-      idleState,
-    );
-
-    expect(result.rowCount).toBe(SIMPLE_STEPPED_LAYOUT_DEFAULTS.rows.length);
-    expect(result.activeRowCount).toBe(derived.activeRows.length);
-    expect(result.minimumBaseplate).toEqual({
-      width: derived.minimumTrayWidth,
-      depth: derived.minimumTrayDepth,
-    });
   });
 
   it("投影转换底盘标准、凹槽与总高度", () => {

@@ -363,7 +363,6 @@ function TestLayoutCanvas({
   params,
   onUpdateSlot,
   onRemoveSlot,
-  onResizeTray,
   onUpdateSlotRotation,
   onUpdateMultipleSlots,
   onLiveUpdateMultipleSlots,
@@ -375,7 +374,6 @@ function TestLayoutCanvas({
   onEditInteractionChange,
   outlinePreview,
   focusedGroupId,
-  rowBands,
   slotMoveScopeResolver,
 }: TestLayoutCanvasProps) {
   const isStepped = "groups" in params;
@@ -395,14 +393,13 @@ function TestLayoutCanvas({
           boundarySpacing,
           cornerRadius: "cornerRadius" in params ? (params.cornerRadius ?? 0) : 0,
           sideBevelWidth: "sideBevelWidth" in params ? params.sideBevelWidth : 0,
-          showEffectiveBaseplate: !isStepped && !rowBands,
-          showMaxBuildBoundary: Boolean(rowBands),
+          showEffectiveBaseplate: !isStepped,
+          showMaxBuildBoundary: false,
         },
         slots: params.slots,
         overlays: {
           focusedGroupId,
           groupOutlines: outlinePreview,
-          rowBands,
           slotGroups: isStepped ? params.groups : null,
         },
         interactions: {
@@ -412,7 +409,6 @@ function TestLayoutCanvas({
       commands={{
         updateSlotPosition: onUpdateSlot,
         removeSlot: onRemoveSlot,
-        resizeTray: onResizeTray,
         updateSlotRotation: onUpdateSlotRotation,
         updateMultipleSlots: onUpdateMultipleSlots,
         liveUpdateMultipleSlots: onLiveUpdateMultipleSlots,
@@ -775,7 +771,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     );
   });
 
-  it("uses simple stepped row bands to switch overflow semantics and drag scoping", async () => {
+  it.skip("旧简易阶梯行带运行时已删除", async () => {
     const slotMoveScopeResolver = vi.fn(() => ["slot-1"]);
     const onSaveSnapshot = vi.fn();
     const onEditInteractionChange = vi.fn();
@@ -1004,7 +1000,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     );
   });
 
-  it("resizes simple stepped trays from the drag handles and clamps to row bounds", async () => {
+  it.skip("旧简易阶梯尺寸拖拽已删除", async () => {
     const onResizeTray = vi.fn();
     const onSaveSnapshot = vi.fn();
     const onEditInteractionChange = vi.fn();
@@ -1103,7 +1099,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     expect(onEditInteractionChange).toHaveBeenLastCalledWith(false);
   });
 
-  it("allows simple stepped tray resizing beyond the print boundary", async () => {
+  it.skip("旧简易阶梯尺寸拖拽已删除", async () => {
     const onResizeTray = vi.fn();
     const { container } = render(
       <TestLayoutCanvas
@@ -1598,7 +1594,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     expect(onSelectionChange).toHaveBeenLastCalledWith([]);
   });
 
-  it("resizes simple stepped trays from the bottom and corner handles", async () => {
+  it.skip("旧简易阶梯尺寸拖拽已删除", async () => {
     const onResizeTray = vi.fn();
     const onSaveSnapshot = vi.fn();
     const onEditInteractionChange = vi.fn();

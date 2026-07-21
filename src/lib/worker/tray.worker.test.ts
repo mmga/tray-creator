@@ -7,7 +7,6 @@ import { BASE_CONVERTER_DEFAULTS } from "@/lib/base-converter-config";
 const createTrayModel = vi.fn();
 const createCustomTrayModel = vi.fn();
 const createBaseConverterModel = vi.fn();
-const createSimpleSteppedTrayModel = vi.fn();
 const createSteppedCadTrayModel = vi.fn();
 const createSteppedCadSplitParts = vi.fn();
 const buildSteppedOutlinePreview = vi.fn();
@@ -24,10 +23,6 @@ vi.mock("../custom-tray-model", () => ({
 
 vi.mock("../base-converter-model", () => ({
   createBaseConverterModel,
-}));
-
-vi.mock("../simple-stepped-tray-model", () => ({
-  createSimpleSteppedTrayModel,
 }));
 
 vi.mock("../stepped-cad-tray-model", () => ({
@@ -118,7 +113,7 @@ describe("tray worker", () => {
     });
   });
 
-  it("logs stepped debug info and posts generation success when debugging is enabled", async () => {
+  it("posts stepped generation success without debug logging", async () => {
     const workerSelf = await loadWorkerModule();
     const geometry = { id: "stepped-geom" };
     const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
@@ -137,22 +132,7 @@ describe("tray worker", () => {
     } as MessageEvent);
 
     expect(createSteppedCadTrayModel).toHaveBeenCalled();
-    expect(infoSpy).toHaveBeenNthCalledWith(
-      1,
-      "[STEPPED_ORIENT]",
-      "worker_request",
-      expect.objectContaining({
-        requestId: "req-stepped",
-        spacing: STEPPED_LAYOUT_DEFAULTS.spacing,
-        smoothingRadius: STEPPED_LAYOUT_DEFAULTS.smoothingRadius,
-      }),
-    );
-    expect(infoSpy).toHaveBeenNthCalledWith(
-      2,
-      "[STEPPED_ORIENT]",
-      "worker_result",
-      { requestId: "req-stepped", volume: 88 },
-    );
+    expect(infoSpy).not.toHaveBeenCalled();
     expect(workerSelf.postMessage).toHaveBeenCalledWith({
       type: "GENERATION_SUCCESS",
       requestId: "req-stepped",

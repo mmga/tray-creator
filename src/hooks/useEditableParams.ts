@@ -34,7 +34,7 @@ interface UseEditableParamsOptions<P, S> {
    * （用于统一吸收"worker service 不可用则优雅降级"的重复检查）。
    */
   guard?: () => boolean;
-  /** 可选：对 setParams/undo/外部导入的值做规范化（simple-stepped 的 normalizeParams） */
+  /** 可选：对 setParams、undo 和外部导入值做规范化 */
   normalize?: (params: P) => P;
   /** preview 失效时的回调（stepped 用来清优化提案） */
   onInvalidate?: () => void;
@@ -67,7 +67,7 @@ export interface UseEditableParamsReturn<P> {
 /**
  * 带 undo 历史 + 预览生命周期的可编辑参数容器。
  *
- * 深化共享模块：把三个模式 hook（custom/simple-stepped/stepped）里逐字重复的
+ * 深化共享模块：把自由布局模式 hook 里逐字重复的
  * "paramsRef + setParams + saveSnapshot/undo + updateParam 三件套" 编排集中到一处。
  *
  * 调用方用 applyChange((prev) => removeSlot(prev, id), { history: "save" })

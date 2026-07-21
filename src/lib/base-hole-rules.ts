@@ -20,7 +20,6 @@ import {
   getGridBoundarySpacingAxes,
   getGridSpacingAxes,
 } from "@/lib/tray-model";
-import { deriveSimpleSteppedLayout } from "@/lib/simple-stepped-layout";
 import { buildSteppedOutlinePreview } from "@/lib/stepped-outline-preview";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import type {
@@ -343,44 +342,6 @@ function getLargestOutlinePoints(footprint: Geom2): { x: number; y: number }[] |
   return largest?.map(([x, y]) => ({ x, y })) ?? null;
 }
 
-function buildSimpleSteppedSlots(params: SimpleSteppedLayoutParams): BaseHoleSlot[] {
-  const derived = deriveSimpleSteppedLayout(params);
-  return derived.activeRows.flatMap((row) => row.slots.map((slot) => {
-    const cavityTop = row.topHeight - params.holeDepth - BASE_HOLE_CONFIG.topWall;
-    const usesRaisedBand = cavityTop > params.firstRowHeight + 1e-6;
-    const bounds = usesRaisedBand
-      ? {
-          minX: (derived.trayWidth - row.length) / 2,
-          maxX: (derived.trayWidth + row.length) / 2,
-          minY: row.centerY - row.depth / 2,
-          maxY: row.centerY + row.depth / 2,
-        }
-      : { minX: 0, maxX: derived.trayWidth, minY: 0, maxY: derived.trayDepth };
-    return {
-      id: slot.id,
-      shape: "circle",
-      nominalWidth: slot.diameter,
-      nominalHeight: slot.diameter,
-      finalWidth: slot.effectiveDiameter,
-      finalHeight: slot.effectiveDiameter,
-      x: slot.globalX,
-      y: slot.globalY,
-      floorHeight: row.topHeight - params.holeDepth,
-      containsExpandedHole: (radius) => circleFits(
-        slot.globalX,
-        slot.globalY,
-        radius,
-        (pointX, pointY) => isPointInRoundedRect(
-          pointX,
-          pointY,
-          bounds,
-          usesRaisedBand ? 0 : params.cornerRadius,
-        ),
-      ),
-    } satisfies BaseHoleSlot;
-  }));
-}
-
 function buildSteppedSlots(params: SteppedLayoutParams): BaseHoleSlot[] {
   const outlines = buildSteppedOutlinePreview(params) ?? [];
   const groupById = new Map(params.groups.map((group) => [group.id, group]));
@@ -518,15 +479,13 @@ function validateSlots(params: BaseHoleParams, slots: BaseHoleSlot[]) {
 
 function buildSlotsForMode(
   mode: Exclude<AppMode, "base-converter">,
-  params: TrayParams | CustomLayoutParams | SimpleSteppedLayoutParams | SteppedLayoutParams,
+  params: TrayParams | CustomLayoutParams | SteppedLayoutParams,
 ): BaseHoleSlot[] {
   switch (mode) {
     case "grid":
       return buildGridSlots(params as TrayParams);
     case "custom":
       return buildCustomSlots(params as CustomLayoutParams);
-    case "simple-stepped":
-      return buildSimpleSteppedSlots(params as SimpleSteppedLayoutParams);
     case "stepped":
       return buildSteppedSlots(params as SteppedLayoutParams);
   }
@@ -534,7 +493,7 @@ function buildSlotsForMode(
 
 export function getResolvedMagneticBaseHolePresets(
   mode: Exclude<AppMode, "base-converter">,
-  params: TrayParams | CustomLayoutParams | SimpleSteppedLayoutParams | SteppedLayoutParams,
+  params: TrayParams | CustomLayoutParams | SteppedLayoutParams,
 ): BaseHolePresetKey[] {
   let presets: Set<BaseHolePresetKey>;
   if (mode === "grid") {
@@ -546,16 +505,6 @@ export function getResolvedMagneticBaseHolePresets(
         slot.baseHeight,
       ),
     ]);
-  } else if (mode === "simple-stepped") {
-    presets = new Set(
-      (params as SimpleSteppedLayoutParams).slots.map((slot) =>
-        resolveMagneticBaseHolePreset(
-          "circle",
-          slot.diameter,
-          slot.diameter,
-        )
-      ),
-    );
   } else {
     presets = new Set(
       (params as CustomLayoutParams | SteppedLayoutParams).slots.map((slot) =>
@@ -580,7 +529,7 @@ export function getBaseHoleFitBlockingReason(
 
 export function validateBaseHoleFit(
   mode: Exclude<AppMode, "base-converter">,
-  params: TrayParams | CustomLayoutParams | SimpleSteppedLayoutParams | SteppedLayoutParams,
+  params: TrayParams | CustomLayoutParams | SteppedLayoutParams,
 ): BaseHoleFitViolation[] {
   return validateSlots(params, buildSlotsForMode(mode, params));
 }

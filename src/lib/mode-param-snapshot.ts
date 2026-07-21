@@ -3,7 +3,6 @@ import type {
   AppMode,
   BaseConverterParams,
   CustomLayoutParams,
-  SimpleSteppedLayoutParams,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 
@@ -11,7 +10,6 @@ export type ParamsByMode = {
   grid: TrayParams;
   custom: CustomLayoutParams;
   "base-converter": BaseConverterParams;
-  "simple-stepped": SimpleSteppedLayoutParams;
   stepped: SteppedLayoutParams;
 };
 

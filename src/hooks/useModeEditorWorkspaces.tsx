@@ -7,7 +7,6 @@ import { useBaseConverter } from "@/hooks/useBaseConverter";
 import { useModeInteractionState } from "@/hooks/useModeInteractionState";
 import { useModeViewportWorkspaces } from "@/hooks/useModeViewportWorkspaces";
 import { useModeWorkspaces } from "@/hooks/useModeWorkspaces";
-import { useSimpleSteppedLayout } from "@/hooks/useSimpleSteppedLayout";
 import { useSteppedLayout } from "@/hooks/useSteppedLayout";
 import { useTrayModel } from "@/hooks/useTrayModel";
 import type { AppMode } from "@/types/custom-tray";
@@ -49,10 +48,8 @@ export function useModeEditorWorkspaces({
   const gridModel = useTrayModel();
   const customModel = useCustomLayout();
   const baseConverterModel = useBaseConverter();
-  const simpleSteppedModel = useSimpleSteppedLayout();
   const steppedModel = useSteppedLayout();
   const customInteractionState = useModeInteractionState();
-  const simpleSteppedInteractionState = useModeInteractionState();
   const steppedInteractionState = useModeInteractionState();
 
   const clearPendingImport = useCallback(() => {
@@ -93,10 +90,8 @@ export function useModeEditorWorkspaces({
     gridModel,
     customModel,
     baseConverterModel,
-    simpleSteppedModel,
     steppedModel,
     customInteractionState,
-    simpleSteppedInteractionState,
     steppedInteractionState,
   });
 
@@ -105,10 +100,8 @@ export function useModeEditorWorkspaces({
     gridModel,
     customModel,
     baseConverterModel,
-    simpleSteppedModel,
     steppedModel,
     customInteractionState,
-    simpleSteppedInteractionState,
     steppedInteractionState,
     onRequestParamImport: requestParamImport,
   });

@@ -40,12 +40,6 @@ export type DraftListItemCompatibilityByMode = {
     trayWidth: number;
     trayDepth: number;
   };
-  "simple-stepped": {
-    rowCount: number;
-    slotCount: number;
-    trayWidth: number;
-    trayDepth: number;
-  };
   stepped: {
     groupCount: number;
     slotCount: number;
@@ -78,7 +72,6 @@ export const DRAFT_MODES: DraftMode[] = [
   "grid",
   "custom",
   "base-converter",
-  "simple-stepped",
   "stepped",
 ];
 
@@ -86,8 +79,8 @@ export function isDraftMode(value: unknown): value is DraftMode {
   return DRAFT_MODES.includes(value as DraftMode);
 }
 
-function isHistoricalDraftMode(value: unknown): value is HistoricalDraftMode {
-  return value === "stepped-cad" || isDraftMode(value);
+function isHistoricalDraftMode(value: unknown): value is HistoricalDraftMode | "simple-stepped" {
+  return value === "stepped-cad" || value === "simple-stepped" || isDraftMode(value);
 }
 
 function isFiniteNumber(value: unknown): value is number {
@@ -117,13 +110,6 @@ export function extractCompatibilityFields(
       return {
         sourceLabel: summary.sourceLabel,
         targetLabel: summary.targetLabel,
-        trayWidth: summary.trayWidth,
-        trayDepth: summary.trayDepth,
-      };
-    case "simple-stepped":
-      return {
-        rowCount: summary.rowCount,
-        slotCount: summary.slotCount,
         trayWidth: summary.trayWidth,
         trayDepth: summary.trayDepth,
       };
@@ -225,8 +211,8 @@ function normalizeSummaryFromLegacyFields(
       isFiniteNumber(item.trayDepth)
     ) {
       return {
-        mode: "simple-stepped",
-        rowCount: item.rowCount,
+        mode: "stepped",
+        groupCount: item.rowCount,
         slotCount: item.slotCount,
         trayWidth: item.trayWidth,
         trayDepth: item.trayDepth,
@@ -250,7 +236,9 @@ export function normalizeListItem<M extends DraftMode>(
   fallbackParams?: DraftParamsByMode[M] | ExportableParams,
 ): (DraftListItemShape<M>) | null {
   const historicalMode = isHistoricalDraftMode(item.mode) ? item.mode : fallbackMode;
-  const mode = historicalMode === "stepped-cad" ? "stepped" : historicalMode;
+  const mode = historicalMode === "stepped-cad" || historicalMode === "simple-stepped"
+    ? "stepped"
+    : historicalMode;
   if (
     !mode ||
     typeof item.id !== "string" ||

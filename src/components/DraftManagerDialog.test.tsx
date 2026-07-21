@@ -167,7 +167,7 @@ describe("DraftManagerDialog", { timeout: 15000 }, () => {
 
     render(
       <DraftManagerDialog
-        mode="simple-stepped"
+        mode="stepped"
         open={true}
         onOpenChange={vi.fn()}
         drafts={drafts}
@@ -185,7 +185,7 @@ describe("DraftManagerDialog", { timeout: 15000 }, () => {
       />,
     );
 
-    expect(screen.getByText("简易阶梯草稿")).toBeInTheDocument();
+    expect(screen.getByText("阶梯模式草稿")).toBeInTheDocument();
     expect(screen.getByText("草稿数量已达上限，请在列表中删除不需要的草稿")).toBeInTheDocument();
     expect(screen.getByText("10 / 10")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("草稿名称（留空自动生成）")).toBeDisabled();

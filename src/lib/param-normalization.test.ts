@@ -3,6 +3,7 @@ import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { getBaseHoleMinBaseThickness, MAX_BUILD_SIZE } from "@/lib/config";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
+import { normalizeSimpleSteppedParams } from "@/lib/simple-stepped-projection";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import {
   migrateCustomParamsToStepped,
@@ -37,7 +38,7 @@ describe("param normalization", () => {
         },
       ],
     } as unknown as CustomLayoutParams) as CustomLayoutParams;
-    const simpleStepped = normalizeParamsForMode("simple-stepped", {
+    const simpleStepped = normalizeSimpleSteppedParams({
       ...SIMPLE_STEPPED_LAYOUT_DEFAULTS,
       rows: [{ id: "row-1", name: "前排", slotIds: ["simple-100"] }],
       slots: [
@@ -206,7 +207,7 @@ describe("param normalization", () => {
   });
 
   it("normalizes simple stepped legacy rows before slot snapshots and derived size", () => {
-    const normalized = normalizeParamsForMode("simple-stepped", {
+    const normalized = normalizeSimpleSteppedParams({
       stepHeight: 5,
       rowGap: 0,
       spacing: 4,
@@ -240,7 +241,7 @@ describe("param normalization", () => {
   });
 
   it("uses the simple stepped layout core for imported tray size and snapshots", () => {
-    const normalized = normalizeParamsForMode("simple-stepped", {
+    const normalized = normalizeSimpleSteppedParams({
       ...SIMPLE_STEPPED_LAYOUT_DEFAULTS,
       trayWidth: 100,
       trayDepth: 100,

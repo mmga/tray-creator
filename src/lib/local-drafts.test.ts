@@ -287,7 +287,6 @@ describe("local drafts", () => {
     vi.spyOn(crypto, "randomUUID")
       .mockReturnValueOnce("grid-1")
       .mockReturnValueOnce("custom-1")
-      .mockReturnValueOnce("simple-1")
       .mockReturnValueOnce("stepped-1");
 
     const grid = createDraft(
@@ -310,22 +309,13 @@ describe("local drafts", () => {
         trayDepth: 80,
       }),
     );
-    const simple = createDraft(
-      "简易阶梯草稿",
-      "simple-stepped",
-      createSimpleSteppedParams(),
-    );
     const stepped = createDraft("阶梯草稿", "stepped", createSteppedParams());
 
     expect(listDrafts("grid").map((item) => item.id)).toEqual([grid.item.id]);
     expect(listDrafts("custom").map((item) => item.id)).toEqual([
       custom.item.id,
     ]);
-    expect(listDrafts("simple-stepped").map((item) => item.id)).toEqual([
-      simple.item.id,
-    ]);
     expect(listDrafts("stepped").map((item) => item.id)).toEqual([
-      simple.item.id,
       stepped.item.id,
     ]);
 
@@ -343,13 +333,6 @@ describe("local drafts", () => {
       slotCount: 1,
       trayWidth: 120,
       trayDepth: 80,
-    });
-    expect(simple.item.summary).toEqual({
-      mode: "simple-stepped",
-      rowCount: 1,
-      slotCount: 1,
-      trayWidth: SIMPLE_STEPPED_LAYOUT_DEFAULTS.trayWidth,
-      trayDepth: SIMPLE_STEPPED_LAYOUT_DEFAULTS.trayDepth,
     });
   });
 

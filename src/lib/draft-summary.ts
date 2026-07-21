@@ -1,9 +1,7 @@
-import { calculateSimpleSteppedDimensions } from "@/lib/simple-stepped-layout";
 import { calculateTrayDimensions } from "@/lib/tray-model";
 import type {
   BaseConverterParams,
   CustomLayoutParams,
-  SimpleSteppedLayoutParams,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import { resolveBaseConverterGeometry } from "@/lib/base-converter-config";
@@ -39,13 +37,6 @@ export type DraftSummary =
       trayDepth: number;
     }
   | {
-      mode: "simple-stepped";
-      rowCount: number;
-      slotCount: number;
-      trayWidth: number;
-      trayDepth: number;
-    }
-  | {
       mode: "stepped";
       groupCount: number;
       slotCount: number;
@@ -61,7 +52,6 @@ export type DraftParamsByMode = {
   grid: TrayParams;
   custom: CustomLayoutParams;
   "base-converter": BaseConverterParams;
-  "simple-stepped": SimpleSteppedLayoutParams;
   stepped: SteppedLayoutParams;
 };
 
@@ -119,19 +109,6 @@ function buildBaseConverterDraftSummary(
   };
 }
 
-function buildSimpleSteppedDraftSummary(
-  params: SimpleSteppedLayoutParams,
-): DraftSummaryByMode["simple-stepped"] {
-  const dimensions = calculateSimpleSteppedDimensions(params);
-  return {
-    mode: "simple-stepped",
-    rowCount: params.rows.length,
-    slotCount: params.slots.length,
-    trayWidth: dimensions.width,
-    trayDepth: dimensions.depth,
-  };
-}
-
 function buildSteppedDraftSummary<M extends "stepped">(
   mode: M,
   params: SteppedLayoutParams,
@@ -159,10 +136,6 @@ export function buildDraftSummary<M extends keyof DraftParamsByMode>(
     case "base-converter":
       return buildBaseConverterDraftSummary(
         params as BaseConverterParams,
-      ) as DraftSummaryByMode[M];
-    case "simple-stepped":
-      return buildSimpleSteppedDraftSummary(
-        params as SimpleSteppedLayoutParams,
       ) as DraftSummaryByMode[M];
     case "stepped":
       return buildSteppedDraftSummary(

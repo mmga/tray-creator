@@ -737,7 +737,7 @@ describe("param-io", () => {
             holeDepth: 3,
           },
         },
-        "simple-stepped",
+        "simple-stepped" as AppMode,
       ),
     ).toThrow("模式不匹配");
   });

@@ -17,7 +17,6 @@ export function ModeTabs({ mode, onModeChange }: ModeTabsProps) {
         onValueChange={(v) => onModeChange(v as AppMode)}
         className="w-full"
       >
-        {/* simple-stepped 不再作为用户可选 Mode（CONTEXT:583）；仅 grid/custom/base-converter/stepped */}
         <TabsList className="grid w-full max-w-[1240px] grid-cols-4 bg-[#1c1a16] border border-[#2e2a24]">
           <TabsTrigger
             value="grid"

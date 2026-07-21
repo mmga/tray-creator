@@ -3,7 +3,6 @@ import { act, fireEvent, render, renderHook, screen, waitFor } from "@testing-li
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
-import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 
 const {
@@ -76,7 +75,6 @@ vi.mock("@/components/PanelActionSection", () => ({
 
 import { useGridWorkspace } from "@/workspaces/grid/useGridWorkspace";
 import { useCustomWorkspace } from "@/workspaces/custom/useCustomWorkspace";
-import { useSimpleSteppedWorkspace } from "@/workspaces/simple-stepped/useSimpleSteppedWorkspace";
 import { useSteppedWorkspace } from "@/workspaces/stepped/useSteppedWorkspace";
 
 function renderWorkspacePanel(panel: ReactNode) {
@@ -223,42 +221,6 @@ describe("Mode Workspace Draft Action Area", () => {
       2,
       expect.objectContaining({ trayWidth: 180 }),
     );
-  });
-
-  it("simple stepped 在重置和导入后清除活动行与 Draft Binding", async () => {
-    const onRequestParamImport = vi.fn(async () => ({ status: "success" as const }));
-    const model = {
-      params: SIMPLE_STEPPED_LAYOUT_DEFAULTS,
-      setParams: vi.fn(),
-      setActiveRow: vi.fn(),
-      effectiveDimensions: { width: 120, depth: 140, height: 12 },
-      handleGenerate: vi.fn(),
-      handleExportSTL: vi.fn(),
-      isGenerating: false,
-      isPreviewStale: true,
-    };
-    const { result } = renderHook(() =>
-      useSimpleSteppedWorkspace({
-        model: model as never,
-        interactionState: { selectedSlotIds: [] } as never,
-        onRequestParamImport,
-      }),
-    );
-    renderWorkspacePanel(result.current.panel);
-
-    fireEvent.click(screen.getByRole("button", { name: "重置" }));
-    fireEvent.click(screen.getByRole("button", { name: "导入" }));
-
-    await waitFor(() => expect(onRequestParamImport).toHaveBeenCalledTimes(1));
-    expect(model.setActiveRow).toHaveBeenCalledTimes(1);
-    expect(model.setActiveRow).toHaveBeenNthCalledWith(1, null);
-    act(() => result.current.importTarget.commit({
-      ...SIMPLE_STEPPED_LAYOUT_DEFAULTS,
-      trayWidth: 180,
-    }));
-    expect(model.setActiveRow).toHaveBeenCalledTimes(2);
-    expect(model.setActiveRow).toHaveBeenNthCalledWith(2, null);
-    expect(clearDraftBindingMock).toHaveBeenCalledTimes(2);
   });
 
   it("stepped 在重置和导入后清除 Mode Interaction State", async () => {

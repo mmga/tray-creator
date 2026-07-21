@@ -17,7 +17,7 @@ import {
 import { convertSimpleSteppedToStepped } from "@/lib/simple-stepped-to-stepped";
 import type { SimpleSteppedLayoutParams } from "@/types/custom-tray";
 
-type HistoricalMode = AppMode | "stepped-cad";
+type HistoricalMode = AppMode | "simple-stepped" | "stepped-cad";
 
 const HISTORICAL_MODES: readonly HistoricalMode[] = [
   "grid",
@@ -32,12 +32,13 @@ export const APP_MODE_LABELS: Record<AppMode, string> = {
   grid: "网格",
   custom: "自定义",
   "base-converter": "转换底盘",
-  "simple-stepped": "简易阶梯",
   stepped: "自定义阶梯",
 };
 
 function getModeLabel(mode: HistoricalMode): string {
-  return mode === "stepped-cad" ? "CAD 阶梯" : APP_MODE_LABELS[mode];
+  if (mode === "stepped-cad") return "CAD 阶梯";
+  if (mode === "simple-stepped") return "简易阶梯";
+  return APP_MODE_LABELS[mode];
 }
 
 export interface ImportCandidate {
