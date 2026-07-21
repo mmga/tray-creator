@@ -90,6 +90,12 @@ export function createSteppedCadTrayModel(
     tray = subtract(tray, ...magnetPostHoles);
   }
 
+  // Rectangular Stepped Footprint 路径几何干净（矩形拉伸 + 圆柱槽孔），
+  // 跳过昂贵的 mesh cleanup 可显著提升性能（ADR-0002 第 11 段门槛优化）。
+  // Contoured 路径仍需 cleanup 修复 layer union 的相切退化。
+  if (params.footprintStyle === "rectangular") {
+    return orientPositiveVolume(tray);
+  }
   return orientPositiveVolume(
     cleanupIfBeneficial(tray, baseHoleStructure === "magnet-post-hole"),
   );
