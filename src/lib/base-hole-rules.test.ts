@@ -108,4 +108,29 @@ describe("base hole rules", () => {
     });
     expect(adjacent.some((item) => item.slotIds.length === 2)).toBe(true);
   });
+
+  it("contoured footprint 按各自外缘评估磁吸孔边缘", () => {
+    // 一个远离其它槽的槽位：contoured footprint 会在它周围形成独立的小实体，
+    // 磁吸孔半径加 0.6mm 侧壁要求，对小槽位应触发不适配
+    const violations = validateBaseHoleFit("custom", {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      footprintStyle: "contoured",
+      baseHoleStructure: "magnetic-base-hole",
+      slots: [
+        { id: "small", x: 0, y: 0, shape: "circle", width: 10, height: 10, rotation: 0 },
+      ],
+    });
+    expect(violations.some((item) => item.slotIds.includes("small"))).toBe(true);
+
+    // 较大槽位在 contoured 下应能容纳对应磁吸孔
+    const ok = validateBaseHoleFit("custom", {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      footprintStyle: "contoured",
+      baseHoleStructure: "magnetic-base-hole",
+      slots: [
+        { id: "large", x: 0, y: 0, shape: "circle", width: 40, height: 40, rotation: 0 },
+      ],
+    });
+    expect(ok.some((item) => item.slotIds.includes("large"))).toBe(false);
+  });
 });

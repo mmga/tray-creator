@@ -9,10 +9,12 @@ import {
 } from "@/lib/base-hole-config";
 export { resolveMagneticBaseHolePreset } from "@/lib/base-hole-config";
 import {
+  calculateCustomContouredFootprint,
   calculateCustomTrayFootprint,
   resolveCustomBoundarySpacing,
   resolveCustomTraySizingMode,
 } from "@/lib/custom-layout-math";
+import { geometries } from "@jscad/modeling";
 import { getGridSlotGeometry } from "@/lib/grid-config";
 import {
   getGridBoundarySpacingAxes,
@@ -32,6 +34,9 @@ import type {
   BaseHolePresetKey,
   TrayParams,
 } from "@/types/tray";
+import type { Geom2 } from "@jscad/modeling/src/geometries/types";
+
+const { geom2 } = geometries;
 
 export const MAGNETIC_BASE_HOLE_MIN_SIDE_WALL = 0.6;
 
@@ -235,6 +240,39 @@ function buildGridSlots(params: TrayParams): BaseHoleSlot[] {
 
 function buildCustomSlots(params: CustomLayoutParams): BaseHoleSlot[] {
   const footprint = calculateCustomTrayFootprint(params);
+
+  // contoured 分支：按各 contoured body 的外缘多边形评估磁吸孔（CONTEXT:629）
+  if (footprint.footprintStyle === "contoured") {
+    const contoured = calculateCustomContouredFootprint(params);
+    const bodiesPoints = contoured.bodies
+      .map((body) => getLargestOutlinePoints(body))
+      .filter((item): item is { x: number; y: number }[] => item !== null);
+
+    return params.slots.map((slot) => {
+      const profile = getFreeSlotProfileGeometry(slot);
+      return {
+        id: slot.id,
+        shape: slot.shape,
+        nominalWidth: slot.width,
+        nominalHeight: slot.height,
+        finalWidth: profile.width,
+        finalHeight: profile.height,
+        x: slot.x,
+        y: slot.y,
+        floorHeight: params.baseThickness,
+        containsExpandedHole: (radius) => circleFits(
+          slot.x,
+          slot.y,
+          radius,
+          (pointX, pointY) => bodiesPoints.some(
+            (points) => isPointInPolygon(pointX, pointY, points),
+          ),
+        ),
+      } satisfies BaseHoleSlot;
+    });
+  }
+
+  // rectangular 分支：保持原有矩形截面校验
   const bevel = Math.max(0, params.sideBevelWidth);
   const boundary = resolveCustomBoundarySpacing(params);
   const fixed = resolveCustomTraySizingMode(params) === "fixed";
@@ -278,6 +316,31 @@ function buildCustomSlots(params: CustomLayoutParams): BaseHoleSlot[] {
       ),
     } satisfies BaseHoleSlot;
   });
+}
+
+/**
+ * 从 Geom2 提取面积最大的外轮廓点列，供多边形包含判定使用。
+ * 与 stepped-outline-preview.ts 的 getLargestOutlinePoints 等价。
+ */
+function getLargestOutlinePoints(footprint: Geom2): { x: number; y: number }[] | null {
+  const outlines = geom2.toOutlines(footprint);
+  let largest: [number, number][] | null = null;
+  let largestArea = 0;
+
+  for (const outline of outlines) {
+    let area = 0;
+    for (let index = 0; index < outline.length; index += 1) {
+      const next = outline[(index + 1) % outline.length];
+      area += outline[index][0] * next[1] - next[0] * outline[index][1];
+    }
+    const absoluteArea = Math.abs(area / 2);
+    if (absoluteArea > largestArea) {
+      largest = outline;
+      largestArea = absoluteArea;
+    }
+  }
+
+  return largest?.map(([x, y]) => ({ x, y })) ?? null;
 }
 
 function buildSimpleSteppedSlots(params: SimpleSteppedLayoutParams): BaseHoleSlot[] {
