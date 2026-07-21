@@ -18,6 +18,7 @@ import {
 import { resolveMagneticBaseHolePreset } from "@/lib/base-hole-rules";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
     Select,
     SelectContent,
@@ -346,6 +347,8 @@ function SteppedPanelBody({
     splitAssemblySection,
     renderGroupSplitAssembly,
 }: SteppedPanelBodyProps) {
+    // 底座轮廓样式派生：缺失默认 contoured（CONTEXT:592）
+    const isRectangularFootprint = params.footprintStyle === "rectangular";
     const state = useSteppedPanelState({
         params,
         effectiveDimensions,
@@ -667,6 +670,28 @@ function SteppedPanelBody({
                 <SectionHeader icon={Wrench} title="阶梯结构" collapsible defaultOpen={false}
                     summary={structureSummary}>
                     <div className="space-y-4">
+                        {/* 底座轮廓样式：矩形阶梯 vs 贴合轮廓（CONTEXT:247-249,621-622） */}
+                        <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
+                            <div className="space-y-0.5">
+                                <Label htmlFor="stepped-footprint-style" className="text-sm cursor-pointer text-[#f0d8b8]">
+                                    底座轮廓样式
+                                </Label>
+                                <p className="text-[11px] text-muted-foreground">
+                                    {isRectangularFootprint
+                                        ? "最低层连续矩形+圆角，更高分组各为矩形高度带"
+                                        : "贴合凹槽外缘；远距凹槽可形成多个独立实体"}
+                                </p>
+                            </div>
+                            <Switch
+                                id="stepped-footprint-style"
+                                aria-label="stepped-footprint-style"
+                                checked={isRectangularFootprint}
+                                onCheckedChange={(checked) =>
+                                    updateParam("footprintStyle", checked ? "rectangular" : "contoured")
+                                }
+                                className="data-[state=checked]:bg-[#8cb880]"
+                            />
+                        </div>
                         <ParamSlider
                             label={STEPPED_LIMITS.spacing.label}
                             value={params.spacing}
@@ -674,6 +699,27 @@ function SteppedPanelBody({
                             onChange={(v) => updateParam("spacing", v)}
                             unit={STEPPED_LIMITS.spacing.unit}
                         />
+                        {/* 边界间距独立开关 + 独立值（CONTEXT:611-614） */}
+                        <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
+                            <Label htmlFor="stepped-boundary-spacing-independent" className="text-sm cursor-pointer text-[#f0d8b8]">
+                                边界间距独立调整
+                            </Label>
+                            <Switch
+                                id="stepped-boundary-spacing-independent"
+                                checked={params.boundarySpacingIndependent === true}
+                                onCheckedChange={(checked) => updateParam("boundarySpacingIndependent", checked)}
+                                className="data-[state=checked]:bg-[#8cb880]"
+                            />
+                        </div>
+                        {params.boundarySpacingIndependent && (
+                            <ParamSlider
+                                label={STEPPED_LIMITS.boundarySpacing.label}
+                                value={params.boundarySpacing ?? params.spacing}
+                                config={STEPPED_LIMITS.boundarySpacing}
+                                onChange={(v) => updateParam("boundarySpacing", v)}
+                                unit={STEPPED_LIMITS.boundarySpacing.unit}
+                            />
+                        )}
                         <ParamSlider
                             label={STEPPED_LIMITS.holeDepth.label}
                             value={params.holeDepth}
@@ -681,35 +727,87 @@ function SteppedPanelBody({
                             onChange={(v) => updateParam("holeDepth", v)}
                             unit={STEPPED_LIMITS.holeDepth.unit}
                         />
-                        <ParamSlider
-                            label={STEPPED_LIMITS.smoothingRadius.label}
-                            value={params.smoothingRadius}
-                            config={STEPPED_LIMITS.smoothingRadius}
-                            onChange={(v) => updateParam("smoothingRadius", v)}
-                            unit={STEPPED_LIMITS.smoothingRadius.unit}
-                        />
-                        <ParamSlider
-                            label={STEPPED_LIMITS.disconnectDistance.label}
-                            value={params.disconnectDistance}
-                            config={STEPPED_LIMITS.disconnectDistance}
-                            onChange={(v) => updateParam("disconnectDistance", v)}
-                            unit={STEPPED_LIMITS.disconnectDistance.unit}
-                        />
-                        {bridgeWarning ? (
-                            <div className="rounded border border-[#7c5a1c] bg-[#2a2115]/70 px-3 py-2 text-[11px] text-[#f0d8b8]">
-                                <div className="flex items-start gap-2">
-                                    <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0 text-[#eab308]" />
-                                    <div className="space-y-1">
-                                        <div>
-                                            {bridgeWarning.groupName} 当前参数可能会将 {bridgeWarning.separatedClusterCount} 个槽群连接为 {bridgeWarning.mergedClusterCount} 个整体。
-                                        </div>
-                                        <div className="text-[#d9c3a3]/80">
-                                            可以尝试增大“槽群断连距离”、减小“平滑半径”，或调整槽位位置。
+                        {/* 矩形阶梯专属：固定尺寸、最低层圆角；贴合轮廓专属：平滑与断连（CONTEXT:621,614） */}
+                        {isRectangularFootprint ? (
+                            <>
+                                <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
+                                    <div className="space-y-0.5">
+                                        <Label htmlFor="stepped-fixed-tray-size" className="text-sm cursor-pointer text-[#f0d8b8]">
+                                            固定最低层尺寸
+                                        </Label>
+                                        <p className="text-[11px] text-muted-foreground">
+                                            仅决定最低连续层；更高分组仍按槽位包络（CONTEXT:603）
+                                        </p>
+                                    </div>
+                                    <Switch
+                                        id="stepped-fixed-tray-size"
+                                        aria-label="stepped-fixed-tray-size"
+                                        checked={params.traySizingMode === "fixed"}
+                                        onCheckedChange={(checked) =>
+                                            updateParam("traySizingMode", checked ? "fixed" : "auto")
+                                        }
+                                        className="data-[state=checked]:bg-[#8cb880]"
+                                    />
+                                </div>
+                                {params.traySizingMode === "fixed" && (
+                                    <>
+                                        <ParamSlider
+                                            label={STEPPED_LIMITS.trayWidth.label}
+                                            value={params.trayWidth}
+                                            config={STEPPED_LIMITS.trayWidth}
+                                            onChange={(value) => updateParam("trayWidth", value)}
+                                            unit={STEPPED_LIMITS.trayWidth.unit}
+                                        />
+                                        <ParamSlider
+                                            label={STEPPED_LIMITS.trayDepth.label}
+                                            value={params.trayDepth}
+                                            config={STEPPED_LIMITS.trayDepth}
+                                            onChange={(value) => updateParam("trayDepth", value)}
+                                            unit={STEPPED_LIMITS.trayDepth.unit}
+                                        />
+                                    </>
+                                )}
+                                <ParamSlider
+                                    label={STEPPED_LIMITS.cornerRadius.label}
+                                    value={params.cornerRadius ?? 0}
+                                    config={STEPPED_LIMITS.cornerRadius}
+                                    onChange={(v) => updateParam("cornerRadius", v)}
+                                    unit={STEPPED_LIMITS.cornerRadius.unit}
+                                />
+                            </>
+                        ) : (
+                            <>
+                                <ParamSlider
+                                    label={STEPPED_LIMITS.smoothingRadius.label}
+                                    value={params.smoothingRadius}
+                                    config={STEPPED_LIMITS.smoothingRadius}
+                                    onChange={(v) => updateParam("smoothingRadius", v)}
+                                    unit={STEPPED_LIMITS.smoothingRadius.unit}
+                                />
+                                <ParamSlider
+                                    label={STEPPED_LIMITS.disconnectDistance.label}
+                                    value={params.disconnectDistance}
+                                    config={STEPPED_LIMITS.disconnectDistance}
+                                    onChange={(v) => updateParam("disconnectDistance", v)}
+                                    unit={STEPPED_LIMITS.disconnectDistance.unit}
+                                />
+                                {bridgeWarning ? (
+                                    <div className="rounded border border-[#7c5a1c] bg-[#2a2115]/70 px-3 py-2 text-[11px] text-[#f0d8b8]">
+                                        <div className="flex items-start gap-2">
+                                            <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0 text-[#eab308]" />
+                                            <div className="space-y-1">
+                                                <div>
+                                                    {bridgeWarning.groupName} 当前参数可能会将 {bridgeWarning.separatedClusterCount} 个槽群连接为 {bridgeWarning.mergedClusterCount} 个整体。
+                                                </div>
+                                                <div className="text-[#d9c3a3]/80">
+                                                    可以尝试增大“槽群断连距离”、减小“平滑半径”，或调整槽位位置。
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                        ) : null}
+                                ) : null}
+                            </>
+                        )}
                     </div>
                 </SectionHeader>
             </div>
@@ -888,7 +986,11 @@ export function SteppedLayoutPanel(props: SteppedLayoutPanelProps) {
     const splitGrooveLabel = params.enableSplitRecess
         ? splitGrooveType === "inset" ? "内缩凹槽" : "轮廓凹槽"
         : "关";
-    const structureSummary = `槽距${params.spacing}mm / 凹槽深度${params.holeDepth}mm / 断连${params.disconnectDistance}mm`;
+    // 底座轮廓样式：rectangular（矩形阶梯）vs contoured（贴合轮廓）；缺失默认 contoured（CONTEXT:592）
+    const isRectangularFootprint = params.footprintStyle === "rectangular";
+    const structureSummary = isRectangularFootprint
+        ? `槽距${params.spacing}mm / 凹槽深度${params.holeDepth}mm / 矩形阶梯`
+        : `槽距${params.spacing}mm / 凹槽深度${params.holeDepth}mm / 断连${params.disconnectDistance}mm`;
 
     const handleSplitGrooveTypeChange = useCallback((type: SplitGrooveType | "off") => {
         if (type === "off") {
