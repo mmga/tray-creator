@@ -8,6 +8,16 @@ export type AppMode =
   | "simple-stepped"
   | "stepped";
 
+/**
+ * 模型级底座轮廓样式：描述整件模型的底座构造规则。
+ * - "rectangular"：矩形包络底座（可选圆角、侧面斜角、固定尺寸）
+ * - "contoured"：贴合槽位的轮廓底座（可能产生多个独立可打印实体）
+ *
+ * 一件托盘只能有一个 Baseplate Footprint Style，不允许每个高度组独立选择。
+ * 缺失字段时由各模式默认值补全：custom 默认 rectangular，stepped 默认 contoured。
+ */
+export type BaseplateFootprintStyle = "rectangular" | "contoured";
+
 export interface BaseConverterParams {
   sourceStandardId: string;
   targetStandardId: string;
@@ -121,7 +131,13 @@ export interface SimpleSteppedRowBand {
 
 /** 自定义布局参数（完全独立） */
 export interface CustomLayoutParams extends BaseHoleParams {
-  /** 托盘尺寸模式；缺失时按自动尺寸兼容旧配置。 */
+  /**
+   * 模型级底座轮廓样式；缺失时按 rectangular 兼容旧配置。
+   * rectangular：矩形包络底座（cornerRadius / sideBevelWidth / traySizingMode 生效）
+   * contoured：贴合槽位轮廓（休眠 fixed sizing / cornerRadius / sideBevelWidth）
+   */
+  footprintStyle?: BaseplateFootprintStyle;
+  /** 托盘尺寸模式；缺失时按自动尺寸兼容旧配置。仅在 rectangular footprint 下生效。 */
   traySizingMode?: "auto" | "fixed";
   /** 托盘宽度 (mm) */
   trayWidth: number;
@@ -147,6 +163,12 @@ export interface CustomLayoutParams extends BaseHoleParams {
 
 /** 阶梯底座布局参数 */
 export interface SteppedLayoutParams extends BaseHoleParams {
+  /**
+   * 模型级底座轮廓样式；缺失时按 contoured 兼容旧配置。
+   * contoured：贴合槽位轮廓（smoothingRadius / disconnectDistance 生效，可多体）
+   * rectangular：矩形阶梯底座（最低层连续矩形+圆角，高层各分组矩形高度带）
+   */
+  footprintStyle?: BaseplateFootprintStyle;
   /** 托盘宽度 (mm) */
   trayWidth: number;
   /** 托盘深度 (mm) */
@@ -159,6 +181,23 @@ export interface SteppedLayoutParams extends BaseHoleParams {
   activeGroupId: string;
   /** 凹槽间距 (mm)，同时作为柱子外扩量 */
   spacing: number;
+  /**
+   * 边界间距 (mm)，凹槽到派生底板边界的最小距离。
+   * rectangular footprint 下决定最低连续层与各分组矩形高度带的外扩；
+   * contoured footprint 下作为槽位轮廓向外扩张的间距。
+   * boundarySpacingIndependent 为 false 时跟随 spacing。
+   */
+  boundarySpacing?: number;
+  /** 是否独立调整边界间距（false 时跟随 spacing） */
+  boundarySpacingIndependent?: boolean;
+  /**
+   * 矩形阶梯底座的托盘尺寸模式；缺失时按自动尺寸兼容旧配置。
+   * 仅在 rectangular footprint 下生效，且只决定最低连续层的尺寸；
+   * 固定尺寸不会传播到更高的分组矩形高度带。
+   */
+  traySizingMode?: "auto" | "fixed";
+  /** 最低连续层外圆角半径 (mm)，仅在 rectangular footprint 下作用于最低层 */
+  cornerRadius?: number;
   /** 凹槽深度 (mm)，全局固定，从柱顶向下挖的深度 */
   holeDepth: number;
   /** 拆件装配槽深度 (mm)；0 表示不生成公母装配槽 */

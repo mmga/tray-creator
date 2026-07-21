@@ -381,7 +381,7 @@ function TestLayoutCanvas({
   const isStepped = "groups" in params;
   const boundarySpacing =
     "boundarySpacingIndependent" in params && params.boundarySpacingIndependent
-      ? params.boundarySpacing
+      ? (params.boundarySpacing ?? params.spacing)
       : params.spacing;
 
   return (
@@ -393,7 +393,7 @@ function TestLayoutCanvas({
           depth: params.trayDepth,
           spacing: params.spacing,
           boundarySpacing,
-          cornerRadius: "cornerRadius" in params ? params.cornerRadius : 0,
+          cornerRadius: "cornerRadius" in params ? (params.cornerRadius ?? 0) : 0,
           sideBevelWidth: "sideBevelWidth" in params ? params.sideBevelWidth : 0,
           showEffectiveBaseplate: !isStepped && !rowBands,
           showMaxBuildBoundary: Boolean(rowBands),
