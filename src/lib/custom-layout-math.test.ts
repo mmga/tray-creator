@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import {
+  calculateCustomContouredFootprint,
   calculateCustomEffectiveDimensions,
   calculateCustomTrayFootprint,
   calculateFixedCustomTrayUsableArea,
   isCustomSlotWithinFixedTrayUsableArea,
   resolveCustomBoundarySpacing,
+  resolveCustomFootprintStyle,
   resolveCustomTraySizingMode,
 } from "@/lib/custom-layout-math";
 
@@ -220,5 +222,79 @@ describe("custom layout math", () => {
         calculateFixedCustomTrayUsableArea(params),
       ),
     ).toBe(false);
+  });
+
+  it("缺失 footprintStyle 时默认 rectangular", () => {
+    expect(resolveCustomFootprintStyle({})).toBe("rectangular");
+    expect(resolveCustomFootprintStyle({ footprintStyle: "contoured" })).toBe("contoured");
+  });
+
+  it("contoured footprint 由槽位外接框派生尺寸并返回实体数", () => {
+    const params = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      footprintStyle: "contoured" as const,
+      slots: [
+        {
+          id: "s1",
+          x: 20,
+          y: 20,
+          shape: "circle",
+          width: 25,
+          height: 25,
+          rotation: 0,
+          slotWidth: 25.4,
+          slotHeight: 25.4,
+        },
+      ],
+      spacing: 5,
+      boundarySpacing: 5,
+      boundarySpacingIndependent: true,
+    };
+
+    const footprint = calculateCustomTrayFootprint(params);
+    expect(footprint.footprintStyle).toBe("contoured");
+    expect(footprint.contourBodyCount).toBe(1);
+    expect(footprint.width).toBeGreaterThan(25);
+    expect(footprint.depth).toBeGreaterThan(25);
+
+    const contoured = calculateCustomContouredFootprint(params);
+    expect(contoured.bodyCount).toBe(1);
+    expect(contoured.bodies.length).toBe(1);
+  });
+
+  it("contoured footprint 远距离多槽可产生多实体", () => {
+    const params = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      footprintStyle: "contoured" as const,
+      slots: [
+        {
+          id: "a",
+          x: 0,
+          y: 0,
+          shape: "circle",
+          width: 25,
+          height: 25,
+          rotation: 0,
+          slotWidth: 25.4,
+          slotHeight: 25.4,
+        },
+        {
+          id: "b",
+          x: 200,
+          y: 200,
+          shape: "circle",
+          width: 25,
+          height: 25,
+          rotation: 0,
+          slotWidth: 25.4,
+          slotHeight: 25.4,
+        },
+      ],
+      spacing: 5,
+      boundarySpacing: 5,
+      boundarySpacingIndependent: true,
+    };
+    const footprint = calculateCustomTrayFootprint(params);
+    expect(footprint.contourBodyCount).toBe(2);
   });
 });
