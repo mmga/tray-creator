@@ -11,8 +11,11 @@ import { normalizeParamsForMode } from "@/lib/param-normalization";
 import {
   createImportNormalizationRecorder,
   recordBehaviorChange,
+  type ImportNormalizationRecorder,
   type ImportNormalizationReport,
 } from "@/lib/param-import-report";
+import { convertSimpleSteppedToStepped } from "@/lib/simple-stepped-to-stepped";
+import type { SimpleSteppedLayoutParams } from "@/types/custom-tray";
 
 type HistoricalMode = AppMode | "stepped-cad";
 
@@ -115,8 +118,10 @@ function detectModesFromParamShape(data: Record<string, unknown>): AppMode[] {
   if (Array.isArray(data.groups) && Array.isArray(data.slots)) {
     return ["stepped"];
   }
+  // 历史 simple-stepped 结构（rows[] + slots[]）现在统一识别为 stepped（CONTEXT:580-583,609-610）
+  // simple-stepped 不再是独立的用户可选 Mode
   if (Array.isArray(data.rows) && Array.isArray(data.slots)) {
-    return ["simple-stepped"];
+    return ["stepped"];
   }
   if (
     Array.isArray(data.slots) &&
@@ -136,8 +141,21 @@ function detectModesFromParamShape(data: Record<string, unknown>): AppMode[] {
   return [];
 }
 
+/**
+ * 判定参数结构是否为历史 simple-stepped（行 + 行内槽位）。
+ * 用于在目标 mode 已解析为 stepped 时，决定是否调用 simple-stepped → stepped 转换器。
+ */
+function isSimpleSteppedStructure(data: Record<string, unknown>): boolean {
+  return Array.isArray(data.rows) && Array.isArray(data.slots)
+    && !Array.isArray(data.groups);
+}
+
 function compatibleModesForDeclaredMode(mode: HistoricalMode): AppMode[] {
-  return mode === "stepped" || mode === "stepped-cad" ? ["stepped"] : [mode];
+  // simple-stepped 作为历史别名读取时直接归一到 stepped（CONTEXT:583,609-610）
+  if (mode === "stepped" || mode === "stepped-cad" || mode === "simple-stepped") {
+    return ["stepped"];
+  }
+  return [mode];
 }
 
 function applyHistoricalSteppedCapabilityDefault(
@@ -233,6 +251,35 @@ function normalizeForMode<M extends AppMode>(
   }
 }
 
+/**
+ * 若原始结构是 simple-stepped，先转换为 stepped 参数；否则原样返回。
+ * 转换会在 Import Normalization Report 中记录一次行为变化（CONTEXT:580,583）。
+ */
+function applySimpleSteppedConversionIfNeeded(
+  rawParams: Record<string, unknown>,
+  targetMode: AppMode,
+  recorder?: ImportNormalizationRecorder,
+): Record<string, unknown> {
+  if (targetMode !== "stepped" || !isSimpleSteppedStructure(rawParams)) {
+    return rawParams;
+  }
+  const conversion = convertSimpleSteppedToStepped(
+    rawParams as unknown as SimpleSteppedLayoutParams,
+  );
+  recordBehaviorChange(recorder, {
+    path: "mode",
+    label: "历史简易阶梯转换",
+    previousValue: "simple-stepped",
+    normalizedValue: "stepped",
+    reason: `历史 simple-stepped 已转换为 stepped：${conversion.report.groupCount} 个高度分组、${conversion.report.slotCount} 个槽位${
+      conversion.report.emptyRowCount > 0
+        ? `（跳过 ${conversion.report.emptyRowCount} 个空行）`
+        : ""
+    }`,
+  });
+  return conversion.params as unknown as Record<string, unknown>;
+}
+
 function createImportCandidate(
   rawParams: Record<string, unknown>,
   targetMode: AppMode,
@@ -253,13 +300,19 @@ function createImportCandidate(
     });
   }
 
+  const afterConversion = applySimpleSteppedConversionIfNeeded(
+    rawParams,
+    targetMode,
+    recorder,
+  );
+
   return {
     fileName,
     targetMode,
     params: normalizeForMode(
       targetMode,
       applyHistoricalSteppedCapabilityDefault(
-        rawParams,
+        afterConversion,
         targetMode,
         declaredMode,
       ),
@@ -358,7 +411,7 @@ export function readDraftParamArtifact<M extends AppMode>(
   return normalizeForMode(
     expectedMode,
     applyHistoricalSteppedCapabilityDefault(
-      decoded.rawParams,
+      applySimpleSteppedConversionIfNeeded(decoded.rawParams, expectedMode),
       expectedMode,
       decoded.declaredMode,
     ),
