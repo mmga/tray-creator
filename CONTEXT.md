@@ -161,7 +161,7 @@ The fixed per-side spacing added around a Source Base Standard to derive the fin
 _Avoid_: Baking print clearance into the nominal source-base sizes or applying it only once across a whole axis.
 
 **Mode**:
-One tray editing workflow such as grid, custom, simple stepped, or stepped.
+One tray editing workflow such as grid, custom, Conversion Base, or stepped.
 _Avoid_: Using "feature" when the meaning is the editor mode.
 
 **Mode Param Snapshot**:
@@ -201,7 +201,7 @@ A tray whose manually placed Slot Instances are assigned to height groups that f
 _Avoid_: Presenting the internal solid-construction algorithm as a user-selectable tray kind.
 
 **Custom Stepped Tray**:
-The user-facing name “自定义阶梯底座” for the Stepped Tray workflow, distinguishing its manual slot and height-group editing from Simple Stepped mode.
+The user-facing name “自定义阶梯底座” for the Stepped Tray workflow, emphasizing its manual slot placement and height-group editing.
 _Avoid_: CAD 阶梯底座, ordinary stepped mode, or using “custom” to imply a separate construction backend.
 
 **CAD Stepped Construction**:
@@ -224,9 +224,53 @@ _Avoid_: A separate Mode, hiding ellipse slots with the capability, or showing i
 The preserved split grouping and assembly settings that remain stored but have no effect while Split Assembly Capability is disabled.
 _Avoid_: Clearing advanced settings when the capability is toggled off or applying hidden split settings to whole-model generation.
 
-**Simple Stepped Layout Core**:
-The simple stepped editing module that owns row and slot relationship repair, simple stepped tray size normalization, outer margin synchronization, and canvas-to-row slot update projection for `simple-stepped` mode.
-_Avoid_: Reimplementing simple stepped row membership repair or tray size normalization separately in import normalization, hooks, and viewport adapters.
+**Historical Simple Stepped Artifact**:
+A legacy `simple-stepped` parameter file or Draft that remains readable only by conversion into the Stepped Tray workflow.
+_Avoid_: A current runtime Mode, writing new `simple-stepped` artifacts, or retaining a separate simple-stepped modeling backend.
+
+**Simple Stepped Model Capability**:
+The ability to generate a Stepped Tray equivalent to the former row-based rectangular stepped model without preserving its row-management or automatic-layout workflow.
+_Avoid_: Using “保留简易阶梯功能” to imply that row creation, automatic row placement, or uniform height progression must remain user-facing features.
+
+**Rectangular Stepped Footprint**:
+A Stepped Tray footprint whose lowest height layer is one continuous rectangle around all Slot Instances while each higher height band uses the rectangular envelopes of the groups that continue above it.
+_Avoid_: Independent disconnected rectangles at the lowest layer, one full-size rectangle at every height, or treating the choice as only a visual edge treatment.
+
+**Rectangular Footprint**:
+A baseplate footprint bounded by one rectangular envelope, with an optional corner radius on its outer boundary.
+_Avoid_: Using the term for each independent stepped height-group rectangle or assuming that every upper stepped band inherits the outer corner radius.
+
+**Axis-aligned Rectangular Envelope**:
+The tray-coordinate-aligned rectangle that contains the rotated final Slot Geometry Snapshots in scope plus Boundary Spacing.
+_Avoid_: A minimum-area rotated rectangle, nominal unrotated base dimensions, or a rectangle whose orientation changes with Slot Instance rotation.
+
+**Baseplate Footprint Style**:
+The model-wide choice between a slot-following Contoured Footprint and a Rectangular Footprint for a custom or stepped tray.
+_Avoid_: Per-group footprint styles, mixing rectangular and contoured groups in one tray, or calling the choice merely an edge shape.
+
+**Contoured Footprint**:
+A baseplate footprint derived from and following the placed Slot Instances rather than enclosing them in one rectangular boundary.
+_Avoid_: Curved edge, rounded rectangle, or assuming that the footprint must remain connected across explicitly disconnected slot clusters.
+
+**Contour Body Count**:
+The number of disconnected printable bodies produced by a Contoured Footprint after its smoothing and disconnection rules are applied.
+_Avoid_: Silently forcing distant slot clusters together or treating every multi-body result as invalid.
+
+**Contoured Footprint Construction**:
+The shared derivation of 2D contoured bodies from final Slot Geometry Snapshots, Boundary Spacing, smoothing radius, and disconnection distance.
+_Avoid_: Mode-specific contour algorithms or independently re-deriving contours for preview, modeling, dimensions, body count, and validation.
+
+**Dormant Fixed Tray Configuration**:
+The preserved custom-tray fixed sizing choice and dimensions that have no effect while Contoured Footprint is selected and become active again when Rectangular Footprint is restored.
+_Avoid_: Discarding fixed dimensions when switching footprint style or applying hidden fixed bounds to a contoured tray.
+
+**Slot Spacing**:
+The minimum intended edge-to-edge distance between Slot Instances, independently of their distance to the baseplate boundary.
+_Avoid_: Using Slot Spacing as the only name for both inter-slot clearance and footprint margin.
+
+**Boundary Spacing**:
+The distance added from the outer Slot Instance profiles to the generated baseplate footprint, optionally configured independently from Slot Spacing.
+_Avoid_: Row outer margin as a separate concept, or changing Slot Spacing when only the footprint margin should change.
 
 **Split Assembly Groove Type**:
 The mutually exclusive Custom Stepped Tray choice that decides which contact-face outline becomes the male/female split assembly groove profile.
@@ -325,8 +369,8 @@ The actual baseplate footprint derived from placed slots and boundary spacing, r
 _Avoid_: Using baseplate, tray size, or tray width/depth to mean the derived printable footprint in custom mode.
 
 **Tray Sizing Mode**:
-The custom-mode choice between deriving the tray footprint from placed slots or keeping the tray footprint at the configured width and depth.
-_Avoid_: Calling a fixed tray an auto-sized effective baseplate.
+The Rectangular Footprint choice between deriving the lowest tray footprint from placed slots or keeping it at the configured width and depth.
+_Avoid_: Applying fixed sizing to a Contoured Footprint or expanding stepped upper height bands to the fixed lowest-layer dimensions.
 
 **Fixed Tray Outer Footprint**:
 The bottom outer dimensions of a fixed custom tray, which remain unchanged when slots are added or moved.
@@ -355,6 +399,10 @@ _Avoid_: Random placement, silently reflowing slots after an ordinary add or man
 **Layout Arrangement Quality（布局编排质量）**:
 The ordered business evaluation of a Layout Arrangement Proposal by validity, alignment rhythm, visual balance, compact whitespace, edge regularity, then original-position displacement.
 _Avoid_: Treating minimum area, minimum movement, or one fixed aspect ratio as the sole meaning of an attractive layout.
+
+**Height-band Footprint Cost**:
+The footprint area, enclosed whitespace, and estimated material volume contributed by every height band under the active Baseplate Footprint Style.
+_Avoid_: Evaluating a stepped arrangement only from the bounding box of all Slot Instances.
 
 **Side Bevel**:
 The continuous side-wall slope from the tray's bottom edge footprint to its top edge footprint. Its width is the horizontal inset from the lower edge to the upper edge.
@@ -506,8 +554,8 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - A **Draft Summary** may be mode-specific rather than globally uniform across all modes.
 - A grid **Draft Summary** may show row/column count, structure mode, base size, and resulting width/depth.
 - A custom **Draft Summary** may show slot count and resulting width/depth.
-- A simple stepped **Draft Summary** may show row count, slot count, and resulting width/depth.
 - A stepped **Draft Summary** may show group count, slot count, and resulting width/depth.
+- A historical `simple-stepped` **Draft Summary** resolves to `stepped` after conversion and reports its converted group count, slot count, and resulting width/depth.
 - A historical `stepped-cad` **Draft Summary** resolves to `stepped` while preserving its group count, slot count, and resulting width/depth fields.
 - Draft titles may be duplicated within the same **Mode**.
 - A **Draft Index** stores **Draft Summary** entries, while full draft records store full mode parameters.
@@ -528,10 +576,57 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - **Stepped Split Orchestration** composes the **Stepped Layout Core** rather than being owned by it.
 - **Stepped Split Orchestration** owns split-preview generation, invalidation, disposal, and split-part export within `stepped`.
 - **Stepped Split Orchestration** reuses the **Stepped Layout Core** group action when it changes a group's split-part target.
-- A **Simple Stepped Layout Core** may allow the derived tray size to exceed the maximum build size when row and slot content requires it.
-- In simple stepped mode, the maximum build size is a user warning threshold, not a hard normalization cap.
-- Imported, draft-loaded, and runtime-edited simple stepped params should pass through the same **Simple Stepped Layout Core** normalization rules.
-- A **Simple Stepped Layout Core** should call the **Slot Instance Factory** when repairing simple stepped **Slot Geometry Snapshots**, rather than owning slot definition matching rules itself.
+- **Simple Stepped Model Capability** requires model equivalence through the Stepped Tray workflow, not preservation of the former simple-stepped editing workflow.
+- A **Historical Simple Stepped Artifact** maps each ordered row to one height group and projects row-local Slot Instances into global stepped-layout coordinates.
+- A converted **Historical Simple Stepped Artifact** uses a fixed Rectangular Stepped Footprint, preserves its stored tray dimensions, outer corner radius, slot depth, and Base-hole Structure, and disables Split Assembly Capability by default.
+- Row gap is represented by the converted Slot Instance positions and is not retained as a current stepped parameter.
+- Current saves, Drafts, and exports never write the historical `simple-stepped` Mode identity.
+- Empty historical simple-stepped rows create no height group and consume no height step during conversion.
+- Historical simple-stepped conversion preserves non-empty row order, Slot Instance centers and final geometry, tray dimensions, lowest-layer corner radius, height-band tops, slot depth, Base-hole Structure, printable-body count, and manufacturability.
+- Historical simple-stepped conversion allows at most 0.1mm error in key linear dimensions and 1% model-volume difference.
+- Historical simple-stepped compatibility does not require identical STL bytes, triangle counts, boolean topology, or facet ordering.
+- Before removing the simple-stepped backend, rectangular stepped generation is compared against it using 10-, 30-, and 50-slot fixtures plus at least two Historical Simple Stepped Artifacts.
+- Migration performance uses three post-warm-up measurements per fixture; the median fixture ratio must not exceed 1.25 and no fixture ratio may exceed 1.5.
+- A failed migration gate requires optimizing rectangular height-band construction before backend removal; a passed gate removes the legacy backend and temporary comparison benchmark without a runtime fallback.
+- Existing and newly created custom trays default to Rectangular Footprint when no Baseplate Footprint Style is recorded.
+- Existing and newly created stepped trays default to Contoured Footprint when no Baseplate Footprint Style is recorded.
+- Converted Historical Simple Stepped Artifacts explicitly use Rectangular Stepped Footprint.
+- Baseplate Footprint Style is selected explicitly and is never inferred from Slot Instance positions.
+- Split Assembly Capability is available for both Contoured Footprint and Rectangular Stepped Footprint.
+- Split interfaces use the contact footprint produced by the active Baseplate Footprint Style at that height.
+- A fixed lowest Rectangular Footprint does not expand higher split-interface footprints beyond their group-derived rectangular envelopes.
+- Changing Baseplate Footprint Style invalidates whole-model and split previews while preserving Dormant Split Configuration.
+- A **Rectangular Stepped Footprint** keeps the lowest layer connected even when height groups have planar gaps.
+- Each higher band of a **Rectangular Stepped Footprint** is the union of the rectangular envelopes of groups whose required heights extend through that band.
+- Only the continuous lowest layer of a **Rectangular Stepped Footprint** uses the model-level outer corner radius; higher group envelopes retain square corners.
+- A **Rectangular Stepped Footprint** may use automatic sizing from all Slot Instances or a Fixed Tray Outer Footprint for its continuous lowest layer.
+- Fixed sizing changes only the continuous lowest layer; higher rectangular height bands remain derived from their groups' Slot Instances and Boundary Spacing.
+- Automatic lowest-layer and group-level rectangular footprints use **Axis-aligned Rectangular Envelopes**.
+- Each height group's Axis-aligned Rectangular Envelope contains all of that group's Slot Instances as one rectangle, including the empty planar space between them.
+- One tray has exactly one **Baseplate Footprint Style**; height groups cannot override it.
+- A custom tray with **Contoured Footprint** always derives its active footprint from Slot Instances and cannot simultaneously have an active **Fixed Tray Outer Footprint**.
+- Selecting **Contoured Footprint** preserves any fixed sizing choice and dimensions as **Dormant Fixed Tray Configuration**.
+- The stepped workflow also preserves fixed sizing as dormant configuration while Contoured Footprint is selected.
+- Historical simple-stepped tray dimensions can be represented by a fixed Rectangular Stepped Footprint without expanding its higher group envelopes.
+- Custom and stepped trays use **Boundary Spacing** to derive automatic rectangular or contoured footprints while **Slot Spacing** remains responsible for inter-slot clearance and stepped connectivity.
+- When independent **Boundary Spacing** is disabled, it follows **Slot Spacing**.
+- Historical stepped parameters without an independent **Boundary Spacing** choice load with Boundary Spacing following Slot Spacing.
+- Stepped smoothing and disconnection settings remain stored but have no effect while Rectangular Stepped Footprint is active.
+- A custom tray's outer corner radius remains stored but has no effect while Contoured Footprint is active.
+- A custom tray's Side Bevel remains stored but has no effect while Contoured Footprint is active.
+- Contoured Footprint does not support Side Bevel until arbitrary-outline bevel construction has its own narrow-bridge, concavity, and body-connectivity validity rules.
+- Custom and stepped editors always expose Baseplate Footprint Style, Slot Spacing, and Boundary Spacing.
+- Editors show only controls that affect the active Baseplate Footprint Style while preserving inactive-style values as dormant configuration.
+- Custom Rectangular Footprint exposes sizing, dimensions, outer corner radius, and Side Bevel; Custom Contoured Footprint exposes smoothing, disconnection, and Contour Body Count.
+- Stepped Contoured Footprint exposes global and group smoothing and disconnection; Rectangular Stepped Footprint exposes sizing, dimensions, and the lowest-layer outer corner radius.
+- Split Assembly Capability remains visible for both stepped footprint styles.
+- Changing Baseplate Footprint Style updates the 2D footprint immediately and marks existing whole-model and split previews stale.
+- Custom and stepped Contoured Footprints share smoothing and disconnection semantics and may deliberately produce more than one printable body.
+- Given the same Slot Instances and contour parameters, custom and stepped workflows receive identical 2D bodies from **Contoured Footprint Construction**.
+- 2D preview, 3D construction, dimensions, Contour Body Count, and base-hole edge validation consume the same Contoured Footprint Construction result.
+- Custom trays initially use a 60mm smoothing radius and 0mm disconnection distance; those values remain stored while Rectangular Footprint is active.
+- A multi-body **Contour Body Count** does not block model generation or export, but must be visible in preview and result summary.
+- Base-hole fit validation evaluates each disconnected contoured body against its own exterior edges.
 - A **Mode Viewport Workspace** may own a **Mode**'s viewport wiring, preview-view switching, and viewport-only transient state.
 - A **Mode Viewport Workspace** should not own left-panel parameter editing or **Draft Binding** rules.
 - A **Mode Viewport Workspace Adapter** implements the shared **Mode Viewport Workspace** interface for one **Mode**.
@@ -557,13 +652,13 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - Re-enabling **Split Assembly Capability** restores its **Dormant Split Configuration**.
 - A historical ordinary-stepped artifact loaded into the unified **Stepped Tray** workflow preserves its slot dimensions and positions, group heights, recess depths, intended footprint, and printability, but does not preserve STL facets, exact volume, or internal solid topology.
 - In custom mode, the **Effective Baseplate** is derived from placed **Slot Instances** plus boundary spacing.
-- A custom **Tray Sizing Mode** is either automatic, which uses the **Effective Baseplate**, or fixed, which uses the configured tray width and depth as the final tray footprint.
+- A Rectangular Footprint **Tray Sizing Mode** is either automatic, which derives its lowest footprint from Slot Instances, or fixed, which uses the configured tray width and depth for the lowest footprint.
 - In fixed custom **Tray Sizing Mode**, **Slot Instances** use the fixed tray's lower-left corner as their layout origin.
 - Changing a custom **Tray Sizing Mode** preserves each **Slot Instance** position and does not silently reflow the layout.
 - A custom tray retains configured width and depth while in automatic **Tray Sizing Mode**, so switching back to fixed mode restores the chosen size.
 - A custom configuration that does not record a **Tray Sizing Mode** is treated as automatic to preserve legacy behavior.
 - A **Tray Sizing Mode** is an optional additive custom configuration field and does not require a parameter-file version change.
-- **Tray Sizing Mode** applies only to custom **Mode** and does not alter grid, simple stepped, or Custom Stepped Tray size rules.
+- **Tray Sizing Mode** applies to custom Rectangular Footprint and Rectangular Stepped Footprint; it remains dormant while either workflow uses Contoured Footprint.
 - A fixed custom tray's configured width and depth define its **Fixed Tray Outer Footprint**.
 - A **Side Bevel** reduces the fixed tray's upper usable footprint inward from its **Fixed Tray Outer Footprint**, while boundary spacing is measured from that upper edge.
 - A fixed tray's upper usable footprint follows its rounded-corner geometry, so a **Slot Boundary Violation** may occur at a corner even when a slot fits within the enclosing rectangle.
@@ -581,12 +676,15 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - A **Layout Arrangement Proposal** is distinct from a **Random Slot Arrangement** and is generated only when the user explicitly requests arrangement.
 - Generating a **Layout Arrangement Proposal** does not change the current layout; applying a selected proposal replaces Slot Instance positions as one explicit action.
 - Adding or manually editing a Slot Instance never implicitly regenerates or applies a **Layout Arrangement Proposal**.
-- Custom, simple stepped, and **Custom Stepped Tray** Modes support **Layout Arrangement Proposals** because each owns manually positionable Slot Instances.
+- Custom and **Custom Stepped Tray** Modes support **Layout Arrangement Proposals** because each owns manually positionable Slot Instances.
 - Grid Mode and Conversion Base Mode do not support **Layout Arrangement Proposals** because neither owns a freely arranged set of Slot Instances.
 - Custom Mode supports **Layout Arrangement Proposals** in both automatic and fixed **Tray Sizing Modes**; a fixed-size proposal must keep every Slot Instance within the existing **Fixed Tray Outer Footprint**.
-- A **Layout Arrangement Proposal** evaluates all participating Slot Instances as one arrangement set and does not preserve simple-stepped row or stepped-group boundaries as layout partitions.
-- In stepped workflows, every Slot Instance retains its required row or group identity while a **Layout Arrangement Proposal** ignores those identities as arrangement partitions and leaves them unchanged.
-- A stepped workflow needs no unassigned or staging Slot Instance state; after applying a proposal, the user may manually revise row or group assignments from the arranged positions.
+- A **Layout Arrangement Proposal** evaluates all participating Slot Instances as one arrangement set and does not preserve stepped-group boundaries as layout partitions.
+- In stepped workflows, every Slot Instance retains its required group identity while a **Layout Arrangement Proposal** ignores those identities as arrangement partitions and leaves them unchanged.
+- A stepped workflow needs no unassigned or staging Slot Instance state; after applying a proposal, the user may manually revise group assignments from the arranged positions.
+- A stepped **Layout Arrangement Proposal** remains a free arrangement across all Slot Instances and does not restore row constraints for Rectangular Stepped Footprint.
+- Stepped proposal scoring derives dimensions, build-limit state, and **Height-band Footprint Cost** from the active Baseplate Footprint Style.
+- Rectangular stepped scoring penalizes large group envelopes and enclosed whitespace so same-group Slot Instances tend to remain spatially concentrated without becoming a hard layout partition.
 - A candidate with a slot collision, insufficient spacing, fixed-footprint boundary violation, or base-hole manufacturing violation is not a valid **Layout Arrangement Proposal**.
 - **Layout Arrangement Quality** compares valid candidates in this order: alignment rhythm, visual balance, compact whitespace, edge regularity, then original-position displacement.
 - Automatic custom sizing rewards compact use of area, while fixed custom sizing preserves the **Fixed Tray Outer Footprint** and rewards balanced whitespace within it.
@@ -603,7 +701,7 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - Importing an external parameter file clears the current **Draft Binding**.
 - Multiple layout modes may expose different subsets of **Slot Definitions**.
 - When two modes expose the same **Slot Definition**, they must use the same geometry.
-- Grid, custom, simple stepped, and stepped modes all expose the 100mm circular **Slot Definition**.
+- Grid, custom, and stepped modes all expose the 100mm circular **Slot Definition**.
 - The 100mm circular **Slot Definition** has a 100mm **Base Size** and a 100.4mm **Final Slot Size**.
 - A **Base Size** is not enough to reproduce a slot unless its **Tolerance** and shape-specific geometry are also known.
 - A **Magnet Post Hole** applies to every supported Slot Instance shape, including Old World rectangular slots, and starts at each slot floor rather than using the automatically matched **Magnetic Base Hole** geometry.
@@ -622,20 +720,20 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - Import and Draft loading preserve the selected Base-hole Structure and Slot Instance positions when a base-hole fit violation exists; they never disable the hole, resize it, or move a slot implicitly.
 - A loaded base-hole fit violation remains visible in the editor and continues to block model generation and export until repaired.
 - A base-hole fit violation is not an **Import Normalization Report** entry and does not add another import confirmation step; it appears only in the owning Mode editor after an Import Candidate is accepted.
-- Grid, custom, simple stepped, and Custom Stepped Tray Modes expose the same mutually exclusive Base-hole Structure choices and the same Magnet Post Hole diameter and depth controls; Conversion Base exposes none of them.
+- Grid, custom, and Custom Stepped Tray Modes expose the same mutually exclusive Base-hole Structure choices and the same Magnet Post Hole diameter and depth controls; Conversion Base exposes none of them.
 - A supporting Mode displays every base-hole fit violation persistently beside its Base-hole Structure controls, keeps 2D editing and Draft persistence available, and disables model generation and export with a visible reason until all such violations are repaired.
 - Enabling a **Magnet Post Hole** raises each affected stepped group as needed to preserve the configured recess depth and at least 1mm of material beneath it.
 - A selected **Magnetic Base Hole** requires its preset cavity depth plus 0.6mm top wall and 0.6mm bottom wall: 2.2mm for the 20mm preset and 2.4mm for the standard or large preset.
 - A selected **Magnet Post Hole** requires **Base-hole Supporting Thickness** equal to its configured depth plus at least 1mm beneath it.
-- Selecting a Base-hole Structure automatically raises grid and custom base thickness, simple stepped first-row height, or affected stepped group heights until the required **Base-hole Supporting Thickness** exists.
+- Selecting a Base-hole Structure automatically raises grid and custom base thickness or affected stepped group heights until the required **Base-hole Supporting Thickness** exists.
 - A selected Base-hole Structure must be present in generated geometry and must never silently degrade to no hole because supporting material is insufficient.
 - An imported parameter artifact that requires automatic supporting-thickness adjustment reports that adjustment in its **Import Normalization Report**.
 - A **Conversion Base** is a thin-bottom model and supports neither a **Magnetic Base Hole** nor a **Magnet Post Hole**.
 - Selecting **Magnetic Base Plate Only** selects **Magnetic Base Hole** and disables half-circle slots.
 - Selecting no base hole or **Magnet Post Hole** while **Magnetic Base Plate Only** is active restores the grid's complete slot structure.
-- Grid, custom, simple stepped, and Custom Stepped Tray Modes each persist exactly one **Base-hole Structure** plus the shared **Magnet Post Hole** diameter and depth values.
+- Grid, custom, and Custom Stepped Tray Modes each persist exactly one **Base-hole Structure** plus the shared **Magnet Post Hole** diameter and depth values.
 - A legacy `enableBaseHole` value migrates to **Magnetic Base Hole** when true and no base hole when false; newly written Persisted Param Artifacts do not retain that legacy field.
-- A new grid tray defaults to **Magnetic Base Hole**, while new custom, simple stepped, and Custom Stepped Tray trays default to no base hole.
+- A new grid tray defaults to **Magnetic Base Hole**, while new custom and Custom Stepped Tray trays default to no base hole.
 - A historical tray artifact with neither a Base-hole Structure nor a legacy `enableBaseHole` defaults to no base hole so import never adds a manufacturing hole implicitly.
 - A historical grid artifact marked as **Magnetic Base Plate Only** always migrates to **Magnetic Base Hole**, even when its legacy magnetic-hole switch is absent.
 - A tray selects exactly one **Base-hole Structure**.
@@ -695,9 +793,10 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - "凹槽越界" could mean a hard editing constraint or a warning-only state. Resolved: use **Slot Boundary Violation** for a red, warning-only state that keeps generation and export available.
 - "随机排列" could mean arbitrary positions that may require manual repair. Resolved: use **Random Slot Arrangement** only for an all-valid layout that satisfies both fixed-boundary and slot-spacing constraints.
 - "自动优化布局" was used for both random placement and an automatically committed reflow. Resolved: use **Layout Arrangement Proposal** for an explicitly requested, previewed candidate that remains unapplied until the user confirms it.
-- "几种自定义布局" could mean only Custom Mode or every Mode with manually positioned Slot Instances. Resolved: **Layout Arrangement Proposals** apply to custom, simple stepped, and **Custom Stepped Tray** Modes, but not grid or Conversion Base Modes.
+- "几种自定义布局" could mean only Custom Mode or every Mode with manually positioned Slot Instances. Resolved: **Layout Arrangement Proposals** apply to custom and **Custom Stepped Tray** Modes, but not grid or Conversion Base Modes.
 - "按分组优化" could mean that existing rows or groups constrain aesthetic arrangement. Resolved: a **Layout Arrangement Proposal** arranges all participating Slot Instances together while preserving—but not partitioning by—their existing row or group identities; the user may revise those identities afterward.
 - "美观布局" could mean the smallest area, the least movement, or a fixed wide rectangle. Resolved: **Layout Arrangement Quality** first requires a valid layout, then prioritises alignment rhythm, visual balance, compact whitespace, edge regularity, and finally original-position displacement.
+- "保留简易阶梯功能" could mean preserving either its generated model or its row-based editing workflow. Resolved: preserve **Simple Stepped Model Capability** only; row management and automatic row layout need not remain user-facing.
 - Grid-mode "面积" means **Grid Footprint Area**, derived from the displayed outer width and depth.
 - "CAD 阶梯模式生成" could mean either per-group solid union or band-by-band CAD construction. Resolved: use **CAD Stepped Construction**, which generates each height band from a sketch before extrusion.
 - "自定义阶梯" and "CAD 阶梯" could imply two user-visible tray products distinguished by their construction algorithms. Resolved: both describe one **Stepped Tray** workflow; identical circular, non-split inputs are intended to produce the same tray semantics, while ellipse and split assembly are capabilities rather than separate tray kinds.
