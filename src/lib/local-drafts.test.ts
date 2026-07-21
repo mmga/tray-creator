@@ -215,6 +215,57 @@ describe("local drafts", () => {
     expect(localStorage.getItem(`tray-creator:drafts:stepped-cad:${id}:v1`)).toBeNull();
   });
 
+  it("在阶梯草稿中发现历史简易阶梯并在更新时迁移存储键", () => {
+    const id = "legacy-simple-stepped";
+    const params = createSimpleSteppedParams({
+      trayWidth: 180,
+      trayDepth: 120,
+    });
+    const item = {
+      id,
+      mode: "simple-stepped",
+      title: "历史简易阶梯",
+      createdAt: "2026-04-08T10:20:00.000Z",
+      updatedAt: "2026-04-08T10:20:00.000Z",
+      rowCount: 1,
+      slotCount: 1,
+      trayWidth: 180,
+      trayDepth: 120,
+    };
+    localStorage.setItem("tray-creator:drafts:index:v1", JSON.stringify([item]));
+    localStorage.setItem(
+      `tray-creator:drafts:simple-stepped:${id}:v1`,
+      JSON.stringify({
+        storageVersion: 1,
+        item,
+        paramFile: {
+          version: 1,
+          mode: "simple-stepped",
+          params,
+        },
+      }),
+    );
+
+    expect(listDrafts("stepped").map((draft) => draft.id)).toEqual([id]);
+    const converted = getDraft("stepped", id);
+    expect(converted?.paramFile.mode).toBe("stepped");
+    expect(converted?.paramFile.params).toMatchObject({
+      footprintStyle: "rectangular",
+      traySizingMode: "fixed",
+      trayWidth: 180,
+      trayDepth: 120,
+    });
+    expect(converted?.item.summary).toMatchObject({
+      mode: "stepped",
+      groupCount: 1,
+      slotCount: 1,
+    });
+
+    updateDraft("stepped", id, "已迁移简易阶梯", converted!.paramFile.params);
+    expect(localStorage.getItem(`tray-creator:drafts:stepped:${id}:v1`)).not.toBeNull();
+    expect(localStorage.getItem(`tray-creator:drafts:simple-stepped:${id}:v1`)).toBeNull();
+  });
+
   it("stores base converter drafts with source and target standards", () => {
     vi.spyOn(crypto, "randomUUID").mockReturnValue("converter-1");
     const record = createDraft(
@@ -274,6 +325,7 @@ describe("local drafts", () => {
       simple.item.id,
     ]);
     expect(listDrafts("stepped").map((item) => item.id)).toEqual([
+      simple.item.id,
       stepped.item.id,
     ]);
 
