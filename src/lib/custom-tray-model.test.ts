@@ -319,4 +319,43 @@ describe("custom tray model", () => {
     expect(fullerDimensions.depth).toBeGreaterThan(shallowDimensions.depth);
     expect(fullerVolume).toBeGreaterThan(shallowVolume);
   });
+
+  it("contoured footprint 生成正体积模型且不应用圆角与侧面斜角", () => {
+    const contouredParams = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      footprintStyle: "contoured" as const,
+      cornerRadius: 8,
+      sideBevelWidth: 4,
+      slots: [createCustomCircleSlot("a", 0, 0, 25)],
+    };
+    const rectangularParams = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      footprintStyle: "rectangular" as const,
+      cornerRadius: 8,
+      sideBevelWidth: 4,
+      slots: [createCustomCircleSlot("a", 0, 0, 25)],
+    };
+
+    const contouredModel = createCustomTrayModel(contouredParams);
+    const rectangularModel = createCustomTrayModel(rectangularParams);
+
+    expect(measureVolume(contouredModel)).toBeGreaterThan(0);
+    // contoured 不应用 side bevel，底面积应小于 rectangular（rectangular 因 bevel 外扩）
+    const contouredDims = calculateCustomTrayDimensions(contouredParams);
+    const rectangularDims = calculateCustomTrayDimensions(rectangularParams);
+    expect(rectangularDims.width).toBeGreaterThan(contouredDims.width);
+  });
+
+  it("contoured footprint 远距离多槽生成可打印模型", () => {
+    const params = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      footprintStyle: "contoured" as const,
+      slots: [
+        createCustomCircleSlot("a", 0, 0, 25),
+        createCustomCircleSlot("b", 200, 200, 25),
+      ],
+    };
+    const model = createCustomTrayModel(params);
+    expect(measureVolume(model)).toBeGreaterThan(0);
+  });
 });
