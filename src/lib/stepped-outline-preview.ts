@@ -4,7 +4,6 @@ import type {
   SteppedSlot,
 } from "@/types/custom-tray";
 import { geometries } from "@jscad/modeling";
-import type { Geom2 } from "@jscad/modeling/src/geometries/types";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import { getEffectiveGroupStructureParams } from "@/lib/stepped-group-params";
 import {
@@ -57,6 +56,9 @@ export function buildSteppedOutlinePreview(
 
   // Contoured 分支：保持现有集群派生
   const result: GroupOutlinePreview[] = [];
+  const boundarySpacing = params.boundarySpacingIndependent
+    ? (params.boundarySpacing ?? params.spacing)
+    : params.spacing;
   const slotsByGroupId = new Map<string, SteppedSlot[]>();
 
   params.slots.forEach((slot) => {
@@ -147,7 +149,7 @@ export function buildSteppedOutlinePreview(
       const footprint = buildContouredClusterFootprint(
         cluster,
         footprintSlotsById,
-        params.spacing,
+        boundarySpacing,
         effectiveParams.smoothingRadius,
       );
       const points = footprint ? getLargestOutlinePoints(footprint) : null;
@@ -179,7 +181,7 @@ function buildRectangularSteppedOutlinePreview(
   params: SteppedLayoutParams,
 ): GroupOutlinePreview[] | null {
   const graph = buildSteppedCadFeatureGraph(params);
-  if (graph.groups.length === 0) {
+  if (graph.groups.length === 0 || graph.layers.length === 0) {
     return null;
   }
 
@@ -188,8 +190,25 @@ function buildRectangularSteppedOutlinePreview(
     { color: group.color, bottomHeight: group.bottomHeight },
   ]));
 
-  const previews: GroupOutlinePreview[] = [];
-  graph.groups.forEach((groupFeature, index) => {
+  const lowestLayer = graph.layers[0];
+  const lowestGroup = graph.groups.find(
+    (group) => Math.abs(group.columnHeight - lowestLayer.toHeight) <= 1e-6,
+  ) ?? graph.groups[0];
+  const lowestPoints = getLargestOutlinePoints(lowestLayer.footprint);
+  const lowestMeta = groupMetaById.get(lowestGroup.groupId);
+  const previews: GroupOutlinePreview[] = lowestPoints && lowestPoints.length >= 3
+    ? [{
+        key: "rect-lowest-layer",
+        groupId: lowestGroup.groupId,
+        color: lowestMeta?.color ?? "#8b7355",
+        bottomHeight: lowestLayer.toHeight,
+        points: lowestPoints,
+      }]
+    : [];
+
+  graph.groups
+    .filter((groupFeature) => groupFeature.columnHeight > lowestLayer.toHeight + 1e-6)
+    .forEach((groupFeature, index) => {
     const points = getLargestOutlinePoints(groupFeature.footprint);
     const meta = groupMetaById.get(groupFeature.groupId);
     if (points && points.length >= 3) {
@@ -201,7 +220,7 @@ function buildRectangularSteppedOutlinePreview(
         points,
       });
     }
-  });
+    });
 
   previews.sort((a, b) => a.bottomHeight - b.bottomHeight);
   return previews.length > 0 ? previews : null;

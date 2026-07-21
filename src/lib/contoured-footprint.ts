@@ -198,7 +198,8 @@ export interface ContouredFootprintResult {
  */
 export function deriveContouredFootprint(
   slots: ContouredFootprintSlot[],
-  spacing: number,
+  slotSpacing: number,
+  boundarySpacing: number,
   smoothingRadius: number,
   disconnectDistance: number,
 ): ContouredFootprintResult {
@@ -213,7 +214,7 @@ export function deriveContouredFootprint(
     rOuter: getConnectivityRadius(
       slot.profile.width,
       slot.profile.height,
-      spacing,
+      slotSpacing,
       slot.profile.outerOffset * 2,
       slot.profile.outerOffset * 2,
     ),
@@ -231,7 +232,12 @@ export function deriveContouredFootprint(
   const slotsById = new Map(slots.map((slot) => [slot.id, slot]));
   const bodies = clusters
     .map((cluster) =>
-      buildContouredClusterFootprint(cluster, slotsById, spacing, smoothingRadius),
+      buildContouredClusterFootprint(
+        cluster,
+        slotsById,
+        boundarySpacing,
+        smoothingRadius,
+      ),
     )
     .filter((item): item is Geom2 => item !== null);
 
@@ -247,13 +253,15 @@ export function deriveContouredFootprint(
  */
 export function countContourBodies(
   slots: ContouredFootprintSlot[],
-  spacing: number,
+  slotSpacing: number,
+  boundarySpacing: number,
   smoothingRadius: number,
   disconnectDistance: number,
 ): number {
   return deriveContouredFootprint(
     slots,
-    spacing,
+    slotSpacing,
+    boundarySpacing,
     smoothingRadius,
     disconnectDistance,
   ).bodyCount;

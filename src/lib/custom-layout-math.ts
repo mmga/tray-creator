@@ -118,6 +118,7 @@ export function calculateCustomContouredFootprint(
   const contouredSlots = params.slots.map(projectCustomSlotToContoured);
   const result = deriveContouredFootprint(
     contouredSlots,
+    params.spacing,
     boundarySpacing,
     CUSTOM_CONTOURED_DEFAULT_SMOOTHING_RADIUS,
     CUSTOM_CONTOURED_DEFAULT_DISCONNECT_DISTANCE,

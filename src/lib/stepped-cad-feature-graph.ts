@@ -199,12 +199,22 @@ export interface SteppedCadFeatureGraph {
 
 function buildNormalizedSlotData(params: SteppedLayoutParams) {
   const effective = calculateEffectiveBaseplate(params);
-  const trayWidth = effective.hasSlots ? effective.width : params.trayWidth;
-  const trayDepth = effective.hasSlots ? effective.depth : params.trayDepth;
-  const sourceCenterX = effective.hasSlots
+  const usesFixedRectangularFootprint =
+    params.footprintStyle === "rectangular" && params.traySizingMode === "fixed";
+  const trayWidth = usesFixedRectangularFootprint
+    ? params.trayWidth
+    : effective.hasSlots ? effective.width : params.trayWidth;
+  const trayDepth = usesFixedRectangularFootprint
+    ? params.trayDepth
+    : effective.hasSlots ? effective.depth : params.trayDepth;
+  const sourceCenterX = usesFixedRectangularFootprint
+    ? params.trayWidth / 2
+    : effective.hasSlots
     ? (effective.minX + effective.maxX) / 2
     : trayWidth / 2;
-  const sourceCenterY = effective.hasSlots
+  const sourceCenterY = usesFixedRectangularFootprint
+    ? params.trayDepth / 2
+    : effective.hasSlots
     ? (effective.minY + effective.maxY) / 2
     : trayDepth / 2;
 
@@ -241,7 +251,8 @@ function buildNormalizedSlotData(params: SteppedLayoutParams) {
 
 function buildClusteredFootprint(
   slotData: NormalizedSlotData[],
-  spacing: number,
+  slotSpacing: number,
+  boundarySpacing: number,
   structureParams: Pick<SteppedLayoutParams, "smoothingRadius" | "disconnectDistance">,
 ): Geom2 | null {
   if (slotData.length === 0) {
@@ -255,7 +266,7 @@ function buildClusteredFootprint(
     rOuter: getConnectivityRadius(
       item.slot.width,
       item.slot.height,
-      spacing,
+      slotSpacing,
       item.profile.outerOffset * 2,
       item.profile.outerOffset * 2,
     ),
@@ -287,7 +298,7 @@ function buildClusteredFootprint(
       buildContouredClusterFootprint(
         cluster,
         footprintSlotsById,
-        spacing,
+        boundarySpacing,
         structureParams.smoothingRadius,
       ),
     )
@@ -393,40 +404,11 @@ function buildRectangleFootprint(
  * - 更高高度带：每个高度组各自的轴对齐包络 + boundary spacing，直角（不应用 cornerRadius）。
  * - fixed sizing 仅决定最低层；不传播到更高分组（CONTEXT:603）。
  */
-function buildRectangularSteppedGroupFootprint(
+function buildRectangularGroupFootprint(
   ownSlotData: NormalizedSlotData[],
-  higherSlotData: NormalizedSlotData[],
-  params: SteppedLayoutParams,
-  isLowestLayer: boolean,
-  lowestLayerBounds?: { minX: number; maxX: number; minY: number; maxY: number } | null,
+  boundarySpacing: number,
 ): Geom2 | null {
-  const boundarySpacingIndependent = params.boundarySpacingIndependent === true;
-  const boundarySpacing = boundarySpacingIndependent
-    ? (params.boundarySpacing ?? params.spacing)
-    : params.spacing;
-
-  // 最低连续层：用整体包络（含所有槽位）或 fixed sizing
-  if (isLowestLayer) {
-    if (params.traySizingMode === "fixed" && params.trayWidth > 0 && params.trayDepth > 0) {
-      return buildRectangleFootprint(
-        {
-          minX: -params.trayWidth / 2,
-          maxX: params.trayWidth / 2,
-          minY: -params.trayDepth / 2,
-          maxY: params.trayDepth / 2,
-        },
-        params.cornerRadius ?? 0,
-      );
-    }
-    if (lowestLayerBounds) {
-      return buildRectangleFootprint(lowestLayerBounds, params.cornerRadius ?? 0);
-    }
-    return null;
-  }
-
-  // 更高高度带：本组包络 + 更高槽位包络的并集；保持直角（CONTEXT:601）
-  const allSlots = [...ownSlotData, ...higherSlotData];
-  const bounds = calculateAxisAlignedEnvelope(allSlots, boundarySpacing);
+  const bounds = calculateAxisAlignedEnvelope(ownSlotData, boundarySpacing);
   if (!bounds) {
     return null;
   }
@@ -456,18 +438,21 @@ export function buildSteppedCadFeatureGraph(
     ? (params.boundarySpacing ?? params.spacing)
     : params.spacing;
 
-  // 预计算最低连续层的整体包络（rectangular 下复用）
-  const lowestLayerBounds = footprintStyle === "rectangular"
+  const automaticLowestLayerBounds = footprintStyle === "rectangular"
     ? calculateAxisAlignedEnvelope(slots, boundarySpacing)
     : null;
-
-  // 找出最低 columnHeight，用于判定哪个 group 是"最低连续层"
-  const allColumnHeights = params.groups
-    .map((group) => Math.max(group.bottomHeight, 3))
-    .filter((height, _index, arr) => arr.length > 0);
-  const lowestColumnHeight = allColumnHeights.length > 0
-    ? Math.min(...allColumnHeights)
-    : 0;
+  const rectangularLowestLayerFootprint = footprintStyle !== "rectangular"
+    ? null
+    : params.traySizingMode === "fixed"
+      ? buildRectangleFootprint({
+          minX: -params.trayWidth / 2,
+          maxX: params.trayWidth / 2,
+          minY: -params.trayDepth / 2,
+          maxY: params.trayDepth / 2,
+        }, params.cornerRadius ?? 0)
+      : automaticLowestLayerBounds
+        ? buildRectangleFootprint(automaticLowestLayerBounds, params.cornerRadius ?? 0)
+        : null;
 
   const groups = params.groups
     .map<SteppedCadGroupFeature | null>((group) => {
@@ -490,19 +475,15 @@ export function buildSteppedCadFeatureGraph(
 
       let footprint: Geom2 | null = null;
       if (footprintStyle === "rectangular") {
-        // 最低 columnHeight 的分组使用最低连续层包络；其余分组用各自的矩形包络
-        const isLowestLayer = columnHeight <= lowestColumnHeight + 1e-6;
-        footprint = buildRectangularSteppedGroupFootprint(
+        footprint = buildRectangularGroupFootprint(
           ownSlots,
-          contextSlots,
-          params,
-          isLowestLayer,
-          isLowestLayer ? lowestLayerBounds : null,
+          boundarySpacing,
         );
       } else {
         footprint = buildClusteredFootprint(
           [...ownSlots, ...contextSlots],
           params.spacing,
+          boundarySpacing,
           getEffectiveGroupStructureParams(group, params),
         );
       }
@@ -535,9 +516,16 @@ export function buildSteppedCadFeatureGraph(
       continue;
     }
 
-    const footprint = activeFootprints.length === 1
-      ? activeFootprints[0].footprint
-      : union(...activeFootprints.map((item) => item.footprint));
+    const footprint = footprintStyle === "rectangular" && previousHeight === 0
+      ? rectangularLowestLayerFootprint
+      : activeFootprints.length === 1
+        ? activeFootprints[0].footprint
+        : union(...activeFootprints.map((item) => item.footprint));
+
+    if (!footprint) {
+      previousHeight = height;
+      continue;
+    }
 
     layers.push({
       id: `layer-${previousHeight}-${height}`,

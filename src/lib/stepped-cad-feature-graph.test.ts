@@ -183,12 +183,12 @@ describe("stepped cad feature graph", () => {
     const graph = buildSteppedCadFeatureGraph(params);
 
     expect(graph.groups.length).toBe(2);
-    // 最低 columnHeight=10 对应整体包络；高层=20 对应分组包络
-    const lowGroup = graph.groups.find((g) => g.columnHeight === 10)!;
+    // 最低 layer 对应整体包络；高层 group 对应分组包络
+    const lowLayer = graph.layers[0];
     const highGroup = graph.groups.find((g) => g.columnHeight === 20)!;
 
     // 最低层应包含两个槽位的整体包络（宽度约 25 + 5*(spacing=5) + 35 + 2*5 = ?，至少 > 单槽）
-    const [lowMin, lowMax] = measurements.measureBoundingBox(lowGroup.footprint);
+    const [lowMin, lowMax] = measurements.measureBoundingBox(lowLayer.footprint);
     const lowWidth = lowMax[0] - lowMin[0];
     expect(lowWidth).toBeGreaterThan(50);
 
@@ -212,12 +212,12 @@ describe("stepped cad feature graph", () => {
     };
     const graph = buildSteppedCadFeatureGraph(params);
 
-    const lowGroup = graph.groups.find((g) => g.columnHeight === 10)!;
+    const lowLayer = graph.layers[0];
     const highGroup = graph.groups.find((g) => g.columnHeight === 20)!;
 
     // 最低层使用固定尺寸 200x160
-    const [, lowMax] = measurements.measureBoundingBox(lowGroup.footprint);
-    const [lowMin] = measurements.measureBoundingBox(lowGroup.footprint);
+    const [, lowMax] = measurements.measureBoundingBox(lowLayer.footprint);
+    const [lowMin] = measurements.measureBoundingBox(lowLayer.footprint);
     expect(lowMax[0] - lowMin[0]).toBeCloseTo(200, 0);
     expect(lowMax[1] - lowMin[1]).toBeCloseTo(160, 0);
 
@@ -225,5 +225,82 @@ describe("stepped cad feature graph", () => {
     const [, highMax] = measurements.measureBoundingBox(highGroup.footprint);
     const [highMin] = measurements.measureBoundingBox(highGroup.footprint);
     expect(highMax[0] - highMin[0]).toBeLessThan(200);
+  });
+
+  it("固定尺寸使用托盘左下角坐标系且报告固定外尺寸", () => {
+    const params = {
+      ...createParams(),
+      footprintStyle: "rectangular" as const,
+      traySizingMode: "fixed" as const,
+      trayWidth: 200,
+      trayDepth: 160,
+      slots: [{
+        ...createParams().slots[0],
+        x: 25,
+        y: 30,
+      }],
+      groups: [createParams().groups[0]],
+    };
+
+    const graph = buildSteppedCadFeatureGraph(params);
+
+    expect(graph.trayWidth).toBe(200);
+    expect(graph.trayDepth).toBe(160);
+    expect(graph.slotHoles[0].cx).toBeCloseTo(-75, 6);
+    expect(graph.slotHoles[0].cy).toBeCloseTo(-50, 6);
+  });
+
+  it("三个高度组的中层是各组矩形并集而不是跨组大包络", () => {
+    const base = createParams();
+    const params: SteppedLayoutParams = {
+      ...base,
+      footprintStyle: "rectangular",
+      traySizingMode: "auto",
+      boundarySpacing: 5,
+      boundarySpacingIndependent: true,
+      slots: [
+        { ...base.slots[0], id: "slot-low", x: 20, groupId: "group-low" },
+        { ...base.slots[0], id: "slot-mid", x: 120, groupId: "group-mid" },
+        { ...base.slots[0], id: "slot-high", x: 220, groupId: "group-high" },
+      ],
+      groups: [
+        { ...base.groups[0], id: "group-low", bottomHeight: 10 },
+        { ...base.groups[0], id: "group-mid", bottomHeight: 20 },
+        { ...base.groups[1], id: "group-high", bottomHeight: 30 },
+      ],
+    };
+
+    const graph = buildSteppedCadFeatureGraph(params);
+    const middleLayer = graph.layers.find(
+      (layer) => layer.fromHeight === 10 && layer.toHeight === 20,
+    );
+
+    expect(middleLayer).toBeDefined();
+    // 两个相距 100mm 的 35.4mm 方形包络并集面积约 2506mm²；
+    // 若错误合并成跨组大矩形，面积会超过 4700mm²。
+    expect(measurements.measureArea(middleLayer!.footprint)).toBeLessThan(3500);
+  });
+
+  it("底孔自动抬高组高度后仍生成全局连续最低层", () => {
+    const base = createParams();
+    const params: SteppedLayoutParams = {
+      ...base,
+      footprintStyle: "rectangular",
+      traySizingMode: "auto",
+      baseHoleStructure: "magnet-post-hole",
+      magnetPostHoleDepth: 3,
+      holeDepth: 6,
+      groups: base.groups.map((group, index) => ({
+        ...group,
+        bottomHeight: index === 0 ? 3 : 12,
+      })),
+    };
+
+    const graph = buildSteppedCadFeatureGraph(params);
+    const firstLayer = graph.layers[0];
+    const [min, max] = measurements.measureBoundingBox(firstLayer.footprint);
+
+    expect(firstLayer.fromHeight).toBe(0);
+    expect(max[0] - min[0]).toBeGreaterThan(70);
   });
 });

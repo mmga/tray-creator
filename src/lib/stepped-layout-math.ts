@@ -13,7 +13,9 @@ export type { LayoutExtents as SteppedLayoutExtents } from "@/lib/custom-layout-
 export function calculateSteppedEffectiveDimensions(
   params: SteppedLayoutParams,
 ): LayoutExtents {
-  const boundarySpacing = params.spacing;
+  const boundarySpacing = params.boundarySpacingIndependent
+    ? (params.boundarySpacing ?? params.spacing)
+    : params.spacing;
   if (params.slots.length === 0) {
     return {
       width: 0,

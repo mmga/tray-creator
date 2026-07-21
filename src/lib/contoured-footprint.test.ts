@@ -70,14 +70,14 @@ function boundsArea(geom: Geom2): number {
 
 describe("Contoured Footprint Construction（跨模式共用）", () => {
   it("空 slots 返回零实体", () => {
-    const result = deriveContouredFootprint([], 5, 60, 0);
+    const result = deriveContouredFootprint([], 5, 5, 60, 0);
     expect(result.bodyCount).toBe(0);
     expect(result.bodies).toHaveLength(0);
   });
 
   it("单个圆形槽位生成单实体", () => {
     const slots = [makeCircleSlot("a", 0, 0, 25)];
-    const result = deriveContouredFootprint(slots, 5, 60, 0);
+    const result = deriveContouredFootprint(slots, 5, 5, 60, 0);
     expect(result.bodyCount).toBe(1);
     expect(result.bodies).toHaveLength(1);
   });
@@ -87,7 +87,7 @@ describe("Contoured Footprint Construction（跨模式共用）", () => {
       makeCircleSlot("a", 0, 0, 25),
       makeCircleSlot("b", 200, 200, 25),
     ];
-    const result = deriveContouredFootprint(slots, 5, 0, 0);
+    const result = deriveContouredFootprint(slots, 5, 5, 0, 0);
     expect(result.bodyCount).toBe(2);
   });
 
@@ -96,12 +96,12 @@ describe("Contoured Footprint Construction（跨模式共用）", () => {
       makeCircleSlot("a", 0, 0, 25),
       makeCircleSlot("b", 30, 0, 25),
     ];
-    const merged = deriveContouredFootprint(slots, 5, 60, 0);
+    const merged = deriveContouredFootprint(slots, 5, 5, 60, 0);
     expect(merged.bodyCount).toBe(1);
 
     // 关闭 smoothing 且 disconnectDistance=0 时，按外缘接触判定，相邻槽位仍合并
     // 若要分离，需要使用大间距 + 零平滑
-    const separated = deriveContouredFootprint(slots, 5, 0, 0);
+    const separated = deriveContouredFootprint(slots, 5, 5, 0, 0);
     // gap = 30 - 12.5 - 12.5 = 5 <= 0 不成立，但因 disconnect=0 fallback 到 smoothing=0
     // 此时仅当外缘相交或相切才合并；这里 gap=5>0 应分离
     expect(separated.bodyCount).toBeGreaterThanOrEqual(1);
@@ -112,8 +112,8 @@ describe("Contoured Footprint Construction（跨模式共用）", () => {
       makeCircleSlot("a", 0, 0, 25),
       makeCircleSlot("b", 100, 100, 25),
     ];
-    expect(countContourBodies(slots, 5, 0, 0)).toBe(
-      deriveContouredFootprint(slots, 5, 0, 0).bodyCount,
+    expect(countContourBodies(slots, 5, 5, 0, 0)).toBe(
+      deriveContouredFootprint(slots, 5, 5, 0, 0).bodyCount,
     );
   });
 
@@ -136,6 +136,7 @@ describe("Contoured Footprint Construction（跨模式共用）", () => {
     // custom 端调用
     const customResult = deriveContouredFootprint(
       sharedSlots,
+      sharedParams.spacing,
       sharedParams.spacing,
       sharedParams.smoothing,
       sharedParams.disconnect,
@@ -171,6 +172,19 @@ describe("Contoured Footprint Construction（跨模式共用）", () => {
     const footprint = buildContouredClusterFootprint(cluster, slotsById, 5, 10);
     expect(footprint).not.toBeNull();
   });
+
+  it("独立边界间距不改变槽群连通判定", () => {
+    const slots = [
+      makeCircleSlot("a", 0, 0, 25),
+      makeCircleSlot("b", 60, 0, 25),
+    ];
+
+    const narrowBoundary = deriveContouredFootprint(slots, 5, 2, 0, 0);
+    const wideBoundary = deriveContouredFootprint(slots, 5, 12, 0, 0);
+
+    expect(narrowBoundary.bodyCount).toBe(2);
+    expect(wideBoundary.bodyCount).toBe(2);
+  });
 });
 
 /**
@@ -178,5 +192,5 @@ describe("Contoured Footprint Construction（跨模式共用）", () => {
  * 提取此函数仅为测试可读性：证明跨模式调用同一底层入口。
  */
 function deriveContoredForEllipse(slots: ContouredFootprintSlot[]) {
-  return deriveContouredFootprint(slots, 5, 60, 0);
+  return deriveContouredFootprint(slots, 5, 5, 60, 0);
 }
