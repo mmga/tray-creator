@@ -109,6 +109,14 @@ export function TrayResultSummary({ result }: TrayResultSummaryProps) {
           超过常规打印尺寸 {result.buildLimit.maxSize} × {result.buildLimit.maxSize} mm，仍可继续建模。
         </div>
       ) : null}
+      {result.footprintWarnings?.map((warning, index) => (
+        <div
+          key={`${warning}-${index}`}
+          className="rounded border border-[#7c5a1c] bg-[#2a2115]/70 px-2 py-1.5 text-[10px] text-[#f0d8b8]"
+        >
+          贴合轮廓警告：{warning}
+        </div>
+      ))}
     </div>
   );
 

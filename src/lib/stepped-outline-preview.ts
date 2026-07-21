@@ -1,22 +1,10 @@
 import type {
   GroupOutlinePreview,
   SteppedLayoutParams,
-  SteppedSlot,
 } from "@/types/custom-tray";
 import { geometries } from "@jscad/modeling";
-import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
-import { getEffectiveGroupStructureParams } from "@/lib/stepped-group-params";
-import {
-  buildContouredClusterFootprint,
-  type ContouredFootprintSlot,
-} from "@/lib/contoured-footprint";
-import {
-  clusterConnectivityCircles,
-  getConnectivityRadius,
-  getEffectiveBridgeGap,
-  type ConnectivityCircle,
-} from "@/lib/stepped-connectivity";
 import { buildSteppedCadFeatureGraph } from "@/lib/stepped-cad-feature-graph";
+import { constructSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
 
 const { geom2 } = geometries;
 
@@ -54,115 +42,21 @@ export function buildSteppedOutlinePreview(
     return buildRectangularSteppedOutlinePreview(params);
   }
 
-  // Contoured 分支：保持现有集群派生
   const result: GroupOutlinePreview[] = [];
-  const boundarySpacing = params.boundarySpacingIndependent
-    ? (params.boundarySpacing ?? params.spacing)
-    : params.spacing;
-  const slotsByGroupId = new Map<string, SteppedSlot[]>();
-
-  params.slots.forEach((slot) => {
-    const groupedSlots = slotsByGroupId.get(slot.groupId);
-    if (groupedSlots) {
-      groupedSlots.push(slot);
-    } else {
-      slotsByGroupId.set(slot.groupId, [slot]);
-    }
-  });
-
-  const higherSlotsByGroupId = new Map<string, SteppedSlot[]>();
-  const groupsByHeight = [...params.groups].sort(
-    (a, b) => b.bottomHeight - a.bottomHeight,
-  );
-  let higherSlots: SteppedSlot[] = [];
-
-  for (let index = 0; index < groupsByHeight.length; ) {
-    const currentHeight = groupsByHeight[index].bottomHeight;
-    const sameHeightGroups: typeof groupsByHeight = [];
-
-    while (
-      index < groupsByHeight.length &&
-      groupsByHeight[index].bottomHeight === currentHeight
-    ) {
-      sameHeightGroups.push(groupsByHeight[index]);
-      index += 1;
-    }
-
-    sameHeightGroups.forEach((group) => {
-      higherSlotsByGroupId.set(group.id, higherSlots);
-    });
-
-    const sameHeightSlots = sameHeightGroups.flatMap(
-      (group) => slotsByGroupId.get(group.id) ?? [],
-    );
-    higherSlots = [...higherSlots, ...sameHeightSlots];
-  }
-
-  for (const group of params.groups) {
-    const ownSlots = slotsByGroupId.get(group.id) ?? [];
-    if (ownSlots.length === 0) {
-      continue;
-    }
-    const effectiveParams = getEffectiveGroupStructureParams(group, params);
-
-    const higherSlotsForGroup = higherSlotsByGroupId.get(group.id) ?? [];
-    const footprintSlotsById = new Map<string, ContouredFootprintSlot>();
-    const connectivityCircles: ConnectivityCircle[] = [
-      ...ownSlots,
-      ...higherSlotsForGroup,
-    ].map((slot) => {
-      const profile = getFreeSlotProfileGeometry(slot);
-      footprintSlotsById.set(slot.id, {
-        id: slot.id,
-        cx: slot.x,
-        cy: slot.y,
-        rotation: slot.rotation,
-        shape: slot.shape,
-        profile,
+  const construction = constructSteppedContouredFootprints(params);
+  const groupById = new Map(params.groups.map((group) => [group.id, group]));
+  for (const constructedGroup of construction.groups) {
+    const group = groupById.get(constructedGroup.groupId);
+    if (!group) continue;
+    constructedGroup.footprint.bodies.forEach((body, bodyIndex) => {
+      if (body.outerOutline.length < 3) return;
+      result.push({
+        key: `${group.id}-${body.slotIds.join("-") || bodyIndex}`,
+        groupId: group.id,
+        color: group.color,
+        bottomHeight: group.bottomHeight,
+        points: body.outerOutline.map((point) => ({ ...point })),
       });
-      return {
-        id: slot.id,
-        cx: slot.x,
-        cy: slot.y,
-        rOuter: getConnectivityRadius(
-          profile.width,
-          profile.height,
-          params.spacing,
-          profile.outerOffset * 2,
-          profile.outerOffset * 2,
-        ),
-      };
-    });
-
-    const clusters = clusterConnectivityCircles(
-      connectivityCircles,
-      getEffectiveBridgeGap(
-        effectiveParams.smoothingRadius,
-        effectiveParams.disconnectDistance,
-      ),
-    );
-
-    clusters.forEach((cluster, clusterIndex) => {
-      const clusterKey =
-        cluster.map((circle) => circle.id).sort().join("-") ||
-        `${group.id}-${clusterIndex}`;
-      const footprint = buildContouredClusterFootprint(
-        cluster,
-        footprintSlotsById,
-        boundarySpacing,
-        effectiveParams.smoothingRadius,
-      );
-      const points = footprint ? getLargestOutlinePoints(footprint) : null;
-
-      if (points && points.length >= 3) {
-        result.push({
-          key: `${group.id}-${clusterKey}`,
-          groupId: group.id,
-          color: group.color,
-          bottomHeight: group.bottomHeight,
-          points,
-        });
-      }
     });
   }
 

@@ -3,6 +3,7 @@ import type {
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import type { LayoutEditorViewportModel } from "@/viewports/layout-editor/types";
+import { constructSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
 
 export function buildSteppedLayoutEditorViewportModel({
   params,
@@ -22,6 +23,11 @@ export function buildSteppedLayoutEditorViewportModel({
   const cornerRadius = params.footprintStyle === "rectangular"
     ? (params.cornerRadius ?? 0)
     : 0;
+  const footprintWarnings = params.footprintStyle !== "rectangular"
+    ? constructSteppedContouredFootprints(params).diagnostics.map(
+        (diagnostic) => diagnostic.message,
+      )
+    : undefined;
 
   return {
     trayFrame: {
@@ -41,6 +47,7 @@ export function buildSteppedLayoutEditorViewportModel({
       // 该函数已按 footprintStyle 分流（rectangular 复用 feature-graph 矩形 footprint）
       groupOutlines,
       slotGroups: params.groups,
+      footprintWarnings,
     },
     interactions: {},
   };

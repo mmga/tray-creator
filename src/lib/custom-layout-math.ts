@@ -2,10 +2,8 @@ import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
 import { RENDER_CONFIG } from "@/lib/config";
-import {
-  deriveContouredFootprint,
-  type ContouredFootprintSlot,
-} from "@/lib/contoured-footprint";
+import { constructCustomContouredFootprint } from "@/lib/custom-contoured-footprint";
+import type { ConstructedContouredFootprint } from "@/lib/contoured-footprint";
 import type { BaseplateFootprintStyle, CustomLayoutParams, FreeSlot } from "@/types/custom-tray";
 
 export type CustomTraySizingMode = "auto" | "fixed";
@@ -74,55 +72,31 @@ export function resolveCustomFootprintStyle(
  * 把自定义模式 FreeSlot 投影为 Contoured Footprint Construction 所需的通用槽位结构。
  * custom 与 stepped 通过各自的投影函数把自己的 Slot Instance 适配到同一形状。
  */
-export function projectCustomSlotToContoured(
-  slot: FreeSlot,
-): ContouredFootprintSlot {
-  const profile = getFreeSlotProfileGeometry(slot);
-  return {
-    id: slot.id,
-    cx: slot.x,
-    cy: slot.y,
-    rotation: slot.rotation || 0,
-    shape: slot.shape,
-    profile,
-  };
-}
-
 /**
  * 为自定义模式派生 contoured footprint：返回 2D bodies 与外接矩形尺寸。
  * 仅在 footprintStyle === "contoured" 时被调用。
  */
 export function calculateCustomContouredFootprint(
   params: CustomLayoutParams,
-): { bodies: ReturnType<typeof deriveContouredFootprint>["bodies"]; bodyCount: number; minX: number; maxX: number; minY: number; maxY: number } {
-  if (params.slots.length === 0) {
-    return {
-      bodies: [],
-      bodyCount: 0,
-      minX: 0,
-      maxX: 0,
-      minY: 0,
-      maxY: 0,
-    };
-  }
-
-  const boundarySpacing = resolveCustomBoundarySpacing(params);
-  const contouredSlots = params.slots.map(projectCustomSlotToContoured);
-  const result = deriveContouredFootprint(
-    contouredSlots,
-    params.spacing,
-    boundarySpacing,
-    params.smoothingRadius ?? 60,
-    params.disconnectDistance ?? 0,
-  );
+): {
+  bodies: ReturnType<typeof constructCustomContouredFootprint>["bodies"][number]["geometry"][];
+  bodyCount: number;
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+  diagnostics: ReturnType<typeof constructCustomContouredFootprint>["diagnostics"];
+} {
+  const result = constructCustomContouredFootprint(params);
   const bounds = result.bounds;
   return {
-    bodies: result.bodies,
+    bodies: result.bodies.map((body) => body.geometry),
     bodyCount: result.bodyCount,
     minX: bounds?.minX ?? 0,
     maxX: bounds?.maxX ?? 0,
     minY: bounds?.minY ?? 0,
     maxY: bounds?.maxY ?? 0,
+    diagnostics: result.diagnostics,
   };
 }
 
@@ -178,6 +152,7 @@ export function calculateCustomEffectiveDimensions(
 
 export function calculateCustomTrayFootprint(
   params: CustomLayoutParams,
+  constructedContoured?: ConstructedContouredFootprint,
 ): CustomTrayFootprint {
   const sizingMode = resolveCustomTraySizingMode(params);
   const footprintStyle = resolveCustomFootprintStyle(params);
@@ -185,19 +160,23 @@ export function calculateCustomTrayFootprint(
   // contoured 分支：底座贴合槽位轮廓，不应用 side bevel / fixed sizing / corner radius。
   // 这些字段保留为 Dormant Fixed Tray Configuration，切换回 rectangular 时复活（CONTEXT:607-608）。
   if (footprintStyle === "contoured") {
-    const contoured = calculateCustomContouredFootprint(params);
-    const width = roundLayoutDimensionToTenth(contoured.maxX - contoured.minX);
-    const depth = roundLayoutDimensionToTenth(contoured.maxY - contoured.minY);
+    const contoured = constructedContoured ?? constructCustomContouredFootprint(params);
+    const width = roundLayoutDimensionToTenth(
+      (contoured.bounds?.maxX ?? 0) - (contoured.bounds?.minX ?? 0),
+    );
+    const depth = roundLayoutDimensionToTenth(
+      (contoured.bounds?.maxY ?? 0) - (contoured.bounds?.minY ?? 0),
+    );
     return {
       sizingMode: "auto", // contoured 下 fixed sizing 休眠，按派生尺寸返回
       footprintStyle,
       hasSlots: contoured.bodyCount > 0,
       width: width > 0 ? width : params.trayWidth,
       depth: depth > 0 ? depth : params.trayDepth,
-      minX: contoured.minX,
-      maxX: contoured.maxX,
-      minY: contoured.minY,
-      maxY: contoured.maxY,
+      minX: contoured.bounds?.minX ?? 0,
+      maxX: contoured.bounds?.maxX ?? 0,
+      minY: contoured.bounds?.minY ?? 0,
+      maxY: contoured.bounds?.maxY ?? 0,
       contourBodyCount: contoured.bodyCount,
     };
   }

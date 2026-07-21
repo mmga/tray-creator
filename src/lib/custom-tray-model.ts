@@ -5,16 +5,18 @@ import {
   extrusions,
   measurements,
 } from "@jscad/modeling";
-import type { Geom2 } from "@jscad/modeling/src/geometries/types";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { CustomLayoutParams } from "@/types/custom-tray";
 import { resolveMagneticBaseHolePreset } from "@/lib/base-hole-config";
 import {
-  calculateCustomContouredFootprint,
   calculateCustomEffectiveDimensions,
   calculateCustomTrayFootprint,
   roundLayoutDimensionToTenth,
 } from "@/lib/custom-layout-math";
+import {
+  constructCustomContouredFootprint,
+} from "@/lib/custom-contoured-footprint";
+import type { ConstructedContouredFootprint } from "@/lib/contoured-footprint";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import {
   createBaseBody,
@@ -86,7 +88,10 @@ export function calculateCustomEffectiveBaseplate(params: CustomLayoutParams) {
  */
 export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
   const { slots, baseThickness, holeDepth, cornerRadius, sideBevelWidth } = params;
-  const footprint = calculateCustomTrayFootprint(params);
+  const constructedContoured = params.footprintStyle === "contoured"
+    ? constructCustomContouredFootprint(params)
+    : undefined;
+  const footprint = calculateCustomTrayFootprint(params, constructedContoured);
   const trayWidth = footprint.width;
   const trayDepth = footprint.depth;
   const totalHeight = baseThickness + holeDepth;
@@ -100,7 +105,11 @@ export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
   // 1. 创建底板实体（按 footprint style 分流）
   let body: Geom3;
   if (footprint.footprintStyle === "contoured") {
-    body = createContouredBaseBody(params, baseThickness + holeDepth);
+    body = createContouredBaseBody(
+      params,
+      constructedContoured!,
+      baseThickness + holeDepth,
+    );
   } else {
     body = createBaseBody(
       trayWidth,
@@ -176,22 +185,25 @@ export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
  * contoured footprint 在用户坐标系中已经包含 boundary spacing 外扩，
  * 这里需要把用户坐标系中心（外接框中心）平移到 JSCAD 中心。
  */
-function createContouredBaseBody(params: CustomLayoutParams, totalHeight: number): Geom3 {
-  const contoured = calculateCustomContouredFootprint(params);
+function createContouredBaseBody(
+  params: CustomLayoutParams,
+  contoured: ConstructedContouredFootprint,
+  totalHeight: number,
+): Geom3 {
   if (contoured.bodies.length === 0) {
     // 无槽位时退化为占位底座，避免下游 measureVolume 等失败
     return createBaseBody(params.trayWidth, params.trayDepth, totalHeight, 0, 0);
   }
 
   // 把用户坐标系下的 2D 轮廓平移到 JSCAD 中心坐标系
-  const centerX = (contoured.minX + contoured.maxX) / 2;
-  const centerY = (contoured.minY + contoured.maxY) / 2;
+  const centerX = ((contoured.bounds?.minX ?? 0) + (contoured.bounds?.maxX ?? 0)) / 2;
+  const centerY = ((contoured.bounds?.minY ?? 0) + (contoured.bounds?.maxY ?? 0)) / 2;
 
-  const solids = contoured.bodies.map((body2d: Geom2) =>
+  const solids = contoured.bodies.map((body) =>
     orientPositiveVolume(
       translate(
         [-centerX, -centerY, 0],
-        extrudeLinear({ height: totalHeight }, body2d),
+        extrudeLinear({ height: totalHeight }, body.geometry),
       ),
     ),
   );

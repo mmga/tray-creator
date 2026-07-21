@@ -11,17 +11,9 @@ import { resolveMagneticBaseHolePreset } from "@/lib/base-hole-config";
 import { roundLayoutDimensionToTenth } from "@/lib/custom-layout-math";
 import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
-import {
-  clusterConnectivityCircles,
-  getConnectivityRadius,
-  getEffectiveBridgeGap,
-  type ConnectivityCircle,
-} from "@/lib/stepped-connectivity";
-import { getEffectiveGroupStructureParams } from "@/lib/stepped-group-params";
-import {
-  buildContouredClusterFootprint,
-  type ContouredFootprintSlot,
-} from "@/lib/contoured-footprint";
+import { constructSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
+import { getConnectivityRadius } from "@/lib/stepped-connectivity";
+import type { ContouredFootprintBounds } from "@/lib/contoured-footprint";
 import {
   getSteppedGroupMinBottomHeight,
   resolveMagnetPostHoleDepth,
@@ -197,8 +189,18 @@ export interface SteppedCadFeatureGraph {
   magnetPostHoles: SteppedCadMagnetPostHoleFeature[];
 }
 
-function buildNormalizedSlotData(params: SteppedLayoutParams) {
-  const effective = calculateEffectiveBaseplate(params);
+function buildNormalizedSlotData(
+  params: SteppedLayoutParams,
+  contouredBounds: ContouredFootprintBounds | null = null,
+) {
+  const effective = contouredBounds
+    ? {
+        hasSlots: true,
+        width: roundLayoutDimensionToTenth(contouredBounds.maxX - contouredBounds.minX),
+        depth: roundLayoutDimensionToTenth(contouredBounds.maxY - contouredBounds.minY),
+        ...contouredBounds,
+      }
+    : calculateEffectiveBaseplate(params);
   const usesFixedRectangularFootprint =
     params.footprintStyle === "rectangular" && params.traySizingMode === "fixed";
   const trayWidth = usesFixedRectangularFootprint
@@ -245,70 +247,10 @@ function buildNormalizedSlotData(params: SteppedLayoutParams) {
   return {
     trayWidth,
     trayDepth,
+    sourceCenterX,
+    sourceCenterY,
     slots,
   };
-}
-
-function buildClusteredFootprint(
-  slotData: NormalizedSlotData[],
-  slotSpacing: number,
-  boundarySpacing: number,
-  structureParams: Pick<SteppedLayoutParams, "smoothingRadius" | "disconnectDistance">,
-): Geom2 | null {
-  if (slotData.length === 0) {
-    return null;
-  }
-
-  const connectivityCircles: ConnectivityCircle[] = slotData.map((item) => ({
-    id: item.slot.id,
-    cx: item.cx,
-    cy: item.cy,
-    rOuter: getConnectivityRadius(
-      item.slot.width,
-      item.slot.height,
-      slotSpacing,
-      item.profile.outerOffset * 2,
-      item.profile.outerOffset * 2,
-    ),
-  }));
-
-  const clusters = clusterConnectivityCircles(
-    connectivityCircles,
-    getEffectiveBridgeGap(
-      structureParams.smoothingRadius,
-      structureParams.disconnectDistance,
-    ),
-  );
-  const footprintSlotsById = new Map<string, ContouredFootprintSlot>(
-    slotData.map((item) => [
-      item.slot.id,
-      {
-        id: item.slot.id,
-        cx: item.cx,
-        cy: item.cy,
-        rotation: item.rotation,
-        shape: item.slot.shape,
-        profile: item.profile,
-      },
-    ]),
-  );
-
-  const outlines = clusters
-    .map((cluster) =>
-      buildContouredClusterFootprint(
-        cluster,
-        footprintSlotsById,
-        boundarySpacing,
-        structureParams.smoothingRadius,
-      ),
-    )
-    .filter((item): item is Geom2 => item !== null);
-
-  if (outlines.length === 0) {
-    return null;
-  }
-
-  return outlines.length === 1 ? outlines[0] : union(...outlines);
 }
 
 /**
@@ -442,7 +384,17 @@ function buildRectangularGroupFootprint(
 export function buildSteppedCadFeatureGraph(
   params: SteppedLayoutParams,
 ): SteppedCadFeatureGraph {
-  const { trayWidth, trayDepth, slots } = buildNormalizedSlotData(params);
+  const footprintStyle = resolveSteppedFootprintStyle(params);
+  const contouredConstruction = footprintStyle === "contoured"
+    ? constructSteppedContouredFootprints(params)
+    : null;
+  const {
+    trayWidth,
+    trayDepth,
+    sourceCenterX,
+    sourceCenterY,
+    slots,
+  } = buildNormalizedSlotData(params, contouredConstruction?.bounds ?? null);
   if (slots.length === 0 || params.groups.length === 0) {
     return {
       trayWidth,
@@ -456,7 +408,9 @@ export function buildSteppedCadFeatureGraph(
     };
   }
 
-  const footprintStyle = resolveSteppedFootprintStyle(params);
+  const contouredGroupById = new Map(
+    contouredConstruction?.groups.map((group) => [group.groupId, group]) ?? [],
+  );
   const boundarySpacingIndependent = params.boundarySpacingIndependent === true;
   const boundarySpacing = boundarySpacingIndependent
     ? (params.boundarySpacing ?? params.spacing)
@@ -490,13 +444,6 @@ export function buildSteppedCadFeatureGraph(
         getSteppedGroupMinBottomHeight(params, group.id),
         3,
       );
-      const contextSlots = slots.filter((slot) => {
-        if (slot.groupId === group.id) {
-          return false;
-        }
-        return slot.columnHeight > columnHeight;
-      });
-
       let footprint: Geom2 | null = null;
       if (footprintStyle === "rectangular") {
         footprint = buildRectangularGroupFootprint(
@@ -507,12 +454,18 @@ export function buildSteppedCadFeatureGraph(
           trayDepth,
         );
       } else {
-        footprint = buildClusteredFootprint(
-          [...ownSlots, ...contextSlots],
-          params.spacing,
-          boundarySpacing,
-          getEffectiveGroupStructureParams(group, params),
-        );
+        const constructed = contouredGroupById.get(group.id)?.footprint;
+        const centeredBodies = constructed?.bodies.map((body) =>
+          translate(
+            [-sourceCenterX, -sourceCenterY],
+            body.geometry,
+          ) as Geom2
+        ) ?? [];
+        footprint = centeredBodies.length === 1
+          ? centeredBodies[0]
+          : centeredBodies.length > 1
+            ? union(...centeredBodies)
+            : null;
       }
 
       if (!footprint) {

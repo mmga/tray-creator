@@ -1,6 +1,7 @@
 import { MAX_BUILD_SIZE } from "@/lib/config";
-import { calculateCustomTrayDimensions } from "@/lib/custom-tray-model";
 import { calculateCustomTrayFootprint } from "@/lib/custom-layout-math";
+import { constructCustomContouredFootprint } from "@/lib/custom-contoured-footprint";
+import { constructSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
 import { calculateTrayDimensions } from "@/lib/tray-model";
 import { resolveBaseConverterGeometry } from "@/lib/base-converter-config";
 import type {
@@ -36,6 +37,7 @@ interface TrayResultProjectionBase {
   buildLimit: TrayResultBuildLimit;
   generating: boolean;
   stale: boolean;
+  footprintWarnings?: readonly string[];
 }
 
 export interface GridTrayResultProjection extends TrayResultProjectionBase {
@@ -178,8 +180,15 @@ export function projectCustomTrayResult(
   effectiveDimensions: { width: number; depth: number },
   state: ResultState,
 ): CustomTrayResultProjection {
-  const modelDimensions = calculateCustomTrayDimensions(params);
-  const footprint = calculateCustomTrayFootprint(params);
+  const constructedContoured = params.footprintStyle === "contoured"
+    ? constructCustomContouredFootprint(params)
+    : undefined;
+  const footprint = calculateCustomTrayFootprint(params, constructedContoured);
+  const modelDimensions = {
+    width: footprint.width,
+    depth: footprint.depth,
+    height: params.baseThickness + params.holeDepth,
+  };
   const footprintStyle = footprint.footprintStyle;
   const sizingMode = footprint.sizingMode;
 
@@ -222,6 +231,9 @@ export function projectCustomTrayResult(
     footprintKind,
     contourBodyCount: footprint.contourBodyCount,
     footprintArea: finiteOrZero(common.dimensions.width * common.dimensions.depth),
+    footprintWarnings: constructedContoured?.diagnostics.map(
+      (diagnostic) => diagnostic.message,
+    ),
   };
 }
 
@@ -231,6 +243,9 @@ export function projectSteppedTrayResult(
   effectiveDimensions: { width: number; depth: number },
   state: ResultState,
 ): SteppedTrayResultProjection {
+  const constructedContoured = params.footprintStyle !== "rectangular"
+    ? constructSteppedContouredFootprints(params)
+    : undefined;
   const height =
     params.groups.length > 0
       ? Math.max(
@@ -250,6 +265,9 @@ export function projectSteppedTrayResult(
     slotCount: params.slots.length,
     itemLabel: `${params.groups.length} 组 · ${params.slots.length} 槽`,
     ...common,
+    footprintWarnings: constructedContoured?.diagnostics.map(
+      (diagnostic) => diagnostic.message,
+    ),
     groupCount: params.groups.length,
     groups: params.groups.map((group) => ({
       id: group.id,

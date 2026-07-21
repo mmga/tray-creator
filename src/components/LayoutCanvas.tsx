@@ -94,6 +94,7 @@ export default function LayoutCanvas({
       focusedGroupId,
       groupOutlines,
       slotGroups,
+      footprintWarnings,
     },
     interactions: { slotHeightById, slotMoveScopeResolver },
   } = model;
@@ -904,6 +905,7 @@ export default function LayoutCanvas({
           selectedIds={effectiveSelectedIds}
           slots={slots}
           collisionErrorCount={collisionState.collisionErrorCount}
+          footprintWarnings={footprintWarnings}
         />
 
         {isEffectiveOversized && (

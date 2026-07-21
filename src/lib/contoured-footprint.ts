@@ -1,11 +1,8 @@
 /**
  * Contoured Footprint Construction（共用贴合轮廓构造）
  *
- * 从 placed Slot Geometry Snapshots、Boundary Spacing、smoothing radius、disconnection distance
- * 派生 2D 贴合轮廓。custom 与 stepped 两个工作流共用同一套构造逻辑，使二维预览、三维生成、
- * 尺寸、Contour Body Count、底板孔位边缘校验消费同一个轮廓结果（CONTEXT:259-262, 625）。
- *
- * 原实现位于 stepped-profile-footprint.ts，本次抽出为跨模式共用模块；旧文件保留向后兼容 re-export。
+ * 从 Mode Adapter 提供的计划批量派生权威托盘编辑坐标 Geom2，并集中提供二维预览、
+ * 三维构造、尺寸、Contour Body Count、底孔校验和诊断所需的所有派生结果。
  */
 import {
   booleans,
@@ -32,15 +29,12 @@ import type { FreeSlot } from "@/types/custom-tray";
 
 const { union } = booleans;
 const { geom2 } = geometries;
-const { measureBoundingBox } = measurements;
+const { measureArea, measureBoundingBox } = measurements;
 const { circle } = primitives;
 const { rotateZ, translate } = transforms;
 const DEG_TO_RAD = Math.PI / 180;
+const CIRCLE_CONTAINMENT_SAMPLES = 32;
 
-/**
- * 贴合轮廓派生所需的单个槽位数据。
- * 与具体模式解耦：custom 与 stepped 各自把自己的 Slot Instance 投影成此结构。
- */
 export interface ContouredFootprintSlot {
   id: string;
   cx: number;
@@ -55,10 +49,85 @@ export interface ContouredFootprintSlot {
   };
 }
 
-/**
- * @deprecated 历史别名，等价于 ContouredFootprintSlot。新代码请使用 ContouredFootprintSlot。
- */
-export type SteppedFootprintSlot = ContouredFootprintSlot;
+export interface ContouredFootprintRequest {
+  key: string;
+  slots: readonly ContouredFootprintSlot[];
+  slotSpacing: number;
+  boundarySpacing: number;
+  smoothingRadius: number;
+  disconnectDistance: number;
+}
+
+export interface ContouredFootprintPlan {
+  requests: readonly ContouredFootprintRequest[];
+}
+
+export interface ContouredFootprintPoint {
+  x: number;
+  y: number;
+}
+
+export interface ContouredFootprintBounds {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+}
+
+export interface ContouredFootprintDiagnostic {
+  code: "smoothing-fallback";
+  requestKey: string;
+  slotIds: readonly string[];
+  message: string;
+}
+
+export interface ContouredFootprintBody {
+  readonly geometry: Geom2;
+  readonly outlines: readonly (readonly ContouredFootprintPoint[])[];
+  readonly outerOutline: readonly ContouredFootprintPoint[];
+  readonly bounds: ContouredFootprintBounds;
+  readonly area: number;
+  readonly slotIds: readonly string[];
+}
+
+export interface ConstructedContouredFootprint {
+  readonly key: string;
+  readonly bodies: readonly ContouredFootprintBody[];
+  readonly bodyCount: number;
+  readonly bounds: ContouredFootprintBounds | null;
+  readonly area: number;
+  readonly diagnostics: readonly ContouredFootprintDiagnostic[];
+  containsExpandedCircle: (x: number, y: number, radius: number) => boolean;
+}
+
+export interface ContouredFootprintConstructionResult {
+  readonly footprints: readonly ConstructedContouredFootprint[];
+  readonly diagnostics: readonly ContouredFootprintDiagnostic[];
+}
+
+export type ContouredFootprintConstructionErrorCode =
+  | "invalid-plan"
+  | "duplicate-request-key"
+  | "invalid-slot-geometry-snapshot"
+  | "invalid-contour-parameters"
+  | "cluster-construction-failed";
+
+export interface ContouredFootprintConstructionError {
+  code: ContouredFootprintConstructionErrorCode;
+  message: string;
+  requestKey?: string;
+  slotIds?: readonly string[];
+  cause?: unknown;
+}
+
+export type ContouredFootprintConstructionOutcome =
+  | { ok: true; value: ContouredFootprintConstructionResult }
+  | { ok: false; error: ContouredFootprintConstructionError };
+
+interface ClusterConstruction {
+  geometry: Geom2;
+  usedSmoothingFallback: boolean;
+}
 
 function createOffsetProfileShape(
   slot: ContouredFootprintSlot,
@@ -76,11 +145,11 @@ function createOffsetProfileShape(
 }
 
 function buildProfileClusterFootprint(
-  cluster: ConnectivityCircle[],
+  cluster: readonly ConnectivityCircle[],
   slotsById: ReadonlyMap<string, ContouredFootprintSlot>,
-  spacing: number,
+  boundarySpacing: number,
   smoothingRadius: number,
-): Geom2 | null {
+): ClusterConstruction | null {
   const clampedSmoothing = Math.max(0, smoothingRadius);
   const buildParts = (extraOffset: number) => cluster
     .map((connectivity) => slotsById.get(connectivity.id))
@@ -88,7 +157,7 @@ function buildProfileClusterFootprint(
     .map((item) => {
       const profile = createOffsetProfileShape(
         item,
-        item.profile.outerOffset + spacing + extraOffset,
+        item.profile.outerOffset + boundarySpacing + extraOffset,
       );
       return translate(
         [item.cx, item.cy],
@@ -97,17 +166,15 @@ function buildProfileClusterFootprint(
     });
 
   if (cluster.length === 1) {
-    return buildParts(0)[0] ?? null;
+    const geometry = buildParts(0)[0];
+    return geometry ? { geometry, usedSmoothingFallback: false } : null;
   }
 
   const parts = buildParts(clampedSmoothing);
-  if (parts.length === 0) {
-    return null;
-  }
-
+  if (parts.length === 0) return null;
   const expanded = parts.length === 1 ? parts[0] : union(...parts);
   if (clampedSmoothing <= 0) {
-    return expanded;
+    return { geometry: expanded, usedSmoothingFallback: false };
   }
 
   const smoothed = insetGeom2(
@@ -116,46 +183,64 @@ function buildProfileClusterFootprint(
     RENDER_CONFIG.cylinderSegments,
   );
   if (smoothed) {
-    return smoothed;
+    return { geometry: smoothed, usedSmoothingFallback: false };
   }
 
   const fallbackParts = buildParts(0);
-  return fallbackParts.length === 1
-    ? fallbackParts[0]
-    : union(...fallbackParts);
+  if (fallbackParts.length === 0) return null;
+  return {
+    geometry: fallbackParts.length === 1
+      ? fallbackParts[0]
+      : union(...fallbackParts),
+    usedSmoothingFallback: true,
+  };
 }
 
 function buildCircularClusterFootprint(
-  cluster: ConnectivityCircle[],
+  cluster: readonly ConnectivityCircle[],
+  slotsById: ReadonlyMap<string, ContouredFootprintSlot>,
+  boundarySpacing: number,
   smoothingRadius: number,
-): Geom2 | null {
+): ClusterConstruction | null {
+  const outlineCircles = cluster
+    .map((item) => {
+      const slot = slotsById.get(item.id);
+      return slot
+        ? {
+            cx: item.cx,
+            cy: item.cy,
+            rOuter: Math.max(slot.profile.width, slot.profile.height) / 2 +
+              slot.profile.outerOffset + boundarySpacing,
+          }
+        : null;
+    })
+    .filter((item): item is OutlineCircle => item !== null);
+  if (outlineCircles.length !== cluster.length) return null;
+
   if (cluster.length === 1) {
-    const item = cluster[0];
-    return translate(
-      [item.cx, item.cy],
-      circle({
-        radius: item.rOuter,
-        segments: RENDER_CONFIG.cylinderSegments,
-      }),
-    ) as Geom2;
+    const item = outlineCircles[0];
+    return {
+      geometry: translate(
+        [item.cx, item.cy],
+        circle({
+          radius: item.rOuter,
+          segments: RENDER_CONFIG.cylinderSegments,
+        }),
+      ) as Geom2,
+      usedSmoothingFallback: false,
+    };
   }
 
   const outline = generateOutlineGeom2(
-    cluster.map(
-      (item): OutlineCircle => ({
-        cx: item.cx,
-        cy: item.cy,
-        rOuter: item.rOuter,
-      }),
-    ),
+    outlineCircles,
     smoothingRadius,
     RENDER_CONFIG.cylinderSegments,
   );
   if (outline) {
-    return outline;
+    return { geometry: outline, usedSmoothingFallback: false };
   }
 
-  const parts = cluster.map((item) =>
+  const parts = outlineCircles.map((item) =>
     translate(
       [item.cx, item.cy],
       circle({
@@ -164,72 +249,200 @@ function buildCircularClusterFootprint(
       }),
     ) as Geom2,
   );
-  return parts.length === 0
-    ? null
-    : parts.length === 1
-      ? parts[0]
-      : union(...parts);
+  if (parts.length === 0) return null;
+  return {
+    geometry: parts.length === 1 ? parts[0] : union(...parts),
+    usedSmoothingFallback: smoothingRadius > 0,
+  };
 }
 
-/**
- * 为一个连通集群构造贴合轮廓 Geom2。
- * 含椭圆槽时走采样 profile 路径，纯圆形集群走形态学闭运算路径。
- *
- * custom 与 stepped 均通过此函数得到给定输入下的同一 2D 轮廓（CONTEXT:625）。
- */
-export function buildContouredClusterFootprint(
-  cluster: ConnectivityCircle[],
+function constructCluster(
+  cluster: readonly ConnectivityCircle[],
   slotsById: ReadonlyMap<string, ContouredFootprintSlot>,
-  spacing: number,
+  boundarySpacing: number,
   smoothingRadius: number,
-): Geom2 | null {
+): ClusterConstruction | null {
   const containsEllipse = cluster.some(
     (item) => slotsById.get(item.id)?.shape === "ellipse",
   );
   return containsEllipse
     ? buildProfileClusterFootprint(
-      cluster,
-      slotsById,
-      spacing,
-      smoothingRadius,
-    )
-    : buildCircularClusterFootprint(cluster, smoothingRadius);
+        cluster,
+        slotsById,
+        boundarySpacing,
+        smoothingRadius,
+      )
+    : buildCircularClusterFootprint(
+        cluster,
+        slotsById,
+        boundarySpacing,
+        smoothingRadius,
+      );
 }
 
-/**
- * Contoured Footprint Construction 的派生结果。
- * - `bodies`：所有非空 2D 实体（每个连通集群一个），custom/stepped 共用同一份输入得到同一份结果（CONTEXT:625）。
- * - `bodyCount`：Contour Body Count，可被多体提示与结果摘要直接消费（CONTEXT:256, 628）。
- */
-export interface ContouredFootprintResult {
-  bodies: Geom2[];
-  bodyCount: number;
-  bounds: {
-    minX: number;
-    maxX: number;
-    minY: number;
-    maxY: number;
-  } | null;
+function boundsFromGeometry(geometry: Geom2): ContouredFootprintBounds {
+  const [min, max] = measureBoundingBox(geometry);
+  return { minX: min[0], maxX: max[0], minY: min[1], maxY: max[1] };
 }
 
-/**
- * 从一组 Slot Instances 派生 Contoured Footprint。
- *
- * 这是 custom 与 stepped 共享的统一入口：调用方传入自己的 Slot Instance 投影
- * 与 spacing/smoothing/disconnect 参数，得到同一组 2D bodies 与实体数（CONTEXT:625-626）。
- * bodies 可直接被二维预览、三维拉伸、尺寸外接框、Contour Body Count、底板孔位边缘校验消费。
- */
-export function deriveContouredFootprint(
-  slots: ContouredFootprintSlot[],
-  slotSpacing: number,
-  boundarySpacing: number,
-  smoothingRadius: number,
-  disconnectDistance: number,
-): ContouredFootprintResult {
-  if (slots.length === 0) {
-    return { bodies: [], bodyCount: 0, bounds: null };
+function unionBounds(
+  bodies: readonly ContouredFootprintBody[],
+): ContouredFootprintBounds | null {
+  if (bodies.length === 0) return null;
+  return {
+    minX: Math.min(...bodies.map((body) => body.bounds.minX)),
+    maxX: Math.max(...bodies.map((body) => body.bounds.maxX)),
+    minY: Math.min(...bodies.map((body) => body.bounds.minY)),
+    maxY: Math.max(...bodies.map((body) => body.bounds.maxY)),
+  };
+}
+
+function pointInRing(
+  x: number,
+  y: number,
+  ring: readonly ContouredFootprintPoint[],
+): boolean {
+  let inside = false;
+  for (let index = 0, previous = ring.length - 1; index < ring.length; previous = index++) {
+    const currentPoint = ring[index];
+    const previousPoint = ring[previous];
+    const crosses = (currentPoint.y > y) !== (previousPoint.y > y) &&
+      x < ((previousPoint.x - currentPoint.x) * (y - currentPoint.y)) /
+        (previousPoint.y - currentPoint.y) + currentPoint.x;
+    if (crosses) inside = !inside;
+  }
+  return inside;
+}
+
+function ringArea(ring: readonly ContouredFootprintPoint[]) {
+  let area = 0;
+  for (let index = 0; index < ring.length; index += 1) {
+    const next = ring[(index + 1) % ring.length];
+    area += ring[index].x * next.y - next.x * ring[index].y;
+  }
+  return area / 2;
+}
+
+function pointInBody(
+  x: number,
+  y: number,
+  body: ContouredFootprintBody,
+): boolean {
+  let inside = false;
+  for (const ring of body.outlines) {
+    if (pointInRing(x, y, ring)) inside = !inside;
+  }
+  return inside;
+}
+
+function circleFitsFootprint(
+  bodies: readonly ContouredFootprintBody[],
+  x: number,
+  y: number,
+  radius: number,
+): boolean {
+  if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(radius) || radius < 0) {
+    return false;
+  }
+  return bodies.some((body) => {
+    if (!pointInBody(x, y, body)) return false;
+    for (let index = 0; index < CIRCLE_CONTAINMENT_SAMPLES; index += 1) {
+      const angle = (Math.PI * 2 * index) / CIRCLE_CONTAINMENT_SAMPLES;
+      const sampleX = x + Math.cos(angle) * radius;
+      const sampleY = y + Math.sin(angle) * radius;
+      if (!pointInBody(sampleX, sampleY, body)) return false;
+    }
+    return true;
+  });
+}
+
+function invalidNumber(value: number) {
+  return !Number.isFinite(value);
+}
+
+function validatePlan(
+  plan: ContouredFootprintPlan,
+): ContouredFootprintConstructionError | null {
+  if (!plan || !Array.isArray(plan.requests)) {
+    return { code: "invalid-plan", message: "轮廓派生计划无效" };
+  }
+  const requestKeys = new Set<string>();
+  for (const request of plan.requests) {
+    if (!request || typeof request.key !== "string" || request.key.length === 0) {
+      return { code: "invalid-plan", message: "轮廓请求缺少稳定 key" };
+    }
+    if (requestKeys.has(request.key)) {
+      return {
+        code: "duplicate-request-key",
+        requestKey: request.key,
+        message: `轮廓请求 key 重复: ${request.key}`,
+      };
+    }
+    requestKeys.add(request.key);
+    for (const [field, value] of [
+      ["slotSpacing", request.slotSpacing],
+      ["boundarySpacing", request.boundarySpacing],
+      ["smoothingRadius", request.smoothingRadius],
+      ["disconnectDistance", request.disconnectDistance],
+    ] as const) {
+      if (invalidNumber(value) || value < 0) {
+        return {
+          code: "invalid-contour-parameters",
+          requestKey: request.key,
+          message: `${field} 必须是非负有限数值`,
+        };
+      }
+    }
+    if (!Array.isArray(request.slots)) {
+      return {
+        code: "invalid-plan",
+        requestKey: request.key,
+        message: "轮廓请求 slots 无效",
+      };
+    }
+    const slotIds = new Set<string>();
+    for (const slot of request.slots) {
+      const invalid = !slot || typeof slot.id !== "string" || !slot.id ||
+        slotIds.has(slot.id) ||
+        (slot.shape !== "circle" && slot.shape !== "ellipse") ||
+        [slot.cx, slot.cy, slot.rotation, slot.profile?.width,
+          slot.profile?.height, slot.profile?.outerOffset]
+          .some((value) => typeof value !== "number" || invalidNumber(value)) ||
+        slot.profile.width <= 0 || slot.profile.height <= 0 ||
+        slot.profile.outerOffset < 0 ||
+        (slot.profile.profileExponent !== undefined &&
+          (invalidNumber(slot.profile.profileExponent) || slot.profile.profileExponent <= 0));
+      if (invalid) {
+        return {
+          code: "invalid-slot-geometry-snapshot",
+          requestKey: request.key,
+          slotIds: slot?.id ? [slot.id] : undefined,
+          message: `请求 ${request.key} 包含无效 Slot Geometry Snapshot`,
+        };
+      }
+      slotIds.add(slot.id);
+    }
+  }
+  return null;
+}
+
+function constructRequest(
+  request: ContouredFootprintRequest,
+): ConstructedContouredFootprint | ContouredFootprintConstructionError {
+  if (request.slots.length === 0) {
+    return {
+      key: request.key,
+      bodies: [],
+      bodyCount: 0,
+      bounds: null,
+      area: 0,
+      diagnostics: [],
+      containsExpandedCircle: () => false,
+    };
   }
 
+  const slots = [...request.slots].sort((left, right) => left.id.localeCompare(right.id));
+  const slotsById = new Map(slots.map((slot) => [slot.id, slot]));
   const connectivityCircles: ConnectivityCircle[] = slots.map((slot) => ({
     id: slot.id,
     cx: slot.cx,
@@ -237,66 +450,109 @@ export function deriveContouredFootprint(
     rOuter: getConnectivityRadius(
       slot.profile.width,
       slot.profile.height,
-      slotSpacing,
+      request.slotSpacing,
       slot.profile.outerOffset * 2,
       slot.profile.outerOffset * 2,
     ),
   }));
-
-  const effectiveBridgeGap = getEffectiveBridgeGap(
-    smoothingRadius,
-    disconnectDistance,
-  );
   const clusters = clusterConnectivityCircles(
     connectivityCircles,
-    effectiveBridgeGap,
-  );
+    getEffectiveBridgeGap(request.smoothingRadius, request.disconnectDistance),
+  ).map((cluster) => [...cluster].sort((left, right) => left.id.localeCompare(right.id)));
 
-  const slotsById = new Map(slots.map((slot) => [slot.id, slot]));
-  const bodies = clusters
-    .map((cluster) =>
-      buildContouredClusterFootprint(
+  const diagnostics: ContouredFootprintDiagnostic[] = [];
+  const bodies: ContouredFootprintBody[] = [];
+  for (const cluster of clusters) {
+    const slotIds = cluster.map((item) => item.id);
+    let construction: ClusterConstruction | null;
+    try {
+      construction = constructCluster(
         cluster,
         slotsById,
-        boundarySpacing,
-        smoothingRadius,
-      ),
-    )
-    .filter((item): item is Geom2 => item !== null);
-
-  const bodyBounds = bodies.map((body) => measureBoundingBox(body));
-  const bounds = bodyBounds.length === 0
-    ? null
-    : {
-        minX: Math.min(...bodyBounds.map(([min]) => min[0])),
-        maxX: Math.max(...bodyBounds.map(([, max]) => max[0])),
-        minY: Math.min(...bodyBounds.map(([min]) => min[1])),
-        maxY: Math.max(...bodyBounds.map(([, max]) => max[1])),
+        request.boundarySpacing,
+        request.smoothingRadius,
+      );
+    } catch (cause) {
+      return {
+        code: "cluster-construction-failed",
+        requestKey: request.key,
+        slotIds,
+        cause,
+        message: `槽群 ${slotIds.join(", ")} 的轮廓构造失败`,
       };
+    }
+    if (!construction) {
+      return {
+        code: "cluster-construction-failed",
+        requestKey: request.key,
+        slotIds,
+        message: `槽群 ${slotIds.join(", ")} 未生成有效轮廓`,
+      };
+    }
+    const outlines = geom2.toOutlines(construction.geometry).map((ring) =>
+      ring.map(([x, y]) => ({ x, y })),
+    );
+    if (outlines.length === 0 || outlines.some((ring) => ring.length < 3)) {
+      return {
+        code: "cluster-construction-failed",
+        requestKey: request.key,
+        slotIds,
+        message: `槽群 ${slotIds.join(", ")} 生成了退化轮廓`,
+      };
+    }
+    bodies.push({
+      geometry: construction.geometry,
+      outlines,
+      outerOutline: outlines.reduce((largest, ring) =>
+        Math.abs(ringArea(ring)) > Math.abs(ringArea(largest)) ? ring : largest,
+      outlines[0]),
+      bounds: boundsFromGeometry(construction.geometry),
+      area: Math.abs(measureArea(construction.geometry)),
+      slotIds,
+    });
+    if (construction.usedSmoothingFallback) {
+      diagnostics.push({
+        code: "smoothing-fallback",
+        requestKey: request.key,
+        slotIds,
+        message: "平滑轮廓构造失败，已退回未平滑轮廓",
+      });
+    }
+  }
 
+  bodies.sort((left, right) => (left.slotIds[0] ?? "").localeCompare(right.slotIds[0] ?? ""));
+  const bounds = unionBounds(bodies);
   return {
+    key: request.key,
     bodies,
     bodyCount: bodies.length,
     bounds,
+    area: bodies.reduce((sum, body) => sum + body.area, 0),
+    diagnostics,
+    containsExpandedCircle: (x, y, radius) =>
+      circleFitsFootprint(bodies, x, y, radius),
   };
 }
 
-/**
- * 计算 Contour Body Count（独立可打印实体数）。
- * 仅返回数量，适用于不需要 2D bodies 的轻量场景（如结果摘要、校验提示）。
- */
-export function countContourBodies(
-  slots: ContouredFootprintSlot[],
-  slotSpacing: number,
-  boundarySpacing: number,
-  smoothingRadius: number,
-  disconnectDistance: number,
-): number {
-  return deriveContouredFootprint(
-    slots,
-    slotSpacing,
-    boundarySpacing,
-    smoothingRadius,
-    disconnectDistance,
-  ).bodyCount;
+export function constructContouredFootprints(
+  plan: ContouredFootprintPlan,
+): ContouredFootprintConstructionOutcome {
+  const validationError = validatePlan(plan);
+  if (validationError) return { ok: false, error: validationError };
+
+  const footprints: ConstructedContouredFootprint[] = [];
+  for (const request of plan.requests) {
+    const constructed = constructRequest(request);
+    if ("code" in constructed) {
+      return { ok: false, error: constructed };
+    }
+    footprints.push(constructed);
+  }
+  return {
+    ok: true,
+    value: {
+      footprints,
+      diagnostics: footprints.flatMap((footprint) => footprint.diagnostics),
+    },
+  };
 }

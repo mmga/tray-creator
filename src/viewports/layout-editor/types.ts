@@ -29,6 +29,7 @@ export interface LayoutEditorViewportModel {
     focusedGroupId?: string | null;
     groupOutlines?: GroupOutlinePreview[] | null;
     slotGroups?: SlotGroup[] | null;
+    footprintWarnings?: readonly string[];
   };
   interactions: {
     slotHeightById?: Record<string, number>;

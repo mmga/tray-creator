@@ -340,6 +340,7 @@ describe("custom tray model", () => {
     const rectangularModel = createCustomTrayModel(rectangularParams);
 
     expect(measureVolume(contouredModel)).toBeGreaterThan(0);
+    expect(measureVolume(rectangularModel)).toBeGreaterThan(0);
     // contoured 不应用 side bevel，底面积应小于 rectangular（rectangular 因 bevel 外扩）
     const contouredDims = calculateCustomTrayDimensions(contouredParams);
     const rectangularDims = calculateCustomTrayDimensions(rectangularParams);

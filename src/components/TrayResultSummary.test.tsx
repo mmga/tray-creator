@@ -55,6 +55,7 @@ describe("TrayResultSummary", () => {
       },
       generating: false,
       stale: false,
+      footprintWarnings: ["平滑轮廓构造失败，已退回未平滑轮廓"],
       groupCount: 2,
       groups: [
         { id: "front", name: "前排", color: "#8cb880", bottomHeight: 8, slotCount: 2 },
@@ -69,5 +70,6 @@ describe("TrayResultSummary", () => {
     expect(screen.getByText("后排")).toBeInTheDocument();
     expect(screen.getByText(/超过常规打印尺寸 260 × 260 mm/)).toBeInTheDocument();
     expect(screen.getByText("2 个分组")).toBeInTheDocument();
+    expect(screen.getByText(/平滑轮廓构造失败/)).toBeInTheDocument();
   });
 });

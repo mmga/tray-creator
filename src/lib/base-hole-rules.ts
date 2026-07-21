@@ -9,18 +9,18 @@ import {
 } from "@/lib/base-hole-config";
 export { resolveMagneticBaseHolePreset } from "@/lib/base-hole-config";
 import {
-  calculateCustomContouredFootprint,
   calculateCustomTrayFootprint,
   resolveCustomBoundarySpacing,
   resolveCustomTraySizingMode,
 } from "@/lib/custom-layout-math";
-import { geometries } from "@jscad/modeling";
+import { constructCustomContouredFootprint } from "@/lib/custom-contoured-footprint";
 import { getGridSlotGeometry } from "@/lib/grid-config";
 import {
   getGridBoundarySpacingAxes,
   getGridSpacingAxes,
 } from "@/lib/tray-model";
 import { buildSteppedOutlinePreview } from "@/lib/stepped-outline-preview";
+import { constructSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import type {
   AppMode,
@@ -33,9 +33,6 @@ import type {
   BaseHolePresetKey,
   TrayParams,
 } from "@/types/tray";
-import type { Geom2 } from "@jscad/modeling/src/geometries/types";
-
-const { geom2 } = geometries;
 
 export const MAGNETIC_BASE_HOLE_MIN_SIDE_WALL = 0.6;
 
@@ -242,10 +239,7 @@ function buildCustomSlots(params: CustomLayoutParams): BaseHoleSlot[] {
 
   // contoured 分支：按各 contoured body 的外缘多边形评估磁吸孔（CONTEXT:629）
   if (footprint.footprintStyle === "contoured") {
-    const contoured = calculateCustomContouredFootprint(params);
-    const bodiesPoints = contoured.bodies
-      .map((body) => getLargestOutlinePoints(body))
-      .filter((item): item is { x: number; y: number }[] => item !== null);
+    const contoured = constructCustomContouredFootprint(params);
 
     return params.slots.map((slot) => {
       const profile = getFreeSlotProfileGeometry(slot);
@@ -259,14 +253,8 @@ function buildCustomSlots(params: CustomLayoutParams): BaseHoleSlot[] {
         x: slot.x,
         y: slot.y,
         floorHeight: params.baseThickness,
-        containsExpandedHole: (radius) => circleFits(
-          slot.x,
-          slot.y,
-          radius,
-          (pointX, pointY) => bodiesPoints.some(
-            (points) => isPointInPolygon(pointX, pointY, points),
-          ),
-        ),
+        containsExpandedHole: (radius) =>
+          contoured.containsExpandedCircle(slot.x, slot.y, radius),
       } satisfies BaseHoleSlot;
     });
   }
@@ -317,37 +305,20 @@ function buildCustomSlots(params: CustomLayoutParams): BaseHoleSlot[] {
   });
 }
 
-/**
- * 从 Geom2 提取面积最大的外轮廓点列，供多边形包含判定使用。
- * 与 stepped-outline-preview.ts 的 getLargestOutlinePoints 等价。
- */
-function getLargestOutlinePoints(footprint: Geom2): { x: number; y: number }[] | null {
-  const outlines = geom2.toOutlines(footprint);
-  let largest: [number, number][] | null = null;
-  let largestArea = 0;
-
-  for (const outline of outlines) {
-    let area = 0;
-    for (let index = 0; index < outline.length; index += 1) {
-      const next = outline[(index + 1) % outline.length];
-      area += outline[index][0] * next[1] - next[0] * outline[index][1];
-    }
-    const absoluteArea = Math.abs(area / 2);
-    if (absoluteArea > largestArea) {
-      largest = outline;
-      largestArea = absoluteArea;
-    }
-  }
-
-  return largest?.map(([x, y]) => ({ x, y })) ?? null;
-}
-
 function buildSteppedSlots(params: SteppedLayoutParams): BaseHoleSlot[] {
-  const outlines = buildSteppedOutlinePreview(params) ?? [];
   const groupById = new Map(params.groups.map((group) => [group.id, group]));
   // rectangular 时所有 outline 都是矩形（含最低层圆角），可用 isPointInRoundedRect 优化
   // contoured 时 outline 是任意多边形，用 isPointInPolygon
   const isRectangular = params.footprintStyle === "rectangular";
+  const outlines = isRectangular ? (buildSteppedOutlinePreview(params) ?? []) : [];
+  const contouredGroupById = new Map(
+    !isRectangular
+      ? constructSteppedContouredFootprints(params).groups.map((group) => [
+          group.groupId,
+          group.footprint,
+        ])
+      : [],
+  );
 
   // 计算最低 columnHeight 用于区分最低层（rectangular 时仅最低层应用 cornerRadius）
   const allHeights = params.groups.map((g) => Math.max(g.bottomHeight, 3));
@@ -372,23 +343,25 @@ function buildSteppedSlots(params: SteppedLayoutParams): BaseHoleSlot[] {
       x: slot.x,
       y: slot.y,
       floorHeight,
-      containsExpandedHole: (radius) => circleFits(
-        slot.x,
-        slot.y,
-        radius,
-        isRectangular
-          ? (pointX: number, pointY: number) =>
+      containsExpandedHole: isRectangular
+        ? (radius) => circleFits(
+            slot.x,
+            slot.y,
+            radius,
+            (pointX: number, pointY: number) =>
               groupOutlines.some((outline) => {
                 const bounds = polygonBounds(outline.points);
                 return bounds
                   ? isPointInRoundedRect(pointX, pointY, bounds, layerRadius)
                   : isPointInPolygon(pointX, pointY, outline.points);
-              })
-          : (pointX: number, pointY: number) =>
-              groupOutlines.some((outline) =>
-                isPointInPolygon(pointX, pointY, outline.points),
-              ),
-      ),
+              }),
+          )
+        : (radius) =>
+            contouredGroupById.get(slot.groupId)?.containsExpandedCircle(
+              slot.x,
+              slot.y,
+              radius,
+            ) ?? false,
     } satisfies BaseHoleSlot;
   });
 }

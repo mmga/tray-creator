@@ -9,6 +9,8 @@ import type {
 const {
   generateSteppedPreviewMock,
   exportSteppedModelFilesMock,
+  generateSteppedSplitPreviewMock,
+  exportSteppedSplitPartFilesMock,
   useSteppedOutlinePreviewMock,
   buildSteppedBridgeWarningMock,
   toastMock,
@@ -19,6 +21,8 @@ const {
 } = vi.hoisted(() => ({
   generateSteppedPreviewMock: vi.fn(),
   exportSteppedModelFilesMock: vi.fn(),
+  generateSteppedSplitPreviewMock: vi.fn(),
+  exportSteppedSplitPartFilesMock: vi.fn(),
   useSteppedOutlinePreviewMock: vi.fn(),
   buildSteppedBridgeWarningMock: vi.fn(),
   toastMock: vi.fn(),
@@ -37,6 +41,8 @@ const {
 vi.mock("@/lib/stepped-model-service", () => ({
   generateSteppedPreview: generateSteppedPreviewMock,
   exportSteppedModelFiles: exportSteppedModelFilesMock,
+  generateSteppedSplitPreview: generateSteppedSplitPreviewMock,
+  exportSteppedSplitPartFiles: exportSteppedSplitPartFilesMock,
 }));
 
 vi.mock("@/hooks/useSteppedOutlinePreview", () => ({
@@ -89,6 +95,8 @@ describe("useSteppedLayout", () => {
   beforeEach(() => {
     generateSteppedPreviewMock.mockReset();
     exportSteppedModelFilesMock.mockReset();
+    generateSteppedSplitPreviewMock.mockReset();
+    exportSteppedSplitPartFilesMock.mockReset();
     useSteppedOutlinePreviewMock.mockReset();
     buildSteppedBridgeWarningMock.mockReset();
     toastMock.mockReset();
@@ -121,14 +129,14 @@ describe("useSteppedLayout", () => {
     vi.useRealTimers();
   });
 
-  it("不暴露 CAD-only split lifecycle", () => {
+  it("暴露现行 CAD split lifecycle", () => {
     const { result } = renderHook(() => useSteppedLayout());
 
-    expect(result.current).not.toHaveProperty("splitPreviewParts");
-    expect(result.current).not.toHaveProperty("isGeneratingSplitPreview");
-    expect(result.current).not.toHaveProperty("handleGenerateSplitPreview");
-    expect(result.current).not.toHaveProperty("clearSplitPreview");
-    expect(result.current).not.toHaveProperty("handleExportSplitParts");
+    expect(result.current).toHaveProperty("splitPreviewParts", null);
+    expect(result.current).toHaveProperty("isGeneratingSplitPreview", false);
+    expect(result.current.handleGenerateSplitPreview).toEqual(expect.any(Function));
+    expect(result.current.clearSplitPreview).toEqual(expect.any(Function));
+    expect(result.current.handleExportSplitParts).toEqual(expect.any(Function));
   });
 
   it("wires outline preview state and manages groups", () => {

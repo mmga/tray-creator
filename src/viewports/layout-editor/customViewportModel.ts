@@ -1,51 +1,25 @@
 import type { CustomLayoutParams, GroupOutlinePreview } from "@/types/custom-tray";
 import {
-  calculateCustomContouredFootprint,
   calculateFixedCustomTrayUsableArea,
   resolveCustomFootprintStyle,
   resolveCustomTraySizingMode,
 } from "@/lib/custom-layout-math";
-import { geometries } from "@jscad/modeling";
-import type { Geom2 } from "@jscad/modeling/src/geometries/types";
+import { constructCustomContouredFootprint } from "@/lib/custom-contoured-footprint";
+import type { ConstructedContouredFootprint } from "@/lib/contoured-footprint";
 import type { LayoutEditorViewportModel } from "@/viewports/layout-editor/types";
-
-const { geom2 } = geometries;
-
-/**
- * 从 contoured body 提取面积最大的外轮廓点列，转成 GroupOutlinePreview 渲染格式。
- */
-function extractLargestOutline(body: Geom2): { x: number; y: number }[] | null {
-  const outlines = geom2.toOutlines(body);
-  let largest: [number, number][] | null = null;
-  let largestArea = 0;
-  for (const outline of outlines) {
-    let area = 0;
-    for (let index = 0; index < outline.length; index += 1) {
-      const next = outline[(index + 1) % outline.length];
-      area += outline[index][0] * next[1] - next[0] * outline[index][1];
-    }
-    const absoluteArea = Math.abs(area / 2);
-    if (absoluteArea > largestArea) {
-      largest = outline;
-      largestArea = absoluteArea;
-    }
-  }
-  return largest?.map(([x, y]) => ({ x, y })) ?? null;
-}
 
 /**
  * 为 contoured footprint 派生每个独立实体的轮廓预览，供画布渲染（CONTEXT:623,625）。
  */
 function buildContouredGroupOutlines(
-  params: CustomLayoutParams,
+  contoured: ConstructedContouredFootprint,
 ): GroupOutlinePreview[] | null {
-  const contoured = calculateCustomContouredFootprint(params);
   if (contoured.bodies.length === 0) {
     return null;
   }
   const previews: GroupOutlinePreview[] = [];
   contoured.bodies.forEach((body, index) => {
-    const points = extractLargestOutline(body);
+    const points = [...body.outerOutline];
     if (points && points.length >= 3) {
       previews.push({
         key: `custom-contoured-${index}`,
@@ -64,6 +38,9 @@ export function buildCustomLayoutEditorViewportModel(
 ): LayoutEditorViewportModel {
   const isFixed = resolveCustomTraySizingMode(params) === "fixed";
   const isContoured = resolveCustomFootprintStyle(params) === "contoured";
+  const contoured = isContoured
+    ? constructCustomContouredFootprint(params)
+    : undefined;
 
   return {
     trayFrame: {
@@ -85,7 +62,12 @@ export function buildCustomLayoutEditorViewportModel(
     },
     slots: params.slots,
     overlays: isContoured
-      ? { groupOutlines: buildContouredGroupOutlines(params) }
+      ? {
+          groupOutlines: buildContouredGroupOutlines(contoured!),
+          footprintWarnings: contoured!.diagnostics.map(
+            (diagnostic) => diagnostic.message,
+          ),
+        }
       : {},
     interactions: {},
   };

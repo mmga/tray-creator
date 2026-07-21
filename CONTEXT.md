@@ -257,8 +257,8 @@ The number of disconnected printable bodies produced by a Contoured Footprint af
 _Avoid_: Silently forcing distant slot clusters together or treating every multi-body result as invalid.
 
 **Contoured Footprint Construction**:
-The shared derivation of 2D contoured bodies from final Slot Geometry Snapshots, Boundary Spacing, smoothing radius, and disconnection distance.
-_Avoid_: Mode-specific contour algorithms or independently re-deriving contours for preview, modeling, dimensions, body count, and validation.
+The shared deterministic derivation of authoritative tray-coordinate 2D contoured bodies and construction diagnostics from final Slot Geometry Snapshots, Boundary Spacing, smoothing radius, and disconnection distance.
+_Avoid_: Mode-specific contour algorithms, silently omitting a failed body, or independently re-deriving contours for preview, modeling, dimensions, body count, and validation.
 
 **Dormant Fixed Tray Configuration**:
 The preserved custom-tray fixed sizing choice and dimensions that have no effect while Contoured Footprint is selected and become active again when Rectangular Footprint is restored.
@@ -624,6 +624,11 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - Custom and stepped Contoured Footprints share smoothing and disconnection semantics and may deliberately produce more than one printable body.
 - Given the same Slot Instances and contour parameters, custom and stepped workflows receive identical 2D bodies from **Contoured Footprint Construction**.
 - 2D preview, 3D construction, dimensions, Contour Body Count, and base-hole edge validation consume the same Contoured Footprint Construction result.
+- **Contoured Footprint Construction** expresses its authoritative bodies in tray editing coordinates; 3D construction performs model-centering only when it consumes those bodies.
+- A recoverable smoothing failure may use an unsmoothed body only when the result records a construction diagnostic.
+- A smoothing fallback diagnostic remains visible as a non-blocking warning in the 2D preview and result summary without producing repeated transient notifications during live editing.
+- A non-empty slot cluster that cannot produce an authoritative body blocks preview, generation, and export instead of producing a partial tray.
+- Separate execution contexts may recompute **Contoured Footprint Construction**, but equivalent inputs must produce semantically equivalent bodies, bounds, Contour Body Count, and diagnostics.
 - Custom trays initially use a 60mm smoothing radius and 0mm disconnection distance; those values remain stored while Rectangular Footprint is active.
 - A multi-body **Contour Body Count** does not block model generation or export, but must be visible in preview and result summary.
 - Base-hole fit validation evaluates each disconnected contoured body against its own exterior edges.
