@@ -20,6 +20,7 @@ export type EllipsePreset = EllipseSlotDefinition;
 export const ELLIPSE_PRESETS: EllipsePreset[] = ELLIPSE_SLOT_DEFINITIONS;
 
 export const CUSTOM_LAYOUT_DEFAULTS: CustomLayoutParams = {
+  footprintStyle: "rectangular",
   traySizingMode: "auto",
   trayWidth: 260,
   trayDepth: 260,

@@ -533,4 +533,83 @@ describe("param normalization", () => {
     expect(inset.splitGrooveType).toBe("inset");
     expect(invalid.splitGrooveType).toBe("profile");
   });
+
+  it("旧自定义文件缺失 footprintStyle 时默认 rectangular 并保留显式 contoured", () => {
+    const legacy = normalizeParamsForMode("custom", {
+      trayWidth: 100,
+      trayDepth: 100,
+      slots: [],
+      spacing: 5,
+      boundarySpacing: 5,
+      boundarySpacingIndependent: false,
+      baseThickness: 3,
+      holeDepth: 3,
+      cornerRadius: 4,
+      sideBevelWidth: 0,
+    } as unknown as CustomLayoutParams) as CustomLayoutParams;
+    expect(legacy.footprintStyle).toBe("rectangular");
+
+    const explicitContoured = normalizeParamsForMode("custom", {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      footprintStyle: "contoured",
+    } as CustomLayoutParams) as CustomLayoutParams;
+    expect(explicitContoured.footprintStyle).toBe("contoured");
+  });
+
+  it("旧阶梯文件缺失 footprintStyle 时默认 contoured 并补全 rectangular 专属字段", () => {
+    const legacy = normalizeParamsForMode("stepped", {
+      trayWidth: 100,
+      trayDepth: 100,
+      groups: [
+        {
+          id: "g1",
+          name: "组 1",
+          color: "#22c55e",
+          bottomHeight: 10,
+          useGroupSmoothingRadius: false,
+          groupSmoothingRadius: 60,
+          useGroupDisconnectDistance: false,
+          groupDisconnectDistance: 0,
+        },
+      ],
+      slots: [],
+      activeGroupId: "g1",
+      spacing: 5,
+      holeDepth: 3,
+      smoothingRadius: 60,
+      disconnectDistance: 0,
+    } as unknown as SteppedLayoutParams) as SteppedLayoutParams;
+    expect(legacy.footprintStyle).toBe("contoured");
+    expect(legacy.boundarySpacing).toBe(5);
+    expect(legacy.boundarySpacingIndependent).toBe(false);
+    expect(legacy.traySizingMode).toBe("auto");
+    expect(typeof legacy.cornerRadius).toBe("number");
+
+    const explicitRect = normalizeParamsForMode("stepped", {
+      ...STEPPED_LAYOUT_DEFAULTS,
+      footprintStyle: "rectangular",
+      boundarySpacing: 8,
+      boundarySpacingIndependent: true,
+    } as SteppedLayoutParams) as SteppedLayoutParams;
+    expect(explicitRect.footprintStyle).toBe("rectangular");
+    expect(explicitRect.boundarySpacing).toBe(8);
+  });
+
+  it("阶梯未启用独立边界间距时 boundarySpacing 跟随 spacing", () => {
+    const normalized = normalizeParamsForMode("stepped", {
+      ...STEPPED_LAYOUT_DEFAULTS,
+      spacing: 7,
+      boundarySpacing: 3,
+      boundarySpacingIndependent: false,
+    } as SteppedLayoutParams) as SteppedLayoutParams;
+    expect(normalized.boundarySpacing).toBe(7);
+
+    const independent = normalizeParamsForMode("stepped", {
+      ...STEPPED_LAYOUT_DEFAULTS,
+      spacing: 7,
+      boundarySpacing: 3,
+      boundarySpacingIndependent: true,
+    } as SteppedLayoutParams) as SteppedLayoutParams;
+    expect(independent.boundarySpacing).toBe(3);
+  });
 });

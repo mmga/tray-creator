@@ -554,6 +554,18 @@ function clampAndFillCustomDerivedFields(
   clampField(obj, "cornerRadius", CUSTOM_LIMITS.cornerRadius, recorder, "cornerRadius", "圆角半径");
   clampField(obj, "sideBevelWidth", CUSTOM_LIMITS.sideBevelWidth, recorder, "sideBevelWidth", "侧面斜角宽度");
 
+  // 补全 Baseplate Footprint Style；缺失时默认 rectangular 以兼容旧自定义文件（CONTEXT:591）
+  const previousFootprintStyle = obj.footprintStyle;
+  if (previousFootprintStyle !== "rectangular" && previousFootprintStyle !== "contoured") {
+    obj.footprintStyle = "rectangular";
+    recordDefault(recorder, {
+      path: "footprintStyle",
+      label: "底座轮廓样式",
+      normalizedValue: "rectangular",
+      reason: "旧自定义文件未记录底座轮廓样式，默认矩形包络",
+    });
+  }
+
   const previousSizingMode = obj.traySizingMode;
   obj.traySizingMode = obj.traySizingMode === "fixed" ? "fixed" : "auto";
   if (previousSizingMode !== obj.traySizingMode) {
@@ -874,6 +886,77 @@ function clampAndFillSteppedDerivedFields(
   clampField(obj, "trayDepth", STEPPED_LIMITS.trayDepth, recorder, "trayDepth", "托盘深度");
   clampField(obj, "spacing", STEPPED_LIMITS.spacing, recorder, "spacing", "凹槽间距");
   clampField(obj, "holeDepth", STEPPED_LIMITS.holeDepth, recorder, "holeDepth", "凹槽深度");
+
+  // 补全 Baseplate Footprint Style；缺失时默认 contoured 以兼容旧阶梯文件（CONTEXT:592）
+  const previousFootprintStyle = obj.footprintStyle;
+  if (previousFootprintStyle !== "rectangular" && previousFootprintStyle !== "contoured") {
+    obj.footprintStyle = "contoured";
+    recordDefault(recorder, {
+      path: "footprintStyle",
+      label: "底座轮廓样式",
+      normalizedValue: "contoured",
+      reason: "旧阶梯文件未记录底座轮廓样式，默认贴合轮廓",
+    });
+  }
+
+  // 补全 boundarySpacing / boundarySpacingIndependent（CONTEXT:611-613）
+  if (typeof obj.boundarySpacingIndependent !== "boolean") {
+    obj.boundarySpacingIndependent = false;
+    recordDefault(recorder, {
+      path: "boundarySpacingIndependent",
+      label: "边界间距独立设置",
+      normalizedValue: false,
+      reason: "旧阶梯文件默认让边界间距跟随凹槽间距",
+    });
+  }
+  if (typeof obj.boundarySpacing !== "number" || !Number.isFinite(obj.boundarySpacing as number)) {
+    obj.boundarySpacing = obj.spacing;
+    recordDefault(recorder, {
+      path: "boundarySpacing",
+      label: "边界间距",
+      normalizedValue: obj.boundarySpacing,
+      reason: "旧阶梯文件未记录边界间距，沿用凹槽间距",
+    });
+  } else {
+    clampField(obj, "boundarySpacing", STEPPED_LIMITS.boundarySpacing, recorder, "boundarySpacing", "边界间距");
+  }
+  if (!obj.boundarySpacingIndependent) {
+    const previous = obj.boundarySpacing;
+    obj.boundarySpacing = obj.spacing;
+    if (previous !== obj.boundarySpacing) {
+      recordBehaviorChange(recorder, {
+        path: "boundarySpacing",
+        label: "边界间距联动",
+        previousValue: previous,
+        normalizedValue: obj.boundarySpacing,
+        reason: "边界间距未启用独立设置",
+      });
+    }
+  }
+
+  // 矩形阶梯专属字段：traySizingMode、cornerRadius（contoured 时休眠但保留）
+  const previousSizingMode = obj.traySizingMode;
+  obj.traySizingMode = obj.traySizingMode === "fixed" ? "fixed" : "auto";
+  if (previousSizingMode !== obj.traySizingMode) {
+    recordDefault(recorder, {
+      path: "traySizingMode",
+      label: "托盘尺寸模式",
+      normalizedValue: obj.traySizingMode,
+      reason: "旧阶梯文件默认使用自动尺寸",
+    });
+  }
+  if (typeof obj.cornerRadius !== "number" || !Number.isFinite(obj.cornerRadius as number)) {
+    obj.cornerRadius = STEPPED_LAYOUT_DEFAULTS.cornerRadius;
+    recordDefault(recorder, {
+      path: "cornerRadius",
+      label: "底板圆角",
+      normalizedValue: obj.cornerRadius,
+      reason: "旧阶梯文件未记录最低层外圆角",
+    });
+  } else {
+    clampField(obj, "cornerRadius", STEPPED_LIMITS.cornerRadius, recorder, "cornerRadius", "底板圆角");
+  }
+
   normalizeReportedBaseHoleParams(obj, "none", recorder);
   if (obj.splitGrooveDepth !== STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth) {
     recordValueAdjustment(recorder, {
