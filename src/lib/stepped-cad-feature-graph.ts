@@ -18,9 +18,9 @@ import {
 } from "@/lib/stepped-connectivity";
 import { getEffectiveGroupStructureParams } from "@/lib/stepped-group-params";
 import {
-  buildSteppedClusterFootprint,
-  type SteppedFootprintSlot,
-} from "@/lib/stepped-profile-footprint";
+  buildContouredClusterFootprint,
+  type ContouredFootprintSlot,
+} from "@/lib/contoured-footprint";
 import {
   getSteppedGroupMinBottomHeight,
   resolveMagnetPostHoleDepth,
@@ -262,7 +262,7 @@ function buildClusteredFootprint(
       structureParams.disconnectDistance,
     ),
   );
-  const footprintSlotsById = new Map<string, SteppedFootprintSlot>(
+  const footprintSlotsById = new Map<string, ContouredFootprintSlot>(
     slotData.map((item) => [
       item.slot.id,
       {
@@ -278,7 +278,7 @@ function buildClusteredFootprint(
 
   const outlines = clusters
     .map((cluster) =>
-      buildSteppedClusterFootprint(
+      buildContouredClusterFootprint(
         cluster,
         footprintSlotsById,
         spacing,

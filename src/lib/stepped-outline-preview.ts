@@ -7,9 +7,9 @@ import { geometries } from "@jscad/modeling";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import { getEffectiveGroupStructureParams } from "@/lib/stepped-group-params";
 import {
-  buildSteppedClusterFootprint,
-  type SteppedFootprintSlot,
-} from "@/lib/stepped-profile-footprint";
+  buildContouredClusterFootprint,
+  type ContouredFootprintSlot,
+} from "@/lib/contoured-footprint";
 import {
   clusterConnectivityCircles,
   getConnectivityRadius,
@@ -95,7 +95,7 @@ export function buildSteppedOutlinePreview(
     const effectiveParams = getEffectiveGroupStructureParams(group, params);
 
     const higherSlotsForGroup = higherSlotsByGroupId.get(group.id) ?? [];
-    const footprintSlotsById = new Map<string, SteppedFootprintSlot>();
+    const footprintSlotsById = new Map<string, ContouredFootprintSlot>();
     const connectivityCircles: ConnectivityCircle[] = [
       ...ownSlots,
       ...higherSlotsForGroup,
@@ -135,7 +135,7 @@ export function buildSteppedOutlinePreview(
       const clusterKey =
         cluster.map((circle) => circle.id).sort().join("-") ||
         `${group.id}-${clusterIndex}`;
-      const footprint = buildSteppedClusterFootprint(
+      const footprint = buildContouredClusterFootprint(
         cluster,
         footprintSlotsById,
         params.spacing,
