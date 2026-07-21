@@ -21,7 +21,12 @@ import {
   type OutlineCircle,
 } from "@/lib/outline-geometry";
 import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
-import type { ConnectivityCircle } from "@/lib/stepped-connectivity";
+import {
+  clusterConnectivityCircles,
+  getConnectivityRadius,
+  getEffectiveBridgeGap,
+  type ConnectivityCircle,
+} from "@/lib/stepped-connectivity";
 import type { FreeSlot } from "@/types/custom-tray";
 
 const { union } = booleans;
@@ -172,4 +177,84 @@ export function buildContouredClusterFootprint(
       smoothingRadius,
     )
     : buildCircularClusterFootprint(cluster, smoothingRadius);
+}
+
+/**
+ * Contoured Footprint Construction 的派生结果。
+ * - `bodies`：所有非空 2D 实体（每个连通集群一个），custom/stepped 共用同一份输入得到同一份结果（CONTEXT:625）。
+ * - `bodyCount`：Contour Body Count，可被多体提示与结果摘要直接消费（CONTEXT:256, 628）。
+ */
+export interface ContouredFootprintResult {
+  bodies: Geom2[];
+  bodyCount: number;
+}
+
+/**
+ * 从一组 Slot Instances 派生 Contoured Footprint。
+ *
+ * 这是 custom 与 stepped 共享的统一入口：调用方传入自己的 Slot Instance 投影
+ * 与 spacing/smoothing/disconnect 参数，得到同一组 2D bodies 与实体数（CONTEXT:625-626）。
+ * bodies 可直接被二维预览、三维拉伸、尺寸外接框、Contour Body Count、底板孔位边缘校验消费。
+ */
+export function deriveContouredFootprint(
+  slots: ContouredFootprintSlot[],
+  spacing: number,
+  smoothingRadius: number,
+  disconnectDistance: number,
+): ContouredFootprintResult {
+  if (slots.length === 0) {
+    return { bodies: [], bodyCount: 0 };
+  }
+
+  const connectivityCircles: ConnectivityCircle[] = slots.map((slot) => ({
+    id: slot.id,
+    cx: slot.cx,
+    cy: slot.cy,
+    rOuter: getConnectivityRadius(
+      slot.profile.width,
+      slot.profile.height,
+      spacing,
+      slot.profile.outerOffset * 2,
+      slot.profile.outerOffset * 2,
+    ),
+  }));
+
+  const effectiveBridgeGap = getEffectiveBridgeGap(
+    smoothingRadius,
+    disconnectDistance,
+  );
+  const clusters = clusterConnectivityCircles(
+    connectivityCircles,
+    effectiveBridgeGap,
+  );
+
+  const slotsById = new Map(slots.map((slot) => [slot.id, slot]));
+  const bodies = clusters
+    .map((cluster) =>
+      buildContouredClusterFootprint(cluster, slotsById, spacing, smoothingRadius),
+    )
+    .filter((item): item is Geom2 => item !== null);
+
+  return {
+    bodies,
+    bodyCount: bodies.length,
+  };
+}
+
+/**
+ * 计算 Contour Body Count（独立可打印实体数）。
+ * 仅返回数量，适用于不需要 2D bodies 的轻量场景（如结果摘要、校验提示）。
+ */
+export function countContourBodies(
+  slots: ContouredFootprintSlot[],
+  spacing: number,
+  smoothingRadius: number,
+  disconnectDistance: number,
+): number {
+  return deriveContouredFootprint(
+    slots,
+    spacing,
+    smoothingRadius,
+    disconnectDistance,
+  ).bodyCount;
 }
