@@ -51,6 +51,8 @@ describe("Tray Result Projection", () => {
     );
 
     expect(automatic.footprintKind).toBe("effective-baseplate");
+    expect(automatic.footprintStyle).toBe("rectangular");
+    expect(automatic.contourBodyCount).toBe(0); // 默认无槽
     expect(automatic.dimensions).toEqual(
       expect.objectContaining({ width: 88, depth: 96 }),
     );
@@ -61,6 +63,26 @@ describe("Tray Result Projection", () => {
         depth: CUSTOM_LAYOUT_DEFAULTS.trayDepth,
       }),
     );
+  });
+
+  it("投影 custom contoured footprint 的实体数与外接框尺寸", () => {
+    const contoured = projectCustomTrayResult(
+      {
+        ...CUSTOM_LAYOUT_DEFAULTS,
+        footprintStyle: "contoured",
+        slots: [
+          { id: "a", x: 0, y: 0, shape: "circle", width: 25, height: 25, rotation: 0 },
+          { id: "b", x: 200, y: 200, shape: "circle", width: 25, height: 25, rotation: 0 },
+        ],
+      },
+      // contoured 时 effectiveDimensions 被忽略，由派生 footprint 决定
+      { width: 0, depth: 0 },
+      idleState,
+    );
+    expect(contoured.footprintStyle).toBe("contoured");
+    expect(contoured.footprintKind).toBe("contoured-footprint");
+    expect(contoured.contourBodyCount).toBe(2);
+    expect(contoured.dimensions.width).toBeGreaterThan(0);
   });
 
   it("投影 simple stepped 的行数、有效行和最小底板", () => {

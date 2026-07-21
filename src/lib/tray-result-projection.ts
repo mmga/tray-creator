@@ -1,10 +1,12 @@
 import { MAX_BUILD_SIZE } from "@/lib/config";
 import { calculateCustomTrayDimensions } from "@/lib/custom-tray-model";
+import { calculateCustomTrayFootprint } from "@/lib/custom-layout-math";
 import type { SimpleSteppedDerivedLayout } from "@/lib/simple-stepped-layout";
 import { calculateTrayDimensions } from "@/lib/tray-model";
 import { resolveBaseConverterGeometry } from "@/lib/base-converter-config";
 import type {
   BaseConverterParams,
+  BaseplateFootprintStyle,
   CustomLayoutParams,
   SimpleSteppedLayoutParams,
   SteppedLayoutParams,
@@ -47,8 +49,11 @@ export interface GridTrayResultProjection extends TrayResultProjectionBase {
 
 export interface CustomTrayResultProjection extends TrayResultProjectionBase {
   mode: "custom";
+  footprintStyle: BaseplateFootprintStyle;
   sizingMode: "auto" | "fixed";
-  footprintKind: "effective-baseplate" | "fixed-outer-footprint";
+  footprintKind: "effective-baseplate" | "fixed-outer-footprint" | "contoured-footprint";
+  /** contoured footprint 产生的独立可打印实体数；rectangular 时为 1（或 0 当无槽）。 */
+  contourBodyCount: number;
   footprintArea: number;
 }
 
@@ -185,33 +190,48 @@ export function projectCustomTrayResult(
   state: ResultState,
 ): CustomTrayResultProjection {
   const modelDimensions = calculateCustomTrayDimensions(params);
-  const sizingMode = params.traySizingMode === "fixed" ? "fixed" : "auto";
+  const footprint = calculateCustomTrayFootprint(params);
+  const footprintStyle = footprint.footprintStyle;
+  const sizingMode = footprint.sizingMode;
+
+  // contoured 时尺寸完全由派生轮廓外接框决定，忽略 effectiveDimensions 上游计算（避免双轨）
   const width =
-    sizingMode === "fixed"
-      ? modelDimensions.width
-      : effectiveDimensions.width > 0
-        ? effectiveDimensions.width
-        : params.trayWidth;
+    footprintStyle === "contoured"
+      ? (footprint.width > 0 ? footprint.width : params.trayWidth)
+      : sizingMode === "fixed"
+        ? modelDimensions.width
+        : effectiveDimensions.width > 0
+          ? effectiveDimensions.width
+          : params.trayWidth;
   const depth =
-    sizingMode === "fixed"
-      ? modelDimensions.depth
-      : effectiveDimensions.depth > 0
-        ? effectiveDimensions.depth
-        : params.trayDepth;
+    footprintStyle === "contoured"
+      ? (footprint.depth > 0 ? footprint.depth : params.trayDepth)
+      : sizingMode === "fixed"
+        ? modelDimensions.depth
+        : effectiveDimensions.depth > 0
+          ? effectiveDimensions.depth
+          : params.trayDepth;
   const common = projectCommon(
     { width, depth, height: modelDimensions.height },
     state,
   );
+
+  const footprintKind =
+    footprintStyle === "contoured"
+      ? ("contoured-footprint" as const)
+      : sizingMode === "fixed"
+        ? ("fixed-outer-footprint" as const)
+        : ("effective-baseplate" as const);
+
   return {
     mode: "custom",
     slotCount: params.slots.length,
     itemLabel: `${params.slots.length} 个凹槽`,
     ...common,
+    footprintStyle,
     sizingMode,
-    footprintKind:
-      sizingMode === "fixed"
-        ? "fixed-outer-footprint"
-        : "effective-baseplate",
+    footprintKind,
+    contourBodyCount: footprint.contourBodyCount,
     footprintArea: finiteOrZero(common.dimensions.width * common.dimensions.depth),
   };
 }
