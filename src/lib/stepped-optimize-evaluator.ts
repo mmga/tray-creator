@@ -2,9 +2,11 @@
  * 阶梯式布局优化的候选评估与多目标比较。
  *
  * 从 stepped-global-optimize.ts 提取，把核心业务偏好（横向优先 → 宽深比 →
- * 对称性 → 面积 → 最大边 → 行数）集中到一处，便于审查和单独测试。
+ * 对称性 → 高度带材料成本 → 面积）集中到一处，便于审查和单独测试。
  */
 import { calculateSteppedEffectiveDimensions } from "@/lib/stepped-layout-math";
+import { buildSteppedCadFeatureGraph } from "@/lib/stepped-cad-feature-graph";
+import { measurements } from "@jscad/modeling";
 import type { SteppedLayoutParams, SteppedSlot } from "@/types/custom-tray";
 import {
   ASPECT_PENALTY_FLIP_THRESHOLD,
@@ -22,6 +24,53 @@ export interface CompactCandidateEvaluation {
   aspectPenalty: number;
   widthToDepthRatio: number;
   rowCount: number;
+  heightBandArea: number;
+  heightBandWhitespace: number;
+  estimatedVolume: number;
+}
+
+const { measureArea } = measurements;
+
+export function calculateHeightBandFootprintCost(
+  params: SteppedLayoutParams,
+  slots: SteppedSlot[],
+) {
+  if (slots.length === 0) {
+    return { heightBandArea: 0, heightBandWhitespace: 0, estimatedVolume: 0 };
+  }
+
+  const candidateParams = { ...params, slots };
+  const graph = buildSteppedCadFeatureGraph(candidateParams);
+  const heightByGroupId = new Map(
+    graph.groups.map((group) => [group.groupId, group.columnHeight] as const),
+  );
+  let heightBandArea = 0;
+  let heightBandWhitespace = 0;
+  let estimatedVolume = 0;
+
+  graph.layers.forEach((layer) => {
+    const area = Math.abs(measureArea(layer.footprint));
+    const bandHeight = layer.toHeight - layer.fromHeight;
+    const activeSlotArea = slots.reduce((sum, slot) => {
+      const groupHeight = heightByGroupId.get(slot.groupId) ?? 0;
+      if (groupHeight + 1e-6 < layer.toHeight) {
+        return sum;
+      }
+      const dims = calculateSteppedEffectiveDimensions({
+        ...candidateParams,
+        slots: [slot],
+        boundarySpacing: 0,
+        boundarySpacingIndependent: true,
+      });
+      return sum + dims.width * dims.depth;
+    }, 0);
+
+    heightBandArea += area;
+    heightBandWhitespace += Math.max(0, area - activeSlotArea);
+    estimatedVolume += area * bandHeight;
+  });
+
+  return { heightBandArea, heightBandWhitespace, estimatedVolume };
 }
 
 export function evaluateCompactCandidate(
@@ -42,6 +91,7 @@ export function evaluateCompactCandidate(
       TARGET_WIDTH_TO_DEPTH_RATIO
     ).toFixed(3),
   );
+  const heightBandCost = calculateHeightBandFootprintCost(params, slots);
 
   return {
     width: dims.width,
@@ -52,6 +102,7 @@ export function evaluateCompactCandidate(
     aspectPenalty,
     widthToDepthRatio,
     rowCount,
+    ...heightBandCost,
   };
 }
 
@@ -62,8 +113,9 @@ export function evaluateCompactCandidate(
  * 1. 横向优先（width > depth 的排前面）
  * 2. 宽深比惩罚（差异超过 ASPECT_PENALTY_FLIP_THRESHOLD 才翻转）
  * 3. 对称性惩罚（SYMMETRY_TOLERANCE 容差内视为同等）
- * 4. 宽深比精细比较（ASPECT_RATIO_TOLERANCE 容差）
- * 5. 面积 → 最大边 → 行数
+ * 4. 实际高度带体积 → 高度带空白 → 高度带面积
+ * 5. 宽深比精细比较（ASPECT_RATIO_TOLERANCE 容差）
+ * 6. 面积 → 最大边 → 行数
  */
 export function compareCompactCandidateEvaluations(
   current: CompactCandidateEvaluation,
@@ -89,6 +141,18 @@ export function compareCompactCandidateEvaluations(
 
   if (current.symmetryPenalty > best.symmetryPenalty + SYMMETRY_TOLERANCE) {
     return 1;
+  }
+
+  if (current.estimatedVolume !== best.estimatedVolume) {
+    return current.estimatedVolume - best.estimatedVolume;
+  }
+
+  if (current.heightBandWhitespace !== best.heightBandWhitespace) {
+    return current.heightBandWhitespace - best.heightBandWhitespace;
+  }
+
+  if (current.heightBandArea !== best.heightBandArea) {
+    return current.heightBandArea - best.heightBandArea;
   }
 
   if (current.aspectPenalty < best.aspectPenalty - ASPECT_RATIO_TOLERANCE) {

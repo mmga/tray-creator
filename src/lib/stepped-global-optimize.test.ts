@@ -143,43 +143,38 @@ describe("stepped global optimize", () => {
     expect(ratio).toBeLessThan(3.2);
   });
 
-  it("keeps groups in separate horizontal regions instead of mixing them together", () => {
+  it("allows groups to share rows while preserving every slot's group identity", () => {
     const [proposal] = generateSteppedOptimizationProposals(createParams());
-    const boundsByGroup = new Map<
-      string,
-      { minX: number; maxX: number }
-    >();
 
-    proposal.params.slots.forEach((slot) => {
-      const { halfW } = getEllipseBoundingBox(
-        slot.width,
-        slot.height,
-        slot.rotation,
-      );
-      const nextBounds = {
-        minX: slot.x - halfW,
-        maxX: slot.x + halfW,
-      };
-      const existing = boundsByGroup.get(slot.groupId);
+    expect(proposal.description).toContain("全部凹槽间自由排列");
+    expect(
+      new Set(proposal.params.slots.map((slot) => slot.groupId)),
+    ).toEqual(new Set(["group-1", "group-2"]));
+    expect(
+      proposal.params.slots.some((slot, index, slots) =>
+        slots.some(
+          (other, otherIndex) =>
+            otherIndex !== index &&
+            other.groupId !== slot.groupId &&
+            Math.abs(other.y - slot.y) <= 0.05,
+        ),
+      ),
+    ).toBe(true);
+  });
 
-      if (!existing) {
-        boundsByGroup.set(slot.groupId, nextBounds);
-        return;
-      }
+  it("preserves a fixed rectangular footprint and rejects proposals that do not fit", () => {
+    const params = {
+      ...createParams(),
+      footprintStyle: "rectangular" as const,
+      traySizingMode: "fixed" as const,
+      trayWidth: 80,
+      trayDepth: 80,
+    };
+    const [proposal] = generateSteppedOptimizationProposals(params);
 
-      existing.minX = Math.min(existing.minX, nextBounds.minX);
-      existing.maxX = Math.max(existing.maxX, nextBounds.maxX);
-    });
-
-    const orderedBounds = createParams().groups
-      .map((group) => boundsByGroup.get(group.id))
-      .filter((bounds): bounds is { minX: number; maxX: number } => Boolean(bounds));
-
-    for (let index = 1; index < orderedBounds.length; index += 1) {
-      const previous = orderedBounds[index - 1]!;
-      const current = orderedBounds[index]!;
-      expect(previous.maxX).toBeLessThanOrEqual(current.minX);
-    }
+    expect(proposal.params).toEqual(params);
+    expect(proposal.metrics.width).toBe(80);
+    expect(proposal.metrics.depth).toBe(80);
   });
 
   it("keeps each packed row centered to favor symmetrical layouts", () => {
