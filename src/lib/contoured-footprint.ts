@@ -10,6 +10,7 @@
 import {
   booleans,
   geometries,
+  measurements,
   primitives,
   transforms,
 } from "@jscad/modeling";
@@ -31,6 +32,7 @@ import type { FreeSlot } from "@/types/custom-tray";
 
 const { union } = booleans;
 const { geom2 } = geometries;
+const { measureBoundingBox } = measurements;
 const { circle } = primitives;
 const { rotateZ, translate } = transforms;
 const DEG_TO_RAD = Math.PI / 180;
@@ -94,6 +96,10 @@ function buildProfileClusterFootprint(
       ) as Geom2;
     });
 
+  if (cluster.length === 1) {
+    return buildParts(0)[0] ?? null;
+  }
+
   const parts = buildParts(clampedSmoothing);
   if (parts.length === 0) {
     return null;
@@ -123,6 +129,17 @@ function buildCircularClusterFootprint(
   cluster: ConnectivityCircle[],
   smoothingRadius: number,
 ): Geom2 | null {
+  if (cluster.length === 1) {
+    const item = cluster[0];
+    return translate(
+      [item.cx, item.cy],
+      circle({
+        radius: item.rOuter,
+        segments: RENDER_CONFIG.cylinderSegments,
+      }),
+    ) as Geom2;
+  }
+
   const outline = generateOutlineGeom2(
     cluster.map(
       (item): OutlineCircle => ({
@@ -187,6 +204,12 @@ export function buildContouredClusterFootprint(
 export interface ContouredFootprintResult {
   bodies: Geom2[];
   bodyCount: number;
+  bounds: {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+  } | null;
 }
 
 /**
@@ -204,7 +227,7 @@ export function deriveContouredFootprint(
   disconnectDistance: number,
 ): ContouredFootprintResult {
   if (slots.length === 0) {
-    return { bodies: [], bodyCount: 0 };
+    return { bodies: [], bodyCount: 0, bounds: null };
   }
 
   const connectivityCircles: ConnectivityCircle[] = slots.map((slot) => ({
@@ -241,9 +264,20 @@ export function deriveContouredFootprint(
     )
     .filter((item): item is Geom2 => item !== null);
 
+  const bodyBounds = bodies.map((body) => measureBoundingBox(body));
+  const bounds = bodyBounds.length === 0
+    ? null
+    : {
+        minX: Math.min(...bodyBounds.map(([min]) => min[0])),
+        maxX: Math.max(...bodyBounds.map(([, max]) => max[0])),
+        minY: Math.min(...bodyBounds.map(([min]) => min[1])),
+        maxY: Math.max(...bodyBounds.map(([, max]) => max[1])),
+      };
+
   return {
     bodies,
     bodyCount: bodies.length,
+    bounds,
   };
 }
 

@@ -1086,6 +1086,32 @@ describe("CustomPanel", { timeout: 15000 }, () => {
     );
     expect(updateParam).toHaveBeenNthCalledWith(3, "sideBevelWidth", 0.5);
   });
+
+  it("贴合轮廓显示并路由平滑与断连参数", () => {
+    const updateParam = vi.fn();
+    render(
+      <CustomPanel
+        params={{
+          ...CUSTOM_LAYOUT_DEFAULTS,
+          footprintStyle: "contoured",
+          smoothingRadius: 60,
+          disconnectDistance: 0,
+        }}
+        effectiveDimensions={{ width: 120, depth: 140 }}
+        updateParam={updateParam}
+        onAddSlot={vi.fn()}
+        isGenerating={false}
+        volume={0}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "设置平滑半径:60" }));
+    fireEvent.click(screen.getByRole("button", { name: "设置槽群断连距离:0" }));
+
+    expect(updateParam).toHaveBeenNthCalledWith(1, "smoothingRadius", 61);
+    expect(updateParam).toHaveBeenNthCalledWith(2, "disconnectDistance", 1);
+    expect(screen.queryByText("侧面斜面宽度")).not.toBeInTheDocument();
+  });
 });
 
 describe("SimpleSteppedPanel", { timeout: 15000 }, () => {

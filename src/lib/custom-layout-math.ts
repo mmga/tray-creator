@@ -89,14 +89,6 @@ export function projectCustomSlotToContoured(
 }
 
 /**
- * Contoured footprint 的休眠默认 smoothingRadius。
- * custom 在 contoured 下不暴露 smoothing/disconnect，统一使用固定默认值；
- * 0 disconnectDistance 表示按 smoothingRadius 自然桥接（CONTEXT:627）。
- */
-const CUSTOM_CONTOURED_DEFAULT_SMOOTHING_RADIUS = 60;
-const CUSTOM_CONTOURED_DEFAULT_DISCONNECT_DISTANCE = 0;
-
-/**
  * 为自定义模式派生 contoured footprint：返回 2D bodies 与外接矩形尺寸。
  * 仅在 footprintStyle === "contoured" 时被调用。
  */
@@ -120,20 +112,17 @@ export function calculateCustomContouredFootprint(
     contouredSlots,
     params.spacing,
     boundarySpacing,
-    CUSTOM_CONTOURED_DEFAULT_SMOOTHING_RADIUS,
-    CUSTOM_CONTOURED_DEFAULT_DISCONNECT_DISTANCE,
+    params.smoothingRadius ?? 60,
+    params.disconnectDistance ?? 0,
   );
-
-  // 用槽位（含 boundary spacing 外扩）的外接矩形作为 contoured 尺寸来源。
-  // contoured 无 side bevel，无 fixed sizing，footprint 外接框即整件外尺寸。
-  const effective = calculateCustomEffectiveDimensions(params);
+  const bounds = result.bounds;
   return {
     bodies: result.bodies,
     bodyCount: result.bodyCount,
-    minX: effective.minX - boundarySpacing,
-    maxX: effective.maxX + boundarySpacing,
-    minY: effective.minY - boundarySpacing,
-    maxY: effective.maxY + boundarySpacing,
+    minX: bounds?.minX ?? 0,
+    maxX: bounds?.maxX ?? 0,
+    minY: bounds?.minY ?? 0,
+    maxY: bounds?.maxY ?? 0,
   };
 }
 

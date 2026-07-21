@@ -238,7 +238,7 @@ describe("custom layout math", () => {
           id: "s1",
           x: 20,
           y: 20,
-          shape: "circle",
+          shape: "circle" as const,
           width: 25,
           height: 25,
           rotation: 0,
@@ -271,7 +271,7 @@ describe("custom layout math", () => {
           id: "a",
           x: 0,
           y: 0,
-          shape: "circle",
+          shape: "circle" as const,
           width: 25,
           height: 25,
           rotation: 0,
@@ -282,7 +282,7 @@ describe("custom layout math", () => {
           id: "b",
           x: 200,
           y: 200,
-          shape: "circle",
+          shape: "circle" as const,
           width: 25,
           height: 25,
           rotation: 0,
@@ -296,5 +296,45 @@ describe("custom layout math", () => {
     };
     const footprint = calculateCustomTrayFootprint(params);
     expect(footprint.contourBodyCount).toBe(2);
+  });
+
+  it("contoured footprint 使用自定义平滑与断连参数", () => {
+    const slots = [
+      {
+        id: "a",
+        x: 0,
+        y: 0,
+        shape: "circle" as const,
+        width: 25,
+        height: 25,
+        rotation: 0,
+      },
+      {
+        id: "b",
+        x: 80,
+        y: 0,
+        shape: "circle" as const,
+        width: 25,
+        height: 25,
+        rotation: 0,
+      },
+    ];
+    const separated = calculateCustomContouredFootprint({
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      footprintStyle: "contoured",
+      smoothingRadius: 1,
+      disconnectDistance: 1,
+      slots,
+    });
+    const bridged = calculateCustomContouredFootprint({
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      footprintStyle: "contoured",
+      smoothingRadius: 60,
+      disconnectDistance: 0,
+      slots,
+    });
+
+    expect(separated.bodyCount).toBe(2);
+    expect(bridged.bodyCount).toBe(1);
   });
 });

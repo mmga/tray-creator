@@ -32,6 +32,8 @@ export const CUSTOM_LAYOUT_DEFAULTS: CustomLayoutParams = {
   holeDepth: 3,
   cornerRadius: 4,
   sideBevelWidth: 0,
+  smoothingRadius: 60,
+  disconnectDistance: 0,
   ...BASE_HOLE_PARAM_DEFAULTS,
   baseHoleStructure: "none",
 };
@@ -45,4 +47,12 @@ export const CUSTOM_LIMITS = {
   holeDepth: SHARED_LAYOUT_LIMITS.holeDepth,
   cornerRadius: SHARED_LAYOUT_LIMITS.cornerRadius,
   sideBevelWidth: SHARED_LAYOUT_LIMITS.sideBevelWidth,
+  smoothingRadius: { label: "平滑半径", min: 1, max: 150, step: 1, unit: "mm" },
+  disconnectDistance: {
+    label: "槽群断连距离",
+    min: 0,
+    max: 60,
+    step: 1,
+    unit: "mm",
+  },
 } as const;

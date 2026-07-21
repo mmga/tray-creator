@@ -8,7 +8,7 @@ import type {
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import { normalizeBaseConverterParams } from "@/lib/base-converter-config";
-import { CUSTOM_LIMITS } from "@/lib/custom-config";
+import { CUSTOM_LAYOUT_DEFAULTS, CUSTOM_LIMITS } from "@/lib/custom-config";
 import { PARAM_CONFIG } from "@/lib/grid-config";
 import { normalizeGridParams } from "@/lib/grid-model-state";
 import {
@@ -553,6 +553,27 @@ function clampAndFillCustomDerivedFields(
   clampField(obj, "holeDepth", CUSTOM_LIMITS.holeDepth, recorder, "holeDepth", "凹槽深度");
   clampField(obj, "cornerRadius", CUSTOM_LIMITS.cornerRadius, recorder, "cornerRadius", "圆角半径");
   clampField(obj, "sideBevelWidth", CUSTOM_LIMITS.sideBevelWidth, recorder, "sideBevelWidth", "侧面斜角宽度");
+
+  if (typeof obj.smoothingRadius !== "number" || !Number.isFinite(obj.smoothingRadius)) {
+    obj.smoothingRadius = CUSTOM_LAYOUT_DEFAULTS.smoothingRadius;
+    recordDefault(recorder, {
+      path: "smoothingRadius",
+      label: "平滑半径",
+      normalizedValue: obj.smoothingRadius,
+      reason: "旧自定义文件未记录贴合轮廓平滑半径",
+    });
+  }
+  clampField(obj, "smoothingRadius", CUSTOM_LIMITS.smoothingRadius, recorder, "smoothingRadius", "平滑半径");
+  if (typeof obj.disconnectDistance !== "number" || !Number.isFinite(obj.disconnectDistance)) {
+    obj.disconnectDistance = CUSTOM_LAYOUT_DEFAULTS.disconnectDistance;
+    recordDefault(recorder, {
+      path: "disconnectDistance",
+      label: "槽群断连距离",
+      normalizedValue: obj.disconnectDistance,
+      reason: "旧自定义文件未记录贴合轮廓断连距离",
+    });
+  }
+  clampField(obj, "disconnectDistance", CUSTOM_LIMITS.disconnectDistance, recorder, "disconnectDistance", "槽群断连距离");
 
   // 补全 Baseplate Footprint Style；缺失时默认 rectangular 以兼容旧自定义文件（CONTEXT:591）
   const previousFootprintStyle = obj.footprintStyle;

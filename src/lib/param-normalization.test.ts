@@ -548,6 +548,8 @@ describe("param normalization", () => {
       sideBevelWidth: 0,
     } as unknown as CustomLayoutParams) as CustomLayoutParams;
     expect(legacy.footprintStyle).toBe("rectangular");
+    expect(legacy.smoothingRadius).toBe(60);
+    expect(legacy.disconnectDistance).toBe(0);
 
     const explicitContoured = normalizeParamsForMode("custom", {
       ...CUSTOM_LAYOUT_DEFAULTS,

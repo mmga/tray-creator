@@ -382,6 +382,24 @@ export default function CustomPanel({
                 unit={SHARED_LAYOUT_LIMITS.sideBevelWidth.unit}
               />
             )}
+            {isContouredFootprint && (
+              <ParamSlider
+                label={CUSTOM_LIMITS.smoothingRadius.label}
+                value={params.smoothingRadius ?? 60}
+                config={CUSTOM_LIMITS.smoothingRadius}
+                onChange={(v) => updateParam("smoothingRadius", v)}
+                unit={CUSTOM_LIMITS.smoothingRadius.unit}
+              />
+            )}
+            {isContouredFootprint && (
+              <ParamSlider
+                label={CUSTOM_LIMITS.disconnectDistance.label}
+                value={params.disconnectDistance ?? 0}
+                config={CUSTOM_LIMITS.disconnectDistance}
+                onChange={(v) => updateParam("disconnectDistance", v)}
+                unit={CUSTOM_LIMITS.disconnectDistance.unit}
+              />
+            )}
           </div>
         </SectionHeader>
       </div>

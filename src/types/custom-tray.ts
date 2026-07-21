@@ -159,6 +159,10 @@ export interface CustomLayoutParams extends BaseHoleParams {
   cornerRadius: number;
   /** 侧面斜面宽度 (mm)，下沿保持有效底板尺寸，上沿向内收缩 */
   sideBevelWidth: number;
+  /** 贴合轮廓平滑半径 (mm)；矩形包络下休眠并保留。 */
+  smoothingRadius?: number;
+  /** 贴合轮廓槽群断连距离 (mm)；矩形包络下休眠并保留。 */
+  disconnectDistance?: number;
 }
 
 /** 阶梯底座布局参数 */
