@@ -384,10 +384,23 @@ function buildSimpleSteppedSlots(params: SimpleSteppedLayoutParams): BaseHoleSlo
 function buildSteppedSlots(params: SteppedLayoutParams): BaseHoleSlot[] {
   const outlines = buildSteppedOutlinePreview(params) ?? [];
   const groupById = new Map(params.groups.map((group) => [group.id, group]));
+  // rectangular 时所有 outline 都是矩形（含最低层圆角），可用 isPointInRoundedRect 优化
+  // contoured 时 outline 是任意多边形，用 isPointInPolygon
+  const isRectangular = params.footprintStyle === "rectangular";
+
+  // 计算最低 columnHeight 用于区分最低层（rectangular 时仅最低层应用 cornerRadius）
+  const allHeights = params.groups.map((g) => Math.max(g.bottomHeight, 3));
+  const lowestHeight = allHeights.length > 0 ? Math.min(...allHeights) : 0;
+
   return params.slots.map((slot) => {
     const profile = getFreeSlotProfileGeometry(slot);
     const groupOutlines = outlines.filter((outline) => outline.groupId === slot.groupId);
-    const floorHeight = (groupById.get(slot.groupId)?.bottomHeight ?? params.holeDepth) - params.holeDepth;
+    const groupHeight = groupById.get(slot.groupId)?.bottomHeight ?? params.holeDepth;
+    const floorHeight = groupHeight - params.holeDepth;
+    const isLowestLayer = groupHeight <= lowestHeight + 1e-6;
+    // rectangular 仅最低层用 cornerRadius（CONTEXT:601），更高层直角
+    const layerRadius = isRectangular && isLowestLayer ? (params.cornerRadius ?? 0) : 0;
+
     return {
       id: slot.id,
       shape: slot.shape,
@@ -402,12 +415,39 @@ function buildSteppedSlots(params: SteppedLayoutParams): BaseHoleSlot[] {
         slot.x,
         slot.y,
         radius,
-        (pointX, pointY) => groupOutlines.some(
-          (outline) => isPointInPolygon(pointX, pointY, outline.points),
-        ),
+        isRectangular
+          ? (pointX: number, pointY: number) =>
+              groupOutlines.some((outline) => {
+                const bounds = polygonBounds(outline.points);
+                return bounds
+                  ? isPointInRoundedRect(pointX, pointY, bounds, layerRadius)
+                  : isPointInPolygon(pointX, pointY, outline.points);
+              })
+          : (pointX: number, pointY: number) =>
+              groupOutlines.some((outline) =>
+                isPointInPolygon(pointX, pointY, outline.points),
+              ),
       ),
     } satisfies BaseHoleSlot;
   });
+}
+
+/** 从矩形多边形点列提取轴对齐 bounds；非矩形时返回 null 回退到多边形判定 */
+function polygonBounds(
+  points: readonly { x: number; y: number }[],
+): { minX: number; maxX: number; minY: number; maxY: number } | null {
+  if (points.length < 3) return null;
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (const point of points) {
+    minX = Math.min(minX, point.x);
+    maxX = Math.max(maxX, point.x);
+    minY = Math.min(minY, point.y);
+    maxY = Math.max(maxY, point.y);
+  }
+  return { minX, maxX, minY, maxY };
 }
 
 function cavityInterval(slot: BaseHoleSlot, preset: BaseHolePresetKey) {
