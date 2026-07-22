@@ -559,7 +559,7 @@ describe("param-io", () => {
               height: 42,
               rotation: 405,
               shape: "ellipse",
-              outerOffset: 0.6,
+              outerOffset: 0.4,
               profileExponent: 2.08,
             },
           ],
@@ -578,7 +578,7 @@ describe("param-io", () => {
       id: "ellipse-1",
       rotation: 45,
       slotDefinitionId: "ellipse-75x42",
-      outerOffset: 0.6,
+      outerOffset: 0.4,
       profileExponent: 2.08,
     });
   });

@@ -2,6 +2,7 @@ import * as React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildCanvasCollisionState } from "@/lib/canvas-collision-model";
+import { ELLIPSE_SLOT_DEFINITIONS } from "@/lib/slot-definitions";
 import AlignPanel from "@/components/canvas/AlignPanel";
 import { CanvasOverlayLayer } from "@/components/canvas/CanvasOverlayLayer";
 import { CanvasSlotLayer } from "@/components/canvas/CanvasSlotLayer";
@@ -522,6 +523,41 @@ describe("AlignPanel", { timeout: 15000 }, () => {
 });
 
 describe("CanvasSlotLayer", { timeout: 15000 }, () => {
+  it("renders the shared 75x42 ellipse definition with the same 2D label", () => {
+    const definition = ELLIPSE_SLOT_DEFINITIONS[1]!;
+    const slot = createSteppedSlot({
+      width: definition.width,
+      height: definition.height,
+      slotDefinitionId: definition.id,
+      outerOffset: definition.outerOffset,
+      profileExponent: definition.profileExponent,
+    });
+
+    const { container } = render(
+      <svg>
+        <CanvasSlotLayer
+          slots={[slot]}
+          trayDepth={100}
+          spacing={5}
+          zoom={1}
+          selectedIds={new Set([slot.id])}
+          hoveredId={null}
+          draggingId={null}
+          steppedGroupMetaById={null}
+          collisionState={buildCanvasCollisionState([slot], 5)}
+          isSpacePressed={false}
+          onSlotPointerDown={vi.fn()}
+          onSlotPointerEnter={vi.fn()}
+          onSlotPointerLeave={vi.fn()}
+          onSlotRotatePointerDown={vi.fn()}
+        />
+      </svg>,
+    );
+
+    expect(container).toHaveTextContent("75x42");
+    expect(container).not.toHaveTextContent("75x43.2");
+  });
+
   it("renders selected stepped slots with readable labels and forwards pointer handlers", () => {
     const slot = createSteppedSlot();
     const steppedGroupMetaById = new Map([[slot.groupId, createGroup()]]);

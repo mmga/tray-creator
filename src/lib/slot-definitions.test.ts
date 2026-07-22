@@ -62,14 +62,14 @@ describe("slot definitions", () => {
       name: "75x42mm",
       width: 75,
       height: 42,
-      outerOffset: 0.6,
+      outerOffset: 0.4,
       profileExponent: 2.08,
     });
     expect(
       findEllipseSlotDefinitionByGeometry({
         width: 75,
         height: 42,
-        outerOffset: 0.6,
+        outerOffset: 0.4,
         profileExponent: 2.08,
       })?.id,
     ).toBe("ellipse-75x42");

@@ -58,7 +58,7 @@ export const ELLIPSE_SLOT_DEFINITIONS: EllipseSlotDefinition[] = [
     name: "75x42mm",
     width: 75,
     height: 43.2,
-    outerOffset: 0.4,
+    outerOffset: 0.6,
     profileExponent: 2.08,
   },
   {
