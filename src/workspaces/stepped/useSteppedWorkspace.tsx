@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { PanelActionSection } from "@/components/PanelActionSection";
 import type { ModeInteractionState } from "@/hooks/useModeInteractionState";
@@ -11,7 +11,7 @@ import type { SteppedLayoutParams } from "@/types/custom-tray";
 import type { UseSteppedLayoutReturn } from "@/hooks/useSteppedLayout";
 import { exportParams } from "@/lib/param-download";
 import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
-import { modelExportAvailability, modelGenerationAvailability, type DraftActionResult, type ManualDraftActionAreaAdapter } from "@/workspaces/draft-action-area";
+import { available, modelExportAvailability, modelGenerationAvailability, type DraftActionResult, type SteppedDraftActionAreaAdapter } from "@/workspaces/draft-action-area";
 
 const SteppedLayoutPanel = dynamic(() =>
   import("@/components/SteppedPanel").then((mod) => mod.SteppedLayoutPanel), {
@@ -33,12 +33,23 @@ export function useSteppedWorkspace({
     selectedSlotIds,
     previewGroupId,
     setPreviewGroupId,
+    activeSteppedGroupId,
+    setActiveSteppedGroupId,
     resetInteractionState,
   } = interactionState;
+  const persistedParams = model.persistedParams ?? model.params;
+  useEffect(() => {
+    if (
+      activeSteppedGroupId === null ||
+      !persistedParams.groups.some((group) => group.id === activeSteppedGroupId)
+    ) {
+      setActiveSteppedGroupId(persistedParams.groups[0]?.id ?? null);
+    }
+  }, [activeSteppedGroupId, persistedParams.groups, setActiveSteppedGroupId]);
   const { draftActions, overlays, clearDraftBinding } =
     useWorkspaceDraftSupport({
       mode: "stepped",
-      params: model.params,
+      params: persistedParams,
       setParams: model.setParams,
       onAfterLoad: resetInteractionState,
     });
@@ -57,14 +68,22 @@ export function useSteppedWorkspace({
 
   const actions = useMemo(
     () => {
-      const adapter: ManualDraftActionAreaAdapter = {
-        kind: "manual",
+      const canExportSplit = persistedParams.enableSplitAssembly && persistedParams.groups.length >= 2 && persistedParams.slots.length > 0;
+      const adapter: SteppedDraftActionAreaAdapter = {
+        kind: "stepped",
         state: {
           currentDraftId: draftActions.currentDraftId,
           hasUnsavedChanges: draftActions.hasUnsavedChanges,
           stale: model.isPreviewStale,
           generate: modelGenerationAvailability(model.isGenerating, model.baseHoleFitBlockingReason),
           exportWhole: modelExportAvailability(model.baseHoleFitBlockingReason),
+          exportSplit: model.baseHoleFitBlockingReason
+            ? { state: "blocked", reason: model.baseHoleFitBlockingReason }
+            : canExportSplit
+              ? available
+              : { state: "blocked", reason: persistedParams.enableSplitAssembly
+                ? "至少需要两个分组且存在凹槽"
+                : "请先启用分件与装配" },
           preview: { kind: "manual" },
         },
         async perform(intent) {
@@ -72,9 +91,10 @@ export function useSteppedWorkspace({
             switch (intent.type) {
               case "generate": model.handleGenerate(); break;
               case "export-whole": model.handleExportSTL(); break;
+              case "export-split": model.handleExportSplitParts(); break;
               case "save-draft": draftActions.onSaveDraft(); break;
               case "open-drafts": draftActions.onOpenDraftDialog(); break;
-              case "export-params": exportParams(captureModeParamSnapshot("stepped", model.params)); break;
+              case "export-params": exportParams(captureModeParamSnapshot("stepped", persistedParams)); break;
               case "import-params": return onRequestParamImport(intent.file);
               case "reset": resetWorkspace(); break;
             }
@@ -86,7 +106,7 @@ export function useSteppedWorkspace({
       };
       return <PanelActionSection adapter={adapter} />;
     },
-    [draftActions, model, onRequestParamImport, resetWorkspace],
+    [draftActions, model, onRequestParamImport, persistedParams, resetWorkspace],
   );
 
   const panel = useMemo(
@@ -98,21 +118,43 @@ export function useSteppedWorkspace({
         setParams={model.setParams}
         actions={actions}
         updateParam={model.updateParam}
-        onAddSlot={model.addSlot}
+        onAddSlot={(width, height, ellipseConfig) =>
+          model.addSlot(
+            width,
+            height,
+            ellipseConfig,
+            activeSteppedGroupId ?? persistedParams.groups[0]?.id,
+          )
+        }
         isGenerating={model.isGenerating}
         volume={model.volume}
         baseHoleFitViolations={model.baseHoleFitViolations}
         selectedSlotIds={selectedSlotIds}
-        onAddGroup={model.addGroup}
+        activeGroupId={activeSteppedGroupId}
+        previewParam={model.previewParam}
+        updateSplitParam={model.updateSplitParam}
+        previewSplitParam={model.previewSplitParam}
+        onSetSplitGrooveType={model.setSplitGrooveType}
+        onPreviewGroupHeight={model.previewGroupHeight}
+        onPreviewGroupSmoothingRadius={model.previewGroupSmoothingRadius}
+        onPreviewGroupDisconnectDistance={model.previewGroupDisconnectDistance}
+        onBeginContinuousEdit={model.beginContinuousEdit}
+        onCommitContinuousEdit={model.commitContinuousEdit}
+        onCancelContinuousEdit={model.cancelContinuousEdit}
+        onAddGroup={() => {
+          const groupId = model.addGroup();
+          if (groupId) setActiveSteppedGroupId(groupId);
+        }}
         onRemoveGroup={model.removeGroup}
         onUpdateGroupHeight={model.updateGroupHeight}
         onUpdateGroupSmoothingOverride={model.updateGroupSmoothingOverride}
         onUpdateGroupSmoothingRadius={model.updateGroupSmoothingRadius}
         onUpdateGroupDisconnectOverride={model.updateGroupDisconnectOverride}
         onUpdateGroupDisconnectDistance={model.updateGroupDisconnectDistance}
-        onSetActiveGroup={model.setActiveGroup}
+        onSetActiveGroup={setActiveSteppedGroupId}
         onMoveSelectedSlotsToGroup={model.moveSelectedSlotsToGroup}
         onReorderGroups={model.reorderGroups}
+        onUpdateGroupSplitPartTarget={model.updateGroupSplitPartTarget}
         previewGroupId={previewGroupId}
         onPreviewGroupChange={setPreviewGroupId}
         bridgeWarning={model.bridgeWarning}
@@ -125,34 +167,13 @@ export function useSteppedWorkspace({
     ),
     [
       actions,
-      model.addGroup,
-      model.addSlot,
-      model.applyOptimizationProposal,
-      model.bridgeWarning,
-      model.clearOptimizationProposals,
-      model.effectiveDimensions,
-      model.generateOptimizationProposals,
-      model.isGenerating,
-      model.isOptimizingLayout,
-      model.isPreviewStale,
-      model.moveSelectedSlotsToGroup,
-      model.optimizationProposals,
-      model.params,
-      model.removeGroup,
-      model.reorderGroups,
-      model.setActiveGroup,
-      model.setParams,
-      model.updateGroupDisconnectDistance,
-      model.updateGroupDisconnectOverride,
-      model.updateGroupHeight,
-      model.updateGroupSmoothingOverride,
-      model.updateGroupSmoothingRadius,
-      model.updateParam,
-      model.volume,
-      model.baseHoleFitViolations,
+      activeSteppedGroupId,
+      model,
+      persistedParams.groups,
       previewGroupId,
-      setPreviewGroupId,
       selectedSlotIds,
+      setActiveSteppedGroupId,
+      setPreviewGroupId,
     ],
   );
 

@@ -149,4 +149,31 @@ describe("stepped outline preview", () => {
     expect(rotatedWidth).toBeCloseTo(46.3, 0);
     expect(rotatedDepth).toBeCloseTo(70.8, 0);
   });
+
+  it("Rectangular Stepped Footprint 为每个分组派生矩形高度带 outline", () => {
+    const params: SteppedLayoutParams = {
+      ...createParams(),
+      footprintStyle: "rectangular",
+      traySizingMode: "auto",
+      cornerRadius: 6,
+      boundarySpacing: 5,
+      boundarySpacingIndependent: true,
+    };
+    const preview = buildSteppedOutlinePreview(params);
+    expect(preview).not.toBeNull();
+    expect(preview!.length).toBeGreaterThanOrEqual(2);
+
+    // 最低 bottomHeight=10 的 outline 应是整体包络（覆盖两个槽位）
+    const lowOutline = preview!.find((item) => item.bottomHeight === 10)!;
+    const lowWidth = Math.max(...lowOutline.points.map((p) => p.x))
+      - Math.min(...lowOutline.points.map((p) => p.x));
+    expect(lowWidth).toBeGreaterThan(50);
+
+    // 高层 outline 仅覆盖高层槽位
+    const highOutline = preview!.find((item) => item.bottomHeight === 20)!;
+    const highWidth = Math.max(...highOutline.points.map((p) => p.x))
+      - Math.min(...highOutline.points.map((p) => p.x));
+    expect(highWidth).toBeLessThan(lowWidth);
+    expect(highWidth).toBeGreaterThan(25);
+  });
 });

@@ -8,7 +8,6 @@ import type { TrayViewerSplitPart } from "@/components/TrayViewer";
 import { buildSteppedLayoutEditorViewportModel } from "@/viewports/layout-editor/steppedViewportModel";
 import { ViewportTabs } from "@/viewports/shared/ViewportTabs";
 import type { ModeViewportWorkspace } from "@/viewports/types";
-import type { AppMode } from "@/types/custom-tray";
 
 const LayoutCanvas = dynamic(() => import("@/components/LayoutCanvas"), {
   ssr: false,
@@ -25,7 +24,6 @@ interface UseSteppedViewportWorkspaceOptions {
   interactionState: ModeInteractionState;
   rightView: "2d" | "3d";
   onRightViewChange: (next: "2d" | "3d") => void;
-  mode?: Extract<AppMode, "stepped" | "stepped-cad">;
   splitPreview?: SteppedSplitPreview;
 }
 
@@ -38,15 +36,17 @@ export function useSteppedViewportWorkspace({
   interactionState,
   rightView,
   onRightViewChange,
-  mode = "stepped",
   splitPreview,
 }: UseSteppedViewportWorkspaceOptions): UseSteppedViewportWorkspaceReturn {
   const {
     selectedSlotIds,
     previewGroupId,
     setSelectedSlotIds,
+    activeSteppedGroupId,
+    setActiveSteppedGroupId,
     resetInteractionState,
   } = interactionState;
+  const persistedParams = model.persistedParams ?? model.params;
   const resetTransientState = useCallback(() => {
     resetInteractionState();
   }, [resetInteractionState]);
@@ -58,15 +58,15 @@ export function useSteppedViewportWorkspace({
 
     const firstSlotId = selectedSlotIds[0];
     const slot = model.params.slots.find((candidate) => candidate.id === firstSlotId);
-    if (slot && "groupId" in slot && slot.groupId !== model.params.activeGroupId) {
-      model.setActiveGroup(slot.groupId);
+    if (slot && "groupId" in slot && slot.groupId !== activeSteppedGroupId) {
+      setActiveSteppedGroupId(slot.groupId);
     }
-  }, [model, selectedSlotIds]);
+  }, [activeSteppedGroupId, model.params.slots, selectedSlotIds, setActiveSteppedGroupId]);
 
   const canvas = useMemo(
     () => (
       <LayoutCanvas
-        key={mode}
+        key="stepped"
         isActive={rightView === "2d"}
         model={buildSteppedLayoutEditorViewportModel({
           params: model.params,
@@ -76,13 +76,20 @@ export function useSteppedViewportWorkspace({
         commands={{
           updateSlotPosition: model.updateSlotPosition,
           removeSlot: model.removeSlot,
+          removeSlots: model.removeSlots,
           updateSlotRotation: model.updateSlotRotation,
           updateMultipleSlots: model.updateMultipleSlots,
           liveUpdateMultipleSlots: model.updateMultipleSlotsLive,
-          insertSlots: model.insertSlots,
+          insertSlots: (slots) =>
+            model.insertSlots(
+              slots,
+              activeSteppedGroupId ?? persistedParams.groups[0]?.id,
+            ),
           duplicateSlots: model.duplicateSlots,
           undo: model.undo,
-          saveSnapshot: model.saveSnapshot,
+          beginContinuousEdit: model.beginContinuousEdit,
+          commitContinuousEdit: model.commitContinuousEdit,
+          cancelContinuousEdit: model.cancelContinuousEdit,
           selectionChanged: setSelectedSlotIds,
           editInteractionChanged: (isInteracting) => {
             if (isInteracting) {
@@ -94,7 +101,7 @@ export function useSteppedViewportWorkspace({
         }}
       />
     ),
-    [mode, model, previewGroupId, rightView, setSelectedSlotIds],
+    [activeSteppedGroupId, model, persistedParams, previewGroupId, rightView, setSelectedSlotIds],
   );
 
   const viewport = useMemo(
@@ -128,7 +135,7 @@ export function useSteppedViewportWorkspace({
 
   return {
     workspace: {
-      mode,
+      mode: "stepped",
       viewport,
       resetTransientState,
     },

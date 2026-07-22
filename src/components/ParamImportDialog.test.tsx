@@ -80,30 +80,6 @@ describe("ParamImportDialog", () => {
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 
-  it("对历史阶梯文件先要求选择原始 Mode", () => {
-    const onSelectMode = vi.fn();
-    render(
-      <ParamImportDialog
-        currentMode="grid"
-        modeSelection={{
-          status: "mode-selection-required",
-          fileName: "legacy-stepped.json",
-          choices: ["stepped", "stepped-cad"],
-          message: "历史阶梯文件没有区分普通阶梯与 CAD 阶梯，请选择原始 Mode",
-        }}
-        candidate={null}
-        targetRisk={null}
-        onSelectMode={onSelectMode}
-        onCancel={vi.fn()}
-        onConfirm={vi.fn()}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: /CAD 阶梯/ }));
-    expect(onSelectMode).toHaveBeenCalledWith("stepped-cad");
-    expect(screen.queryByRole("button", { name: /确认导入/ })).not.toBeInTheDocument();
-  });
-
   it("无兼容调整时仍展示确认结论", () => {
     const candidate = createCandidate();
     candidate.report.adjustments = [];

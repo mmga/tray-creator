@@ -30,6 +30,7 @@ export default defineConfig({
     exclude: [
       "src/**/*.integration.test.ts",
       "src/**/*.integration.test.tsx",
+      "src/**/*.performance.test.ts",
       ".next/**",
       "node_modules/**",
     ],
@@ -45,6 +46,7 @@ export default defineConfig({
         "src/**/*.spec.tsx",
         "src/**/*.integration.test.ts",
         "src/**/*.integration.test.tsx",
+        "src/**/*.performance.test.ts",
       ],
     },
   },

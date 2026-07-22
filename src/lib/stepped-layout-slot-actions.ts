@@ -50,6 +50,7 @@ export function addSteppedSlot(
   width: number,
   height?: number,
   ellipseConfig?: EllipseSlotInstanceConfig,
+  targetGroupId?: string,
 ): SteppedLayoutParams {
   const newSlot = createSteppedSlotInstance({
     id: idFactory.createId(),
@@ -58,7 +59,7 @@ export function addSteppedSlot(
     width,
     height,
     ellipseConfig,
-    groupId: params.activeGroupId,
+    groupId: targetGroupId ?? params.groups[0]?.id ?? "",
   });
   const newProfile = getFreeSlotProfileGeometry(newSlot);
   const newHalf = getEllipseBoundingBox(
@@ -129,6 +130,7 @@ export function insertSteppedSlots(
   params: SteppedLayoutParams,
   idFactory: IdFactory,
   slotsToInsert: SymmetryInsertSlot[],
+  targetGroupId?: string,
 ): SteppedLayoutParams {
   return insertFreeSlots<SteppedSlot, SteppedLayoutParams, SymmetryInsertSlot>(
     params,
@@ -151,7 +153,8 @@ export function insertSteppedSlots(
             profileExponent: slot.profileExponent,
           }
         : {}),
-      groupId: slot.groupId ?? params.activeGroupId,
+      groupId:
+        slot.groupId ?? targetGroupId ?? params.groups[0]?.id ?? "",
     }),
   );
 }

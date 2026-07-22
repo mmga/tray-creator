@@ -1,15 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
-import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
-import { deriveSimpleSteppedLayout } from "@/lib/simple-stepped-layout";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import { BASE_CONVERTER_DEFAULTS } from "@/lib/base-converter-config";
 import {
   projectCustomTrayResult,
   projectBaseConverterResult,
   projectGridTrayResult,
-  projectSimpleSteppedTrayResult,
   projectSteppedTrayResult,
 } from "@/lib/tray-result-projection";
 
@@ -51,6 +48,8 @@ describe("Tray Result Projection", () => {
     );
 
     expect(automatic.footprintKind).toBe("effective-baseplate");
+    expect(automatic.footprintStyle).toBe("rectangular");
+    expect(automatic.contourBodyCount).toBe(0); // 默认无槽
     expect(automatic.dimensions).toEqual(
       expect.objectContaining({ width: 88, depth: 96 }),
     );
@@ -63,24 +62,24 @@ describe("Tray Result Projection", () => {
     );
   });
 
-  it("投影 simple stepped 的行数、有效行和最小底板", () => {
-    const derived = deriveSimpleSteppedLayout(
-      SIMPLE_STEPPED_LAYOUT_DEFAULTS,
-      null,
-    );
-    const result = projectSimpleSteppedTrayResult(
-      SIMPLE_STEPPED_LAYOUT_DEFAULTS,
-      derived,
-      { width: 120, depth: 130, height: 12 },
+  it("投影 custom contoured footprint 的实体数与外接框尺寸", () => {
+    const contoured = projectCustomTrayResult(
+      {
+        ...CUSTOM_LAYOUT_DEFAULTS,
+        footprintStyle: "contoured",
+        slots: [
+          { id: "a", x: 0, y: 0, shape: "circle", width: 25, height: 25, rotation: 0 },
+          { id: "b", x: 200, y: 200, shape: "circle", width: 25, height: 25, rotation: 0 },
+        ],
+      },
+      // contoured 时 effectiveDimensions 被忽略，由派生 footprint 决定
+      { width: 0, depth: 0 },
       idleState,
     );
-
-    expect(result.rowCount).toBe(SIMPLE_STEPPED_LAYOUT_DEFAULTS.rows.length);
-    expect(result.activeRowCount).toBe(derived.activeRows.length);
-    expect(result.minimumBaseplate).toEqual({
-      width: derived.minimumTrayWidth,
-      depth: derived.minimumTrayDepth,
-    });
+    expect(contoured.footprintStyle).toBe("contoured");
+    expect(contoured.footprintKind).toBe("contoured-footprint");
+    expect(contoured.contourBodyCount).toBe(2);
+    expect(contoured.dimensions.width).toBeGreaterThan(0);
   });
 
   it("投影转换底盘标准、凹槽与总高度", () => {
@@ -98,21 +97,14 @@ describe("Tray Result Projection", () => {
     expect(result.weight.status).toBe("available");
   });
 
-  it("stepped 与 CAD stepped 复用同一份公共投影规则", () => {
+  it("投影统一后的阶梯模式", () => {
     const stepped = projectSteppedTrayResult(
       "stepped",
       STEPPED_LAYOUT_DEFAULTS,
       { width: 120, depth: 140 },
       idleState,
     );
-    const cad = projectSteppedTrayResult(
-      "stepped-cad",
-      STEPPED_LAYOUT_DEFAULTS,
-      { width: 120, depth: 140 },
-      idleState,
-    );
-
-    expect(cad).toEqual({ ...stepped, mode: "stepped-cad" });
+    expect(stepped).toMatchObject({ mode: "stepped", groupCount: 1 });
   });
 
   it("不会把非有限尺寸或重量暴露给展示层", () => {

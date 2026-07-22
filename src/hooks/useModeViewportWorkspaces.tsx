@@ -4,16 +4,12 @@ import { useMemo, useState } from "react";
 import type { useCustomLayout } from "@/hooks/useCustomLayout";
 import type { useBaseConverter } from "@/hooks/useBaseConverter";
 import type { ModeInteractionState } from "@/hooks/useModeInteractionState";
-import type { useSimpleSteppedLayout } from "@/hooks/useSimpleSteppedLayout";
 import type { useSteppedLayout } from "@/hooks/useSteppedLayout";
-import type { useSteppedCadLayout } from "@/hooks/useSteppedCadLayout";
 import type { useTrayModel } from "@/hooks/useTrayModel";
 import { useCustomViewportWorkspace } from "@/viewports/custom/useCustomViewportWorkspace";
 import { useBaseConverterViewportWorkspace } from "@/viewports/base-converter/useBaseConverterViewportWorkspace";
 import { useGridViewportWorkspace } from "@/viewports/grid/useGridViewportWorkspace";
-import { useSimpleSteppedViewportWorkspace } from "@/viewports/simple-stepped/useSimpleSteppedViewportWorkspace";
 import { useSteppedViewportWorkspace } from "@/viewports/stepped/useSteppedViewportWorkspace";
-import { useSteppedCadViewportWorkspace } from "@/viewports/stepped-cad/useSteppedCadViewportWorkspace";
 import type { ModeViewportWorkspace } from "@/viewports/types";
 import type { AppMode } from "@/types/custom-tray";
 
@@ -22,11 +18,8 @@ interface UseModeViewportWorkspacesOptions {
   gridModel: ReturnType<typeof useTrayModel>;
   customModel: ReturnType<typeof useCustomLayout>;
   baseConverterModel: ReturnType<typeof useBaseConverter>;
-  simpleSteppedModel: ReturnType<typeof useSimpleSteppedLayout>;
   steppedModel: ReturnType<typeof useSteppedLayout>;
-  steppedCadModel: ReturnType<typeof useSteppedCadLayout>;
   customInteractionState: ModeInteractionState;
-  simpleSteppedInteractionState: ModeInteractionState;
   steppedInteractionState: ModeInteractionState;
 }
 
@@ -39,11 +32,8 @@ export function useModeViewportWorkspaces({
   gridModel,
   customModel,
   baseConverterModel,
-  simpleSteppedModel,
   steppedModel,
-  steppedCadModel,
   customInteractionState,
-  simpleSteppedInteractionState,
   steppedInteractionState,
 }: UseModeViewportWorkspacesOptions): UseModeViewportWorkspacesReturn {
   const [rightView, setRightView] = useState<"2d" | "3d">("2d");
@@ -64,23 +54,16 @@ export function useModeViewportWorkspaces({
     rightView,
     onRightViewChange: setRightView,
   });
-  const simpleSteppedViewport = useSimpleSteppedViewportWorkspace({
-    model: simpleSteppedModel,
-    interactionState: simpleSteppedInteractionState,
-    rightView,
-    onRightViewChange: setRightView,
-  });
   const steppedViewport = useSteppedViewportWorkspace({
     model: steppedModel,
     interactionState: steppedInteractionState,
     rightView,
     onRightViewChange: setRightView,
-  });
-  const steppedCadViewport = useSteppedCadViewportWorkspace({
-    model: steppedCadModel,
-    interactionState: steppedInteractionState,
-    rightView,
-    onRightViewChange: setRightView,
+    splitPreview: steppedModel.params.enableSplitAssembly ? {
+      parts: steppedModel.splitPreviewParts,
+      isGenerating: steppedModel.isGeneratingSplitPreview,
+      generate: steppedModel.handleGenerateSplitPreview,
+    } : undefined,
   });
 
   const activeViewport = useMemo<ModeViewportWorkspace>(() => {
@@ -91,12 +74,8 @@ export function useModeViewportWorkspaces({
         return customViewport;
       case "base-converter":
         return baseConverterViewport;
-      case "simple-stepped":
-        return simpleSteppedViewport;
       case "stepped":
         return steppedViewport.workspace;
-      case "stepped-cad":
-        return steppedCadViewport.workspace;
       default: {
         const unreachableMode: never = mode;
         throw new Error(`Unsupported viewport mode: ${String(unreachableMode)}`);
@@ -107,9 +86,7 @@ export function useModeViewportWorkspaces({
     baseConverterViewport,
     gridViewport,
     mode,
-    simpleSteppedViewport,
     steppedViewport.workspace,
-    steppedCadViewport.workspace,
   ]);
 
   return {

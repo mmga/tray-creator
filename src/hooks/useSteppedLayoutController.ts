@@ -8,8 +8,10 @@ import type {
   GroupOutlinePreview,
 } from "@/types/custom-tray";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
-import { useUndoHistory } from "@/hooks/useUndoHistory";
-import { usePreviewLifecycle } from "@/hooks/usePreviewLifecycle";
+import {
+  useEditableParams,
+  type EditTransactionOutcome,
+} from "@/hooks/useEditableParams";
 import { trayWorkerService } from "@/lib/worker/worker-service";
 import type * as THREE from "three";
 import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
@@ -19,30 +21,11 @@ import { buildSteppedBridgeWarning } from "@/lib/stepped-bridge-warning";
 import type { BridgeWarning } from "@/lib/stepped-connectivity";
 import { applySteppedBaseHoleDerivedFields } from "@/lib/stepped-base-hole";
 import {
-  addSteppedGroup,
-  moveSteppedSlotsToGroup,
-  removeSteppedGroup,
-  reorderSteppedGroups,
-  setSteppedActiveGroup,
-  updateSteppedGroupDisconnectDistance,
-  updateSteppedGroupDisconnectOverride,
-  updateSteppedGroupHeight,
-  updateSteppedGroupSplitPartTarget,
-  updateSteppedGroupSmoothingOverride,
-  updateSteppedGroupSmoothingRadius,
-} from "@/lib/stepped-layout-group-actions";
-import {
-  addSteppedSlot,
-  applySteppedSlotUpdates,
-  duplicateSteppedSlots,
-  insertSteppedSlots,
-  removeSteppedSlot,
-  trimSteppedBaseplate,
-  updateSteppedLayoutParam,
-  updateSteppedSlotPosition,
-  updateSteppedSlotRotation,
+  applySteppedEditIntent,
+  type SteppedContinuousEditIntent,
+  type SteppedEditIntent,
   type SteppedSlotUpdate,
-} from "@/lib/stepped-layout-slot-actions";
+} from "@/lib/stepped-edit-intent";
 import {
   calculateSteppedEffectiveDimensions,
   type SteppedLayoutExtents,
@@ -71,8 +54,16 @@ import {
 
 export interface UseSteppedLayoutControllerReturn {
   params: SteppedLayoutParams;
+  persistedParams: SteppedLayoutParams;
+  transactionRevision: number;
+  edit: (intent: SteppedEditIntent) => SteppedEditResult;
+  previewEdit: (intent: SteppedContinuousEditIntent) => EditTransactionOutcome;
   setParams: React.Dispatch<React.SetStateAction<SteppedLayoutParams>>;
   updateParam: <K extends keyof SteppedLayoutParams>(
+    key: K,
+    value: SteppedLayoutParams[K],
+  ) => void;
+  previewParam: <K extends keyof SteppedLayoutParams>(
     key: K,
     value: SteppedLayoutParams[K],
   ) => void;
@@ -80,8 +71,10 @@ export interface UseSteppedLayoutControllerReturn {
     width: number,
     height?: number,
     ellipseConfig?: EllipseSlotInstanceConfig,
+    targetGroupId?: string,
   ) => void;
   removeSlot: (id: string) => void;
+  removeSlots: (ids: string[]) => void;
   updateSlotPosition: (id: string, x: number, y: number) => void;
   updateMultipleSlots: (
     updates: { id: string; x: number; y: number; rotation?: number }[],
@@ -90,25 +83,25 @@ export interface UseSteppedLayoutControllerReturn {
     updates: { id: string; x: number; y: number; rotation?: number }[],
   ) => void;
   updateSlotRotation: (id: string, rotation: number) => void;
-  insertSlots: (slots: SymmetryInsertSlot[]) => void;
+  insertSlots: (slots: SymmetryInsertSlot[], targetGroupId?: string) => void;
   duplicateSlots: (ids: string[]) => string[];
   trimBaseplate: () => void;
-  addGroup: () => void;
+  addGroup: () => string | null;
   removeGroup: (groupId: string) => void;
   updateGroupHeight: (groupId: string, height: number) => void;
   updateGroupSmoothingOverride: (groupId: string, enabled: boolean) => void;
   updateGroupSmoothingRadius: (groupId: string, radius: number) => void;
   updateGroupDisconnectOverride: (groupId: string, enabled: boolean) => void;
   updateGroupDisconnectDistance: (groupId: string, distance: number) => void;
-  updateGroupSplitPartTarget: (
-    groupId: string,
-    targetGroupId: string | null,
-  ) => void;
-  setActiveGroup: (groupId: string) => void;
+  previewGroupHeight: (groupId: string, height: number) => void;
+  previewGroupSmoothingRadius: (groupId: string, radius: number) => void;
+  previewGroupDisconnectDistance: (groupId: string, distance: number) => void;
   moveSelectedSlotsToGroup: (ids: string[], targetGroupId: string) => void;
   reorderGroups: (fromIndex: number, toIndex: number) => void;
   effectiveDimensions: SteppedLayoutExtents;
-  saveSnapshot: () => void;
+  beginContinuousEdit: () => boolean;
+  commitContinuousEdit: () => void;
+  cancelContinuousEdit: () => void;
   undo: () => void;
   canUndo: boolean;
   threeGeometry: THREE.BufferGeometry | null;
@@ -130,8 +123,13 @@ export interface UseSteppedLayoutControllerReturn {
   outlinePreview: GroupOutlinePreview[] | null;
 }
 
+export interface SteppedEditResult {
+  outcome: EditTransactionOutcome;
+  createdIds: string[];
+}
+
 interface UseSteppedLayoutControllerOptions<
-  M extends "stepped" | "stepped-cad",
+  M extends "stepped",
   TWorkerPort extends STLExportWorkerPort & SteppedOutlinePreviewPort,
 > {
   mode: M;
@@ -148,30 +146,18 @@ interface UseSteppedLayoutControllerOptions<
 }
 
 export function useSteppedLayoutController<
-  M extends "stepped" | "stepped-cad",
+  M extends "stepped",
   TWorkerPort extends STLExportWorkerPort & SteppedOutlinePreviewPort,
 >({
   mode,
   generatePreview,
   exportModel,
 }: UseSteppedLayoutControllerOptions<M, TWorkerPort>): UseSteppedLayoutControllerReturn {
-  const [params, internalSetParams] = useState<SteppedLayoutParams>(
-    () => applySteppedBaseHoleDerivedFields(STEPPED_LAYOUT_DEFAULTS),
-  );
   const [optimizationProposals, setOptimizationProposals] = useState<
     SteppedOptimizationProposal[]
   >([]);
   const [isOptimizingLayout, setIsOptimizingLayout] = useState(false);
 
-  const {
-    pushState,
-    popState,
-    canUndo: canUndoFn,
-  } = useUndoHistory<SteppedLayoutParams>();
-  const paramsRef = useRef(params);
-  useEffect(() => {
-    paramsRef.current = params;
-  }, [params]);
   const optimizationProposalsRef = useRef(optimizationProposals);
   const optimizationRequestIdRef = useRef(0);
   const optimizationVariantRef = useRef(0);
@@ -195,8 +181,12 @@ export function useSteppedLayoutController<
   }, [cancelPendingOptimization]);
 
   const normalizeParams = useCallback(
-    (nextParams: SteppedLayoutParams) =>
-      applySteppedBaseHoleDerivedFields(nextParams),
+    (nextParams: SteppedLayoutParams) => {
+      const normalized = applySteppedBaseHoleDerivedFields(nextParams);
+      const persisted = { ...normalized };
+      delete persisted.activeGroupId;
+      return persisted as SteppedLayoutParams;
+    },
     [],
   );
 
@@ -208,18 +198,30 @@ export function useSteppedLayoutController<
   );
 
   const {
+    params: persistedParams,
+    viewParams: params,
+    paramsRef,
+    replaceParams: setParams,
+    applyChange,
+    beginContinuousEdit: beginContinuousEditTransaction,
+    previewContinuousEdit,
+    commitContinuousEdit: commitContinuousEditTransaction,
+    cancelContinuousEdit: cancelContinuousEditTransaction,
+    hasActiveContinuousEdit,
+    transactionRevision,
+    undo,
+    canUndo,
     threeGeometry,
     volume,
     isGenerating,
     isPreviewStale,
-    invalidatePreview,
     handleGenerate,
     handleExportSTL,
-  } = usePreviewLifecycle<
+  } = useEditableParams<
     SteppedLayoutParams,
     ModeParamSnapshot<M>
   >({
-    getParams: () => paramsRef.current,
+    initialState: () => normalizeParams(STEPPED_LAYOUT_DEFAULTS),
     captureSnapshot: (currentParams) =>
       captureModeParamSnapshot(mode, currentParams),
     fingerprintSnapshot: createModelGeometryFingerprint,
@@ -250,6 +252,8 @@ export function useSteppedLayoutController<
       optimizationVariantRef.current = 0;
       clearOptimizationProposals();
     },
+    normalize: normalizeParams,
+    areEqual: (left, right) => JSON.stringify(left) === JSON.stringify(right),
   });
 
   const baseHoleFitViolations = useMemo(
@@ -260,27 +264,11 @@ export function useSteppedLayoutController<
     baseHoleFitViolations,
   );
 
-  const setParams = useCallback<
-    React.Dispatch<React.SetStateAction<SteppedLayoutParams>>
-  >(
-    (value) => {
-      internalSetParams((prev) =>
-        normalizeParams(typeof value === "function"
-          ? (value as (prevState: SteppedLayoutParams) => SteppedLayoutParams)(
-              prev,
-            )
-          : value),
-      );
-      invalidatePreview();
-    },
-    [invalidatePreview, normalizeParams],
-  );
-
   const calculateEffectiveDimensions = useCallback(
     (current: SteppedLayoutParams = paramsRef.current) => {
       return calculateSteppedEffectiveDimensions(current);
     },
-    [],
+    [paramsRef],
   );
 
   const effectiveDimensions = useMemo(
@@ -288,30 +276,43 @@ export function useSteppedLayoutController<
     [calculateEffectiveDimensions, params],
   );
 
-  const saveSnapshot = useCallback(() => {
-    pushState(paramsRef.current);
-  }, [pushState]);
+  const edit = useCallback((intent: SteppedEditIntent): SteppedEditResult => {
+    let createdIds: string[] = [];
+    const outcome = applyChange((previous) => {
+      const application = applySteppedEditIntent(
+        previous,
+        intent,
+        randomIdFactory,
+      );
+      createdIds = application.createdIds;
+      return application.params;
+    });
+    return { outcome, createdIds };
+  }, [applyChange]);
 
-  const undo = useCallback(() => {
-    const prev = popState();
-    if (prev) {
-      internalSetParams(normalizeParams(prev));
-      invalidatePreview();
-    }
-  }, [invalidatePreview, normalizeParams, popState]);
+  const previewEdit = useCallback((intent: SteppedContinuousEditIntent) => (
+    previewContinuousEdit((working) =>
+      applySteppedEditIntent(working, intent, randomIdFactory).params
+    )
+  ), [previewContinuousEdit]);
 
   const updateParam = useCallback(
     <K extends keyof SteppedLayoutParams>(
       key: K,
       value: SteppedLayoutParams[K],
     ) => {
-      pushState(paramsRef.current);
-      internalSetParams((prev) =>
-        normalizeParams(updateSteppedLayoutParam(prev, key, value)),
-      );
-      invalidatePreview();
+      edit({ type: "param.update", key, value } as SteppedEditIntent);
     },
-    [invalidatePreview, normalizeParams, pushState],
+    [edit],
+  );
+  const previewParam = useCallback(
+    <K extends keyof SteppedLayoutParams>(
+      key: K,
+      value: SteppedLayoutParams[K],
+    ) => {
+      previewEdit({ type: "param.update", key, value } as SteppedContinuousEditIntent);
+    },
+    [previewEdit],
   );
 
   const addSlot = useCallback(
@@ -319,255 +320,157 @@ export function useSteppedLayoutController<
       width: number,
       height?: number,
       ellipseConfig?: EllipseSlotInstanceConfig,
+      targetGroupId?: string,
     ) => {
-      internalSetParams((prev) => {
-        pushState(prev);
-        return normalizeParams(
-          addSteppedSlot(
-            prev,
-            randomIdFactory,
-            width,
-            height,
-            ellipseConfig,
-          ),
-        );
-      });
-      invalidatePreview();
+      edit({ type: "slot.add", width, height, ellipseConfig, targetGroupId });
     },
-    [invalidatePreview, normalizeParams, pushState],
+    [edit],
   );
 
   const removeSlot = useCallback(
     (id: string) => {
-      pushState(paramsRef.current);
-      internalSetParams((prev) => normalizeParams(removeSteppedSlot(prev, id)));
-      invalidatePreview();
+      edit({ type: "slot.remove", id });
     },
-    [invalidatePreview, normalizeParams, pushState],
+    [edit],
   );
+  const removeSlots = useCallback((ids: string[]) => {
+    edit({ type: "slots.remove", ids });
+  }, [edit]);
 
   const updateSlotPosition = useCallback(
     (id: string, x: number, y: number) => {
-      internalSetParams((prev) =>
-        normalizeParams(updateSteppedSlotPosition(prev, id, x, y)),
-      );
-      invalidatePreview();
+      edit({ type: "slot.position", id, x, y });
     },
-    [invalidatePreview, normalizeParams],
+    [edit],
   );
 
   const {
     outlinePreview,
     pauseOutlinePreview,
     resumeOutlinePreview,
-  } = useSteppedOutlinePreview(params, trayWorkerService);
-
-  const applyMultipleSlotUpdates = useCallback(
-    (
-      updates: SteppedSlotUpdate[],
-      saveHistory: boolean,
-    ) => {
-      internalSetParams((prev) => {
-        if (saveHistory) {
-          pushState(prev);
-        }
-
-        return normalizeParams(applySteppedSlotUpdates(prev, updates));
-      });
-      invalidatePreview();
-    },
-    [invalidatePreview, normalizeParams, pushState],
-  );
+  } = useSteppedOutlinePreview(persistedParams, trayWorkerService);
 
   const updateMultipleSlots = useCallback(
     (updates: SteppedSlotUpdate[]) => {
-      applyMultipleSlotUpdates(updates, true);
+      edit({ type: "slots.update", updates });
     },
-    [applyMultipleSlotUpdates],
+    [edit],
   );
 
   const updateMultipleSlotsLive = useCallback(
     (updates: SteppedSlotUpdate[]) => {
-      applyMultipleSlotUpdates(updates, false);
+      if (!hasActiveContinuousEdit()) {
+        beginContinuousEditTransaction();
+      }
+      previewEdit({ type: "slots.update", updates });
     },
-    [applyMultipleSlotUpdates],
+    [beginContinuousEditTransaction, hasActiveContinuousEdit, previewEdit],
   );
 
   const updateSlotRotation = useCallback(
     (id: string, rotation: number) => {
-      internalSetParams((prev) =>
-        normalizeParams(updateSteppedSlotRotation(prev, id, rotation)),
-      );
-      invalidatePreview();
+      edit({ type: "slot.rotation", id, rotation });
     },
-    [invalidatePreview, normalizeParams],
+    [edit],
   );
 
   const insertSlots = useCallback(
-    (slotsToInsert: SymmetryInsertSlot[]) => {
+    (slotsToInsert: SymmetryInsertSlot[], targetGroupId?: string) => {
       if (slotsToInsert.length === 0) return;
 
-      internalSetParams((prev) => {
-        pushState(prev);
-        return normalizeParams(
-          insertSteppedSlots(prev, randomIdFactory, slotsToInsert),
-        );
-      });
-      invalidatePreview();
+      edit({ type: "slots.insert", slots: slotsToInsert, targetGroupId });
     },
-    [invalidatePreview, normalizeParams, pushState],
+    [edit],
   );
 
   const duplicateSlots = useCallback(
     (ids: string[]): string[] => {
-      const current = paramsRef.current;
-      pushState(current);
-      const result = duplicateSteppedSlots(current, randomIdFactory, ids);
-      internalSetParams(normalizeParams(result.params));
-      invalidatePreview();
-      return result.newIds;
+      return edit({ type: "slots.duplicate", ids }).createdIds;
     },
-    [invalidatePreview, normalizeParams, pushState],
+    [edit],
   );
 
   const addGroup = useCallback(() => {
-    internalSetParams((prev) => {
-      pushState(prev);
-      return normalizeParams(addSteppedGroup(prev, randomIdFactory));
-    });
-    invalidatePreview();
-  }, [invalidatePreview, normalizeParams, pushState]);
+    return edit({ type: "group.add" }).createdIds[0] ?? null;
+  }, [edit]);
 
   const removeGroup = useCallback(
     (groupId: string) => {
-      internalSetParams((prev) => {
-        const next = removeSteppedGroup(prev, groupId);
-        if (next === prev) {
-          return prev;
-        }
-        pushState(prev);
-        return normalizeParams(next);
-      });
-      invalidatePreview();
+      edit({ type: "group.remove", groupId });
     },
-    [invalidatePreview, normalizeParams, pushState],
+    [edit],
   );
 
   const updateGroupHeight = useCallback(
     (groupId: string, height: number) => {
-      pushState(paramsRef.current);
-      internalSetParams((prev) =>
-        normalizeParams(updateSteppedGroupHeight(prev, groupId, height)),
-      );
-      invalidatePreview();
+      edit({ type: "group.height", groupId, height });
     },
-    [invalidatePreview, normalizeParams, pushState],
+    [edit],
   );
 
   const updateGroupSmoothingOverride = useCallback(
     (groupId: string, enabled: boolean) => {
-      pushState(paramsRef.current);
-      internalSetParams((prev) =>
-        normalizeParams(
-          updateSteppedGroupSmoothingOverride(prev, groupId, enabled),
-        ),
-      );
-      invalidatePreview();
+      edit({ type: "group.smoothing-override", groupId, enabled });
     },
-    [invalidatePreview, normalizeParams, pushState],
+    [edit],
   );
 
   const updateGroupSmoothingRadius = useCallback(
     (groupId: string, radius: number) => {
-      pushState(paramsRef.current);
-      internalSetParams((prev) =>
-        normalizeParams(updateSteppedGroupSmoothingRadius(prev, groupId, radius)),
-      );
-      invalidatePreview();
+      edit({ type: "group.smoothing-radius", groupId, radius });
     },
-    [invalidatePreview, normalizeParams, pushState],
+    [edit],
   );
 
   const updateGroupDisconnectOverride = useCallback(
     (groupId: string, enabled: boolean) => {
-      pushState(paramsRef.current);
-      internalSetParams((prev) =>
-        normalizeParams(
-          updateSteppedGroupDisconnectOverride(prev, groupId, enabled),
-        ),
-      );
-      invalidatePreview();
+      edit({ type: "group.disconnect-override", groupId, enabled });
     },
-    [invalidatePreview, normalizeParams, pushState],
+    [edit],
   );
 
   const updateGroupDisconnectDistance = useCallback(
     (groupId: string, distance: number) => {
-      pushState(paramsRef.current);
-      internalSetParams((prev) =>
-        normalizeParams(
-          updateSteppedGroupDisconnectDistance(prev, groupId, distance),
-        ),
-      );
-      invalidatePreview();
+      edit({ type: "group.disconnect-distance", groupId, distance });
     },
-    [invalidatePreview, normalizeParams, pushState],
+    [edit],
   );
-
-  const updateGroupSplitPartTarget = useCallback(
-    (groupId: string, targetGroupId: string | null) => {
-      pushState(paramsRef.current);
-      internalSetParams((prev) =>
-        normalizeParams(
-          updateSteppedGroupSplitPartTarget(prev, groupId, targetGroupId),
-        ),
-      );
-      invalidatePreview();
+  const previewGroupHeight = useCallback(
+    (groupId: string, height: number) => {
+      previewEdit({ type: "group.height", groupId, height });
     },
-    [invalidatePreview, normalizeParams, pushState],
+    [previewEdit],
   );
-
-  const setActiveGroup = useCallback((groupId: string) => {
-    internalSetParams((prev) =>
-      normalizeParams(setSteppedActiveGroup(prev, groupId)),
-    );
-  }, [normalizeParams]);
+  const previewGroupSmoothingRadius = useCallback(
+    (groupId: string, radius: number) => {
+      previewEdit({ type: "group.smoothing-radius", groupId, radius });
+    },
+    [previewEdit],
+  );
+  const previewGroupDisconnectDistance = useCallback(
+    (groupId: string, distance: number) => {
+      previewEdit({ type: "group.disconnect-distance", groupId, distance });
+    },
+    [previewEdit],
+  );
 
   const moveSelectedSlotsToGroup = useCallback(
     (ids: string[], targetGroupId: string) => {
-      pushState(paramsRef.current);
-      internalSetParams((prev) =>
-        normalizeParams(moveSteppedSlotsToGroup(prev, ids, targetGroupId)),
-      );
-      invalidatePreview();
+      edit({ type: "slots.move-to-group", ids, targetGroupId });
     },
-    [invalidatePreview, normalizeParams, pushState],
+    [edit],
   );
 
   const reorderGroups = useCallback(
     (fromIndex: number, toIndex: number) => {
-      internalSetParams((prev) => {
-        const next = reorderSteppedGroups(prev, fromIndex, toIndex);
-        if (next === prev) {
-          return prev;
-        }
-        pushState(prev);
-        return normalizeParams(next);
-      });
-      clearOptimizationProposals();
+      edit({ type: "group.reorder", fromIndex, toIndex });
     },
-    [clearOptimizationProposals, normalizeParams, pushState],
+    [edit],
   );
 
   const trimBaseplate = useCallback(() => {
-    internalSetParams((prev) => {
-      if (prev.slots.length === 0) return prev;
-      pushState(prev);
-      const dims = calculateSteppedEffectiveDimensions(prev);
-      return normalizeParams(trimSteppedBaseplate(prev, dims));
-    });
-    invalidatePreview();
-  }, [invalidatePreview, normalizeParams, pushState]);
+    edit({ type: "baseplate.trim" });
+  }, [edit]);
 
   const bridgeWarning = useMemo<BridgeWarning | null>(() => {
     return buildSteppedBridgeWarning(params);
@@ -598,7 +501,7 @@ export function useSteppedLayoutController<
         }
       }
     }, 0);
-  }, [cancelPendingOptimization]);
+  }, [cancelPendingOptimization, paramsRef]);
 
   const applyOptimizationProposal = useCallback(
     (proposalId: SteppedOptimizationProposal["id"]) => {
@@ -609,19 +512,33 @@ export function useSteppedLayoutController<
         return;
       }
 
-      pushState(paramsRef.current, { force: true });
-      internalSetParams(normalizeParams(proposal.params));
-      invalidatePreview();
+      edit({ type: "params.replace", params: proposal.params });
     },
-    [invalidatePreview, normalizeParams, pushState],
+    [edit],
   );
+
+  const beginContinuousEdit = useCallback(() => {
+    return beginContinuousEditTransaction().status === "previewing";
+  }, [beginContinuousEditTransaction]);
+  const commitContinuousEdit = useCallback(() => {
+    commitContinuousEditTransaction();
+  }, [commitContinuousEditTransaction]);
+  const cancelContinuousEdit = useCallback(() => {
+    cancelContinuousEditTransaction();
+  }, [cancelContinuousEditTransaction]);
 
   return {
     params,
+    persistedParams,
+    transactionRevision,
+    edit,
+    previewEdit,
     setParams,
     updateParam,
+    previewParam,
     addSlot,
     removeSlot,
+    removeSlots,
     updateSlotPosition,
     updateMultipleSlots,
     updateMultipleSlotsLive,
@@ -636,14 +553,17 @@ export function useSteppedLayoutController<
     updateGroupSmoothingRadius,
     updateGroupDisconnectOverride,
     updateGroupDisconnectDistance,
-    updateGroupSplitPartTarget,
-    setActiveGroup,
+    previewGroupHeight,
+    previewGroupSmoothingRadius,
+    previewGroupDisconnectDistance,
     moveSelectedSlotsToGroup,
     reorderGroups,
     effectiveDimensions,
-    saveSnapshot,
+    beginContinuousEdit,
+    commitContinuousEdit,
+    cancelContinuousEdit,
     undo,
-    canUndo: canUndoFn(),
+    canUndo,
     threeGeometry,
     volume,
     isGenerating,

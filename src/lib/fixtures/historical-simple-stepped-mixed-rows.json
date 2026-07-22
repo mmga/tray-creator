@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "mode": "simple-stepped",
+  "params": {
+    "trayWidth": 150,
+    "trayDepth": 120,
+    "rows": [
+      { "id": "row-low", "name": "低层双槽", "slotIds": ["slot-a", "slot-b"] },
+      { "id": "row-empty", "name": "历史空行", "slotIds": [] },
+      { "id": "row-mid", "name": "中层大槽", "slotIds": ["slot-c"] },
+      { "id": "row-high", "name": "高层双槽", "slotIds": ["slot-d", "slot-e"] }
+    ],
+    "slots": [
+      { "id": "slot-a", "rowId": "row-low", "shape": "circle", "diameter": 25, "effectiveDiameter": 25.2, "x": -20, "y": 0 },
+      { "id": "slot-b", "rowId": "row-low", "shape": "circle", "diameter": 25, "effectiveDiameter": 25.2, "x": 20, "y": 0 },
+      { "id": "slot-c", "rowId": "row-mid", "shape": "circle", "diameter": 40, "effectiveDiameter": 40.2, "x": 0, "y": 0 },
+      { "id": "slot-d", "rowId": "row-high", "shape": "circle", "diameter": 20, "effectiveDiameter": 20.2, "x": -30, "y": 0 },
+      { "id": "slot-e", "rowId": "row-high", "shape": "circle", "diameter": 20, "effectiveDiameter": 20.2, "x": 30, "y": 0 }
+    ],
+    "firstRowHeight": 8,
+    "stepHeight": 4,
+    "rowGap": 3,
+    "spacing": 4,
+    "outerMarginIndependent": true,
+    "outerMargin": 6,
+    "holeDepth": 3,
+    "cornerRadius": 5,
+    "baseHoleStructure": "none",
+    "magnetPostHoleDiameter": 5,
+    "magnetPostHoleDepth": 2,
+    "baseHoleSize": "25"
+  }
+}

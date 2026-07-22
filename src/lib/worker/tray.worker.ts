@@ -1,14 +1,10 @@
 import { createTrayModel } from "../tray-model";
 import { createCustomTrayModel } from "../custom-tray-model";
 import { createBaseConverterModel } from "../base-converter-model";
-import { createSimpleSteppedTrayModel } from "../simple-stepped-tray-model";
 import {
   createSteppedCadSplitParts,
   createSteppedCadTrayModel,
 } from "../stepped-cad-tray-model";
-import {
-  createSteppedTrayModel,
-} from "../stepped-tray-model";
 import { buildSteppedOutlinePreview } from "../stepped-outline-preview";
 import stlSerializer from "@jscad/stl-serializer";
 import { measureVolume } from "@jscad/modeling/src/measurements";
@@ -17,7 +13,6 @@ import type {
   BaseConverterParams,
   CustomLayoutParams,
   GroupOutlinePreview,
-  SimpleSteppedLayoutParams,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import type { TrayParams } from "@/types/tray";
@@ -41,19 +36,9 @@ export type WorkerRequest =
       params: SteppedLayoutParams;
     }
   | {
-      type: "GENERATE_STEPPED_CAD";
+      type: "GENERATE_STEPPED_SPLIT_PARTS";
       requestId: string;
       params: SteppedLayoutParams;
-    }
-  | {
-      type: "GENERATE_STEPPED_CAD_SPLIT_PARTS";
-      requestId: string;
-      params: SteppedLayoutParams;
-    }
-  | {
-      type: "GENERATE_SIMPLE_STEPPED";
-      requestId: string;
-      params: SimpleSteppedLayoutParams;
     }
   | {
       type: "GENERATE_STEPPED_OUTLINE_PREVIEW";
@@ -128,36 +113,6 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
         volumeInfo: volume,
       });
     } else if (req.type === "GENERATE_STEPPED") {
-      const shouldDebug =
-        Boolean(
-          (req.params as { debugOrientation?: boolean }).debugOrientation,
-        ) ||
-        (Array.isArray(req.params?.slots) && req.params.slots.length === 2);
-      if (shouldDebug) {
-        console.info("[STEPPED_ORIENT]", "worker_request", {
-          requestId,
-          slots: req.params?.slots?.length ?? 0,
-          spacing: req.params?.spacing,
-          smoothingRadius: req.params?.smoothingRadius,
-          holeDepth: req.params?.holeDepth,
-        });
-      }
-
-      const geometry = createSteppedTrayModel(req.params);
-      const volume = measureVolume(geometry);
-      if (shouldDebug) {
-        console.info("[STEPPED_ORIENT]", "worker_result", {
-          requestId,
-          volume,
-        });
-      }
-      self.postMessage({
-        type: "GENERATION_SUCCESS",
-        requestId,
-        geometry,
-        volumeInfo: volume,
-      });
-    } else if (req.type === "GENERATE_STEPPED_CAD") {
       const geometry = createSteppedCadTrayModel(req.params);
       const volume = measureVolume(geometry);
       self.postMessage({
@@ -166,21 +121,12 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
         geometry,
         volumeInfo: volume,
       });
-    } else if (req.type === "GENERATE_STEPPED_CAD_SPLIT_PARTS") {
+    } else if (req.type === "GENERATE_STEPPED_SPLIT_PARTS") {
       const parts = createSteppedCadSplitParts(req.params);
       self.postMessage({
         type: "STEPPED_SPLIT_PARTS_SUCCESS",
         requestId,
         parts,
-      });
-    } else if (req.type === "GENERATE_SIMPLE_STEPPED") {
-      const geometry = createSimpleSteppedTrayModel(req.params);
-      const volume = measureVolume(geometry);
-      self.postMessage({
-        type: "GENERATION_SUCCESS",
-        requestId,
-        geometry,
-        volumeInfo: volume,
       });
     } else if (req.type === "GENERATE_STEPPED_OUTLINE_PREVIEW") {
       const startedAt = performance.now();

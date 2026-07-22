@@ -5,15 +5,19 @@ import { browserDownloadPort } from "@/lib/download-port";
 import { useToast } from "@/hooks/useToast";
 import type {
   DownloadPort,
-  SteppedCadWorkerPort,
+  SteppedWorkerPort,
 } from "@/lib/model-ports";
-import type { SteppedCadSplitPreviewPart } from "@/lib/stepped-cad-model-service";
+import type { SteppedSplitPreviewPart } from "@/lib/stepped-model-service";
 import {
   captureModeParamSnapshot,
   type ModeParamSnapshot,
 } from "@/lib/mode-param-snapshot";
 import { trayWorkerService } from "@/lib/worker/worker-service";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
+import type {
+  SteppedContinuousEditIntent,
+  SteppedEditIntent,
+} from "@/lib/stepped-edit-intent";
 import {
   getBaseHoleFitBlockingReason,
   validateBaseHoleFit,
@@ -21,27 +25,47 @@ import {
 
 interface UseSteppedCadSplitOrchestrationOptions {
   params: SteppedLayoutParams;
+  transactionRevision?: number;
+  edit: (intent: SteppedEditIntent) => unknown;
+  previewEdit: (intent: SteppedContinuousEditIntent) => unknown;
   generateSplitPreview: (
     params: SteppedLayoutParams,
-    workerPort: SteppedCadWorkerPort,
-  ) => Promise<SteppedCadSplitPreviewPart[]>;
+    workerPort: SteppedWorkerPort,
+  ) => Promise<SteppedSplitPreviewPart[]>;
   exportSplitParts: (
-    snapshot: ModeParamSnapshot<"stepped-cad">,
-    workerPort: SteppedCadWorkerPort,
+    snapshot: ModeParamSnapshot<"stepped">,
+    workerPort: SteppedWorkerPort,
     downloadPort: DownloadPort,
   ) => Promise<void>;
 }
 
 export interface UseSteppedCadSplitOrchestrationReturn {
-  splitPreviewParts: SteppedCadSplitPreviewPart[] | null;
+  splitPreviewParts: SteppedSplitPreviewPart[] | null;
   isGeneratingSplitPreview: boolean;
   handleGenerateSplitPreview: () => Promise<void>;
   clearSplitPreview: () => void;
   handleExportSplitParts: () => Promise<void>;
+  updateSplitParam: <K extends SteppedSplitParamKey>(
+    key: K,
+    value: SteppedLayoutParams[K],
+  ) => void;
+  previewSplitParam: <K extends SteppedSplitParamKey>(
+    key: K,
+    value: SteppedLayoutParams[K],
+  ) => void;
+  setSplitGrooveType: (type: SteppedLayoutParams["splitGrooveType"] | "off") => void;
+  updateGroupSplitPartTarget: (groupId: string, targetGroupId: string | null) => void;
 }
 
+type SteppedSplitParamKey =
+  | "enableSplitAssembly"
+  | "splitGrooveDepth"
+  | "enableSplitRecess"
+  | "splitGrooveType"
+  | "enableSplitLocators";
+
 function disposeSplitPreviewParts(
-  parts: SteppedCadSplitPreviewPart[] | null,
+  parts: SteppedSplitPreviewPart[] | null,
 ): void {
   parts?.forEach((part) => part.threeGeometry.dispose());
 }
@@ -49,21 +73,59 @@ function disposeSplitPreviewParts(
 export function useSteppedCadSplitOrchestration(
   options: UseSteppedCadSplitOrchestrationOptions,
 ): UseSteppedCadSplitOrchestrationReturn {
-  const { params, generateSplitPreview, exportSplitParts } = options;
+  const {
+    params,
+    transactionRevision = 0,
+    edit,
+    previewEdit,
+    generateSplitPreview,
+    exportSplitParts,
+  } = options;
   const { toast } = useToast();
   const paramsRef = useRef(params);
-  const previousParamsRef = useRef(params);
+  const revisionRef = useRef(transactionRevision);
+  const previousRevisionRef = useRef(transactionRevision);
   const splitPreviewPartsRef =
-    useRef<SteppedCadSplitPreviewPart[] | null>(null);
+    useRef<SteppedSplitPreviewPart[] | null>(null);
   const [splitPreviewParts, setSplitPreviewParts] = useState<
-    SteppedCadSplitPreviewPart[] | null
+    SteppedSplitPreviewPart[] | null
   >(null);
   const [isGeneratingSplitPreview, setIsGeneratingSplitPreview] =
     useState(false);
   paramsRef.current = params;
+  revisionRef.current = transactionRevision;
+
+  const updateSplitParam = useCallback(<K extends SteppedSplitParamKey>(
+    key: K,
+    value: SteppedLayoutParams[K],
+  ) => {
+    edit({ type: "param.update", key, value } as SteppedEditIntent);
+  }, [edit]);
+  const previewSplitParam = useCallback(<K extends SteppedSplitParamKey>(
+    key: K,
+    value: SteppedLayoutParams[K],
+  ) => {
+    previewEdit({ type: "param.update", key, value } as SteppedContinuousEditIntent);
+  }, [previewEdit]);
+  const setSplitGrooveType = useCallback((
+    type: SteppedLayoutParams["splitGrooveType"] | "off",
+  ) => {
+    edit({
+      type: "params.patch",
+      patch: type === "off"
+        ? { enableSplitRecess: false }
+        : { enableSplitRecess: true, splitGrooveType: type },
+    });
+  }, [edit]);
+  const updateGroupSplitPartTarget = useCallback((
+    groupId: string,
+    targetGroupId: string | null,
+  ) => {
+    edit({ type: "group.split-target", groupId, targetGroupId });
+  }, [edit]);
 
   const replaceSplitPreviewParts = useCallback(
-    (next: SteppedCadSplitPreviewPart[] | null) => {
+    (next: SteppedSplitPreviewPart[] | null) => {
       disposeSplitPreviewParts(splitPreviewPartsRef.current);
       splitPreviewPartsRef.current = next;
       setSplitPreviewParts(next);
@@ -84,22 +146,27 @@ export function useSteppedCadSplitOrchestration(
   );
 
   useEffect(() => {
-    if (previousParamsRef.current !== params) {
-      previousParamsRef.current = params;
+    if (previousRevisionRef.current !== transactionRevision) {
+      previousRevisionRef.current = transactionRevision;
       clearSplitPreview();
     }
-  }, [clearSplitPreview, params]);
+  }, [clearSplitPreview, transactionRevision]);
 
   const handleGenerateSplitPreview = useCallback(async () => {
-    const workerPort = trayWorkerService as SteppedCadWorkerPort | null;
+    if (!paramsRef.current.enableSplitAssembly) {
+      toast("error", "请先启用分件与装配");
+      return;
+    }
+    const workerPort = trayWorkerService as SteppedWorkerPort | null;
     if (!workerPort) {
       toast("error", "当前环境无法使用后台建模服务");
       return;
     }
 
     const currentParams = paramsRef.current;
+    const generationRevision = revisionRef.current;
     const blockingReason = getBaseHoleFitBlockingReason(
-      validateBaseHoleFit("stepped-cad", currentParams),
+      validateBaseHoleFit("stepped", currentParams),
     );
     if (blockingReason) {
       toast("error", blockingReason);
@@ -116,6 +183,10 @@ export function useSteppedCadSplitOrchestration(
         currentParams,
         workerPort,
       );
+      if (revisionRef.current !== generationRevision) {
+        disposeSplitPreviewParts(parts);
+        return;
+      }
       replaceSplitPreviewParts(parts);
     } catch (err) {
       console.error("拆件预览生成失败:", err);
@@ -129,7 +200,11 @@ export function useSteppedCadSplitOrchestration(
   }, [generateSplitPreview, replaceSplitPreviewParts, toast]);
 
   const handleExportSplitParts = useCallback(async () => {
-    const workerPort = trayWorkerService as SteppedCadWorkerPort | null;
+    if (!paramsRef.current.enableSplitAssembly) {
+      toast("error", "请先启用分件与装配");
+      return;
+    }
+    const workerPort = trayWorkerService as SteppedWorkerPort | null;
     if (!workerPort) {
       toast("error", "当前环境无法使用后台建模服务");
       return;
@@ -137,7 +212,7 @@ export function useSteppedCadSplitOrchestration(
 
     const currentParams = paramsRef.current;
     const blockingReason = getBaseHoleFitBlockingReason(
-      validateBaseHoleFit("stepped-cad", currentParams),
+      validateBaseHoleFit("stepped", currentParams),
     );
     if (blockingReason) {
       toast("error", blockingReason);
@@ -150,11 +225,11 @@ export function useSteppedCadSplitOrchestration(
 
     try {
       await exportSplitParts(
-        captureModeParamSnapshot("stepped-cad", currentParams),
+        captureModeParamSnapshot("stepped", currentParams),
         workerPort,
         browserDownloadPort,
       );
-      toast("success", "CAD 拆件文件已导出");
+      toast("success", "阶梯分件文件已导出");
     } catch (err) {
       console.error("分件导出失败:", err);
       toast(
@@ -170,5 +245,9 @@ export function useSteppedCadSplitOrchestration(
     handleGenerateSplitPreview,
     clearSplitPreview,
     handleExportSplitParts,
+    updateSplitParam,
+    previewSplitParam,
+    setSplitGrooveType,
+    updateGroupSplitPartTarget,
   };
 }

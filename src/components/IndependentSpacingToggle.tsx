@@ -26,7 +26,7 @@ interface IndependentSpacingToggleProps {
 /**
  * "边界间距独立调整" Switch + 条件 ParamSlider。
  *
- * 提取自 ParameterPanel / CustomPanel / SimpleSteppedPanel 中三处逐字
+ * 提取自多个参数面板中的重复交互
  * 复制的同构结构。参数名（boundarySpacing vs outerMargin）通过 props
  * 参数化，调用方传入具体的值和回调。
  */

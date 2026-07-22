@@ -5,9 +5,17 @@ export type AppMode =
   | "grid"
   | "custom"
   | "base-converter"
-  | "simple-stepped"
-  | "stepped"
-  | "stepped-cad";
+  | "stepped";
+
+/**
+ * 模型级底座轮廓样式：描述整件模型的底座构造规则。
+ * - "rectangular"：矩形包络底座（可选圆角、侧面斜角、固定尺寸）
+ * - "contoured"：贴合槽位的轮廓底座（可能产生多个独立可打印实体）
+ *
+ * 一件托盘只能有一个 Baseplate Footprint Style，不允许每个高度组独立选择。
+ * 缺失字段时由各模式默认值补全：custom 默认 rectangular，stepped 默认 contoured。
+ */
+export type BaseplateFootprintStyle = "rectangular" | "contoured";
 
 export interface BaseConverterParams {
   sourceStandardId: string;
@@ -37,6 +45,17 @@ export interface SlotGroup {
   groupDisconnectDistance: number;
   /** 拆件导出时并入的目标分组；为空时该组单独拆件 */
   splitPartGroupId?: string;
+  /**
+   * 历史 simple-stepped 行带的矩形几何快照。
+   * 仅由历史转换器写入，用于保留旧模型中“所有高层行带等宽”的几何；
+   * 现行阶梯编辑创建的分组不使用该字段，仍由槽位包络自动推导。
+   */
+  legacyRectangularFootprint?: {
+    centerX: number;
+    centerY: number;
+    width: number;
+    depth: number;
+  };
 }
 
 /** 分组轮廓预览（供 2D 编辑器逐组渲染） */
@@ -122,7 +141,13 @@ export interface SimpleSteppedRowBand {
 
 /** 自定义布局参数（完全独立） */
 export interface CustomLayoutParams extends BaseHoleParams {
-  /** 托盘尺寸模式；缺失时按自动尺寸兼容旧配置。 */
+  /**
+   * 模型级底座轮廓样式；缺失时按 rectangular 兼容旧配置。
+   * rectangular：矩形包络底座（cornerRadius / sideBevelWidth / traySizingMode 生效）
+   * contoured：贴合槽位轮廓（休眠 fixed sizing / cornerRadius / sideBevelWidth）
+   */
+  footprintStyle?: BaseplateFootprintStyle;
+  /** 托盘尺寸模式；缺失时按自动尺寸兼容旧配置。仅在 rectangular footprint 下生效。 */
   traySizingMode?: "auto" | "fixed";
   /** 托盘宽度 (mm) */
   trayWidth: number;
@@ -144,10 +169,20 @@ export interface CustomLayoutParams extends BaseHoleParams {
   cornerRadius: number;
   /** 侧面斜面宽度 (mm)，下沿保持有效底板尺寸，上沿向内收缩 */
   sideBevelWidth: number;
+  /** 贴合轮廓平滑半径 (mm)；矩形包络下休眠并保留。 */
+  smoothingRadius?: number;
+  /** 贴合轮廓槽群断连距离 (mm)；矩形包络下休眠并保留。 */
+  disconnectDistance?: number;
 }
 
 /** 阶梯底座布局参数 */
 export interface SteppedLayoutParams extends BaseHoleParams {
+  /**
+   * 模型级底座轮廓样式；缺失时按 contoured 兼容旧配置。
+   * contoured：贴合槽位轮廓（smoothingRadius / disconnectDistance 生效，可多体）
+   * rectangular：矩形阶梯底座（最低层连续矩形+圆角，高层各分组矩形高度带）
+   */
+  footprintStyle?: BaseplateFootprintStyle;
   /** 托盘宽度 (mm) */
   trayWidth: number;
   /** 托盘深度 (mm) */
@@ -156,14 +191,33 @@ export interface SteppedLayoutParams extends BaseHoleParams {
   slots: SteppedSlot[];
   /** 分组列表（决定阶梯层高，每组凹槽共享相同高度） */
   groups: SlotGroup[];
-  /** 当前激活的分组 ID（新添加凹槽自动进入此组） */
-  activeGroupId: string;
+  /** @deprecated 仅用于读取历史参数；当前激活组属于 Mode Interaction State。 */
+  activeGroupId?: string;
   /** 凹槽间距 (mm)，同时作为柱子外扩量 */
   spacing: number;
+  /**
+   * 边界间距 (mm)，凹槽到派生底板边界的最小距离。
+   * rectangular footprint 下决定最低连续层与各分组矩形高度带的外扩；
+   * contoured footprint 下作为槽位轮廓向外扩张的间距。
+   * boundarySpacingIndependent 为 false 时跟随 spacing。
+   */
+  boundarySpacing?: number;
+  /** 是否独立调整边界间距（false 时跟随 spacing） */
+  boundarySpacingIndependent?: boolean;
+  /**
+   * 矩形阶梯底座的托盘尺寸模式；缺失时按自动尺寸兼容旧配置。
+   * 仅在 rectangular footprint 下生效，且只决定最低连续层的尺寸；
+   * 固定尺寸不会传播到更高的分组矩形高度带。
+   */
+  traySizingMode?: "auto" | "fixed";
+  /** 最低连续层外圆角半径 (mm)，仅在 rectangular footprint 下作用于最低层 */
+  cornerRadius?: number;
   /** 凹槽深度 (mm)，全局固定，从柱顶向下挖的深度 */
   holeDepth: number;
   /** 拆件装配槽深度 (mm)；0 表示不生成公母装配槽 */
   splitGrooveDepth: number;
+  /** 是否启用分件预览、分件导出与装配配置；关闭时保留配置但不生效 */
+  enableSplitAssembly: boolean;
   /** CAD 拆件时在下方实体生成上方实体轮廓浅槽 */
   enableSplitRecess?: boolean;
   /** CAD 拆件装配槽型：完整轮廓或内缩轮廓 */

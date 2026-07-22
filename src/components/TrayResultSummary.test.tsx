@@ -40,9 +40,9 @@ describe("TrayResultSummary", () => {
     expect(screen.getByText("3 × 2")).toBeInTheDocument();
   });
 
-  it("阶梯与 CAD 共用分组详情和超尺寸提示", () => {
+  it("阶梯模式展示分组详情和超尺寸提示", () => {
     const result: SteppedTrayResultProjection = {
-      mode: "stepped-cad",
+      mode: "stepped",
       slotCount: 3,
       itemLabel: "2 组 · 3 槽",
       dimensions: { width: 280, depth: 120, height: 16 },
@@ -55,6 +55,7 @@ describe("TrayResultSummary", () => {
       },
       generating: false,
       stale: false,
+      footprintWarnings: ["平滑轮廓构造失败，已退回未平滑轮廓"],
       groupCount: 2,
       groups: [
         { id: "front", name: "前排", color: "#8cb880", bottomHeight: 8, slotCount: 2 },
@@ -69,5 +70,6 @@ describe("TrayResultSummary", () => {
     expect(screen.getByText("后排")).toBeInTheDocument();
     expect(screen.getByText(/超过常规打印尺寸 260 × 260 mm/)).toBeInTheDocument();
     expect(screen.getByText("2 个分组")).toBeInTheDocument();
+    expect(screen.getByText(/平滑轮廓构造失败/)).toBeInTheDocument();
   });
 });

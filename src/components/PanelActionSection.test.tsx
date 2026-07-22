@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { PanelActionSection } from "@/components/PanelActionSection";
 import type {
   ManualDraftActionAreaAdapter,
-  SteppedCadDraftActionAreaAdapter,
+  SteppedDraftActionAreaAdapter,
 } from "@/workspaces/draft-action-area";
 
 const success = { status: "success" } as const;
@@ -34,9 +34,9 @@ describe("PanelActionSection", () => {
     expect(screen.getByText("有未保存修改")).toBeInTheDocument();
   });
 
-  it("CAD 能力将导出收拢为菜单，并直接消费分件 Availability", async () => {
-    const adapter: SteppedCadDraftActionAreaAdapter = {
-      kind: "stepped-cad",
+  it("阶梯分件能力将导出收拢为菜单，并直接消费分件 Availability", async () => {
+    const adapter: SteppedDraftActionAreaAdapter = {
+      kind: "stepped",
       state: {
         currentDraftId: null,
         hasUnsavedChanges: false,

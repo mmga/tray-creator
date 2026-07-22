@@ -8,9 +8,12 @@ interface UseCanvasKeyboardOptions {
   selectedIdsRef: React.RefObject<Set<string>>;
   slotsRef: React.RefObject<FreeSlot[]>;
   onUpdateSlot: (id: string, x: number, y: number) => void;
+  onUpdateSlots?: (updates: { id: string; x: number; y: number }[]) => void;
   onRemoveSlot: (id: string) => void;
+  onRemoveSlots?: (ids: string[]) => void;
   onDuplicateSlots?: (ids: string[]) => string[] | void;
   onUndo?: () => void;
+  onCancelInteraction?: () => void;
   setSelectedIds: React.Dispatch<React.SetStateAction<Set<string>>>;
   setIsRotating: React.Dispatch<React.SetStateAction<boolean>>;
   setIsSpacePressed: React.Dispatch<React.SetStateAction<boolean>>;
@@ -29,9 +32,12 @@ export function useCanvasKeyboard({
   selectedIdsRef,
   slotsRef,
   onUpdateSlot,
+  onUpdateSlots,
   onRemoveSlot,
+  onRemoveSlots,
   onDuplicateSlots,
   onUndo,
+  onCancelInteraction,
   setSelectedIds,
   setIsRotating,
   setIsSpacePressed,
@@ -66,12 +72,12 @@ export function useCanvasKeyboard({
       if (event.code === "ArrowUp") dy = step;
       if (event.code === "ArrowDown") dy = -step;
 
-      selectedIdsRef.current.forEach((id) => {
+      const updates = Array.from(selectedIdsRef.current).flatMap((id) => {
         const slot = slotsRef.current.find((candidate) => candidate.id === id);
-        if (slot) {
-          onUpdateSlot(id, slot.x + dx, slot.y + dy);
-        }
+        return slot ? [{ id, x: slot.x + dx, y: slot.y + dy }] : [];
       });
+      if (onUpdateSlots) onUpdateSlots(updates);
+      else updates.forEach(({ id, x, y }) => onUpdateSlot(id, x, y));
     }
 
     if (
@@ -106,12 +112,15 @@ export function useCanvasKeyboard({
       (event.code === "Delete" || event.code === "Backspace")
     ) {
       event.preventDefault();
-      selectedIdsRef.current.forEach((id) => onRemoveSlot(id));
+      const ids = Array.from(selectedIdsRef.current);
+      if (onRemoveSlots) onRemoveSlots(ids);
+      else ids.forEach((id) => onRemoveSlot(id));
       setSelectedIds(new Set());
     }
 
     if (event.code === "Escape") {
       event.preventDefault();
+      onCancelInteraction?.();
       setSelectedIds(new Set());
       setIsRotating(false);
     }

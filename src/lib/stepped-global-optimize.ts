@@ -28,7 +28,6 @@ import {
   getSlotGeometry,
   getTargetShelfWidth,
   normalizeSlotsToOrigin,
-  roundPosition,
   roundToStep,
   sortSlotsByEffectiveSize,
 } from "@/lib/stepped-optimize-slot-geometry";
@@ -37,7 +36,6 @@ import {
 } from "@/lib/stepped-optimize-shelf-packer";
 
 type ProposalKind = "compact";
-type GroupAlignment = "center" | "top" | "bottom";
 
 interface ProposalSeed {
   kind: ProposalKind;
@@ -53,11 +51,6 @@ interface CompactCandidate {
 
 interface GroupCompactCandidate extends CompactCandidate {
   key: string;
-}
-
-interface GroupPlacementChoice {
-  candidate: GroupCompactCandidate;
-  alignment: GroupAlignment;
 }
 
 export interface SteppedOptimizationMetrics {
@@ -76,22 +69,6 @@ export interface SteppedOptimizationProposal {
   description: string;
   params: SteppedLayoutParams;
   metrics: SteppedOptimizationMetrics;
-}
-
-function resolveAlignmentOffset(
-  overallSpan: number,
-  blockSpan: number,
-  alignment: GroupAlignment,
-): number {
-  if (alignment === "top") {
-    return 0;
-  }
-
-  if (alignment === "bottom") {
-    return overallSpan - blockSpan;
-  }
-
-  return (overallSpan - blockSpan) / 2;
 }
 
 function buildGroupCompactCandidates(
@@ -171,165 +148,9 @@ function buildGroupCompactCandidates(
     .slice(0, GROUP_CANDIDATE_LIMIT);
 }
 
-function composeGroupPlacements(
-  params: SteppedLayoutParams,
-  placements: GroupPlacementChoice[],
-): CompactCandidate {
-  const overallDepth = Math.max(
-    0,
-    ...placements.map((placement) => placement.candidate.metrics.depth),
-  );
-  const combined: SteppedSlot[] = [];
-  let cursorX = 0;
-  let symmetryPenalty = 0;
-  let rowCount = 0;
-
-  placements.forEach((placement) => {
-    const blockDepth = placement.candidate.metrics.depth;
-    const offsetY = resolveAlignmentOffset(
-      overallDepth,
-      blockDepth,
-      placement.alignment,
-    );
-    const centeredOffsetY = resolveAlignmentOffset(
-      overallDepth,
-      blockDepth,
-      "center",
-    );
-
-    placement.candidate.slots.forEach((slot) => {
-      combined.push({
-        ...slot,
-        x: roundPosition(slot.x + cursorX),
-        y: roundPosition(slot.y + offsetY),
-      });
-    });
-
-    cursorX += placement.candidate.metrics.width;
-    symmetryPenalty +=
-      placement.candidate.metrics.symmetryPenalty +
-      Math.abs(offsetY - centeredOffsetY);
-    rowCount += placement.candidate.metrics.rowCount;
-  });
-
-  const normalized = normalizeSlotsToOrigin(combined, params.spacing);
-
-  return {
-    metrics: evaluateCompactCandidate(
-      params,
-      normalized,
-      roundPosition(symmetryPenalty),
-      rowCount,
-    ),
-    slots: normalized,
-  };
-}
-
 function buildCompactCandidates(params: SteppedLayoutParams): CompactCandidate[] {
-  const slotsByGroupId = new Map<string, SteppedSlot[]>();
-  params.slots.forEach((slot) => {
-    const groupSlots = slotsByGroupId.get(slot.groupId);
-    if (groupSlots) {
-      groupSlots.push(slot);
-    } else {
-      slotsByGroupId.set(slot.groupId, [slot]);
-    }
-  });
-
-  const groupCandidateSets = params.groups
-    .map((group) => ({
-      groupId: group.id,
-      candidates: buildGroupCompactCandidates(
-        params,
-        slotsByGroupId.get(group.id) ?? [],
-      ),
-    }))
-    .filter((entry) => entry.candidates.length > 0);
-
-  if (groupCandidateSets.length === 0) {
-    return [];
-  }
-
-  let drafts: Array<{
-    key: string;
-    placements: GroupPlacementChoice[];
-    candidate: CompactCandidate;
-  }> = [
-    {
-      key: "",
-      placements: [],
-      candidate: {
-        metrics: evaluateCompactCandidate(params, [], 0, 0),
-        slots: [],
-      },
-    },
-  ];
-
-  groupCandidateSets.forEach((groupSet) => {
-    const nextDrafts = new Map<
-      string,
-      {
-        key: string;
-        placements: GroupPlacementChoice[];
-        candidate: CompactCandidate;
-      }
-    >();
-
-    drafts.forEach((draft) => {
-      groupSet.candidates.forEach((candidate) => {
-        const alignments: GroupAlignment[] =
-          draft.placements.length === 0
-            ? ["center"]
-            : ["center", "top", "bottom"];
-
-        alignments.forEach((alignment) => {
-          const placements = [
-            ...draft.placements,
-            { candidate, alignment },
-          ];
-          const combinedCandidate = composeGroupPlacements(params, placements);
-          const key = serializeSlots(combinedCandidate.slots);
-          const existing = nextDrafts.get(key);
-
-          if (
-            !existing ||
-            compareCompactCandidateEvaluations(
-              combinedCandidate.metrics,
-              existing.candidate.metrics,
-            ) < 0
-          ) {
-            nextDrafts.set(key, {
-              key,
-              placements,
-              candidate: combinedCandidate,
-            });
-          }
-        });
-      });
-    });
-
-    drafts = [...nextDrafts.values()]
-      .sort((left, right) =>
-        compareCompactCandidateEvaluations(
-          left.candidate.metrics,
-          right.candidate.metrics,
-        ),
-      )
-      .slice(0, OVERALL_CANDIDATE_LIMIT);
-  });
-
-  return drafts.map((draft) => draft.candidate).sort((left, right) => {
-    const metricOrder = compareCompactCandidateEvaluations(
-      left.metrics,
-      right.metrics,
-    );
-
-    if (metricOrder !== 0) {
-      return metricOrder;
-    }
-
-    return serializeSlots(left.slots).localeCompare(serializeSlots(right.slots));
-  });
+  return buildGroupCompactCandidates(params, params.slots)
+    .slice(0, OVERALL_CANDIDATE_LIMIT);
 }
 
 function createCompactSeed(
@@ -350,7 +171,7 @@ function createCompactSeed(
   return {
     kind: "compact",
     label: "紧凑对称",
-    description: "仅在组内重排，不跨组混排；优先保证左右对称，并尽量收敛到横向约 5:2 的长方形。",
+    description: "在全部凹槽间自由排列并保留高度组身份；优先降低真实高度带材料与包络空白。",
     slots: selectedCandidate?.slots ?? fallbackSlots,
   };
 }
@@ -381,17 +202,40 @@ function finalizeProposal(
   seed: ProposalSeed,
 ): SteppedOptimizationProposal {
   const compactedSlots = normalizeSlotsToOrigin(seed.slots, params.spacing);
-  const nextParams = trimSteppedBaseplate(
-    {
-      ...params,
-      slots: compactedSlots,
-    },
-    calculateSteppedEffectiveDimensions({
-      ...params,
-      slots: compactedSlots,
-    }),
-  );
-  const dims = calculateSteppedEffectiveDimensions(nextParams);
+  const compactedParams = { ...params, slots: compactedSlots };
+  const compactedDims = calculateSteppedEffectiveDimensions(compactedParams);
+  const usesFixedRectangularFootprint =
+    params.footprintStyle === "rectangular" &&
+    params.traySizingMode === "fixed";
+  const fitsFixedFootprint =
+    compactedDims.width <= params.trayWidth &&
+    compactedDims.depth <= params.trayDepth;
+  const nextParams = usesFixedRectangularFootprint
+    ? fitsFixedFootprint
+      ? {
+          ...compactedParams,
+          slots: compactedSlots.map((slot) => ({
+            ...slot,
+            x:
+              slot.x +
+              params.trayWidth / 2 -
+              (compactedDims.minX + compactedDims.maxX) / 2,
+            y:
+              slot.y +
+              params.trayDepth / 2 -
+              (compactedDims.minY + compactedDims.maxY) / 2,
+          })),
+        }
+      : params
+    : trimSteppedBaseplate(compactedParams, compactedDims);
+  const contentDims = calculateSteppedEffectiveDimensions(nextParams);
+  const dims = usesFixedRectangularFootprint
+    ? {
+        ...contentDims,
+        width: params.trayWidth,
+        depth: params.trayDepth,
+      }
+    : contentDims;
   const hasBridgeWarning = buildSteppedBridgeWarning(nextParams) !== null;
   const metrics: SteppedOptimizationMetrics = {
     width: dims.width,

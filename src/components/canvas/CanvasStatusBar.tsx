@@ -17,6 +17,7 @@ interface CanvasStatusBarProps {
     selectedIds: Set<string>;
     slots: FreeSlot[];
     collisionErrorCount?: number;
+    footprintWarnings?: readonly string[];
 }
 
 const PERF_LABELS: Record<PerfMetricName, string> = {
@@ -89,6 +90,7 @@ export function CanvasStatusBar({
     selectedIds,
     slots,
     collisionErrorCount = 0,
+    footprintWarnings = [],
 }: CanvasStatusBarProps) {
     const perfState = useSyncExternalStore(
         subscribePerfMetrics,
@@ -117,6 +119,11 @@ export function CanvasStatusBar({
                 <span className={collisionErrorCount > 0 ? "text-red-400" : "text-emerald-400"}>
                     ERRORS: {collisionErrorCount}
                 </span>
+                {footprintWarnings.map((warning, index) => (
+                    <span key={`${warning}-${index}`} className="text-amber-300">
+                        贴合轮廓警告：{warning}
+                    </span>
+                ))}
 
                 {selectedSlot && (
                     <span className="text-orange-400">

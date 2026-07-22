@@ -8,22 +8,24 @@ import {
 import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 
 describe("Current Param Artifact Encoder", () => {
-  it("保留 Mode Param Snapshot 的实际 CAD Mode", () => {
+  it("保留统一后的阶梯 Mode", () => {
     const snapshot = captureModeParamSnapshot(
-      "stepped-cad",
+      "stepped",
       STEPPED_LAYOUT_DEFAULTS,
     );
 
+    const persistedParams = { ...STEPPED_LAYOUT_DEFAULTS };
+    delete persistedParams.activeGroupId;
     expect(buildCurrentParamArtifact(snapshot)).toEqual({
       version: 1,
-      mode: "stepped-cad",
-      params: STEPPED_LAYOUT_DEFAULTS,
+      mode: "stepped",
+      params: persistedParams,
     });
   });
 
   it("捕获后不受编辑器参数继续变化影响", () => {
     const params = structuredClone(STEPPED_LAYOUT_DEFAULTS);
-    const snapshot = captureModeParamSnapshot("stepped-cad", params);
+    const snapshot = captureModeParamSnapshot("stepped", params);
 
     params.trayWidth += 10;
     params.groups.push({ ...params.groups[0], id: "later-group" });
@@ -37,12 +39,12 @@ describe("Current Param Artifact Encoder", () => {
   it("序列化当前格式并保留三位小数精度", async () => {
     const params = structuredClone(STEPPED_LAYOUT_DEFAULTS);
     params.trayWidth = 12.34567;
-    const snapshot = captureModeParamSnapshot("stepped-cad", params);
+    const snapshot = captureModeParamSnapshot("stepped", params);
 
     const serialized = serializeCurrentParamArtifact(snapshot);
     expect(JSON.parse(serialized)).toMatchObject({
       version: 1,
-      mode: "stepped-cad",
+      mode: "stepped",
       params: { trayWidth: 12.346 },
     });
 

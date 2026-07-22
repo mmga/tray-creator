@@ -4,8 +4,18 @@ import {
   createModelGeometryFingerprint,
 } from "@/lib/mode-param-snapshot";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
+import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 
 describe("Model Geometry Fingerprint", () => {
+  it("does not capture the Active Stepped Group as persisted params", () => {
+    const snapshot = captureModeParamSnapshot("stepped", {
+      ...STEPPED_LAYOUT_DEFAULTS,
+      activeGroupId: "group-transient",
+    });
+
+    expect(snapshot.params).not.toHaveProperty("activeGroupId");
+  });
+
   it("相同 Mode 和参数得到相同指纹，不受对象键顺序影响", () => {
     const snapshot = captureModeParamSnapshot("grid", DEFAULT_TRAY_PARAMS);
     const reordered = {

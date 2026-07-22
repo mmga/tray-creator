@@ -61,10 +61,10 @@ describe("custom layout actions", () => {
       y: 80,
       shape: "circle",
       slotDefinitionId: "circle-25",
-      slotWidth: 25.2,
-      slotHeight: 25.2,
+      slotWidth: 25.4,
+      slotHeight: 25.4,
     });
-    expect(withSecond.slots[1].x).toBeCloseTo(130.2, 5);
+    expect(withSecond.slots[1].x).toBeCloseTo(130.4, 5);
 
     const moved = updateCustomSlotPosition(withSecond, "slot-1", 20, 30);
     const rotated = updateCustomSlotRotation(moved, "slot-2", 45);
@@ -109,7 +109,7 @@ describe("custom layout actions", () => {
       60,
       35.5,
       {
-        outerOffset: 0.4,
+        outerOffset: 0.2,
         profileExponent: 2.05,
       },
     );
@@ -120,7 +120,7 @@ describe("custom layout actions", () => {
       width: 60,
       height: 35.5,
       slotDefinitionId: "ellipse-60x35.5",
-      outerOffset: 0.4,
+      outerOffset: 0.2,
       profileExponent: 2.05,
     });
   });

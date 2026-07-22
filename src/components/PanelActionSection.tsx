@@ -51,7 +51,7 @@ export function PanelActionSection({ adapter }: { adapter: DraftActionAreaAdapte
           {state.generate.state === "busy" ? state.generate.label : "开始锻造"}
         </Button>
 
-        {adapter.kind === "stepped-cad" ? (
+        {adapter.kind === "stepped" ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild><Button className="h-11 min-w-0 bg-[#2a3528] px-2 text-xs text-[#8cb880] border border-[#4a6741] hover:bg-[#354530]"><Download className="size-4" />导出</Button></DropdownMenuTrigger>
             <DropdownMenuContent align="end" side="top">

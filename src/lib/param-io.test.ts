@@ -4,17 +4,14 @@ import {
   DEFAULT_TRAY_PARAMS,
 } from "@/lib/grid-config";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
-import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import { BASE_CONVERTER_DEFAULTS } from "@/lib/base-converter-config";
 import type {
   AppMode,
   CustomLayoutParams,
-  SimpleSteppedLayoutParams,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import type { TrayParams } from "@/types/tray";
-import { calculateSimpleSteppedDimensions } from "@/lib/simple-stepped-layout";
 import {
   prepareParamImport,
 } from "@/lib/param-io";
@@ -83,16 +80,15 @@ describe("param-io", () => {
     expect(parsed.params.spacing).toBe(5.679);
   });
 
-  it("preserves the real CAD stepped Mode in newly exported files", () => {
-    const file = buildParamFile("stepped-cad", STEPPED_LAYOUT_DEFAULTS);
+  it("新导出的阶梯文件只使用统一 Mode", () => {
+    const file = buildParamFile("stepped", STEPPED_LAYOUT_DEFAULTS);
     expect(file).toMatchObject({
       version: 1,
-      mode: "stepped-cad",
+      mode: "stepped",
     });
-    expect(parseParamFileObject(file, "stepped-cad")).toMatchObject(
+    expect(parseParamFileObject(file, "stepped")).toMatchObject(
       STEPPED_LAYOUT_DEFAULTS,
     );
-    expect(() => parseParamFileObject(file, "stepped")).toThrow("模式不匹配");
   });
 
   it("round-trips declared base converter parameters", () => {
@@ -186,7 +182,7 @@ describe("param-io", () => {
     );
   });
 
-  it("infers wrapperless Mode and requires a choice for historical stepped files", () => {
+  it("推断无包装 Mode，并将历史阶梯文件直接归一为统一 Mode", () => {
     const inferred = prepareParamFileObject({
       ...CUSTOM_LAYOUT_DEFAULTS,
       slots: [],
@@ -199,31 +195,33 @@ describe("param-io", () => {
       },
     });
 
-    const ambiguous = prepareParamFileObject({
+    const historicalStepped = prepareParamFileObject({
       version: 1,
       mode: "stepped",
       params: STEPPED_LAYOUT_DEFAULTS,
     });
-    expect(ambiguous).toEqual({
-      status: "mode-selection-required",
-      fileName: "参数文件",
-      choices: ["stepped", "stepped-cad"],
-      message: "历史阶梯文件没有区分普通阶梯与 CAD 阶梯，请选择原始 Mode",
-    });
-
-    const selected = prepareParamFileObject(
-      {
-        version: 1,
-        mode: "stepped",
-        params: STEPPED_LAYOUT_DEFAULTS,
-      },
-      { selectedMode: "stepped-cad" },
-    );
-    expect(selected).toMatchObject({
+    expect(historicalStepped).toMatchObject({
       status: "ready",
       candidate: {
-        targetMode: "stepped-cad",
-        report: { modeResolution: { kind: "selected" } },
+        targetMode: "stepped",
+        params: { enableSplitAssembly: false },
+      },
+    });
+
+    const historicalCadParams: Partial<SteppedLayoutParams> = {
+      ...STEPPED_LAYOUT_DEFAULTS,
+    };
+    delete historicalCadParams.enableSplitAssembly;
+    const historicalCad = prepareParamFileObject({
+      version: 1,
+      mode: "stepped-cad",
+      params: historicalCadParams,
+    });
+    expect(historicalCad).toMatchObject({
+      status: "ready",
+      candidate: {
+        targetMode: "stepped",
+        params: { enableSplitAssembly: true },
       },
     });
   });
@@ -644,7 +642,7 @@ describe("param-io", () => {
     expect(parsed.groups[0].groupDisconnectDistance).toBe(0);
     expect(parsed.slots[0]).toMatchObject({
       id: "test-uuid",
-      shape: "circle",
+      shape: "ellipse",
       height: 25,
       rotation: 270,
       groupId: parsed.groups[0].id,
@@ -657,83 +655,91 @@ describe("param-io", () => {
     expect("bottomHeight" in parsed.slots[0]).toBe(false);
   });
 
-  it("migrates legacy CAD assembly fields after explicit external Mode selection", () => {
-    const legacySteppedParams = { ...STEPPED_LAYOUT_DEFAULTS };
+  it("迁移历史 CAD 装配字段并默认开启分件能力", () => {
+    const legacySteppedParams: Partial<SteppedLayoutParams> = {
+      ...STEPPED_LAYOUT_DEFAULTS,
+    };
+    delete legacySteppedParams.enableSplitAssembly;
     delete legacySteppedParams.enableSplitRecess;
     delete legacySteppedParams.enableSplitLocators;
     const preparation = prepareParamFileObject(
       {
         version: 1,
-        mode: "stepped",
+        mode: "stepped-cad",
         params: {
           ...legacySteppedParams,
           splitAssemblyMode: "locator-recess",
         },
       },
-      { selectedMode: "stepped-cad" },
     );
     expect(preparation.status).toBe("ready");
     if (preparation.status !== "ready") return;
     const parsed = preparation.candidate.params as SteppedLayoutParams;
 
     expect(parsed.enableSplitRecess).toBe(true);
+    expect(parsed.enableSplitAssembly).toBe(true);
     expect(parsed.splitGrooveType).toBe("profile");
     expect(parsed.enableSplitLocators).toBe(true);
     expect(parsed.splitAssemblyMode).toBeUndefined();
   });
 
-  it("normalizes simple stepped files and rebuilds row membership", () => {
+  it("历史 simple-stepped 文件读取时归一转换为 stepped（CONTEXT:580-583）", () => {
+    // 历史 simple-stepped 文件不再作为独立 Mode 读取，统一归一到 stepped
     const parsed = parseParamFileObject(
       {
         version: 1,
         mode: "simple-stepped" as AppMode,
         params: {
-          trayWidth: 40,
-          trayDepth: 50,
-          rows: [],
-          slots: [
-            {
-              shape: "ellipse",
-              diameter: 25,
-              x: 0,
-              y: Number.NaN,
-            },
+          trayWidth: 120,
+          trayDepth: 80,
+          rows: [
+            { id: "row-1", name: "行 1", slotIds: ["s1"] },
           ],
-          firstRowHeight: 99,
-          stepHeight: 99,
-          rowGap: 99,
-          spacing: 99,
-          outerMargin: 12,
-          holeDepth: 99,
+          slots: [
+            { id: "s1", rowId: "row-1", shape: "circle", diameter: 25, x: 0, y: 0 },
+          ],
+          firstRowHeight: 10,
+          stepHeight: 5,
+          rowGap: 2,
+          spacing: 5,
+          outerMargin: 5,
+          holeDepth: 3,
         },
       },
-      "simple-stepped",
-    ) as SimpleSteppedLayoutParams;
+      "stepped",
+    ) as SteppedLayoutParams;
 
-    const dimensions = calculateSimpleSteppedDimensions(parsed);
+    // 转换结果应为 stepped 参数，使用 rectangular footprint（CONTEXT:593）
+    expect(parsed.footprintStyle).toBe("rectangular");
+    expect(parsed.traySizingMode).toBe("fixed");
+    expect(parsed.groups.length).toBe(1);
+    expect(parsed.groups[0].bottomHeight).toBe(10);
+    expect(parsed.slots.length).toBe(1);
+    expect(parsed.slots[0].groupId).toBe("row-1");
+  });
 
-    expect(parsed.rows).toHaveLength(1);
-    expect(parsed.rows[0]).toMatchObject({
-      id: "test-uuid",
-      name: "行 1",
-      slotIds: ["test-uuid"],
-    });
-    expect(parsed.slots[0]).toMatchObject({
-      id: "test-uuid",
-      shape: "circle",
-      rowId: "test-uuid",
-      y: 0,
-    });
-    expect(parsed.firstRowHeight).toBe(40);
-    expect(parsed.stepHeight).toBe(40);
-    expect(parsed.rowGap).toBe(40);
-    expect(parsed.spacing).toBe(20);
-    expect(parsed.outerMarginIndependent).toBe(true);
-    expect(parsed.outerMargin).toBe(12);
-    expect(parsed.holeDepth).toBe(20);
-    expect(parsed.cornerRadius).toBe(SIMPLE_STEPPED_LAYOUT_DEFAULTS.cornerRadius);
-    expect(parsed.trayWidth).toBeCloseTo(dimensions.width, 5);
-    expect(parsed.trayDepth).toBeCloseTo(dimensions.depth, 5);
+  it("拒绝以 simple-stepped 作为 expectedMode（已不再是独立 Mode）", () => {
+    expect(() =>
+      parseParamFileObject(
+        {
+          version: 1,
+          mode: "simple-stepped" as AppMode,
+          params: {
+            trayWidth: 40,
+            trayDepth: 50,
+            rows: [],
+            slots: [],
+            firstRowHeight: 10,
+            stepHeight: 5,
+            rowGap: 2,
+            spacing: 5,
+            outerMargin: 5,
+            holeDepth: 3,
+          },
+        },
+        "simple-stepped" as AppMode,
+      ),
+    ).toThrow("模式不匹配");
   });
 
   it("rejects invalid versions and mismatched modes", () => {

@@ -31,4 +31,33 @@ describe("custom layout editor viewport model", () => {
       cornerRadius: 4,
     });
   });
+
+  it("contoured footprint 用 groupOutlines 渲染贴合轮廓，关闭矩形 effective baseplate", () => {
+    const model = buildCustomLayoutEditorViewportModel({
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      footprintStyle: "contoured",
+      traySizingMode: "fixed", // contoured 下 fixed sizing 应被休眠
+      trayWidth: 100,
+      trayDepth: 80,
+      slots: [
+        { id: "a", x: 20, y: 20, shape: "circle", width: 25, height: 25, rotation: 0 },
+      ],
+    });
+    expect(model.trayFrame.showEffectiveBaseplate).toBe(false);
+    expect(model.trayFrame.fixedUsableArea).toBeUndefined();
+    expect(model.overlays.groupOutlines).not.toBeNull();
+    expect(model.overlays.groupOutlines!.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("contoured footprint 远距多槽渲染为多个独立 outline", () => {
+    const model = buildCustomLayoutEditorViewportModel({
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      footprintStyle: "contoured",
+      slots: [
+        { id: "a", x: 0, y: 0, shape: "circle", width: 25, height: 25, rotation: 0 },
+        { id: "b", x: 200, y: 200, shape: "circle", width: 25, height: 25, rotation: 0 },
+      ],
+    });
+    expect(model.overlays.groupOutlines?.length).toBe(2);
+  });
 });

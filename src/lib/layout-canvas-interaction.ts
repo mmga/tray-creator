@@ -1,4 +1,3 @@
-import type { SimpleSteppedRowBand } from "@/types/custom-tray";
 import type { CanvasPoint, CanvasSlotUpdate } from "@/lib/canvas-types";
 import type { LayoutEditorSlot } from "@/viewports/layout-editor/types";
 
@@ -72,29 +71,4 @@ export function buildLayoutCanvasDragUpdates({
     });
   });
   return updates;
-}
-
-export function calculateLayoutCanvasMinimumTrayBounds({
-  rowBands,
-  effectiveBaseplate,
-}: {
-  rowBands?: SimpleSteppedRowBand[] | null;
-  effectiveBaseplate: { width: number; height: number };
-}) {
-  if (!rowBands || rowBands.length === 0) {
-    return {
-      width: effectiveBaseplate.width,
-      depth: effectiveBaseplate.height,
-    };
-  }
-
-  const minBandX = Math.min(...rowBands.map((band) => band.x));
-  const maxBandX = Math.max(...rowBands.map((band) => band.x + band.width));
-  const minBandY = Math.min(...rowBands.map((band) => band.y));
-  const maxBandY = Math.max(...rowBands.map((band) => band.y + band.depth));
-
-  return {
-    width: Math.max(0, maxBandX - minBandX),
-    depth: Math.max(0, maxBandY - minBandY),
-  };
 }

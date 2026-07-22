@@ -4,16 +4,12 @@ import { useCallback, useMemo } from "react";
 import type { useCustomLayout } from "@/hooks/useCustomLayout";
 import type { useBaseConverter } from "@/hooks/useBaseConverter";
 import type { ModeInteractionState } from "@/hooks/useModeInteractionState";
-import type { useSimpleSteppedLayout } from "@/hooks/useSimpleSteppedLayout";
 import type { useSteppedLayout } from "@/hooks/useSteppedLayout";
-import type { useSteppedCadLayout } from "@/hooks/useSteppedCadLayout";
 import type { useTrayModel } from "@/hooks/useTrayModel";
 import { useCustomWorkspace } from "@/workspaces/custom/useCustomWorkspace";
 import { useBaseConverterWorkspace } from "@/workspaces/base-converter/useBaseConverterWorkspace";
 import { useGridWorkspace } from "@/workspaces/grid/useGridWorkspace";
-import { useSimpleSteppedWorkspace } from "@/workspaces/simple-stepped/useSimpleSteppedWorkspace";
 import { useSteppedWorkspace } from "@/workspaces/stepped/useSteppedWorkspace";
-import { useSteppedCadWorkspace } from "@/workspaces/stepped-cad/useSteppedCadWorkspace";
 import type { ModeWorkspace } from "@/workspaces/types";
 import type { AppMode } from "@/types/custom-tray";
 import type { DraftActionResult } from "@/workspaces/draft-action-area";
@@ -24,11 +20,8 @@ interface UseModeWorkspacesOptions {
   gridModel: ReturnType<typeof useTrayModel>;
   customModel: ReturnType<typeof useCustomLayout>;
   baseConverterModel: ReturnType<typeof useBaseConverter>;
-  simpleSteppedModel: ReturnType<typeof useSimpleSteppedLayout>;
   steppedModel: ReturnType<typeof useSteppedLayout>;
-  steppedCadModel: ReturnType<typeof useSteppedCadLayout>;
   customInteractionState: ModeInteractionState;
-  simpleSteppedInteractionState: ModeInteractionState;
   steppedInteractionState: ModeInteractionState;
   onRequestParamImport: (file: File) => Promise<DraftActionResult>;
 }
@@ -43,11 +36,8 @@ export function useModeWorkspaces({
   gridModel,
   customModel,
   baseConverterModel,
-  simpleSteppedModel,
   steppedModel,
-  steppedCadModel,
   customInteractionState,
-  simpleSteppedInteractionState,
   steppedInteractionState,
   onRequestParamImport,
 }: UseModeWorkspacesOptions): UseModeWorkspacesReturn {
@@ -64,18 +54,8 @@ export function useModeWorkspaces({
     model: baseConverterModel,
     onRequestParamImport,
   });
-  const simpleSteppedWorkspace = useSimpleSteppedWorkspace({
-    model: simpleSteppedModel,
-    interactionState: simpleSteppedInteractionState,
-    onRequestParamImport,
-  });
   const steppedWorkspace = useSteppedWorkspace({
     model: steppedModel,
-    interactionState: steppedInteractionState,
-    onRequestParamImport,
-  });
-  const steppedCadWorkspace = useSteppedCadWorkspace({
-    model: steppedCadModel,
     interactionState: steppedInteractionState,
     onRequestParamImport,
   });
@@ -88,12 +68,8 @@ export function useModeWorkspaces({
         return customWorkspace;
       case "base-converter":
         return baseConverterWorkspace;
-      case "simple-stepped":
-        return simpleSteppedWorkspace;
       case "stepped":
         return steppedWorkspace;
-      case "stepped-cad":
-        return steppedCadWorkspace;
       default: {
         const unreachableMode: never = mode;
         throw new Error(`Unsupported workspace mode: ${String(unreachableMode)}`);
@@ -104,9 +80,7 @@ export function useModeWorkspaces({
     baseConverterWorkspace,
     gridWorkspace,
     mode,
-    simpleSteppedWorkspace,
     steppedWorkspace,
-    steppedCadWorkspace,
   ]);
 
   const getImportTarget = useCallback((targetMode: AppMode) => {
@@ -117,12 +91,8 @@ export function useModeWorkspaces({
         return customWorkspace.importTarget;
       case "base-converter":
         return baseConverterWorkspace.importTarget;
-      case "simple-stepped":
-        return simpleSteppedWorkspace.importTarget;
       case "stepped":
         return steppedWorkspace.importTarget;
-      case "stepped-cad":
-        return steppedCadWorkspace.importTarget;
       default: {
         const unreachableMode: never = targetMode;
         throw new Error(`Unsupported import mode: ${String(unreachableMode)}`);
@@ -132,8 +102,6 @@ export function useModeWorkspaces({
     customWorkspace.importTarget,
     baseConverterWorkspace.importTarget,
     gridWorkspace.importTarget,
-    simpleSteppedWorkspace.importTarget,
-    steppedCadWorkspace.importTarget,
     steppedWorkspace.importTarget,
   ]);
 

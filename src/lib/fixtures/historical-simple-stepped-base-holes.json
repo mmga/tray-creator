@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "mode": "simple-stepped",
+  "params": {
+    "trayWidth": 180,
+    "trayDepth": 110,
+    "rows": [
+      { "id": "row-1", "name": "磁铁孔低层", "slotIds": ["slot-1", "slot-2", "slot-3"] },
+      { "id": "row-2", "name": "磁铁孔高层", "slotIds": ["slot-4", "slot-5"] }
+    ],
+    "slots": [
+      { "id": "slot-1", "rowId": "row-1", "shape": "circle", "diameter": 32, "effectiveDiameter": 32.2, "x": -38, "y": 0 },
+      { "id": "slot-2", "rowId": "row-1", "shape": "circle", "diameter": 25, "effectiveDiameter": 25.2, "x": 0, "y": 0 },
+      { "id": "slot-3", "rowId": "row-1", "shape": "circle", "diameter": 32, "effectiveDiameter": 32.2, "x": 38, "y": 0 },
+      { "id": "slot-4", "rowId": "row-2", "shape": "circle", "diameter": 25, "effectiveDiameter": 25.2, "x": -18, "y": 0 },
+      { "id": "slot-5", "rowId": "row-2", "shape": "circle", "diameter": 25, "effectiveDiameter": 25.2, "x": 18, "y": 0 }
+    ],
+    "firstRowHeight": 9,
+    "stepHeight": 6,
+    "rowGap": 2,
+    "spacing": 5,
+    "outerMarginIndependent": false,
+    "outerMargin": 9,
+    "holeDepth": 3,
+    "cornerRadius": 4,
+    "baseHoleStructure": "magnetic-base-hole",
+    "magnetPostHoleDiameter": 5,
+    "magnetPostHoleDepth": 2,
+    "baseHoleSize": "25"
+  }
+}

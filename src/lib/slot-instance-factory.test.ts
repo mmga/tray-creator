@@ -63,7 +63,7 @@ describe("slot instance factory", () => {
         width: 75,
         height: 42,
         ellipseConfig: {
-          outerOffset: 0.6,
+          outerOffset: 0.2,
           profileExponent: 2.08,
         },
       }),
@@ -95,8 +95,8 @@ describe("slot instance factory", () => {
       height: 25,
       groupId: "group-1",
       slotDefinitionId: "circle-25",
-      slotWidth: 25.2,
-      slotHeight: 25.2,
+      slotWidth: 25.4,
+      slotHeight: 25.4,
     });
 
     expect(
@@ -112,7 +112,7 @@ describe("slot instance factory", () => {
       shape: "circle",
       diameter: 25,
       slotDefinitionId: "circle-25",
-      effectiveDiameter: 25.2,
+      effectiveDiameter: 25.4,
       x: 5,
       y: 0,
     });

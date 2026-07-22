@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { exportToSTL, generateCustomSTLFilename, generateSimpleSteppedSTLFilename, generateSTLFilename } from "@/lib/stl-export";
+import { exportToSTL, generateCustomSTLFilename, generateSTLFilename } from "@/lib/stl-export";
 
 const { serializeMock } = vi.hoisted(() => ({
   serializeMock: vi.fn(),
@@ -48,13 +48,10 @@ describe("stl export", () => {
     vi.useRealTimers();
   });
 
-  it("generates stable filenames for grid, custom, and simple stepped exports", () => {
+  it("generates stable filenames for grid and custom exports", () => {
     expect(generateSTLFilename(4, 3, 32)).toBe("tray_3x4_32mm.stl");
     expect(generateCustomSTLFilename(120, 90, 5)).toBe(
       "tray_custom_120x90_5slots.stl",
-    );
-    expect(generateSimpleSteppedSTLFilename(140, 110, 3, 7)).toBe(
-      "tray_simple_stepped_140x110_3rows_7slots.stl",
     );
   });
 });

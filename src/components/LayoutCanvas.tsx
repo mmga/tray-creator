@@ -6,7 +6,6 @@ import type {
   SteppedSlot,
 } from "@/types/custom-tray";
 import { MAX_BUILD_SIZE } from "@/lib/config";
-import { getCanvasDashAttributes } from "@/lib/canvas-dash-styles";
 import { buildCanvasCollisionState } from "@/lib/canvas-collision-model";
 import { calculateEffectiveBaseplate } from "@/lib/canvas-slot-geometry";
 import { isCustomSlotWithinFixedTrayUsableArea } from "@/lib/custom-layout-math";
@@ -18,7 +17,6 @@ import {
 } from "@/lib/canvas-selection-model";
 import {
   buildLayoutCanvasDragUpdates,
-  calculateLayoutCanvasMinimumTrayBounds,
   resolveLayoutCanvasDragStart,
 } from "@/lib/layout-canvas-interaction";
 import {
@@ -79,7 +77,7 @@ export default function LayoutCanvas({
   const {
     updateSlotPosition,
     removeSlot,
-    resizeTray,
+    removeSlots,
     updateSlotRotation,
     updateMultipleSlots,
     liveUpdateMultipleSlots,
@@ -87,6 +85,9 @@ export default function LayoutCanvas({
     duplicateSlots,
     undo,
     saveSnapshot,
+    beginContinuousEdit,
+    commitContinuousEdit,
+    cancelContinuousEdit,
     selectionChanged,
     editInteractionChanged,
   } = commands;
@@ -96,8 +97,8 @@ export default function LayoutCanvas({
     overlays: {
       focusedGroupId,
       groupOutlines,
-      rowBands,
       slotGroups,
+      footprintWarnings,
     },
     interactions: { slotHeightById, slotMoveScopeResolver },
   } = model;
@@ -122,7 +123,6 @@ export default function LayoutCanvas({
     null,
   );
   const [guideLines, setGuideLines] = useState<CanvasGuideLine[]>([]);
-  const [isResizingTray, setIsResizingTray] = useState(false);
   const [symmetryHighlightIds, setSymmetryHighlightIds] = useState<
     ReadonlySet<string>
   >(EMPTY_SET);
@@ -141,11 +141,6 @@ export default function LayoutCanvas({
     mouseStart: { x: number; y: number };
     slotOrigins: Map<string, { x: number; y: number }>;
     canMove: boolean;
-  } | null>(null);
-  const trayResizeRef = useRef<{
-    mode: "right" | "bottom" | "corner";
-    minWidth: number;
-    minDepth: number;
   } | null>(null);
 
   const {
@@ -190,8 +185,6 @@ export default function LayoutCanvas({
     trayWidth,
     trayDepth,
   });
-  const boundaryDash = getCanvasDashAttributes("boundary", zoom);
-
   const slotById = useMemo(
     () =>
       new Map<string, FreeSlot | SteppedSlot>(
@@ -365,31 +358,14 @@ export default function LayoutCanvas({
     applyLiveUpdates,
   });
 
-  useCanvasKeyboard({
-    enabled: isActive,
-    selectedIdsRef,
-    slotsRef,
-    onUpdateSlot: updateSlotPosition,
-    onRemoveSlot: removeSlot,
-    onDuplicateSlots: duplicateSlots,
-    onUndo: undo,
-    setSelectedIds,
-    setIsRotating,
-    setIsSpacePressed,
-    setIsPanning,
-    setShowHints,
-  });
-
   const clearPointerInteractionState = useCallback(() => {
     setDraggingId(null);
     setIsPanning(false);
     setSelectionBox(null);
     setIsRotating(false);
     setGuideLines([]);
-    setIsResizingTray(false);
     rotateStartRef.current = null;
     dragStartRef.current = null;
-    trayResizeRef.current = null;
   }, [setIsPanning]);
 
   const resetTransientCanvasState = useCallback(() => {
@@ -399,9 +375,44 @@ export default function LayoutCanvas({
     stopActionPanelResize();
   }, [clearPointerInteractionState, setIsSpacePressed, stopActionPanelResize]);
 
+  const cancelCanvasInteraction = useCallback(() => {
+    flushScheduledLiveUpdates();
+    cancelContinuousEdit?.();
+    editInteractionChanged?.(false);
+    primaryPointerIdRef.current = null;
+    clearPointerInteractionState();
+  }, [cancelContinuousEdit, clearPointerInteractionState, editInteractionChanged, flushScheduledLiveUpdates]);
+
+  const handleCanvasUndo = useCallback(() => {
+    flushScheduledLiveUpdates();
+    undo?.();
+    editInteractionChanged?.(false);
+    primaryPointerIdRef.current = null;
+    clearPointerInteractionState();
+  }, [clearPointerInteractionState, editInteractionChanged, flushScheduledLiveUpdates, undo]);
+
+  useCanvasKeyboard({
+    enabled: isActive,
+    selectedIdsRef,
+    slotsRef,
+    onUpdateSlot: updateSlotPosition,
+    onUpdateSlots: handleUpdateSlots,
+    onRemoveSlot: removeSlot,
+    onRemoveSlots: removeSlots,
+    onDuplicateSlots: duplicateSlots,
+    onUndo: handleCanvasUndo,
+    onCancelInteraction: cancelCanvasInteraction,
+    setSelectedIds,
+    setIsRotating,
+    setIsSpacePressed,
+    setIsPanning,
+    setShowHints,
+  });
+
   useEffect(() => {
     if (!isActive) {
       flushScheduledLiveUpdates();
+      cancelContinuousEdit?.();
       editInteractionChanged?.(false);
       const frame = window.requestAnimationFrame(() => {
         resetTransientCanvasState();
@@ -414,6 +425,7 @@ export default function LayoutCanvas({
     flushScheduledLiveUpdates,
     isActive,
     editInteractionChanged,
+    cancelContinuousEdit,
     resetTransientCanvasState,
   ]);
 
@@ -455,7 +467,6 @@ export default function LayoutCanvas({
     [boundarySpacing, sideBevelWidth, slots, trayDepth],
   );
 
-  const isSimpleSteppedCanvas = Boolean(rowBands);
   const fixedBoundaryViolationCount = useMemo(
     () =>
       fixedUsableArea
@@ -468,9 +479,9 @@ export default function LayoutCanvas({
     [collisionState.collisionMap, fixedUsableArea, slots],
   );
   const isEffectiveOversized =
-    (isSimpleSteppedCanvas || fixedUsableArea ? trayWidth : effectiveBaseplate.width) >
+    (fixedUsableArea ? trayWidth : effectiveBaseplate.width) >
       MAX_BUILD_SIZE ||
-    (isSimpleSteppedCanvas || fixedUsableArea ? trayDepth : effectiveBaseplate.height) >
+    (fixedUsableArea ? trayDepth : effectiveBaseplate.height) >
       MAX_BUILD_SIZE;
 
   const symmetryAxes =
@@ -492,16 +503,6 @@ export default function LayoutCanvas({
           ),
         }
       : null;
-
-  const minimumTrayBounds = useMemo(() => {
-    return calculateLayoutCanvasMinimumTrayBounds({
-      rowBands,
-      effectiveBaseplate,
-    });
-  }, [effectiveBaseplate, rowBands]);
-
-  const trayResizeHandleSize = 10 / zoom;
-  const trayResizeHitSize = 14 / zoom;
 
   const getSvgPointFromClient = (clientX: number, clientY: number) => {
     const svg = svgRef.current;
@@ -535,7 +536,11 @@ export default function LayoutCanvas({
       svgPoint.x - slotCenterX,
     );
 
-    saveSnapshot?.();
+    if (beginContinuousEdit) {
+      if (beginContinuousEdit() === false) return;
+    } else {
+      saveSnapshot?.();
+    }
     editInteractionChanged?.(true);
     setIsRotating(true);
     setDraggingId(slot.id);
@@ -544,37 +549,6 @@ export default function LayoutCanvas({
       startRotation: slot.rotation,
     };
   };
-
-  const startTrayResize = useCallback(
-    (
-      event: React.PointerEvent,
-      mode: "right" | "bottom" | "corner",
-    ) => {
-      if (!resizeTray || !rowBands) {
-        return;
-      }
-
-      event.preventDefault();
-      event.stopPropagation();
-      (event.target as Element)?.setPointerCapture?.(event.pointerId);
-      saveSnapshot?.();
-      editInteractionChanged?.(true);
-      trayResizeRef.current = {
-        mode,
-        minWidth: Math.max(1, minimumTrayBounds.width),
-        minDepth: Math.max(1, minimumTrayBounds.depth),
-      };
-      setIsResizingTray(true);
-    },
-    [
-      minimumTrayBounds.depth,
-      minimumTrayBounds.width,
-      editInteractionChanged,
-      resizeTray,
-      saveSnapshot,
-      rowBands,
-    ],
-  );
 
   const handlePointerMove = (event: React.PointerEvent) => {
     measurePerf("canvas.pointermove", () => {
@@ -602,31 +576,6 @@ export default function LayoutCanvas({
           }
         }
         panStartRef.current = { x: event.clientX, y: event.clientY };
-        return;
-      }
-
-      if (rowBands && trayResizeRef.current && resizeTray) {
-        const svgPoint = getSvgPointFromClient(event.clientX, event.clientY);
-        if (!svgPoint) {
-          return;
-        }
-
-        const nextWidth = Math.max(
-          trayResizeRef.current.minWidth,
-          svgPoint.x,
-        );
-        const nextDepth = Math.max(
-          trayResizeRef.current.minDepth,
-          svgPoint.y,
-        );
-
-        if (trayResizeRef.current.mode === "right") {
-          resizeTray(nextWidth, trayDepth);
-        } else if (trayResizeRef.current.mode === "bottom") {
-          resizeTray(trayWidth, nextDepth);
-        } else {
-          resizeTray(nextWidth, nextDepth);
-        }
         return;
       }
 
@@ -807,7 +756,11 @@ export default function LayoutCanvas({
         return;
       }
 
-      saveSnapshot?.();
+      if (beginContinuousEdit) {
+        if (beginContinuousEdit() === false) return;
+      } else {
+        saveSnapshot?.();
+      }
       editInteractionChanged?.(true);
       setDraggingId(slotId);
 
@@ -839,8 +792,13 @@ export default function LayoutCanvas({
     }
   };
 
-  const handlePointerUp = () => {
+  const finishPointerInteraction = (cancelled: boolean) => {
     flushScheduledLiveUpdates();
+    if (cancelled) {
+      cancelContinuousEdit?.();
+    } else {
+      commitContinuousEdit?.();
+    }
     editInteractionChanged?.(false);
     primaryPointerIdRef.current = null;
 
@@ -903,9 +861,9 @@ export default function LayoutCanvas({
           style={{ touchAction: "none" }}
           onPointerDown={(event) => handlePointerDown(event)}
           onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerLeave={handlePointerUp}
-          onPointerCancel={handlePointerUp}
+          onPointerUp={() => finishPointerInteraction(false)}
+          onPointerLeave={() => finishPointerInteraction(false)}
+          onPointerCancel={() => finishPointerInteraction(true)}
           onWheel={handleWheel}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
@@ -917,19 +875,6 @@ export default function LayoutCanvas({
           }}
           preserveAspectRatio="xMidYMid meet"
         >
-          {isSimpleSteppedCanvas && (
-            <rect
-              x={0}
-              y={0}
-              width={MAX_BUILD_SIZE}
-              height={MAX_BUILD_SIZE}
-              fill="none"
-              stroke="#38bdf8"
-              {...boundaryDash}
-              pointerEvents="none"
-            />
-          )}
-
           <CanvasOverlayLayer
             trayWidth={trayWidth}
             trayDepth={trayDepth}
@@ -949,63 +894,6 @@ export default function LayoutCanvas({
             guideLines={guideLines}
             outlinePreview={groupOutlines}
           />
-
-          {rowBands?.map((band) => (
-            <rect
-              key={band.id}
-              x={band.x}
-              y={trayDepth - band.y - band.depth}
-              width={band.width}
-              height={band.depth}
-              fill={band.isActive ? "#a1620730" : "#78716c18"}
-              stroke={band.isActive ? "#fbbf24" : "#78716c"}
-              strokeWidth={band.isActive ? 0.8 / zoom : boundaryDash.strokeWidth}
-              strokeDasharray={band.isActive ? undefined : boundaryDash.strokeDasharray}
-              strokeOpacity={band.isActive ? 0.95 : boundaryDash.strokeOpacity}
-              pointerEvents="none"
-            />
-          ))}
-
-          {resizeTray && isSimpleSteppedCanvas && (
-            <>
-              <rect
-                x={trayWidth - trayResizeHitSize / 2}
-                y={0}
-                width={trayResizeHitSize}
-                height={trayDepth}
-                fill="transparent"
-                style={{ cursor: "ew-resize" }}
-                onPointerDown={(event) => startTrayResize(event, "right")}
-              />
-              <rect
-                x={0}
-                y={trayDepth - trayResizeHitSize / 2}
-                width={trayWidth}
-                height={trayResizeHitSize}
-                fill="transparent"
-                style={{ cursor: "ns-resize" }}
-                onPointerDown={(event) => startTrayResize(event, "bottom")}
-              />
-              <rect
-                x={trayWidth - trayResizeHitSize}
-                y={trayDepth - trayResizeHitSize}
-                width={trayResizeHitSize}
-                height={trayResizeHitSize}
-                fill="transparent"
-                style={{ cursor: "nwse-resize" }}
-                onPointerDown={(event) => startTrayResize(event, "corner")}
-              />
-              <rect
-                x={trayWidth - trayResizeHandleSize}
-                y={trayDepth - trayResizeHandleSize}
-                width={trayResizeHandleSize}
-                height={trayResizeHandleSize}
-                fill={isResizingTray ? "#fbbf24" : "#8b7355"}
-                fillOpacity={0.8}
-                pointerEvents="none"
-              />
-            </>
-          )}
 
           <CanvasSlotLayer
             slots={slots as Array<FreeSlot | SteppedSlot>}
@@ -1055,14 +943,15 @@ export default function LayoutCanvas({
           selectedIds={effectiveSelectedIds}
           slots={slots}
           collisionErrorCount={collisionState.collisionErrorCount}
+          footprintWarnings={footprintWarnings}
         />
 
         {isEffectiveOversized && (
           <div className="absolute top-14 right-3 z-72 px-3 py-1.5 bg-[#3b1515]/90 border border-[#8b1a1a] rounded-sm text-xs text-[#f2b8b8] font-mono backdrop-blur-sm">
-            {isSimpleSteppedCanvas || fixedUsableArea ? "打印边框超限" : "有效底板超限"}:{" "}
-            {(isSimpleSteppedCanvas || fixedUsableArea ? trayWidth : effectiveBaseplate.width).toFixed(0)}{" "}
+            {fixedUsableArea ? "打印边框超限" : "有效底板超限"}:{" "}
+            {(fixedUsableArea ? trayWidth : effectiveBaseplate.width).toFixed(0)}{" "}
             ×{" "}
-            {(isSimpleSteppedCanvas || fixedUsableArea ? trayDepth : effectiveBaseplate.height).toFixed(0)}{" "}
+            {(fixedUsableArea ? trayDepth : effectiveBaseplate.height).toFixed(0)}{" "}
             mm
           </div>
         )}
@@ -1103,7 +992,7 @@ export default function LayoutCanvas({
           selectedSlots={selectedSymmetrySlots}
           unselectedSlots={unselectedSymmetrySlots}
           enableCopyPreview={
-            isActive && !effectiveDraggingId && !isRotating && !isResizingTray
+            isActive && !effectiveDraggingId && !isRotating
           }
           slots={slots as Array<FreeSlot | SteppedSlot>}
           onUpdateSlots={handleUpdateSlots}

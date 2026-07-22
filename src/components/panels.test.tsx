@@ -12,8 +12,6 @@ import {
   PARAM_CONFIG,
 } from "@/lib/grid-config";
 import { calculateCustomEffectiveDimensions } from "@/lib/custom-layout-math";
-import { calculateSimpleSteppedDimensions, deriveSimpleSteppedLayout } from "@/lib/simple-stepped-layout";
-import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import { buildSteppedPerfFixture } from "@/lib/stepped-perf-fixtures";
 import { STEPPED_LAYOUT_DEFAULTS, STEPPED_LIMITS } from "@/lib/stepped-config";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
@@ -203,11 +201,7 @@ vi.mock("@/components/ui/ParamSlider", () => ({
 
 import CustomPanelImplementation from "@/components/CustomPanel";
 import ParameterPanelImplementation from "@/components/ParameterPanel";
-import SimpleSteppedPanelImplementation from "@/components/SimpleSteppedPanel";
-import {
-  SteppedCadPanel as SteppedCadPanelImplementation,
-  SteppedLayoutPanel as SteppedLayoutPanelImplementation,
-} from "@/components/SteppedPanel";
+import { SteppedLayoutPanel as SteppedLayoutPanelImplementation } from "@/components/SteppedPanel";
 
 const panelActionsStub = <div data-testid="panel-actions-stub" />;
 
@@ -247,28 +241,36 @@ function CustomPanel(
   return <CustomPanelImplementation {...rest} actions={actions} isPreviewStale={isPreviewStale} />;
 }
 
-function SimpleSteppedPanel(
-  props: Omit<React.ComponentProps<typeof SimpleSteppedPanelImplementation>, "actions"> &
-    { actions?: React.ReactNode },
-) {
-  const { actions = panelActionsStub, ...rest } = props;
-  return <SimpleSteppedPanelImplementation {...rest} actions={actions} />;
-}
-
 function SteppedLayoutPanel(
-  props: Omit<React.ComponentProps<typeof SteppedLayoutPanelImplementation>, "actions"> &
-    { actions?: React.ReactNode },
+  props: Omit<
+    React.ComponentProps<typeof SteppedLayoutPanelImplementation>,
+    "actions" | "onUpdateGroupSplitPartTarget"
+  > & {
+    actions?: React.ReactNode;
+    onUpdateGroupSplitPartTarget?: React.ComponentProps<
+      typeof SteppedLayoutPanelImplementation
+    >["onUpdateGroupSplitPartTarget"];
+  },
 ) {
-  const { actions = panelActionsStub, ...rest } = props;
-  return <SteppedLayoutPanelImplementation {...rest} actions={actions} />;
-}
-
-function SteppedCadPanel(
-  props: Omit<React.ComponentProps<typeof SteppedCadPanelImplementation>, "actions"> &
-    { actions?: React.ReactNode },
-) {
-  const { actions = panelActionsStub, ...rest } = props;
-  return <SteppedCadPanelImplementation {...rest} actions={actions} />;
+  const {
+    actions = panelActionsStub,
+    onUpdateGroupSplitPartTarget = vi.fn(),
+    ...rest
+  } = props;
+  const requestedActiveGroupId = rest.activeGroupId ?? rest.params.activeGroupId;
+  const activeGroupId = rest.params.groups.some(
+    (group) => group.id === requestedActiveGroupId,
+  )
+    ? requestedActiveGroupId
+    : rest.params.groups[0]?.id ?? null;
+  return (
+    <SteppedLayoutPanelImplementation
+      {...rest}
+      activeGroupId={activeGroupId}
+      actions={actions}
+      onUpdateGroupSplitPartTarget={onUpdateGroupSplitPartTarget}
+    />
+  );
 }
 
 const HUNDRED_MM_PRESET = BASE_PRESETS.find(
@@ -312,47 +314,6 @@ function createSteppedParams(overrides?: Partial<SteppedLayoutParams>) {
       },
     ],
     activeGroupId: "group-1",
-    ...overrides,
-  };
-}
-
-function createSimpleSteppedParams(
-  overrides?: Partial<React.ComponentProps<typeof SimpleSteppedPanel>["params"]>,
-) {
-  return {
-    ...SIMPLE_STEPPED_LAYOUT_DEFAULTS,
-    trayWidth: 150,
-    trayDepth: 130,
-    rows: [
-      { id: "row-1", name: "前排", slotIds: ["slot-1"] },
-      { id: "row-2", name: "后排", slotIds: ["slot-2"] },
-    ],
-    slots: [
-      {
-        id: "slot-1",
-        rowId: "row-1",
-        shape: "circle" as const,
-        diameter: 25,
-        x: 0,
-        y: 0,
-      },
-      {
-        id: "slot-2",
-        rowId: "row-2",
-        shape: "circle" as const,
-        diameter: 40,
-        x: 12,
-        y: 0,
-      },
-    ],
-    firstRowHeight: 5,
-    stepHeight: 4,
-    rowGap: 6,
-    spacing: 5,
-    outerMarginIndependent: false,
-    outerMargin: 5,
-    holeDepth: 3,
-    cornerRadius: 4,
     ...overrides,
   };
 }
@@ -1007,255 +968,34 @@ describe("CustomPanel", { timeout: 15000 }, () => {
     );
     expect(updateParam).toHaveBeenNthCalledWith(3, "sideBevelWidth", 0.5);
   });
-});
 
-describe("SimpleSteppedPanel", { timeout: 15000 }, () => {
-  it("routes row management and slot insertion controls", () => {
-    const params = createSimpleSteppedParams();
-    const derivedLayout = deriveSimpleSteppedLayout(params, "row-1");
-    const effectiveDimensions = calculateSimpleSteppedDimensions(params);
-    const onSetActiveRow = vi.fn();
-    const onAddRow = vi.fn();
-    const onRemoveRow = vi.fn();
-    const onRenameRow = vi.fn();
-    const onClearRow = vi.fn();
-    const onReorderRows = vi.fn();
-    const onAddSlotToRow = vi.fn();
-
-    render(
-      <SimpleSteppedPanel
-        params={params}
-        derivedLayout={derivedLayout}
-        activeRowId="row-1"
-        effectiveDimensions={effectiveDimensions}
-        updateParam={vi.fn()}
-        onSetActiveRow={onSetActiveRow}
-        onAddRow={onAddRow}
-        onRemoveRow={onRemoveRow}
-        onRenameRow={onRenameRow}
-        onClearRow={onClearRow}
-        onReorderRows={onReorderRows}
-        onAddSlotToRow={onAddSlotToRow}
-        onTrimTray={vi.fn()}
-        isGenerating={false}
-        isPreviewStale={false}
-        volume={0}
-      />,
-    );
-
-    fireEvent.change(screen.getByDisplayValue("前排"), {
-      target: { value: "第一排" },
-    });
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: String(HUNDRED_MM_PRESET.diameter),
-      }),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "清空本行" }));
-    fireEvent.click(screen.getByText("后排"));
-    fireEvent.click(screen.getAllByTitle("下移")[0]!);
-    fireEvent.click(screen.getAllByTitle("删除行")[0]!);
-    fireEvent.click(screen.getByRole("button", { name: "新建行" }));
-
-    expect(onRenameRow).toHaveBeenCalledWith("row-1", "第一排");
-    expect(onAddSlotToRow).toHaveBeenCalledWith(
-      "row-1",
-      HUNDRED_MM_PRESET.diameter,
-    );
-    expect(onClearRow).toHaveBeenCalledWith("row-1");
-    expect(onSetActiveRow).toHaveBeenCalledWith("row-2");
-    expect(onReorderRows).toHaveBeenCalledWith(0, 1);
-    expect(onRemoveRow).toHaveBeenCalledWith("row-1");
-    expect(onAddRow).toHaveBeenCalledTimes(1);
-  });
-
-  it("routes structure and trim controls", () => {
-    const params = createSimpleSteppedParams({
-      outerMarginIndependent: true,
-      outerMargin: 8,
-    });
-    const derivedLayout = deriveSimpleSteppedLayout(params, "row-1");
-    const effectiveDimensions = calculateSimpleSteppedDimensions(params);
+  it("贴合轮廓显示并路由平滑与断连参数", () => {
     const updateParam = vi.fn();
-    const onTrimTray = vi.fn();
-
     render(
-      <SimpleSteppedPanel
-        params={params}
-        derivedLayout={derivedLayout}
-        activeRowId="row-1"
-        effectiveDimensions={effectiveDimensions}
-        updateParam={updateParam}
-        onSetActiveRow={vi.fn()}
-        onAddRow={vi.fn()}
-        onRemoveRow={vi.fn()}
-        onRenameRow={vi.fn()}
-        onClearRow={vi.fn()}
-        onReorderRows={vi.fn()}
-        onAddSlotToRow={vi.fn()}
-        onTrimTray={onTrimTray}
-        isGenerating={false}
-        isPreviewStale={true}
-        volume={1000}
-      />,
-    );
-
-    expect(screen.getByText("预览待更新")).toBeInTheDocument();
-    expandResultSummary();
-    expect(screen.getByText("0.7 g")).toBeInTheDocument();
-
-    fireEvent.click(
-      screen.getByRole("switch", {
-        name: "simple-stepped-outer-margin-independent",
-      }),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "设置首排高度:5" }));
-    fireEvent.click(screen.getByRole("button", { name: "设置阶梯步进:4" }));
-    fireEvent.click(screen.getByRole("button", { name: "设置行间距:6" }));
-    fireEvent.click(screen.getByRole("button", { name: "设置凹槽间距:5" }));
-    fireEvent.click(screen.getByRole("button", { name: "设置边界间距:8" }));
-    fireEvent.click(screen.getByRole("button", { name: "设置凹槽深度:3" }));
-    fireEvent.click(screen.getByRole("button", { name: "设置底板圆角:4" }));
-    fireEvent.click(screen.getByRole("button", { name: "Trim 到凹槽占用区域" }));
-
-    expect(updateParam).toHaveBeenNthCalledWith(
-      1,
-      "outerMarginIndependent",
-      false,
-    );
-    expect(updateParam).toHaveBeenNthCalledWith(2, "firstRowHeight", 5.5);
-    expect(updateParam).toHaveBeenNthCalledWith(3, "stepHeight", 4.5);
-    expect(updateParam).toHaveBeenNthCalledWith(4, "rowGap", 7);
-    expect(updateParam).toHaveBeenNthCalledWith(5, "spacing", 6);
-    expect(updateParam).toHaveBeenNthCalledWith(6, "outerMargin", 9);
-    expect(updateParam).toHaveBeenNthCalledWith(7, "holeDepth", 3.2);
-    expect(updateParam).toHaveBeenNthCalledWith(8, "cornerRadius", 5);
-    expect(onTrimTray).toHaveBeenCalledTimes(1);
-  });
-
-  it("shows disabled states when no row is active, nothing can trim, and the layout is oversized", () => {
-    const params = createSimpleSteppedParams();
-    const derivedLayout = deriveSimpleSteppedLayout(params, null);
-
-    render(
-      <SimpleSteppedPanel
-        params={params}
-        derivedLayout={{
-          ...derivedLayout,
-          trayWidth: derivedLayout.minimumTrayWidth,
-          trayDepth: derivedLayout.minimumTrayDepth,
+      <CustomPanel
+        params={{
+          ...CUSTOM_LAYOUT_DEFAULTS,
+          footprintStyle: "contoured",
+          smoothingRadius: 60,
+          disconnectDistance: 0,
         }}
-        activeRowId={null}
-        effectiveDimensions={{ width: 300, depth: 280, height: 12 }}
-        updateParam={vi.fn()}
-        onSetActiveRow={vi.fn()}
-        onAddRow={vi.fn()}
-        onRemoveRow={vi.fn()}
-        onRenameRow={vi.fn()}
-        onClearRow={vi.fn()}
-        onReorderRows={vi.fn()}
-        onAddSlotToRow={vi.fn()}
-        onTrimTray={vi.fn()}
+        effectiveDimensions={{ width: 120, depth: 140 }}
+        updateParam={updateParam}
+        onAddSlot={vi.fn()}
         isGenerating={false}
-        isPreviewStale={false}
         volume={0}
       />,
     );
 
-    expect(screen.getByText("请先选择一行")).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: /25/ })[0]).toBeDisabled();
-    expect(
-      screen.getByRole("button", { name: "Trim 到凹槽占用区域" }),
-    ).toBeDisabled();
-    expect(screen.getByText("超出常规尺寸")).toBeInTheDocument();
-  });
+    fireEvent.click(screen.getByRole("button", { name: "设置平滑半径:60" }));
+    fireEvent.click(screen.getByRole("button", { name: "设置槽群断连距离:0" }));
 
-  it("renders the empty-row state and only allows creating a new row", () => {
-    const onAddRow = vi.fn();
-    const params = createSimpleSteppedParams({
-      rows: [],
-      slots: [],
-    });
-    const derivedLayout = deriveSimpleSteppedLayout(params, null);
-
-    render(
-      <SimpleSteppedPanel
-        params={params}
-        derivedLayout={derivedLayout}
-        activeRowId={null}
-        effectiveDimensions={{ width: 0, depth: 0, height: 0 }}
-        updateParam={vi.fn()}
-        onSetActiveRow={vi.fn()}
-        onAddRow={onAddRow}
-        onRemoveRow={vi.fn()}
-        onRenameRow={vi.fn()}
-        onClearRow={vi.fn()}
-        onReorderRows={vi.fn()}
-        onAddSlotToRow={vi.fn()}
-        onTrimTray={vi.fn()}
-        isGenerating={false}
-        isPreviewStale={false}
-        volume={0}
-      />,
-    );
-
-    expect(
-      screen.getByText("还没有行，先新建一行再开始排布凹槽。"),
-    ).toBeInTheDocument();
-    expect(screen.getByText("请先选择一行")).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: /25/ })[0]!).toBeDisabled();
-
-    fireEvent.click(screen.getByRole("button", { name: "新建行" }));
-
-    expect(onAddRow).toHaveBeenCalledTimes(1);
-  });
-
-  it("renders fallback row metrics and generating state for rows missing derived layout", () => {
-    const params = createSimpleSteppedParams({
-      rows: [
-        { id: "row-1", name: "前排", slotIds: ["slot-1"] },
-        { id: "row-2", name: "空白排", slotIds: [] },
-      ],
-      slots: [
-        {
-          id: "slot-1",
-          rowId: "row-1",
-          shape: "circle" as const,
-          diameter: 25,
-          x: 0,
-          y: 0,
-        },
-      ],
-    });
-    const derivedLayout = deriveSimpleSteppedLayout(params, "row-2");
-
-    render(
-      <SimpleSteppedPanel
-        params={params}
-        derivedLayout={derivedLayout}
-        activeRowId="row-2"
-        effectiveDimensions={{ width: 120, depth: 130, height: 9 }}
-        updateParam={vi.fn()}
-        onSetActiveRow={vi.fn()}
-        onAddRow={vi.fn()}
-        onRemoveRow={vi.fn()}
-        onRenameRow={vi.fn()}
-        onClearRow={vi.fn()}
-        onReorderRows={vi.fn()}
-        onAddSlotToRow={vi.fn()}
-        onTrimTray={vi.fn()}
-        isGenerating={true}
-        isPreviewStale={false}
-        volume={0}
-      />,
-    );
-
-    expect(screen.getByText("0 槽位 / 空行")).toBeInTheDocument();
-    expect(screen.getByText("正在锻造")).toBeInTheDocument();
-    expect(screen.getByText("-")).toBeInTheDocument();
-    expect(screen.getAllByText("0mm")).toHaveLength(2);
+    expect(updateParam).toHaveBeenNthCalledWith(1, "smoothingRadius", 61);
+    expect(updateParam).toHaveBeenNthCalledWith(2, "disconnectDistance", 1);
+    expect(screen.queryByText("侧面斜面宽度")).not.toBeInTheDocument();
   });
 });
+
 
 describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
   beforeEach(() => {
@@ -1456,8 +1196,8 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
     const onUpdateGroupSplitPartTarget = vi.fn();
 
     render(
-      <SteppedCadPanel
-        params={createSteppedParams()}
+      <SteppedLayoutPanel
+        params={createSteppedParams({ enableSplitAssembly: true })}
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
         updateParam={vi.fn()}
@@ -1549,17 +1289,18 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
     expect(onAddGroup).toHaveBeenCalledTimes(1);
   });
 
-  it("adds slots from presets and updates CAD stepped structure controls", () => {
+  it("adds slots from presets and updates stepped structure controls", () => {
     const updateParam = vi.fn();
     const onAddSlot = vi.fn();
 
     render(
-      <SteppedCadPanel
+      <SteppedLayoutPanel
         params={createSteppedParams({
           activeGroupId: "group-2",
           spacing: 5,
           holeDepth: 3,
           splitGrooveDepth: 2,
+          enableSplitAssembly: true,
           smoothingRadius: 14,
           disconnectDistance: 2,
         })}
@@ -1635,7 +1376,7 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
     expect(updateParam).toHaveBeenNthCalledWith(5, "disconnectDistance", 3);
   });
 
-  it("hides split controls in non-CAD stepped mode", () => {
+  it("默认关闭分件能力但始终提供椭圆凹槽", () => {
     render(
       <SteppedLayoutPanel
         params={createSteppedParams({
@@ -1670,7 +1411,7 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
       />,
     );
 
-    // 类型保证普通阶梯组件没有 CAD 专属字段；这里断言 CAD 专属内容不渲染。
+    expect(screen.getByRole("switch", { name: "启用分件与装配" })).not.toBeChecked();
     expect(
       screen.queryByRole("button", { name: "设置装配槽深度:2" }),
     ).not.toBeInTheDocument();
@@ -1679,16 +1420,17 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
     expect(screen.queryByText("定位柱")).not.toBeInTheDocument();
     expect(screen.queryByText("拆件归并")).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: ELLIPSE_PRESETS[0].name }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("button", { name: ELLIPSE_PRESETS[0].name }),
+    ).toBeInTheDocument();
   });
 
-  it("routes CAD split groove type and locator controls", () => {
+  it("启用后路由分件凹槽类型与定位柱控件", () => {
     const updateParam = vi.fn();
 
     render(
-      <SteppedCadPanel
+      <SteppedLayoutPanel
         params={createSteppedParams({
+          enableSplitAssembly: true,
           enableSplitRecess: false,
           splitGrooveType: "profile",
           enableSplitLocators: false,
@@ -1817,7 +1559,7 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
     };
 
     const { unmount } = render(
-      <SteppedCadPanel
+      <SteppedLayoutPanel
         {...commonProps}
         onUpdateGroupSplitPartTarget={vi.fn()}
       />,

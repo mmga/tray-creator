@@ -12,6 +12,7 @@ function createParams(): SteppedLayoutParams {
   return {
     trayWidth: 260,
     trayDepth: 260,
+    enableSplitAssembly: true,
     slots: [
       {
         id: "slot-low",
@@ -477,5 +478,33 @@ describe("stepped cad tray model", () => {
     expect(insetHighMinZ).toBeLessThan(plainHighMinZ - 1.5);
     expect(insetBottomArea).toBeGreaterThan(0);
     expect(insetBottomArea).toBeLessThan(profileBottomArea * 0.95);
+  });
+
+  it("Rectangular Stepped Footprint 生成正体积主模型", () => {
+    const params = {
+      ...createParams(),
+      footprintStyle: "rectangular" as const,
+      traySizingMode: "auto" as const,
+      cornerRadius: 6,
+      boundarySpacing: 5,
+      boundarySpacingIndependent: true,
+    };
+    const geometry = createSteppedCadTrayModel(params);
+    expect(measureVolume(geometry)).toBeGreaterThan(0);
+  });
+
+  it("Rectangular Stepped Footprint 生成有效的拆件", () => {
+    const params = {
+      ...createParams(),
+      footprintStyle: "rectangular" as const,
+      cornerRadius: 4,
+      boundarySpacing: 5,
+      boundarySpacingIndependent: true,
+    };
+    const parts = createSteppedCadSplitParts(params, 2);
+    expect(parts.length).toBeGreaterThan(0);
+    for (const part of parts) {
+      expect(measureVolume(part.geometry)).toBeGreaterThan(0);
+    }
   });
 });

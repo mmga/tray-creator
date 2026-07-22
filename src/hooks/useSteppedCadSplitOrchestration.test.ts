@@ -15,7 +15,7 @@ const {
   generateSplitPreviewMock: vi.fn(),
   exportSplitPartsMock: vi.fn(),
   trayWorkerServiceMock: {
-    generateSteppedCadSplitParts: vi.fn(),
+    generateSteppedSplitParts: vi.fn(),
     generateSteppedOutlinePreview: vi.fn(),
     exportSTL: vi.fn(),
   },
@@ -38,9 +38,14 @@ vi.mock("@/lib/download-port", () => ({
 
 import { useSteppedCadSplitOrchestration } from "@/hooks/useSteppedCadSplitOrchestration";
 
+const editMock = vi.fn();
+const previewEditMock = vi.fn();
+const editPorts = { edit: editMock, previewEdit: previewEditMock };
+
 function createParams(): SteppedLayoutParams {
   return {
     ...STEPPED_LAYOUT_DEFAULTS,
+    enableSplitAssembly: true,
     groups: [
       { ...STEPPED_LAYOUT_DEFAULTS.groups[0], id: "group-1" },
       {
@@ -70,6 +75,67 @@ describe("useSteppedCadSplitOrchestration", () => {
     toastMock.mockReset();
     generateSplitPreviewMock.mockReset();
     exportSplitPartsMock.mockReset();
+    editMock.mockReset();
+    previewEditMock.mockReset();
+  });
+
+  it("总开关关闭时阻断分件预览和导出", async () => {
+    const params = { ...createParams(), enableSplitAssembly: false };
+    const { result } = renderHook(() =>
+      useSteppedCadSplitOrchestration({
+        ...editPorts,
+        params,
+        generateSplitPreview: generateSplitPreviewMock,
+        exportSplitParts: exportSplitPartsMock,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.handleGenerateSplitPreview();
+      await result.current.handleExportSplitParts();
+    });
+
+    expect(generateSplitPreviewMock).not.toHaveBeenCalled();
+    expect(exportSplitPartsMock).not.toHaveBeenCalled();
+    expect(toastMock).toHaveBeenCalledWith("error", "请先启用分件与装配");
+  });
+
+  it("通过共享事务 Interface 提交拆分编辑意图", () => {
+    const { result } = renderHook(() =>
+      useSteppedCadSplitOrchestration({
+        ...editPorts,
+        params: createParams(),
+        generateSplitPreview: generateSplitPreviewMock,
+        exportSplitParts: exportSplitPartsMock,
+      }),
+    );
+
+    act(() => {
+      result.current.updateSplitParam("enableSplitLocators", true);
+      result.current.previewSplitParam("splitGrooveDepth", 2.4);
+      result.current.setSplitGrooveType("inset");
+      result.current.updateGroupSplitPartTarget("group-1", "group-2");
+    });
+
+    expect(editMock).toHaveBeenNthCalledWith(1, {
+      type: "param.update",
+      key: "enableSplitLocators",
+      value: true,
+    });
+    expect(previewEditMock).toHaveBeenCalledWith({
+      type: "param.update",
+      key: "splitGrooveDepth",
+      value: 2.4,
+    });
+    expect(editMock).toHaveBeenNthCalledWith(2, {
+      type: "params.patch",
+      patch: { enableSplitRecess: true, splitGrooveType: "inset" },
+    });
+    expect(editMock).toHaveBeenNthCalledWith(3, {
+      type: "group.split-target",
+      groupId: "group-1",
+      targetGroupId: "group-2",
+    });
   });
 
   it("生成拆件预览并在 params 失效时释放旧资源", async () => {
@@ -78,13 +144,15 @@ describe("useSteppedCadSplitOrchestration", () => {
     generateSplitPreviewMock.mockResolvedValue([createPart(dispose)]);
 
     const { result, rerender } = renderHook(
-      ({ currentParams }) =>
+      ({ currentParams, transactionRevision }) =>
         useSteppedCadSplitOrchestration({
+          ...editPorts,
           params: currentParams,
+          transactionRevision,
           generateSplitPreview: generateSplitPreviewMock,
           exportSplitParts: exportSplitPartsMock,
         }),
-      { initialProps: { currentParams: params } },
+      { initialProps: { currentParams: params, transactionRevision: 0 } },
     );
 
     await act(async () => {
@@ -98,7 +166,10 @@ describe("useSteppedCadSplitOrchestration", () => {
     expect(result.current.splitPreviewParts).toHaveLength(1);
     expect(result.current.isGeneratingSplitPreview).toBe(false);
 
-    rerender({ currentParams: { ...params, trayWidth: params.trayWidth + 1 } });
+    rerender({
+      currentParams: { ...params, trayWidth: params.trayWidth + 1 },
+      transactionRevision: 1,
+    });
 
     await waitFor(() => {
       expect(result.current.splitPreviewParts).toBeNull();
@@ -116,6 +187,7 @@ describe("useSteppedCadSplitOrchestration", () => {
 
     const { result, unmount } = renderHook(() =>
       useSteppedCadSplitOrchestration({
+        ...editPorts,
         params,
         generateSplitPreview: generateSplitPreviewMock,
         exportSplitParts: exportSplitPartsMock,
@@ -152,6 +224,7 @@ describe("useSteppedCadSplitOrchestration", () => {
     const { result, rerender } = renderHook(
       ({ params }) =>
         useSteppedCadSplitOrchestration({
+          ...editPorts,
           params,
           generateSplitPreview: generateSplitPreviewMock,
           exportSplitParts: exportSplitPartsMock,
@@ -180,11 +253,12 @@ describe("useSteppedCadSplitOrchestration", () => {
     expect(result.current.isGeneratingSplitPreview).toBe(false);
   });
 
-  it("使用 CAD Mode Snapshot 导出分件并保留成功提示", async () => {
+  it("使用统一阶梯 Mode Snapshot 导出分件并保留成功提示", async () => {
     const params = createParams();
     exportSplitPartsMock.mockResolvedValue(undefined);
     const { result } = renderHook(() =>
       useSteppedCadSplitOrchestration({
+        ...editPorts,
         params,
         generateSplitPreview: generateSplitPreviewMock,
         exportSplitParts: exportSplitPartsMock,
@@ -195,17 +269,18 @@ describe("useSteppedCadSplitOrchestration", () => {
       await result.current.handleExportSplitParts();
     });
 
-    expect(exportSplitPartsMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        mode: "stepped-cad",
-        params,
-      }),
-      trayWorkerServiceMock,
-      browserDownloadPortMock,
-    );
+    const [snapshot, workerPort, downloadPort] = exportSplitPartsMock.mock.calls[0];
+    expect(snapshot).toMatchObject({ mode: "stepped" });
+    expect(snapshot.params).toMatchObject({
+      groups: params.groups,
+      enableSplitAssembly: true,
+    });
+    expect(snapshot.params).not.toHaveProperty("activeGroupId");
+    expect(workerPort).toBe(trayWorkerServiceMock);
+    expect(downloadPort).toBe(browserDownloadPortMock);
     expect(toastMock).toHaveBeenCalledWith(
       "success",
-      "CAD 拆件文件已导出",
+      "阶梯分件文件已导出",
     );
   });
 
@@ -214,6 +289,7 @@ describe("useSteppedCadSplitOrchestration", () => {
     params.groups = [params.groups[0]];
     const { result } = renderHook(() =>
       useSteppedCadSplitOrchestration({
+        ...editPorts,
         params,
         generateSplitPreview: generateSplitPreviewMock,
         exportSplitParts: exportSplitPartsMock,
@@ -251,6 +327,7 @@ describe("useSteppedCadSplitOrchestration", () => {
     };
     const { result } = renderHook(() =>
       useSteppedCadSplitOrchestration({
+        ...editPorts,
         params,
         generateSplitPreview: generateSplitPreviewMock,
         exportSplitParts: exportSplitPartsMock,
@@ -274,6 +351,7 @@ describe("useSteppedCadSplitOrchestration", () => {
     exportSplitPartsMock.mockRejectedValue(new Error("export failed"));
     const { result } = renderHook(() =>
       useSteppedCadSplitOrchestration({
+        ...editPorts,
         params: createParams(),
         generateSplitPreview: generateSplitPreviewMock,
         exportSplitParts: exportSplitPartsMock,

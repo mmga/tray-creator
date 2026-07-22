@@ -3,7 +3,6 @@ import { act, fireEvent, render, renderHook, screen, waitFor } from "@testing-li
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
-import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 
 const {
@@ -55,7 +54,7 @@ vi.mock("@/components/PanelActionSection", () => ({
         data-generate-state={adapter.state.generate.state}
         data-export-state={adapter.state.exportWhole.state}
         data-stale={String(adapter.state.stale)}
-        data-can-split={adapter.kind === "stepped-cad" ? String(adapter.state.exportSplit.state === "available") : undefined}
+        data-can-split={adapter.kind === "stepped" ? String(adapter.state.exportSplit.state === "available") : undefined}
       >
         {adapter.kind === "automatic" ? (
           <button type="button" onClick={() => void adapter.perform({ type: "set-auto-preview", enabled: !adapter.state.preview.enabled })}>
@@ -64,7 +63,7 @@ vi.mock("@/components/PanelActionSection", () => ({
         ) : null}
         <button type="button" onClick={() => void adapter.perform({ type: "generate" })}>锻造</button>
         <button type="button" onClick={() => void adapter.perform({ type: "export-whole" })}>完整导出</button>
-        {adapter.kind === "stepped-cad" ? (
+        {adapter.kind === "stepped" ? (
           <button type="button" onClick={() => void adapter.perform({ type: "export-split" })}>分件导出</button>
         ) : null}
         <button type="button" onClick={() => void adapter.perform({ type: "reset" })}>重置</button>
@@ -76,9 +75,7 @@ vi.mock("@/components/PanelActionSection", () => ({
 
 import { useGridWorkspace } from "@/workspaces/grid/useGridWorkspace";
 import { useCustomWorkspace } from "@/workspaces/custom/useCustomWorkspace";
-import { useSimpleSteppedWorkspace } from "@/workspaces/simple-stepped/useSimpleSteppedWorkspace";
 import { useSteppedWorkspace } from "@/workspaces/stepped/useSteppedWorkspace";
-import { useSteppedCadWorkspace } from "@/workspaces/stepped-cad/useSteppedCadWorkspace";
 
 function renderWorkspacePanel(panel: ReactNode) {
   return render(<>{panel}</>);
@@ -226,42 +223,6 @@ describe("Mode Workspace Draft Action Area", () => {
     );
   });
 
-  it("simple stepped 在重置和导入后清除活动行与 Draft Binding", async () => {
-    const onRequestParamImport = vi.fn(async () => ({ status: "success" as const }));
-    const model = {
-      params: SIMPLE_STEPPED_LAYOUT_DEFAULTS,
-      setParams: vi.fn(),
-      setActiveRow: vi.fn(),
-      effectiveDimensions: { width: 120, depth: 140, height: 12 },
-      handleGenerate: vi.fn(),
-      handleExportSTL: vi.fn(),
-      isGenerating: false,
-      isPreviewStale: true,
-    };
-    const { result } = renderHook(() =>
-      useSimpleSteppedWorkspace({
-        model: model as never,
-        interactionState: { selectedSlotIds: [] } as never,
-        onRequestParamImport,
-      }),
-    );
-    renderWorkspacePanel(result.current.panel);
-
-    fireEvent.click(screen.getByRole("button", { name: "重置" }));
-    fireEvent.click(screen.getByRole("button", { name: "导入" }));
-
-    await waitFor(() => expect(onRequestParamImport).toHaveBeenCalledTimes(1));
-    expect(model.setActiveRow).toHaveBeenCalledTimes(1);
-    expect(model.setActiveRow).toHaveBeenNthCalledWith(1, null);
-    act(() => result.current.importTarget.commit({
-      ...SIMPLE_STEPPED_LAYOUT_DEFAULTS,
-      trayWidth: 180,
-    }));
-    expect(model.setActiveRow).toHaveBeenCalledTimes(2);
-    expect(model.setActiveRow).toHaveBeenNthCalledWith(2, null);
-    expect(clearDraftBindingMock).toHaveBeenCalledTimes(2);
-  });
-
   it("stepped 在重置和导入后清除 Mode Interaction State", async () => {
     const onRequestParamImport = vi.fn(async () => ({ status: "success" as const }));
     const resetInteractionState = vi.fn();
@@ -277,7 +238,9 @@ describe("Mode Workspace Draft Action Area", () => {
     const interactionState = {
       selectedSlotIds: [],
       previewGroupId: null,
+      activeSteppedGroupId: null,
       setPreviewGroupId: vi.fn(),
+      setActiveSteppedGroupId: vi.fn(),
       resetInteractionState,
     };
     const { result } = renderHook(() =>
@@ -299,11 +262,12 @@ describe("Mode Workspace Draft Action Area", () => {
     expect(clearDraftBindingMock).toHaveBeenCalledTimes(2);
   });
 
-  it("CAD stepped 保留分件导出条件与独立 Draft Mode", () => {
+  it("统一阶梯模式保留分件导出条件", () => {
     const onRequestParamImport = vi.fn(async () => ({ status: "success" as const }));
     const model = {
       params: {
         ...STEPPED_LAYOUT_DEFAULTS,
+        enableSplitAssembly: true,
         groups: [
           ...STEPPED_LAYOUT_DEFAULTS.groups,
           { ...STEPPED_LAYOUT_DEFAULTS.groups[0], id: "group-2" },
@@ -320,12 +284,14 @@ describe("Mode Workspace Draft Action Area", () => {
     };
     const resetInteractionState = vi.fn();
     const { result } = renderHook(() =>
-      useSteppedCadWorkspace({
+      useSteppedWorkspace({
         model: model as never,
         interactionState: {
           selectedSlotIds: [],
           previewGroupId: null,
+          activeSteppedGroupId: null,
           setPreviewGroupId: vi.fn(),
+          setActiveSteppedGroupId: vi.fn(),
           resetInteractionState,
         } as never,
         onRequestParamImport,
@@ -333,7 +299,7 @@ describe("Mode Workspace Draft Action Area", () => {
     );
     renderWorkspacePanel(result.current.panel);
 
-    expect(screen.getByTestId("actions-stepped-cad")).toHaveAttribute(
+    expect(screen.getByTestId("actions-stepped")).toHaveAttribute(
       "data-can-split",
       "true",
     );
@@ -343,7 +309,7 @@ describe("Mode Workspace Draft Action Area", () => {
     expect(model.handleExportSTL).toHaveBeenCalledTimes(1);
     expect(model.handleExportSplitParts).toHaveBeenCalledTimes(1);
     expect(useWorkspaceDraftSupportMock).toHaveBeenCalledWith(
-      expect.objectContaining({ mode: "stepped-cad" }),
+      expect.objectContaining({ mode: "stepped" }),
     );
   });
 });

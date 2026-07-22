@@ -13,12 +13,9 @@ const {
   gridModelMock,
   customModelMock,
   baseConverterModelMock,
-  simpleSteppedModelMock,
   steppedModelMock,
-  steppedCadModelMock,
   gridDraftsMock,
   customDraftsMock,
-  simpleSteppedDraftsMock,
   steppedDraftsMock,
 } = vi.hoisted(() => {
   const gridParams: TrayParams = {
@@ -70,51 +67,6 @@ const {
     baseHoleSize: "25",
   };
 
-  const simpleSteppedCanvasParams: CustomLayoutParams = {
-    trayWidth: 180,
-    trayDepth: 150,
-    slots: [
-      {
-        id: "simple-slot-1",
-        x: 72,
-        y: 48,
-        shape: "circle",
-        width: 25,
-        height: 25,
-        rotation: 0,
-      },
-      {
-        id: "simple-slot-2",
-        x: 112,
-        y: 48,
-        shape: "circle",
-        width: 25,
-        height: 25,
-        rotation: 0,
-      },
-      {
-        id: "simple-slot-3",
-        x: 90,
-        y: 110,
-        shape: "circle",
-        width: 40,
-        height: 40,
-        rotation: 0,
-      },
-    ],
-    spacing: 5,
-    boundarySpacing: 5,
-    boundarySpacingIndependent: false,
-    baseThickness: 5,
-    holeDepth: 3,
-    cornerRadius: 4,
-    sideBevelWidth: 0,
-    baseHoleStructure: "none",
-    magnetPostHoleDiameter: 5,
-    magnetPostHoleDepth: 2,
-    baseHoleSize: "25",
-  };
-
   const steppedParams: SteppedLayoutParams = {
     trayWidth: 260,
     trayDepth: 260,
@@ -146,6 +98,7 @@ const {
     spacing: 5,
     holeDepth: 3,
     splitGrooveDepth: 2,
+    enableSplitAssembly: false,
     smoothingRadius: 60,
     disconnectDistance: 0,
     baseHoleStructure: "none",
@@ -209,14 +162,7 @@ const {
                 trayWidth: 260,
                 trayDepth: 260,
               }
-            : mode === "simple-stepped"
-              ? {
-                  rowCount: 2,
-                  slotCount: 3,
-                  trayWidth: 180,
-                  trayDepth: 150,
-                }
-              : {
+            : {
                   slotCount: 1,
                   groupCount: 1,
                   trayWidth: 260,
@@ -381,141 +327,8 @@ const {
       splitPreviewParts: null,
       canUndo: true,
     },
-    simpleSteppedModelMock: {
-      params: {
-        trayWidth: 180,
-        trayDepth: 150,
-        rows: [
-          { id: "row-1", name: "前排", slotIds: ["simple-slot-1", "simple-slot-2"] },
-          { id: "row-2", name: "后排", slotIds: ["simple-slot-3"] },
-        ],
-        slots: [
-          {
-            id: "simple-slot-1",
-            rowId: "row-1",
-            shape: "circle",
-            diameter: 25,
-            x: -20,
-            y: 0,
-          },
-          {
-            id: "simple-slot-2",
-            rowId: "row-1",
-            shape: "circle",
-            diameter: 25,
-            x: 20,
-            y: 0,
-          },
-          {
-            id: "simple-slot-3",
-            rowId: "row-2",
-            shape: "circle",
-            diameter: 40,
-            x: 0,
-            y: 0,
-          },
-        ],
-        firstRowHeight: 5,
-        stepHeight: 5,
-        rowGap: 6,
-        spacing: 5,
-        outerMarginIndependent: false,
-        outerMargin: 5,
-        holeDepth: 3,
-        cornerRadius: 4,
-      },
-      derivedLayout: {
-        trayWidth: 180,
-        trayDepth: 150,
-        minimumTrayWidth: 180,
-        minimumTrayDepth: 150,
-        trayHeight: 10,
-        highestTopHeight: 10,
-        slotCount: 3,
-        activeRows: [
-          {
-            id: "row-1",
-            name: "前排",
-            x: 0,
-            y: 0,
-            length: 180,
-            depth: 50,
-            centerY: 25,
-            holeCenterX: 90,
-            topHeight: 5,
-            extraHeight: 0,
-            slots: [],
-          },
-          {
-            id: "row-2",
-            name: "后排",
-            x: 0,
-            y: 56,
-            length: 180,
-            depth: 94,
-            centerY: 103,
-            holeCenterX: 90,
-            topHeight: 10,
-            extraHeight: 5,
-            slots: [],
-          },
-        ],
-        rowBands: [
-          {
-            id: "row-1",
-            name: "前排",
-            x: 0,
-            y: 0,
-            width: 180,
-            depth: 50,
-            topHeight: 5,
-            isActive: true,
-          },
-          {
-            id: "row-2",
-            name: "后排",
-            x: 0,
-            y: 56,
-            width: 180,
-            depth: 94,
-            topHeight: 10,
-            isActive: false,
-          },
-        ],
-      },
-      activeRowId: "row-1",
-      effectiveDimensions: { width: 180, depth: 150, height: 10 },
-      setParams: vi.fn(),
-      updateParam: vi.fn(),
-      setActiveRow: vi.fn(),
-      addRow: vi.fn(),
-      removeRow: vi.fn(),
-      renameRow: vi.fn(),
-      clearRow: vi.fn(),
-      reorderRows: vi.fn(),
-      addSlotToRow: vi.fn(),
-      removeSlot: vi.fn(),
-      updateSlotPosition: vi.fn(),
-      updateMultipleSlots: vi.fn(),
-      updateMultipleSlotsLive: vi.fn(),
-      updateSlotRotation: vi.fn(),
-      duplicateSlots: vi.fn(),
-      canvasParams: simpleSteppedCanvasParams,
-      saveSnapshot: vi.fn(),
-      undo: vi.fn(),
-      canUndo: true,
-      resizeTray: vi.fn(),
-      trimTray: vi.fn(),
-      threeGeometry: { id: "simple-stepped-geometry" },
-      volume: 30,
-      isGenerating: false,
-      isPreviewStale: true,
-      handleGenerate: vi.fn(),
-      handleExportSTL: vi.fn(),
-    },
     gridDraftsMock: createDraftControllerMock("grid"),
     customDraftsMock: createDraftControllerMock("custom"),
-    simpleSteppedDraftsMock: createDraftControllerMock("simple-stepped"),
     steppedDraftsMock: createDraftControllerMock("stepped"),
   };
 });
@@ -582,14 +395,6 @@ vi.mock("@/hooks/useSteppedLayout", () => ({
   useSteppedLayout: () => steppedModelMock,
 }));
 
-vi.mock("@/hooks/useSteppedCadLayout", () => ({
-  useSteppedCadLayout: () => steppedCadModelMock,
-}));
-
-vi.mock("@/hooks/useSimpleSteppedLayout", () => ({
-  useSimpleSteppedLayout: () => simpleSteppedModelMock,
-}));
-
 vi.mock("@/hooks/useModeDrafts", () => ({
   useModeDrafts: ({ mode }: { mode: AppMode }) => {
     if (mode === "grid") {
@@ -597,9 +402,6 @@ vi.mock("@/hooks/useModeDrafts", () => ({
     }
     if (mode === "custom") {
       return customDraftsMock;
-    }
-    if (mode === "simple-stepped") {
-      return simpleSteppedDraftsMock;
     }
     return steppedDraftsMock;
   },
@@ -624,14 +426,8 @@ vi.mock("@/components/ModeTabs", () => ({
         <button type="button" onClick={() => onModeChange("base-converter")}>
           切到转换底盘
         </button>
-        <button type="button" onClick={() => onModeChange("simple-stepped")}>
-          切到简易阶梯
-        </button>
         <button type="button" onClick={() => onModeChange("stepped")}>
           切到阶梯
-        </button>
-        <button type="button" onClick={() => onModeChange("stepped-cad")}>
-          切到 CAD 阶梯
         </button>
       </div>
     );
@@ -650,17 +446,8 @@ vi.mock("@/components/CustomPanel", () => ({
   },
 }));
 
-vi.mock("@/components/SimpleSteppedPanel", () => ({
-  default() {
-    return <div data-testid="simple-stepped-panel" />;
-  },
-}));
-
 vi.mock("@/components/SteppedPanel", () => ({
   SteppedLayoutPanel(props: SteppedPanelMockProps) {
-    return SteppedPanelMock(props);
-  },
-  SteppedCadPanel(props: SteppedPanelMockProps) {
     return SteppedPanelMock(props);
   },
 }));
@@ -971,27 +758,17 @@ describe("Home page", { timeout: 15000 }, () => {
     customModelMock.handleGenerate.mockReset();
     baseConverterModelMock.handleGenerate.mockReset();
     baseConverterModelMock.isPreviewStale = false;
-    simpleSteppedModelMock.handleGenerate.mockReset();
     steppedModelMock.handleGenerate.mockReset();
-    steppedCadModelMock.handleGenerate.mockReset();
     steppedModelMock.setActiveGroup.mockReset();
-    steppedCadModelMock.setActiveGroup.mockReset();
     steppedModelMock.pauseOutlinePreview.mockReset();
     steppedModelMock.resumeOutlinePreview.mockReset();
-    steppedCadModelMock.pauseOutlinePreview.mockReset();
-    steppedCadModelMock.resumeOutlinePreview.mockReset();
     steppedModelMock.generateOptimizationProposals.mockReset();
     steppedModelMock.applyOptimizationProposal.mockReset();
     steppedModelMock.clearOptimizationProposals.mockReset();
-    steppedCadModelMock.generateOptimizationProposals.mockReset();
-    steppedCadModelMock.applyOptimizationProposal.mockReset();
-    steppedCadModelMock.clearOptimizationProposals.mockReset();
     steppedModelMock.isOptimizingLayout = false;
-    steppedCadModelMock.isOptimizingLayout = false;
     for (const draftMock of [
       gridDraftsMock,
       customDraftsMock,
-      simpleSteppedDraftsMock,
       steppedDraftsMock,
     ]) {
       draftMock.getDraftList.mockClear();
@@ -1079,40 +856,6 @@ describe("Home page", { timeout: 15000 }, () => {
     );
   });
 
-  it("wires simple stepped mode through the panel, canvas, and 3D regenerate flow", async () => {
-    render(<Home />);
-
-    fireEvent.click(screen.getByRole("button", { name: "切到简易阶梯" }));
-    await screen.findByTestId("simple-stepped-panel");
-
-    expect(screen.getByTestId("layout-canvas")).toHaveAttribute(
-      "data-row-band-count",
-      "2",
-    );
-    expect(screen.getByTestId("layout-canvas")).toHaveAttribute(
-      "data-has-resize-tray",
-      "true",
-    );
-    expect(screen.getByTestId("layout-canvas")).toHaveAttribute(
-      "data-scoped-drag-ids",
-      "simple-slot-1,simple-slot-2",
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "3D 预览" }));
-
-    await waitFor(() => {
-      expect(simpleSteppedModelMock.handleGenerate).toHaveBeenCalledTimes(1);
-    });
-    expect(screen.getByTestId("tray-viewer")).toHaveAttribute(
-      "data-geometry-id",
-      "simple-stepped-geometry",
-    );
-    expect(screen.getByTestId("tray-viewer")).toHaveAttribute(
-      "data-is-stale",
-      "true",
-    );
-  });
-
   it("syncs stepped selection to the active group, pauses outline preview, and resets stepped UI state on mode changes", async () => {
     render(<Home />);
 
@@ -1195,23 +938,6 @@ describe("Home page", { timeout: 15000 }, () => {
     );
     expect(steppedModelMock.clearOptimizationProposals).toHaveBeenCalledTimes(
       1,
-    );
-  });
-
-  it("wires stepped cad mode through the stepped panel and 3D regenerate flow", async () => {
-    render(<Home />);
-
-    fireEvent.click(screen.getByRole("button", { name: "切到 CAD 阶梯" }));
-    await screen.findByTestId("stepped-panel");
-
-    fireEvent.click(screen.getByRole("button", { name: "3D 预览" }));
-
-    await waitFor(() => {
-      expect(steppedCadModelMock.handleGenerate).toHaveBeenCalledTimes(1);
-    });
-    expect(screen.getByTestId("tray-viewer")).toHaveAttribute(
-      "data-geometry-id",
-      "stepped-cad-geometry",
     );
   });
 

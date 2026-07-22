@@ -3,7 +3,6 @@ import type {
   AppMode,
   BaseConverterParams,
   CustomLayoutParams,
-  SimpleSteppedLayoutParams,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 
@@ -11,9 +10,7 @@ export type ParamsByMode = {
   grid: TrayParams;
   custom: CustomLayoutParams;
   "base-converter": BaseConverterParams;
-  "simple-stepped": SimpleSteppedLayoutParams;
   stepped: SteppedLayoutParams;
-  "stepped-cad": SteppedLayoutParams;
 };
 
 export type ExportableParams = ParamsByMode[AppMode];
@@ -32,9 +29,15 @@ export function captureModeParamSnapshot<M extends AppMode>(
   mode: M,
   params: ParamsByMode[M],
 ): ModeParamSnapshot<M> {
+  const copiedParams = structuredClone(params) as ParamsByMode[M] & {
+    activeGroupId?: string;
+  };
+  if (mode === "stepped") {
+    delete copiedParams.activeGroupId;
+  }
   return {
     mode,
-    params: structuredClone(params),
+    params: copiedParams,
   };
 }
 

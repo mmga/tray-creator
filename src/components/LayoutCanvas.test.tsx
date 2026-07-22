@@ -5,7 +5,6 @@ import LayoutCanvas from "@/components/LayoutCanvas";
 import type {
   CustomLayoutParams,
   GroupOutlinePreview,
-  SimpleSteppedRowBand,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import type { CanvasSlotUpdate } from "@/lib/canvas-types";
@@ -330,6 +329,7 @@ function createSteppedParams(
     disconnectDistance: 0,
     baseHoleSize: "25",
     ...overrides,
+    enableSplitAssembly: overrides.enableSplitAssembly ?? false,
     baseHoleStructure: overrides.baseHoleStructure ?? "none",
     magnetPostHoleDiameter: overrides.magnetPostHoleDiameter ?? 5,
     magnetPostHoleDepth: overrides.magnetPostHoleDepth ?? 2,
@@ -353,7 +353,6 @@ interface TestLayoutCanvasProps {
   onEditInteractionChange?: (isInteracting: boolean) => void;
   outlinePreview?: GroupOutlinePreview[] | null;
   focusedGroupId?: string | null;
-  rowBands?: SimpleSteppedRowBand[] | null;
   slotMoveScopeResolver?: (draggingId: string, selectedIds: string[]) => string[];
 }
 
@@ -362,7 +361,6 @@ function TestLayoutCanvas({
   params,
   onUpdateSlot,
   onRemoveSlot,
-  onResizeTray,
   onUpdateSlotRotation,
   onUpdateMultipleSlots,
   onLiveUpdateMultipleSlots,
@@ -374,13 +372,12 @@ function TestLayoutCanvas({
   onEditInteractionChange,
   outlinePreview,
   focusedGroupId,
-  rowBands,
   slotMoveScopeResolver,
 }: TestLayoutCanvasProps) {
   const isStepped = "groups" in params;
   const boundarySpacing =
     "boundarySpacingIndependent" in params && params.boundarySpacingIndependent
-      ? params.boundarySpacing
+      ? (params.boundarySpacing ?? params.spacing)
       : params.spacing;
 
   return (
@@ -392,16 +389,15 @@ function TestLayoutCanvas({
           depth: params.trayDepth,
           spacing: params.spacing,
           boundarySpacing,
-          cornerRadius: "cornerRadius" in params ? params.cornerRadius : 0,
+          cornerRadius: "cornerRadius" in params ? (params.cornerRadius ?? 0) : 0,
           sideBevelWidth: "sideBevelWidth" in params ? params.sideBevelWidth : 0,
-          showEffectiveBaseplate: !isStepped && !rowBands,
-          showMaxBuildBoundary: Boolean(rowBands),
+          showEffectiveBaseplate: !isStepped,
+          showMaxBuildBoundary: false,
         },
         slots: params.slots,
         overlays: {
           focusedGroupId,
           groupOutlines: outlinePreview,
-          rowBands,
           slotGroups: isStepped ? params.groups : null,
         },
         interactions: {
@@ -411,7 +407,6 @@ function TestLayoutCanvas({
       commands={{
         updateSlotPosition: onUpdateSlot,
         removeSlot: onRemoveSlot,
-        resizeTray: onResizeTray,
         updateSlotRotation: onUpdateSlotRotation,
         updateMultipleSlots: onUpdateMultipleSlots,
         liveUpdateMultipleSlots: onLiveUpdateMultipleSlots,
@@ -774,87 +769,6 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     );
   });
 
-  it("uses simple stepped row bands to switch overflow semantics and drag scoping", async () => {
-    const slotMoveScopeResolver = vi.fn(() => ["slot-1"]);
-    const onSaveSnapshot = vi.fn();
-    const onEditInteractionChange = vi.fn();
-
-    render(
-      <TestLayoutCanvas
-        params={createCustomParams({
-          trayWidth: 280,
-          trayDepth: 270,
-          slots: [
-            {
-              id: "slot-1",
-              x: 72,
-              y: 48,
-              shape: "circle",
-              width: 25,
-              height: 25,
-              rotation: 0,
-            },
-            {
-              id: "slot-2",
-              x: 112,
-              y: 48,
-              shape: "circle",
-              width: 25,
-              height: 25,
-              rotation: 0,
-            },
-          ],
-        })}
-        rowBands={[
-          {
-            id: "row-1",
-            name: "前排",
-            x: 0,
-            y: 0,
-            width: 180,
-            depth: 50,
-            topHeight: 5,
-            isActive: true,
-          },
-          {
-            id: "row-2",
-            name: "后排",
-            x: 0,
-            y: 56,
-            width: 180,
-            depth: 94,
-            topHeight: 10,
-            isActive: false,
-          },
-        ]}
-        slotMoveScopeResolver={slotMoveScopeResolver}
-        onResizeTray={vi.fn()}
-        onUpdateSlot={vi.fn()}
-        onRemoveSlot={vi.fn()}
-        onSaveSnapshot={onSaveSnapshot}
-        onEditInteractionChange={onEditInteractionChange}
-      />,
-    );
-
-    expect(screen.getByTestId("canvas-overlay-layer")).toHaveAttribute(
-      "data-show-effective-baseplate",
-      "false",
-    );
-    expect(screen.getByText(/打印边框超限/)).toBeInTheDocument();
-
-    fireEvent.pointerDown(screen.getByTestId("canvas-slot-slot-1"), {
-      pointerId: 1,
-      pointerType: "mouse",
-      clientX: 32,
-      clientY: 44,
-    });
-
-    await waitFor(() => {
-      expect(slotMoveScopeResolver).toHaveBeenCalledWith("slot-1", ["slot-1"]);
-    });
-    expect(onSaveSnapshot).toHaveBeenCalledTimes(1);
-    expect(onEditInteractionChange).toHaveBeenCalledWith(true);
-  });
 
   it("requires selecting a slot before dragging it", async () => {
     const { container } = render(
@@ -1003,166 +917,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     );
   });
 
-  it("resizes simple stepped trays from the drag handles and clamps to row bounds", async () => {
-    const onResizeTray = vi.fn();
-    const onSaveSnapshot = vi.fn();
-    const onEditInteractionChange = vi.fn();
-    const { container } = render(
-      <TestLayoutCanvas
-        params={createCustomParams({
-          trayWidth: 220,
-          trayDepth: 150,
-          slots: [
-            {
-              id: "slot-1",
-              x: 72,
-              y: 48,
-              shape: "circle",
-              width: 25,
-              height: 25,
-              rotation: 0,
-            },
-          ],
-        })}
-        rowBands={[
-          {
-            id: "row-1",
-            name: "前排",
-            x: 0,
-            y: 0,
-            width: 180,
-            depth: 60,
-            topHeight: 5,
-            isActive: true,
-          },
-          {
-            id: "row-2",
-            name: "后排",
-            x: 0,
-            y: 70,
-            width: 180,
-            depth: 60,
-            topHeight: 10,
-            isActive: false,
-          },
-        ]}
-        onResizeTray={onResizeTray}
-        onUpdateSlot={vi.fn()}
-        onRemoveSlot={vi.fn()}
-        onSaveSnapshot={onSaveSnapshot}
-        onEditInteractionChange={onEditInteractionChange}
-      />,
-    );
 
-    const svg = container.querySelector("svg");
-    const rightHandle = container.querySelector<SVGRectElement>(
-      'rect[style*="cursor: ew-resize"]',
-    );
-    expect(svg).not.toBeNull();
-    expect(rightHandle).not.toBeNull();
-
-    fireEvent.pointerDown(rightHandle!, {
-      pointerId: 9,
-      pointerType: "mouse",
-      clientX: 220,
-      clientY: 40,
-    });
-
-    await waitFor(() => {
-      expect(screen.getByTestId("alignment-toolbar")).toHaveAttribute(
-        "data-enable-copy-preview",
-        "false",
-      );
-    });
-    expect(onSaveSnapshot).toHaveBeenCalledTimes(1);
-    expect(onEditInteractionChange).toHaveBeenCalledWith(true);
-
-    fireEvent.pointerMove(svg!, {
-      pointerId: 9,
-      pointerType: "mouse",
-      clientX: 120,
-      clientY: 40,
-    });
-
-    await waitFor(() => {
-      expect(onResizeTray).toHaveBeenCalledWith(180, 150);
-    });
-
-    fireEvent.pointerUp(svg!, {
-      pointerId: 9,
-      pointerType: "mouse",
-    });
-
-    await waitFor(() => {
-      expect(screen.getByTestId("alignment-toolbar")).toHaveAttribute(
-        "data-enable-copy-preview",
-        "true",
-      );
-    });
-    expect(onEditInteractionChange).toHaveBeenLastCalledWith(false);
-  });
-
-  it("allows simple stepped tray resizing beyond the print boundary", async () => {
-    const onResizeTray = vi.fn();
-    const { container } = render(
-      <TestLayoutCanvas
-        params={createCustomParams({
-          trayWidth: 280,
-          trayDepth: 270,
-          slots: [
-            {
-              id: "slot-1",
-              x: 72,
-              y: 48,
-              shape: "circle",
-              width: 25,
-              height: 25,
-              rotation: 0,
-            },
-          ],
-        })}
-        rowBands={[
-          {
-            id: "row-1",
-            name: "前排",
-            x: 0,
-            y: 0,
-            width: 180,
-            depth: 60,
-            topHeight: 5,
-            isActive: true,
-          },
-        ]}
-        onResizeTray={onResizeTray}
-        onUpdateSlot={vi.fn()}
-        onRemoveSlot={vi.fn()}
-      />,
-    );
-
-    const svg = container.querySelector("svg");
-    const rightHandle = container.querySelector<SVGRectElement>(
-      'rect[style*="cursor: ew-resize"]',
-    );
-    expect(svg).not.toBeNull();
-    expect(rightHandle).not.toBeNull();
-
-    fireEvent.pointerDown(rightHandle!, {
-      pointerId: 10,
-      pointerType: "mouse",
-      clientX: 280,
-      clientY: 40,
-    });
-    fireEvent.pointerMove(svg!, {
-      pointerId: 10,
-      pointerType: "mouse",
-      clientX: 340,
-      clientY: 40,
-    });
-
-    await waitFor(() => {
-      expect(onResizeTray).toHaveBeenCalledWith(340, 270);
-    });
-  });
 
   it("adds slots through ctrl marquee selection on the canvas background", async () => {
     const onSelectionChange = vi.fn();
@@ -1597,116 +1352,6 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     expect(onSelectionChange).toHaveBeenLastCalledWith([]);
   });
 
-  it("resizes simple stepped trays from the bottom and corner handles", async () => {
-    const onResizeTray = vi.fn();
-    const onSaveSnapshot = vi.fn();
-    const onEditInteractionChange = vi.fn();
-    const { container } = render(
-      <TestLayoutCanvas
-        params={createCustomParams({
-          trayWidth: 220,
-          trayDepth: 150,
-          slots: [
-            {
-              id: "slot-1",
-              x: 72,
-              y: 48,
-              shape: "circle",
-              width: 25,
-              height: 25,
-              rotation: 0,
-            },
-          ],
-        })}
-        rowBands={[
-          {
-            id: "row-1",
-            name: "前排",
-            x: 0,
-            y: 0,
-            width: 180,
-            depth: 60,
-            topHeight: 5,
-            isActive: true,
-          },
-          {
-            id: "row-2",
-            name: "后排",
-            x: 0,
-            y: 70,
-            width: 180,
-            depth: 60,
-            topHeight: 10,
-            isActive: false,
-          },
-        ]}
-        onResizeTray={onResizeTray}
-        onUpdateSlot={vi.fn()}
-        onRemoveSlot={vi.fn()}
-        onSaveSnapshot={onSaveSnapshot}
-        onEditInteractionChange={onEditInteractionChange}
-      />,
-    );
-
-    const svg = container.querySelector("svg");
-    const bottomHandle = container.querySelector<SVGRectElement>(
-      'rect[style*="cursor: ns-resize"]',
-    );
-    const cornerHandle = container.querySelector<SVGRectElement>(
-      'rect[style*="cursor: nwse-resize"]',
-    );
-    expect(svg).not.toBeNull();
-    expect(bottomHandle).not.toBeNull();
-    expect(cornerHandle).not.toBeNull();
-
-    fireEvent.pointerDown(bottomHandle!, {
-      pointerId: 3,
-      pointerType: "mouse",
-      clientX: 120,
-      clientY: 150,
-    });
-    fireEvent.pointerMove(svg!, {
-      pointerId: 3,
-      pointerType: "mouse",
-      clientX: 120,
-      clientY: 80,
-    });
-
-    await waitFor(() => {
-      expect(onResizeTray).toHaveBeenCalledWith(220, 130);
-    });
-
-    fireEvent.pointerUp(svg!, {
-      pointerId: 3,
-      pointerType: "mouse",
-    });
-
-    fireEvent.pointerDown(cornerHandle!, {
-      pointerId: 4,
-      pointerType: "mouse",
-      clientX: 220,
-      clientY: 150,
-    });
-    fireEvent.pointerMove(svg!, {
-      pointerId: 4,
-      pointerType: "mouse",
-      clientX: 120,
-      clientY: 80,
-    });
-
-    await waitFor(() => {
-      expect(onResizeTray).toHaveBeenCalledWith(180, 130);
-    });
-
-    fireEvent.pointerUp(svg!, {
-      pointerId: 4,
-      pointerType: "mouse",
-    });
-
-    expect(onSaveSnapshot).toHaveBeenCalledTimes(2);
-    expect(onEditInteractionChange).toHaveBeenNthCalledWith(1, true);
-    expect(onEditInteractionChange).toHaveBeenLastCalledWith(false);
-  });
 
   it("cancels drag interaction when the scoped move set is empty", async () => {
     const slotMoveScopeResolver = vi.fn(() => []);

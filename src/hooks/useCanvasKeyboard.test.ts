@@ -31,9 +31,12 @@ function dispatchKeyboardEvent(
 
 describe("useCanvasKeyboard", () => {
   const onUpdateSlot = vi.fn();
+  const onUpdateSlots = vi.fn();
   const onRemoveSlot = vi.fn();
+  const onRemoveSlots = vi.fn();
   const onDuplicateSlots = vi.fn();
   const onUndo = vi.fn();
+  const onCancelInteraction = vi.fn();
   const setSelectedIds = vi.fn();
   const setIsRotating = vi.fn();
   const setIsSpacePressed = vi.fn();
@@ -45,9 +48,12 @@ describe("useCanvasKeyboard", () => {
 
   beforeEach(() => {
     onUpdateSlot.mockReset();
+    onUpdateSlots.mockReset();
     onRemoveSlot.mockReset();
+    onRemoveSlots.mockReset();
     onDuplicateSlots.mockReset();
     onUndo.mockReset();
+    onCancelInteraction.mockReset();
     setSelectedIds.mockReset();
     setIsRotating.mockReset();
     setIsSpacePressed.mockReset();
@@ -66,6 +72,7 @@ describe("useCanvasKeyboard", () => {
         selectedIdsRef,
         slotsRef,
         onUpdateSlot,
+        onUpdateSlots,
         onRemoveSlot,
         onDuplicateSlots,
         onUndo,
@@ -81,9 +88,11 @@ describe("useCanvasKeyboard", () => {
       dispatchKeyboardEvent("keydown", { code: "ArrowRight" });
     });
 
-    expect(onUpdateSlot).toHaveBeenCalledTimes(2);
-    expect(onUpdateSlot).toHaveBeenNthCalledWith(1, "slot-1", 10.1, 20);
-    expect(onUpdateSlot).toHaveBeenNthCalledWith(2, "slot-2", 30.1, 40);
+    expect(onUpdateSlots).toHaveBeenCalledWith([
+      { id: "slot-1", x: 10.1, y: 20 },
+      { id: "slot-2", x: 30.1, y: 40 },
+    ]);
+    expect(onUpdateSlot).not.toHaveBeenCalled();
 
     const input = document.createElement("input");
     document.body.appendChild(input);
@@ -92,7 +101,7 @@ describe("useCanvasKeyboard", () => {
       dispatchKeyboardEvent("keydown", { code: "ArrowLeft" }, input);
     });
 
-    expect(onUpdateSlot).toHaveBeenCalledTimes(2);
+    expect(onUpdateSlots).toHaveBeenCalledTimes(1);
   });
 
   it("routes delete, duplicate, undo, escape, and hint toggles through the expected handlers", () => {
@@ -103,9 +112,12 @@ describe("useCanvasKeyboard", () => {
         selectedIdsRef,
         slotsRef,
         onUpdateSlot,
+        onUpdateSlots,
         onRemoveSlot,
+        onRemoveSlots,
         onDuplicateSlots,
         onUndo,
+        onCancelInteraction,
         setSelectedIds,
         setIsRotating,
         setIsSpacePressed,
@@ -126,9 +138,9 @@ describe("useCanvasKeyboard", () => {
     expect(onDuplicateSlots).toHaveBeenCalledWith(["slot-1", "slot-2"]);
     expect(setSelectedIds).toHaveBeenCalledWith(new Set(["copy-1", "copy-2"]));
     expect(onUndo).toHaveBeenCalledTimes(1);
-    expect(onRemoveSlot).toHaveBeenCalledTimes(2);
-    expect(onRemoveSlot).toHaveBeenCalledWith("slot-1");
-    expect(onRemoveSlot).toHaveBeenCalledWith("slot-2");
+    expect(onRemoveSlots).toHaveBeenCalledWith(["slot-1", "slot-2"]);
+    expect(onRemoveSlot).not.toHaveBeenCalled();
+    expect(onCancelInteraction).toHaveBeenCalledTimes(1);
     expect(setSelectedIds).toHaveBeenCalledWith(new Set());
     expect(setIsRotating).toHaveBeenCalledWith(false);
     expect(setShowHints).toHaveBeenCalledTimes(1);

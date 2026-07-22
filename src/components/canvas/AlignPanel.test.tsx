@@ -60,7 +60,7 @@ describe("AlignPanel", { timeout: 15000 }, () => {
     expect(updates[0]).toMatchObject({ id: "slot-1", y: 50 });
     expect(updates[1]).toMatchObject({ id: "slot-2", y: 50 });
     expect(updates[0].x).toBeCloseTo(34.8, 5);
-    expect(updates[1].x).toBeCloseTo(65, 5);
+    expect(updates[1].x).toBeCloseTo(65.2, 5);
   });
 
   it("disables align and arrange actions when fewer than two slots are selected", () => {

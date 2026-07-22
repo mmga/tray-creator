@@ -23,13 +23,15 @@ export interface EllipseSlotDefinition {
 
 export type SlotDefinition = CircleSlotDefinition | EllipseSlotDefinition;
 
+/** 未匹配到具体预设时使用；各预设仍可独立配置加工容差。 */
 export const DEFAULT_CIRCLE_SLOT_TOLERANCE = 0.4;
-export const DEFAULT_ELLIPSE_OUTER_OFFSET = 0.4;
+/** 未匹配到具体预设时使用；各椭圆预设仍可独立配置法线外扩量。 */
+export const DEFAULT_ELLIPSE_OUTER_OFFSET = 0.2;
 export const DEFAULT_ELLIPSE_PROFILE_EXPONENT = 2.6;
 
 export const CIRCLE_SLOT_DEFINITIONS: CircleSlotDefinition[] = [
   { id: "circle-10", shape: "circle", name: "10mm 圆形", baseDiameter: 10, slotDiameter: 10.4, tolerance: 0.4 },
-  { id: "circle-25", shape: "circle", name: "小型步兵 (25mm)", baseDiameter: 25, slotDiameter: 25.2, tolerance: 0.2 },
+  { id: "circle-25", shape: "circle", name: "小型步兵 (25mm)", baseDiameter: 25, slotDiameter: 25.4, tolerance: 0.4 },
   { id: "circle-28.5", shape: "circle", name: "中型步兵 (28.5mm)", baseDiameter: 28.5, slotDiameter: 28.9, tolerance: 0.4 },
   { id: "circle-32", shape: "circle", name: "标准步兵 (32mm)", baseDiameter: 32, slotDiameter: 32.4, tolerance: 0.4 },
   { id: "circle-40", shape: "circle", name: "大型 (40mm)", baseDiameter: 40, slotDiameter: 40.4, tolerance: 0.4 },
@@ -47,7 +49,7 @@ export const ELLIPSE_SLOT_DEFINITIONS: EllipseSlotDefinition[] = [
     name: "60x35.5mm",
     width: 60,
     height: 35.5,
-    outerOffset: 0.4,
+    outerOffset: 0.2,
     profileExponent: 2.05,
   },
   {
@@ -65,7 +67,7 @@ export const ELLIPSE_SLOT_DEFINITIONS: EllipseSlotDefinition[] = [
     name: "90x52mm",
     width: 90,
     height: 52,
-    outerOffset: DEFAULT_ELLIPSE_OUTER_OFFSET,
+    outerOffset: 0.2,
     profileExponent: DEFAULT_ELLIPSE_PROFILE_EXPONENT,
   },
   {
@@ -74,7 +76,7 @@ export const ELLIPSE_SLOT_DEFINITIONS: EllipseSlotDefinition[] = [
     name: "105x70mm",
     width: 105,
     height: 70,
-    outerOffset: DEFAULT_ELLIPSE_OUTER_OFFSET,
+    outerOffset: 0.2,
     profileExponent: DEFAULT_ELLIPSE_PROFILE_EXPONENT,
   },
   {
@@ -83,7 +85,7 @@ export const ELLIPSE_SLOT_DEFINITIONS: EllipseSlotDefinition[] = [
     name: "120x92mm",
     width: 120,
     height: 92,
-    outerOffset: DEFAULT_ELLIPSE_OUTER_OFFSET,
+    outerOffset: 0.2,
     profileExponent: DEFAULT_ELLIPSE_PROFILE_EXPONENT,
   },
   {
@@ -92,7 +94,7 @@ export const ELLIPSE_SLOT_DEFINITIONS: EllipseSlotDefinition[] = [
     name: "150x95mm",
     width: 150,
     height: 95,
-    outerOffset: DEFAULT_ELLIPSE_OUTER_OFFSET,
+    outerOffset: 0.2,
     profileExponent: DEFAULT_ELLIPSE_PROFILE_EXPONENT,
   },
   {
@@ -101,7 +103,7 @@ export const ELLIPSE_SLOT_DEFINITIONS: EllipseSlotDefinition[] = [
     name: "170x105mm",
     width: 170,
     height: 105,
-    outerOffset: DEFAULT_ELLIPSE_OUTER_OFFSET,
+    outerOffset: 0.2,
     profileExponent: DEFAULT_ELLIPSE_PROFILE_EXPONENT,
   },
 ];

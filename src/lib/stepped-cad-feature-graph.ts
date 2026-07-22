@@ -2,6 +2,7 @@ import {
   booleans,
   geometries,
   primitives,
+  transforms,
 } from "@jscad/modeling";
 import type { Geom2 } from "@jscad/modeling/src/geometries/types";
 import type { SteppedLayoutParams, SteppedSlot } from "@/types/custom-tray";
@@ -10,17 +11,9 @@ import { resolveMagneticBaseHolePreset } from "@/lib/base-hole-config";
 import { roundLayoutDimensionToTenth } from "@/lib/custom-layout-math";
 import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
-import {
-  clusterConnectivityCircles,
-  getConnectivityRadius,
-  getEffectiveBridgeGap,
-  type ConnectivityCircle,
-} from "@/lib/stepped-connectivity";
-import { getEffectiveGroupStructureParams } from "@/lib/stepped-group-params";
-import {
-  buildSteppedClusterFootprint,
-  type SteppedFootprintSlot,
-} from "@/lib/stepped-profile-footprint";
+import { constructSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
+import { getConnectivityRadius } from "@/lib/stepped-connectivity";
+import type { ContouredFootprintBounds } from "@/lib/contoured-footprint";
 import {
   getSteppedGroupMinBottomHeight,
   resolveMagnetPostHoleDepth,
@@ -30,6 +23,7 @@ import {
 const { union } = booleans;
 const { geom2 } = geometries;
 const { circle } = primitives;
+const { translate } = transforms;
 
 function getSlotBoundingHalfSize(
   width: number,
@@ -88,7 +82,11 @@ function createOffsetSlotShape(
 }
 
 function calculateEffectiveBaseplate(params: SteppedLayoutParams) {
-  const boundarySpacing = params.spacing;
+  // boundary spacing 缺失时跟随 spacing（CONTEXT:613）；rectangular 与 contoured 共用此规则
+  const boundarySpacingIndependent = params.boundarySpacingIndependent === true;
+  const boundarySpacing = boundarySpacingIndependent
+    ? (params.boundarySpacing ?? params.spacing)
+    : params.spacing;
 
   if (params.slots.length === 0) {
     return {
@@ -191,14 +189,34 @@ export interface SteppedCadFeatureGraph {
   magnetPostHoles: SteppedCadMagnetPostHoleFeature[];
 }
 
-function buildNormalizedSlotData(params: SteppedLayoutParams) {
-  const effective = calculateEffectiveBaseplate(params);
-  const trayWidth = effective.hasSlots ? effective.width : params.trayWidth;
-  const trayDepth = effective.hasSlots ? effective.depth : params.trayDepth;
-  const sourceCenterX = effective.hasSlots
+function buildNormalizedSlotData(
+  params: SteppedLayoutParams,
+  contouredBounds: ContouredFootprintBounds | null = null,
+) {
+  const effective = contouredBounds
+    ? {
+        hasSlots: true,
+        width: roundLayoutDimensionToTenth(contouredBounds.maxX - contouredBounds.minX),
+        depth: roundLayoutDimensionToTenth(contouredBounds.maxY - contouredBounds.minY),
+        ...contouredBounds,
+      }
+    : calculateEffectiveBaseplate(params);
+  const usesFixedRectangularFootprint =
+    params.footprintStyle === "rectangular" && params.traySizingMode === "fixed";
+  const trayWidth = usesFixedRectangularFootprint
+    ? params.trayWidth
+    : effective.hasSlots ? effective.width : params.trayWidth;
+  const trayDepth = usesFixedRectangularFootprint
+    ? params.trayDepth
+    : effective.hasSlots ? effective.depth : params.trayDepth;
+  const sourceCenterX = usesFixedRectangularFootprint
+    ? params.trayWidth / 2
+    : effective.hasSlots
     ? (effective.minX + effective.maxX) / 2
     : trayWidth / 2;
-  const sourceCenterY = effective.hasSlots
+  const sourceCenterY = usesFixedRectangularFootprint
+    ? params.trayDepth / 2
+    : effective.hasSlots
     ? (effective.minY + effective.maxY) / 2
     : trayDepth / 2;
 
@@ -229,75 +247,154 @@ function buildNormalizedSlotData(params: SteppedLayoutParams) {
   return {
     trayWidth,
     trayDepth,
+    sourceCenterX,
+    sourceCenterY,
     slots,
   };
 }
 
-function buildClusteredFootprint(
+/**
+ * 解析阶梯模式的底座轮廓样式；缺失时默认 contoured 以兼容旧阶梯文件（CONTEXT:592）。
+ */
+function resolveSteppedFootprintStyle(
+  params: Pick<SteppedLayoutParams, "footprintStyle">,
+): "rectangular" | "contoured" {
+  return params.footprintStyle === "rectangular" ? "rectangular" : "contoured";
+}
+
+/**
+ * 计算一组 slot 的轴对齐矩形包络（含 boundary spacing 外扩）。
+ * 包络在托盘坐标系中保持轴对齐，并包含旋转后的最终槽位几何（CONTEXT:243-245）。
+ */
+function calculateAxisAlignedEnvelope(
   slotData: NormalizedSlotData[],
-  spacing: number,
-  structureParams: Pick<SteppedLayoutParams, "smoothingRadius" | "disconnectDistance">,
-): Geom2 | null {
+  boundarySpacing: number,
+): { minX: number; maxX: number; minY: number; maxY: number } | null {
   if (slotData.length === 0) {
     return null;
   }
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (const item of slotData) {
+    const { halfW, halfH } = getSlotBoundingHalfSize(
+      item.profile.width,
+      item.profile.height,
+      item.rotation,
+      item.slot.shape,
+      item.profile.outerOffset,
+      item.profile.profileExponent,
+    );
+    minX = Math.min(minX, item.cx - halfW);
+    maxX = Math.max(maxX, item.cx + halfW);
+    minY = Math.min(minY, item.cy - halfH);
+    maxY = Math.max(maxY, item.cy + halfH);
+  }
+  return {
+    minX: minX - boundarySpacing,
+    maxX: maxX + boundarySpacing,
+    minY: minY - boundarySpacing,
+    maxY: maxY + boundarySpacing,
+  };
+}
 
-  const connectivityCircles: ConnectivityCircle[] = slotData.map((item) => ({
-    id: item.slot.id,
-    cx: item.cx,
-    cy: item.cy,
-    rOuter: getConnectivityRadius(
-      item.slot.width,
-      item.slot.height,
-      spacing,
-      item.profile.outerOffset * 2,
-      item.profile.outerOffset * 2,
-    ),
-  }));
+/**
+ * 构造矩形 Geom2（轴对齐，可选圆角）。
+ * center 为矩形中心；rotateZ(0) 保证轴对齐。
+ */
+function buildRectangleFootprint(
+  bounds: { minX: number; maxX: number; minY: number; maxY: number },
+  cornerRadius = 0,
+): Geom2 {
+  const width = bounds.maxX - bounds.minX;
+  const depth = bounds.maxY - bounds.minY;
+  const cx = (bounds.minX + bounds.maxX) / 2;
+  const cy = (bounds.minY + bounds.maxY) / 2;
+  const safeRadius = Math.max(0, Math.min(cornerRadius, width / 2 - 0.01, depth / 2 - 0.01));
 
-  const clusters = clusterConnectivityCircles(
-    connectivityCircles,
-    getEffectiveBridgeGap(
-      structureParams.smoothingRadius,
-      structureParams.disconnectDistance,
-    ),
-  );
-  const footprintSlotsById = new Map<string, SteppedFootprintSlot>(
-    slotData.map((item) => [
-      item.slot.id,
-      {
-        id: item.slot.id,
-        cx: item.cx,
-        cy: item.cy,
-        rotation: item.rotation,
-        shape: item.slot.shape,
-        profile: item.profile,
-      },
-    ]),
-  );
-
-  const outlines = clusters
-    .map((cluster) =>
-      buildSteppedClusterFootprint(
-        cluster,
-        footprintSlotsById,
-        spacing,
-        structureParams.smoothingRadius,
-      ),
-    )
-    .filter((item): item is Geom2 => item !== null);
-
-  if (outlines.length === 0) {
-    return null;
+  if (safeRadius <= 0) {
+    return primitives.rectangle({ size: [width, depth], center: [cx, cy] });
   }
 
-  return outlines.length === 1 ? outlines[0] : union(...outlines);
+  // 圆角矩形：用 4 段圆弧 + 4 段直线采样构造闭合多边形
+  const segmentsPerArc = 8;
+  const points: [number, number][] = [];
+  const corners = [
+    { x: bounds.maxX - safeRadius, y: bounds.maxY - safeRadius, startAngle: 0 },
+    { x: bounds.minX + safeRadius, y: bounds.maxY - safeRadius, startAngle: Math.PI / 2 },
+    { x: bounds.minX + safeRadius, y: bounds.minY + safeRadius, startAngle: Math.PI },
+    { x: bounds.maxX - safeRadius, y: bounds.minY + safeRadius, startAngle: -Math.PI / 2 },
+  ];
+  for (const corner of corners) {
+    for (let i = 0; i < segmentsPerArc; i += 1) {
+      const angle = corner.startAngle + (Math.PI / 2) * (i / segmentsPerArc);
+      points.push([
+        corner.x + safeRadius * Math.cos(angle),
+        corner.y + safeRadius * Math.sin(angle),
+      ]);
+    }
+  }
+  return translate([0, 0], geom2.fromPoints(points));
+}
+
+/**
+ * 为阶梯模式构造 Rectangular Stepped Footprint（CONTEXT:235-237,601-603）。
+ *
+ * - 最低连续层：所有槽位的整体轴对齐包络 + boundary spacing；应用模型级 cornerRadius。
+ *   若 traySizingMode=fixed，使用配置的 trayWidth/trayDepth 作为最低层尺寸。
+ * - 更高高度带：每个高度组各自的轴对齐包络 + boundary spacing，直角（不应用 cornerRadius）。
+ * - fixed sizing 仅决定最低层；不传播到更高分组（CONTEXT:603）。
+ */
+function buildRectangularGroupFootprint(
+  ownSlotData: NormalizedSlotData[],
+  boundarySpacing: number,
+  legacyFootprint?: SteppedLayoutParams["groups"][number]["legacyRectangularFootprint"],
+  trayWidth?: number,
+  trayDepth?: number,
+): Geom2 | null {
+  if (
+    legacyFootprint &&
+    Number.isFinite(legacyFootprint.centerX) &&
+    Number.isFinite(legacyFootprint.centerY) &&
+    Number.isFinite(legacyFootprint.width) &&
+    Number.isFinite(legacyFootprint.depth) &&
+    legacyFootprint.width > 0 &&
+    legacyFootprint.depth > 0 &&
+    typeof trayWidth === "number" &&
+    typeof trayDepth === "number"
+  ) {
+    const centerX = legacyFootprint.centerX - trayWidth / 2;
+    const centerY = legacyFootprint.centerY - trayDepth / 2;
+    return buildRectangleFootprint({
+      minX: centerX - legacyFootprint.width / 2,
+      maxX: centerX + legacyFootprint.width / 2,
+      minY: centerY - legacyFootprint.depth / 2,
+      maxY: centerY + legacyFootprint.depth / 2,
+    }, 0);
+  }
+
+  const bounds = calculateAxisAlignedEnvelope(ownSlotData, boundarySpacing);
+  if (!bounds) {
+    return null;
+  }
+  return buildRectangleFootprint(bounds, 0);
 }
 
 export function buildSteppedCadFeatureGraph(
   params: SteppedLayoutParams,
 ): SteppedCadFeatureGraph {
-  const { trayWidth, trayDepth, slots } = buildNormalizedSlotData(params);
+  const footprintStyle = resolveSteppedFootprintStyle(params);
+  const contouredConstruction = footprintStyle === "contoured"
+    ? constructSteppedContouredFootprints(params)
+    : null;
+  const {
+    trayWidth,
+    trayDepth,
+    sourceCenterX,
+    sourceCenterY,
+    slots,
+  } = buildNormalizedSlotData(params, contouredConstruction?.bounds ?? null);
   if (slots.length === 0 || params.groups.length === 0) {
     return {
       trayWidth,
@@ -311,6 +408,30 @@ export function buildSteppedCadFeatureGraph(
     };
   }
 
+  const contouredGroupById = new Map(
+    contouredConstruction?.groups.map((group) => [group.groupId, group]) ?? [],
+  );
+  const boundarySpacingIndependent = params.boundarySpacingIndependent === true;
+  const boundarySpacing = boundarySpacingIndependent
+    ? (params.boundarySpacing ?? params.spacing)
+    : params.spacing;
+
+  const automaticLowestLayerBounds = footprintStyle === "rectangular"
+    ? calculateAxisAlignedEnvelope(slots, boundarySpacing)
+    : null;
+  const rectangularLowestLayerFootprint = footprintStyle !== "rectangular"
+    ? null
+    : params.traySizingMode === "fixed"
+      ? buildRectangleFootprint({
+          minX: -params.trayWidth / 2,
+          maxX: params.trayWidth / 2,
+          minY: -params.trayDepth / 2,
+          maxY: params.trayDepth / 2,
+        }, params.cornerRadius ?? 0)
+      : automaticLowestLayerBounds
+        ? buildRectangleFootprint(automaticLowestLayerBounds, params.cornerRadius ?? 0)
+        : null;
+
   const groups = params.groups
     .map<SteppedCadGroupFeature | null>((group) => {
       const ownSlots = slots.filter((slot) => slot.groupId === group.id);
@@ -323,17 +444,29 @@ export function buildSteppedCadFeatureGraph(
         getSteppedGroupMinBottomHeight(params, group.id),
         3,
       );
-      const contextSlots = slots.filter((slot) => {
-        if (slot.groupId === group.id) {
-          return false;
-        }
-        return slot.columnHeight > columnHeight;
-      });
-      const footprint = buildClusteredFootprint(
-        [...ownSlots, ...contextSlots],
-        params.spacing,
-        getEffectiveGroupStructureParams(group, params),
-      );
+      let footprint: Geom2 | null = null;
+      if (footprintStyle === "rectangular") {
+        footprint = buildRectangularGroupFootprint(
+          ownSlots,
+          boundarySpacing,
+          group.legacyRectangularFootprint,
+          trayWidth,
+          trayDepth,
+        );
+      } else {
+        const constructed = contouredGroupById.get(group.id)?.footprint;
+        const centeredBodies = constructed?.bodies.map((body) =>
+          translate(
+            [-sourceCenterX, -sourceCenterY],
+            body.geometry,
+          ) as Geom2
+        ) ?? [];
+        footprint = centeredBodies.length === 1
+          ? centeredBodies[0]
+          : centeredBodies.length > 1
+            ? union(...centeredBodies)
+            : null;
+      }
 
       if (!footprint) {
         return null;
@@ -363,9 +496,16 @@ export function buildSteppedCadFeatureGraph(
       continue;
     }
 
-    const footprint = activeFootprints.length === 1
-      ? activeFootprints[0].footprint
-      : union(...activeFootprints.map((item) => item.footprint));
+    const footprint = footprintStyle === "rectangular" && previousHeight === 0
+      ? rectangularLowestLayerFootprint
+      : activeFootprints.length === 1
+        ? activeFootprints[0].footprint
+        : union(...activeFootprints.map((item) => item.footprint));
+
+    if (!footprint) {
+      previousHeight = height;
+      continue;
+    }
 
     layers.push({
       id: `layer-${previousHeight}-${height}`,

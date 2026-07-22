@@ -1,9 +1,7 @@
-import { calculateSimpleSteppedDimensions } from "@/lib/simple-stepped-layout";
 import { calculateTrayDimensions } from "@/lib/tray-model";
 import type {
   BaseConverterParams,
   CustomLayoutParams,
-  SimpleSteppedLayoutParams,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import { resolveBaseConverterGeometry } from "@/lib/base-converter-config";
@@ -39,21 +37,7 @@ export type DraftSummary =
       trayDepth: number;
     }
   | {
-      mode: "simple-stepped";
-      rowCount: number;
-      slotCount: number;
-      trayWidth: number;
-      trayDepth: number;
-    }
-  | {
       mode: "stepped";
-      groupCount: number;
-      slotCount: number;
-      trayWidth: number;
-      trayDepth: number;
-    }
-  | {
-      mode: "stepped-cad";
       groupCount: number;
       slotCount: number;
       trayWidth: number;
@@ -68,9 +52,7 @@ export type DraftParamsByMode = {
   grid: TrayParams;
   custom: CustomLayoutParams;
   "base-converter": BaseConverterParams;
-  "simple-stepped": SimpleSteppedLayoutParams;
   stepped: SteppedLayoutParams;
-  "stepped-cad": SteppedLayoutParams;
 };
 
 function formatBaseSizeLabel(size: number) {
@@ -127,20 +109,7 @@ function buildBaseConverterDraftSummary(
   };
 }
 
-function buildSimpleSteppedDraftSummary(
-  params: SimpleSteppedLayoutParams,
-): DraftSummaryByMode["simple-stepped"] {
-  const dimensions = calculateSimpleSteppedDimensions(params);
-  return {
-    mode: "simple-stepped",
-    rowCount: params.rows.length,
-    slotCount: params.slots.length,
-    trayWidth: dimensions.width,
-    trayDepth: dimensions.depth,
-  };
-}
-
-function buildSteppedDraftSummary<M extends "stepped" | "stepped-cad">(
+function buildSteppedDraftSummary<M extends "stepped">(
   mode: M,
   params: SteppedLayoutParams,
 ): DraftSummaryByMode[M] {
@@ -168,18 +137,9 @@ export function buildDraftSummary<M extends keyof DraftParamsByMode>(
       return buildBaseConverterDraftSummary(
         params as BaseConverterParams,
       ) as DraftSummaryByMode[M];
-    case "simple-stepped":
-      return buildSimpleSteppedDraftSummary(
-        params as SimpleSteppedLayoutParams,
-      ) as DraftSummaryByMode[M];
     case "stepped":
       return buildSteppedDraftSummary(
         "stepped",
-        params as SteppedLayoutParams,
-      ) as DraftSummaryByMode[M];
-    case "stepped-cad":
-      return buildSteppedDraftSummary(
-        "stepped-cad",
         params as SteppedLayoutParams,
       ) as DraftSummaryByMode[M];
     default: {

@@ -179,33 +179,91 @@ describe("local drafts", () => {
     expect(getDraft("stepped", record.item.id)).toEqual(record);
   });
 
-  it("stores CAD stepped drafts under an independent Mode identity", () => {
-    vi.spyOn(crypto, "randomUUID")
-      .mockReturnValueOnce("ordinary-stepped")
-      .mockReturnValueOnce("cad-stepped");
-    const ordinary = createDraft("普通阶梯", "stepped", createSteppedParams());
-    const cad = createDraft("CAD 阶梯", "stepped-cad", createSteppedParams());
-
-    expect(cad.item.mode).toBe("stepped-cad");
-    expect(cad.item.summary).toEqual({
+  it("读取历史 CAD 草稿为统一阶梯，并在更新时迁移存储键", () => {
+    const id = "cad-stepped";
+    const params = createSteppedParams();
+    const item = {
+      id,
       mode: "stepped-cad",
+      title: "CAD 阶梯",
+      createdAt: "2026-04-08T10:20:00.000Z",
+      updatedAt: "2026-04-08T10:20:00.000Z",
       groupCount: 1,
       slotCount: 1,
       trayWidth: 260,
       trayDepth: 260,
+    };
+    localStorage.setItem("tray-creator:drafts:index:v1", JSON.stringify([item]));
+    localStorage.setItem(
+      `tray-creator:drafts:stepped-cad:${id}:v1`,
+      JSON.stringify({
+        storageVersion: 1,
+        item,
+        paramFile: {
+          version: 1,
+          mode: "stepped-cad",
+          params: { ...params, enableSplitAssembly: undefined },
+        },
+      }),
+    );
+
+    expect(listDrafts("stepped").map((draft) => draft.id)).toEqual([id]);
+    expect(getDraft("stepped", id)?.paramFile.params.enableSplitAssembly).toBe(true);
+
+    updateDraft("stepped", id, "已迁移", params);
+    expect(localStorage.getItem(`tray-creator:drafts:stepped:${id}:v1`)).not.toBeNull();
+    expect(localStorage.getItem(`tray-creator:drafts:stepped-cad:${id}:v1`)).toBeNull();
+  });
+
+  it("在阶梯草稿中发现历史简易阶梯并在更新时迁移存储键", () => {
+    const id = "legacy-simple-stepped";
+    const params = createSimpleSteppedParams({
+      trayWidth: 180,
+      trayDepth: 120,
     });
-    expect(cad.paramFile.mode).toBe("stepped-cad");
-    expect(localStorage.getItem(
-      `tray-creator:drafts:stepped-cad:${cad.item.id}:v1`,
-    )).not.toBeNull();
-    expect(listDrafts("stepped-cad").map((item) => item.id)).toEqual([
-      cad.item.id,
-    ]);
-    expect(listDrafts("stepped").map((item) => item.id)).toEqual([
-      ordinary.item.id,
-    ]);
-    expect(getDraft("stepped-cad", ordinary.item.id)).toBeNull();
-    expect(getDraft("stepped", cad.item.id)).toBeNull();
+    const item = {
+      id,
+      mode: "simple-stepped",
+      title: "历史简易阶梯",
+      createdAt: "2026-04-08T10:20:00.000Z",
+      updatedAt: "2026-04-08T10:20:00.000Z",
+      rowCount: 1,
+      slotCount: 1,
+      trayWidth: 180,
+      trayDepth: 120,
+    };
+    localStorage.setItem("tray-creator:drafts:index:v1", JSON.stringify([item]));
+    localStorage.setItem(
+      `tray-creator:drafts:simple-stepped:${id}:v1`,
+      JSON.stringify({
+        storageVersion: 1,
+        item,
+        paramFile: {
+          version: 1,
+          mode: "simple-stepped",
+          params,
+        },
+      }),
+    );
+
+    expect(listDrafts("stepped").map((draft) => draft.id)).toEqual([id]);
+    const converted = getDraft("stepped", id);
+    expect(converted?.paramFile.mode).toBe("stepped");
+    expect(converted?.paramFile.params).toMatchObject({
+      footprintStyle: "rectangular",
+      traySizingMode: "fixed",
+      trayWidth: 180,
+      trayDepth: 120,
+    });
+    expect(converted?.item.summary).toMatchObject({
+      mode: "stepped",
+      groupCount: 1,
+      slotCount: 1,
+    });
+
+    updateDraft("stepped", id, "已迁移简易阶梯", converted!.paramFile.params);
+    expect(localStorage.getItem(`tray-creator:drafts:stepped:${id}:v1`)).not.toBeNull();
+    expect(localStorage.getItem(`tray-creator:drafts:simple-stepped:${id}:v1`)).toBeNull();
   });
 
   it("stores base converter drafts with source and target standards", () => {
@@ -229,7 +287,6 @@ describe("local drafts", () => {
     vi.spyOn(crypto, "randomUUID")
       .mockReturnValueOnce("grid-1")
       .mockReturnValueOnce("custom-1")
-      .mockReturnValueOnce("simple-1")
       .mockReturnValueOnce("stepped-1");
 
     const grid = createDraft(
@@ -252,19 +309,11 @@ describe("local drafts", () => {
         trayDepth: 80,
       }),
     );
-    const simple = createDraft(
-      "简易阶梯草稿",
-      "simple-stepped",
-      createSimpleSteppedParams(),
-    );
     const stepped = createDraft("阶梯草稿", "stepped", createSteppedParams());
 
     expect(listDrafts("grid").map((item) => item.id)).toEqual([grid.item.id]);
     expect(listDrafts("custom").map((item) => item.id)).toEqual([
       custom.item.id,
-    ]);
-    expect(listDrafts("simple-stepped").map((item) => item.id)).toEqual([
-      simple.item.id,
     ]);
     expect(listDrafts("stepped").map((item) => item.id)).toEqual([
       stepped.item.id,
@@ -284,13 +333,6 @@ describe("local drafts", () => {
       slotCount: 1,
       trayWidth: 120,
       trayDepth: 80,
-    });
-    expect(simple.item.summary).toEqual({
-      mode: "simple-stepped",
-      rowCount: 1,
-      slotCount: 1,
-      trayWidth: SIMPLE_STEPPED_LAYOUT_DEFAULTS.trayWidth,
-      trayDepth: SIMPLE_STEPPED_LAYOUT_DEFAULTS.trayDepth,
     });
   });
 
@@ -344,10 +386,12 @@ describe("local drafts", () => {
     expect(getDraft("stepped", initial.item.id)?.item.title).toBe("Final Draft");
 
     exportDraft("stepped", initial.item.id);
+    const exportedParams = { ...nextParams };
+    delete exportedParams.activeGroupId;
     expect(downloadParamFileMock).toHaveBeenCalledWith(
       {
         mode: "stepped",
-        params: nextParams,
+        params: exportedParams,
       },
       "stepped-draft-final-draft.json",
     );

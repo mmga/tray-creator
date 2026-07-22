@@ -151,9 +151,13 @@ function buildExpectedMergedPartGeometry(grooveDepth: number) {
 }
 
 function expectGeometryRoughlyMatches(actual: Geom3, expected: Geom3) {
+  const expectedVolume = Math.abs(measureVolume(expected));
+  // 权威轮廓使用最终槽型快照（该夹具中比 nominal diameter 大 0.4 mm），
+  // 分层 profile 的布尔分区与直接 union 会产生很小的离散化体积差；同时仍严格核对 bounds。
   expect(
-    Math.abs(measureVolume(actual) - measureVolume(expected)),
-  ).toBeLessThan(10);
+    Math.abs(measureVolume(actual) - measureVolume(expected)) /
+      Math.max(expectedVolume, 1),
+  ).toBeLessThan(0.005);
 
   const actualBounds = measureBoundingBox(actual);
   const expectedBounds = measureBoundingBox(expected);

@@ -9,6 +9,8 @@ import type {
 const {
   generateSteppedPreviewMock,
   exportSteppedModelFilesMock,
+  generateSteppedSplitPreviewMock,
+  exportSteppedSplitPartFilesMock,
   useSteppedOutlinePreviewMock,
   buildSteppedBridgeWarningMock,
   toastMock,
@@ -19,6 +21,8 @@ const {
 } = vi.hoisted(() => ({
   generateSteppedPreviewMock: vi.fn(),
   exportSteppedModelFilesMock: vi.fn(),
+  generateSteppedSplitPreviewMock: vi.fn(),
+  exportSteppedSplitPartFilesMock: vi.fn(),
   useSteppedOutlinePreviewMock: vi.fn(),
   buildSteppedBridgeWarningMock: vi.fn(),
   toastMock: vi.fn(),
@@ -37,6 +41,8 @@ const {
 vi.mock("@/lib/stepped-model-service", () => ({
   generateSteppedPreview: generateSteppedPreviewMock,
   exportSteppedModelFiles: exportSteppedModelFilesMock,
+  generateSteppedSplitPreview: generateSteppedSplitPreviewMock,
+  exportSteppedSplitPartFiles: exportSteppedSplitPartFilesMock,
 }));
 
 vi.mock("@/hooks/useSteppedOutlinePreview", () => ({
@@ -89,6 +95,8 @@ describe("useSteppedLayout", () => {
   beforeEach(() => {
     generateSteppedPreviewMock.mockReset();
     exportSteppedModelFilesMock.mockReset();
+    generateSteppedSplitPreviewMock.mockReset();
+    exportSteppedSplitPartFilesMock.mockReset();
     useSteppedOutlinePreviewMock.mockReset();
     buildSteppedBridgeWarningMock.mockReset();
     toastMock.mockReset();
@@ -121,14 +129,14 @@ describe("useSteppedLayout", () => {
     vi.useRealTimers();
   });
 
-  it("不暴露 CAD-only split lifecycle", () => {
+  it("暴露现行 CAD split lifecycle", () => {
     const { result } = renderHook(() => useSteppedLayout());
 
-    expect(result.current).not.toHaveProperty("splitPreviewParts");
-    expect(result.current).not.toHaveProperty("isGeneratingSplitPreview");
-    expect(result.current).not.toHaveProperty("handleGenerateSplitPreview");
-    expect(result.current).not.toHaveProperty("clearSplitPreview");
-    expect(result.current).not.toHaveProperty("handleExportSplitParts");
+    expect(result.current).toHaveProperty("splitPreviewParts", null);
+    expect(result.current).toHaveProperty("isGeneratingSplitPreview", false);
+    expect(result.current.handleGenerateSplitPreview).toEqual(expect.any(Function));
+    expect(result.current.clearSplitPreview).toEqual(expect.any(Function));
+    expect(result.current.handleExportSplitParts).toEqual(expect.any(Function));
   });
 
   it("wires outline preview state and manages groups", () => {
@@ -149,15 +157,12 @@ describe("useSteppedLayout", () => {
       id: "group-2",
       name: "组 2",
     });
-    expect(result.current.params.activeGroupId).toBe("group-2");
-
     act(() => {
       result.current.updateGroupHeight("group-2", 24);
       result.current.updateGroupSmoothingOverride("group-2", true);
       result.current.updateGroupSmoothingRadius("group-2", 90);
       result.current.updateGroupDisconnectOverride("group-2", true);
       result.current.updateGroupDisconnectDistance("group-2", 8);
-      result.current.setActiveGroup(STEPPED_LAYOUT_DEFAULTS.groups[0].id);
     });
 
     expect(result.current.params.groups.at(-1)).toMatchObject({
@@ -167,10 +172,6 @@ describe("useSteppedLayout", () => {
       useGroupDisconnectDistance: true,
       groupDisconnectDistance: 8,
     });
-    expect(result.current.params.activeGroupId).toBe(
-      STEPPED_LAYOUT_DEFAULTS.groups[0].id,
-    );
-
     act(() => {
       result.current.pauseOutlinePreview();
       result.current.resumeOutlinePreview();
@@ -291,7 +292,7 @@ describe("useSteppedLayout", () => {
     expect(result.current.params.groups[0].bottomHeight).toBeGreaterThan(5);
   });
 
-  it("supports snapshots, undo, batch updates, and group reordering", () => {
+  it("supports undo, batch updates, and group reordering", () => {
     vi.useFakeTimers();
     randomIdFactoryMock.createId
       .mockReturnValueOnce("group-2")
@@ -305,8 +306,6 @@ describe("useSteppedLayout", () => {
     });
 
     act(() => {
-      vi.advanceTimersByTime(600);
-      result.current.saveSnapshot();
       result.current.updateSlotPosition("slot-1", 50, 60);
     });
     expect(result.current.params.slots[0]).toMatchObject({ x: 50, y: 60 });
@@ -363,9 +362,13 @@ describe("useSteppedLayout", () => {
 
     act(() => {
       result.current.addGroup();
-      result.current.addSlot(40);
-      result.current.setActiveGroup(STEPPED_LAYOUT_DEFAULTS.groups[0].id);
-      result.current.addSlot(25);
+      result.current.addSlot(40, undefined, undefined, "group-2");
+      result.current.addSlot(
+        25,
+        undefined,
+        undefined,
+        STEPPED_LAYOUT_DEFAULTS.groups[0].id,
+      );
     });
 
     const beforeApply = result.current.params;

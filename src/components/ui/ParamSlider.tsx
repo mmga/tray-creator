@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,10 @@ interface ParamSliderProps {
     value: number;
     config: { min: number; max: number; step: number };
     onChange: (v: number) => void;
+    onContinuousChangeStart?: () => boolean | void;
+    onContinuousChange?: (v: number) => void;
+    onContinuousChangeCommit?: () => void;
+    onContinuousChangeCancel?: () => void;
     unit?: string;
 }
 
@@ -21,6 +25,10 @@ export function ParamSlider({
     value,
     config,
     onChange,
+    onContinuousChangeStart,
+    onContinuousChange,
+    onContinuousChangeCommit,
+    onContinuousChangeCancel,
     unit = "mm",
 }: ParamSliderProps) {
     // 防御 undefined：确保 input/slider 始终为受控状态
@@ -30,6 +38,7 @@ export function ParamSlider({
     const [inputDraft, setInputDraft] = useState(() => String(safeValue));
     const [isInputFocused, setIsInputFocused] = useState(false);
     const skipNextBlurCommitRef = useRef(false);
+    const continuousEditActiveRef = useRef(false);
     const sliderValue = useMemo(() => [safeValue], [safeValue]);
     const displayedInputValue = isInputFocused ? inputDraft : String(safeValue);
     const handleValueChange = useCallback(
@@ -39,6 +48,39 @@ export function ParamSlider({
             }
         },
         [onChange, safeValue],
+    );
+    const beginContinuousChange = useCallback((): boolean => {
+        if (!onContinuousChange) return false;
+        if (continuousEditActiveRef.current) return true;
+        if (onContinuousChangeStart?.() === false) return false;
+        continuousEditActiveRef.current = true;
+        return true;
+    }, [onContinuousChange, onContinuousChangeStart]);
+    const previewContinuousChange = useCallback((nextValue: number) => {
+        if (!onContinuousChange) {
+            handleValueChange(nextValue);
+            return;
+        }
+        if (!beginContinuousChange()) return;
+        if (nextValue !== safeValue) onContinuousChange(nextValue);
+    }, [beginContinuousChange, handleValueChange, onContinuousChange, safeValue]);
+    const commitContinuousChange = useCallback(() => {
+        if (!continuousEditActiveRef.current) return;
+        continuousEditActiveRef.current = false;
+        onContinuousChangeCommit?.();
+    }, [onContinuousChangeCommit]);
+    const cancelContinuousChange = useCallback(() => {
+        if (!continuousEditActiveRef.current) return;
+        continuousEditActiveRef.current = false;
+        onContinuousChangeCancel?.();
+    }, [onContinuousChangeCancel]);
+    const cancelContinuousChangeRef = useRef(cancelContinuousChange);
+    useEffect(() => {
+        cancelContinuousChangeRef.current = cancelContinuousChange;
+    }, [cancelContinuousChange]);
+    useEffect(
+        () => () => cancelContinuousChangeRef.current(),
+        [],
     );
     const blockArrowKeyParamAdjust = useCallback(
         (event: React.KeyboardEvent<HTMLElement>) => {
@@ -120,8 +162,14 @@ export function ParamSlider({
                 min={effectiveMin}
                 max={effectiveMax}
                 step={config.step}
-                onKeyDownCapture={blockArrowKeyParamAdjust}
-                onValueChange={([v]) => handleValueChange(v)}
+                onPointerDownCapture={beginContinuousChange}
+                onPointerCancel={cancelContinuousChange}
+                onKeyDownCapture={(event) => {
+                    if (event.key === "Escape") cancelContinuousChange();
+                    blockArrowKeyParamAdjust(event);
+                }}
+                onValueChange={([v]) => previewContinuousChange(v)}
+                onValueCommit={commitContinuousChange}
                 className="py-1"
             />
         </div>

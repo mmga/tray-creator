@@ -1,12 +1,13 @@
 import { MAX_BUILD_SIZE } from "@/lib/config";
-import { calculateCustomTrayDimensions } from "@/lib/custom-tray-model";
-import type { SimpleSteppedDerivedLayout } from "@/lib/simple-stepped-layout";
+import { calculateCustomTrayFootprint } from "@/lib/custom-layout-math";
+import { constructCustomContouredFootprint } from "@/lib/custom-contoured-footprint";
+import { constructSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
 import { calculateTrayDimensions } from "@/lib/tray-model";
 import { resolveBaseConverterGeometry } from "@/lib/base-converter-config";
 import type {
   BaseConverterParams,
+  BaseplateFootprintStyle,
   CustomLayoutParams,
-  SimpleSteppedLayoutParams,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import type { TrayParams } from "@/types/tray";
@@ -36,6 +37,7 @@ interface TrayResultProjectionBase {
   buildLimit: TrayResultBuildLimit;
   generating: boolean;
   stale: boolean;
+  footprintWarnings?: readonly string[];
 }
 
 export interface GridTrayResultProjection extends TrayResultProjectionBase {
@@ -47,17 +49,12 @@ export interface GridTrayResultProjection extends TrayResultProjectionBase {
 
 export interface CustomTrayResultProjection extends TrayResultProjectionBase {
   mode: "custom";
+  footprintStyle: BaseplateFootprintStyle;
   sizingMode: "auto" | "fixed";
-  footprintKind: "effective-baseplate" | "fixed-outer-footprint";
+  footprintKind: "effective-baseplate" | "fixed-outer-footprint" | "contoured-footprint";
+  /** contoured footprint 产生的独立可打印实体数；rectangular 时为 1（或 0 当无槽）。 */
+  contourBodyCount: number;
   footprintArea: number;
-}
-
-export interface SimpleSteppedTrayResultProjection
-  extends TrayResultProjectionBase {
-  mode: "simple-stepped";
-  rowCount: number;
-  activeRowCount: number;
-  minimumBaseplate: { width: number; depth: number };
 }
 
 export interface BaseConverterResultProjection extends TrayResultProjectionBase {
@@ -68,7 +65,7 @@ export interface BaseConverterResultProjection extends TrayResultProjectionBase 
 }
 
 export interface SteppedTrayResultProjection extends TrayResultProjectionBase {
-  mode: "stepped" | "stepped-cad";
+  mode: "stepped";
   groupCount: number;
   groups: Array<{
     id: string;
@@ -83,7 +80,6 @@ export type TrayResultProjection =
   | GridTrayResultProjection
   | CustomTrayResultProjection
   | BaseConverterResultProjection
-  | SimpleSteppedTrayResultProjection
   | SteppedTrayResultProjection;
 
 export function projectBaseConverterResult(
@@ -184,65 +180,72 @@ export function projectCustomTrayResult(
   effectiveDimensions: { width: number; depth: number },
   state: ResultState,
 ): CustomTrayResultProjection {
-  const modelDimensions = calculateCustomTrayDimensions(params);
-  const sizingMode = params.traySizingMode === "fixed" ? "fixed" : "auto";
+  const constructedContoured = params.footprintStyle === "contoured"
+    ? constructCustomContouredFootprint(params)
+    : undefined;
+  const footprint = calculateCustomTrayFootprint(params, constructedContoured);
+  const modelDimensions = {
+    width: footprint.width,
+    depth: footprint.depth,
+    height: params.baseThickness + params.holeDepth,
+  };
+  const footprintStyle = footprint.footprintStyle;
+  const sizingMode = footprint.sizingMode;
+
+  // contoured 时尺寸完全由派生轮廓外接框决定，忽略 effectiveDimensions 上游计算（避免双轨）
   const width =
-    sizingMode === "fixed"
-      ? modelDimensions.width
-      : effectiveDimensions.width > 0
-        ? effectiveDimensions.width
-        : params.trayWidth;
+    footprintStyle === "contoured"
+      ? (footprint.width > 0 ? footprint.width : params.trayWidth)
+      : sizingMode === "fixed"
+        ? modelDimensions.width
+        : effectiveDimensions.width > 0
+          ? effectiveDimensions.width
+          : params.trayWidth;
   const depth =
-    sizingMode === "fixed"
-      ? modelDimensions.depth
-      : effectiveDimensions.depth > 0
-        ? effectiveDimensions.depth
-        : params.trayDepth;
+    footprintStyle === "contoured"
+      ? (footprint.depth > 0 ? footprint.depth : params.trayDepth)
+      : sizingMode === "fixed"
+        ? modelDimensions.depth
+        : effectiveDimensions.depth > 0
+          ? effectiveDimensions.depth
+          : params.trayDepth;
   const common = projectCommon(
     { width, depth, height: modelDimensions.height },
     state,
   );
+
+  const footprintKind =
+    footprintStyle === "contoured"
+      ? ("contoured-footprint" as const)
+      : sizingMode === "fixed"
+        ? ("fixed-outer-footprint" as const)
+        : ("effective-baseplate" as const);
+
   return {
     mode: "custom",
     slotCount: params.slots.length,
     itemLabel: `${params.slots.length} 个凹槽`,
     ...common,
+    footprintStyle,
     sizingMode,
-    footprintKind:
-      sizingMode === "fixed"
-        ? "fixed-outer-footprint"
-        : "effective-baseplate",
+    footprintKind,
+    contourBodyCount: footprint.contourBodyCount,
     footprintArea: finiteOrZero(common.dimensions.width * common.dimensions.depth),
-  };
-}
-
-export function projectSimpleSteppedTrayResult(
-  params: SimpleSteppedLayoutParams,
-  derivedLayout: SimpleSteppedDerivedLayout,
-  effectiveDimensions: TrayResultDimensions,
-  state: ResultState,
-): SimpleSteppedTrayResultProjection {
-  const common = projectCommon(effectiveDimensions, state);
-  return {
-    mode: "simple-stepped",
-    slotCount: params.slots.length,
-    itemLabel: `${params.rows.length} 行 · ${params.slots.length} 槽`,
-    ...common,
-    rowCount: params.rows.length,
-    activeRowCount: derivedLayout.activeRows.length,
-    minimumBaseplate: {
-      width: finiteOrZero(derivedLayout.minimumTrayWidth),
-      depth: finiteOrZero(derivedLayout.minimumTrayDepth),
-    },
+    footprintWarnings: constructedContoured?.diagnostics.map(
+      (diagnostic) => diagnostic.message,
+    ),
   };
 }
 
 export function projectSteppedTrayResult(
-  mode: "stepped" | "stepped-cad",
+  mode: "stepped",
   params: SteppedLayoutParams,
   effectiveDimensions: { width: number; depth: number },
   state: ResultState,
 ): SteppedTrayResultProjection {
+  const constructedContoured = params.footprintStyle !== "rectangular"
+    ? constructSteppedContouredFootprints(params)
+    : undefined;
   const height =
     params.groups.length > 0
       ? Math.max(
@@ -262,6 +265,9 @@ export function projectSteppedTrayResult(
     slotCount: params.slots.length,
     itemLabel: `${params.groups.length} 组 · ${params.slots.length} 槽`,
     ...common,
+    footprintWarnings: constructedContoured?.diagnostics.map(
+      (diagnostic) => diagnostic.message,
+    ),
     groupCount: params.groups.length,
     groups: params.groups.map((group) => ({
       id: group.id,

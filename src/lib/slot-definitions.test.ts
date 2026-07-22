@@ -18,8 +18,8 @@ describe("slot definitions", () => {
     expect(findCircleSlotDefinitionByBaseDiameter(25)).toMatchObject({
       id: "circle-25",
       baseDiameter: 25,
-      slotDiameter: 25.2,
-      tolerance: 0.2,
+      slotDiameter: 25.4,
+      tolerance: 0.4,
     });
     expect(findCircleSlotDefinitionByBaseDiameter(40)).toMatchObject({
       id: "circle-40",

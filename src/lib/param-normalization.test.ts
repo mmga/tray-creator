@@ -3,6 +3,7 @@ import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { getBaseHoleMinBaseThickness, MAX_BUILD_SIZE } from "@/lib/config";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
+import { normalizeSimpleSteppedParams } from "@/lib/simple-stepped-projection";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import {
   migrateCustomParamsToStepped,
@@ -37,7 +38,7 @@ describe("param normalization", () => {
         },
       ],
     } as unknown as CustomLayoutParams) as CustomLayoutParams;
-    const simpleStepped = normalizeParamsForMode("simple-stepped", {
+    const simpleStepped = normalizeSimpleSteppedParams({
       ...SIMPLE_STEPPED_LAYOUT_DEFAULTS,
       rows: [{ id: "row-1", name: "前排", slotIds: ["simple-100"] }],
       slots: [
@@ -206,7 +207,7 @@ describe("param normalization", () => {
   });
 
   it("normalizes simple stepped legacy rows before slot snapshots and derived size", () => {
-    const normalized = normalizeParamsForMode("simple-stepped", {
+    const normalized = normalizeSimpleSteppedParams({
       stepHeight: 5,
       rowGap: 0,
       spacing: 4,
@@ -240,7 +241,7 @@ describe("param normalization", () => {
   });
 
   it("uses the simple stepped layout core for imported tray size and snapshots", () => {
-    const normalized = normalizeParamsForMode("simple-stepped", {
+    const normalized = normalizeSimpleSteppedParams({
       ...SIMPLE_STEPPED_LAYOUT_DEFAULTS,
       trayWidth: 100,
       trayDepth: 100,
@@ -317,15 +318,13 @@ describe("param normalization", () => {
     });
     expect(normalized.groups[0].splitPartGroupId).toBeUndefined();
     expect(normalized.slots[0]).toMatchObject({
-      shape: "circle",
+      shape: "ellipse",
       width: 40,
-      height: 40,
+      height: 25,
       rotation: 315,
       groupId: normalized.groups[0].id,
-      slotDefinitionId: "circle-40",
-      slotWidth: 40.4,
-      slotHeight: 40.4,
     });
+    expect(normalized.slots[0].slotDefinitionId).toBeUndefined();
     expect("bottomHeight" in normalized.slots[0]).toBe(false);
     expect("bridgeRadius" in (normalized as unknown as Record<string, unknown>)).toBe(
       false,
@@ -475,8 +474,8 @@ describe("param normalization", () => {
     );
   });
 
-  it("fills and clamps CAD magnet post hole params while preserving a 1mm bottom wall", () => {
-    const normalized = normalizeParamsForMode("stepped-cad", {
+  it("fills and clamps stepped magnet post hole params while preserving a 1mm bottom wall", () => {
+    const normalized = normalizeParamsForMode("stepped", {
       ...STEPPED_LAYOUT_DEFAULTS,
       holeDepth: 3,
       baseHoleStructure: "magnet-post-hole",
@@ -534,5 +533,86 @@ describe("param normalization", () => {
 
     expect(inset.splitGrooveType).toBe("inset");
     expect(invalid.splitGrooveType).toBe("profile");
+  });
+
+  it("旧自定义文件缺失 footprintStyle 时默认 rectangular 并保留显式 contoured", () => {
+    const legacy = normalizeParamsForMode("custom", {
+      trayWidth: 100,
+      trayDepth: 100,
+      slots: [],
+      spacing: 5,
+      boundarySpacing: 5,
+      boundarySpacingIndependent: false,
+      baseThickness: 3,
+      holeDepth: 3,
+      cornerRadius: 4,
+      sideBevelWidth: 0,
+    } as unknown as CustomLayoutParams) as CustomLayoutParams;
+    expect(legacy.footprintStyle).toBe("rectangular");
+    expect(legacy.smoothingRadius).toBe(60);
+    expect(legacy.disconnectDistance).toBe(0);
+
+    const explicitContoured = normalizeParamsForMode("custom", {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      footprintStyle: "contoured",
+    } as CustomLayoutParams) as CustomLayoutParams;
+    expect(explicitContoured.footprintStyle).toBe("contoured");
+  });
+
+  it("旧阶梯文件缺失 footprintStyle 时默认 contoured 并补全 rectangular 专属字段", () => {
+    const legacy = normalizeParamsForMode("stepped", {
+      trayWidth: 100,
+      trayDepth: 100,
+      groups: [
+        {
+          id: "g1",
+          name: "组 1",
+          color: "#22c55e",
+          bottomHeight: 10,
+          useGroupSmoothingRadius: false,
+          groupSmoothingRadius: 60,
+          useGroupDisconnectDistance: false,
+          groupDisconnectDistance: 0,
+        },
+      ],
+      slots: [],
+      activeGroupId: "g1",
+      spacing: 5,
+      holeDepth: 3,
+      smoothingRadius: 60,
+      disconnectDistance: 0,
+    } as unknown as SteppedLayoutParams) as SteppedLayoutParams;
+    expect(legacy.footprintStyle).toBe("contoured");
+    expect(legacy.boundarySpacing).toBe(5);
+    expect(legacy.boundarySpacingIndependent).toBe(false);
+    expect(legacy.traySizingMode).toBe("auto");
+    expect(typeof legacy.cornerRadius).toBe("number");
+
+    const explicitRect = normalizeParamsForMode("stepped", {
+      ...STEPPED_LAYOUT_DEFAULTS,
+      footprintStyle: "rectangular",
+      boundarySpacing: 8,
+      boundarySpacingIndependent: true,
+    } as SteppedLayoutParams) as SteppedLayoutParams;
+    expect(explicitRect.footprintStyle).toBe("rectangular");
+    expect(explicitRect.boundarySpacing).toBe(8);
+  });
+
+  it("阶梯未启用独立边界间距时 boundarySpacing 跟随 spacing", () => {
+    const normalized = normalizeParamsForMode("stepped", {
+      ...STEPPED_LAYOUT_DEFAULTS,
+      spacing: 7,
+      boundarySpacing: 3,
+      boundarySpacingIndependent: false,
+    } as SteppedLayoutParams) as SteppedLayoutParams;
+    expect(normalized.boundarySpacing).toBe(7);
+
+    const independent = normalizeParamsForMode("stepped", {
+      ...STEPPED_LAYOUT_DEFAULTS,
+      spacing: 7,
+      boundarySpacing: 3,
+      boundarySpacingIndependent: true,
+    } as SteppedLayoutParams) as SteppedLayoutParams;
+    expect(independent.boundarySpacing).toBe(3);
   });
 });

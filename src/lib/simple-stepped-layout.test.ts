@@ -58,22 +58,22 @@ describe("simple stepped layout", () => {
   it("derives stacked rows, row bands, and effective tray dimensions", () => {
     const params = createSimpleSteppedParams();
 
-    expect(getSimpleSteppedEffectiveDiameter({ diameter: 25 })).toBe(25.2);
+    expect(getSimpleSteppedEffectiveDiameter({ diameter: 25 })).toBe(25.4);
     expect(getSimpleSteppedEffectiveDiameter({ diameter: 32 })).toBe(32.4);
 
     const minimumSize = calculateSimpleSteppedMinimumTraySize(params);
-    expect(minimumSize.width).toBeCloseTo(79.8, 5);
+    expect(minimumSize.width).toBeCloseTo(79.9, 5);
     expect(minimumSize.depth).toBeCloseTo(110.8, 5);
 
     const dimensions = calculateSimpleSteppedDimensions(params);
-    expect(dimensions.width).toBeCloseTo(79.8, 5);
+    expect(dimensions.width).toBeCloseTo(79.9, 5);
     expect(dimensions.depth).toBeCloseTo(110.8, 5);
     expect(dimensions.height).toBe(10);
 
     const derived = deriveSimpleSteppedLayout(params, "row-2");
-    expect(derived.trayWidth).toBeCloseTo(79.8, 5);
+    expect(derived.trayWidth).toBeCloseTo(79.9, 5);
     expect(derived.trayDepth).toBeCloseTo(110.8, 5);
-    expect(derived.minimumTrayWidth).toBeCloseTo(79.8, 5);
+    expect(derived.minimumTrayWidth).toBeCloseTo(79.9, 5);
     expect(derived.minimumTrayDepth).toBeCloseTo(110.8, 5);
     expect(derived.trayHeight).toBe(10);
     expect(derived.highestTopHeight).toBe(10);
@@ -85,8 +85,8 @@ describe("simple stepped layout", () => {
       topHeight: 6,
       extraHeight: 0,
     });
-    expect(derived.activeRows[0]?.length).toBeCloseTo(79.8, 5);
-    expect(derived.activeRows[0].slots[0]?.globalX).toBeCloseTo(20.6, 5);
+    expect(derived.activeRows[0]?.length).toBeCloseTo(79.9, 5);
+    expect(derived.activeRows[0].slots[0]?.globalX).toBeCloseTo(20.7, 5);
     expect(derived.activeRows[0].slots[0]?.globalY).toBeCloseTo(24.2, 5);
 
     expect(derived.activeRows[1]).toMatchObject({
@@ -95,8 +95,8 @@ describe("simple stepped layout", () => {
       topHeight: 10,
       extraHeight: 4,
     });
-    expect(derived.activeRows[1]?.length).toBeCloseTo(79.8, 5);
-    expect(derived.activeRows[1].slots[0]?.globalX).toBeCloseTo(39.9, 5);
+    expect(derived.activeRows[1]?.length).toBeCloseTo(79.9, 5);
+    expect(derived.activeRows[1].slots[0]?.globalX).toBeCloseTo(39.95, 5);
     expect(derived.activeRows[1].slots[0]?.globalY).toBeCloseTo(85.6, 5);
 
     expect(buildSimpleSteppedRowBands(params, "row-2")).toEqual(
@@ -109,7 +109,7 @@ describe("simple stepped layout", () => {
       depth: 48.4,
       isActive: false,
     });
-    expect(derived.rowBands[0]?.width).toBeCloseTo(79.8, 5);
+    expect(derived.rowBands[0]?.width).toBeCloseTo(79.9, 5);
     expect(derived.rowBands[1]).toMatchObject({
       id: "row-2",
       x: 0,
@@ -118,7 +118,7 @@ describe("simple stepped layout", () => {
       topHeight: 10,
       isActive: true,
     });
-    expect(derived.rowBands[1]?.width).toBeCloseTo(79.8, 5);
+    expect(derived.rowBands[1]?.width).toBeCloseTo(79.9, 5);
   });
 
   it("returns stored tray size and empty rows when no active rows exist", () => {
@@ -152,7 +152,7 @@ describe("simple stepped layout", () => {
         100,
       ),
     ).toEqual([
-      { id: "slot-1", x: 29.4, y: 3.5999999999999996 },
+      { id: "slot-1", x: 29.3, y: 3.5 },
       { id: "slot-3", x: -21.8, y: 0 },
     ]);
   });

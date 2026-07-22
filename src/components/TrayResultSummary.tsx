@@ -52,21 +52,7 @@ function modeSpecificMetrics(result: TrayResultProjection) {
           />
         </>
       );
-    case "simple-stepped":
-      return (
-        <>
-          <ResultMetric
-            label="行数 / 有效行"
-            value={`${result.rowCount} / ${result.activeRowCount}`}
-          />
-          <ResultMetric
-            label="最小底板"
-            value={`${result.minimumBaseplate.width.toFixed(1)} × ${result.minimumBaseplate.depth.toFixed(1)} mm`}
-          />
-        </>
-      );
     case "stepped":
-    case "stepped-cad":
       return (
         <div className="col-span-2 space-y-1.5 border border-[#2e2a24] bg-[#1c1a16] p-2">
           <div className="text-center text-[9px] text-muted-foreground/60">
@@ -123,6 +109,14 @@ export function TrayResultSummary({ result }: TrayResultSummaryProps) {
           超过常规打印尺寸 {result.buildLimit.maxSize} × {result.buildLimit.maxSize} mm，仍可继续建模。
         </div>
       ) : null}
+      {result.footprintWarnings?.map((warning, index) => (
+        <div
+          key={`${warning}-${index}`}
+          className="rounded border border-[#7c5a1c] bg-[#2a2115]/70 px-2 py-1.5 text-[10px] text-[#f0d8b8]"
+        >
+          贴合轮廓警告：{warning}
+        </div>
+      ))}
     </div>
   );
 

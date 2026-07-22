@@ -243,7 +243,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     (ids: string[]): string[] => {
       const current = paramsRef.current;
       const result = duplicateCustomSlots(current, randomIdFactory, ids);
-      applyChange(() => result.params, { force: true });
+      applyChange(() => result.params);
       return result.newIds;
     },
     [applyChange, paramsRef],

@@ -13,13 +13,14 @@ import {
   resolveCustomBoundarySpacing,
   resolveCustomTraySizingMode,
 } from "@/lib/custom-layout-math";
+import { constructCustomContouredFootprint } from "@/lib/custom-contoured-footprint";
 import { getGridSlotGeometry } from "@/lib/grid-config";
 import {
   getGridBoundarySpacingAxes,
   getGridSpacingAxes,
 } from "@/lib/tray-model";
-import { deriveSimpleSteppedLayout } from "@/lib/simple-stepped-layout";
 import { buildSteppedOutlinePreview } from "@/lib/stepped-outline-preview";
+import { constructSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import type {
   AppMode,
@@ -235,6 +236,30 @@ function buildGridSlots(params: TrayParams): BaseHoleSlot[] {
 
 function buildCustomSlots(params: CustomLayoutParams): BaseHoleSlot[] {
   const footprint = calculateCustomTrayFootprint(params);
+
+  // contoured 分支：按各 contoured body 的外缘多边形评估磁吸孔（CONTEXT:629）
+  if (footprint.footprintStyle === "contoured") {
+    const contoured = constructCustomContouredFootprint(params);
+
+    return params.slots.map((slot) => {
+      const profile = getFreeSlotProfileGeometry(slot);
+      return {
+        id: slot.id,
+        shape: slot.shape,
+        nominalWidth: slot.width,
+        nominalHeight: slot.height,
+        finalWidth: profile.width,
+        finalHeight: profile.height,
+        x: slot.x,
+        y: slot.y,
+        floorHeight: params.baseThickness,
+        containsExpandedHole: (radius) =>
+          contoured.containsExpandedCircle(slot.x, slot.y, radius),
+      } satisfies BaseHoleSlot;
+    });
+  }
+
+  // rectangular 分支：保持原有矩形截面校验
   const bevel = Math.max(0, params.sideBevelWidth);
   const boundary = resolveCustomBoundarySpacing(params);
   const fixed = resolveCustomTraySizingMode(params) === "fixed";
@@ -280,51 +305,34 @@ function buildCustomSlots(params: CustomLayoutParams): BaseHoleSlot[] {
   });
 }
 
-function buildSimpleSteppedSlots(params: SimpleSteppedLayoutParams): BaseHoleSlot[] {
-  const derived = deriveSimpleSteppedLayout(params);
-  return derived.activeRows.flatMap((row) => row.slots.map((slot) => {
-    const cavityTop = row.topHeight - params.holeDepth - BASE_HOLE_CONFIG.topWall;
-    const usesRaisedBand = cavityTop > params.firstRowHeight + 1e-6;
-    const bounds = usesRaisedBand
-      ? {
-          minX: (derived.trayWidth - row.length) / 2,
-          maxX: (derived.trayWidth + row.length) / 2,
-          minY: row.centerY - row.depth / 2,
-          maxY: row.centerY + row.depth / 2,
-        }
-      : { minX: 0, maxX: derived.trayWidth, minY: 0, maxY: derived.trayDepth };
-    return {
-      id: slot.id,
-      shape: "circle",
-      nominalWidth: slot.diameter,
-      nominalHeight: slot.diameter,
-      finalWidth: slot.effectiveDiameter,
-      finalHeight: slot.effectiveDiameter,
-      x: slot.globalX,
-      y: slot.globalY,
-      floorHeight: row.topHeight - params.holeDepth,
-      containsExpandedHole: (radius) => circleFits(
-        slot.globalX,
-        slot.globalY,
-        radius,
-        (pointX, pointY) => isPointInRoundedRect(
-          pointX,
-          pointY,
-          bounds,
-          usesRaisedBand ? 0 : params.cornerRadius,
-        ),
-      ),
-    } satisfies BaseHoleSlot;
-  }));
-}
-
 function buildSteppedSlots(params: SteppedLayoutParams): BaseHoleSlot[] {
-  const outlines = buildSteppedOutlinePreview(params) ?? [];
   const groupById = new Map(params.groups.map((group) => [group.id, group]));
+  // rectangular 时所有 outline 都是矩形（含最低层圆角），可用 isPointInRoundedRect 优化
+  // contoured 时 outline 是任意多边形，用 isPointInPolygon
+  const isRectangular = params.footprintStyle === "rectangular";
+  const outlines = isRectangular ? (buildSteppedOutlinePreview(params) ?? []) : [];
+  const contouredGroupById = new Map(
+    !isRectangular
+      ? constructSteppedContouredFootprints(params).groups.map((group) => [
+          group.groupId,
+          group.footprint,
+        ])
+      : [],
+  );
+
+  // 计算最低 columnHeight 用于区分最低层（rectangular 时仅最低层应用 cornerRadius）
+  const allHeights = params.groups.map((g) => Math.max(g.bottomHeight, 3));
+  const lowestHeight = allHeights.length > 0 ? Math.min(...allHeights) : 0;
+
   return params.slots.map((slot) => {
     const profile = getFreeSlotProfileGeometry(slot);
     const groupOutlines = outlines.filter((outline) => outline.groupId === slot.groupId);
-    const floorHeight = (groupById.get(slot.groupId)?.bottomHeight ?? params.holeDepth) - params.holeDepth;
+    const groupHeight = groupById.get(slot.groupId)?.bottomHeight ?? params.holeDepth;
+    const floorHeight = groupHeight - params.holeDepth;
+    const isLowestLayer = groupHeight <= lowestHeight + 1e-6;
+    // rectangular 仅最低层用 cornerRadius（CONTEXT:601），更高层直角
+    const layerRadius = isRectangular && isLowestLayer ? (params.cornerRadius ?? 0) : 0;
+
     return {
       id: slot.id,
       shape: slot.shape,
@@ -335,16 +343,45 @@ function buildSteppedSlots(params: SteppedLayoutParams): BaseHoleSlot[] {
       x: slot.x,
       y: slot.y,
       floorHeight,
-      containsExpandedHole: (radius) => circleFits(
-        slot.x,
-        slot.y,
-        radius,
-        (pointX, pointY) => groupOutlines.some(
-          (outline) => isPointInPolygon(pointX, pointY, outline.points),
-        ),
-      ),
+      containsExpandedHole: isRectangular
+        ? (radius) => circleFits(
+            slot.x,
+            slot.y,
+            radius,
+            (pointX: number, pointY: number) =>
+              groupOutlines.some((outline) => {
+                const bounds = polygonBounds(outline.points);
+                return bounds
+                  ? isPointInRoundedRect(pointX, pointY, bounds, layerRadius)
+                  : isPointInPolygon(pointX, pointY, outline.points);
+              }),
+          )
+        : (radius) =>
+            contouredGroupById.get(slot.groupId)?.containsExpandedCircle(
+              slot.x,
+              slot.y,
+              radius,
+            ) ?? false,
     } satisfies BaseHoleSlot;
   });
+}
+
+/** 从矩形多边形点列提取轴对齐 bounds；非矩形时返回 null 回退到多边形判定 */
+function polygonBounds(
+  points: readonly { x: number; y: number }[],
+): { minX: number; maxX: number; minY: number; maxY: number } | null {
+  if (points.length < 3) return null;
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (const point of points) {
+    minX = Math.min(minX, point.x);
+    maxX = Math.max(maxX, point.x);
+    minY = Math.min(minY, point.y);
+    maxY = Math.max(maxY, point.y);
+  }
+  return { minX, maxX, minY, maxY };
 }
 
 function cavityInterval(slot: BaseHoleSlot, preset: BaseHolePresetKey) {
@@ -415,24 +452,21 @@ function validateSlots(params: BaseHoleParams, slots: BaseHoleSlot[]) {
 
 function buildSlotsForMode(
   mode: Exclude<AppMode, "base-converter">,
-  params: TrayParams | CustomLayoutParams | SimpleSteppedLayoutParams | SteppedLayoutParams,
+  params: TrayParams | CustomLayoutParams | SteppedLayoutParams,
 ): BaseHoleSlot[] {
   switch (mode) {
     case "grid":
       return buildGridSlots(params as TrayParams);
     case "custom":
       return buildCustomSlots(params as CustomLayoutParams);
-    case "simple-stepped":
-      return buildSimpleSteppedSlots(params as SimpleSteppedLayoutParams);
     case "stepped":
-    case "stepped-cad":
       return buildSteppedSlots(params as SteppedLayoutParams);
   }
 }
 
 export function getResolvedMagneticBaseHolePresets(
   mode: Exclude<AppMode, "base-converter">,
-  params: TrayParams | CustomLayoutParams | SimpleSteppedLayoutParams | SteppedLayoutParams,
+  params: TrayParams | CustomLayoutParams | SteppedLayoutParams,
 ): BaseHolePresetKey[] {
   let presets: Set<BaseHolePresetKey>;
   if (mode === "grid") {
@@ -444,16 +478,6 @@ export function getResolvedMagneticBaseHolePresets(
         slot.baseHeight,
       ),
     ]);
-  } else if (mode === "simple-stepped") {
-    presets = new Set(
-      (params as SimpleSteppedLayoutParams).slots.map((slot) =>
-        resolveMagneticBaseHolePreset(
-          "circle",
-          slot.diameter,
-          slot.diameter,
-        )
-      ),
-    );
   } else {
     presets = new Set(
       (params as CustomLayoutParams | SteppedLayoutParams).slots.map((slot) =>
@@ -478,7 +502,7 @@ export function getBaseHoleFitBlockingReason(
 
 export function validateBaseHoleFit(
   mode: Exclude<AppMode, "base-converter">,
-  params: TrayParams | CustomLayoutParams | SimpleSteppedLayoutParams | SteppedLayoutParams,
+  params: TrayParams | CustomLayoutParams | SteppedLayoutParams,
 ): BaseHoleFitViolation[] {
   return validateSlots(params, buildSlotsForMode(mode, params));
 }

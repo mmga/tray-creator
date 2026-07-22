@@ -3,7 +3,6 @@
 import type {
   FreeSlot,
   GroupOutlinePreview,
-  SimpleSteppedRowBand,
   SlotGroup,
   SteppedSlot,
 } from "@/types/custom-tray";
@@ -29,8 +28,8 @@ export interface LayoutEditorViewportModel {
   overlays: {
     focusedGroupId?: string | null;
     groupOutlines?: GroupOutlinePreview[] | null;
-    rowBands?: SimpleSteppedRowBand[] | null;
     slotGroups?: SlotGroup[] | null;
+    footprintWarnings?: readonly string[];
   };
   interactions: {
     slotHeightById?: Record<string, number>;
@@ -44,7 +43,7 @@ export interface LayoutEditorViewportModel {
 export interface LayoutEditorViewportCommands {
   updateSlotPosition: (id: string, x: number, y: number) => void;
   removeSlot: (id: string) => void;
-  resizeTray?: (width: number, depth: number) => void;
+  removeSlots?: (ids: string[]) => void;
   updateSlotRotation?: (id: string, rotation: number) => void;
   updateMultipleSlots?: (updates: CanvasSlotUpdate[]) => void;
   liveUpdateMultipleSlots?: (updates: CanvasSlotUpdate[]) => void;
@@ -52,6 +51,9 @@ export interface LayoutEditorViewportCommands {
   duplicateSlots?: (ids: string[]) => string[] | void;
   undo?: () => void;
   saveSnapshot?: () => void;
+  beginContinuousEdit?: () => boolean | void;
+  commitContinuousEdit?: () => void;
+  cancelContinuousEdit?: () => void;
   selectionChanged?: (ids: string[]) => void;
   editInteractionChanged?: (isInteracting: boolean) => void;
 }

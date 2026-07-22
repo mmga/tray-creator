@@ -507,16 +507,16 @@ describe("AlignPanel", { timeout: 15000 }, () => {
 
     fireEvent.click(screen.getByRole("button", { name: /一排/ }));
     expect(onUpdateSlots).toHaveBeenLastCalledWith([
-      { id: "slot-1", x: 28.8, y: 40 },
+      { id: "slot-1", x: 28.6, y: 40 },
       { id: "slot-2", x: 60, y: 40 },
-      { id: "slot-3", x: 91.2, y: 40 },
+      { id: "slot-3", x: 91.4, y: 40 },
     ]);
 
     fireEvent.click(screen.getByRole("button", { name: /一列/ }));
     expect(onUpdateSlots).toHaveBeenLastCalledWith([
-      { id: "slot-1", x: 60, y: 8.8 },
+      { id: "slot-1", x: 60, y: 8.6 },
       { id: "slot-3", x: 60, y: 40 },
-      { id: "slot-2", x: 60, y: 71.2 },
+      { id: "slot-2", x: 60, y: 71.4 },
     ]);
   });
 });
