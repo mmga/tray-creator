@@ -23,7 +23,10 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     exportModel: exportSteppedModelFiles,
   });
   const splitModel = useSteppedCadSplitOrchestration({
-    params: steppedModel.params,
+    params: steppedModel.persistedParams,
+    transactionRevision: steppedModel.transactionRevision,
+    edit: steppedModel.edit,
+    previewEdit: steppedModel.previewEdit,
     generateSplitPreview: generateSteppedSplitPreview,
     exportSplitParts: exportSteppedSplitPartFiles,
   });

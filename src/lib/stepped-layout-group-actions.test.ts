@@ -6,7 +6,6 @@ import {
   moveSteppedSlotsToGroup,
   removeSteppedGroup,
   reorderSteppedGroups,
-  setSteppedActiveGroup,
   updateSteppedGroupDisconnectDistance,
   updateSteppedGroupDisconnectOverride,
   updateSteppedGroupHeight,
@@ -78,7 +77,7 @@ describe("stepped group actions", () => {
       useGroupDisconnectDistance: false,
       groupDisconnectDistance: 12,
     });
-    expect(next.activeGroupId).toBe("group-3");
+    expect(next.activeGroupId).toBe(createParams().activeGroupId);
   });
 
   it("removes groups, their slots, and protects the last remaining group", () => {
@@ -125,8 +124,7 @@ describe("stepped group actions", () => {
       "group-2",
       8,
     );
-    const activated = setSteppedActiveGroup(updated, "group-2");
-    const moved = moveSteppedSlotsToGroup(activated, ["slot-1"], "group-2");
+    const moved = moveSteppedSlotsToGroup(updated, ["slot-1"], "group-2");
     const reordered = reorderSteppedGroups(moved, 1, 0);
 
     expect(updated.groups[1]).toMatchObject({
@@ -136,20 +134,12 @@ describe("stepped group actions", () => {
       useGroupDisconnectDistance: true,
       groupDisconnectDistance: 8,
     });
-    expect(activated.activeGroupId).toBe("group-2");
     expect(moved.slots[0].groupId).toBe("group-2");
     expect(reordered.groups.map((group) => group.id)).toEqual([
       "group-2",
       STEPPED_LAYOUT_DEFAULTS.groups[0].id,
     ]);
     expect(reorderSteppedGroups(moved, -1, 0)).toBe(moved);
-  });
-
-  it("does not replace params when activating the current or a missing group", () => {
-    const params = createParams();
-
-    expect(setSteppedActiveGroup(params, params.activeGroupId)).toBe(params);
-    expect(setSteppedActiveGroup(params, "missing-group")).toBe(params);
   });
 
   it("updates split part merge targets and clears invalid targets", () => {

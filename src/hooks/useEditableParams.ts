@@ -12,15 +12,19 @@ export interface PreviewLifecycleResult {
   volume: number;
 }
 
-/** history 选项：显式化"拖拽前快照 + 拖拽中不 push"的隐含协议 */
+/** 兼容尚未迁移到显式连续事务的非阶梯编辑模式。 */
 export type HistoryMode = "save" | "live" | "skip";
 
 interface ApplyChangeOptions {
-  /** save = 离散操作（pushState 后变换）；live = 拖拽高频（靠合并窗口）；skip = 无需历史（setParams/resetParams） */
+  /** save = 离散操作（pushState 后变换）；live = 已由显式会话捕获历史；skip = 无需历史 */
   history?: HistoryMode;
-  /** 强制入栈，绕过合并窗口（如 applyOptimizationProposal） */
-  force?: boolean;
 }
+
+export type EditTransactionOutcome =
+  | { status: "committed"; revision: number }
+  | { status: "previewing" }
+  | { status: "unchanged" }
+  | { status: "rejected"; code: "edit-already-active" | "edit-not-active" };
 
 interface UseEditableParamsOptions<P, S> {
   initialState: P | (() => P);
@@ -38,10 +42,16 @@ interface UseEditableParamsOptions<P, S> {
   normalize?: (params: P) => P;
   /** preview 失效时的回调（stepped 用来清优化提案） */
   onInvalidate?: () => void;
+  /** 判断归一化后的两个参数是否语义相同；默认使用引用相等。 */
+  areEqual?: (left: P, right: P) => boolean;
 }
 
 export interface UseEditableParamsReturn<P> {
   params: P;
+  /** 连续事务的暂态工作参数；没有活动事务时等于 params。 */
+  viewParams: P;
+  workingParams: P | null;
+  transactionRevision: number;
   paramsRef: React.MutableRefObject<P>;
   /** 获取当前参数快照（供 generatePreview/exportModel 的闭包使用） */
   getParams: () => P;
@@ -51,7 +61,14 @@ export interface UseEditableParamsReturn<P> {
   applyChange: (
     mutate: (prev: P) => P,
     opts?: ApplyChangeOptions,
-  ) => void;
+  ) => EditTransactionOutcome;
+  beginContinuousEdit: () => EditTransactionOutcome;
+  previewContinuousEdit: (mutate: (working: P) => P) => EditTransactionOutcome;
+  commitContinuousEdit: () => EditTransactionOutcome;
+  cancelContinuousEdit: () => EditTransactionOutcome;
+  hasActiveContinuousEdit: () => boolean;
+  /** Draft 加载、参数导入和重置：建立新编辑会话并清空历史。 */
+  replaceParams: React.Dispatch<React.SetStateAction<P>>;
   saveSnapshot: () => void;
   undo: () => void;
   canUndo: boolean;
@@ -83,14 +100,25 @@ export function useEditableParams<P, S>({
   guard,
   normalize,
   onInvalidate,
+  areEqual = Object.is,
 }: UseEditableParamsOptions<P, S>): UseEditableParamsReturn<P> {
   const [params, internalSetParams] = useState<P>(initialState);
+  const [workingParams, internalSetWorkingParams] = useState<P | null>(null);
+  const [transactionRevision, setTransactionRevision] = useState(0);
+  const transactionRevisionRef = useRef(0);
   const paramsRef = useRef(params);
+  const workingParamsRef = useRef<P | null>(null);
+  const continuousBaseRef = useRef<P | null>(null);
   useEffect(() => {
     paramsRef.current = params;
   }, [params]);
 
-  const { pushState, popState, canUndo: canUndoFn } = useUndoHistory<P>();
+  const {
+    pushState,
+    popState,
+    canUndo: canUndoFn,
+    clearHistory,
+  } = useUndoHistory<P>();
 
   const normalizeIfNeeded = useCallback(
     (value: P): P => (normalize ? normalize(value) : value),
@@ -131,39 +159,126 @@ export function useEditableParams<P, S>({
     onInvalidate,
   });
 
-  const setParams = useCallback<React.Dispatch<React.SetStateAction<P>>>(
+  const cancelWorkingParams = useCallback(() => {
+    workingParamsRef.current = null;
+    continuousBaseRef.current = null;
+    internalSetWorkingParams(null);
+  }, []);
+
+  const replaceParams = useCallback<React.Dispatch<React.SetStateAction<P>>>(
     (value) => {
-      internalSetParams((prev) =>
-        normalizeIfNeeded(
-          typeof value === "function"
-            ? (value as (prevState: P) => P)(prev)
-            : value,
-        ),
+      const previous = paramsRef.current;
+      const next = normalizeIfNeeded(
+        typeof value === "function"
+          ? (value as (prevState: P) => P)(previous)
+          : value,
       );
+      cancelWorkingParams();
+      clearHistory();
+      paramsRef.current = next;
+      internalSetParams(next);
+      transactionRevisionRef.current += 1;
+      setTransactionRevision(transactionRevisionRef.current);
       invalidatePreview();
     },
-    [invalidatePreview, normalizeIfNeeded],
+    [cancelWorkingParams, clearHistory, invalidatePreview, normalizeIfNeeded],
   );
+  const setParams = replaceParams;
 
   /**
    * 统一 action 执行器。
    *
    * history: "save"  → pushState(prev) 后变换（离散操作，默认）
-   * history: "live"  → 不 pushState（拖拽高频，靠 500ms 合并窗口，需在拖拽前调 saveSnapshot）
+   * history: "live"  → 不 pushState（旧模式由拖拽开始前的 saveSnapshot 捕获历史）
    * history: "skip"  → 不 pushState（setParams/resetParams 这类无需历史的路径）
    */
   const applyChange = useCallback(
     (mutate: (prev: P) => P, opts?: ApplyChangeOptions) => {
       const history = opts?.history ?? "save";
-      internalSetParams((prev) => {
-        if (history === "save") {
-          pushState(prev, opts?.force ? { force: true } : undefined);
-        }
-        return normalizeIfNeeded(mutate(prev));
-      });
+      if (continuousBaseRef.current !== null) {
+        return {
+          status: "rejected",
+          code: "edit-already-active",
+        } satisfies EditTransactionOutcome;
+      }
+      const previous = paramsRef.current;
+      const next = normalizeIfNeeded(mutate(previous));
+      if (areEqual(previous, next)) {
+        return { status: "unchanged" } satisfies EditTransactionOutcome;
+      }
+      if (history === "save") {
+        pushState(previous);
+      }
+      paramsRef.current = next;
+      internalSetParams(next);
+      transactionRevisionRef.current += 1;
+      const committedRevision = transactionRevisionRef.current;
+      setTransactionRevision(committedRevision);
       invalidatePreview();
+      return {
+        status: "committed",
+        revision: committedRevision,
+      } satisfies EditTransactionOutcome;
     },
-    [invalidatePreview, normalizeIfNeeded, pushState],
+    [areEqual, invalidatePreview, normalizeIfNeeded, pushState],
+  );
+
+  const beginContinuousEdit = useCallback((): EditTransactionOutcome => {
+    if (continuousBaseRef.current !== null) {
+      return { status: "rejected", code: "edit-already-active" };
+    }
+    continuousBaseRef.current = paramsRef.current;
+    workingParamsRef.current = paramsRef.current;
+    internalSetWorkingParams(paramsRef.current);
+    return { status: "previewing" };
+  }, []);
+
+  const previewContinuousEdit = useCallback(
+    (mutate: (working: P) => P): EditTransactionOutcome => {
+      const current = workingParamsRef.current;
+      if (continuousBaseRef.current === null || current === null) {
+        return { status: "rejected", code: "edit-not-active" };
+      }
+      const next = normalizeIfNeeded(mutate(current));
+      workingParamsRef.current = next;
+      internalSetWorkingParams(next);
+      return { status: "previewing" };
+    },
+    [normalizeIfNeeded],
+  );
+
+  const commitContinuousEdit = useCallback((): EditTransactionOutcome => {
+    const previous = continuousBaseRef.current;
+    const working = workingParamsRef.current;
+    if (previous === null || working === null) {
+      return { status: "rejected", code: "edit-not-active" };
+    }
+    const next = normalizeIfNeeded(working);
+    cancelWorkingParams();
+    if (areEqual(previous, next)) {
+      return { status: "unchanged" };
+    }
+    pushState(previous);
+    paramsRef.current = next;
+    internalSetParams(next);
+    transactionRevisionRef.current += 1;
+    const committedRevision = transactionRevisionRef.current;
+    setTransactionRevision(committedRevision);
+    invalidatePreview();
+    return { status: "committed", revision: committedRevision };
+  }, [areEqual, cancelWorkingParams, invalidatePreview, normalizeIfNeeded, pushState]);
+
+  const cancelContinuousEdit = useCallback((): EditTransactionOutcome => {
+    if (continuousBaseRef.current === null) {
+      return { status: "rejected", code: "edit-not-active" };
+    }
+    cancelWorkingParams();
+    return { status: "unchanged" };
+  }, [cancelWorkingParams]);
+
+  const hasActiveContinuousEdit = useCallback(
+    () => continuousBaseRef.current !== null,
+    [],
   );
 
   const saveSnapshot = useCallback(() => {
@@ -171,21 +286,38 @@ export function useEditableParams<P, S>({
   }, [pushState]);
 
   const undo = useCallback(() => {
+    if (continuousBaseRef.current !== null) {
+      cancelWorkingParams();
+      return;
+    }
     const prev = popState();
     if (prev !== undefined) {
-      internalSetParams(normalizeIfNeeded(prev));
+      const next = normalizeIfNeeded(prev);
+      paramsRef.current = next;
+      internalSetParams(next);
+      transactionRevisionRef.current += 1;
+      setTransactionRevision(transactionRevisionRef.current);
       invalidatePreview();
     }
-  }, [invalidatePreview, normalizeIfNeeded, popState]);
+  }, [cancelWorkingParams, invalidatePreview, normalizeIfNeeded, popState]);
 
   const getParams = useCallback(() => paramsRef.current, []);
 
   return {
     params,
+    viewParams: workingParams ?? params,
+    workingParams,
+    transactionRevision,
     paramsRef,
     getParams,
     setParams,
+    replaceParams,
     applyChange,
+    beginContinuousEdit,
+    previewContinuousEdit,
+    commitContinuousEdit,
+    cancelContinuousEdit,
+    hasActiveContinuousEdit,
     saveSnapshot,
     undo,
     canUndo: canUndoFn(),

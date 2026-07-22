@@ -238,7 +238,9 @@ describe("Mode Workspace Draft Action Area", () => {
     const interactionState = {
       selectedSlotIds: [],
       previewGroupId: null,
+      activeSteppedGroupId: null,
       setPreviewGroupId: vi.fn(),
+      setActiveSteppedGroupId: vi.fn(),
       resetInteractionState,
     };
     const { result } = renderHook(() =>
@@ -287,7 +289,9 @@ describe("Mode Workspace Draft Action Area", () => {
         interactionState: {
           selectedSlotIds: [],
           previewGroupId: null,
+          activeSteppedGroupId: null,
           setPreviewGroupId: vi.fn(),
+          setActiveSteppedGroupId: vi.fn(),
           resetInteractionState,
         } as never,
         onRequestParamImport,

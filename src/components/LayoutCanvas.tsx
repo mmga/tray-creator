@@ -77,6 +77,7 @@ export default function LayoutCanvas({
   const {
     updateSlotPosition,
     removeSlot,
+    removeSlots,
     updateSlotRotation,
     updateMultipleSlots,
     liveUpdateMultipleSlots,
@@ -84,6 +85,9 @@ export default function LayoutCanvas({
     duplicateSlots,
     undo,
     saveSnapshot,
+    beginContinuousEdit,
+    commitContinuousEdit,
+    cancelContinuousEdit,
     selectionChanged,
     editInteractionChanged,
   } = commands;
@@ -354,21 +358,6 @@ export default function LayoutCanvas({
     applyLiveUpdates,
   });
 
-  useCanvasKeyboard({
-    enabled: isActive,
-    selectedIdsRef,
-    slotsRef,
-    onUpdateSlot: updateSlotPosition,
-    onRemoveSlot: removeSlot,
-    onDuplicateSlots: duplicateSlots,
-    onUndo: undo,
-    setSelectedIds,
-    setIsRotating,
-    setIsSpacePressed,
-    setIsPanning,
-    setShowHints,
-  });
-
   const clearPointerInteractionState = useCallback(() => {
     setDraggingId(null);
     setIsPanning(false);
@@ -386,9 +375,44 @@ export default function LayoutCanvas({
     stopActionPanelResize();
   }, [clearPointerInteractionState, setIsSpacePressed, stopActionPanelResize]);
 
+  const cancelCanvasInteraction = useCallback(() => {
+    flushScheduledLiveUpdates();
+    cancelContinuousEdit?.();
+    editInteractionChanged?.(false);
+    primaryPointerIdRef.current = null;
+    clearPointerInteractionState();
+  }, [cancelContinuousEdit, clearPointerInteractionState, editInteractionChanged, flushScheduledLiveUpdates]);
+
+  const handleCanvasUndo = useCallback(() => {
+    flushScheduledLiveUpdates();
+    undo?.();
+    editInteractionChanged?.(false);
+    primaryPointerIdRef.current = null;
+    clearPointerInteractionState();
+  }, [clearPointerInteractionState, editInteractionChanged, flushScheduledLiveUpdates, undo]);
+
+  useCanvasKeyboard({
+    enabled: isActive,
+    selectedIdsRef,
+    slotsRef,
+    onUpdateSlot: updateSlotPosition,
+    onUpdateSlots: handleUpdateSlots,
+    onRemoveSlot: removeSlot,
+    onRemoveSlots: removeSlots,
+    onDuplicateSlots: duplicateSlots,
+    onUndo: handleCanvasUndo,
+    onCancelInteraction: cancelCanvasInteraction,
+    setSelectedIds,
+    setIsRotating,
+    setIsSpacePressed,
+    setIsPanning,
+    setShowHints,
+  });
+
   useEffect(() => {
     if (!isActive) {
       flushScheduledLiveUpdates();
+      cancelContinuousEdit?.();
       editInteractionChanged?.(false);
       const frame = window.requestAnimationFrame(() => {
         resetTransientCanvasState();
@@ -401,6 +425,7 @@ export default function LayoutCanvas({
     flushScheduledLiveUpdates,
     isActive,
     editInteractionChanged,
+    cancelContinuousEdit,
     resetTransientCanvasState,
   ]);
 
@@ -511,7 +536,11 @@ export default function LayoutCanvas({
       svgPoint.x - slotCenterX,
     );
 
-    saveSnapshot?.();
+    if (beginContinuousEdit) {
+      if (beginContinuousEdit() === false) return;
+    } else {
+      saveSnapshot?.();
+    }
     editInteractionChanged?.(true);
     setIsRotating(true);
     setDraggingId(slot.id);
@@ -727,7 +756,11 @@ export default function LayoutCanvas({
         return;
       }
 
-      saveSnapshot?.();
+      if (beginContinuousEdit) {
+        if (beginContinuousEdit() === false) return;
+      } else {
+        saveSnapshot?.();
+      }
       editInteractionChanged?.(true);
       setDraggingId(slotId);
 
@@ -759,8 +792,13 @@ export default function LayoutCanvas({
     }
   };
 
-  const handlePointerUp = () => {
+  const finishPointerInteraction = (cancelled: boolean) => {
     flushScheduledLiveUpdates();
+    if (cancelled) {
+      cancelContinuousEdit?.();
+    } else {
+      commitContinuousEdit?.();
+    }
     editInteractionChanged?.(false);
     primaryPointerIdRef.current = null;
 
@@ -823,9 +861,9 @@ export default function LayoutCanvas({
           style={{ touchAction: "none" }}
           onPointerDown={(event) => handlePointerDown(event)}
           onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerLeave={handlePointerUp}
-          onPointerCancel={handlePointerUp}
+          onPointerUp={() => finishPointerInteraction(false)}
+          onPointerLeave={() => finishPointerInteraction(false)}
+          onPointerCancel={() => finishPointerInteraction(true)}
           onWheel={handleWheel}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}

@@ -37,6 +37,10 @@ interface BaseHoleConfigProps<TParams extends BaseHoleParams> {
     key: K,
     value: TParams[K],
   ) => void;
+  previewParam?: <K extends keyof TParams>(key: K, value: TParams[K]) => void;
+  onBeginContinuousEdit?: () => boolean | void;
+  onCommitContinuousEdit?: () => void;
+  onCancelContinuousEdit?: () => void;
   collapsible?: boolean;
   defaultOpen?: boolean;
 }
@@ -57,9 +61,21 @@ export function BaseHoleConfig<TParams extends BaseHoleParams>({
   supportingThicknessLabel = "当前承载厚度",
   fitViolations = [],
   updateParam,
+  previewParam,
+  onBeginContinuousEdit,
+  onCommitContinuousEdit,
+  onCancelContinuousEdit,
   collapsible = false,
   defaultOpen = true,
 }: BaseHoleConfigProps<TParams>) {
+  const continuousParam = <K extends keyof TParams>(key: K) => previewParam
+    ? {
+        onContinuousChangeStart: onBeginContinuousEdit,
+        onContinuousChange: (value: number) => previewParam(key, value as TParams[K]),
+        onContinuousChangeCommit: onCommitContinuousEdit,
+        onContinuousChangeCancel: onCancelContinuousEdit,
+      }
+    : {};
   const presets = resolvedBaseHoleSizes.map(getBaseHolePreset);
   const requiredThickness = getRequiredBaseHoleSupportingThickness({
     baseHoleStructure,
@@ -164,6 +180,7 @@ export function BaseHoleConfig<TParams extends BaseHoleParams>({
                   "magnetPostHoleDiameter",
                   value as TParams["magnetPostHoleDiameter"],
                 )}
+                {...continuousParam("magnetPostHoleDiameter")}
                 unit={MAGNET_POST_HOLE_LIMITS.diameter.unit}
               />
               <ParamSlider
@@ -174,6 +191,7 @@ export function BaseHoleConfig<TParams extends BaseHoleParams>({
                   "magnetPostHoleDepth",
                   value as TParams["magnetPostHoleDepth"],
                 )}
+                {...continuousParam("magnetPostHoleDepth")}
                 unit={MAGNET_POST_HOLE_LIMITS.depth.unit}
               />
               <div className="flex justify-between border border-[#2e2a24] bg-[#1c1a16] p-2.5 font-mono text-[11px] text-muted-foreground/70">

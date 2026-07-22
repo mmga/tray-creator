@@ -43,6 +43,7 @@ export interface LayoutEditorViewportModel {
 export interface LayoutEditorViewportCommands {
   updateSlotPosition: (id: string, x: number, y: number) => void;
   removeSlot: (id: string) => void;
+  removeSlots?: (ids: string[]) => void;
   updateSlotRotation?: (id: string, rotation: number) => void;
   updateMultipleSlots?: (updates: CanvasSlotUpdate[]) => void;
   liveUpdateMultipleSlots?: (updates: CanvasSlotUpdate[]) => void;
@@ -50,6 +51,9 @@ export interface LayoutEditorViewportCommands {
   duplicateSlots?: (ids: string[]) => string[] | void;
   undo?: () => void;
   saveSnapshot?: () => void;
+  beginContinuousEdit?: () => boolean | void;
+  commitContinuousEdit?: () => void;
+  cancelContinuousEdit?: () => void;
   selectionChanged?: (ids: string[]) => void;
   editInteractionChanged?: (isInteracting: boolean) => void;
 }

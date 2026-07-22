@@ -14,10 +14,12 @@ describe("Current Param Artifact Encoder", () => {
       STEPPED_LAYOUT_DEFAULTS,
     );
 
+    const persistedParams = { ...STEPPED_LAYOUT_DEFAULTS };
+    delete persistedParams.activeGroupId;
     expect(buildCurrentParamArtifact(snapshot)).toEqual({
       version: 1,
       mode: "stepped",
-      params: STEPPED_LAYOUT_DEFAULTS,
+      params: persistedParams,
     });
   });
 

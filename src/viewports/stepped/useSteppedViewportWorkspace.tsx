@@ -42,8 +42,11 @@ export function useSteppedViewportWorkspace({
     selectedSlotIds,
     previewGroupId,
     setSelectedSlotIds,
+    activeSteppedGroupId,
+    setActiveSteppedGroupId,
     resetInteractionState,
   } = interactionState;
+  const persistedParams = model.persistedParams ?? model.params;
   const resetTransientState = useCallback(() => {
     resetInteractionState();
   }, [resetInteractionState]);
@@ -55,10 +58,10 @@ export function useSteppedViewportWorkspace({
 
     const firstSlotId = selectedSlotIds[0];
     const slot = model.params.slots.find((candidate) => candidate.id === firstSlotId);
-    if (slot && "groupId" in slot && slot.groupId !== model.params.activeGroupId) {
-      model.setActiveGroup(slot.groupId);
+    if (slot && "groupId" in slot && slot.groupId !== activeSteppedGroupId) {
+      setActiveSteppedGroupId(slot.groupId);
     }
-  }, [model, selectedSlotIds]);
+  }, [activeSteppedGroupId, model.params.slots, selectedSlotIds, setActiveSteppedGroupId]);
 
   const canvas = useMemo(
     () => (
@@ -73,13 +76,20 @@ export function useSteppedViewportWorkspace({
         commands={{
           updateSlotPosition: model.updateSlotPosition,
           removeSlot: model.removeSlot,
+          removeSlots: model.removeSlots,
           updateSlotRotation: model.updateSlotRotation,
           updateMultipleSlots: model.updateMultipleSlots,
           liveUpdateMultipleSlots: model.updateMultipleSlotsLive,
-          insertSlots: model.insertSlots,
+          insertSlots: (slots) =>
+            model.insertSlots(
+              slots,
+              activeSteppedGroupId ?? persistedParams.groups[0]?.id,
+            ),
           duplicateSlots: model.duplicateSlots,
           undo: model.undo,
-          saveSnapshot: model.saveSnapshot,
+          beginContinuousEdit: model.beginContinuousEdit,
+          commitContinuousEdit: model.commitContinuousEdit,
+          cancelContinuousEdit: model.cancelContinuousEdit,
           selectionChanged: setSelectedSlotIds,
           editInteractionChanged: (isInteracting) => {
             if (isInteracting) {
@@ -91,7 +101,7 @@ export function useSteppedViewportWorkspace({
         }}
       />
     ),
-    [model, previewGroupId, rightView, setSelectedSlotIds],
+    [activeSteppedGroupId, model, persistedParams, previewGroupId, rightView, setSelectedSlotIds],
   );
 
   const viewport = useMemo(

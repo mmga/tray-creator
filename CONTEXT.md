@@ -193,7 +193,7 @@ A Historical Param Artifact Reader failure with a stable semantic code, a user-r
 _Avoid_: Requiring callers or tests to parse localized error text, or representing a required Import Mode choice as an error.
 
 **Mode Interaction State**:
-Mode-local transient editor state shared by a **Mode Workspace** and a **Mode Viewport Workspace**, such as selected slot ids or preview focus ids.
+Mode-local transient editor state shared by a **Mode Workspace** and a **Mode Viewport Workspace**, such as selected slot ids, preview focus ids, or the Active Stepped Group.
 _Avoid_: Treating shared editor interaction state as page-owned state or as registry-owned state.
 
 **Stepped Tray**:
@@ -212,9 +212,25 @@ _Avoid_: Treating the unified stepped model as an arbitrary union of per-group s
 The stepped editing module that owns group and slot editing, undo history, outline preview, whole-model preview/export, base-hole derived fields, and layout optimization for `stepped`, while excluding split assembly orchestration.
 _Avoid_: Letting the layout core own split preview, split export, split assembly groove, Locator Pin, or split merge lifecycle.
 
+**Stepped Edit Transaction**:
+One complete user-visible edit intent committed through the Stepped Layout Core that, only when normalized persisted parameters actually change, produces exactly one undo step and uniformly normalizes derived fields, invalidates whole-model and outline previews, clears Layout Arrangement Proposals, and causes Stepped Split Orchestration to clear its split preview; a complete intent includes one slot drag or rotation, one continuous control gesture, one confirmed field edit, one keyboard nudge, one batch operation, one group mutation, or one Split Assembly Capability edit, while rejected, unchanged, selection-only, and Active Stepped Group operations have no transaction effects.
+_Avoid_: Creating one undo step per live pointer or slider update, using a time window to guess transaction scope, omitting keyboard edits from undo history, recording interaction-only or unchanged operations, or letting callers independently choose which derived results become stale.
+
+**Stepped Edit Working Params**:
+The transient parameter copy used only to render the single allowed in-progress continuous Stepped Edit Transaction, including slot transforms and continuous control gestures, before it is committed or cancelled; Escape, pointer cancellation, workspace replacement, Mode changes, or Undo cancel it without consuming committed Undo History.
+_Avoid_: Running concurrent continuous edit transactions, silently replacing or committing an active transaction, treating working parameters as persisted Stepped Tray parameters, exposing them to Drafts, model generation, export, Model Geometry Fingerprints, Layout Arrangement Proposals, or Stepped Split Orchestration.
+
+**Stepped Editing Session**:
+The current normalized Stepped Tray document together with its Undo History, beginning when defaults, an imported parameter artifact, or a Draft replaces the workspace and ending at the next such replacement.
+_Avoid_: Carrying Undo History or uncommitted Stepped Edit Working Params across a reset, accepted import, or Draft load, allowing Undo to restore the previous editing session, or merging distinct Stepped Edit Transactions because they occurred within a time window; the history retains at most the latest fifty successful transactions.
+
+**Active Stepped Group**:
+The transient height-group selection that receives newly added Slot Instances and belongs to Mode Interaction State rather than Stepped Tray parameters.
+_Avoid_: Persisting it in a Draft or Persisted Param Artifact, including it in a Model Geometry Fingerprint, or treating a selection change as Unsaved Draft Changes.
+
 **Stepped Split Orchestration**:
-The optional `stepped` capability that owns split-preview lifecycle and split-part export while composing the **Stepped Layout Core**.
-_Avoid_: Treating split assembly as a separate Mode or making the layout core own its lifecycle.
+The optional `stepped` capability that owns Split Assembly Capability edit intents and validation, split-preview lifecycle, and split-part export while composing the Stepped Layout Core and committing its persisted edits through the shared Stepped Edit Transaction history.
+_Avoid_: Treating split assembly as a separate Mode, maintaining a second undo history, or making the layout core understand split assembly domain rules or own the split lifecycle.
 
 **Split Assembly Capability**:
 The optional, default-off Custom Stepped Tray capability that reveals split grouping, assembly features, split preview, and split-part export when enabled.

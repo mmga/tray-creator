@@ -25,7 +25,6 @@ export function addSteppedGroup(
   return {
     ...params,
     groups: [...params.groups, newGroup],
-    activeGroupId: newGroup.id,
   };
 }
 
@@ -45,16 +44,10 @@ export function removeSteppedGroup(
         : group,
     );
   const nextSlots = params.slots.filter((slot) => slot.groupId !== groupId);
-  const nextActiveGroupId =
-    params.activeGroupId === groupId
-      ? (nextGroups[0]?.id ?? "")
-      : params.activeGroupId;
-
   return {
     ...params,
     groups: nextGroups,
     slots: nextSlots,
-    activeGroupId: nextActiveGroupId,
   };
 }
 
@@ -148,23 +141,6 @@ export function updateSteppedGroupSplitPartTarget(
         ? { ...group, splitPartGroupId: validTargetId }
         : group,
     ),
-  };
-}
-
-export function setSteppedActiveGroup(
-  params: SteppedLayoutParams,
-  groupId: string,
-): SteppedLayoutParams {
-  if (
-    params.activeGroupId === groupId ||
-    !params.groups.some((group) => group.id === groupId)
-  ) {
-    return params;
-  }
-
-  return {
-    ...params,
-    activeGroupId: groupId,
   };
 }
 

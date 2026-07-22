@@ -191,8 +191,8 @@ export interface SteppedLayoutParams extends BaseHoleParams {
   slots: SteppedSlot[];
   /** 分组列表（决定阶梯层高，每组凹槽共享相同高度） */
   groups: SlotGroup[];
-  /** 当前激活的分组 ID（新添加凹槽自动进入此组） */
-  activeGroupId: string;
+  /** @deprecated 仅用于读取历史参数；当前激活组属于 Mode Interaction State。 */
+  activeGroupId?: string;
   /** 凹槽间距 (mm)，同时作为柱子外扩量 */
   spacing: number;
   /**

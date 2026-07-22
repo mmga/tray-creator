@@ -257,9 +257,16 @@ function SteppedLayoutPanel(
     onUpdateGroupSplitPartTarget = vi.fn(),
     ...rest
   } = props;
+  const requestedActiveGroupId = rest.activeGroupId ?? rest.params.activeGroupId;
+  const activeGroupId = rest.params.groups.some(
+    (group) => group.id === requestedActiveGroupId,
+  )
+    ? requestedActiveGroupId
+    : rest.params.groups[0]?.id ?? null;
   return (
     <SteppedLayoutPanelImplementation
       {...rest}
+      activeGroupId={activeGroupId}
       actions={actions}
       onUpdateGroupSplitPartTarget={onUpdateGroupSplitPartTarget}
     />

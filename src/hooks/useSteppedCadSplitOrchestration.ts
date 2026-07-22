@@ -14,6 +14,10 @@ import {
 } from "@/lib/mode-param-snapshot";
 import { trayWorkerService } from "@/lib/worker/worker-service";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
+import type {
+  SteppedContinuousEditIntent,
+  SteppedEditIntent,
+} from "@/lib/stepped-edit-intent";
 import {
   getBaseHoleFitBlockingReason,
   validateBaseHoleFit,
@@ -21,6 +25,9 @@ import {
 
 interface UseSteppedCadSplitOrchestrationOptions {
   params: SteppedLayoutParams;
+  transactionRevision?: number;
+  edit: (intent: SteppedEditIntent) => unknown;
+  previewEdit: (intent: SteppedContinuousEditIntent) => unknown;
   generateSplitPreview: (
     params: SteppedLayoutParams,
     workerPort: SteppedWorkerPort,
@@ -38,7 +45,24 @@ export interface UseSteppedCadSplitOrchestrationReturn {
   handleGenerateSplitPreview: () => Promise<void>;
   clearSplitPreview: () => void;
   handleExportSplitParts: () => Promise<void>;
+  updateSplitParam: <K extends SteppedSplitParamKey>(
+    key: K,
+    value: SteppedLayoutParams[K],
+  ) => void;
+  previewSplitParam: <K extends SteppedSplitParamKey>(
+    key: K,
+    value: SteppedLayoutParams[K],
+  ) => void;
+  setSplitGrooveType: (type: SteppedLayoutParams["splitGrooveType"] | "off") => void;
+  updateGroupSplitPartTarget: (groupId: string, targetGroupId: string | null) => void;
 }
+
+type SteppedSplitParamKey =
+  | "enableSplitAssembly"
+  | "splitGrooveDepth"
+  | "enableSplitRecess"
+  | "splitGrooveType"
+  | "enableSplitLocators";
 
 function disposeSplitPreviewParts(
   parts: SteppedSplitPreviewPart[] | null,
@@ -49,10 +73,18 @@ function disposeSplitPreviewParts(
 export function useSteppedCadSplitOrchestration(
   options: UseSteppedCadSplitOrchestrationOptions,
 ): UseSteppedCadSplitOrchestrationReturn {
-  const { params, generateSplitPreview, exportSplitParts } = options;
+  const {
+    params,
+    transactionRevision = 0,
+    edit,
+    previewEdit,
+    generateSplitPreview,
+    exportSplitParts,
+  } = options;
   const { toast } = useToast();
   const paramsRef = useRef(params);
-  const previousParamsRef = useRef(params);
+  const revisionRef = useRef(transactionRevision);
+  const previousRevisionRef = useRef(transactionRevision);
   const splitPreviewPartsRef =
     useRef<SteppedSplitPreviewPart[] | null>(null);
   const [splitPreviewParts, setSplitPreviewParts] = useState<
@@ -61,6 +93,36 @@ export function useSteppedCadSplitOrchestration(
   const [isGeneratingSplitPreview, setIsGeneratingSplitPreview] =
     useState(false);
   paramsRef.current = params;
+  revisionRef.current = transactionRevision;
+
+  const updateSplitParam = useCallback(<K extends SteppedSplitParamKey>(
+    key: K,
+    value: SteppedLayoutParams[K],
+  ) => {
+    edit({ type: "param.update", key, value } as SteppedEditIntent);
+  }, [edit]);
+  const previewSplitParam = useCallback(<K extends SteppedSplitParamKey>(
+    key: K,
+    value: SteppedLayoutParams[K],
+  ) => {
+    previewEdit({ type: "param.update", key, value } as SteppedContinuousEditIntent);
+  }, [previewEdit]);
+  const setSplitGrooveType = useCallback((
+    type: SteppedLayoutParams["splitGrooveType"] | "off",
+  ) => {
+    edit({
+      type: "params.patch",
+      patch: type === "off"
+        ? { enableSplitRecess: false }
+        : { enableSplitRecess: true, splitGrooveType: type },
+    });
+  }, [edit]);
+  const updateGroupSplitPartTarget = useCallback((
+    groupId: string,
+    targetGroupId: string | null,
+  ) => {
+    edit({ type: "group.split-target", groupId, targetGroupId });
+  }, [edit]);
 
   const replaceSplitPreviewParts = useCallback(
     (next: SteppedSplitPreviewPart[] | null) => {
@@ -84,11 +146,11 @@ export function useSteppedCadSplitOrchestration(
   );
 
   useEffect(() => {
-    if (previousParamsRef.current !== params) {
-      previousParamsRef.current = params;
+    if (previousRevisionRef.current !== transactionRevision) {
+      previousRevisionRef.current = transactionRevision;
       clearSplitPreview();
     }
-  }, [clearSplitPreview, params]);
+  }, [clearSplitPreview, transactionRevision]);
 
   const handleGenerateSplitPreview = useCallback(async () => {
     if (!paramsRef.current.enableSplitAssembly) {
@@ -102,6 +164,7 @@ export function useSteppedCadSplitOrchestration(
     }
 
     const currentParams = paramsRef.current;
+    const generationRevision = revisionRef.current;
     const blockingReason = getBaseHoleFitBlockingReason(
       validateBaseHoleFit("stepped", currentParams),
     );
@@ -120,6 +183,10 @@ export function useSteppedCadSplitOrchestration(
         currentParams,
         workerPort,
       );
+      if (revisionRef.current !== generationRevision) {
+        disposeSplitPreviewParts(parts);
+        return;
+      }
       replaceSplitPreviewParts(parts);
     } catch (err) {
       console.error("拆件预览生成失败:", err);
@@ -178,5 +245,9 @@ export function useSteppedCadSplitOrchestration(
     handleGenerateSplitPreview,
     clearSplitPreview,
     handleExportSplitParts,
+    updateSplitParam,
+    previewSplitParam,
+    setSplitGrooveType,
+    updateGroupSplitPartTarget,
   };
 }

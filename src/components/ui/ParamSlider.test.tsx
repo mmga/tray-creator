@@ -10,17 +10,26 @@ vi.mock("@/components/ui/slider", () => ({
     max,
     step,
     onKeyDownCapture,
+    onPointerDownCapture,
+    onPointerCancel,
     onValueChange,
+    onValueCommit,
   }: {
     value: number[];
     min: number;
     max: number;
     step?: number;
     onKeyDownCapture?: React.KeyboardEventHandler<HTMLDivElement>;
+    onPointerDownCapture?: React.PointerEventHandler<HTMLDivElement>;
+    onPointerCancel?: React.PointerEventHandler<HTMLDivElement>;
     onValueChange?: (value: number[]) => void;
+    onValueCommit?: (value: number[]) => void;
   }) {
     return (
-      <div>
+      <div
+        onPointerDownCapture={onPointerDownCapture}
+        onPointerCancel={onPointerCancel}
+      >
         <div
           data-testid="slider-props"
           data-value={String(value[0])}
@@ -39,6 +48,15 @@ vi.mock("@/components/ui/slider", () => ({
           onClick={() => onValueChange?.([value[0]])}
         >
           emit same value
+        </button>
+        <button
+          type="button"
+          onClick={() => onValueChange?.([value[0] + 1])}
+        >
+          preview next value
+        </button>
+        <button type="button" onClick={() => onValueCommit?.(value)}>
+          commit value
         </button>
       </div>
     );
@@ -189,5 +207,60 @@ describe("ParamSlider", () => {
 
     expect(onParentKeyDown).not.toHaveBeenCalled();
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("把一次滑动表达为 begin、preview、commit 生命周期", () => {
+    const begin = vi.fn();
+    const preview = vi.fn();
+    const commit = vi.fn();
+    const cancel = vi.fn();
+
+    render(
+      <ParamSlider
+        label="长度"
+        value={10}
+        config={{ min: 0, max: 20, step: 1 }}
+        onChange={vi.fn()}
+        onContinuousChangeStart={begin}
+        onContinuousChange={preview}
+        onContinuousChangeCommit={commit}
+        onContinuousChangeCancel={cancel}
+      />,
+    );
+
+    const previewButton = screen.getByRole("button", { name: "preview next value" });
+    fireEvent.pointerDown(previewButton);
+    fireEvent.click(previewButton);
+    fireEvent.click(screen.getByRole("button", { name: "commit value" }));
+
+    expect(begin).toHaveBeenCalledTimes(1);
+    expect(preview).toHaveBeenCalledWith(11);
+    expect(commit).toHaveBeenCalledTimes(1);
+    expect(cancel).not.toHaveBeenCalled();
+  });
+
+  it("begin 被拒绝时不进入连续预览", () => {
+    const preview = vi.fn();
+    const commit = vi.fn();
+
+    render(
+      <ParamSlider
+        label="长度"
+        value={10}
+        config={{ min: 0, max: 20, step: 1 }}
+        onChange={vi.fn()}
+        onContinuousChangeStart={() => false}
+        onContinuousChange={preview}
+        onContinuousChangeCommit={commit}
+      />,
+    );
+
+    const previewButton = screen.getByRole("button", { name: "preview next value" });
+    fireEvent.pointerDown(previewButton);
+    fireEvent.click(previewButton);
+    fireEvent.click(screen.getByRole("button", { name: "commit value" }));
+
+    expect(preview).not.toHaveBeenCalled();
+    expect(commit).not.toHaveBeenCalled();
   });
 });

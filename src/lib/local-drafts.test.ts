@@ -386,10 +386,12 @@ describe("local drafts", () => {
     expect(getDraft("stepped", initial.item.id)?.item.title).toBe("Final Draft");
 
     exportDraft("stepped", initial.item.id);
+    const exportedParams = { ...nextParams };
+    delete exportedParams.activeGroupId;
     expect(downloadParamFileMock).toHaveBeenCalledWith(
       {
         mode: "stepped",
-        params: nextParams,
+        params: exportedParams,
       },
       "stepped-draft-final-draft.json",
     );

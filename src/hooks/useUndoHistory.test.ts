@@ -1,15 +1,9 @@
 import { act, renderHook } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { useUndoHistory } from "@/hooks/useUndoHistory";
 
 describe("useUndoHistory", () => {
-  it("merges rapid pushes unless forced and resets the merge window after undo", () => {
-    vi.spyOn(Date, "now")
-      .mockReturnValueOnce(1_000)
-      .mockReturnValueOnce(1_200)
-      .mockReturnValueOnce(1_300)
-      .mockReturnValueOnce(1_350);
-
+  it("keeps every explicit transaction and can clear an editing session", () => {
     const { result } = renderHook(() => useUndoHistory<number>());
 
     act(() => {
@@ -18,26 +12,18 @@ describe("useUndoHistory", () => {
     });
 
     expect(result.current.canUndo()).toBe(true);
+    expect(result.current.popState()).toBe(2);
     expect(result.current.popState()).toBe(1);
-    expect(result.current.popState()).toBeUndefined();
 
     act(() => {
       result.current.pushState(3);
-      result.current.pushState(4, { force: true });
+      result.current.clearHistory();
     });
 
-    expect(result.current.popState()).toBe(4);
-    expect(result.current.popState()).toBe(3);
     expect(result.current.popState()).toBeUndefined();
   });
 
   it("keeps only the latest fifty snapshots", () => {
-    let now = 1_000;
-    vi.spyOn(Date, "now").mockImplementation(() => {
-      now += 600;
-      return now;
-    });
-
     const { result } = renderHook(() => useUndoHistory<number>());
 
     act(() => {
