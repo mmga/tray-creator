@@ -51,12 +51,12 @@ export const ELLIPSE_SLOT_DEFINITIONS: EllipseSlotDefinition[] = [
     profileExponent: 2.05,
   },
   {
-    id: "ellipse-75x43.2",
+    id: "ellipse-75x42",
     shape: "ellipse",
-    name: "75x43.2mm",
+    name: "75x42mm",
     width: 75,
     height: 43.2,
-    outerOffset: 0.6,
+    outerOffset: 0.4,
     profileExponent: 2.08,
   },
   {

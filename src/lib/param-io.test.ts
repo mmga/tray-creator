@@ -558,7 +558,7 @@ describe("param-io", () => {
               x: 40,
               y: 50,
               width: 75,
-              height: 43.2,
+              height: 42,
               rotation: 405,
               shape: "ellipse",
               outerOffset: 0.6,
@@ -579,7 +579,7 @@ describe("param-io", () => {
     expect(parsed.slots[1]).toMatchObject({
       id: "ellipse-1",
       rotation: 45,
-      slotDefinitionId: "ellipse-75x43.2",
+      slotDefinitionId: "ellipse-75x42",
       outerOffset: 0.6,
       profileExponent: 2.08,
     });

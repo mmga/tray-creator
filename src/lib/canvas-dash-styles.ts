@@ -1,17 +1,17 @@
 export const CANVAS_DASH_STYLES = {
   boundary: {
-    strokeWidth: 0.5,
-    dash: [3, 3],
-    strokeOpacity: 0.88,
+    strokeWidth: 0.2,
+    dash: [0.5, 0.5],
+    strokeOpacity: 0.8,
   },
   guide: {
-    strokeWidth: 0.3,
-    dash: [2, 2],
+    strokeWidth: 0.2,
+    dash: [1, 1],
     strokeOpacity: 0.8,
   },
   alert: {
-    strokeWidth: 0.5,
-    dash: [3, 2],
+    strokeWidth: 0.2,
+    dash: [1, 1],
     strokeOpacity: 0.8,
   },
 } as const;

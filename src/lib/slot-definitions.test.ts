@@ -58,20 +58,20 @@ describe("slot definitions", () => {
 
   it("stores ellipse naming and shape parameters in the shared definitions", () => {
     expect(ELLIPSE_SLOT_DEFINITIONS[1]).toMatchObject({
-      id: "ellipse-75x43.2",
-      name: "75x43.2mm",
+      id: "ellipse-75x42",
+      name: "75x42mm",
       width: 75,
-      height: 43.2,
+      height: 42,
       outerOffset: 0.6,
       profileExponent: 2.08,
     });
     expect(
       findEllipseSlotDefinitionByGeometry({
         width: 75,
-        height: 43.2,
+        height: 42,
         outerOffset: 0.6,
         profileExponent: 2.08,
       })?.id,
-    ).toBe("ellipse-75x43.2");
+    ).toBe("ellipse-75x42");
   });
 });
