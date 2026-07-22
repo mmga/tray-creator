@@ -21,13 +21,13 @@ describe("canvas slot geometry", () => {
     });
 
     expect(getEllipseBoundingBox(20, 10, 0, "ellipse")).toEqual({
-      halfW: 10.4,
-      halfH: 5.4,
+      halfW: 10.2,
+      halfH: 5.2,
     });
 
     const diagonalEllipse = getEllipseBoundingBox(20, 10, 45, "ellipse");
-    expect(diagonalEllipse.halfW).toBeCloseTo(8.8018, 4);
-    expect(diagonalEllipse.halfH).toBeCloseTo(8.8018, 4);
+    expect(diagonalEllipse.halfW).toBeCloseTo(8.602, 4);
+    expect(diagonalEllipse.halfH).toBeCloseTo(8.602, 4);
 
     const fullerEllipse = getEllipseBoundingBox(20, 10, 45, "ellipse", 4);
     expect(fullerEllipse.halfW).toBeGreaterThan(diagonalEllipse.halfW);

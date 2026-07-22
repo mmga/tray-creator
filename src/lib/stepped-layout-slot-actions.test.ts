@@ -53,7 +53,7 @@ describe("stepped slot actions", () => {
     const added = addSteppedSlot(createParams(), createIdFactory("slot-2"), 25);
     expect(added.slots[1]).toMatchObject({
       id: "slot-2",
-      x: 130.2,
+      x: 130.4,
       y: 80,
       groupId: STEPPED_LAYOUT_DEFAULTS.activeGroupId,
     });
@@ -77,7 +77,7 @@ describe("stepped slot actions", () => {
 
     expect(rotated.slots[1]).toMatchObject({
       id: "ellipse-1",
-      x: 148,
+      x: 147.9,
       y: 80,
       shape: "ellipse",
       width: preset.width,

@@ -577,10 +577,10 @@ describe("param-io", () => {
     expect(parsed.slots[1]).toMatchObject({
       id: "ellipse-1",
       rotation: 45,
-      slotDefinitionId: "ellipse-75x43.2",
       outerOffset: 0.6,
       profileExponent: 2.08,
     });
+    expect(parsed.slots[1].slotDefinitionId).toBeUndefined();
   });
 
   it("migrates legacy stepped files with bottomHeight and bridgeRadius", () => {

@@ -23,7 +23,7 @@ describe("stepped layout math", () => {
 
     const dimensions = calculateSteppedEffectiveDimensions(params);
 
-    expect(dimensions.width).toBeCloseTo(47.2, 1);
-    expect(dimensions.depth).toBeCloseTo(47.2, 1);
+    expect(dimensions.width).toBeCloseTo(47.4, 1);
+    expect(dimensions.depth).toBeCloseTo(47.4, 1);
   });
 });

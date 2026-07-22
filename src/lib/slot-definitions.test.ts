@@ -18,8 +18,8 @@ describe("slot definitions", () => {
     expect(findCircleSlotDefinitionByBaseDiameter(25)).toMatchObject({
       id: "circle-25",
       baseDiameter: 25,
-      slotDiameter: 25.2,
-      tolerance: 0.2,
+      slotDiameter: 25.4,
+      tolerance: 0.4,
     });
     expect(findCircleSlotDefinitionByBaseDiameter(40)).toMatchObject({
       id: "circle-40",
@@ -62,14 +62,14 @@ describe("slot definitions", () => {
       name: "75x43.2mm",
       width: 75,
       height: 43.2,
-      outerOffset: 0.6,
+      outerOffset: 0.2,
       profileExponent: 2.08,
     });
     expect(
       findEllipseSlotDefinitionByGeometry({
         width: 75,
         height: 43.2,
-        outerOffset: 0.6,
+        outerOffset: 0.2,
         profileExponent: 2.08,
       })?.id,
     ).toBe("ellipse-75x43.2");

@@ -129,8 +129,8 @@ describe("custom tray model", () => {
       ],
     });
 
-    expect(dimensions.width).toBe(135.8);
-    expect(dimensions.depth).toBe(55.8);
+    expect(dimensions.width).toBe(135.4);
+    expect(dimensions.depth).toBe(55.4);
     expect(dimensions.height).toBe(6);
   });
 
@@ -148,16 +148,16 @@ describe("custom tray model", () => {
 
     expect(calculateCustomEffectiveBaseplate(params)).toEqual({
       hasSlots: true,
-      width: 70.2,
-      depth: 35.2,
-      minX: 7.4,
-      maxX: 67.6,
-      minY: 27.4,
-      maxY: 52.6,
+      width: 70.4,
+      depth: 35.4,
+      minX: 7.300000000000001,
+      maxX: 67.7,
+      minY: 27.3,
+      maxY: 52.7,
     });
     expect(calculateCustomTrayDimensions(params)).toEqual({
-      width: 70.2,
-      depth: 35.2,
+      width: 70.4,
+      depth: 35.4,
       height: 6,
     });
   });
