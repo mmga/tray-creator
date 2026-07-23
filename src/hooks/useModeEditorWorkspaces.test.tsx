@@ -103,7 +103,11 @@ vi.mock("@/hooks/useModeWorkspaces", () => ({
     }>;
   }) => {
     capturedWorkspaceOptions.push(options);
-    return { activeWorkspace, getImportTarget: getImportTargetMock };
+    return {
+      activeWorkspace,
+      getWorkspace: vi.fn(() => activeWorkspace),
+      getImportTarget: getImportTargetMock,
+    };
   },
 }));
 
@@ -112,7 +116,10 @@ vi.mock("@/hooks/useModeViewportWorkspaces", () => ({
     steppedInteractionState: ModeInteractionState;
   }) => {
     capturedViewportOptions.push(options);
-    return { activeViewport, getViewport: vi.fn(() => activeViewport) };
+    return {
+      activeViewport,
+      getViewport: vi.fn((mode: AppMode) => ({ ...activeViewport, mode })),
+    };
   },
 }));
 

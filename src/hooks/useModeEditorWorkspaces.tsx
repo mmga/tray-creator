@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ParamImportDialog } from "@/components/ParamImportDialog";
 import { useCustomLayout } from "@/hooks/useCustomLayout";
 import { useBaseConverter } from "@/hooks/useBaseConverter";
@@ -22,6 +22,7 @@ import {
 } from "@/lib/historical-param-artifact-reader";
 import type { DraftActionResult } from "@/workspaces/draft-action-area";
 import { useToast } from "@/hooks/useToast";
+import { createModeEditorCatalog } from "@/mode-editor/catalog";
 
 interface UseModeEditorWorkspacesOptions {
   mode: AppMode;
@@ -85,7 +86,7 @@ export function useModeEditorWorkspaces({
     }
   }, [clearPendingImport]);
 
-  const { activeViewport, getViewport } = useModeViewportWorkspaces({
+  const { getViewport } = useModeViewportWorkspaces({
     mode,
     gridModel,
     customModel,
@@ -95,7 +96,7 @@ export function useModeEditorWorkspaces({
     steppedInteractionState,
   });
 
-  const { activeWorkspace, getImportTarget } = useModeWorkspaces({
+  const { getWorkspace, getImportTarget } = useModeWorkspaces({
     mode,
     gridModel,
     customModel,
@@ -105,6 +106,18 @@ export function useModeEditorWorkspaces({
     steppedInteractionState,
     onRequestParamImport: requestParamImport,
   });
+
+  const catalog = useMemo(() => createModeEditorCatalog({
+    grid: { workspace: getWorkspace("grid"), viewport: getViewport("grid") },
+    custom: { workspace: getWorkspace("custom"), viewport: getViewport("custom") },
+    "base-converter": {
+      workspace: getWorkspace("base-converter"),
+      viewport: getViewport("base-converter"),
+    },
+    stepped: { workspace: getWorkspace("stepped"), viewport: getViewport("stepped") },
+  }), [getViewport, getWorkspace]);
+  const activeWorkspace = catalog[mode].workspace;
+  const activeViewport = catalog[mode].viewport;
 
   const selectImportMode = useCallback(async (selectedMode: AppMode) => {
     if (!pendingImportFile) return;

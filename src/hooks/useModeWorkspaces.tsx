@@ -28,6 +28,7 @@ interface UseModeWorkspacesOptions {
 
 interface UseModeWorkspacesReturn {
   activeWorkspace: ModeWorkspace;
+  getWorkspace: (mode: AppMode) => ModeWorkspace;
   getImportTarget: (mode: AppMode) => ModeWorkspaceImportTarget;
 }
 
@@ -60,8 +61,8 @@ export function useModeWorkspaces({
     onRequestParamImport,
   });
 
-  const activeWorkspace = useMemo<ModeWorkspace>(() => {
-    switch (mode) {
+  const getWorkspace = useCallback((requestedMode: AppMode): ModeWorkspace => {
+    switch (requestedMode) {
       case "grid":
         return gridWorkspace;
       case "custom":
@@ -71,7 +72,7 @@ export function useModeWorkspaces({
       case "stepped":
         return steppedWorkspace;
       default: {
-        const unreachableMode: never = mode;
+        const unreachableMode: never = requestedMode;
         throw new Error(`Unsupported workspace mode: ${String(unreachableMode)}`);
       }
     }
@@ -79,9 +80,12 @@ export function useModeWorkspaces({
     customWorkspace,
     baseConverterWorkspace,
     gridWorkspace,
-    mode,
     steppedWorkspace,
   ]);
+  const activeWorkspace = useMemo(
+    () => getWorkspace(mode),
+    [getWorkspace, mode],
+  );
 
   const getImportTarget = useCallback((targetMode: AppMode) => {
     switch (targetMode) {
@@ -107,6 +111,7 @@ export function useModeWorkspaces({
 
   return {
     activeWorkspace,
+    getWorkspace,
     getImportTarget,
   };
 }
