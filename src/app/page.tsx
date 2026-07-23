@@ -1,24 +1,15 @@
 "use client";
 
-import {
-  useState,
-} from "react";
-import { useModeEditorWorkspaces } from "@/hooks/useModeEditorWorkspaces";
+import { useModeEditor } from "@/hooks/useModeEditor";
 import { ModeTabs } from "@/components/ModeTabs";
-import type { AppMode } from "@/types/custom-tray";
 import { Boxes } from "lucide-react";
 
 export default function Home() {
-  const [mode, setMode] = useState<AppMode>("grid");
-  const { activeWorkspace, activeViewport, importOverlay } = useModeEditorWorkspaces({
-    mode,
-    onModeChange: setMode,
-  });
+  const editor = useModeEditor();
 
   return (
     <div className="flex flex-col h-dvh bg-background text-foreground overflow-hidden">
-      {activeWorkspace.overlays}
-      {importOverlay}
+      {editor.active.overlays}
 
       {/* Header */}
       <header className="relative shrink-0">
@@ -51,16 +42,16 @@ export default function Home() {
       </header>
 
       {/* Mode Switcher */}
-      <ModeTabs mode={mode} onModeChange={(m) => {
-        activeViewport.deactivate();
-        setMode(m);
-      }} />
+      <ModeTabs
+        mode={editor.active.mode}
+        onModeChange={(mode) => editor.perform({ type: "switch-mode", mode })}
+      />
 
       {/* ===== 主布局: 左右分栏 ===== */}
       <main className="flex flex-row flex-1 overflow-hidden">
         {/* Left Panel */}
         <aside className="h-full w-[380px] min-w-[320px] shrink-0 overflow-hidden bg-[#0e0d0b]">
-          <div className="h-full min-h-0">{activeWorkspace.panel}</div>
+          <div className="h-full min-h-0">{editor.active.panel}</div>
         </aside>
 
         {/* Divider */}
@@ -70,7 +61,7 @@ export default function Home() {
 
         {/* Right Viewport */}
         <section className="flex-1 bg-[#0a0908] relative flex flex-col">
-          {activeViewport.viewport}
+          {editor.active.viewport}
         </section>
       </main>
     </div>

@@ -178,7 +178,13 @@ const {
     hasUnsavedChanges: mode === "custom",
     setDraftNameInput: vi.fn(),
     saveAsNewDraft: vi.fn(),
-    loadDraft: vi.fn(),
+    prepareDraftLoad: vi.fn((id: string) => ({
+      id,
+      title: `${mode} Draft 1`,
+      snapshot: { mode, params: mode === "grid" ? gridParams : mode === "custom" ? customParams : steppedParams },
+      serializedParams: "{}",
+    })),
+    commitLoadedDraftBinding: vi.fn(),
     renameDraftItem: vi.fn(),
     deleteDraftItem: vi.fn(),
     exportDraftItem: vi.fn(),
@@ -776,7 +782,8 @@ describe("Home page", { timeout: 15000 }, () => {
       draftMock.closeDialog.mockReset();
       draftMock.saveCurrentDraft.mockReset();
       draftMock.saveAsNewDraft.mockReset();
-      draftMock.loadDraft.mockReset();
+      draftMock.prepareDraftLoad.mockReset();
+      draftMock.commitLoadedDraftBinding.mockReset();
       draftMock.renameDraftItem.mockReset();
       draftMock.deleteDraftItem.mockReset();
       draftMock.exportDraftItem.mockReset();
@@ -958,7 +965,8 @@ describe("Home page", { timeout: 15000 }, () => {
     expect(gridDraftsMock.openDialog).toHaveBeenCalledTimes(1);
     expect(gridDraftsMock.saveAsNewDraft).toHaveBeenCalledTimes(1);
     expect(gridDraftsMock.saveCurrentDraft).toHaveBeenCalledTimes(1);
-    expect(gridDraftsMock.loadDraft).toHaveBeenCalledWith("draft-1");
+    expect(gridDraftsMock.prepareDraftLoad).toHaveBeenCalledWith("draft-1");
+    expect(gridDraftsMock.commitLoadedDraftBinding).toHaveBeenCalledTimes(1);
     expect(gridDraftsMock.renameDraftItem).toHaveBeenCalledWith(
       "draft-1",
       "Renamed",
