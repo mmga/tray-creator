@@ -25,6 +25,7 @@ interface UseSteppedOutlinePreviewResult {
 export function useSteppedOutlinePreview(
   params: SteppedLayoutParams,
   previewPort: SteppedOutlinePreviewPort | null,
+  sessionEpoch = 0,
 ): UseSteppedOutlinePreviewResult {
   const [isOutlinePreviewPaused, setIsOutlinePreviewPaused] = useState(false);
   const [frozenOutlinePreviewParams, setFrozenOutlinePreviewParams] =
@@ -106,7 +107,7 @@ export function useSteppedOutlinePreview(
     return () => {
       isCancelled = true;
     };
-  }, [deferredOutlineParams, previewPort, isStale, nextSeq]);
+  }, [deferredOutlineParams, previewPort, isStale, nextSeq, sessionEpoch]);
 
   return {
     outlinePreview,

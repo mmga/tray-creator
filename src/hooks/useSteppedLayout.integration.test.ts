@@ -147,6 +147,7 @@ describe("useSteppedLayout", () => {
     expect(useSteppedOutlinePreviewMock).toHaveBeenCalledWith(
       expect.not.objectContaining({ activeGroupId: expect.anything() }),
       trayWorkerServiceMock,
+      0,
     );
     expect(result.current.bridgeWarning).toBeNull();
 

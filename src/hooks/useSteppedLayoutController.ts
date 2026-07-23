@@ -209,6 +209,7 @@ export function useSteppedLayoutController<
     cancelContinuousEdit: cancelContinuousEditTransaction,
     hasActiveContinuousEdit,
     transactionRevision,
+    sessionEpoch,
     undo,
     canUndo,
     threeGeometry,
@@ -348,7 +349,11 @@ export function useSteppedLayoutController<
     outlinePreview,
     pauseOutlinePreview,
     resumeOutlinePreview,
-  } = useSteppedOutlinePreview(persistedParams, trayWorkerService);
+  } = useSteppedOutlinePreview(
+    persistedParams,
+    trayWorkerService,
+    sessionEpoch,
+  );
 
   const updateMultipleSlots = useCallback(
     (updates: SteppedSlotUpdate[]) => {
