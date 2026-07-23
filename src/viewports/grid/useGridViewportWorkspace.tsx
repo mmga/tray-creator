@@ -10,7 +10,7 @@ interface UseGridViewportWorkspaceOptions { model: ReturnType<typeof useTrayMode
 
 export function useGridViewportWorkspace({
   model,
-}: UseGridViewportWorkspaceOptions): ModeViewportWorkspace {
+}: UseGridViewportWorkspaceOptions): ModeViewportWorkspace<"grid"> {
   const [rightView, setRightView] = useState<"2d" | "3d">("2d");
   const deactivate = useCallback(() => {}, []);
   const resetForSessionReplacement = useCallback(() => setRightView("2d"), []);

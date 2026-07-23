@@ -26,7 +26,7 @@ interface UseSteppedViewportWorkspaceOptions {
 }
 
 interface UseSteppedViewportWorkspaceReturn {
-  workspace: ModeViewportWorkspace;
+  workspace: ModeViewportWorkspace<"stepped">;
 }
 
 export function useSteppedViewportWorkspace({

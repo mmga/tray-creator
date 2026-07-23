@@ -98,11 +98,12 @@ export function useCustomWorkspace({
   onRequestParamImport,
   onRequestReset,
   onRequestDraftLoad,
-}: UseCustomWorkspaceOptions): ModeWorkspace {
+}: UseCustomWorkspaceOptions): ModeWorkspace<"custom"> {
   const {
     draftActions,
     overlays,
     clearDraftBinding,
+    prepareDraftLoad,
     commitLoadedDraftBinding,
   } =
     useWorkspaceDraftSupport({
@@ -178,6 +179,7 @@ export function useCustomWorkspace({
   );
 
   return {
+    mode: "custom",
     panel,
     overlays,
     replacementTarget: {
@@ -185,10 +187,11 @@ export function useCustomWorkspace({
       currentDraftId: draftActions.currentDraftId,
       hasUnsavedChanges: draftActions.hasUnsavedChanges,
       paramsRevision: model.transactionRevision ?? 0,
+      prepareDraftLoad,
       commitReset: resetWorkspace,
-      commitImport: (params) => importIntoWorkspace(params as CustomLayoutParams),
+      commitImport: importIntoWorkspace,
       commitDraftLoad: (prepared) => {
-        model.setParams(prepared.snapshot.params as CustomLayoutParams);
+        model.setParams(prepared.snapshot.params);
         interactionState.resetInteractionState();
         commitLoadedDraftBinding(prepared);
       },

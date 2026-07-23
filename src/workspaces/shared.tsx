@@ -52,22 +52,25 @@ export interface WorkspaceDraftActions {
   onOpenDraftDialog: () => void;
 }
 
-interface WorkspaceDraftSupport {
+interface WorkspaceDraftSupport<M extends DraftMode> {
   draftActions: WorkspaceDraftActions;
   overlays: ReactNode;
   clearDraftBinding: () => void;
+  prepareDraftLoad: (
+    draftId: string,
+  ) => PreparedDraftLoad<M> | null;
   commitLoadedDraftBinding: (
-    prepared: PreparedDraftLoad<DraftMode>,
+    prepared: PreparedDraftLoad<M>,
   ) => void;
 }
 
 type WorkspaceDraftSupportOptions<M extends DraftMode> = UseModeDraftsOptions<M> & {
-  requestDraftLoad: (prepared: PreparedDraftLoad<M>) => void;
+  requestDraftLoad: (draftId: string) => void;
 };
 
 export function useWorkspaceDraftSupport<M extends DraftMode>(
   options: WorkspaceDraftSupportOptions<M>,
-): WorkspaceDraftSupport {
+): WorkspaceDraftSupport<M> {
   const { mode, requestDraftLoad } = options;
   const {
     currentDraftId,
@@ -138,10 +141,7 @@ export function useWorkspaceDraftSupport<M extends DraftMode>(
         refreshDraftList();
       },
       onLoad: (id) => {
-        const prepared = prepareDraftLoad(id);
-        if (!prepared) return;
-        requestDraftLoad(prepared);
-        refreshDraftList();
+        requestDraftLoad(id);
       },
       onRename: (id, title) => {
         renameDraftItem(id, title);
@@ -163,7 +163,6 @@ export function useWorkspaceDraftSupport<M extends DraftMode>(
       exportDraftItem,
       hasUnsavedChanges,
       isDialogOpen,
-      prepareDraftLoad,
       openDraftDialog,
       refreshDraftList,
       renameDraftItem,
@@ -184,8 +183,7 @@ export function useWorkspaceDraftSupport<M extends DraftMode>(
     draftActions,
     overlays,
     clearDraftBinding,
-    commitLoadedDraftBinding: commitLoadedDraftBinding as (
-      prepared: PreparedDraftLoad<DraftMode>,
-    ) => void,
+    prepareDraftLoad,
+    commitLoadedDraftBinding,
   };
 }

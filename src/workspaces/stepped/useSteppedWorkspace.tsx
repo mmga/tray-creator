@@ -34,7 +34,7 @@ export function useSteppedWorkspace({
   onRequestParamImport,
   onRequestReset,
   onRequestDraftLoad,
-}: UseSteppedWorkspaceOptions): ModeWorkspace {
+}: UseSteppedWorkspaceOptions): ModeWorkspace<"stepped"> {
   const {
     selectedSlotIds,
     previewGroupId,
@@ -56,6 +56,7 @@ export function useSteppedWorkspace({
     draftActions,
     overlays,
     clearDraftBinding,
+    prepareDraftLoad,
     commitLoadedDraftBinding,
   } =
     useWorkspaceDraftSupport({
@@ -188,6 +189,7 @@ export function useSteppedWorkspace({
   );
 
   return {
+    mode: "stepped",
     panel,
     overlays,
     replacementTarget: {
@@ -195,10 +197,11 @@ export function useSteppedWorkspace({
       currentDraftId: draftActions.currentDraftId,
       hasUnsavedChanges: draftActions.hasUnsavedChanges,
       paramsRevision: model.transactionRevision ?? 0,
+      prepareDraftLoad,
       commitReset: resetWorkspace,
-      commitImport: (params) => importIntoWorkspace(params as SteppedLayoutParams),
+      commitImport: importIntoWorkspace,
       commitDraftLoad: (prepared) => {
-        model.setParams(prepared.snapshot.params as SteppedLayoutParams);
+        model.setParams(prepared.snapshot.params);
         resetInteractionState();
         commitLoadedDraftBinding(prepared);
       },

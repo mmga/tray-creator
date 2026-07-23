@@ -12,7 +12,7 @@ interface Options {
 
 export function useBaseConverterViewportWorkspace({
   model,
-}: Options): ModeViewportWorkspace {
+}: Options): ModeViewportWorkspace<"base-converter"> {
   const [rightView, setRightView] = useState<"2d" | "3d">("2d");
   const deactivate = useCallback(() => {}, []);
   const resetForSessionReplacement = useCallback(() => setRightView("2d"), []);

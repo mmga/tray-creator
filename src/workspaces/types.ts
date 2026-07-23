@@ -1,18 +1,21 @@
 "use client";
 
 import type { ReactNode } from "react";
-import type { ExportableParams } from "@/lib/mode-param-snapshot";
+import type { ParamsByMode } from "@/lib/mode-param-snapshot";
 import type { PreparedDraftLoad } from "@/hooks/useModeDrafts";
 import type { AppMode } from "@/types/custom-tray";
 
-export interface ModeWorkspaceReplacementTarget {
-  mode: AppMode;
+export interface ModeWorkspaceReplacementTarget<M extends AppMode = AppMode> {
+  mode: M;
   currentDraftId: string | null;
   hasUnsavedChanges: boolean;
   paramsRevision: number;
+  prepareDraftLoad: (
+    draftId: string,
+  ) => PreparedDraftLoad<M> | null;
   commitReset: () => void;
-  commitImport: (params: ExportableParams) => void;
-  commitDraftLoad: (prepared: PreparedDraftLoad<AppMode>) => void;
+  commitImport: (params: ParamsByMode[M]) => void;
+  commitDraftLoad: (prepared: PreparedDraftLoad<M>) => void;
 }
 
 /**
@@ -23,8 +26,9 @@ export interface ModeWorkspaceReplacementTarget {
  *
  * 页面渲染 `{overlays}` 与 `<aside>{panel}</aside>`；导入编排不感知 Mode 特有规则。
  */
-export interface ModeWorkspace {
+export interface ModeWorkspace<M extends AppMode = AppMode> {
+  mode: M;
   panel: ReactNode;
   overlays: ReactNode;
-  replacementTarget: ModeWorkspaceReplacementTarget;
+  replacementTarget: ModeWorkspaceReplacementTarget<M>;
 }

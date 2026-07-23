@@ -94,11 +94,12 @@ export function useGridWorkspace({
   onRequestParamImport,
   onRequestReset,
   onRequestDraftLoad,
-}: UseGridWorkspaceOptions): ModeWorkspace {
+}: UseGridWorkspaceOptions): ModeWorkspace<"grid"> {
   const {
     draftActions,
     overlays,
     clearDraftBinding,
+    prepareDraftLoad,
     commitLoadedDraftBinding,
   } =
     useWorkspaceDraftSupport({
@@ -170,6 +171,7 @@ export function useGridWorkspace({
   );
 
   return {
+    mode: "grid",
     panel,
     overlays,
     replacementTarget: {
@@ -177,10 +179,11 @@ export function useGridWorkspace({
       currentDraftId: draftActions.currentDraftId,
       hasUnsavedChanges: draftActions.hasUnsavedChanges,
       paramsRevision: model.transactionRevision ?? 0,
+      prepareDraftLoad,
       commitReset: resetWorkspace,
-      commitImport: (params) => importIntoWorkspace(params as TrayParams),
+      commitImport: importIntoWorkspace,
       commitDraftLoad: (prepared) => {
-        model.replaceParams(prepared.snapshot.params as TrayParams);
+        model.replaceParams(prepared.snapshot.params);
         commitLoadedDraftBinding(prepared);
       },
     },

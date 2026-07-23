@@ -274,6 +274,7 @@ const {
       duplicateSlots: vi.fn(),
       undo: vi.fn(),
       saveSnapshot: vi.fn(),
+      cancelContinuousEdit: vi.fn(),
       outlinePreview,
       pauseOutlinePreview: vi.fn(),
       resumeOutlinePreview: vi.fn(),
@@ -768,6 +769,7 @@ describe("Home page", { timeout: 15000 }, () => {
     steppedModelMock.setActiveGroup.mockReset();
     steppedModelMock.pauseOutlinePreview.mockReset();
     steppedModelMock.resumeOutlinePreview.mockReset();
+    steppedModelMock.cancelContinuousEdit.mockReset();
     steppedModelMock.generateOptimizationProposals.mockReset();
     steppedModelMock.applyOptimizationProposal.mockReset();
     steppedModelMock.clearOptimizationProposals.mockReset();
@@ -899,8 +901,7 @@ describe("Home page", { timeout: 15000 }, () => {
       "group-1",
     );
 
-    // Page shell only calls active viewport reset; stepped interaction state
-    // is owned behind useModeEditorWorkspaces.
+    // Mode Editor 退出源 Mode 时统一取消 Working Edit 并清理瞬态交互。
     fireEvent.click(screen.getByRole("button", { name: "切到网格" }));
     fireEvent.click(screen.getByRole("button", { name: "切到阶梯" }));
 
@@ -974,6 +975,6 @@ describe("Home page", { timeout: 15000 }, () => {
     expect(gridDraftsMock.deleteDraftItem).toHaveBeenCalledWith("draft-1");
     expect(gridDraftsMock.exportDraftItem).toHaveBeenCalledWith("draft-1");
     expect(gridDraftsMock.closeDialog).toHaveBeenCalledTimes(1);
-    expect(gridDraftsMock.getDraftList).toHaveBeenCalledTimes(6);
+    expect(gridDraftsMock.getDraftList).toHaveBeenCalledTimes(5);
   });
 });

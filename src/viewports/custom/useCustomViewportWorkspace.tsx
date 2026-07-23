@@ -20,7 +20,7 @@ interface UseCustomViewportWorkspaceOptions {
 export function useCustomViewportWorkspace({
   model,
   interactionState,
-}: UseCustomViewportWorkspaceOptions): ModeViewportWorkspace {
+}: UseCustomViewportWorkspaceOptions): ModeViewportWorkspace<"custom"> {
   const [rightView, setRightView] = useState<"2d" | "3d">("2d");
   const deactivate = interactionState.resetInteractionState;
   const resetForSessionReplacement = useCallback(() => {

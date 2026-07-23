@@ -101,11 +101,12 @@ export function useBaseConverterWorkspace({
   onRequestParamImport,
   onRequestReset,
   onRequestDraftLoad,
-}: UseBaseConverterWorkspaceOptions): ModeWorkspace {
+}: UseBaseConverterWorkspaceOptions): ModeWorkspace<"base-converter"> {
   const {
     draftActions,
     overlays,
     clearDraftBinding,
+    prepareDraftLoad,
     commitLoadedDraftBinding,
   } =
     useWorkspaceDraftSupport({
@@ -146,6 +147,7 @@ export function useBaseConverterWorkspace({
   ), [actions, model.isGenerating, model.isPreviewStale, model.params, model.updateParam, model.volume]);
 
   return {
+    mode: "base-converter",
     panel,
     overlays,
     replacementTarget: {
@@ -153,10 +155,11 @@ export function useBaseConverterWorkspace({
       currentDraftId: draftActions.currentDraftId,
       hasUnsavedChanges: draftActions.hasUnsavedChanges,
       paramsRevision: model.transactionRevision ?? 0,
+      prepareDraftLoad,
       commitReset: resetWorkspace,
-      commitImport: (params) => importIntoWorkspace(params as BaseConverterParams),
+      commitImport: importIntoWorkspace,
       commitDraftLoad: (prepared) => {
-        model.replaceParams(prepared.snapshot.params as BaseConverterParams);
+        model.replaceParams(prepared.snapshot.params);
         commitLoadedDraftBinding(prepared);
       },
     },
