@@ -87,6 +87,7 @@ export function useSteppedCadSplitOrchestration(
   const previousRevisionRef = useRef(transactionRevision);
   const splitPreviewPartsRef =
     useRef<SteppedSplitPreviewPart[] | null>(null);
+  const splitPreviewRequestRef = useRef(0);
   const [splitPreviewParts, setSplitPreviewParts] = useState<
     SteppedSplitPreviewPart[] | null
   >(null);
@@ -134,6 +135,8 @@ export function useSteppedCadSplitOrchestration(
   );
 
   const clearSplitPreview = useCallback(() => {
+    splitPreviewRequestRef.current += 1;
+    setIsGeneratingSplitPreview(false);
     replaceSplitPreviewParts(null);
   }, [replaceSplitPreviewParts]);
 
@@ -165,6 +168,8 @@ export function useSteppedCadSplitOrchestration(
 
     const currentParams = paramsRef.current;
     const generationRevision = revisionRef.current;
+    const requestId = splitPreviewRequestRef.current + 1;
+    splitPreviewRequestRef.current = requestId;
     const blockingReason = getBaseHoleFitBlockingReason(
       validateBaseHoleFit("stepped", currentParams),
     );
@@ -183,19 +188,25 @@ export function useSteppedCadSplitOrchestration(
         currentParams,
         workerPort,
       );
-      if (revisionRef.current !== generationRevision) {
+      if (
+        revisionRef.current !== generationRevision ||
+        splitPreviewRequestRef.current !== requestId
+      ) {
         disposeSplitPreviewParts(parts);
         return;
       }
       replaceSplitPreviewParts(parts);
     } catch (err) {
+      if (splitPreviewRequestRef.current !== requestId) return;
       console.error("拆件预览生成失败:", err);
       toast(
         "error",
         `拆件预览失败：${err instanceof Error ? err.message : "未知错误"}`,
       );
     } finally {
-      setIsGeneratingSplitPreview(false);
+      if (splitPreviewRequestRef.current === requestId) {
+        setIsGeneratingSplitPreview(false);
+      }
     }
   }, [generateSplitPreview, replaceSplitPreviewParts, toast]);
 
