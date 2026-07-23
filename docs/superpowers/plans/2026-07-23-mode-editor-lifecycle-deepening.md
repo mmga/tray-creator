@@ -2,7 +2,7 @@
 
 > 日期：2026-07-23
 >
-> 状态：待确认
+> 状态：已完成（2026-07-23）
 >
 > 实施对象：Mode Editor、Mode Workspace、Mode Viewport Workspace、Draft Binding、参数导入、异步预览生命周期
 >
@@ -694,3 +694,24 @@ docs: finalize mode editor lifecycle deepening
 按本计划的八阶段顺序实施，并把阶段 5 与阶段 6 合并为唯一原子切换提交。
 
 不先做页面改线，也不先删除旧 Registry。先建立类型安全、Session Epoch、Draft prepare/commit 和真实 Adapter，再一次性把页面切换到 `active + perform`。这样可以在迁移前获得并发安全和可测试的 Seam，同时避免双 active Mode、双提交路径和长期兼容层。
+
+## 9. 完成记录
+
+2026-07-23 已完成本计划的生产迁移：
+
+- `useModeEditor` 成为 active Mode、Workspace/Viewport Catalog、替换风险门和 Session 替换提交的唯一所有者。
+- reset、参数导入和 Draft 加载统一通过 `ModeEditor.perform`；Draft 加载以 `draftId` 进入，先 prepare 再 commit。
+- Mode、参数快照、Workspace 与 Viewport 使用泛型映射保持编译期配对，删除跨 Mode 参数强制转换。
+- 普通切换会退出源 Mode；Stepped 同时取消 Working Edit 并清理瞬态交互，不重置目标 Session。
+- 删除 `useModeEditorWorkspaces`、`useModeWorkspaces`、`useModeViewportWorkspaces` 及对应旧测试。
+- 新增静态架构守卫，防止页面重新持有 Model/Mode 或恢复双 Registry。
+
+自动验证结果：
+
+- unit：94 个测试文件、479 个测试通过；
+- integration：4 个测试文件、23 个测试通过；
+- performance：1 个测试通过；
+- TypeScript、eslint、`git diff --check` 通过；
+- Next.js 生产构建与静态预渲染通过；由于执行环境无法访问 Google Fonts，构建验收使用 Next.js 官方测试入口注入本地字体响应，不修改生产字体配置。
+
+按用户最终指示跳过浏览器页面测试；其余完成定义已由自动测试、架构守卫和生产构建覆盖。
