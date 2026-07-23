@@ -9,7 +9,7 @@ const {
   capturedWorkspaceOptions,
   capturedViewportOptions,
   modelMocks,
-  getImportTargetMock,
+  getReplacementTargetMock,
   commitImportMock,
 } = vi.hoisted(() => {
   const commitImport = vi.fn();
@@ -62,10 +62,13 @@ const {
       steppedModel: { kind: "stepped" },
       steppedCadModel: { kind: "stepped-cad" },
     },
-    getImportTargetMock: vi.fn(() => ({
+    getReplacementTargetMock: vi.fn(() => ({
+      mode: "custom",
       currentDraftId: null,
       hasUnsavedChanges: false,
-      commit: commitImport,
+      commitReset: vi.fn(),
+      commitImport,
+      commitDraftLoad: vi.fn(),
     })),
     commitImportMock: commitImport,
   };
@@ -106,7 +109,7 @@ vi.mock("@/hooks/useModeWorkspaces", () => ({
     return {
       activeWorkspace,
       getWorkspace: vi.fn(() => activeWorkspace),
-      getImportTarget: getImportTargetMock,
+      getReplacementTarget: getReplacementTargetMock,
     };
   },
 }));
@@ -188,7 +191,7 @@ describe("useModeEditorWorkspaces", () => {
 
     act(() => overlay.props.onConfirm());
 
-    expect(getImportTargetMock).toHaveBeenCalledWith("custom");
+    expect(getReplacementTargetMock).toHaveBeenCalledWith("custom");
     expect(commitImportMock).toHaveBeenCalledWith(
       expect.objectContaining({ trayWidth: 120, trayDepth: 120 }),
     );

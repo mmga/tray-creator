@@ -7,12 +7,19 @@ import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 
 const {
   clearDraftBindingMock,
+  commitLoadedDraftBindingMock,
+  requestResetMock,
+  requestDraftLoadMock,
   useAutoPreviewMock,
   useWorkspaceDraftSupportMock,
 } = vi.hoisted(() => {
   const clearDraftBinding = vi.fn();
+  const commitLoadedDraftBinding = vi.fn();
   return {
     clearDraftBindingMock: clearDraftBinding,
+    commitLoadedDraftBindingMock: commitLoadedDraftBinding,
+    requestResetMock: vi.fn(),
+    requestDraftLoadMock: vi.fn(),
     useAutoPreviewMock: vi.fn(),
     useWorkspaceDraftSupportMock: vi.fn(() => ({
       draftActions: {
@@ -23,6 +30,7 @@ const {
       },
       overlays: null,
       clearDraftBinding,
+      commitLoadedDraftBinding,
     })),
   };
 });
@@ -86,6 +94,9 @@ describe("Mode Workspace Draft Action Area", () => {
     clearDraftBindingMock.mockReset();
     useAutoPreviewMock.mockReset();
     useWorkspaceDraftSupportMock.mockClear();
+    commitLoadedDraftBindingMock.mockReset();
+    requestResetMock.mockReset();
+    requestDraftLoadMock.mockReset();
   });
 
   it("grid 仅在活动面板挂载后启用自动预览，并路由重置与导入", async () => {
@@ -104,6 +115,8 @@ describe("Mode Workspace Draft Action Area", () => {
     const { result } = renderHook(() => useGridWorkspace({
       model: model as never,
       onRequestParamImport,
+      onRequestReset: requestResetMock,
+      onRequestDraftLoad: requestDraftLoadMock,
     }));
 
     expect(useAutoPreviewMock).not.toHaveBeenCalled();
@@ -127,11 +140,15 @@ describe("Mode Workspace Draft Action Area", () => {
       expect.objectContaining({ enabled: true }),
     );
     expect(model.handleGenerate).toHaveBeenCalledTimes(1);
-    expect(model.resetParams).toHaveBeenCalledTimes(1);
+    expect(requestResetMock).toHaveBeenCalledTimes(1);
+    expect(model.resetParams).not.toHaveBeenCalled();
     await waitFor(() => expect(onRequestParamImport).toHaveBeenCalledTimes(1));
+    expect(clearDraftBindingMock).not.toHaveBeenCalled();
+    act(() => result.current.replacementTarget.commitReset());
+    expect(model.resetParams).toHaveBeenCalledTimes(1);
     expect(clearDraftBindingMock).toHaveBeenCalledTimes(1);
     expect(model.replaceParams).not.toHaveBeenCalled();
-    act(() => result.current.importTarget.commit({
+    act(() => result.current.replacementTarget.commitImport({
       ...DEFAULT_TRAY_PARAMS,
       rows: 3,
     }));
@@ -158,6 +175,8 @@ describe("Mode Workspace Draft Action Area", () => {
     const { result } = renderHook(() => useGridWorkspace({
       model: model as never,
       onRequestParamImport: vi.fn(async () => ({ status: "success" as const })),
+      onRequestReset: requestResetMock,
+      onRequestDraftLoad: requestDraftLoadMock,
     }));
 
     renderWorkspacePanel(result.current.panel);
@@ -193,6 +212,8 @@ describe("Mode Workspace Draft Action Area", () => {
       model: model as never,
       interactionState: { selectedSlotIds: [] } as never,
       onRequestParamImport,
+      onRequestReset: requestResetMock,
+      onRequestDraftLoad: requestDraftLoadMock,
     }));
 
     expect(useAutoPreviewMock).not.toHaveBeenCalled();
@@ -210,9 +231,11 @@ describe("Mode Workspace Draft Action Area", () => {
       expect.objectContaining({ enabled: true }),
     );
     await waitFor(() => expect(onRequestParamImport).toHaveBeenCalledTimes(1));
-    expect(clearDraftBindingMock).toHaveBeenCalledTimes(1);
+    expect(requestResetMock).toHaveBeenCalledTimes(1);
+    expect(clearDraftBindingMock).not.toHaveBeenCalled();
+    act(() => result.current.replacementTarget.commitReset());
     expect(model.setParams).toHaveBeenNthCalledWith(1, CUSTOM_LAYOUT_DEFAULTS);
-    act(() => result.current.importTarget.commit({
+    act(() => result.current.replacementTarget.commitImport({
       ...CUSTOM_LAYOUT_DEFAULTS,
       trayWidth: 180,
     }));
@@ -248,6 +271,8 @@ describe("Mode Workspace Draft Action Area", () => {
         model: model as never,
         interactionState: interactionState as never,
         onRequestParamImport,
+        onRequestReset: requestResetMock,
+        onRequestDraftLoad: requestDraftLoadMock,
       }),
     );
     renderWorkspacePanel(result.current.panel);
@@ -256,8 +281,10 @@ describe("Mode Workspace Draft Action Area", () => {
     fireEvent.click(screen.getByRole("button", { name: "导入" }));
 
     await waitFor(() => expect(onRequestParamImport).toHaveBeenCalledTimes(1));
-    expect(resetInteractionState).toHaveBeenCalledTimes(1);
-    act(() => result.current.importTarget.commit(STEPPED_LAYOUT_DEFAULTS));
+    expect(requestResetMock).toHaveBeenCalledTimes(1);
+    expect(resetInteractionState).not.toHaveBeenCalled();
+    act(() => result.current.replacementTarget.commitReset());
+    act(() => result.current.replacementTarget.commitImport(STEPPED_LAYOUT_DEFAULTS));
     expect(resetInteractionState).toHaveBeenCalledTimes(2);
     expect(clearDraftBindingMock).toHaveBeenCalledTimes(2);
   });
@@ -295,6 +322,8 @@ describe("Mode Workspace Draft Action Area", () => {
           resetInteractionState,
         } as never,
         onRequestParamImport,
+        onRequestReset: requestResetMock,
+        onRequestDraftLoad: requestDraftLoadMock,
       }),
     );
     renderWorkspacePanel(result.current.panel);

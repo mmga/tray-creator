@@ -2,7 +2,18 @@ import { describe, expect, it } from "vitest";
 import { createModeEditorCatalog } from "@/mode-editor/catalog";
 
 function workspace() {
-  return { panel: null, overlays: null, importTarget: { currentDraftId: null, hasUnsavedChanges: false, commit: () => {} } };
+  return {
+    panel: null,
+    overlays: null,
+    replacementTarget: {
+      mode: "grid" as const,
+      currentDraftId: null,
+      hasUnsavedChanges: false,
+      commitReset: () => {},
+      commitImport: () => {},
+      commitDraftLoad: () => {},
+    },
+  };
 }
 
 describe("Mode Editor Catalog", () => {

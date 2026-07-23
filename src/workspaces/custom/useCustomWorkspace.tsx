@@ -22,6 +22,10 @@ interface UseCustomWorkspaceOptions {
   model: ReturnType<typeof useCustomLayout>;
   interactionState: ModeInteractionState;
   onRequestParamImport: (file: File) => Promise<DraftActionResult>;
+  onRequestReset: () => void;
+  onRequestDraftLoad: Parameters<
+    typeof useWorkspaceDraftSupport<"custom">
+  >[0]["requestDraftLoad"];
 }
 
 interface CustomDraftActionAreaProps {
@@ -92,15 +96,19 @@ export function useCustomWorkspace({
   model,
   interactionState,
   onRequestParamImport,
+  onRequestReset,
+  onRequestDraftLoad,
 }: UseCustomWorkspaceOptions): ModeWorkspace {
-  const { draftActions, overlays, clearDraftBinding } =
+  const {
+    draftActions,
+    overlays,
+    clearDraftBinding,
+    commitLoadedDraftBinding,
+  } =
     useWorkspaceDraftSupport({
       mode: "custom",
       params: model.params,
-      commitDraftLoad: (prepared) => {
-        model.setParams(prepared.snapshot.params);
-        interactionState.resetInteractionState();
-      },
+      requestDraftLoad: onRequestDraftLoad,
     });
 
   const resetWorkspace = useCallback(() => {
@@ -122,7 +130,7 @@ export function useCustomWorkspace({
         blockingReason={model.baseHoleFitBlockingReason}
         onGenerate={model.handleGenerate}
         onExportSTL={model.handleExportSTL}
-        onReset={resetWorkspace}
+        onReset={onRequestReset}
         onRequestParamImport={onRequestParamImport}
         draftActions={draftActions}
       />
@@ -136,7 +144,7 @@ export function useCustomWorkspace({
       model.isPreviewStale,
       model.params,
       onRequestParamImport,
-      resetWorkspace,
+      onRequestReset,
     ],
   );
 
@@ -172,10 +180,17 @@ export function useCustomWorkspace({
   return {
     panel,
     overlays,
-    importTarget: {
+    replacementTarget: {
+      mode: "custom",
       currentDraftId: draftActions.currentDraftId,
       hasUnsavedChanges: draftActions.hasUnsavedChanges,
-      commit: (params) => importIntoWorkspace(params as CustomLayoutParams),
+      commitReset: resetWorkspace,
+      commitImport: (params) => importIntoWorkspace(params as CustomLayoutParams),
+      commitDraftLoad: (prepared) => {
+        model.setParams(prepared.snapshot.params as CustomLayoutParams);
+        interactionState.resetInteractionState();
+        commitLoadedDraftBinding(prepared);
+      },
     },
   };
 }

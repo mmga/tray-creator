@@ -22,12 +22,18 @@ interface UseSteppedWorkspaceOptions {
   model: UseSteppedLayoutReturn;
   interactionState: ModeInteractionState;
   onRequestParamImport: (file: File) => Promise<DraftActionResult>;
+  onRequestReset: () => void;
+  onRequestDraftLoad: Parameters<
+    typeof useWorkspaceDraftSupport<"stepped">
+  >[0]["requestDraftLoad"];
 }
 
 export function useSteppedWorkspace({
   model,
   interactionState,
   onRequestParamImport,
+  onRequestReset,
+  onRequestDraftLoad,
 }: UseSteppedWorkspaceOptions): ModeWorkspace {
   const {
     selectedSlotIds,
@@ -46,14 +52,16 @@ export function useSteppedWorkspace({
       setActiveSteppedGroupId(persistedParams.groups[0]?.id ?? null);
     }
   }, [activeSteppedGroupId, persistedParams.groups, setActiveSteppedGroupId]);
-  const { draftActions, overlays, clearDraftBinding } =
+  const {
+    draftActions,
+    overlays,
+    clearDraftBinding,
+    commitLoadedDraftBinding,
+  } =
     useWorkspaceDraftSupport({
       mode: "stepped",
       params: persistedParams,
-      commitDraftLoad: (prepared) => {
-        model.setParams(prepared.snapshot.params);
-        resetInteractionState();
-      },
+      requestDraftLoad: onRequestDraftLoad,
     });
 
   const resetWorkspace = useCallback(() => {
@@ -98,7 +106,7 @@ export function useSteppedWorkspace({
               case "open-drafts": draftActions.onOpenDraftDialog(); break;
               case "export-params": exportParams(captureModeParamSnapshot("stepped", persistedParams)); break;
               case "import-params": return onRequestParamImport(intent.file);
-              case "reset": resetWorkspace(); break;
+              case "reset": onRequestReset(); break;
             }
             return { status: "success" };
           } catch (error) {
@@ -108,7 +116,7 @@ export function useSteppedWorkspace({
       };
       return <PanelActionSection adapter={adapter} />;
     },
-    [draftActions, model, onRequestParamImport, persistedParams, resetWorkspace],
+    [draftActions, model, onRequestParamImport, onRequestReset, persistedParams],
   );
 
   const panel = useMemo(
@@ -182,10 +190,17 @@ export function useSteppedWorkspace({
   return {
     panel,
     overlays,
-    importTarget: {
+    replacementTarget: {
+      mode: "stepped",
       currentDraftId: draftActions.currentDraftId,
       hasUnsavedChanges: draftActions.hasUnsavedChanges,
-      commit: (params) => importIntoWorkspace(params as SteppedLayoutParams),
+      commitReset: resetWorkspace,
+      commitImport: (params) => importIntoWorkspace(params as SteppedLayoutParams),
+      commitDraftLoad: (prepared) => {
+        model.setParams(prepared.snapshot.params as SteppedLayoutParams);
+        resetInteractionState();
+        commitLoadedDraftBinding(prepared);
+      },
     },
   };
 }

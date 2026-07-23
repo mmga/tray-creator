@@ -13,7 +13,8 @@ import { useSteppedWorkspace } from "@/workspaces/stepped/useSteppedWorkspace";
 import type { ModeWorkspace } from "@/workspaces/types";
 import type { AppMode } from "@/types/custom-tray";
 import type { DraftActionResult } from "@/workspaces/draft-action-area";
-import type { ModeWorkspaceImportTarget } from "@/workspaces/types";
+import type { ModeWorkspaceReplacementTarget } from "@/workspaces/types";
+import type { PreparedDraftLoad } from "@/hooks/useModeDrafts";
 
 interface UseModeWorkspacesOptions {
   mode: AppMode;
@@ -24,12 +25,17 @@ interface UseModeWorkspacesOptions {
   customInteractionState: ModeInteractionState;
   steppedInteractionState: ModeInteractionState;
   onRequestParamImport: (file: File) => Promise<DraftActionResult>;
+  onRequestReset: (mode: AppMode) => void;
+  onRequestDraftLoad: (
+    mode: AppMode,
+    prepared: PreparedDraftLoad<AppMode>,
+  ) => void;
 }
 
 interface UseModeWorkspacesReturn {
   activeWorkspace: ModeWorkspace;
   getWorkspace: (mode: AppMode) => ModeWorkspace;
-  getImportTarget: (mode: AppMode) => ModeWorkspaceImportTarget;
+  getReplacementTarget: (mode: AppMode) => ModeWorkspaceReplacementTarget;
 }
 
 export function useModeWorkspaces({
@@ -41,24 +47,35 @@ export function useModeWorkspaces({
   customInteractionState,
   steppedInteractionState,
   onRequestParamImport,
+  onRequestReset,
+  onRequestDraftLoad,
 }: UseModeWorkspacesOptions): UseModeWorkspacesReturn {
   const gridWorkspace = useGridWorkspace({
     model: gridModel,
     onRequestParamImport,
+    onRequestReset: () => onRequestReset("grid"),
+    onRequestDraftLoad: (prepared) => onRequestDraftLoad("grid", prepared),
   });
   const customWorkspace = useCustomWorkspace({
     model: customModel,
     interactionState: customInteractionState,
     onRequestParamImport,
+    onRequestReset: () => onRequestReset("custom"),
+    onRequestDraftLoad: (prepared) => onRequestDraftLoad("custom", prepared),
   });
   const baseConverterWorkspace = useBaseConverterWorkspace({
     model: baseConverterModel,
     onRequestParamImport,
+    onRequestReset: () => onRequestReset("base-converter"),
+    onRequestDraftLoad: (prepared) =>
+      onRequestDraftLoad("base-converter", prepared),
   });
   const steppedWorkspace = useSteppedWorkspace({
     model: steppedModel,
     interactionState: steppedInteractionState,
     onRequestParamImport,
+    onRequestReset: () => onRequestReset("stepped"),
+    onRequestDraftLoad: (prepared) => onRequestDraftLoad("stepped", prepared),
   });
 
   const getWorkspace = useCallback((requestedMode: AppMode): ModeWorkspace => {
@@ -87,31 +104,31 @@ export function useModeWorkspaces({
     [getWorkspace, mode],
   );
 
-  const getImportTarget = useCallback((targetMode: AppMode) => {
+  const getReplacementTarget = useCallback((targetMode: AppMode) => {
     switch (targetMode) {
       case "grid":
-        return gridWorkspace.importTarget;
+        return gridWorkspace.replacementTarget;
       case "custom":
-        return customWorkspace.importTarget;
+        return customWorkspace.replacementTarget;
       case "base-converter":
-        return baseConverterWorkspace.importTarget;
+        return baseConverterWorkspace.replacementTarget;
       case "stepped":
-        return steppedWorkspace.importTarget;
+        return steppedWorkspace.replacementTarget;
       default: {
         const unreachableMode: never = targetMode;
         throw new Error(`Unsupported import mode: ${String(unreachableMode)}`);
       }
     }
   }, [
-    customWorkspace.importTarget,
-    baseConverterWorkspace.importTarget,
-    gridWorkspace.importTarget,
-    steppedWorkspace.importTarget,
+    customWorkspace.replacementTarget,
+    baseConverterWorkspace.replacementTarget,
+    gridWorkspace.replacementTarget,
+    steppedWorkspace.replacementTarget,
   ]);
 
   return {
     activeWorkspace,
     getWorkspace,
-    getImportTarget,
+    getReplacementTarget,
   };
 }

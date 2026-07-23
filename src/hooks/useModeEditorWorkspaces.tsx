@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { ParamImportDialog } from "@/components/ParamImportDialog";
 import { useCustomLayout } from "@/hooks/useCustomLayout";
 import { useBaseConverter } from "@/hooks/useBaseConverter";
@@ -23,6 +23,15 @@ import {
 import type { DraftActionResult } from "@/workspaces/draft-action-area";
 import { useToast } from "@/hooks/useToast";
 import { createModeEditorCatalog } from "@/mode-editor/catalog";
+import type { PreparedDraftLoad } from "@/hooks/useModeDrafts";
+
+type ReplacementRequest =
+  | { kind: "reset"; mode: AppMode }
+  | {
+      kind: "draft";
+      mode: AppMode;
+      prepared: PreparedDraftLoad<AppMode>;
+    };
 
 interface UseModeEditorWorkspacesOptions {
   mode: AppMode;
@@ -52,6 +61,22 @@ export function useModeEditorWorkspaces({
   const steppedModel = useSteppedLayout();
   const customInteractionState = useModeInteractionState();
   const steppedInteractionState = useModeInteractionState();
+  const replacementRequestRef = useRef<(request: ReplacementRequest) => void>(
+    () => {},
+  );
+  const requestReset = useCallback((targetMode: AppMode) => {
+    replacementRequestRef.current({ kind: "reset", mode: targetMode });
+  }, []);
+  const requestDraftLoad = useCallback((
+    targetMode: AppMode,
+    prepared: PreparedDraftLoad<AppMode>,
+  ) => {
+    replacementRequestRef.current({
+      kind: "draft",
+      mode: targetMode,
+      prepared,
+    });
+  }, []);
 
   const clearPendingImport = useCallback(() => {
     setPendingImportFile(null);
@@ -96,7 +121,7 @@ export function useModeEditorWorkspaces({
     steppedInteractionState,
   });
 
-  const { getWorkspace, getImportTarget } = useModeWorkspaces({
+  const { getWorkspace, getReplacementTarget } = useModeWorkspaces({
     mode,
     gridModel,
     customModel,
@@ -105,6 +130,8 @@ export function useModeEditorWorkspaces({
     customInteractionState,
     steppedInteractionState,
     onRequestParamImport: requestParamImport,
+    onRequestReset: requestReset,
+    onRequestDraftLoad: requestDraftLoad,
   });
 
   const catalog = useMemo(() => createModeEditorCatalog({
@@ -118,6 +145,15 @@ export function useModeEditorWorkspaces({
   }), [getViewport, getWorkspace]);
   const activeWorkspace = catalog[mode].workspace;
   const activeViewport = catalog[mode].viewport;
+  replacementRequestRef.current = (request) => {
+    const target = getReplacementTarget(request.mode);
+    getViewport(request.mode).resetForSessionReplacement();
+    if (request.kind === "reset") {
+      target.commitReset();
+      return;
+    }
+    target.commitDraftLoad(request.prepared);
+  };
 
   const selectImportMode = useCallback(async (selectedMode: AppMode) => {
     if (!pendingImportFile) return;
@@ -145,12 +181,12 @@ export function useModeEditorWorkspaces({
 
   const confirmParamImport = useCallback(() => {
     if (!importCandidate) return;
-    const importTarget = getImportTarget(importCandidate.mode);
+    const importTarget = getReplacementTarget(importCandidate.mode);
     if (importCandidate.mode !== mode) {
       activeViewport.deactivate();
     }
     getViewport(importCandidate.mode).resetForSessionReplacement();
-    importTarget.commit(importCandidate.snapshot.params);
+    importTarget.commitImport(importCandidate.snapshot.params);
     onModeChange(importCandidate.mode);
     toast(
       "success",
@@ -161,7 +197,7 @@ export function useModeEditorWorkspaces({
     clearPendingImport();
   }, [
     clearPendingImport,
-    getImportTarget,
+    getReplacementTarget,
     getViewport,
     importCandidate,
     mode,
@@ -170,7 +206,7 @@ export function useModeEditorWorkspaces({
   ]);
 
   const targetRisk = importCandidate
-    ? getImportTarget(importCandidate.mode)
+    ? getReplacementTarget(importCandidate.mode)
     : null;
 
   const importOverlay = (

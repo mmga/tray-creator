@@ -2,11 +2,16 @@
 
 import type { ReactNode } from "react";
 import type { ExportableParams } from "@/lib/mode-param-snapshot";
+import type { PreparedDraftLoad } from "@/hooks/useModeDrafts";
+import type { AppMode } from "@/types/custom-tray";
 
-export interface ModeWorkspaceImportTarget {
+export interface ModeWorkspaceReplacementTarget {
+  mode: AppMode;
   currentDraftId: string | null;
   hasUnsavedChanges: boolean;
-  commit: (params: ExportableParams) => void;
+  commitReset: () => void;
+  commitImport: (params: ExportableParams) => void;
+  commitDraftLoad: (prepared: PreparedDraftLoad<AppMode>) => void;
 }
 
 /**
@@ -20,5 +25,5 @@ export interface ModeWorkspaceImportTarget {
 export interface ModeWorkspace {
   panel: ReactNode;
   overlays: ReactNode;
-  importTarget: ModeWorkspaceImportTarget;
+  replacementTarget: ModeWorkspaceReplacementTarget;
 }

@@ -90,17 +90,28 @@ function BaseConverterActionArea({
 interface UseBaseConverterWorkspaceOptions {
   model: ReturnType<typeof useBaseConverter>;
   onRequestParamImport: (file: File) => Promise<DraftActionResult>;
+  onRequestReset: () => void;
+  onRequestDraftLoad: Parameters<
+    typeof useWorkspaceDraftSupport<"base-converter">
+  >[0]["requestDraftLoad"];
 }
 
 export function useBaseConverterWorkspace({
   model,
   onRequestParamImport,
+  onRequestReset,
+  onRequestDraftLoad,
 }: UseBaseConverterWorkspaceOptions): ModeWorkspace {
-  const { draftActions, overlays, clearDraftBinding } =
+  const {
+    draftActions,
+    overlays,
+    clearDraftBinding,
+    commitLoadedDraftBinding,
+  } =
     useWorkspaceDraftSupport({
       mode: "base-converter",
       params: model.params,
-      commitDraftLoad: (prepared) => model.replaceParams(prepared.snapshot.params),
+      requestDraftLoad: onRequestDraftLoad,
     });
   const resetWorkspace = useCallback(() => {
     model.resetParams();
@@ -117,11 +128,11 @@ export function useBaseConverterWorkspace({
       isGenerating={model.isGenerating}
       onGenerate={model.handleGenerate}
       onExportSTL={model.handleExportSTL}
-      onReset={resetWorkspace}
+      onReset={onRequestReset}
       onRequestParamImport={onRequestParamImport}
       draftActions={draftActions}
     />
-  ), [draftActions, model.handleExportSTL, model.handleGenerate, model.isGenerating, model.params, onRequestParamImport, resetWorkspace]);
+  ), [draftActions, model.handleExportSTL, model.handleGenerate, model.isGenerating, model.params, onRequestParamImport, onRequestReset]);
 
   const panel = useMemo(() => (
     <BaseConverterPanel
@@ -137,10 +148,16 @@ export function useBaseConverterWorkspace({
   return {
     panel,
     overlays,
-    importTarget: {
+    replacementTarget: {
+      mode: "base-converter",
       currentDraftId: draftActions.currentDraftId,
       hasUnsavedChanges: draftActions.hasUnsavedChanges,
-      commit: (params) => importIntoWorkspace(params as BaseConverterParams),
+      commitReset: resetWorkspace,
+      commitImport: (params) => importIntoWorkspace(params as BaseConverterParams),
+      commitDraftLoad: (prepared) => {
+        model.replaceParams(prepared.snapshot.params as BaseConverterParams);
+        commitLoadedDraftBinding(prepared);
+      },
     },
   };
 }

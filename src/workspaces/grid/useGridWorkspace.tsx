@@ -19,6 +19,10 @@ const ParameterPanel = dynamic(() => import("@/components/ParameterPanel"), {
 interface UseGridWorkspaceOptions {
   model: ReturnType<typeof useTrayModel>;
   onRequestParamImport: (file: File) => Promise<DraftActionResult>;
+  onRequestReset: () => void;
+  onRequestDraftLoad: Parameters<
+    typeof useWorkspaceDraftSupport<"grid">
+  >[0]["requestDraftLoad"];
 }
 
 interface GridDraftActionAreaProps {
@@ -88,12 +92,19 @@ function GridDraftActionArea({
 export function useGridWorkspace({
   model,
   onRequestParamImport,
+  onRequestReset,
+  onRequestDraftLoad,
 }: UseGridWorkspaceOptions): ModeWorkspace {
-  const { draftActions, overlays, clearDraftBinding } =
+  const {
+    draftActions,
+    overlays,
+    clearDraftBinding,
+    commitLoadedDraftBinding,
+  } =
     useWorkspaceDraftSupport({
       mode: "grid",
       params: model.params,
-      commitDraftLoad: (prepared) => model.replaceParams(prepared.snapshot.params),
+      requestDraftLoad: onRequestDraftLoad,
     });
 
   const resetWorkspace = useCallback(() => {
@@ -115,7 +126,7 @@ export function useGridWorkspace({
         blockingReason={model.baseHoleFitBlockingReason}
         onGenerate={model.handleGenerate}
         onExportSTL={model.handleExportSTL}
-        onReset={resetWorkspace}
+        onReset={onRequestReset}
         onRequestParamImport={onRequestParamImport}
         draftActions={draftActions}
       />
@@ -129,7 +140,7 @@ export function useGridWorkspace({
       model.isPreviewStale,
       model.params,
       onRequestParamImport,
-      resetWorkspace,
+      onRequestReset,
     ],
   );
 
@@ -161,10 +172,16 @@ export function useGridWorkspace({
   return {
     panel,
     overlays,
-    importTarget: {
+    replacementTarget: {
+      mode: "grid",
       currentDraftId: draftActions.currentDraftId,
       hasUnsavedChanges: draftActions.hasUnsavedChanges,
-      commit: (params) => importIntoWorkspace(params as TrayParams),
+      commitReset: resetWorkspace,
+      commitImport: (params) => importIntoWorkspace(params as TrayParams),
+      commitDraftLoad: (prepared) => {
+        model.replaceParams(prepared.snapshot.params as TrayParams);
+        commitLoadedDraftBinding(prepared);
+      },
     },
   };
 }
