@@ -52,6 +52,8 @@ export interface UseEditableParamsReturn<P> {
   viewParams: P;
   workingParams: P | null;
   transactionRevision: number;
+  /** 仅在 reset、导入、Draft 加载等 Session 替换时递增。 */
+  sessionEpoch: number;
   paramsRef: React.MutableRefObject<P>;
   /** 获取当前参数快照（供 generatePreview/exportModel 的闭包使用） */
   getParams: () => P;
@@ -105,6 +107,7 @@ export function useEditableParams<P, S>({
   const [params, internalSetParams] = useState<P>(initialState);
   const [workingParams, internalSetWorkingParams] = useState<P | null>(null);
   const [transactionRevision, setTransactionRevision] = useState(0);
+  const [sessionEpoch, setSessionEpoch] = useState(0);
   const transactionRevisionRef = useRef(0);
   const paramsRef = useRef(params);
   const workingParamsRef = useRef<P | null>(null);
@@ -175,6 +178,7 @@ export function useEditableParams<P, S>({
       );
       cancelWorkingParams();
       clearHistory();
+      setSessionEpoch((epoch) => epoch + 1);
       paramsRef.current = next;
       internalSetParams(next);
       transactionRevisionRef.current += 1;
@@ -308,6 +312,7 @@ export function useEditableParams<P, S>({
     viewParams: workingParams ?? params,
     workingParams,
     transactionRevision,
+    sessionEpoch,
     paramsRef,
     getParams,
     setParams,

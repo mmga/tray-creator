@@ -49,6 +49,7 @@ export function usePreviewLifecycle<P, S>({
   const [isPreviewStale, setIsPreviewStale] = useState(false);
   const geometryRef = useRef<Geom3 | null>(null);
   const geometryFingerprintRef = useRef<string | null>(null);
+  const generatingSeqRef = useRef(0);
   const { nextSeq, isStale } = useRequestSequence();
 
   const invalidatePreview = useCallback(() => {
@@ -56,6 +57,7 @@ export function usePreviewLifecycle<P, S>({
     geometryRef.current = null;
     geometryFingerprintRef.current = null;
     setVolume(0);
+    setIsGenerating(false);
     setIsPreviewStale(true);
     onInvalidate?.();
   }, [nextSeq, onInvalidate]);
@@ -69,6 +71,7 @@ export function usePreviewLifecycle<P, S>({
       return null;
     }
     const seq = nextSeq();
+    generatingSeqRef.current = seq;
     setIsGenerating(true);
     try {
       const result = await generatePreview(snapshot);
@@ -91,6 +94,9 @@ export function usePreviewLifecycle<P, S>({
       setIsPreviewStale(false);
       return result.geometry;
     } catch (err) {
+      if (isStale(seq)) {
+        return null;
+      }
       console.error("生成失败:", err);
       toast(
         "error",
@@ -98,7 +104,9 @@ export function usePreviewLifecycle<P, S>({
       );
       return null;
     } finally {
-      setIsGenerating(false);
+      if (!isStale(seq) && generatingSeqRef.current === seq) {
+        setIsGenerating(false);
+      }
     }
   }, [fingerprintSnapshot, generatePreview, isStale, nextSeq, toast, validateSnapshot]);
 
