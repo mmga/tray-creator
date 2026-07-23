@@ -194,6 +194,7 @@ export function useSteppedWorkspace({
       mode: "stepped",
       currentDraftId: draftActions.currentDraftId,
       hasUnsavedChanges: draftActions.hasUnsavedChanges,
+      paramsRevision: model.transactionRevision ?? 0,
       commitReset: resetWorkspace,
       commitImport: (params) => importIntoWorkspace(params as SteppedLayoutParams),
       commitDraftLoad: (prepared) => {

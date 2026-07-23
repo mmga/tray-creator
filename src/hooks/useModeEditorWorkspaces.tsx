@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useRef, useState } from "react";
 import { ParamImportDialog } from "@/components/ParamImportDialog";
+import { ModeReplacementConfirmDialog } from "@/components/ModeReplacementConfirmDialog";
 import { useCustomLayout } from "@/hooks/useCustomLayout";
 import { useBaseConverter } from "@/hooks/useBaseConverter";
 import { useModeInteractionState } from "@/hooks/useModeInteractionState";
@@ -11,7 +12,10 @@ import { useSteppedLayout } from "@/hooks/useSteppedLayout";
 import { useTrayModel } from "@/hooks/useTrayModel";
 import type { AppMode } from "@/types/custom-tray";
 import type { ModeViewportWorkspace } from "@/viewports/types";
-import type { ModeWorkspace } from "@/workspaces/types";
+import type {
+  ModeWorkspace,
+  ModeWorkspaceReplacementTarget,
+} from "@/workspaces/types";
 import {
   prepareParamImport,
 } from "@/lib/param-io";
@@ -32,6 +36,34 @@ type ReplacementRequest =
       mode: AppMode;
       prepared: PreparedDraftLoad<AppMode>;
     };
+
+type ReplacementRisk = Pick<
+  ModeWorkspaceReplacementTarget,
+  "currentDraftId" | "hasUnsavedChanges" | "paramsRevision"
+>;
+
+interface PendingReplacement {
+  request: ReplacementRequest;
+  acknowledgedRisk: ReplacementRisk;
+}
+
+function readRisk(
+  target: ModeWorkspaceReplacementTarget,
+): ReplacementRisk {
+  return {
+    currentDraftId: target.currentDraftId,
+    hasUnsavedChanges: target.hasUnsavedChanges,
+    paramsRevision: target.paramsRevision,
+  };
+}
+
+function isSameRisk(left: ReplacementRisk, right: ReplacementRisk): boolean {
+  return (
+    left.currentDraftId === right.currentDraftId &&
+    left.hasUnsavedChanges === right.hasUnsavedChanges &&
+    left.paramsRevision === right.paramsRevision
+  );
+}
 
 interface UseModeEditorWorkspacesOptions {
   mode: AppMode;
@@ -54,6 +86,9 @@ export function useModeEditorWorkspaces({
     useState<ImportModeSelectionRequired | null>(null);
   const [importCandidate, setImportCandidate] =
     useState<ImportCandidate | null>(null);
+  const [importRisk, setImportRisk] = useState<ReplacementRisk | null>(null);
+  const [pendingReplacement, setPendingReplacement] =
+    useState<PendingReplacement | null>(null);
   const [isPreparingImport, setIsPreparingImport] = useState(false);
   const gridModel = useTrayModel();
   const customModel = useCustomLayout();
@@ -64,6 +99,11 @@ export function useModeEditorWorkspaces({
   const replacementRequestRef = useRef<(request: ReplacementRequest) => void>(
     () => {},
   );
+  const replacementTargetGetterRef = useRef<
+    (mode: AppMode) => ModeWorkspaceReplacementTarget
+  >(() => {
+    throw new Error("Mode Editor replacement target 尚未装配");
+  });
   const requestReset = useCallback((targetMode: AppMode) => {
     replacementRequestRef.current({ kind: "reset", mode: targetMode });
   }, []);
@@ -82,6 +122,7 @@ export function useModeEditorWorkspaces({
     setPendingImportFile(null);
     setModeSelection(null);
     setImportCandidate(null);
+    setImportRisk(null);
     setIsPreparingImport(false);
   }, []);
 
@@ -98,6 +139,9 @@ export function useModeEditorWorkspaces({
       } else {
         setModeSelection(null);
         setImportCandidate(preparation.candidate);
+        setImportRisk(readRisk(
+          replacementTargetGetterRef.current(preparation.candidate.mode),
+        ));
       }
       return { status: "success" };
     } catch (error) {
@@ -145,7 +189,9 @@ export function useModeEditorWorkspaces({
   }), [getViewport, getWorkspace]);
   const activeWorkspace = catalog[mode].workspace;
   const activeViewport = catalog[mode].viewport;
-  replacementRequestRef.current = (request) => {
+  replacementTargetGetterRef.current = getReplacementTarget;
+
+  const commitReplacement = useCallback((request: ReplacementRequest) => {
     const target = getReplacementTarget(request.mode);
     getViewport(request.mode).resetForSessionReplacement();
     if (request.kind === "reset") {
@@ -153,6 +199,15 @@ export function useModeEditorWorkspaces({
       return;
     }
     target.commitDraftLoad(request.prepared);
+  }, [getReplacementTarget, getViewport]);
+  replacementRequestRef.current = (request) => {
+    const target = getReplacementTarget(request.mode);
+    const risk = readRisk(target);
+    if (risk.hasUnsavedChanges) {
+      setPendingReplacement({ request, acknowledgedRisk: risk });
+      return;
+    }
+    commitReplacement(request);
   };
 
   const selectImportMode = useCallback(async (selectedMode: AppMode) => {
@@ -168,6 +223,9 @@ export function useModeEditorWorkspaces({
       }
       setModeSelection(null);
       setImportCandidate(preparation.candidate);
+      setImportRisk(readRisk(
+        replacementTargetGetterRef.current(preparation.candidate.mode),
+      ));
     } catch (error) {
       clearPendingImport();
       toast(
@@ -182,6 +240,11 @@ export function useModeEditorWorkspaces({
   const confirmParamImport = useCallback(() => {
     if (!importCandidate) return;
     const importTarget = getReplacementTarget(importCandidate.mode);
+    const currentRisk = readRisk(importTarget);
+    if (!importRisk || !isSameRisk(importRisk, currentRisk)) {
+      setImportRisk(currentRisk);
+      return;
+    }
     if (importCandidate.mode !== mode) {
       activeViewport.deactivate();
     }
@@ -200,29 +263,47 @@ export function useModeEditorWorkspaces({
     getReplacementTarget,
     getViewport,
     importCandidate,
+    importRisk,
     mode,
     onModeChange,
+    activeViewport,
     toast,
   ]);
 
-  const targetRisk = importCandidate
-    ? getReplacementTarget(importCandidate.mode)
-    : null;
+  const confirmPendingReplacement = useCallback(() => {
+    if (!pendingReplacement) return;
+    const target = getReplacementTarget(pendingReplacement.request.mode);
+    const currentRisk = readRisk(target);
+    if (!isSameRisk(pendingReplacement.acknowledgedRisk, currentRisk)) {
+      setPendingReplacement({
+        request: pendingReplacement.request,
+        acknowledgedRisk: currentRisk,
+      });
+      return;
+    }
+    commitReplacement(pendingReplacement.request);
+    setPendingReplacement(null);
+  }, [commitReplacement, getReplacementTarget, pendingReplacement]);
 
   const importOverlay = (
-    <ParamImportDialog
-      currentMode={mode}
-      modeSelection={modeSelection}
-      candidate={importCandidate}
-      targetRisk={targetRisk ? {
-        currentDraftId: targetRisk.currentDraftId,
-        hasUnsavedChanges: targetRisk.hasUnsavedChanges,
-      } : null}
-      isPreparing={isPreparingImport}
-      onSelectMode={(selectedMode) => void selectImportMode(selectedMode)}
-      onCancel={clearPendingImport}
-      onConfirm={confirmParamImport}
-    />
+    <>
+      <ParamImportDialog
+        currentMode={mode}
+        modeSelection={modeSelection}
+        candidate={importCandidate}
+        targetRisk={importRisk}
+        isPreparing={isPreparingImport}
+        onSelectMode={(selectedMode) => void selectImportMode(selectedMode)}
+        onCancel={clearPendingImport}
+        onConfirm={confirmParamImport}
+      />
+      <ModeReplacementConfirmDialog
+        mode={pendingReplacement?.request.mode ?? null}
+        kind={pendingReplacement?.request.kind ?? null}
+        onCancel={() => setPendingReplacement(null)}
+        onConfirm={confirmPendingReplacement}
+      />
+    </>
   );
 
   return {

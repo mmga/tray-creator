@@ -184,6 +184,7 @@ export function useCustomWorkspace({
       mode: "custom",
       currentDraftId: draftActions.currentDraftId,
       hasUnsavedChanges: draftActions.hasUnsavedChanges,
+      paramsRevision: model.transactionRevision ?? 0,
       commitReset: resetWorkspace,
       commitImport: (params) => importIntoWorkspace(params as CustomLayoutParams),
       commitDraftLoad: (prepared) => {

@@ -9,6 +9,7 @@ function workspace() {
       mode: "grid" as const,
       currentDraftId: null,
       hasUnsavedChanges: false,
+      paramsRevision: 0,
       commitReset: () => {},
       commitImport: () => {},
       commitDraftLoad: () => {},

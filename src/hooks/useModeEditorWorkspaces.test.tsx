@@ -11,8 +11,11 @@ const {
   modelMocks,
   getReplacementTargetMock,
   commitImportMock,
+  commitResetMock,
+  replacementTarget,
 } = vi.hoisted(() => {
   const commitImport = vi.fn();
+  const commitReset = vi.fn();
   const activeWorkspace = {
     mode: "stepped" as AppMode,
     panel: null,
@@ -45,12 +48,22 @@ const {
     resetForSessionReplacement: vi.fn(),
   };
 
+  const replacementTarget = {
+    mode: "custom" as AppMode,
+    currentDraftId: null as string | null,
+    hasUnsavedChanges: false,
+    paramsRevision: 0,
+    commitReset,
+    commitImport,
+    commitDraftLoad: vi.fn(),
+  };
   return {
     activeWorkspace,
     activeViewport,
     capturedWorkspaceOptions: [] as Array<{
       steppedInteractionState: ModeInteractionState;
       onRequestParamImport: (file: File) => Promise<{ status: "success" | "error" }>;
+      onRequestReset: (mode: AppMode) => void;
     }>,
     capturedViewportOptions: [] as Array<{
       steppedInteractionState: ModeInteractionState;
@@ -62,15 +75,10 @@ const {
       steppedModel: { kind: "stepped" },
       steppedCadModel: { kind: "stepped-cad" },
     },
-    getReplacementTargetMock: vi.fn(() => ({
-      mode: "custom",
-      currentDraftId: null,
-      hasUnsavedChanges: false,
-      commitReset: vi.fn(),
-      commitImport,
-      commitDraftLoad: vi.fn(),
-    })),
+    getReplacementTargetMock: vi.fn(() => replacementTarget),
     commitImportMock: commitImport,
+    commitResetMock: commitReset,
+    replacementTarget,
   };
 });
 
@@ -104,6 +112,7 @@ vi.mock("@/hooks/useModeWorkspaces", () => ({
     onRequestParamImport: (file: File) => Promise<{
       status: "success" | "error";
     }>;
+    onRequestReset: (mode: AppMode) => void;
   }) => {
     capturedWorkspaceOptions.push(options);
     return {
@@ -182,7 +191,10 @@ describe("useModeEditorWorkspaces", () => {
       await capturedWorkspaceOptions.at(-1)?.onRequestParamImport(file);
     });
 
-    const overlay = result.current.importOverlay as React.ReactElement<{
+    const overlays = result.current.importOverlay as React.ReactElement<{
+      children: React.ReactElement[];
+    }>;
+    const overlay = overlays.props.children[0] as React.ReactElement<{
       candidate: { mode: AppMode } | null;
       onConfirm: () => void;
     }>;
@@ -198,5 +210,49 @@ describe("useModeEditorWorkspaces", () => {
     expect(activeViewport.deactivate).toHaveBeenCalledTimes(1);
     expect(activeViewport.resetForSessionReplacement).toHaveBeenCalledTimes(1);
     expect(onModeChange).toHaveBeenCalledWith("custom");
+  });
+
+  it("风险变化时刷新确认，取消保持零写入", () => {
+    replacementTarget.hasUnsavedChanges = true;
+    replacementTarget.currentDraftId = "draft-1";
+    replacementTarget.paramsRevision = 1;
+    const { result } = renderHook(() =>
+      useModeEditorWorkspaces({ mode: "grid", onModeChange: vi.fn() }),
+    );
+
+    act(() => capturedWorkspaceOptions.at(-1)?.onRequestReset("grid"));
+    let overlays = result.current.importOverlay as React.ReactElement<{
+      children: React.ReactElement[];
+    }>;
+    let confirm = overlays.props.children[1] as React.ReactElement<{
+      mode: AppMode | null;
+      onCancel: () => void;
+      onConfirm: () => void;
+    }>;
+    expect(confirm.props.mode).toBe("grid");
+    expect(commitResetMock).not.toHaveBeenCalled();
+
+    act(() => confirm.props.onCancel());
+    expect(commitResetMock).not.toHaveBeenCalled();
+
+    act(() => capturedWorkspaceOptions.at(-1)?.onRequestReset("grid"));
+    replacementTarget.paramsRevision = 2;
+    overlays = result.current.importOverlay as React.ReactElement<{
+      children: React.ReactElement[];
+    }>;
+    confirm = overlays.props.children[1] as typeof confirm;
+    act(() => confirm.props.onConfirm());
+    expect(commitResetMock).not.toHaveBeenCalled();
+
+    overlays = result.current.importOverlay as React.ReactElement<{
+      children: React.ReactElement[];
+    }>;
+    confirm = overlays.props.children[1] as typeof confirm;
+    act(() => confirm.props.onConfirm());
+    expect(commitResetMock).toHaveBeenCalledTimes(1);
+    expect(activeViewport.resetForSessionReplacement).toHaveBeenCalled();
+
+    replacementTarget.hasUnsavedChanges = false;
+    replacementTarget.currentDraftId = null;
   });
 });

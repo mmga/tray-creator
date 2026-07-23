@@ -152,6 +152,7 @@ export function useBaseConverterWorkspace({
       mode: "base-converter",
       currentDraftId: draftActions.currentDraftId,
       hasUnsavedChanges: draftActions.hasUnsavedChanges,
+      paramsRevision: model.transactionRevision ?? 0,
       commitReset: resetWorkspace,
       commitImport: (params) => importIntoWorkspace(params as BaseConverterParams),
       commitDraftLoad: (prepared) => {

@@ -68,6 +68,7 @@ type WorkspaceDraftSupportOptions<M extends DraftMode> = UseModeDraftsOptions<M>
 export function useWorkspaceDraftSupport<M extends DraftMode>(
   options: WorkspaceDraftSupportOptions<M>,
 ): WorkspaceDraftSupport {
+  const { mode, requestDraftLoad } = options;
   const {
     currentDraftId,
     isDialogOpen,
@@ -114,7 +115,7 @@ export function useWorkspaceDraftSupport<M extends DraftMode>(
 
   const draftDialogProps = useMemo<DraftManagerDialogProps<AnyDraftListItem>>(
     () => ({
-      mode: options.mode,
+      mode,
       open: isDialogOpen,
       onOpenChange: (open) => {
         if (!open) {
@@ -139,7 +140,7 @@ export function useWorkspaceDraftSupport<M extends DraftMode>(
       onLoad: (id) => {
         const prepared = prepareDraftLoad(id);
         if (!prepared) return;
-        options.requestDraftLoad(prepared);
+        requestDraftLoad(prepared);
         refreshDraftList();
       },
       onRename: (id, title) => {
@@ -169,8 +170,8 @@ export function useWorkspaceDraftSupport<M extends DraftMode>(
       saveAsNewDraft,
       saveCurrentDraft,
       setDraftNameInput,
-      options.mode,
-      options.requestDraftLoad,
+      mode,
+      requestDraftLoad,
     ],
   );
 

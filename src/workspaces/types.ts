@@ -9,6 +9,7 @@ export interface ModeWorkspaceReplacementTarget {
   mode: AppMode;
   currentDraftId: string | null;
   hasUnsavedChanges: boolean;
+  paramsRevision: number;
   commitReset: () => void;
   commitImport: (params: ExportableParams) => void;
   commitDraftLoad: (prepared: PreparedDraftLoad<AppMode>) => void;

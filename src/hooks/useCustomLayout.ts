@@ -90,6 +90,7 @@ interface UseCustomLayoutReturn {
   volume: number; // in mm^3
   isGenerating: boolean;
   isPreviewStale: boolean;
+  transactionRevision: number;
   baseHoleFitViolations: BaseHoleFitViolation[];
   baseHoleFitBlockingReason: string | null;
   handleGenerate: () => void;
@@ -109,6 +110,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     volume,
     isGenerating,
     isPreviewStale,
+    transactionRevision,
     handleGenerate,
     handleExportSTL,
   } = useEditableParams<
@@ -279,6 +281,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     volume,
     isGenerating,
     isPreviewStale,
+    transactionRevision,
     baseHoleFitViolations,
     baseHoleFitBlockingReason,
     handleGenerate,

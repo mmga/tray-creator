@@ -32,6 +32,7 @@ interface UseBaseConverterReturn {
   volume: number;
   isGenerating: boolean;
   isPreviewStale: boolean;
+  transactionRevision: number;
   handleGenerate: () => Promise<void>;
   handleExportSTL: () => Promise<void>;
 }
@@ -83,6 +84,7 @@ export function useBaseConverter(): UseBaseConverterReturn {
     volume: model.volume,
     isGenerating: model.isGenerating,
     isPreviewStale: model.isPreviewStale,
+    transactionRevision: model.transactionRevision,
     handleGenerate: model.handleGenerate,
     handleExportSTL: model.handleExportSTL,
   };

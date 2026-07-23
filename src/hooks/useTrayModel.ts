@@ -38,6 +38,7 @@ interface UseTrayModelReturn {
   volume: number;
   isGenerating: boolean;
   isPreviewStale: boolean;
+  transactionRevision: number;
   baseHoleFitViolations: BaseHoleFitViolation[];
   baseHoleFitBlockingReason: string | null;
   handleGenerate: () => void;
@@ -52,6 +53,7 @@ export function useTrayModel(): UseTrayModelReturn {
     volume,
     isGenerating,
     isPreviewStale,
+    transactionRevision,
     handleGenerate,
     handleExportSTL,
   } = useEditableParams<TrayParams, ModeParamSnapshot<"grid">>({
@@ -111,6 +113,7 @@ export function useTrayModel(): UseTrayModelReturn {
     volume,
     isGenerating,
     isPreviewStale,
+    transactionRevision,
     baseHoleFitViolations,
     baseHoleFitBlockingReason,
     handleGenerate,

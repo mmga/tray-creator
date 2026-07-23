@@ -176,6 +176,7 @@ export function useGridWorkspace({
       mode: "grid",
       currentDraftId: draftActions.currentDraftId,
       hasUnsavedChanges: draftActions.hasUnsavedChanges,
+      paramsRevision: model.transactionRevision ?? 0,
       commitReset: resetWorkspace,
       commitImport: (params) => importIntoWorkspace(params as TrayParams),
       commitDraftLoad: (prepared) => {
