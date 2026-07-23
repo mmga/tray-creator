@@ -115,7 +115,7 @@ describe("useSteppedLayout", () => {
     buildSteppedBridgeWarningMock.mockImplementation((params) =>
       params.slots.length > 0
         ? {
-            groupId: params.activeGroupId,
+            groupId: params.groups[0]?.id,
             groupName: "预警组",
             separatedClusterCount: 2,
             mergedClusterCount: 1,
@@ -145,7 +145,7 @@ describe("useSteppedLayout", () => {
 
     expect(result.current.outlinePreview).toEqual(outlinePreviewValue);
     expect(useSteppedOutlinePreviewMock).toHaveBeenCalledWith(
-      STEPPED_LAYOUT_DEFAULTS,
+      expect.not.objectContaining({ activeGroupId: expect.anything() }),
       trayWorkerServiceMock,
     );
     expect(result.current.bridgeWarning).toBeNull();
@@ -191,7 +191,7 @@ describe("useSteppedLayout", () => {
 
     act(() => {
       result.current.addGroup();
-      result.current.addSlot(25);
+      result.current.addSlot(25, undefined, undefined, "group-2");
     });
     expect(result.current.params.slots[0]).toMatchObject({
       id: "slot-1",
@@ -209,7 +209,7 @@ describe("useSteppedLayout", () => {
           height: 32,
           rotation: 0,
         },
-      ]);
+      ], "group-2");
     });
     expect(result.current.params.slots[1]).toMatchObject({
       id: "slot-2",
@@ -302,7 +302,7 @@ describe("useSteppedLayout", () => {
 
     act(() => {
       result.current.addGroup();
-      result.current.addSlot(25);
+      result.current.addSlot(25, undefined, undefined, "group-2");
     });
 
     act(() => {
@@ -339,6 +339,7 @@ describe("useSteppedLayout", () => {
       result.current.updateMultipleSlotsLive([
         { id: "slot-1", x: 95, y: 105, rotation: 30 },
       ]);
+      result.current.commitContinuousEdit();
       result.current.reorderGroups(1, 0);
     });
     expect(result.current.params.slots[0]).toMatchObject({

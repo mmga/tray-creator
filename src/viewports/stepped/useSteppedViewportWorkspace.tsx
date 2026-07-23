@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { ModeInteractionState } from "@/hooks/useModeInteractionState";
 import type { UseSteppedLayoutReturn } from "@/hooks/useSteppedLayout";
@@ -22,8 +22,6 @@ interface SteppedSplitPreview {
 interface UseSteppedViewportWorkspaceOptions {
   model: UseSteppedLayoutReturn;
   interactionState: ModeInteractionState;
-  rightView: "2d" | "3d";
-  onRightViewChange: (next: "2d" | "3d") => void;
   splitPreview?: SteppedSplitPreview;
 }
 
@@ -34,10 +32,9 @@ interface UseSteppedViewportWorkspaceReturn {
 export function useSteppedViewportWorkspace({
   model,
   interactionState,
-  rightView,
-  onRightViewChange,
   splitPreview,
 }: UseSteppedViewportWorkspaceOptions): UseSteppedViewportWorkspaceReturn {
+  const [rightView, setRightView] = useState<"2d" | "3d">("2d");
   const {
     selectedSlotIds,
     previewGroupId,
@@ -47,8 +44,12 @@ export function useSteppedViewportWorkspace({
     resetInteractionState,
   } = interactionState;
   const persistedParams = model.persistedParams ?? model.params;
-  const resetTransientState = useCallback(() => {
+  const deactivate = useCallback(() => {
     resetInteractionState();
+  }, [resetInteractionState]);
+  const resetForSessionReplacement = useCallback(() => {
+    resetInteractionState();
+    setRightView("2d");
   }, [resetInteractionState]);
 
   useEffect(() => {
@@ -108,7 +109,7 @@ export function useSteppedViewportWorkspace({
     () => (
       <ViewportTabs
         rightView={rightView}
-        onRightViewChange={onRightViewChange}
+        onRightViewChange={setRightView}
         canvas={canvas}
         threeGeometry={model.threeGeometry}
         splitParts={splitPreview?.parts}
@@ -125,7 +126,6 @@ export function useSteppedViewportWorkspace({
       model.isGenerating,
       model.isPreviewStale,
       model.threeGeometry,
-      onRightViewChange,
       rightView,
       splitPreview?.generate,
       splitPreview?.isGenerating,
@@ -137,7 +137,8 @@ export function useSteppedViewportWorkspace({
     workspace: {
       mode: "stepped",
       viewport,
-      resetTransientState,
+      deactivate,
+      resetForSessionReplacement,
     },
   };
 }

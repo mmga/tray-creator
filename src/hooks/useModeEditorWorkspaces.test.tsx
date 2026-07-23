@@ -41,7 +41,8 @@ const {
   const activeViewport = {
     mode: "stepped" as AppMode,
     viewport: null,
-    resetTransientState: vi.fn(),
+    deactivate: vi.fn(),
+    resetForSessionReplacement: vi.fn(),
   };
 
   return {
@@ -111,7 +112,7 @@ vi.mock("@/hooks/useModeViewportWorkspaces", () => ({
     steppedInteractionState: ModeInteractionState;
   }) => {
     capturedViewportOptions.push(options);
-    return { activeViewport };
+    return { activeViewport, getViewport: vi.fn(() => activeViewport) };
   },
 }));
 
@@ -172,10 +173,10 @@ describe("useModeEditorWorkspaces", () => {
     });
 
     const overlay = result.current.importOverlay as React.ReactElement<{
-      candidate: { targetMode: AppMode } | null;
+      candidate: { mode: AppMode } | null;
       onConfirm: () => void;
     }>;
-    expect(overlay.props.candidate?.targetMode).toBe("custom");
+    expect(overlay.props.candidate?.mode).toBe("custom");
     expect(commitImportMock).not.toHaveBeenCalled();
 
     act(() => overlay.props.onConfirm());
@@ -184,7 +185,8 @@ describe("useModeEditorWorkspaces", () => {
     expect(commitImportMock).toHaveBeenCalledWith(
       expect.objectContaining({ trayWidth: 120, trayDepth: 120 }),
     );
-    expect(activeViewport.resetTransientState).toHaveBeenCalledTimes(1);
+    expect(activeViewport.deactivate).toHaveBeenCalledTimes(1);
+    expect(activeViewport.resetForSessionReplacement).toHaveBeenCalledTimes(1);
     expect(onModeChange).toHaveBeenCalledWith("custom");
   });
 });

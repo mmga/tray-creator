@@ -52,7 +52,7 @@ export default function Home() {
 
       {/* Mode Switcher */}
       <ModeTabs mode={mode} onModeChange={(m) => {
-        activeViewport.resetTransientState();
+        activeViewport.deactivate();
         setMode(m);
       }} />
 

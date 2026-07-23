@@ -6,5 +6,8 @@ import type { AppMode } from "@/types/custom-tray";
 export interface ModeViewportWorkspace {
   mode: AppMode;
   viewport: ReactNode;
-  resetTransientState: () => void;
+  /** 普通离开当前 Mode；不改变该 Mode 的视图选择。 */
+  deactivate: () => void;
+  /** 替换该 Mode Editing Session；清理瞬态状态并回到 2D。 */
+  resetForSessionReplacement: () => void;
 }

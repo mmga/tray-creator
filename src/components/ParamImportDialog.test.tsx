@@ -7,8 +7,8 @@ import type { ImportCandidate } from "@/lib/historical-param-artifact-reader";
 function createCandidate(): ImportCandidate {
   return {
     fileName: "legacy-grid.json",
-    targetMode: "grid",
-    params: DEFAULT_TRAY_PARAMS,
+    mode: "grid",
+    snapshot: { mode: "grid", params: DEFAULT_TRAY_PARAMS },
     report: {
       modeResolution: {
         kind: "declared",

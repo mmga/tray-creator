@@ -194,16 +194,16 @@ export function ParamImportDialog({
               <div className="rounded-sm border border-[#6a5728] bg-[#211b0e] px-3 py-2.5">
                 <div className="text-[10px] tracking-wider text-[#9e874d]">导入目标</div>
                 <div className="mt-1 text-sm font-semibold text-[#e4c76e]">
-                  {APP_MODE_LABELS[candidate.targetMode]}
+                  {APP_MODE_LABELS[candidate.mode]}
                 </div>
               </div>
             </div>
 
-            {candidate.targetMode !== currentMode ? (
+            {candidate.mode !== currentMode ? (
               <div className="flex gap-3 rounded-sm border border-[#695327] bg-[#211a0d] px-3 py-3 text-[#d8bb68]">
                 <Wrench className="mt-0.5 size-4 shrink-0" />
                 <p className="text-xs leading-5">
-                  确认后将自动切换到「{APP_MODE_LABELS[candidate.targetMode]}」工作区。
+                  确认后将自动切换到「{APP_MODE_LABELS[candidate.mode]}」工作区。
                 </p>
               </div>
             ) : null}
@@ -307,9 +307,9 @@ export function ParamImportDialog({
               className="border border-[#a48639] bg-[#6d571e] text-[#f0dfad] hover:bg-[#816924]"
             >
               <ShieldCheck className="size-4" />
-              {candidate.targetMode === currentMode
+              {candidate.mode === currentMode
                 ? "确认导入"
-                : `确认并切换到${APP_MODE_LABELS[candidate.targetMode]}`}
+                : `确认并切换到${APP_MODE_LABELS[candidate.mode]}`}
             </Button>
           ) : null}
         </DialogFooter>

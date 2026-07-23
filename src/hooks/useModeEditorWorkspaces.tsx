@@ -85,7 +85,7 @@ export function useModeEditorWorkspaces({
     }
   }, [clearPendingImport]);
 
-  const { activeViewport } = useModeViewportWorkspaces({
+  const { activeViewport, getViewport } = useModeViewportWorkspaces({
     mode,
     gridModel,
     customModel,
@@ -132,21 +132,24 @@ export function useModeEditorWorkspaces({
 
   const confirmParamImport = useCallback(() => {
     if (!importCandidate) return;
-    const importTarget = getImportTarget(importCandidate.targetMode);
-    activeViewport.resetTransientState();
-    importTarget.commit(importCandidate.params);
-    onModeChange(importCandidate.targetMode);
+    const importTarget = getImportTarget(importCandidate.mode);
+    if (importCandidate.mode !== mode) {
+      activeViewport.deactivate();
+    }
+    getViewport(importCandidate.mode).resetForSessionReplacement();
+    importTarget.commit(importCandidate.snapshot.params);
+    onModeChange(importCandidate.mode);
     toast(
       "success",
-      importCandidate.targetMode === mode
-        ? `已导入「${APP_MODE_LABELS[importCandidate.targetMode]}」参数`
-        : `已导入参数并切换到「${APP_MODE_LABELS[importCandidate.targetMode]}」`,
+      importCandidate.mode === mode
+        ? `已导入「${APP_MODE_LABELS[importCandidate.mode]}」参数`
+        : `已导入参数并切换到「${APP_MODE_LABELS[importCandidate.mode]}」`,
     );
     clearPendingImport();
   }, [
-    activeViewport,
     clearPendingImport,
     getImportTarget,
+    getViewport,
     importCandidate,
     mode,
     onModeChange,
@@ -154,7 +157,7 @@ export function useModeEditorWorkspaces({
   ]);
 
   const targetRisk = importCandidate
-    ? getImportTarget(importCandidate.targetMode)
+    ? getImportTarget(importCandidate.mode)
     : null;
 
   const importOverlay = (

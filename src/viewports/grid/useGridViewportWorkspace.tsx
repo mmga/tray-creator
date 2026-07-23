@@ -1,23 +1,19 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { useTrayModel } from "@/hooks/useTrayModel";
 import { GridLayoutPreview } from "@/components/GridLayoutPreview";
 import { ViewportTabs } from "@/viewports/shared/ViewportTabs";
 import type { ModeViewportWorkspace } from "@/viewports/types";
 
-interface UseGridViewportWorkspaceOptions {
-  model: ReturnType<typeof useTrayModel>;
-  rightView: "2d" | "3d";
-  onRightViewChange: (next: "2d" | "3d") => void;
-}
+interface UseGridViewportWorkspaceOptions { model: ReturnType<typeof useTrayModel>; }
 
 export function useGridViewportWorkspace({
   model,
-  rightView,
-  onRightViewChange,
 }: UseGridViewportWorkspaceOptions): ModeViewportWorkspace {
-  const resetTransientState = useCallback(() => {}, []);
+  const [rightView, setRightView] = useState<"2d" | "3d">("2d");
+  const deactivate = useCallback(() => {}, []);
+  const resetForSessionReplacement = useCallback(() => setRightView("2d"), []);
 
   const twoDView = useMemo(
     () => <GridLayoutPreview params={model.params} />,
@@ -27,7 +23,7 @@ export function useGridViewportWorkspace({
     () => (
       <ViewportTabs
         rightView={rightView}
-        onRightViewChange={onRightViewChange}
+        onRightViewChange={setRightView}
         canvas={twoDView}
         threeGeometry={model.threeGeometry}
         isPreviewStale={model.isPreviewStale}
@@ -40,7 +36,6 @@ export function useGridViewportWorkspace({
       model.isGenerating,
       model.isPreviewStale,
       model.threeGeometry,
-      onRightViewChange,
       rightView,
       twoDView,
     ],
@@ -49,6 +44,7 @@ export function useGridViewportWorkspace({
   return {
     mode: "grid",
     viewport,
-    resetTransientState,
+    deactivate,
+    resetForSessionReplacement,
   };
 }

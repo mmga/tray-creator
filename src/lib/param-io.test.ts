@@ -100,7 +100,7 @@ describe("param-io", () => {
       prepareParamFileObject(file),
     ).toMatchObject({
       status: "ready",
-      candidate: { targetMode: "base-converter" },
+      candidate: { mode: "base-converter" },
     });
     expect(() => parseParamFileObject(file, "grid")).toThrow("模式不匹配");
   });
@@ -123,10 +123,12 @@ describe("param-io", () => {
 
     expect(preparation.candidate).toMatchObject({
       fileName: "legacy-grid.json",
-      targetMode: "grid",
-      params: {
-        rows: 30,
-        spacing: 10,
+      mode: "grid",
+      snapshot: {
+        params: {
+          rows: 30,
+          spacing: 10,
+        },
       },
       report: {
         modeResolution: {
@@ -166,7 +168,7 @@ describe("param-io", () => {
     expect(preparation.status).toBe("ready");
     if (preparation.status !== "ready") return;
 
-    expect(preparation.candidate.params).toMatchObject({
+    expect(preparation.candidate.snapshot.params).toMatchObject({
       baseHoleStructure: "magnetic-base-hole",
       baseThickness: 2.4,
     });
@@ -190,7 +192,7 @@ describe("param-io", () => {
     expect(inferred).toMatchObject({
       status: "ready",
       candidate: {
-        targetMode: "custom",
+        mode: "custom",
         report: { modeResolution: { kind: "inferred" } },
       },
     });
@@ -203,8 +205,8 @@ describe("param-io", () => {
     expect(historicalStepped).toMatchObject({
       status: "ready",
       candidate: {
-        targetMode: "stepped",
-        params: { enableSplitAssembly: false },
+        mode: "stepped",
+        snapshot: { params: { enableSplitAssembly: false } },
       },
     });
 
@@ -220,8 +222,8 @@ describe("param-io", () => {
     expect(historicalCad).toMatchObject({
       status: "ready",
       candidate: {
-        targetMode: "stepped",
-        params: { enableSplitAssembly: true },
+        mode: "stepped",
+        snapshot: { params: { enableSplitAssembly: true } },
       },
     });
   });
@@ -267,7 +269,7 @@ describe("param-io", () => {
     );
     expect(
       "splitPartGroupId" in
-        (preparation.candidate.params as SteppedLayoutParams).groups[0],
+        (preparation.candidate.snapshot.params as SteppedLayoutParams).groups[0],
     ).toBe(false);
   });
 
@@ -282,7 +284,7 @@ describe("param-io", () => {
       status: "ready",
       candidate: {
         fileName: "custom.json",
-        targetMode: "custom",
+        mode: "custom",
       },
     });
   });
@@ -556,10 +558,10 @@ describe("param-io", () => {
               x: 40,
               y: 50,
               width: 75,
-              height: 42,
+              height: 43.2,
               rotation: 405,
               shape: "ellipse",
-              outerOffset: 0.4,
+              outerOffset: 0.6,
               profileExponent: 2.08,
             },
           ],
@@ -578,7 +580,7 @@ describe("param-io", () => {
       id: "ellipse-1",
       rotation: 45,
       slotDefinitionId: "ellipse-75x42",
-      outerOffset: 0.4,
+      outerOffset: 0.6,
       profileExponent: 2.08,
     });
   });
@@ -674,7 +676,7 @@ describe("param-io", () => {
     );
     expect(preparation.status).toBe("ready");
     if (preparation.status !== "ready") return;
-    const parsed = preparation.candidate.params as SteppedLayoutParams;
+    const parsed = preparation.candidate.snapshot.params as SteppedLayoutParams;
 
     expect(parsed.enableSplitRecess).toBe(true);
     expect(parsed.enableSplitAssembly).toBe(true);
@@ -819,8 +821,8 @@ describe("param-io", () => {
     await expect(prepareParamImport(file)).resolves.toMatchObject({
       status: "ready",
       candidate: {
-        targetMode: "grid",
-        params: DEFAULT_TRAY_PARAMS,
+        mode: "grid",
+        snapshot: { params: DEFAULT_TRAY_PARAMS },
       },
     });
 

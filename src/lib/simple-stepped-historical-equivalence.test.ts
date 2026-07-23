@@ -23,7 +23,7 @@ describe("历史 simple-stepped 模型等价性", () => {
     if (preparation.status !== "ready") {
       throw new Error("历史简易阶梯样本未能转换为 stepped");
     }
-    const steppedParams = preparation.candidate.params as SteppedLayoutParams;
+    const steppedParams = preparation.candidate.snapshot.params as SteppedLayoutParams;
     const newGeometry = createSteppedCadTrayModel(steppedParams);
     const [newMin, newMax] = measureBoundingBox(newGeometry);
     const newDimensions = newMax.map((value, index) => value - newMin[index]);

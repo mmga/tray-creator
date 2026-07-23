@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import type { useCustomLayout } from "@/hooks/useCustomLayout";
 import type { useBaseConverter } from "@/hooks/useBaseConverter";
 import type { ModeInteractionState } from "@/hooks/useModeInteractionState";
@@ -25,6 +25,7 @@ interface UseModeViewportWorkspacesOptions {
 
 interface UseModeViewportWorkspacesReturn {
   activeViewport: ModeViewportWorkspace;
+  getViewport: (mode: AppMode) => ModeViewportWorkspace;
 }
 
 export function useModeViewportWorkspaces({
@@ -36,29 +37,19 @@ export function useModeViewportWorkspaces({
   customInteractionState,
   steppedInteractionState,
 }: UseModeViewportWorkspacesOptions): UseModeViewportWorkspacesReturn {
-  const [rightView, setRightView] = useState<"2d" | "3d">("2d");
-
   const gridViewport = useGridViewportWorkspace({
     model: gridModel,
-    rightView,
-    onRightViewChange: setRightView,
   });
   const customViewport = useCustomViewportWorkspace({
     model: customModel,
     interactionState: customInteractionState,
-    rightView,
-    onRightViewChange: setRightView,
   });
   const baseConverterViewport = useBaseConverterViewportWorkspace({
     model: baseConverterModel,
-    rightView,
-    onRightViewChange: setRightView,
   });
   const steppedViewport = useSteppedViewportWorkspace({
     model: steppedModel,
     interactionState: steppedInteractionState,
-    rightView,
-    onRightViewChange: setRightView,
     splitPreview: steppedModel.params.enableSplitAssembly ? {
       parts: steppedModel.splitPreviewParts,
       isGenerating: steppedModel.isGeneratingSplitPreview,
@@ -66,8 +57,8 @@ export function useModeViewportWorkspaces({
     } : undefined,
   });
 
-  const activeViewport = useMemo<ModeViewportWorkspace>(() => {
-    switch (mode) {
+  const getViewport = useCallback((requestedMode: AppMode): ModeViewportWorkspace => {
+    switch (requestedMode) {
       case "grid":
         return gridViewport;
       case "custom":
@@ -77,7 +68,7 @@ export function useModeViewportWorkspaces({
       case "stepped":
         return steppedViewport.workspace;
       default: {
-        const unreachableMode: never = mode;
+        const unreachableMode: never = requestedMode;
         throw new Error(`Unsupported viewport mode: ${String(unreachableMode)}`);
       }
     }
@@ -85,11 +76,15 @@ export function useModeViewportWorkspaces({
     customViewport,
     baseConverterViewport,
     gridViewport,
-    mode,
     steppedViewport.workspace,
   ]);
+  const activeViewport = useMemo(
+    () => getViewport(mode),
+    [getViewport, mode],
+  );
 
   return {
     activeViewport,
+    getViewport,
   };
 }

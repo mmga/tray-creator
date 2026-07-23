@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { useCustomLayout } from "@/hooks/useCustomLayout";
 import type { ModeInteractionState } from "@/hooks/useModeInteractionState";
@@ -15,17 +15,18 @@ const LayoutCanvas = dynamic(() => import("@/components/LayoutCanvas"), {
 interface UseCustomViewportWorkspaceOptions {
   model: ReturnType<typeof useCustomLayout>;
   interactionState: ModeInteractionState;
-  rightView: "2d" | "3d";
-  onRightViewChange: (next: "2d" | "3d") => void;
 }
 
 export function useCustomViewportWorkspace({
   model,
   interactionState,
-  rightView,
-  onRightViewChange,
 }: UseCustomViewportWorkspaceOptions): ModeViewportWorkspace {
-  const resetTransientState = interactionState.resetInteractionState;
+  const [rightView, setRightView] = useState<"2d" | "3d">("2d");
+  const deactivate = interactionState.resetInteractionState;
+  const resetForSessionReplacement = useCallback(() => {
+    interactionState.resetInteractionState();
+    setRightView("2d");
+  }, [interactionState]);
 
   const canvas = useMemo(
     () => (
@@ -67,7 +68,7 @@ export function useCustomViewportWorkspace({
     () => (
       <ViewportTabs
         rightView={rightView}
-        onRightViewChange={onRightViewChange}
+        onRightViewChange={setRightView}
         canvas={canvas}
         threeGeometry={model.threeGeometry}
         isPreviewStale={model.isPreviewStale}
@@ -81,7 +82,6 @@ export function useCustomViewportWorkspace({
       model.isGenerating,
       model.isPreviewStale,
       model.threeGeometry,
-      onRightViewChange,
       rightView,
     ],
   );
@@ -89,6 +89,7 @@ export function useCustomViewportWorkspace({
   return {
     mode: "custom",
     viewport,
-    resetTransientState,
+    deactivate,
+    resetForSessionReplacement,
   };
 }
