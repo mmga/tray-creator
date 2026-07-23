@@ -45,8 +45,9 @@ export function useSteppedViewportWorkspace({
   } = interactionState;
   const persistedParams = model.persistedParams ?? model.params;
   const deactivate = useCallback(() => {
+    model.cancelContinuousEdit();
     resetInteractionState();
-  }, [resetInteractionState]);
+  }, [model, resetInteractionState]);
   const resetForSessionReplacement = useCallback(() => {
     resetInteractionState();
     setRightView("2d");
