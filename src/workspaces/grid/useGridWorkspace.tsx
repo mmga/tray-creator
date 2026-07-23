@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState, type SetStateAction } from "react";
+import { useCallback, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { PanelActionSection } from "@/components/PanelActionSection";
 import { useAutoPreview } from "@/hooks/useAutoPreview";
@@ -89,16 +89,11 @@ export function useGridWorkspace({
   model,
   onRequestParamImport,
 }: UseGridWorkspaceOptions): ModeWorkspace {
-  const setGridParams = useCallback((value: SetStateAction<TrayParams>) => {
-    const nextParams = typeof value === "function" ? value(model.params) : value;
-    model.replaceParams(nextParams);
-  }, [model]);
-
   const { draftActions, overlays, clearDraftBinding } =
     useWorkspaceDraftSupport({
       mode: "grid",
       params: model.params,
-      setParams: setGridParams,
+      commitDraftLoad: (prepared) => model.replaceParams(prepared.snapshot.params),
     });
 
   const resetWorkspace = useCallback(() => {

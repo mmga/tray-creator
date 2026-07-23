@@ -5,6 +5,7 @@ import { DraftManagerDialog } from "@/components/DraftManagerDialog";
 import type { DraftManagerDialogProps } from "@/components/DraftManagerDialog";
 import { useModeDrafts } from "@/hooks/useModeDrafts";
 import type { UseModeDraftsOptions } from "@/hooks/useModeDrafts";
+import type { PreparedDraftLoad } from "@/hooks/useModeDrafts";
 import type { AnyDraftListItem, DraftMode } from "@/lib/local-drafts";
 
 function renderDraftSummary(item: AnyDraftListItem): ReactNode {
@@ -57,8 +58,12 @@ interface WorkspaceDraftSupport {
   clearDraftBinding: () => void;
 }
 
+type WorkspaceDraftSupportOptions<M extends DraftMode> = UseModeDraftsOptions<M> & {
+  commitDraftLoad: (prepared: PreparedDraftLoad<M>) => void;
+};
+
 export function useWorkspaceDraftSupport<M extends DraftMode>(
-  options: UseModeDraftsOptions<M>,
+  options: WorkspaceDraftSupportOptions<M>,
 ): WorkspaceDraftSupport {
   const {
     currentDraftId,
@@ -72,7 +77,8 @@ export function useWorkspaceDraftSupport<M extends DraftMode>(
     getDraftList,
     saveCurrentDraft,
     saveAsNewDraft,
-    loadDraft,
+    prepareDraftLoad,
+    commitLoadedDraftBinding,
     renameDraftItem,
     deleteDraftItem,
     exportDraftItem,
@@ -128,7 +134,10 @@ export function useWorkspaceDraftSupport<M extends DraftMode>(
         refreshDraftList();
       },
       onLoad: (id) => {
-        loadDraft(id);
+        const prepared = prepareDraftLoad(id);
+        if (!prepared) return;
+        options.commitDraftLoad(prepared);
+        commitLoadedDraftBinding(prepared);
         refreshDraftList();
       },
       onRename: (id, title) => {
@@ -151,7 +160,8 @@ export function useWorkspaceDraftSupport<M extends DraftMode>(
       exportDraftItem,
       hasUnsavedChanges,
       isDialogOpen,
-      loadDraft,
+      prepareDraftLoad,
+      commitLoadedDraftBinding,
       openDraftDialog,
       refreshDraftList,
       renameDraftItem,
@@ -159,6 +169,7 @@ export function useWorkspaceDraftSupport<M extends DraftMode>(
       saveCurrentDraft,
       setDraftNameInput,
       options.mode,
+      options.commitDraftLoad,
     ],
   );
 

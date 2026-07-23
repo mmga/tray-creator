@@ -97,7 +97,10 @@ export function useCustomWorkspace({
     useWorkspaceDraftSupport({
       mode: "custom",
       params: model.params,
-      setParams: model.setParams,
+      commitDraftLoad: (prepared) => {
+        model.setParams(prepared.snapshot.params);
+        interactionState.resetInteractionState();
+      },
     });
 
   const resetWorkspace = useCallback(() => {

@@ -50,8 +50,10 @@ export function useSteppedWorkspace({
     useWorkspaceDraftSupport({
       mode: "stepped",
       params: persistedParams,
-      setParams: model.setParams,
-      onAfterLoad: resetInteractionState,
+      commitDraftLoad: (prepared) => {
+        model.setParams(prepared.snapshot.params);
+        resetInteractionState();
+      },
     });
 
   const resetWorkspace = useCallback(() => {

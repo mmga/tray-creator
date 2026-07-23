@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import type { Dispatch, SetStateAction } from "react";
 import {
   createDraft,
   defaultDraftTitle,
@@ -24,15 +23,20 @@ import {
 } from "@/lib/draft-session";
 import { readDraftParamArtifact } from "@/lib/historical-param-artifact-reader";
 import { serializeCurrentParamArtifact } from "@/lib/current-param-artifact-encoder";
-import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
+import { captureModeParamSnapshot, type ModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import type { DraftParamsByMode } from "@/lib/draft-summary";
 import { useToast } from "@/hooks/useToast";
 
 export interface UseModeDraftsOptions<M extends DraftMode> {
   mode: M;
   params: DraftParamsByMode[M];
-  setParams: Dispatch<SetStateAction<DraftParamsByMode[M]>>;
-  onAfterLoad?: () => void;
+}
+
+export interface PreparedDraftLoad<M extends DraftMode> {
+  readonly id: string;
+  readonly title: string;
+  readonly snapshot: ModeParamSnapshot<M>;
+  readonly serializedParams: string;
 }
 
 export interface UseModeDraftsReturn<M extends DraftMode> {
@@ -47,7 +51,8 @@ export interface UseModeDraftsReturn<M extends DraftMode> {
   getDraftList: () => DraftListItem<M>[];
   saveCurrentDraft: () => void;
   saveAsNewDraft: (title?: string) => void;
-  loadDraft: (id: string) => void;
+  prepareDraftLoad: (id: string) => PreparedDraftLoad<M> | null;
+  commitLoadedDraftBinding: (prepared: PreparedDraftLoad<M>) => void;
   renameDraftItem: (id: string, newTitle: string) => void;
   deleteDraftItem: (id: string) => void;
   exportDraftItem: (id: string) => void;
@@ -56,8 +61,6 @@ export interface UseModeDraftsReturn<M extends DraftMode> {
 export function useModeDrafts<M extends DraftMode>({
   mode,
   params,
-  setParams,
-  onAfterLoad,
 }: UseModeDraftsOptions<M>): UseModeDraftsReturn<M> {
   const { toast } = useToast();
   const [draftSession, setDraftSession] = useState<DraftSession>(() =>
@@ -140,36 +143,39 @@ export function useModeDrafts<M extends DraftMode>({
     [draftNameInput, mode, serializedParams, snapshot, toast],
   );
 
-  const loadDraft = useCallback(
+  const prepareDraftLoad = useCallback(
     (id: string) => {
       try {
         const record = getDraft(mode, id);
         if (!record) {
           toast("error", "草稿不存在或已损坏，无法加载");
-          return;
+          return null;
         }
 
         const loaded = readDraftParamArtifact(record.paramFile, mode);
-
-        setParams(loaded);
-        setDraftSession(bindDraftSession(
+        const loadedSnapshot = captureModeParamSnapshot(mode, loaded);
+        return {
           id,
-          serializeCurrentParamArtifact(
-            captureModeParamSnapshot(mode, loaded),
-          ),
-        ));
-        setIsDialogOpen(false);
-        onAfterLoad?.();
-        toast("success", `已加载草稿「${record.item.title}」`);
+          title: record.item.title,
+          snapshot: loadedSnapshot,
+          serializedParams: serializeCurrentParamArtifact(loadedSnapshot),
+        };
       } catch (error) {
         toast(
           "error",
           `加载失败：${error instanceof Error ? error.message : String(error)}`,
         );
+        return null;
       }
     },
-    [mode, onAfterLoad, setParams, toast],
+    [mode, toast],
   );
+
+  const commitLoadedDraftBinding = useCallback((prepared: PreparedDraftLoad<M>) => {
+    setDraftSession(bindDraftSession(prepared.id, prepared.serializedParams));
+    setIsDialogOpen(false);
+    toast("success", `已加载草稿「${prepared.title}」`);
+  }, [toast]);
 
   const renameDraftItem = useCallback(
     (id: string, newTitle: string) => {
@@ -231,7 +237,8 @@ export function useModeDrafts<M extends DraftMode>({
     getDraftList,
     saveCurrentDraft,
     saveAsNewDraft,
-    loadDraft,
+    prepareDraftLoad,
+    commitLoadedDraftBinding,
     renameDraftItem,
     deleteDraftItem,
     exportDraftItem,

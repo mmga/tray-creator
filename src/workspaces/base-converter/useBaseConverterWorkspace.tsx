@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState, type SetStateAction } from "react";
+import { useCallback, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { PanelActionSection } from "@/components/PanelActionSection";
 import { useAutoPreview } from "@/hooks/useAutoPreview";
@@ -96,14 +96,11 @@ export function useBaseConverterWorkspace({
   model,
   onRequestParamImport,
 }: UseBaseConverterWorkspaceOptions): ModeWorkspace {
-  const setParams = useCallback((value: SetStateAction<BaseConverterParams>) => {
-    model.replaceParams(typeof value === "function" ? value(model.params) : value);
-  }, [model]);
   const { draftActions, overlays, clearDraftBinding } =
     useWorkspaceDraftSupport({
       mode: "base-converter",
       params: model.params,
-      setParams,
+      commitDraftLoad: (prepared) => model.replaceParams(prepared.snapshot.params),
     });
   const resetWorkspace = useCallback(() => {
     model.resetParams();
