@@ -1,6 +1,6 @@
 # Contoured Footprint 权威结果开发计划
 
-Status: `needs-triage`
+Status: `completed`
 
 ## 目标
 
@@ -34,6 +34,8 @@ Status: `needs-triage`
 4. [让 Custom Worker 任务复用单一结果](issues/04-reuse-custom-worker-result.md)，依赖任务 2
 5. [让 Stepped Worker 任务复用单一结果](issues/05-reuse-stepped-worker-result.md)，依赖任务 3
 6. [完成跨 Mode 回归与性能门槛](issues/06-contoured-result-regression-gate.md)，依赖任务 2、3、4、5
+
+完成记录：2026-07-25，六项任务均已实施并通过 unit、integration、performance、TypeScript 与差异检查。
 
 ## 推荐执行波次
 

@@ -45,3 +45,6 @@ User stories: `US-1`, `US-2`, `US-3`, `US-4`, `US-5`, `US-6`
 - `git diff --check`
 
 ## Comments
+
+- 2026-07-25：已完成跨 Mode 回归门槛。Custom/Stepped 主线程持有 Session-local 权威结果；Worker 在各自生成任务中构造一次。Rectangular 不触发 Contoured 构造，Contoured 2D 直接消费工作结果。
+- 验证：unit 98 文件、487/487；integration 4 文件、25/25；performance 1/1；`tsc --noEmit`、`git diff --check` 通过。同步陈旧的椭圆规格、画布虚线与显式结果注入断言，提交：`22226a0`。

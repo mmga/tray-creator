@@ -49,3 +49,6 @@ User stories: `US-3`, `US-5`, `US-6`
 - `pnpm typecheck`
 
 ## Comments
+
+- 2026-07-24：已完成。Custom Worker 在 `GENERATE_CUSTOM` 任务入口对 Contoured 参数构造一次结果，并显式传给 `createCustomTrayModel`；结构化失败会阻断生成。`EXPORT_STL` 接收已生成的 Geom3 序列化，因此不重建参数轮廓。
+- 验证：Worker、Custom 模型与 Outcome 定向测试 22/22，`tsc --noEmit`、`git diff --check` 通过。实现提交：`dc7982c`。

@@ -50,3 +50,6 @@ User stories: `US-3`, `US-5`, `US-6`
 - `pnpm typecheck`
 
 ## Comments
+
+- 2026-07-24：已完成。Stepped Worker 的 `GENERATE_STEPPED` 与 `GENERATE_STEPPED_SPLIT_PARTS` 各自在任务入口构造一次 Contoured 结果，并传入 CAD feature graph、整模或分件装配；结构化失败会阻断对应任务。`EXPORT_STL` 仅序列化既有 Geom3，不重建轮廓。
+- 验证：Worker、feature graph、CAD 整模与 split profile 定向测试 33/33，`tsc --noEmit`、`git diff --check` 通过。实现提交：`f80bed8`。
