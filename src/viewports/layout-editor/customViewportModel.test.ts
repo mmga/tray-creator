@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
+import { constructCustomContouredFootprint } from "@/lib/custom-contoured-footprint";
+import type { CustomLayoutParams } from "@/types/custom-tray";
 import { buildCustomLayoutEditorViewportModel } from "@/viewports/layout-editor/customViewportModel";
 
 describe("custom layout editor viewport model", () => {
@@ -33,7 +35,7 @@ describe("custom layout editor viewport model", () => {
   });
 
   it("contoured footprint 用 groupOutlines 渲染贴合轮廓，关闭矩形 effective baseplate", () => {
-    const model = buildCustomLayoutEditorViewportModel({
+    const params = {
       ...CUSTOM_LAYOUT_DEFAULTS,
       footprintStyle: "contoured",
       traySizingMode: "fixed", // contoured 下 fixed sizing 应被休眠
@@ -42,7 +44,11 @@ describe("custom layout editor viewport model", () => {
       slots: [
         { id: "a", x: 20, y: 20, shape: "circle", width: 25, height: 25, rotation: 0 },
       ],
-    });
+    } satisfies CustomLayoutParams;
+    const model = buildCustomLayoutEditorViewportModel(
+      params,
+      constructCustomContouredFootprint(params),
+    );
     expect(model.trayFrame.showEffectiveBaseplate).toBe(false);
     expect(model.trayFrame.fixedUsableArea).toBeUndefined();
     expect(model.overlays.groupOutlines).not.toBeNull();
@@ -50,14 +56,32 @@ describe("custom layout editor viewport model", () => {
   });
 
   it("contoured footprint 远距多槽渲染为多个独立 outline", () => {
-    const model = buildCustomLayoutEditorViewportModel({
+    const params = {
       ...CUSTOM_LAYOUT_DEFAULTS,
       footprintStyle: "contoured",
       slots: [
         { id: "a", x: 0, y: 0, shape: "circle", width: 25, height: 25, rotation: 0 },
         { id: "b", x: 200, y: 200, shape: "circle", width: 25, height: 25, rotation: 0 },
       ],
-    });
+    } satisfies CustomLayoutParams;
+    const model = buildCustomLayoutEditorViewportModel(
+      params,
+      constructCustomContouredFootprint(params),
+    );
     expect(model.overlays.groupOutlines?.length).toBe(2);
+  });
+
+  it("contoured 构造失败时显示结构化错误而不要求 outline", () => {
+    const model = buildCustomLayoutEditorViewportModel(
+      { ...CUSTOM_LAYOUT_DEFAULTS, footprintStyle: "contoured" },
+      null,
+      {
+        code: "invalid-contour-parameters",
+        message: "轮廓参数无效",
+      },
+    );
+
+    expect(model.overlays.groupOutlines).toBeNull();
+    expect(model.overlays.footprintWarnings).toEqual(["轮廓参数无效"]);
   });
 });

@@ -142,8 +142,7 @@ describe("useCustomLayout", () => {
     );
   });
 
-  it("supports snapshots, live updates, and undo", () => {
-    vi.useFakeTimers();
+  it("keeps live updates in working params until the continuous edit commits", () => {
     randomIdFactoryMock.createId.mockReturnValue("slot-1");
     const { result } = renderHook(() => useCustomLayout());
 
@@ -152,19 +151,37 @@ describe("useCustomLayout", () => {
     });
 
     act(() => {
-      vi.advanceTimersByTime(600);
-      result.current.saveSnapshot();
-      result.current.updateSlotPosition("slot-1", 50, 60);
+      expect(result.current.beginContinuousEdit()).toBe(true);
+      result.current.updateMultipleSlotsLive([
+        { id: "slot-1", x: 50, y: 60, rotation: 30 },
+      ]);
     });
-    expect(result.current.params.slots[0]).toMatchObject({ x: 50, y: 60 });
+    expect(result.current.params.slots[0]).toMatchObject({
+      x: 50,
+      y: 60,
+      rotation: 30,
+    });
+    expect(result.current.persistedParams.slots[0]).toMatchObject({
+      x: 130,
+      y: 130,
+      rotation: 0,
+    });
 
     act(() => {
-      result.current.undo();
+      result.current.cancelContinuousEdit();
     });
     expect(result.current.params.slots[0]).toMatchObject({ x: 130, y: 130 });
+    expect(result.current.persistedParams.slots[0]).toMatchObject({
+      x: 130,
+      y: 130,
+    });
 
     act(() => {
-      result.current.updateMultipleSlots([{ id: "slot-1", x: 70, y: 90, rotation: 45 }]);
+      expect(result.current.beginContinuousEdit()).toBe(true);
+      result.current.updateMultipleSlotsLive([
+        { id: "slot-1", x: 70, y: 90, rotation: 45 },
+      ]);
+      result.current.commitContinuousEdit();
     });
     expect(result.current.params.slots[0]).toMatchObject({
       x: 70,
@@ -181,16 +198,69 @@ describe("useCustomLayout", () => {
       rotation: 0,
     });
 
+  });
+
+  it("generates from committed params while a continuous edit is active", async () => {
+    randomIdFactoryMock.createId.mockReturnValue("slot-1");
+    generateCustomPreviewMock.mockResolvedValue({
+      geometry: { id: "geom" } as never,
+      threeGeometry: { dispose: vi.fn() } as never,
+      volume: 10,
+    });
+    const { result } = renderHook(() => useCustomLayout());
+
     act(() => {
+      result.current.addSlot(25);
+      result.current.beginContinuousEdit();
       result.current.updateMultipleSlotsLive([
-        { id: "slot-1", x: 90, y: 95, rotation: 30 },
+        { id: "slot-1", x: 80, y: 90 },
       ]);
     });
-    expect(result.current.params.slots[0]).toMatchObject({
-      x: 90,
-      y: 95,
-      rotation: 30,
+
+    await act(async () => {
+      await result.current.handleGenerate();
     });
+
+    expect(generateCustomPreviewMock).toHaveBeenLastCalledWith(
+      result.current.persistedParams,
+      trayWorkerServiceMock,
+    );
+  });
+
+  it("复用已提交的 Contoured Footprint，并把工作结果限制在连续编辑期间", async () => {
+    randomIdFactoryMock.createId.mockReturnValue("slot-1");
+    const { result } = renderHook(() => useCustomLayout());
+
+    act(() => {
+      result.current.updateParam("footprintStyle", "contoured");
+      result.current.addSlot(25);
+    });
+
+    await waitFor(() => {
+      expect(result.current.committedContouredFootprint).not.toBeNull();
+    });
+    const committed = result.current.committedContouredFootprint;
+
+    act(() => {
+      result.current.beginContinuousEdit();
+      result.current.updateMultipleSlotsLive([
+        { id: "slot-1", x: 80, y: 90 },
+      ]);
+    });
+
+    expect(result.current.committedContouredFootprint).toBe(committed);
+    expect(result.current.workingContouredFootprint).not.toBeNull();
+    expect(result.current.workingContouredFootprint).not.toBe(committed);
+
+    act(() => {
+      result.current.cancelContinuousEdit();
+      result.current.updateParam("footprintStyle", "rectangular");
+      result.current.updateParam("trayWidth", 180);
+      result.current.updateParam("footprintStyle", "contoured");
+    });
+
+    expect(result.current.workingContouredFootprint).toBeNull();
+    expect(result.current.committedContouredFootprint).toBe(committed);
   });
 
   it("generates previews and exports the current custom layout", async () => {

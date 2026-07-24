@@ -3,6 +3,8 @@ import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import { BASE_CONVERTER_DEFAULTS } from "@/lib/base-converter-config";
+import { constructCustomContouredFootprint } from "@/lib/custom-contoured-footprint";
+import type { CustomLayoutParams } from "@/types/custom-tray";
 import {
   projectCustomTrayResult,
   projectBaseConverterResult,
@@ -63,18 +65,20 @@ describe("Tray Result Projection", () => {
   });
 
   it("投影 custom contoured footprint 的实体数与外接框尺寸", () => {
-    const contoured = projectCustomTrayResult(
-      {
+    const params = {
         ...CUSTOM_LAYOUT_DEFAULTS,
         footprintStyle: "contoured",
         slots: [
           { id: "a", x: 0, y: 0, shape: "circle", width: 25, height: 25, rotation: 0 },
           { id: "b", x: 200, y: 200, shape: "circle", width: 25, height: 25, rotation: 0 },
         ],
-      },
+      } satisfies CustomLayoutParams;
+    const contoured = projectCustomTrayResult(
+      params,
       // contoured 时 effectiveDimensions 被忽略，由派生 footprint 决定
       { width: 0, depth: 0 },
       idleState,
+      constructCustomContouredFootprint(params),
     );
     expect(contoured.footprintStyle).toBe("contoured");
     expect(contoured.footprintKind).toBe("contoured-footprint");

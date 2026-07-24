@@ -1,7 +1,10 @@
 import { MAX_BUILD_SIZE } from "@/lib/config";
 import { calculateCustomTrayFootprint } from "@/lib/custom-layout-math";
-import { constructCustomContouredFootprint } from "@/lib/custom-contoured-footprint";
 import { constructSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
+import type {
+  ContouredFootprintConstructionError,
+  ConstructedContouredFootprint,
+} from "@/lib/contoured-footprint";
 import { calculateTrayDimensions } from "@/lib/tray-model";
 import { resolveBaseConverterGeometry } from "@/lib/base-converter-config";
 import type {
@@ -179,10 +182,9 @@ export function projectCustomTrayResult(
   params: CustomLayoutParams,
   effectiveDimensions: { width: number; depth: number },
   state: ResultState,
+  constructedContoured?: ConstructedContouredFootprint | null,
+  contouredConstructionError?: ContouredFootprintConstructionError | null,
 ): CustomTrayResultProjection {
-  const constructedContoured = params.footprintStyle === "contoured"
-    ? constructCustomContouredFootprint(params)
-    : undefined;
   const footprint = calculateCustomTrayFootprint(params, constructedContoured);
   const modelDimensions = {
     width: footprint.width,
@@ -231,9 +233,9 @@ export function projectCustomTrayResult(
     footprintKind,
     contourBodyCount: footprint.contourBodyCount,
     footprintArea: finiteOrZero(common.dimensions.width * common.dimensions.depth),
-    footprintWarnings: constructedContoured?.diagnostics.map(
-      (diagnostic) => diagnostic.message,
-    ),
+    footprintWarnings: contouredConstructionError
+      ? [contouredConstructionError.message]
+      : constructedContoured?.diagnostics.map((diagnostic) => diagnostic.message),
   };
 }
 

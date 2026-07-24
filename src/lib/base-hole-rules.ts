@@ -14,6 +14,7 @@ import {
   resolveCustomTraySizingMode,
 } from "@/lib/custom-layout-math";
 import { constructCustomContouredFootprint } from "@/lib/custom-contoured-footprint";
+import type { ConstructedContouredFootprint } from "@/lib/contoured-footprint";
 import { getGridSlotGeometry } from "@/lib/grid-config";
 import {
   getGridBoundarySpacingAxes,
@@ -40,6 +41,10 @@ export interface BaseHoleFitViolation {
   readonly kind: "magnetic-base-hole-fit" | "magnet-post-hole-fit";
   readonly slotIds: readonly string[];
   readonly message: string;
+}
+
+export interface BaseHoleFitOptions {
+  readonly customContouredFootprint?: ConstructedContouredFootprint | null;
 }
 
 interface BaseHoleSlot {
@@ -234,12 +239,18 @@ function buildGridSlots(params: TrayParams): BaseHoleSlot[] {
   return slots;
 }
 
-function buildCustomSlots(params: CustomLayoutParams): BaseHoleSlot[] {
-  const footprint = calculateCustomTrayFootprint(params);
+function buildCustomSlots(
+  params: CustomLayoutParams,
+  constructedContoured?: ConstructedContouredFootprint | null,
+): BaseHoleSlot[] {
+  const contoured = params.footprintStyle === "contoured"
+    ? (constructedContoured ?? constructCustomContouredFootprint(params))
+    : undefined;
+  const footprint = calculateCustomTrayFootprint(params, contoured);
 
   // contoured 分支：按各 contoured body 的外缘多边形评估磁吸孔（CONTEXT:629）
   if (footprint.footprintStyle === "contoured") {
-    const contoured = constructCustomContouredFootprint(params);
+    if (!contoured) return [];
 
     return params.slots.map((slot) => {
       const profile = getFreeSlotProfileGeometry(slot);
@@ -453,12 +464,16 @@ function validateSlots(params: BaseHoleParams, slots: BaseHoleSlot[]) {
 function buildSlotsForMode(
   mode: Exclude<AppMode, "base-converter">,
   params: TrayParams | CustomLayoutParams | SteppedLayoutParams,
+  options?: BaseHoleFitOptions,
 ): BaseHoleSlot[] {
   switch (mode) {
     case "grid":
       return buildGridSlots(params as TrayParams);
     case "custom":
-      return buildCustomSlots(params as CustomLayoutParams);
+      return buildCustomSlots(
+        params as CustomLayoutParams,
+        options?.customContouredFootprint,
+      );
     case "stepped":
       return buildSteppedSlots(params as SteppedLayoutParams);
   }
@@ -503,6 +518,7 @@ export function getBaseHoleFitBlockingReason(
 export function validateBaseHoleFit(
   mode: Exclude<AppMode, "base-converter">,
   params: TrayParams | CustomLayoutParams | SteppedLayoutParams,
+  options?: BaseHoleFitOptions,
 ): BaseHoleFitViolation[] {
-  return validateSlots(params, buildSlotsForMode(mode, params));
+  return validateSlots(params, buildSlotsForMode(mode, params, options));
 }

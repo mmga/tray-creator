@@ -25,6 +25,7 @@ import {
   generateCustomPreview,
 } from "@/lib/custom-layout-service";
 import { useEditableParams } from "@/hooks/useEditableParams";
+import { useCustomContouredFootprint } from "@/hooks/useCustomContouredFootprint";
 import { trayWorkerService } from "@/lib/worker/worker-service";
 import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
 import type * as THREE from "three";
@@ -39,9 +40,18 @@ import {
   validateBaseHoleFit,
   type BaseHoleFitViolation,
 } from "@/lib/base-hole-rules";
+import type {
+  ContouredFootprintConstructionError,
+  ConstructedContouredFootprint,
+} from "@/lib/contoured-footprint";
 
 interface UseCustomLayoutReturn {
   params: CustomLayoutParams;
+  persistedParams: CustomLayoutParams;
+  committedContouredFootprint: ConstructedContouredFootprint | null;
+  workingContouredFootprint: ConstructedContouredFootprint | null;
+  contouredConstructionError: ContouredFootprintConstructionError | null;
+  workingContouredConstructionError: ContouredFootprintConstructionError | null;
   setParams: React.Dispatch<React.SetStateAction<CustomLayoutParams>>;
   updateParam: <K extends keyof CustomLayoutParams>(
     key: K,
@@ -61,6 +71,9 @@ interface UseCustomLayoutReturn {
   updateMultipleSlotsLive: (
     updates: { id: string; x: number; y: number; rotation?: number }[],
   ) => void;
+  beginContinuousEdit: () => boolean;
+  commitContinuousEdit: () => void;
+  cancelContinuousEdit: () => void;
   updateSlotRotation: (id: string, rotation: number) => void;
   insertSlots: (slots: SymmetryInsertSlot[]) => void;
   duplicateSlots: (ids: string[]) => string[];
@@ -81,8 +94,6 @@ interface UseCustomLayoutReturn {
     minY: number;
     maxY: number;
   };
-  // 历史操作
-  saveSnapshot: () => void;
   undo: () => void;
   canUndo: boolean;
   // 3D 相关
@@ -99,11 +110,17 @@ interface UseCustomLayoutReturn {
 
 export function useCustomLayout(): UseCustomLayoutReturn {
   const {
-    params,
+    params: persistedParams,
+    viewParams: params,
     paramsRef,
     setParams,
     applyChange,
-    saveSnapshot,
+    beginContinuousEdit: beginContinuousEditTransaction,
+    previewContinuousEdit,
+    commitContinuousEdit: commitContinuousEditTransaction,
+    cancelContinuousEdit: cancelContinuousEditTransaction,
+    hasActiveContinuousEdit,
+    workingParams,
     undo,
     canUndo,
     threeGeometry,
@@ -111,8 +128,8 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     isGenerating,
     isPreviewStale,
     transactionRevision,
-    handleGenerate,
-    handleExportSTL,
+    handleGenerate: generatePreview,
+    handleExportSTL: exportSTL,
   } = useEditableParams<
     CustomLayoutParams,
     ModeParamSnapshot<"custom">
@@ -132,19 +149,39 @@ export function useCustomLayout(): UseCustomLayoutReturn {
         browserDownloadPort,
       );
     },
-    validateSnapshot: (snapshot) =>
-      getBaseHoleFitBlockingReason(
-        validateBaseHoleFit("custom", snapshot.params),
-      ),
+    // 主线程校验由下方的权威构造结果统一提供，避免生成前再次从快照重构轮廓。
+    validateSnapshot: () => null,
   });
 
+  const contouredFootprints = useCustomContouredFootprint({
+    persistedParams,
+    workingParams,
+  });
+  const committedContouredFootprint = contouredFootprints.committed?.footprint ?? null;
+  const workingContouredFootprint = contouredFootprints.working?.footprint ?? null;
+  const contouredConstructionError =
+    contouredFootprints.committed?.error ?? null;
+  const workingContouredConstructionError =
+    contouredFootprints.working?.error ?? null;
+
   const baseHoleFitViolations = useMemo(
-    () => validateBaseHoleFit("custom", params),
-    [params],
+    () => validateBaseHoleFit("custom", persistedParams, {
+      customContouredFootprint: committedContouredFootprint,
+    }),
+    [committedContouredFootprint, persistedParams],
   );
-  const baseHoleFitBlockingReason = getBaseHoleFitBlockingReason(
-    baseHoleFitViolations,
-  );
+  const baseHoleFitBlockingReason = contouredConstructionError?.message ??
+    getBaseHoleFitBlockingReason(baseHoleFitViolations);
+
+  const handleGenerate = useCallback(() => {
+    if (baseHoleFitBlockingReason) return Promise.resolve();
+    return generatePreview();
+  }, [baseHoleFitBlockingReason, generatePreview]);
+
+  const handleExportSTL = useCallback(() => {
+    if (baseHoleFitBlockingReason) return Promise.resolve();
+    return exportSTL();
+  }, [baseHoleFitBlockingReason, exportSTL]);
 
   const calculateEffectiveDimensions = useCallback(
     () => calculateCustomEffectiveDimensions(paramsRef.current),
@@ -196,10 +233,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
 
   const updateSlotPosition = useCallback(
     (id: string, x: number, y: number) => {
-      applyChange(
-        (prev) => updateCustomSlotPosition(prev, id, x, y),
-        { history: "live" },
-      );
+      applyChange((prev) => updateCustomSlotPosition(prev, id, x, y));
     },
     [applyChange],
   );
@@ -213,20 +247,19 @@ export function useCustomLayout(): UseCustomLayoutReturn {
 
   const updateMultipleSlotsLive = useCallback(
     (updates: CustomSlotUpdate[]) => {
-      applyChange(
-        (prev) => applyCustomSlotUpdates(prev, updates),
-        { history: "live" },
+      if (!hasActiveContinuousEdit()) {
+        beginContinuousEditTransaction();
+      }
+      previewContinuousEdit((working) =>
+        applyCustomSlotUpdates(working, updates),
       );
     },
-    [applyChange],
+    [beginContinuousEditTransaction, hasActiveContinuousEdit, previewContinuousEdit],
   );
 
   const updateSlotRotation = useCallback(
     (id: string, rotation: number) => {
-      applyChange(
-        (prev) => updateCustomSlotRotation(prev, id, rotation),
-        { history: "live" },
-      );
+      applyChange((prev) => updateCustomSlotRotation(prev, id, rotation));
     },
     [applyChange],
   );
@@ -259,8 +292,25 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     });
   }, [applyChange]);
 
+  const beginContinuousEdit = useCallback(() => {
+    return beginContinuousEditTransaction().status === "previewing";
+  }, [beginContinuousEditTransaction]);
+
+  const commitContinuousEdit = useCallback(() => {
+    commitContinuousEditTransaction();
+  }, [commitContinuousEditTransaction]);
+
+  const cancelContinuousEdit = useCallback(() => {
+    cancelContinuousEditTransaction();
+  }, [cancelContinuousEditTransaction]);
+
   return {
     params,
+    persistedParams,
+    committedContouredFootprint,
+    workingContouredFootprint,
+    contouredConstructionError,
+    workingContouredConstructionError,
     setParams,
     updateParam,
     addSlot,
@@ -268,13 +318,15 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     updateSlotPosition,
     updateMultipleSlots,
     updateMultipleSlotsLive,
+    beginContinuousEdit,
+    commitContinuousEdit,
+    cancelContinuousEdit,
     updateSlotRotation,
     insertSlots,
     duplicateSlots,
     trimBaseplate,
     calculateEffectiveDimensions,
     effectiveDimensions,
-    saveSnapshot,
     undo,
     canUndo,
     threeGeometry,

@@ -22,7 +22,10 @@ export function useCustomViewportWorkspace({
   interactionState,
 }: UseCustomViewportWorkspaceOptions): ModeViewportWorkspace<"custom"> {
   const [rightView, setRightView] = useState<"2d" | "3d">("2d");
-  const deactivate = interactionState.resetInteractionState;
+  const deactivate = useCallback(() => {
+    model.cancelContinuousEdit();
+    interactionState.resetInteractionState();
+  }, [interactionState, model]);
   const resetForSessionReplacement = useCallback(() => {
     interactionState.resetInteractionState();
     setRightView("2d");
@@ -33,7 +36,14 @@ export function useCustomViewportWorkspace({
       <LayoutCanvas
         key="custom"
         isActive={rightView === "2d"}
-        model={buildCustomLayoutEditorViewportModel(model.params)}
+        model={buildCustomLayoutEditorViewportModel(
+          model.params,
+          model.workingContouredFootprint ?? model.committedContouredFootprint,
+          model.workingContouredFootprint
+            ? null
+            : model.workingContouredConstructionError ??
+              model.contouredConstructionError,
+        )}
         commands={{
           updateSlotPosition: model.updateSlotPosition,
           removeSlot: model.removeSlot,
@@ -43,17 +53,25 @@ export function useCustomViewportWorkspace({
           insertSlots: model.insertSlots,
           duplicateSlots: model.duplicateSlots,
           undo: model.undo,
-          saveSnapshot: model.saveSnapshot,
+          beginContinuousEdit: model.beginContinuousEdit,
+          commitContinuousEdit: model.commitContinuousEdit,
+          cancelContinuousEdit: model.cancelContinuousEdit,
           selectionChanged: interactionState.setSelectedSlotIds,
         }}
       />
     ),
     [
       model.duplicateSlots,
+      model.beginContinuousEdit,
+      model.cancelContinuousEdit,
+      model.commitContinuousEdit,
+      model.committedContouredFootprint,
+      model.contouredConstructionError,
       model.insertSlots,
       model.params,
       model.removeSlot,
-      model.saveSnapshot,
+      model.workingContouredFootprint,
+      model.workingContouredConstructionError,
       model.undo,
       model.updateMultipleSlots,
       model.updateMultipleSlotsLive,

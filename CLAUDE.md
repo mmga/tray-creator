@@ -228,3 +228,17 @@ Fall back to Grep/Glob/Read **only** when the graph doesn't cover what you need.
 2. Use `detect_changes` for code review.
 3. Use `get_affected_flows` to understand impact.
 4. Use `query_graph` pattern="tests_for" to check coverage.
+
+## Agent skills
+
+### Issue tracker
+
+任务与 PRD 使用仓库内的本地 Markdown 文件管理。详见 `docs/agents/issue-tracker.md`。
+
+### Triage labels
+
+任务采用五种标准状态标签。详见 `docs/agents/triage-labels.md`。
+
+### Domain docs
+
+本仓库采用单上下文领域文档布局。详见 `docs/agents/domain.md`。

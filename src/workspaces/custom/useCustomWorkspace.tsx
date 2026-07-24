@@ -99,6 +99,7 @@ export function useCustomWorkspace({
   onRequestReset,
   onRequestDraftLoad,
 }: UseCustomWorkspaceOptions): ModeWorkspace<"custom"> {
+  const persistedParams = model.persistedParams ?? model.params;
   const {
     draftActions,
     overlays,
@@ -108,7 +109,7 @@ export function useCustomWorkspace({
   } =
     useWorkspaceDraftSupport({
       mode: "custom",
-      params: model.params,
+      params: persistedParams,
       requestDraftLoad: onRequestDraftLoad,
     });
 
@@ -125,7 +126,7 @@ export function useCustomWorkspace({
   const actions = useMemo(
     () => (
       <CustomDraftActionArea
-        params={model.params}
+        params={persistedParams}
         isGenerating={model.isGenerating}
         isPreviewStale={model.isPreviewStale}
         blockingReason={model.baseHoleFitBlockingReason}
@@ -143,7 +144,7 @@ export function useCustomWorkspace({
       model.baseHoleFitBlockingReason,
       model.isGenerating,
       model.isPreviewStale,
-      model.params,
+      persistedParams,
       onRequestParamImport,
       onRequestReset,
     ],
@@ -160,6 +161,8 @@ export function useCustomWorkspace({
         isGenerating={model.isGenerating}
         isPreviewStale={model.isPreviewStale}
         volume={model.volume}
+        contouredFootprint={model.committedContouredFootprint}
+        contouredConstructionError={model.contouredConstructionError}
         baseHoleFitViolations={model.baseHoleFitViolations}
         selectedSlotIds={interactionState.selectedSlotIds}
       />
@@ -174,6 +177,8 @@ export function useCustomWorkspace({
       model.updateParam,
       model.volume,
       model.baseHoleFitViolations,
+      model.committedContouredFootprint,
+      model.contouredConstructionError,
       interactionState.selectedSlotIds,
     ],
   );

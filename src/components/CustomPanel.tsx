@@ -36,6 +36,10 @@ import {
   resolveMagneticBaseHolePreset,
   type BaseHoleFitViolation,
 } from "@/lib/base-hole-rules";
+import type {
+  ContouredFootprintConstructionError,
+  ConstructedContouredFootprint,
+} from "@/lib/contoured-footprint";
 
 // ── Props ──────────────────────────────
 
@@ -53,6 +57,8 @@ interface CustomPanelProps {
   isGenerating: boolean;
   isPreviewStale: boolean;
   volume: number;
+  contouredFootprint?: ConstructedContouredFootprint | null;
+  contouredConstructionError?: ContouredFootprintConstructionError | null;
   baseHoleFitViolations?: BaseHoleFitViolation[];
   selectedSlotIds?: string[];
 }
@@ -74,6 +80,8 @@ export default function CustomPanel({
   isGenerating,
   isPreviewStale,
   volume,
+  contouredFootprint,
+  contouredConstructionError,
   baseHoleFitViolations = [],
   selectedSlotIds = [],
 }: CustomPanelProps) {
@@ -81,7 +89,7 @@ export default function CustomPanel({
     volume,
     isGenerating,
     isPreviewStale,
-  });
+  }, contouredFootprint, contouredConstructionError);
   const isContouredFootprint = result.footprintStyle === "contoured";
   // contoured 休眠 fixed sizing；rectangular 下按 traySizingMode 决定（CONTEXT:607-608,619）
   const isFixedTraySize = !isContouredFootprint && params.traySizingMode === "fixed";

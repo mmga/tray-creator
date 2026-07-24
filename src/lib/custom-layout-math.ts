@@ -152,7 +152,7 @@ export function calculateCustomEffectiveDimensions(
 
 export function calculateCustomTrayFootprint(
   params: CustomLayoutParams,
-  constructedContoured?: ConstructedContouredFootprint,
+  constructedContoured?: ConstructedContouredFootprint | null,
 ): CustomTrayFootprint {
   const sizingMode = resolveCustomTraySizingMode(params);
   const footprintStyle = resolveCustomFootprintStyle(params);
@@ -160,7 +160,21 @@ export function calculateCustomTrayFootprint(
   // contoured 分支：底座贴合槽位轮廓，不应用 side bevel / fixed sizing / corner radius。
   // 这些字段保留为 Dormant Fixed Tray Configuration，切换回 rectangular 时复活（CONTEXT:607-608）。
   if (footprintStyle === "contoured") {
-    const contoured = constructedContoured ?? constructCustomContouredFootprint(params);
+    if (!constructedContoured) {
+      return {
+        sizingMode: "auto",
+        footprintStyle,
+        hasSlots: false,
+        width: params.trayWidth,
+        depth: params.trayDepth,
+        minX: 0,
+        maxX: 0,
+        minY: 0,
+        maxY: 0,
+        contourBodyCount: 0,
+      };
+    }
+    const contoured = constructedContoured;
     const width = roundLayoutDimensionToTenth(
       (contoured.bounds?.maxX ?? 0) - (contoured.bounds?.minX ?? 0),
     );

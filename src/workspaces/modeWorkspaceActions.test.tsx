@@ -197,8 +197,13 @@ describe("Mode Workspace Draft Action Area", () => {
 
   it("custom 的自动预览状态随 Draft Action Area 挂载，并路由外部参数提交", async () => {
     const onRequestParamImport = vi.fn(async () => ({ status: "success" as const }));
+    const persistedParams = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      trayWidth: 180,
+    };
     const model = {
       params: CUSTOM_LAYOUT_DEFAULTS,
+      persistedParams,
       setParams: vi.fn(),
       updateParam: vi.fn(),
       effectiveDimensions: { width: 120, depth: 140 },
@@ -227,8 +232,11 @@ describe("Mode Workspace Draft Action Area", () => {
     fireEvent.click(screen.getByRole("button", { name: "导入" }));
 
     expect(useAutoPreviewMock).toHaveBeenLastCalledWith(
-      CUSTOM_LAYOUT_DEFAULTS,
+      persistedParams,
       expect.objectContaining({ enabled: true }),
+    );
+    expect(useWorkspaceDraftSupportMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ params: persistedParams }),
     );
     await waitFor(() => expect(onRequestParamImport).toHaveBeenCalledTimes(1));
     expect(requestResetMock).toHaveBeenCalledTimes(1);

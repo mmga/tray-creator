@@ -4,8 +4,10 @@ import {
   resolveCustomFootprintStyle,
   resolveCustomTraySizingMode,
 } from "@/lib/custom-layout-math";
-import { constructCustomContouredFootprint } from "@/lib/custom-contoured-footprint";
-import type { ConstructedContouredFootprint } from "@/lib/contoured-footprint";
+import type {
+  ContouredFootprintConstructionError,
+  ConstructedContouredFootprint,
+} from "@/lib/contoured-footprint";
 import type { LayoutEditorViewportModel } from "@/viewports/layout-editor/types";
 
 /**
@@ -35,12 +37,11 @@ function buildContouredGroupOutlines(
 
 export function buildCustomLayoutEditorViewportModel(
   params: CustomLayoutParams,
+  contoured?: ConstructedContouredFootprint | null,
+  contouredConstructionError?: ContouredFootprintConstructionError | null,
 ): LayoutEditorViewportModel {
   const isFixed = resolveCustomTraySizingMode(params) === "fixed";
   const isContoured = resolveCustomFootprintStyle(params) === "contoured";
-  const contoured = isContoured
-    ? constructCustomContouredFootprint(params)
-    : undefined;
 
   return {
     trayFrame: {
@@ -63,10 +64,12 @@ export function buildCustomLayoutEditorViewportModel(
     slots: params.slots,
     overlays: isContoured
       ? {
-          groupOutlines: buildContouredGroupOutlines(contoured!),
-          footprintWarnings: contoured!.diagnostics.map(
-            (diagnostic) => diagnostic.message,
-          ),
+          groupOutlines: contoured
+            ? buildContouredGroupOutlines(contoured)
+            : null,
+          footprintWarnings: contouredConstructionError
+            ? [contouredConstructionError.message]
+            : contoured?.diagnostics.map((diagnostic) => diagnostic.message),
         }
       : {},
     interactions: {},
