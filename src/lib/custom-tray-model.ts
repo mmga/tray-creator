@@ -86,12 +86,15 @@ export function calculateCustomEffectiveBaseplate(params: CustomLayoutParams) {
  * - contoured：直接拉伸 Contoured Footprint Construction 的 2D bodies；
  *   不应用 corner radius / side bevel（CONTEXT:615-617），允许产生多个独立实体
  */
-export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
+export function createCustomTrayModel(
+  params: CustomLayoutParams,
+  constructedContoured?: ConstructedContouredFootprint | null,
+): Geom3 {
   const { slots, baseThickness, holeDepth, cornerRadius, sideBevelWidth } = params;
-  const constructedContoured = params.footprintStyle === "contoured"
-    ? constructCustomContouredFootprint(params)
+  const contoured = params.footprintStyle === "contoured"
+    ? (constructedContoured ?? constructCustomContouredFootprint(params))
     : undefined;
-  const footprint = calculateCustomTrayFootprint(params, constructedContoured);
+  const footprint = calculateCustomTrayFootprint(params, contoured);
   const trayWidth = footprint.width;
   const trayDepth = footprint.depth;
   const totalHeight = baseThickness + holeDepth;
@@ -107,7 +110,7 @@ export function createCustomTrayModel(params: CustomLayoutParams): Geom3 {
   if (footprint.footprintStyle === "contoured") {
     body = createContouredBaseBody(
       params,
-      constructedContoured!,
+      contoured!,
       baseThickness + holeDepth,
     );
   } else {
@@ -215,8 +218,14 @@ function createContouredBaseBody(
 /**
  * 计算自定义托盘的边界尺寸
  */
-export function calculateCustomTrayDimensions(params: CustomLayoutParams) {
-  const footprint = calculateCustomTrayFootprint(params);
+export function calculateCustomTrayDimensions(
+  params: CustomLayoutParams,
+  constructedContoured?: ConstructedContouredFootprint | null,
+) {
+  const contoured = params.footprintStyle === "contoured"
+    ? (constructedContoured ?? constructCustomContouredFootprint(params))
+    : undefined;
+  const footprint = calculateCustomTrayFootprint(params, contoured);
   return {
     width: footprint.width,
     depth: footprint.depth,

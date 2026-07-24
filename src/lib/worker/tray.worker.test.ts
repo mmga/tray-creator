@@ -12,6 +12,7 @@ const createSteppedCadSplitParts = vi.fn();
 const buildSteppedOutlinePreview = vi.fn();
 const serialize = vi.fn();
 const measureVolume = vi.fn();
+const constructCustomContouredFootprintOutcome = vi.fn();
 
 vi.mock("../tray-model", () => ({
   createTrayModel,
@@ -19,6 +20,10 @@ vi.mock("../tray-model", () => ({
 
 vi.mock("../custom-tray-model", () => ({
   createCustomTrayModel,
+}));
+
+vi.mock("../custom-contoured-footprint", () => ({
+  constructCustomContouredFootprintOutcome,
 }));
 
 vi.mock("../base-converter-model", () => ({
@@ -62,6 +67,10 @@ async function loadWorkerModule() {
 describe("tray worker", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    constructCustomContouredFootprintOutcome.mockReturnValue({
+      ok: true,
+      value: { key: "custom-baseplate", bodies: [], bodyCount: 0 },
+    });
   });
 
   it("posts generation success for grid requests", async () => {
@@ -270,5 +279,22 @@ describe("tray worker", () => {
       requestId: "req-custom",
       message: "custom failed",
     });
+  });
+
+  it("为每个 contoured Custom 生成任务只构造一次并传给模型", async () => {
+    const workerSelf = await loadWorkerModule();
+    const geometry = { id: "custom-geom" };
+    const contoured = { key: "custom-baseplate", bodies: [], bodyCount: 0 };
+    constructCustomContouredFootprintOutcome.mockReturnValue({ ok: true, value: contoured });
+    createCustomTrayModel.mockReturnValue(geometry);
+    measureVolume.mockReturnValue(12);
+    const params = { ...CUSTOM_LAYOUT_DEFAULTS, footprintStyle: "contoured" as const };
+
+    await workerSelf.onmessage?.({
+      data: { type: "GENERATE_CUSTOM", requestId: "req-custom-once", params },
+    } as MessageEvent);
+
+    expect(constructCustomContouredFootprintOutcome).toHaveBeenCalledTimes(1);
+    expect(createCustomTrayModel).toHaveBeenCalledWith(params, contoured);
   });
 });

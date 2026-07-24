@@ -6,6 +6,7 @@ import {
   createSteppedCadTrayModel,
 } from "../stepped-cad-tray-model";
 import { buildSteppedOutlinePreview } from "../stepped-outline-preview";
+import { constructCustomContouredFootprintOutcome } from "../custom-contoured-footprint";
 import stlSerializer from "@jscad/stl-serializer";
 import { measureVolume } from "@jscad/modeling/src/measurements";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
@@ -95,7 +96,18 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
         volumeInfo: volume,
       });
     } else if (req.type === "GENERATE_CUSTOM") {
-      const geometry = createCustomTrayModel(req.params);
+      const contoured = req.params.footprintStyle === "contoured"
+        ? constructCustomContouredFootprintOutcome(req.params)
+        : null;
+      if (contoured && !contoured.ok) {
+        throw Object.assign(new Error(contoured.error.message), {
+          code: contoured.error.code,
+        });
+      }
+      const geometry = createCustomTrayModel(
+        req.params,
+        contoured?.ok ? contoured.value : undefined,
+      );
       const volume = measureVolume(geometry);
       self.postMessage({
         type: "GENERATION_SUCCESS",
