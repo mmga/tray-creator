@@ -13,6 +13,7 @@ import {
   subtractBaseHoles,
 } from "@/lib/model-utils";
 import { buildSteppedCadFeatureGraph } from "@/lib/stepped-cad-feature-graph";
+import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
 import {
   buildSteppedCadSplitProfilePlan,
   type SteppedCadLayerProfilePlan,
@@ -56,8 +57,9 @@ function createEmptyGeom() {
 
 export function createSteppedCadTrayModel(
   params: SteppedLayoutParams,
+  constructedContoured?: ConstructedSteppedContouredFootprints | null,
 ): Geom3 {
-  const graph = buildSteppedCadFeatureGraph(params);
+  const graph = buildSteppedCadFeatureGraph(params, constructedContoured);
   if (graph.groups.length === 0) {
     return createEmptyGeom();
   }
@@ -801,8 +803,9 @@ function buildInterfaceLocatorMap(
 export function createSteppedCadSplitParts(
   params: SteppedLayoutParams,
   grooveDepth = params.splitGrooveDepth ?? DEFAULT_INTERFACE_GROOVE_DEPTH,
+  constructedContoured?: ConstructedSteppedContouredFootprints | null,
 ): SteppedSplitPartResult[] {
-  const graph = buildSteppedCadFeatureGraph(params);
+  const graph = buildSteppedCadFeatureGraph(params, constructedContoured);
   if (graph.groups.length === 0) {
     return [];
   }

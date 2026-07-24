@@ -7,6 +7,7 @@ import {
 } from "../stepped-cad-tray-model";
 import { buildSteppedOutlinePreview } from "../stepped-outline-preview";
 import { constructCustomContouredFootprintOutcome } from "../custom-contoured-footprint";
+import { constructSteppedContouredFootprintsOutcome } from "../stepped-contoured-footprint";
 import stlSerializer from "@jscad/stl-serializer";
 import { measureVolume } from "@jscad/modeling/src/measurements";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
@@ -125,7 +126,11 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
         volumeInfo: volume,
       });
     } else if (req.type === "GENERATE_STEPPED") {
-      const geometry = createSteppedCadTrayModel(req.params);
+      const contoured = req.params.footprintStyle === "contoured"
+        ? constructSteppedContouredFootprintsOutcome(req.params)
+        : null;
+      if (contoured && !contoured.ok) throw new Error(contoured.error.message);
+      const geometry = createSteppedCadTrayModel(req.params, contoured?.ok ? contoured.value : undefined);
       const volume = measureVolume(geometry);
       self.postMessage({
         type: "GENERATION_SUCCESS",
@@ -134,7 +139,11 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
         volumeInfo: volume,
       });
     } else if (req.type === "GENERATE_STEPPED_SPLIT_PARTS") {
-      const parts = createSteppedCadSplitParts(req.params);
+      const contoured = req.params.footprintStyle === "contoured"
+        ? constructSteppedContouredFootprintsOutcome(req.params)
+        : null;
+      if (contoured && !contoured.ok) throw new Error(contoured.error.message);
+      const parts = createSteppedCadSplitParts(req.params, undefined, contoured?.ok ? contoured.value : undefined);
       self.postMessage({
         type: "STEPPED_SPLIT_PARTS_SUCCESS",
         requestId,

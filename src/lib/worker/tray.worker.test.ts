@@ -166,6 +166,7 @@ describe("tray worker", () => {
 
     expect(createSteppedCadTrayModel).toHaveBeenCalledWith(
       STEPPED_LAYOUT_DEFAULTS,
+      expect.objectContaining({ groups: expect.any(Array) }),
     );
     expect(workerSelf.postMessage).toHaveBeenCalledWith({
       type: "GENERATION_SUCCESS",
@@ -225,6 +226,8 @@ describe("tray worker", () => {
 
     expect(createSteppedCadSplitParts).toHaveBeenCalledWith(
       STEPPED_LAYOUT_DEFAULTS,
+      undefined,
+      expect.objectContaining({ groups: expect.any(Array) }),
     );
     expect(workerSelf.postMessage).toHaveBeenCalledWith({
       type: "STEPPED_SPLIT_PARTS_SUCCESS",

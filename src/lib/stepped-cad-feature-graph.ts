@@ -12,6 +12,7 @@ import { roundLayoutDimensionToTenth } from "@/lib/custom-layout-math";
 import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import { constructSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
+import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
 import { getConnectivityRadius } from "@/lib/stepped-connectivity";
 import type { ContouredFootprintBounds } from "@/lib/contoured-footprint";
 import {
@@ -383,10 +384,11 @@ function buildRectangularGroupFootprint(
 
 export function buildSteppedCadFeatureGraph(
   params: SteppedLayoutParams,
+  constructedContoured?: ConstructedSteppedContouredFootprints | null,
 ): SteppedCadFeatureGraph {
   const footprintStyle = resolveSteppedFootprintStyle(params);
   const contouredConstruction = footprintStyle === "contoured"
-    ? constructSteppedContouredFootprints(params)
+    ? (constructedContoured ?? constructSteppedContouredFootprints(params))
     : null;
   const {
     trayWidth,
