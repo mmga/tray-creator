@@ -3,16 +3,21 @@ import type {
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import type { LayoutEditorViewportModel } from "@/viewports/layout-editor/types";
-import { constructSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
+import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
+import type { ContouredFootprintConstructionError } from "@/lib/contoured-footprint";
 
 export function buildSteppedLayoutEditorViewportModel({
   params,
   focusedGroupId,
   groupOutlines,
+  contouredFootprints,
+  contouredConstructionError,
 }: {
   params: SteppedLayoutParams;
   focusedGroupId: string | null;
   groupOutlines: GroupOutlinePreview[] | null;
+  contouredFootprints?: ConstructedSteppedContouredFootprints | null;
+  contouredConstructionError?: ContouredFootprintConstructionError | null;
 }): LayoutEditorViewportModel {
   // boundary spacing 缺失时跟随 spacing（CONTEXT:613）
   const boundarySpacing = params.boundarySpacingIndependent
@@ -24,9 +29,9 @@ export function buildSteppedLayoutEditorViewportModel({
     ? (params.cornerRadius ?? 0)
     : 0;
   const footprintWarnings = params.footprintStyle !== "rectangular"
-    ? constructSteppedContouredFootprints(params).diagnostics.map(
-        (diagnostic) => diagnostic.message,
-      )
+    ? contouredConstructionError
+      ? [contouredConstructionError.message]
+      : contouredFootprints?.diagnostics.map((diagnostic) => diagnostic.message)
     : undefined;
 
   return {

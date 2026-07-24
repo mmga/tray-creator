@@ -17,6 +17,7 @@ import type * as THREE from "three";
 import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
 import type { EllipseSlotInstanceConfig } from "@/lib/slot-instance-factory";
 import { useSteppedOutlinePreview } from "@/hooks/useSteppedOutlinePreview";
+import { useSteppedContouredFootprint } from "@/hooks/useSteppedContouredFootprint";
 import { buildSteppedBridgeWarning } from "@/lib/stepped-bridge-warning";
 import type { BridgeWarning } from "@/lib/stepped-connectivity";
 import { applySteppedBaseHoleDerivedFields } from "@/lib/stepped-base-hole";
@@ -51,10 +52,18 @@ import {
   validateBaseHoleFit,
   type BaseHoleFitViolation,
 } from "@/lib/base-hole-rules";
+import type {
+  ConstructedSteppedContouredFootprints,
+} from "@/lib/stepped-contoured-footprint";
+import type { ContouredFootprintConstructionError } from "@/lib/contoured-footprint";
 
 export interface UseSteppedLayoutControllerReturn {
   params: SteppedLayoutParams;
   persistedParams: SteppedLayoutParams;
+  committedContouredFootprints: ConstructedSteppedContouredFootprints | null;
+  workingContouredFootprints: ConstructedSteppedContouredFootprints | null;
+  contouredConstructionError: ContouredFootprintConstructionError | null;
+  workingContouredConstructionError: ContouredFootprintConstructionError | null;
   transactionRevision: number;
   edit: (intent: SteppedEditIntent) => SteppedEditResult;
   previewEdit: (intent: SteppedContinuousEditIntent) => EditTransactionOutcome;
@@ -164,7 +173,9 @@ export function useSteppedLayoutController<
   const optimizationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
-  optimizationProposalsRef.current = optimizationProposals;
+  useEffect(() => {
+    optimizationProposalsRef.current = optimizationProposals;
+  }, [optimizationProposals]);
 
   const cancelPendingOptimization = useCallback(() => {
     optimizationRequestIdRef.current += 1;
@@ -208,6 +219,7 @@ export function useSteppedLayoutController<
     commitContinuousEdit: commitContinuousEditTransaction,
     cancelContinuousEdit: cancelContinuousEditTransaction,
     hasActiveContinuousEdit,
+    workingParams,
     transactionRevision,
     sessionEpoch,
     undo,
@@ -245,10 +257,8 @@ export function useSteppedLayoutController<
         browserDownloadPort,
       );
     },
-    validateSnapshot: (snapshot) =>
-      getBaseHoleFitBlockingReason(
-        validateBaseHoleFit(mode, snapshot.params),
-      ),
+    // 权威构造结果在下方统一提供，避免生成前从相同快照再次构造轮廓。
+    validateSnapshot: () => null,
     onInvalidate: () => {
       optimizationVariantRef.current = 0;
       clearOptimizationProposals();
@@ -257,24 +267,47 @@ export function useSteppedLayoutController<
     areEqual: (left, right) => JSON.stringify(left) === JSON.stringify(right),
   });
 
+  const contouredFootprints = useSteppedContouredFootprint({
+    persistedParams,
+    workingParams,
+  });
+  const committedContouredFootprints = contouredFootprints.committed?.footprints ?? null;
+  const workingContouredFootprints = contouredFootprints.working?.footprints ?? null;
+  const contouredConstructionError = contouredFootprints.committed?.error ?? null;
+  const workingContouredConstructionError = contouredFootprints.working?.error ?? null;
+
   const baseHoleFitViolations = useMemo(
-    () => validateBaseHoleFit(mode, params),
-    [mode, params],
+    () => validateBaseHoleFit(mode, persistedParams, {
+      steppedContouredFootprints: committedContouredFootprints,
+    }),
+    [committedContouredFootprints, mode, persistedParams],
   );
-  const baseHoleFitBlockingReason = getBaseHoleFitBlockingReason(
-    baseHoleFitViolations,
-  );
+  const baseHoleFitBlockingReason = contouredConstructionError?.message ??
+    getBaseHoleFitBlockingReason(baseHoleFitViolations);
+
+  const guardedHandleGenerate = useCallback(() => {
+    if (baseHoleFitBlockingReason) return;
+    handleGenerate();
+  }, [baseHoleFitBlockingReason, handleGenerate]);
+
+  const guardedHandleExportSTL = useCallback(() => {
+    if (baseHoleFitBlockingReason) return;
+    handleExportSTL();
+  }, [baseHoleFitBlockingReason, handleExportSTL]);
 
   const calculateEffectiveDimensions = useCallback(
-    (current: SteppedLayoutParams = paramsRef.current) => {
-      return calculateSteppedEffectiveDimensions(current);
+    (current: SteppedLayoutParams = persistedParams) => {
+      return calculateSteppedEffectiveDimensions(
+        current,
+        current === persistedParams ? committedContouredFootprints : undefined,
+      );
     },
-    [paramsRef],
+    [committedContouredFootprints, persistedParams],
   );
 
   const effectiveDimensions = useMemo(
-    () => calculateEffectiveDimensions(params),
-    [calculateEffectiveDimensions, params],
+    () => calculateEffectiveDimensions(persistedParams),
+    [calculateEffectiveDimensions, persistedParams],
   );
 
   const edit = useCallback((intent: SteppedEditIntent): SteppedEditResult => {
@@ -350,9 +383,10 @@ export function useSteppedLayoutController<
     pauseOutlinePreview,
     resumeOutlinePreview,
   } = useSteppedOutlinePreview(
-    persistedParams,
+    params,
     trayWorkerService,
     sessionEpoch,
+    workingContouredFootprints ?? committedContouredFootprints,
   );
 
   const updateMultipleSlots = useCallback(
@@ -535,6 +569,10 @@ export function useSteppedLayoutController<
   return {
     params,
     persistedParams,
+    committedContouredFootprints,
+    workingContouredFootprints,
+    contouredConstructionError,
+    workingContouredConstructionError,
     transactionRevision,
     edit,
     previewEdit,
@@ -583,8 +621,8 @@ export function useSteppedLayoutController<
     clearOptimizationProposals,
     pauseOutlinePreview,
     resumeOutlinePreview,
-    handleGenerate,
-    handleExportSTL,
+    handleGenerate: guardedHandleGenerate,
+    handleExportSTL: guardedHandleExportSTL,
     outlinePreview,
   };
 }

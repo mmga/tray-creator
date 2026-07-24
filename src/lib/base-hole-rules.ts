@@ -22,6 +22,7 @@ import {
 } from "@/lib/tray-model";
 import { buildSteppedOutlinePreview } from "@/lib/stepped-outline-preview";
 import { constructSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
+import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import type {
   AppMode,
@@ -45,6 +46,7 @@ export interface BaseHoleFitViolation {
 
 export interface BaseHoleFitOptions {
   readonly customContouredFootprint?: ConstructedContouredFootprint | null;
+  readonly steppedContouredFootprints?: ConstructedSteppedContouredFootprints | null;
 }
 
 interface BaseHoleSlot {
@@ -316,7 +318,10 @@ function buildCustomSlots(
   });
 }
 
-function buildSteppedSlots(params: SteppedLayoutParams): BaseHoleSlot[] {
+function buildSteppedSlots(
+  params: SteppedLayoutParams,
+  constructedContoured?: ConstructedSteppedContouredFootprints | null,
+): BaseHoleSlot[] {
   const groupById = new Map(params.groups.map((group) => [group.id, group]));
   // rectangular 时所有 outline 都是矩形（含最低层圆角），可用 isPointInRoundedRect 优化
   // contoured 时 outline 是任意多边形，用 isPointInPolygon
@@ -324,7 +329,7 @@ function buildSteppedSlots(params: SteppedLayoutParams): BaseHoleSlot[] {
   const outlines = isRectangular ? (buildSteppedOutlinePreview(params) ?? []) : [];
   const contouredGroupById = new Map(
     !isRectangular
-      ? constructSteppedContouredFootprints(params).groups.map((group) => [
+      ? (constructedContoured ?? constructSteppedContouredFootprints(params)).groups.map((group) => [
           group.groupId,
           group.footprint,
         ])
@@ -475,7 +480,10 @@ function buildSlotsForMode(
         options?.customContouredFootprint,
       );
     case "stepped":
-      return buildSteppedSlots(params as SteppedLayoutParams);
+      return buildSteppedSlots(
+        params as SteppedLayoutParams,
+        options?.steppedContouredFootprints,
+      );
   }
 }
 

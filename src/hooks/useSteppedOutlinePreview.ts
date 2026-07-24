@@ -9,6 +9,7 @@ import {
 } from "react";
 import { recordPerfSample } from "@/lib/perf";
 import { buildSteppedOutlinePreview } from "@/lib/stepped-outline-preview";
+import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
 import type { SteppedOutlinePreviewPort } from "@/lib/model-ports";
 import { useRequestSequence } from "@/hooks/useRequestSequence";
 import type {
@@ -26,6 +27,7 @@ export function useSteppedOutlinePreview(
   params: SteppedLayoutParams,
   previewPort: SteppedOutlinePreviewPort | null,
   sessionEpoch = 0,
+  contouredFootprints?: ConstructedSteppedContouredFootprints | null,
 ): UseSteppedOutlinePreviewResult {
   const [isOutlinePreviewPaused, setIsOutlinePreviewPaused] = useState(false);
   const [frozenOutlinePreviewParams, setFrozenOutlinePreviewParams] =
@@ -74,6 +76,13 @@ export function useSteppedOutlinePreview(
 
     const runOutlinePreview = async () => {
       try {
+        if (deferredOutlineParams.footprintStyle !== "rectangular") {
+          applyOutlinePreview(buildSteppedOutlinePreview(
+            deferredOutlineParams,
+            contouredFootprints,
+          ));
+          return;
+        }
         if (previewPort) {
           const result =
             await previewPort.generateSteppedOutlinePreview(
@@ -107,7 +116,14 @@ export function useSteppedOutlinePreview(
     return () => {
       isCancelled = true;
     };
-  }, [deferredOutlineParams, previewPort, isStale, nextSeq, sessionEpoch]);
+  }, [
+    contouredFootprints,
+    deferredOutlineParams,
+    previewPort,
+    isStale,
+    nextSeq,
+    sessionEpoch,
+  ]);
 
   return {
     outlinePreview,

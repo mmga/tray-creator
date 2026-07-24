@@ -54,3 +54,6 @@ Contoured 分支不再通过异步 outline path 重复构造；现有 outline pr
 - `pnpm typecheck`
 
 ## Comments
+
+- 2026-07-24：已完成。新增 Mode-local `useSteppedContouredFootprint`；主线程的实时 2D、viewport diagnostics、effective dimensions、base-hole validation 与 Tray Result Projection 显式消费已提交或工作结果。Contoured 2D 不再走 Worker outline preview；Rectangular 保留既有异步预览路径与休眠结果语义。
+- 验证：权威结果、Stepped 集成、outline preview、base-hole、结果投影与 viewport 定向测试 19/19 通过；TypeScript、改动文件 ESLint 与 `git diff --check` 通过。`pnpm typecheck` 因本机 lockfile/PNPM 版本不兼容未运行，改用仓库现有 `tsc --noEmit` 验证。

@@ -1,6 +1,6 @@
 import { MAX_BUILD_SIZE } from "@/lib/config";
 import { calculateCustomTrayFootprint } from "@/lib/custom-layout-math";
-import { constructSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
+import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
 import type {
   ContouredFootprintConstructionError,
   ConstructedContouredFootprint,
@@ -244,10 +244,9 @@ export function projectSteppedTrayResult(
   params: SteppedLayoutParams,
   effectiveDimensions: { width: number; depth: number },
   state: ResultState,
+  constructedContoured?: ConstructedSteppedContouredFootprints | null,
+  contouredConstructionError?: ContouredFootprintConstructionError | null,
 ): SteppedTrayResultProjection {
-  const constructedContoured = params.footprintStyle !== "rectangular"
-    ? constructSteppedContouredFootprints(params)
-    : undefined;
   const height =
     params.groups.length > 0
       ? Math.max(
@@ -267,9 +266,9 @@ export function projectSteppedTrayResult(
     slotCount: params.slots.length,
     itemLabel: `${params.groups.length} 组 · ${params.slots.length} 槽`,
     ...common,
-    footprintWarnings: constructedContoured?.diagnostics.map(
-      (diagnostic) => diagnostic.message,
-    ),
+    footprintWarnings: contouredConstructionError
+      ? [contouredConstructionError.message]
+      : constructedContoured?.diagnostics.map((diagnostic) => diagnostic.message),
     groupCount: params.groups.length,
     groups: params.groups.map((group) => ({
       id: group.id,

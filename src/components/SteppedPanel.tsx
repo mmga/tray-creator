@@ -65,6 +65,8 @@ import {
     projectSteppedTrayResult,
     type SteppedTrayResultProjection,
 } from "@/lib/tray-result-projection";
+import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
+import type { ContouredFootprintConstructionError } from "@/lib/contoured-footprint";
 import { BaseHoleConfig } from "@/components/BaseHoleConfig";
 import {
     getResolvedMagneticBaseHolePresets,
@@ -97,6 +99,8 @@ function continuousSliderProps(
 interface SteppedPanelSharedProps {
     params: SteppedLayoutParams;
     effectiveDimensions: { width: number; depth: number };
+    committedContouredFootprints?: ConstructedSteppedContouredFootprints | null;
+    contouredConstructionError?: ContouredFootprintConstructionError | null;
     isPreviewStale: boolean;
     updateParam: <K extends keyof SteppedLayoutParams>(key: K, value: SteppedLayoutParams[K]) => void;
     previewParam?: <K extends keyof SteppedLayoutParams>(key: K, value: SteppedLayoutParams[K]) => void;
@@ -149,6 +153,8 @@ interface UseSteppedPanelStateOptions {
     params: SteppedLayoutParams;
     activeGroupId?: string | null;
     effectiveDimensions: { width: number; depth: number };
+    committedContouredFootprints?: ConstructedSteppedContouredFootprints | null;
+    contouredConstructionError?: ContouredFootprintConstructionError | null;
     volume: number;
     isGenerating: boolean;
     isPreviewStale: boolean;
@@ -185,6 +191,8 @@ function useSteppedPanelState(options: UseSteppedPanelStateOptions): UseSteppedP
         params,
         activeGroupId,
         effectiveDimensions,
+        committedContouredFootprints,
+        contouredConstructionError,
         volume,
         isGenerating,
         isPreviewStale,
@@ -198,8 +206,8 @@ function useSteppedPanelState(options: UseSteppedPanelStateOptions): UseSteppedP
             volume,
             isGenerating,
             isPreviewStale,
-        }),
-        [effectiveDimensions, isGenerating, isPreviewStale, params, volume],
+        }, committedContouredFootprints, contouredConstructionError),
+        [committedContouredFootprints, contouredConstructionError, effectiveDimensions, isGenerating, isPreviewStale, params, volume],
     );
     const [pressedPreviewGroupId, setPressedPreviewGroupId] = useState<string | null>(null);
     const [lockedPreviewGroupId, setLockedPreviewGroupId] = useState<string | null>(null);

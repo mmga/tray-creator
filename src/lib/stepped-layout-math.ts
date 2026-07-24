@@ -4,7 +4,10 @@ import {
   type LayoutExtents,
 } from "@/lib/custom-layout-math";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
-import { constructSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
+import {
+  constructSteppedContouredFootprints,
+  type ConstructedSteppedContouredFootprints,
+} from "@/lib/stepped-contoured-footprint";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 
 // SteppedLayoutExtents has the same shape as LayoutExtents — re-export to
@@ -13,6 +16,7 @@ export type { LayoutExtents as SteppedLayoutExtents } from "@/lib/custom-layout-
 
 export function calculateSteppedEffectiveDimensions(
   params: SteppedLayoutParams,
+  constructedContoured?: ConstructedSteppedContouredFootprints | null,
 ): LayoutExtents {
   const boundarySpacing = params.boundarySpacingIndependent
     ? (params.boundarySpacing ?? params.spacing)
@@ -29,7 +33,8 @@ export function calculateSteppedEffectiveDimensions(
   }
 
   if (params.footprintStyle !== "rectangular") {
-    const bounds = constructSteppedContouredFootprints(params).bounds;
+    // Worker 与候选优化仍处于独立任务上下文；主线程 Controller 会显式传入权威结果。
+    const bounds = (constructedContoured ?? constructSteppedContouredFootprints(params)).bounds;
     if (bounds) {
       return {
         width: roundLayoutDimensionToTenth(bounds.maxX - bounds.minX),

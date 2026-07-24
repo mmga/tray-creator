@@ -74,6 +74,10 @@ export function useSteppedViewportWorkspace({
           params: model.params,
           focusedGroupId: previewGroupId,
           groupOutlines: model.outlinePreview,
+          contouredFootprints: model.workingContouredFootprints ??
+            model.committedContouredFootprints,
+          contouredConstructionError: model.workingContouredConstructionError ??
+            model.contouredConstructionError,
         })}
         commands={{
           updateSlotPosition: model.updateSlotPosition,

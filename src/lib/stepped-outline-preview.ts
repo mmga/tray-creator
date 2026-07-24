@@ -5,6 +5,7 @@ import type {
 import { geometries } from "@jscad/modeling";
 import { buildSteppedCadFeatureGraph } from "@/lib/stepped-cad-feature-graph";
 import { constructSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
+import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
 
 const { geom2 } = geometries;
 
@@ -31,6 +32,7 @@ function getLargestOutlinePoints(footprint: Parameters<typeof geom2.toOutlines>[
 
 export function buildSteppedOutlinePreview(
   params: SteppedLayoutParams,
+  constructedContoured?: ConstructedSteppedContouredFootprints | null,
 ): GroupOutlinePreview[] | null {
   if (params.slots.length === 0 || params.groups.length === 0) {
     return null;
@@ -43,7 +45,7 @@ export function buildSteppedOutlinePreview(
   }
 
   const result: GroupOutlinePreview[] = [];
-  const construction = constructSteppedContouredFootprints(params);
+  const construction = constructedContoured ?? constructSteppedContouredFootprints(params);
   const groupById = new Map(params.groups.map((group) => [group.id, group]));
   for (const constructedGroup of construction.groups) {
     const group = groupById.get(constructedGroup.groupId);
