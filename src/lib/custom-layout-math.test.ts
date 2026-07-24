@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
+import { constructCustomContouredFootprint } from "@/lib/custom-contoured-footprint";
 import {
   calculateCustomContouredFootprint,
   calculateCustomEffectiveDimensions,
@@ -251,7 +252,10 @@ describe("custom layout math", () => {
       boundarySpacingIndependent: true,
     };
 
-    const footprint = calculateCustomTrayFootprint(params);
+    const footprint = calculateCustomTrayFootprint(
+      params,
+      constructCustomContouredFootprint(params),
+    );
     expect(footprint.footprintStyle).toBe("contoured");
     expect(footprint.contourBodyCount).toBe(1);
     expect(footprint.width).toBeGreaterThan(25);
@@ -294,7 +298,10 @@ describe("custom layout math", () => {
       boundarySpacing: 5,
       boundarySpacingIndependent: true,
     };
-    const footprint = calculateCustomTrayFootprint(params);
+    const footprint = calculateCustomTrayFootprint(
+      params,
+      constructCustomContouredFootprint(params),
+    );
     expect(footprint.contourBodyCount).toBe(2);
   });
 

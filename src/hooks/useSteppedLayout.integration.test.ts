@@ -148,6 +148,7 @@ describe("useSteppedLayout", () => {
       expect.not.objectContaining({ activeGroupId: expect.anything() }),
       trayWorkerServiceMock,
       0,
+      expect.objectContaining({ groups: expect.any(Array) }),
     );
     expect(result.current.bridgeWarning).toBeNull();
 

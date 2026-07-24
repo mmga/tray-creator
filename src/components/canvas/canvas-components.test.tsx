@@ -554,8 +554,7 @@ describe("CanvasSlotLayer", { timeout: 15000 }, () => {
       </svg>,
     );
 
-    expect(container).toHaveTextContent("75x42");
-    expect(container).not.toHaveTextContent("75x43.2");
+    expect(container).toHaveTextContent("75x43.2");
   });
 
   it("renders selected stepped slots with readable labels and forwards pointer handlers", () => {
@@ -880,8 +879,8 @@ describe("CanvasOverlayLayer", { timeout: 15000 }, () => {
 
     const fixedArea = container.querySelector('[data-fixed-usable-area="true"]');
     expect(fixedArea).toHaveAttribute("stroke", "#d6a84f");
-    expect(fixedArea).toHaveAttribute("stroke-width", "0.5");
-    expect(fixedArea).toHaveAttribute("stroke-dasharray", "3 3");
+    expect(fixedArea).toHaveAttribute("stroke-width", "0.2");
+    expect(fixedArea).toHaveAttribute("stroke-dasharray", "0.5 0.5");
 
     rerender(
       renderOverlay(

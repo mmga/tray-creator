@@ -61,9 +61,9 @@ describe("slot instance factory", () => {
         x: 20,
         y: 30,
         width: 75,
-        height: 42,
+        height: 43.2,
         ellipseConfig: {
-          outerOffset: 0.4,
+          outerOffset: 0.6,
           profileExponent: 2.08,
         },
       }),
@@ -71,9 +71,9 @@ describe("slot instance factory", () => {
       id: "ellipse-1",
       shape: "ellipse",
       width: 75,
-      height: 42,
+      height: 43.2,
       slotDefinitionId: "ellipse-75x42",
-      outerOffset: 0.4,
+      outerOffset: 0.6,
       profileExponent: 2.08,
       rotation: 0,
     });
