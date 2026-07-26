@@ -204,7 +204,13 @@ export function normalizeParamsForMode(
     requireNumber(raw as unknown as Record<string, unknown>, "floorThickness");
     requireNumber(raw as unknown as Record<string, unknown>, "recessDepth");
     const normalized = normalizeBaseConverterParams(raw);
-    for (const key of ["sourceStandardId", "targetStandardId", "floorThickness", "recessDepth"] as const) {
+    for (const key of [
+      "sourceStandardId",
+      "targetStandardId",
+      "floorThickness",
+      "recessDepth",
+      "sideBevelWidth",
+    ] as const) {
       if (normalized[key] !== raw[key]) {
         recordValueAdjustment(recorder, {
           path: key,

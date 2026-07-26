@@ -20,11 +20,43 @@ describe("base converter model", () => {
       targetStandardId: "target-ellipse-70x105",
       floorThickness: 1.2,
       recessDepth: 2,
+      sideBevelWidth: 0,
     });
     const [min, max] = measurements.measureBoundingBox(geometry);
 
     expect(max[0] - min[0]).toBeCloseTo(70, 1);
     expect(max[1] - min[1]).toBeCloseTo(105, 1);
     expect(measurements.measureVolume(geometry)).toBeGreaterThan(0);
+  });
+
+  it("creates a circular recess for round-to-round conversion", () => {
+    const roundGeometry = createBaseConverterModel({
+      ...BASE_CONVERTER_DEFAULTS,
+      sourceStandardId: "source-circle-20",
+    });
+    const squareGeometry = createBaseConverterModel({
+      ...BASE_CONVERTER_DEFAULTS,
+      sourceStandardId: "source-20x20",
+    });
+
+    expect(measurements.measureVolume(roundGeometry))
+      .toBeGreaterThan(measurements.measureVolume(squareGeometry));
+  });
+
+  it("keeps the target bottom footprint and tapers the top edge", () => {
+    const straightGeometry = createBaseConverterModel({
+      ...BASE_CONVERTER_DEFAULTS,
+      sideBevelWidth: 0,
+    });
+    const beveledGeometry = createBaseConverterModel({
+      ...BASE_CONVERTER_DEFAULTS,
+      sideBevelWidth: 1,
+    });
+    const [min, max] = measurements.measureBoundingBox(beveledGeometry);
+
+    expect(max[0] - min[0]).toBeCloseTo(25, 1);
+    expect(max[1] - min[1]).toBeCloseTo(25, 1);
+    expect(measurements.measureVolume(beveledGeometry))
+      .toBeLessThan(measurements.measureVolume(straightGeometry));
   });
 });

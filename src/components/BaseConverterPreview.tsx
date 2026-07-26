@@ -7,6 +7,8 @@ import { resolveBaseConverterGeometry } from "@/lib/base-converter-config";
 export function BaseConverterPreview({ params }: { params: BaseConverterParams }) {
   const clipId = useId().replace(/:/g, "");
   const { source, target, recess } = resolveBaseConverterGeometry(params);
+  const topWidth = target.width - params.sideBevelWidth * 2;
+  const topDepth = target.depth - params.sideBevelWidth * 2;
   const margin = Math.max(target.width, target.depth) * 0.12 + 4;
   const viewBox = `${-target.width / 2 - margin} ${-target.depth / 2 - margin} ${target.width + margin * 2} ${target.depth + margin * 2}`;
 
@@ -38,16 +40,37 @@ export function BaseConverterPreview({ params }: { params: BaseConverterParams }
           stroke="#d6a84f"
           strokeWidth={0.8}
         />
-        <rect
-          x={-recess.width / 2}
-          y={-recess.depth / 2}
-          width={recess.width}
-          height={recess.depth}
-          clipPath={`url(#${clipId})`}
-          fill="rgba(14, 13, 11, 0.86)"
-          stroke="#f0d8b8"
-          strokeWidth={0.5}
-        />
+        {params.sideBevelWidth > 0 ? (
+          <ellipse
+            rx={topWidth / 2}
+            ry={topDepth / 2}
+            fill="none"
+            stroke="#d6a84f"
+            strokeWidth={0.35}
+            strokeDasharray="1.2 0.8"
+          />
+        ) : null}
+        {source.shape === "circle" ? (
+          <ellipse
+            rx={recess.width / 2}
+            ry={recess.depth / 2}
+            clipPath={`url(#${clipId})`}
+            fill="rgba(14, 13, 11, 0.86)"
+            stroke="#f0d8b8"
+            strokeWidth={0.5}
+          />
+        ) : (
+          <rect
+            x={-recess.width / 2}
+            y={-recess.depth / 2}
+            width={recess.width}
+            height={recess.depth}
+            clipPath={`url(#${clipId})`}
+            fill="rgba(14, 13, 11, 0.86)"
+            stroke="#f0d8b8"
+            strokeWidth={0.5}
+          />
+        )}
         <line x1={-target.width / 2} y1={0} x2={target.width / 2} y2={0} stroke="#8b7355" strokeWidth={0.2} strokeDasharray="1 1" />
         <line x1={0} y1={-target.depth / 2} x2={0} y2={target.depth / 2} stroke="#8b7355" strokeWidth={0.2} strokeDasharray="1 1" />
       </svg>

@@ -3,6 +3,7 @@ import {
   BASE_CONVERTER_DEFAULTS,
   SOURCE_BASE_STANDARDS,
   TARGET_BASE_STANDARDS,
+  getMaxBaseConverterSideBevelWidth,
   getConversionRecessDimensions,
   isBaseConversionCompatible,
   normalizeBaseConverterParams,
@@ -13,9 +14,10 @@ describe("base converter config", () => {
     expect(SOURCE_BASE_STANDARDS.map((item) => item.name)).toEqual([
       "20 × 20mm", "25 × 25mm", "40 × 40mm",
       "25 × 50mm", "50 × 75mm", "50 × 100mm",
+      "Ø20mm", "Ø25mm", "Ø32mm", "Ø40mm",
     ]);
     expect(TARGET_BASE_STANDARDS.map((item) => item.name)).toEqual([
-      "Ø25mm", "Ø32mm", "Ø50mm",
+      "Ø25mm", "Ø32mm", "Ø40mm", "Ø50mm",
       "35 × 60mm", "42 × 75mm", "70 × 105mm",
     ]);
   });
@@ -25,6 +27,41 @@ describe("base converter config", () => {
       width: 20.4,
       depth: 20.4,
     });
+  });
+
+  it("provides circular source standards for round-to-round conversion", () => {
+    const source = SOURCE_BASE_STANDARDS.find((item) => item.id === "source-circle-20")!;
+    const target = TARGET_BASE_STANDARDS.find((item) => item.id === "target-circle-25")!;
+
+    expect(source.shape).toBe("circle");
+    expect(getConversionRecessDimensions(source)).toEqual({
+      width: 20.4,
+      depth: 20.4,
+    });
+    expect(isBaseConversionCompatible(source, target)).toBe(true);
+  });
+
+  it("provides a 40mm circular target standard", () => {
+    expect(TARGET_BASE_STANDARDS).toContainEqual({
+      id: "target-circle-40",
+      name: "Ø40mm",
+      shape: "circle",
+      width: 40,
+      depth: 40,
+    });
+  });
+
+  it("limits the side bevel so the recess keeps a top wall", () => {
+    const source = SOURCE_BASE_STANDARDS.find((item) => item.id === "source-circle-20")!;
+    const target = TARGET_BASE_STANDARDS.find((item) => item.id === "target-circle-25")!;
+
+    expect(getMaxBaseConverterSideBevelWidth(source, target)).toBeCloseTo(2.2);
+    expect(normalizeBaseConverterParams({
+      ...BASE_CONVERTER_DEFAULTS,
+      sourceStandardId: source.id,
+      targetStandardId: target.id,
+      sideBevelWidth: 10,
+    }).sideBevelWidth).toBeCloseTo(2.2);
   });
 
   it("filters targets that cannot retain material on both axes", () => {
@@ -44,6 +81,7 @@ describe("base converter config", () => {
       targetStandardId: "target-ellipse-70x105",
       floorThickness: 0.8,
       recessDepth: BASE_CONVERTER_DEFAULTS.recessDepth,
+      sideBevelWidth: 0,
     });
   });
 });

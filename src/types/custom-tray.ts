@@ -24,6 +24,8 @@ export interface BaseConverterParams {
   floorThickness: number;
   /** 从顶面向下挖的凹槽深度，同时也是四向挡边高度 (mm) */
   recessDepth: number;
+  /** 侧面斜面宽度 (mm)，下沿保持目标底盘尺寸，上沿向内收缩 */
+  sideBevelWidth: number;
 }
 
 export type SplitGrooveType = "profile" | "inset";

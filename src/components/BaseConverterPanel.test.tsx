@@ -12,6 +12,7 @@ describe("BaseConverterPanel", () => {
           targetStandardId: "target-ellipse-70x105",
           floorThickness: 1.2,
           recessDepth: 2,
+          sideBevelWidth: 0,
         }}
         updateParam={vi.fn()}
         actions={<div>操作区</div>}
@@ -35,5 +36,32 @@ describe("BaseConverterPanel", () => {
     expect(
       compatibleTargetOption,
     ).not.toHaveAttribute("data-disabled");
+  });
+
+  it("offers circular source standards", () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    render(
+      <BaseConverterPanel
+        params={{
+          sourceStandardId: "source-circle-20",
+          targetStandardId: "target-circle-25",
+          floorThickness: 1.2,
+          recessDepth: 2,
+          sideBevelWidth: 1,
+        }}
+        updateParam={vi.fn()}
+        actions={<div>操作区</div>}
+        isGenerating={false}
+        isPreviewStale={false}
+        volume={0}
+      />,
+    );
+
+    fireEvent.click(screen.getAllByRole("combobox")[0]);
+    expect(
+      screen.getAllByText("圆形 · Ø20mm")
+        .some((element) => element.closest('[role="option"]')),
+    ).toBe(true);
+    expect(screen.getByText("侧面斜面宽度")).toBeInTheDocument();
   });
 });

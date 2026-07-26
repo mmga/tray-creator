@@ -232,6 +232,7 @@ const {
         targetStandardId: "target-circle-25",
         floorThickness: 1.2,
         recessDepth: 2,
+        sideBevelWidth: 0,
       },
       updateParam: vi.fn(),
       replaceParams: vi.fn(),

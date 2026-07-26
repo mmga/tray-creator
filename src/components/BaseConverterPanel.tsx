@@ -11,6 +11,7 @@ import {
   findSourceBaseStandard,
   findTargetBaseStandard,
   getConversionRecessDimensions,
+  getMaxBaseConverterSideBevelWidth,
   isBaseConversionCompatible,
 } from "@/lib/base-converter-config";
 import { Label } from "@/components/ui/label";
@@ -52,6 +53,10 @@ export default function BaseConverterPanel({
   const target = findTargetBaseStandard(params.targetStandardId)
     ?? TARGET_BASE_STANDARDS[0];
   const recess = getConversionRecessDimensions(source);
+  const sideBevelConfig = {
+    ...BASE_CONVERTER_LIMITS.sideBevelWidth,
+    max: getMaxBaseConverterSideBevelWidth(source, target),
+  };
   const result = projectBaseConverterResult(params, {
     volume,
     isGenerating,
@@ -71,7 +76,7 @@ export default function BaseConverterPanel({
           >
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <Label className="text-sm text-muted-foreground">原方形 / 矩形底盘</Label>
+                <Label className="text-sm text-muted-foreground">原底盘</Label>
                 <Select
                   value={source.id}
                   onValueChange={(value) => updateParam("sourceStandardId", value)}
@@ -82,7 +87,7 @@ export default function BaseConverterPanel({
                   <SelectContent className="bg-[#16140f] border-[#2e2a24]">
                     {SOURCE_BASE_STANDARDS.map((standard) => (
                       <SelectItem key={standard.id} value={standard.id}>
-                        {standard.name}
+                        {standard.shape === "circle" ? "圆形" : "方形 / 矩形"} · {standard.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -136,7 +141,7 @@ export default function BaseConverterPanel({
             title="结构参数"
             collapsible
             defaultOpen
-            summary={`底厚 ${params.floorThickness}mm / 挡边 ${params.recessDepth}mm`}
+            summary={`底厚 ${params.floorThickness}mm / 挡边 ${params.recessDepth}mm / 斜面 ${params.sideBevelWidth}mm`}
           >
             <div className="space-y-4">
               <ParamSlider
@@ -152,6 +157,13 @@ export default function BaseConverterPanel({
                 config={BASE_CONVERTER_LIMITS.recessDepth}
                 onChange={(value) => updateParam("recessDepth", value)}
                 unit="mm"
+              />
+              <ParamSlider
+                label={BASE_CONVERTER_LIMITS.sideBevelWidth.label}
+                value={params.sideBevelWidth}
+                config={sideBevelConfig}
+                onChange={(value) => updateParam("sideBevelWidth", value)}
+                unit={BASE_CONVERTER_LIMITS.sideBevelWidth.unit}
               />
             </div>
           </SectionHeader>
