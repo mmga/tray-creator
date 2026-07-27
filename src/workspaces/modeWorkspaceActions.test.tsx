@@ -4,6 +4,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
+import {
+  BASE_CONVERTER_DEFAULTS,
+  SOURCE_BASE_STANDARDS,
+  TARGET_BASE_STANDARDS,
+  createConversionGeometrySnapshot,
+} from "@/lib/base-converter-config";
 
 const {
   clearDraftBindingMock,
@@ -84,6 +90,7 @@ vi.mock("@/components/PanelActionSection", () => ({
 import { useGridWorkspace } from "@/workspaces/grid/useGridWorkspace";
 import { useCustomWorkspace } from "@/workspaces/custom/useCustomWorkspace";
 import { useSteppedWorkspace } from "@/workspaces/stepped/useSteppedWorkspace";
+import { useBaseConverterWorkspace } from "@/workspaces/base-converter/useBaseConverterWorkspace";
 
 function renderWorkspacePanel(panel: ReactNode) {
   return render(<>{panel}</>);
@@ -184,6 +191,65 @@ describe("Mode Workspace Draft Action Area", () => {
     expect(useAutoPreviewMock).toHaveBeenCalledWith(
       DEFAULT_TRAY_PARAMS,
       expect.objectContaining({ isBlocked: true }),
+    );
+    expect(screen.getByTestId("actions-automatic")).toHaveAttribute(
+      "data-generate-state",
+      "blocked",
+    );
+    expect(screen.getByTestId("actions-automatic")).toHaveAttribute(
+      "data-export-state",
+      "blocked",
+    );
+  });
+
+  it("转换底盘默认启用 300ms 自动预览，并在几何不兼容时阻断生成与导出", () => {
+    const source = SOURCE_BASE_STANDARDS.find(
+      (entry) => entry.id === "source-50x100",
+    )!;
+    const target = TARGET_BASE_STANDARDS.find(
+      (entry) => entry.id === "target-circle-50",
+    )!;
+    const params = {
+      ...BASE_CONVERTER_DEFAULTS,
+      sourceStandardId: source.id,
+      targetStandardId: target.id,
+      geometrySnapshot: createConversionGeometrySnapshot(source, target),
+    };
+    const model = {
+      params,
+      viewParams: params,
+      replaceParams: vi.fn(),
+      resetParams: vi.fn(),
+      updateParam: vi.fn(),
+      updateParams: vi.fn(),
+      beginContinuousEdit: vi.fn(),
+      previewParam: vi.fn(),
+      commitContinuousEdit: vi.fn(),
+      cancelContinuousEdit: vi.fn(),
+      undo: vi.fn(),
+      canUndo: false,
+      handleGenerate: vi.fn(),
+      handleExportSTL: vi.fn(),
+      isGenerating: false,
+      isPreviewStale: true,
+      volume: 0,
+    };
+    const { result } = renderHook(() => useBaseConverterWorkspace({
+      model: model as never,
+      onRequestParamImport: vi.fn(async () => ({ status: "success" as const })),
+      onRequestReset: requestResetMock,
+      onRequestDraftLoad: requestDraftLoadMock,
+    }));
+
+    renderWorkspacePanel(result.current.panel);
+
+    expect(useAutoPreviewMock).toHaveBeenCalledWith(
+      params,
+      expect.objectContaining({
+        enabled: true,
+        isBlocked: true,
+        delayMs: 300,
+      }),
     );
     expect(screen.getByTestId("actions-automatic")).toHaveAttribute(
       "data-generate-state",

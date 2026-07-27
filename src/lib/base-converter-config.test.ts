@@ -49,7 +49,7 @@ describe("base converter config", () => {
       targetStandardId: "target-circle-25",
       geometrySnapshot: createConversionGeometrySnapshot(source, target),
       conversionClearance: 0.35,
-      floorThickness: -10,
+      floorThickness: Number.NEGATIVE_INFINITY,
       recessDepth: Number.NaN,
       sideBevelWidth: 12,
     });
@@ -95,6 +95,35 @@ describe("base converter config", () => {
     };
 
     expect(validateBaseConverterParams(params)).toBeNull();
+  });
+
+  it("preserves finite invalid values and embedded custom snapshots for repair", () => {
+    const customId = "custom-source-imported";
+    const normalized = normalizeBaseConverterParams({
+      ...BASE_CONVERTER_DEFAULTS,
+      sourceStandardId: customId,
+      floorThickness: -1,
+      geometrySnapshot: {
+        ...BASE_CONVERTER_DEFAULTS.geometrySnapshot,
+        source: {
+          customId,
+          name: "导入的实测规格",
+          shape: "rectangle",
+          nominalWidth: 20,
+          nominalDepth: 40,
+          fitWidth: 20,
+          fitDepth: 40,
+          cornerRadius: 1,
+        },
+      },
+    });
+
+    expect(normalized.floorThickness).toBe(-1);
+    expect(normalized.sourceStandardId).toBe(customId);
+    expect(normalized.geometrySnapshot.source.name).toBe("导入的实测规格");
+    expect(validateBaseConverterParams(normalized)).toContain(
+      "厚度、深度、间隙或斜面参数无效",
+    );
   });
 
   it("blocks incompatible pairs and collapsed bevel geometry", () => {

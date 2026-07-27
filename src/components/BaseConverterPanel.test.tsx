@@ -1,39 +1,95 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import BaseConverterPanel from "@/components/BaseConverterPanel";
-import { BASE_CONVERTER_DEFAULTS } from "@/lib/base-converter-config";
+import {
+  BASE_CONVERTER_DEFAULTS,
+  SOURCE_BASE_STANDARDS,
+  TARGET_BASE_STANDARDS,
+  createConversionGeometrySnapshot,
+} from "@/lib/base-converter-config";
+
+function renderPanel(
+  params = BASE_CONVERTER_DEFAULTS,
+  overrides: Partial<React.ComponentProps<typeof BaseConverterPanel>> = {},
+) {
+  const props: React.ComponentProps<typeof BaseConverterPanel> = {
+    params,
+    updateParam: vi.fn(),
+    updateParams: vi.fn(),
+    beginContinuousEdit: vi.fn(() => true),
+    previewParam: vi.fn(),
+    commitContinuousEdit: vi.fn(),
+    cancelContinuousEdit: vi.fn(),
+    undo: vi.fn(),
+    canUndo: false,
+    actions: <div>操作区</div>,
+    isGenerating: false,
+    isPreviewStale: false,
+    volume: 0,
+    ...overrides,
+  };
+  return { ...render(<BaseConverterPanel {...props} />), props };
+}
 
 describe("BaseConverterPanel", () => {
-  it("shows standards, fixed clearance, and disabled incompatible targets", () => {
+  beforeEach(() => {
     Element.prototype.scrollIntoView = vi.fn();
-    render(
-      <BaseConverterPanel
-        params={{
-          ...BASE_CONVERTER_DEFAULTS,
-          sourceStandardId: "source-50x100",
-          targetStandardId: "target-ellipse-70x105",
-        }}
-        updateParam={vi.fn()}
-        actions={<div>操作区</div>}
-        isGenerating={false}
-        isPreviewStale={false}
-        volume={0}
-      />,
-    );
+    window.localStorage.clear();
+  });
 
-    expect(screen.getByText("0.2 mm")).toBeInTheDocument();
-    expect(screen.getByText("50.4 × 100.4 mm")).toBeInTheDocument();
-    const targetSelect = screen.getAllByRole("combobox")[1];
-    fireEvent.click(targetSelect);
-    expect(
-      screen.getByText("圆形 · Ø25mm（尺寸不足）").closest('[role="option"]'),
-    ).toHaveAttribute("data-disabled");
-    const compatibleTargetOption = screen
-      .getAllByText("椭圆 · 70 × 105mm")
+  it("shows adjustable clearance, all structure controls, and incompatible targets remain selectable", () => {
+    const source = SOURCE_BASE_STANDARDS.find((item) => item.id === "source-50x100")!;
+    const target = TARGET_BASE_STANDARDS.find((item) => item.id === "target-ellipse-70x105")!;
+    renderPanel({
+      ...BASE_CONVERTER_DEFAULTS,
+      sourceStandardId: source.id,
+      targetStandardId: target.id,
+      geometrySnapshot: createConversionGeometrySnapshot(source, target),
+    });
+
+    expect(screen.getAllByText("0.20 mm").length).toBeGreaterThan(0);
+    expect(screen.getByText("50.40 × 100.40 mm")).toBeInTheDocument();
+    expect(screen.getByText("底部保留厚度")).toBeInTheDocument();
+    expect(screen.getByText("凹槽深度 / 挡边高度")).toBeInTheDocument();
+    expect(screen.getByText("侧面斜面宽度")).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole("combobox")[1]);
+    const incompatibleOption = screen
+      .getAllByText("标准 · 圆形 · Ø25mm")
       .map((element) => element.closest('[role="option"]'))
       .find(Boolean);
-    expect(
-      compatibleTargetOption,
-    ).not.toHaveAttribute("data-disabled");
+    expect(incompatibleOption).not.toHaveAttribute("data-disabled");
+  });
+
+  it("applies custom target axes in short-to-long order with the shared fullness default", () => {
+    const updateParams = vi.fn();
+    renderPanel(BASE_CONVERTER_DEFAULTS, { updateParams });
+
+    fireEvent.click(screen.getByRole("button", { name: /自定义与个人规格/ }));
+    const shortAxis = screen.getByLabelText("短轴 mm");
+    const longAxis = screen.getByLabelText("长轴 mm");
+    fireEvent.change(shortAxis, { target: { value: "80" } });
+    fireEvent.change(longAxis, { target: { value: "40" } });
+    const applyButtons = screen.getAllByRole("button", { name: "应用" });
+    fireEvent.click(applyButtons[1]);
+
+    const mutate = updateParams.mock.calls[0][0] as (
+      params: typeof BASE_CONVERTER_DEFAULTS,
+    ) => typeof BASE_CONVERTER_DEFAULTS;
+    const next = mutate(BASE_CONVERTER_DEFAULTS);
+    expect(next.geometrySnapshot.target).toMatchObject({
+      shape: "ellipse",
+      width: 40,
+      depth: 80,
+      profileExponent: 2.6,
+    });
+  });
+
+  it("exposes undo without mixing personal-library deletion into parameter edits", () => {
+    const undo = vi.fn();
+    renderPanel(BASE_CONVERTER_DEFAULTS, { undo, canUndo: true });
+
+    fireEvent.click(screen.getByRole("button", { name: "撤销" }));
+    expect(undo).toHaveBeenCalledTimes(1);
   });
 });

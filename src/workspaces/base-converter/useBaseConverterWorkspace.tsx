@@ -8,9 +8,10 @@ import type { useBaseConverter } from "@/hooks/useBaseConverter";
 import { exportParams } from "@/lib/param-download";
 import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import type { BaseConverterParams } from "@/types/custom-tray";
+import { validateBaseConverterParams } from "@/lib/base-converter-config";
 import {
-  available,
-  generatingAvailability,
+  modelExportAvailability,
+  modelGenerationAvailability,
   type AutomaticDraftActionAreaAdapter,
   type DraftActionResult,
 } from "@/workspaces/draft-action-area";
@@ -33,6 +34,7 @@ interface BaseConverterActionAreaProps {
   onReset: () => void;
   onRequestParamImport: (file: File) => Promise<DraftActionResult>;
   draftActions: WorkspaceDraftActions;
+  blockingReason: string | null;
 }
 
 function BaseConverterActionArea({
@@ -43,13 +45,15 @@ function BaseConverterActionArea({
   onReset,
   onRequestParamImport,
   draftActions,
+  blockingReason,
 }: BaseConverterActionAreaProps) {
-  const [autoPreview, setAutoPreview] = useState(false);
+  const [autoPreview, setAutoPreview] = useState(true);
   useAutoPreview(params, {
     enabled: autoPreview,
     isGenerating,
-    isBlocked: false,
+    isBlocked: blockingReason !== null,
     onGenerate,
+    delayMs: 300,
   });
 
   const adapter = useMemo<AutomaticDraftActionAreaAdapter>(() => ({
@@ -58,8 +62,8 @@ function BaseConverterActionArea({
       currentDraftId: draftActions.currentDraftId,
       hasUnsavedChanges: draftActions.hasUnsavedChanges,
       stale: false,
-      generate: generatingAvailability(isGenerating),
-      exportWhole: available,
+      generate: modelGenerationAvailability(isGenerating, blockingReason),
+      exportWhole: modelExportAvailability(blockingReason),
       preview: { kind: "automatic", enabled: autoPreview },
     },
     async perform(intent) {
@@ -82,7 +86,7 @@ function BaseConverterActionArea({
         };
       }
     },
-  }), [autoPreview, draftActions, isGenerating, onExportSTL, onGenerate, onRequestParamImport, onReset, params]);
+  }), [autoPreview, blockingReason, draftActions, isGenerating, onExportSTL, onGenerate, onRequestParamImport, onReset, params]);
 
   return <PanelActionSection adapter={adapter} />;
 }
@@ -132,19 +136,41 @@ export function useBaseConverterWorkspace({
       onReset={onRequestReset}
       onRequestParamImport={onRequestParamImport}
       draftActions={draftActions}
+      blockingReason={validateBaseConverterParams(model.params)}
     />
   ), [draftActions, model.handleExportSTL, model.handleGenerate, model.isGenerating, model.params, onRequestParamImport, onRequestReset]);
 
   const panel = useMemo(() => (
     <BaseConverterPanel
-      params={model.params}
+      params={model.viewParams}
       updateParam={model.updateParam}
+      updateParams={model.updateParams}
+      beginContinuousEdit={model.beginContinuousEdit}
+      previewParam={model.previewParam}
+      commitContinuousEdit={model.commitContinuousEdit}
+      cancelContinuousEdit={model.cancelContinuousEdit}
+      undo={model.undo}
+      canUndo={model.canUndo}
       actions={actions}
       isGenerating={model.isGenerating}
       isPreviewStale={model.isPreviewStale}
       volume={model.volume}
     />
-  ), [actions, model.isGenerating, model.isPreviewStale, model.params, model.updateParam, model.volume]);
+  ), [
+    actions,
+    model.beginContinuousEdit,
+    model.canUndo,
+    model.cancelContinuousEdit,
+    model.commitContinuousEdit,
+    model.isGenerating,
+    model.isPreviewStale,
+    model.previewParam,
+    model.undo,
+    model.updateParam,
+    model.updateParams,
+    model.viewParams,
+    model.volume,
+  ]);
 
   return {
     mode: "base-converter",

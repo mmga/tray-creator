@@ -106,6 +106,34 @@ const {
     magnetPostHoleDepth: 2,
     baseHoleSize: "25",
   };
+  const baseConverterParams = {
+    sourceStandardId: "source-20x20",
+    targetStandardId: "target-circle-25",
+    geometrySnapshot: {
+      source: {
+        standardId: "source-20x20",
+        name: "20 × 20mm",
+        shape: "rectangle" as const,
+        nominalWidth: 20,
+        nominalDepth: 20,
+        fitWidth: 20,
+        fitDepth: 20,
+        cornerRadius: 0,
+      },
+      target: {
+        standardId: "target-circle-25",
+        name: "Ø25mm",
+        shape: "circle" as const,
+        width: 25,
+        depth: 25,
+        profileExponent: 2,
+      },
+    },
+    conversionClearance: 0.2,
+    floorThickness: 1.2,
+    recessDepth: 2,
+    sideBevelWidth: 0,
+  };
 
   const outlinePreview: GroupOutlinePreview[] = [
     {
@@ -227,13 +255,16 @@ const {
       saveSnapshot: vi.fn(),
     },
     baseConverterModelMock: {
-      params: {
-        sourceStandardId: "source-20x20",
-        targetStandardId: "target-circle-25",
-        floorThickness: 1.2,
-        recessDepth: 2,
-      },
+      params: baseConverterParams,
+      viewParams: baseConverterParams,
       updateParam: vi.fn(),
+      updateParams: vi.fn(),
+      beginContinuousEdit: vi.fn(),
+      previewParam: vi.fn(),
+      commitContinuousEdit: vi.fn(),
+      cancelContinuousEdit: vi.fn(),
+      undo: vi.fn(),
+      canUndo: false,
       replaceParams: vi.fn(),
       resetParams: vi.fn(),
       handleGenerate: vi.fn(),
@@ -852,7 +883,7 @@ describe("Home page", { timeout: 15000 }, () => {
     render(<Home />);
 
     fireEvent.click(screen.getByRole("button", { name: "切到转换底盘" }));
-    expect(await screen.findByText("标准转换")).toBeInTheDocument();
+    expect(await screen.findByText("底盘转换")).toBeInTheDocument();
     expect(screen.getByLabelText("转换底盘 2D 图")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "3D 预览" }));

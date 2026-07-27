@@ -60,7 +60,9 @@ export function findTargetBaseStandard(id: string | undefined) {
   return TARGET_BASE_STANDARDS.find((standard) => standard.id === id);
 }
 
-function snapshotSource(source: SourceBaseStandard): ConversionSourceGeometrySnapshot {
+export function snapshotSourceStandard(
+  source: SourceBaseStandard,
+): ConversionSourceGeometrySnapshot {
   return {
     standardId: source.id,
     name: source.name,
@@ -73,7 +75,9 @@ function snapshotSource(source: SourceBaseStandard): ConversionSourceGeometrySna
   };
 }
 
-function snapshotTarget(target: TargetBaseStandard): ConversionTargetGeometrySnapshot {
+export function snapshotTargetStandard(
+  target: TargetBaseStandard,
+): ConversionTargetGeometrySnapshot {
   return {
     standardId: target.id,
     name: target.name,
@@ -89,8 +93,8 @@ export function createConversionGeometrySnapshot(
   target: TargetBaseStandard,
 ): ConversionGeometrySnapshot {
   return {
-    source: snapshotSource(source),
-    target: snapshotTarget(target),
+    source: snapshotSourceStandard(source),
+    target: snapshotTargetStandard(target),
   };
 }
 
@@ -143,50 +147,67 @@ function normalizeFinite(
     : fallback;
 }
 
-function hasMatchingSnapshot(
-  snapshot: ConversionGeometrySnapshot | undefined,
-  sourceId: string,
-  targetId: string,
-): snapshot is ConversionGeometrySnapshot {
-  return snapshot?.source.standardId === sourceId
-    && snapshot.target.standardId === targetId;
+function sourceSnapshotMatchesId(
+  source: ConversionSourceGeometrySnapshot | undefined,
+  id: string | undefined,
+) {
+  return source?.standardId === id || source?.customId === id;
+}
+
+function targetSnapshotMatchesId(
+  target: ConversionTargetGeometrySnapshot | undefined,
+  id: string | undefined,
+) {
+  return target?.standardId === id || target?.customId === id;
 }
 
 export function normalizeBaseConverterParams(
   params: Partial<BaseConverterParams>,
 ): BaseConverterParams {
-  const source = findSourceBaseStandard(params.sourceStandardId) ?? DEFAULT_SOURCE;
-  const target = findTargetBaseStandard(params.targetStandardId) ?? DEFAULT_TARGET;
-  const geometrySnapshot = hasMatchingSnapshot(
-    params.geometrySnapshot,
-    source.id,
-    target.id,
+  const sourceStandard = findSourceBaseStandard(params.sourceStandardId);
+  const targetStandard = findTargetBaseStandard(params.targetStandardId);
+  const sourceSnapshot = sourceSnapshotMatchesId(
+    params.geometrySnapshot?.source,
+    params.sourceStandardId,
   )
-    ? params.geometrySnapshot
-    : createConversionGeometrySnapshot(source, target);
+    ? params.geometrySnapshot!.source
+    : snapshotSourceStandard(sourceStandard ?? DEFAULT_SOURCE);
+  const targetSnapshot = targetSnapshotMatchesId(
+    params.geometrySnapshot?.target,
+    params.targetStandardId,
+  )
+    ? params.geometrySnapshot!.target
+    : snapshotTargetStandard(targetStandard ?? DEFAULT_TARGET);
 
   return {
-    sourceStandardId: source.id,
-    targetStandardId: target.id,
-    geometrySnapshot,
+    sourceStandardId: sourceStandard?.id
+      ?? sourceSnapshot.customId
+      ?? DEFAULT_SOURCE.id,
+    targetStandardId: targetStandard?.id
+      ?? targetSnapshot.customId
+      ?? DEFAULT_TARGET.id,
+    geometrySnapshot: {
+      source: sourceSnapshot,
+      target: targetSnapshot,
+    },
     conversionClearance: normalizeFinite(
       params.conversionClearance,
-      (value) => value >= 0,
+      () => true,
       BASE_CONVERTER_DEFAULTS.conversionClearance,
     ),
     floorThickness: normalizeFinite(
       params.floorThickness,
-      (value) => value > 0,
+      () => true,
       BASE_CONVERTER_DEFAULTS.floorThickness,
     ),
     recessDepth: normalizeFinite(
       params.recessDepth,
-      (value) => value > 0,
+      () => true,
       BASE_CONVERTER_DEFAULTS.recessDepth,
     ),
     sideBevelWidth: normalizeFinite(
       params.sideBevelWidth,
-      (value) => value >= 0,
+      () => true,
       BASE_CONVERTER_DEFAULTS.sideBevelWidth,
     ),
   };
