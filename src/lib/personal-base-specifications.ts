@@ -24,12 +24,34 @@ function isPersonalBaseSpecification(
 ): value is PersonalBaseSpecification {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<PersonalBaseSpecification>;
-  return typeof candidate.id === "string"
+  if (!(typeof candidate.id === "string"
     && candidate.id.length > 0
     && (candidate.role === "source" || candidate.role === "target")
     && typeof candidate.name === "string"
     && candidate.geometry !== null
-    && typeof candidate.geometry === "object";
+    && typeof candidate.geometry === "object")) {
+    return false;
+  }
+  const geometry = candidate.geometry as unknown as Record<string, unknown>;
+  if (
+    geometry.customId !== candidate.id
+    || typeof geometry.name !== "string"
+  ) {
+    return false;
+  }
+  if (candidate.role === "source") {
+    return geometry.shape === "rectangle"
+      && [
+        geometry.nominalWidth,
+        geometry.nominalDepth,
+        geometry.fitWidth,
+        geometry.fitDepth,
+        geometry.cornerRadius,
+      ].every((entry) => typeof entry === "number" && Number.isFinite(entry));
+  }
+  return (geometry.shape === "circle" || geometry.shape === "ellipse")
+    && [geometry.width, geometry.depth, geometry.profileExponent]
+      .every((entry) => typeof entry === "number" && Number.isFinite(entry));
 }
 
 export function loadPersonalBaseSpecifications(): PersonalBaseSpecification[] {

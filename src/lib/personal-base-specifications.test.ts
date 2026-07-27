@@ -63,4 +63,19 @@ describe("personal base specifications", () => {
     );
     expect(loadPersonalBaseSpecifications()).toEqual([]);
   });
+
+  it("filters entries whose stable id and geometry identity do not match", () => {
+    window.localStorage.setItem(
+      "tray-creator:personal-base-specifications:v1",
+      JSON.stringify([
+        SOURCE_SPECIFICATION,
+        {
+          ...SOURCE_SPECIFICATION,
+          id: "different-id",
+        },
+      ]),
+    );
+
+    expect(loadPersonalBaseSpecifications()).toEqual([SOURCE_SPECIFICATION]);
+  });
 });

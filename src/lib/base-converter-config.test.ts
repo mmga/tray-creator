@@ -146,4 +146,19 @@ describe("base converter config", () => {
       }),
     ).toContain("侧面斜面过大");
   });
+
+  it("validates source nominal identity as well as fit geometry", () => {
+    expect(
+      validateBaseConverterParams({
+        ...BASE_CONVERTER_DEFAULTS,
+        geometrySnapshot: {
+          ...BASE_CONVERTER_DEFAULTS.geometrySnapshot,
+          source: {
+            ...BASE_CONVERTER_DEFAULTS.geometrySnapshot.source,
+            nominalWidth: 0,
+          },
+        },
+      }),
+    ).toContain("源底座尺寸或圆角无效");
+  });
 });

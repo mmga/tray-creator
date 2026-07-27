@@ -238,9 +238,14 @@ export function validateBaseConverterParams(
     resolveBaseConverterGeometry(params);
 
   if (
-    !Number.isFinite(source.fitWidth)
+    source.shape !== "rectangle"
+    || !Number.isFinite(source.nominalWidth)
+    || !Number.isFinite(source.nominalDepth)
+    || !Number.isFinite(source.fitWidth)
     || !Number.isFinite(source.fitDepth)
     || !Number.isFinite(source.cornerRadius)
+    || source.nominalWidth <= 0
+    || source.nominalDepth <= 0
     || source.fitWidth <= 0
     || source.fitDepth <= 0
     || source.cornerRadius < 0
@@ -249,7 +254,8 @@ export function validateBaseConverterParams(
     return "源底座尺寸或圆角无效";
   }
   if (
-    !Number.isFinite(target.width)
+    (target.shape !== "circle" && target.shape !== "ellipse")
+    || !Number.isFinite(target.width)
     || !Number.isFinite(target.depth)
     || !Number.isFinite(target.profileExponent)
     || target.width <= 0
