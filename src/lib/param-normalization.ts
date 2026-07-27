@@ -204,14 +204,33 @@ export function normalizeParamsForMode(
     requireNumber(raw as unknown as Record<string, unknown>, "floorThickness");
     requireNumber(raw as unknown as Record<string, unknown>, "recessDepth");
     const normalized = normalizeBaseConverterParams(raw);
-    for (const key of ["sourceStandardId", "targetStandardId", "floorThickness", "recessDepth"] as const) {
+    const labels: Record<keyof BaseConverterParams, string> = {
+      sourceStandardId: "原底盘标准",
+      targetStandardId: "目标底盘标准",
+      geometrySnapshot: "转换几何快照",
+      conversionClearance: "单边装配间隙",
+      floorThickness: "底部保留厚度",
+      recessDepth: "凹槽深度",
+      sideBevelWidth: "侧面斜面宽度",
+    };
+    for (const key of [
+      "sourceStandardId",
+      "targetStandardId",
+      "geometrySnapshot",
+      "conversionClearance",
+      "floorThickness",
+      "recessDepth",
+      "sideBevelWidth",
+    ] as const) {
       if (normalized[key] !== raw[key]) {
         recordValueAdjustment(recorder, {
           path: key,
-          label: key,
+          label: labels[key],
           previousValue: raw[key],
           normalizedValue: normalized[key],
-          reason: "已调整为当前支持的转换底盘标准或参数范围",
+          reason: key === "geometrySnapshot"
+            ? "已从历史标准 ID 补齐可复现的转换几何快照"
+            : "已补齐或修复当前转换底盘参数",
         });
       }
     }

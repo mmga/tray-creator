@@ -1,15 +1,24 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { BaseConverterPreview } from "@/components/BaseConverterPreview";
+import {
+  BASE_CONVERTER_DEFAULTS,
+  SOURCE_BASE_STANDARDS,
+  TARGET_BASE_STANDARDS,
+  createConversionGeometrySnapshot,
+} from "@/lib/base-converter-config";
 
 describe("BaseConverterPreview", () => {
   it("renders the selected standard conversion and fixed-clearance recess", () => {
     const { container } = render(
       <BaseConverterPreview params={{
+        ...BASE_CONVERTER_DEFAULTS,
         sourceStandardId: "source-50x100",
         targetStandardId: "target-ellipse-70x105",
-        floorThickness: 1.2,
-        recessDepth: 2,
+        geometrySnapshot: createConversionGeometrySnapshot(
+          SOURCE_BASE_STANDARDS.find((item) => item.id === "source-50x100")!,
+          TARGET_BASE_STANDARDS.find((item) => item.id === "target-ellipse-70x105")!,
+        ),
       }} />,
     );
 

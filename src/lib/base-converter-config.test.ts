@@ -3,6 +3,7 @@ import {
   BASE_CONVERTER_DEFAULTS,
   SOURCE_BASE_STANDARDS,
   TARGET_BASE_STANDARDS,
+  createConversionGeometrySnapshot,
   getConversionRecessDimensions,
   isBaseConversionCompatible,
   normalizeBaseConverterParams,
@@ -15,15 +16,21 @@ describe("base converter config", () => {
       "25 × 50mm", "50 × 75mm", "50 × 100mm",
     ]);
     expect(TARGET_BASE_STANDARDS.map((item) => item.name)).toEqual([
-      "Ø25mm", "Ø32mm", "Ø50mm",
+      "Ø25mm", "Ø28.5mm", "Ø32mm", "Ø40mm", "Ø50mm",
       "35 × 60mm", "42 × 75mm", "70 × 105mm",
     ]);
+    expect(
+      TARGET_BASE_STANDARDS
+        .filter((item) => item.shape === "ellipse")
+        .map((item) => item.profileExponent),
+    ).toEqual([2.05, 2.08, 2.6]);
   });
 
-  it("adds 0.2mm clearance on every side", () => {
+  it("adds uniform clearance to dimensions and corner radius", () => {
     expect(getConversionRecessDimensions(SOURCE_BASE_STANDARDS[0])).toEqual({
       width: 20.4,
       depth: 20.4,
+      cornerRadius: 0.2,
     });
   });
 
@@ -33,17 +40,49 @@ describe("base converter config", () => {
     expect(isBaseConversionCompatible(source, TARGET_BASE_STANDARDS.at(-1)!)).toBe(true);
   });
 
-  it("normalizes invalid ids and incompatible pairs", () => {
-    expect(normalizeBaseConverterParams({
+  it("normalizes invalid ids but preserves a recognized incompatible pair", () => {
+    const source = SOURCE_BASE_STANDARDS.find((item) => item.id === "source-50x100")!;
+    const target = TARGET_BASE_STANDARDS.find((item) => item.id === "target-circle-25")!;
+    const normalized = normalizeBaseConverterParams({
       sourceStandardId: "source-50x100",
       targetStandardId: "target-circle-25",
+      geometrySnapshot: createConversionGeometrySnapshot(source, target),
+      conversionClearance: 0.35,
       floorThickness: -10,
       recessDepth: Number.NaN,
-    })).toEqual({
+      sideBevelWidth: 12,
+    });
+
+    expect(normalized).toEqual({
       sourceStandardId: "source-50x100",
-      targetStandardId: "target-ellipse-70x105",
-      floorThickness: 0.8,
+      targetStandardId: "target-circle-25",
+      geometrySnapshot: createConversionGeometrySnapshot(source, target),
+      conversionClearance: 0.35,
+      floorThickness: BASE_CONVERTER_DEFAULTS.floorThickness,
       recessDepth: BASE_CONVERTER_DEFAULTS.recessDepth,
+      sideBevelWidth: 12,
+    });
+  });
+
+  it("migrates legacy id-only parameters into a geometry snapshot", () => {
+    const normalized = normalizeBaseConverterParams({
+      sourceStandardId: "source-25x50",
+      targetStandardId: "target-ellipse-35x60",
+      floorThickness: 6,
+      recessDepth: 7,
+    });
+
+    expect(normalized.floorThickness).toBe(6);
+    expect(normalized.recessDepth).toBe(7);
+    expect(normalized.geometrySnapshot.source).toMatchObject({
+      standardId: "source-25x50",
+      fitWidth: 25,
+      fitDepth: 50,
+      cornerRadius: 0,
+    });
+    expect(normalized.geometrySnapshot.target).toMatchObject({
+      standardId: "target-ellipse-35x60",
+      profileExponent: 2.05,
     });
   });
 });

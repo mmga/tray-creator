@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { measurements } from "@jscad/modeling";
-import { BASE_CONVERTER_DEFAULTS } from "@/lib/base-converter-config";
+import {
+  BASE_CONVERTER_DEFAULTS,
+  SOURCE_BASE_STANDARDS,
+  TARGET_BASE_STANDARDS,
+  createConversionGeometrySnapshot,
+} from "@/lib/base-converter-config";
 import { createBaseConverterModel } from "@/lib/base-converter-model";
 
 describe("base converter model", () => {
@@ -16,10 +21,13 @@ describe("base converter model", () => {
 
   it("creates the reference 50x100 to 70x105 oval conversion", () => {
     const geometry = createBaseConverterModel({
+      ...BASE_CONVERTER_DEFAULTS,
       sourceStandardId: "source-50x100",
       targetStandardId: "target-ellipse-70x105",
-      floorThickness: 1.2,
-      recessDepth: 2,
+      geometrySnapshot: createConversionGeometrySnapshot(
+        SOURCE_BASE_STANDARDS.find((item) => item.id === "source-50x100")!,
+        TARGET_BASE_STANDARDS.find((item) => item.id === "target-ellipse-70x105")!,
+      ),
     });
     const [min, max] = measurements.measureBoundingBox(geometry);
 

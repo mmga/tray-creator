@@ -17,13 +17,45 @@ export type AppMode =
  */
 export type BaseplateFootprintStyle = "rectangular" | "contoured";
 
+export interface ConversionSourceGeometrySnapshot {
+  standardId?: string;
+  customId?: string;
+  name: string;
+  shape: "rectangle";
+  nominalWidth: number;
+  nominalDepth: number;
+  fitWidth: number;
+  fitDepth: number;
+  cornerRadius: number;
+}
+
+export interface ConversionTargetGeometrySnapshot {
+  standardId?: string;
+  customId?: string;
+  name: string;
+  shape: "circle" | "ellipse";
+  width: number;
+  depth: number;
+  profileExponent: number;
+}
+
+export interface ConversionGeometrySnapshot {
+  source: ConversionSourceGeometrySnapshot;
+  target: ConversionTargetGeometrySnapshot;
+}
+
 export interface BaseConverterParams {
   sourceStandardId: string;
   targetStandardId: string;
+  geometrySnapshot: ConversionGeometrySnapshot;
+  /** 源适配轮廓的等距外扩距离 (mm) */
+  conversionClearance: number;
   /** 凹槽底部保留厚度 (mm) */
   floorThickness: number;
   /** 从顶面向下挖的凹槽深度，同时也是四向挡边高度 (mm) */
   recessDepth: number;
+  /** 转换底盘底边到顶边的水平内缩 (mm) */
+  sideBevelWidth: number;
 }
 
 export type SplitGrooveType = "profile" | "inset";

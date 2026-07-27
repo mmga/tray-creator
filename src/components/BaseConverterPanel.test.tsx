@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import BaseConverterPanel from "@/components/BaseConverterPanel";
+import { BASE_CONVERTER_DEFAULTS } from "@/lib/base-converter-config";
 
 describe("BaseConverterPanel", () => {
   it("shows standards, fixed clearance, and disabled incompatible targets", () => {
@@ -8,10 +9,9 @@ describe("BaseConverterPanel", () => {
     render(
       <BaseConverterPanel
         params={{
+          ...BASE_CONVERTER_DEFAULTS,
           sourceStandardId: "source-50x100",
           targetStandardId: "target-ellipse-70x105",
-          floorThickness: 1.2,
-          recessDepth: 2,
         }}
         updateParam={vi.fn()}
         actions={<div>操作区</div>}

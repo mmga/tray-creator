@@ -105,6 +105,38 @@ describe("param-io", () => {
     expect(() => parseParamFileObject(file, "grid")).toThrow("模式不匹配");
   });
 
+  it("migrates legacy base converter ids into a reported geometry snapshot", () => {
+    const preparation = prepareParamFileObject({
+      version: 1,
+      mode: "base-converter",
+      params: {
+        sourceStandardId: "source-25x50",
+        targetStandardId: "target-ellipse-35x60",
+        floorThickness: 1.2,
+        recessDepth: 2,
+      },
+    }, { fileName: "legacy-base-converter.json" });
+
+    expect(preparation.status).toBe("ready");
+    if (preparation.status !== "ready") return;
+    expect(preparation.candidate.snapshot.params).toMatchObject({
+      conversionClearance: 0.2,
+      sideBevelWidth: 0,
+      geometrySnapshot: {
+        source: { standardId: "source-25x50", fitWidth: 25, fitDepth: 50 },
+        target: { standardId: "target-ellipse-35x60", profileExponent: 2.05 },
+      },
+    });
+    expect(preparation.candidate.report.adjustments).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: "geometrySnapshot",
+          label: "转换几何快照",
+        }),
+      ]),
+    );
+  });
+
   it("prepares a normalized candidate with defaults and value adjustments", () => {
     const preparation = prepareParamFileObject({
       version: 1,
