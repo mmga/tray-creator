@@ -16,7 +16,7 @@ describe("base converter config", () => {
     expect(SOURCE_BASE_STANDARDS.map((item) => item.name)).toEqual([
       "20 × 20mm", "25 × 25mm", "40 × 40mm",
       "25 × 50mm", "50 × 75mm", "50 × 100mm",
-      "Ø20mm", "Ø25mm", "Ø32mm", "Ø40mm",
+      "Ø20mm", "Ø25mm", "Ø28.5mm", "Ø32mm", "Ø40mm",
     ]);
     expect(TARGET_BASE_STANDARDS.map((item) => item.name)).toEqual([
       "Ø25mm", "Ø28.5mm", "Ø32mm", "Ø40mm", "Ø50mm",
@@ -51,6 +51,25 @@ describe("base converter config", () => {
       fitDepth: 20,
     });
     expect(isBaseConversionCompatible(source, target)).toBe(true);
+  });
+
+  it("provides 28.5mm circular standards on both sides", () => {
+    expect(SOURCE_BASE_STANDARDS).toContainEqual({
+      id: "source-circle-28.5",
+      name: "Ø28.5mm",
+      shape: "circle",
+      width: 28.5,
+      depth: 28.5,
+      cornerRadius: 0,
+    });
+    expect(TARGET_BASE_STANDARDS).toContainEqual({
+      id: "target-circle-28.5",
+      name: "Ø28.5mm",
+      shape: "circle",
+      width: 28.5,
+      depth: 28.5,
+      profileExponent: 2,
+    });
   });
 
   it("limits the side bevel so the top recess keeps a wall", () => {

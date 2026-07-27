@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useEffectEvent } from "react";
+import { useEffect, useEffectEvent, useRef } from "react";
 
 interface UseAutoPreviewOptions {
   enabled: boolean;
@@ -9,6 +9,8 @@ interface UseAutoPreviewOptions {
   onGenerate: () => void;
   delayMs?: number;
 }
+
+const NO_AUTO_PREVIEW_TRIGGER = Symbol("no-auto-preview-trigger");
 
 export function useAutoPreview(
   trigger: unknown,
@@ -20,16 +22,25 @@ export function useAutoPreview(
     delayMs = 500,
   }: UseAutoPreviewOptions,
 ) {
+  const lastGeneratedTriggerRef = useRef<unknown>(NO_AUTO_PREVIEW_TRIGGER);
   const handleGenerate = useEffectEvent(() => {
     onGenerate();
   });
 
   useEffect(() => {
-    if (!enabled || isGenerating || isBlocked) {
+    if (!enabled || isBlocked) {
+      lastGeneratedTriggerRef.current = NO_AUTO_PREVIEW_TRIGGER;
+      return;
+    }
+    if (
+      isGenerating
+      || Object.is(lastGeneratedTriggerRef.current, trigger)
+    ) {
       return;
     }
 
     const handler = window.setTimeout(() => {
+      lastGeneratedTriggerRef.current = trigger;
       handleGenerate();
     }, delayMs);
 

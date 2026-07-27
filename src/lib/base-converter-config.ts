@@ -35,6 +35,7 @@ export const SOURCE_BASE_STANDARDS: SourceBaseStandard[] = [
   { id: "source-50x100", name: "50 × 100mm", shape: "rectangle", width: 50, depth: 100, cornerRadius: 0 },
   { id: "source-circle-20", name: "Ø20mm", shape: "circle", width: 20, depth: 20, cornerRadius: 0 },
   { id: "source-circle-25", name: "Ø25mm", shape: "circle", width: 25, depth: 25, cornerRadius: 0 },
+  { id: "source-circle-28.5", name: "Ø28.5mm", shape: "circle", width: 28.5, depth: 28.5, cornerRadius: 0 },
   { id: "source-circle-32", name: "Ø32mm", shape: "circle", width: 32, depth: 32, cornerRadius: 0 },
   { id: "source-circle-40", name: "Ø40mm", shape: "circle", width: 40, depth: 40, cornerRadius: 0 },
 ];
