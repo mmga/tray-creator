@@ -8,6 +8,7 @@ import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import { BASE_CONVERTER_DEFAULTS } from "@/lib/base-converter-config";
 import type {
   AppMode,
+  BaseConverterParams,
   CustomLayoutParams,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
@@ -96,13 +97,53 @@ describe("param-io", () => {
     expect(parseParamFileObject(file, "base-converter")).toEqual(
       BASE_CONVERTER_DEFAULTS,
     );
-    expect(
-      prepareParamFileObject(file),
-    ).toMatchObject({
+    const preparation = prepareParamFileObject(file);
+    expect(preparation).toMatchObject({
       status: "ready",
       candidate: { mode: "base-converter" },
     });
+    expect(preparation.status === "ready"
+      ? preparation.candidate.report.adjustments
+      : null).toEqual([]);
     expect(() => parseParamFileObject(file, "grid")).toThrow("模式不匹配");
+  });
+
+  it("round-trips embedded custom conversion geometry without using the personal library", () => {
+    const params: BaseConverterParams = {
+      ...BASE_CONVERTER_DEFAULTS,
+      sourceStandardId: "custom-source-file",
+      targetStandardId: "custom-target-file",
+      geometrySnapshot: {
+        source: {
+          customId: "custom-source-file",
+          name: "外部实测矩形",
+          shape: "rectangle",
+          nominalWidth: 25,
+          nominalDepth: 50,
+          fitWidth: 24.8,
+          fitDepth: 49.7,
+          cornerRadius: 1.5,
+        },
+        target: {
+          customId: "custom-target-file",
+          name: "外部丰满椭圆",
+          shape: "ellipse",
+          width: 40,
+          depth: 80,
+          profileExponent: 3.1,
+        },
+      },
+    };
+    const libraryKey = "tray-creator:personal-base-specifications:v1";
+    const libraryBefore = window.localStorage.getItem(libraryKey);
+
+    const parsed = parseParamFileObject(
+      buildParamFile("base-converter", params),
+      "base-converter",
+    );
+
+    expect(parsed).toEqual(params);
+    expect(window.localStorage.getItem(libraryKey)).toBe(libraryBefore);
   });
 
   it("migrates legacy base converter ids into a reported geometry snapshot", () => {
@@ -130,6 +171,7 @@ describe("param-io", () => {
     expect(preparation.candidate.report.adjustments).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
+          category: "migration",
           path: "geometrySnapshot",
           label: "转换几何快照",
         }),

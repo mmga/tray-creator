@@ -213,6 +213,18 @@ export function normalizeParamsForMode(
       recessDepth: "凹槽深度",
       sideBevelWidth: "侧面斜面宽度",
     };
+    const valuesEqual = (left: unknown, right: unknown) => {
+      if (Object.is(left, right)) return true;
+      if (
+        left !== null
+        && right !== null
+        && typeof left === "object"
+        && typeof right === "object"
+      ) {
+        return JSON.stringify(left) === JSON.stringify(right);
+      }
+      return false;
+    };
     for (const key of [
       "sourceStandardId",
       "targetStandardId",
@@ -222,8 +234,8 @@ export function normalizeParamsForMode(
       "recessDepth",
       "sideBevelWidth",
     ] as const) {
-      if (normalized[key] !== raw[key]) {
-        recordValueAdjustment(recorder, {
+      if (!valuesEqual(normalized[key], raw[key])) {
+        const adjustment = {
           path: key,
           label: labels[key],
           previousValue: raw[key],
@@ -231,7 +243,12 @@ export function normalizeParamsForMode(
           reason: key === "geometrySnapshot"
             ? "已从历史标准 ID 补齐可复现的转换几何快照"
             : "已补齐或修复当前转换底盘参数",
-        });
+        };
+        if (key === "geometrySnapshot") {
+          recordMigration(recorder, adjustment);
+        } else {
+          recordValueAdjustment(recorder, adjustment);
+        }
       }
     }
     return normalized;

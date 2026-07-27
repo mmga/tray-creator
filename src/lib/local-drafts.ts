@@ -183,6 +183,11 @@ function getDraftInternal<M extends DraftMode>(
           { version: 1, mode: recordMode, params: rawParams },
           mode,
         )
+      : mode === "base-converter"
+        ? readDraftParamArtifact(
+            { version: 1, mode, params: rawParams },
+            mode,
+          )
       : mode === "stepped" &&
           !("enableSplitAssembly" in (rawParams as object))
         ? { ...rawParams, enableSplitAssembly: false }
