@@ -6,6 +6,7 @@ import type { BaseConverterParams } from "@/types/custom-tray";
 import {
   BASE_CONVERTER_DEFAULTS,
   normalizeBaseConverterParams,
+  validateBaseConverterParams,
 } from "@/lib/base-converter-config";
 import {
   exportBaseConverterModelFiles,
@@ -22,10 +23,23 @@ import {
 
 interface UseBaseConverterReturn {
   params: BaseConverterParams;
+  viewParams: BaseConverterParams;
   updateParam: <K extends keyof BaseConverterParams>(
     key: K,
     value: BaseConverterParams[K],
   ) => void;
+  updateParams: (
+    mutate: (params: BaseConverterParams) => BaseConverterParams,
+  ) => void;
+  beginContinuousEdit: () => boolean;
+  previewParam: <K extends keyof BaseConverterParams>(
+    key: K,
+    value: BaseConverterParams[K],
+  ) => void;
+  commitContinuousEdit: () => void;
+  cancelContinuousEdit: () => void;
+  undo: () => void;
+  canUndo: boolean;
   replaceParams: (params: BaseConverterParams) => void;
   resetParams: () => void;
   threeGeometry: THREE.BufferGeometry | null;
@@ -47,6 +61,8 @@ export function useBaseConverter(): UseBaseConverterReturn {
       captureModeParamSnapshot("base-converter", params),
     fingerprintSnapshot: createModelGeometryFingerprint,
     normalize: normalizeBaseConverterParams,
+    validateSnapshot: (snapshot) =>
+      validateBaseConverterParams(snapshot.params),
     guard: () => trayWorkerService !== null,
     generatePreview: async (snapshot) =>
       generateBaseConverterPreview(snapshot.params, trayWorkerService!),
@@ -63,21 +79,59 @@ export function useBaseConverter(): UseBaseConverterReturn {
     <K extends keyof BaseConverterParams>(
       key: K,
       value: BaseConverterParams[K],
-    ) => model.setParams((previous) => ({ ...previous, [key]: value })),
+    ) => {
+      model.applyChange((previous) => ({ ...previous, [key]: value }));
+    },
     [model],
   );
+  const updateParams = useCallback(
+    (mutate: (params: BaseConverterParams) => BaseConverterParams) => {
+      model.applyChange(mutate);
+    },
+    [model],
+  );
+  const beginContinuousEdit = useCallback(
+    () => model.beginContinuousEdit().status === "previewing",
+    [model],
+  );
+  const previewParam = useCallback(
+    <K extends keyof BaseConverterParams>(
+      key: K,
+      value: BaseConverterParams[K],
+    ) => {
+      model.previewContinuousEdit((previous) => ({
+        ...previous,
+        [key]: value,
+      }));
+    },
+    [model],
+  );
+  const commitContinuousEdit = useCallback(() => {
+    model.commitContinuousEdit();
+  }, [model]);
+  const cancelContinuousEdit = useCallback(() => {
+    model.cancelContinuousEdit();
+  }, [model]);
   const replaceParams = useCallback(
-    (params: BaseConverterParams) => model.setParams(params),
+    (params: BaseConverterParams) => model.replaceParams(params),
     [model],
   );
   const resetParams = useCallback(
-    () => model.setParams(BASE_CONVERTER_DEFAULTS),
+    () => model.replaceParams(BASE_CONVERTER_DEFAULTS),
     [model],
   );
 
   return {
     params: model.params,
+    viewParams: model.viewParams,
     updateParam,
+    updateParams,
+    beginContinuousEdit,
+    previewParam,
+    commitContinuousEdit,
+    cancelContinuousEdit,
+    undo: model.undo,
+    canUndo: model.canUndo,
     replaceParams,
     resetParams,
     threeGeometry: model.threeGeometry,

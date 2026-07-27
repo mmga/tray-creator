@@ -141,24 +141,72 @@ The nominal size of the miniature base the slot is intended to hold.
 _Avoid_: Using base size to mean the final generated slot size.
 
 **Conversion Base**:
-A printable adapter with a round or oval outer footprint and a centered shallow recess that locates an existing square or rectangular miniature base.
-_Avoid_: Tray slot, through-hole adapter, four independent clips.
+A printable adapter whose shallow recess locates an existing miniature base while its outer footprint conforms to a different Target Base Specification.
+_Avoid_: Tray slot, through-hole adapter, round-or-oval source, square-or-rectangular target, reversible conversion workflow.
 
-**Source Base Standard**:
-One supported nominal square or rectangular miniature-base size selected as the object held by a Conversion Base.
-_Avoid_: Binding a source size permanently to one target footprint.
+**Base Standard**:
+An immutable catalogued miniature-base identity with a marketed shape and nominal dimensions plus any confirmed Conversion Source Fit Geometry.
+_Avoid_: User measurement, editable preset, using one standard ID for different geometry.
 
-**Target Base Standard**:
-One supported nominal round or oval footprint selected as the resulting footprint of a Conversion Base.
-_Avoid_: Treating the target footprint as a recess size or as part of a fixed source-target pair.
+**Custom Base Specification**:
+A user-defined miniature-base shape and dimensions, including separate Conversion Source Fit Geometry when its physical fit differs from its nominal dimensions.
+_Avoid_: Mutating a Base Standard, assigning an official standard identity to measured geometry.
+
+**Personal Base Specification Library**:
+The user's local named catalog of reusable Custom Base Specifications, addressed by stable personal IDs and filtered by source or target role.
+_Avoid_: Official Base Standard catalog, artifact dependency, name-as-identity, automatically trusting imported specifications.
+
+**Source Base Specification**:
+The selected square or rectangular Base Standard or Custom Base Specification held by a Conversion Base.
+_Avoid_: Round or oval source, binding a source specification permanently to one target footprint.
+
+**Target Base Specification**:
+The selected round or oval Base Standard or Custom Base Specification that defines a Conversion Base's resulting outer footprint.
+_Avoid_: Square or rectangular target, treating the target footprint as a recess size or as part of a fixed source-target pair.
+
+**Target Base Footprint Profile**:
+The exact circular or exponent-shaped oval plan profile that defines a Conversion Base's outer footprint for its selected Target Base Specification.
+_Avoid_: Inferring every oval as a mathematical ellipse, reusing slot clearance or Ellipse Outer Offset in the target footprint, duplicating the project's default ellipse exponent.
 
 **Conversion Recess**:
-The centered, axis-aligned, non-through rectangular lowered area of a Conversion Base, bounded where material exists by four arc-shaped retaining sectors.
-_Avoid_: Through hole, fully enclosed rectangular pocket, removable insert.
+The centered, axis-aligned, non-through rectangular recess whose plan profile follows the selected square or rectangular Source Base Specification's Conversion Source Fit Geometry.
+_Avoid_: Through hole, round or oval recess, target-footprint cut, removable insert.
 
 **Conversion Clearance**:
-The fixed per-side spacing added around a Source Base Standard to derive the final Conversion Recess width and depth.
-_Avoid_: Baking print clearance into the nominal source-base sizes or applying it only once across a whole axis.
+The configurable uniform outward offset applied around a Source Base Specification to derive the final Conversion Recess profile.
+_Avoid_: Baking print clearance into nominal or measured source geometry, expanding only the width and depth while leaving corner geometry unchanged, separate X/Y values without validated need.
+
+**Conversion Source Fit Geometry**:
+The physical rectangular profile dimensions used to generate a Conversion Recess for the selected Source Base Specification.
+_Avoid_: Target-footprint geometry, print clearance, dimensions for a round or oval source, borrowing another Mode's corner radius.
+
+**Conversion Source Corner Radius**:
+The optional physical corner radius of a square or rectangular Conversion Source Fit Geometry.
+_Avoid_: Tray outer corner radius, target footprint curvature, print-clearance value.
+
+**Conversion Axis Alignment**:
+The fixed orientation rule that represents a rectangular Conversion Source Fit Geometry and oval target footprint as short-axis × long-axis, then aligns short axis to short axis and long axis to long axis.
+_Avoid_: Raw X/Y entry order, implicit quarter-turn variants, per-conversion rotation without a validated use case.
+
+**Geometric Conversion Compatibility**:
+The generation rule that requires an aligned Conversion Recess to be strictly smaller than its target footprint on both principal axes.
+_Avoid_: Printability guarantee, minimum retaining-width policy, rejecting positive but thin retaining regions.
+
+**Conversion Geometry Validity**:
+The non-degeneracy rule that requires finite Conversion Base dimensions and shape parameters to describe constructible source, target, recess, floor, and outer profiles.
+_Avoid_: Slider range, printability recommendation, Geometric Conversion Compatibility between an otherwise valid source and target.
+
+**Conversion Geometry Snapshot**:
+The copied source fit geometry and target footprint profile captured when a Conversion Base selects its Source and Target Base Specifications, making that conversion reproducible without re-resolving current catalogs.
+_Avoid_: Standard ID alone, mutable catalog reference, including Conversion Clearance or structural thickness parameters in specification geometry.
+
+**Bonded Conversion Assembly**:
+The permanent assembly in which a Conversion Recess locates the existing source base and user-applied adhesive retains it on the Conversion Base.
+_Avoid_: Friction-fit guarantee, snap fit, removable adapter, treating Conversion Clearance as a retention force.
+
+**Conversion Edit Transaction**:
+One complete user-visible Conversion Base parameter edit that commits exactly one Undo History step when normalized persisted parameters change.
+_Avoid_: Mode Editing Session replacement, one undo step per slider update, library management, automatic-preview preference.
 
 **Mode**:
 One tray editing workflow such as grid, custom, Conversion Base, or stepped.
@@ -195,6 +243,14 @@ _Avoid_: Requiring callers or tests to parse localized error text, or representi
 **Mode Interaction State**:
 Mode-local transient editor state shared by a **Mode Workspace** and a **Mode Viewport Workspace**, such as selected slot ids, preview focus ids, or the Active Stepped Group.
 _Avoid_: Treating shared editor interaction state as page-owned state or as registry-owned state.
+
+**Mode Editing Session**:
+One Mode's committed normalized parameters together with its Undo History and Draft Binding, preserved across ordinary Mode switches and replaced only by reset, an accepted Import Candidate, or Draft loading.
+_Avoid_: Including Mode Interaction State or an in-progress continuous edit in the preserved session.
+
+**Mode Editor**:
+The application-level lifecycle owner that keeps one active Mode and routes Mode switches or workspace replacements through the paired Mode Editor Adapter.
+_Avoid_: Letting the page independently select a Workspace, reset a Viewport, submit target parameters, or change the active Mode.
 
 **Stepped Tray**:
 A tray whose manually placed Slot Instances are assigned to height groups that form one user-visible stepped modeling workflow.
@@ -345,16 +401,12 @@ The mode-local action section where draft save/open controls live alongside impo
 _Avoid_: Hiding draft entry points in mode-specific one-off locations unless the interaction is materially different.
 
 **Mode Workspace**:
-The mode-local orchestration layer for the active editor workflow, including parameter panel wiring, draft binding, draft actions, and reset/import side effects.
+The mode-local orchestration layer for parameter-panel wiring, Draft Binding, Draft actions, and the workspace half of Mode Editing Session replacement.
 _Avoid_: Treating the page component as the owner of every mode-specific draft and parameter-panel rule.
 
 **Mode Workspace Adapter**:
 A mode-specific adapter that implements the shared **Mode Workspace** interface for one Mode.
 _Avoid_: Putting all mode-specific workspace orchestration into one central switch.
-
-**Mode Workspace Registry**:
-The registry seam that selects the active **Mode Workspace Adapter** for the current Mode.
-_Avoid_: Making the registry own mode-specific workflow rules instead of just selecting an adapter.
 
 **Mode Viewport Workspace**:
 The mode-local orchestration layer for the active viewport workflow, including 2D/3D view selection, canvas wiring, preview wiring, and viewport-only transient state.
@@ -364,9 +416,13 @@ _Avoid_: Treating the page component as the owner of every mode-specific viewpor
 A mode-specific adapter that implements the shared **Mode Viewport Workspace** interface for one Mode.
 _Avoid_: Putting all mode-specific viewport orchestration into one central switch.
 
-**Mode Viewport Workspace Registry**:
-The registry seam that selects the active **Mode Viewport Workspace Adapter** for the current Mode.
-_Avoid_: Making the registry own mode-specific viewport rules instead of just selecting an adapter.
+**Mode Editor Adapter**:
+A mode-specific adapter that pairs one Mode Workspace Adapter, one Mode Viewport Workspace Adapter, and their shared Mode Editing Session lifecycle without merging their responsibilities.
+_Avoid_: Exposing the ordering of source exit, target replacement, transient-state reset, and Mode activation to the page.
+
+**Mode Editor Catalog**:
+The statically assembled catalog that provides exactly one Mode Editor Adapter for every current Mode.
+_Avoid_: Separate Workspace and Viewport registries, dynamic Hook registration, or capability Interfaces backed by only one adapter.
 
 **Layout Editor Viewport**:
 The canonical 2D editing view consumed by the layout canvas, including tray frame, canvas-ready slot instances, overlays, interaction capabilities, and edit commands.
@@ -413,7 +469,7 @@ The footprint area, enclosed whitespace, and estimated material volume contribut
 _Avoid_: Evaluating a stepped arrangement only from the bounding box of all Slot Instances.
 
 **Side Bevel**:
-The continuous side-wall slope from the tray's bottom edge footprint to its top edge footprint. Its width is the horizontal inset from the lower edge to the upper edge.
+The continuous side-wall slope from a tray or Conversion Base's bottom edge footprint to its top edge footprint. Its width is the horizontal inset from the lower edge to the upper edge.
 _Avoid_: Treating it as a corner radius, slot clearance, stepped split groove, or a decorative 2D-only annotation.
 
 **Effective Baseplate Area**:
@@ -434,16 +490,89 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - A circular **Slot Definition** records its **Final Slot Size** directly.
 - An ellipse **Slot Definition** includes base width, base height, **Ellipse Outer Offset**, and **Ellipse Profile Exponent**.
 - The `base-converter` **Mode** owns one editable **Conversion Base** at a time.
-- A Conversion Base independently selects exactly one **Source Base Standard** and exactly one **Target Base Standard**.
-- The first **Source Base Standard** set contains `20×20`, `25×25`, `40×40`, `25×50`, `50×75`, and `50×100` millimetres.
-- The first **Target Base Standard** set contains `Ø25`, `Ø32`, `Ø50`, `35×60`, `42×75`, and `70×105` millimetres.
-- Source and target standards are not stored as seven fixed pairs; a geometrically compatible source-target combination forms a Conversion Base.
-- A source-target combination is compatible only when the final Conversion Recess remains smaller than the target footprint on both principal axes, preserving retaining material in all four cardinal directions.
+- One Conversion Base Mode parameter snapshot and model export represents exactly one Conversion Base.
+- Conversion Base Mode exposes no quantity, array, automatic print-bed arrangement, or mixed-specification batch model; duplication and print-bed layout belong to slicing software.
+- The Personal Base Specification Library supports specification reuse without producing batch geometry.
+- Conversion Base Mode supports only square-or-rectangle-to-round-or-oval conversion and exposes no direction switch or reverse conversion.
+- A Conversion Base independently selects exactly one **Source Base Specification** and exactly one **Target Base Specification**.
+- A **Source Base Specification** or **Target Base Specification** may select an immutable **Base Standard** preset or define an explicit **Custom Base Specification**; custom geometry never mutates a Base Standard.
+- A Custom Base Specification may be named and saved to the local **Personal Base Specification Library** for reuse.
+- Personal Base Specification Library entries have stable personal IDs, may share display names, and are filtered to compatible source or target roles.
+- Selecting a personal library entry captures a new **Conversion Geometry Snapshot**; later editing, renaming, or deleting the library entry does not change an existing Conversion Base or Draft.
+- Persisted Param Artifacts carry the selected custom geometry snapshot and never require the recipient to have a matching Personal Base Specification Library.
+- Importing a Custom Base Specification keeps it embedded in the Import Candidate and does not automatically add it to the Personal Base Specification Library; the user may explicitly save it afterward.
+- The Personal Base Specification Library provides no bulk import, export, backup, restore, or cloud synchronization capability.
+- Clearing local application data or moving to another device may remove the Personal Base Specification Library; individual Persisted Param Artifacts still retain their own Conversion Geometry Snapshots but cannot reconstruct the whole library automatically.
+- A Conversion Base stores a **Conversion Geometry Snapshot** for its selected source and target; a selected Base Standard additionally retains its stable standard ID as identity.
+- A Custom Base Specification contributes its complete geometry directly to the Conversion Geometry Snapshot.
+- A square or rectangular Conversion Source Fit Geometry includes its **Conversion Source Corner Radius** in the Conversion Geometry Snapshot.
+- Official source Base Standards default their Conversion Source Corner Radius to `0mm` unless reliable physical measurements establish another value.
+- A custom source Base Specification exposes Conversion Source Corner Radius with a `0mm` default.
+- 2D preview, 3D generation, Draft summaries, model export, and Persisted Param Artifacts consume the Conversion Geometry Snapshot rather than re-resolving geometry from current standard catalogs.
+- Editing, removing, or correcting a catalog entry does not change an existing Conversion Geometry Snapshot.
+- Explicitly reselecting a Base Standard refreshes the corresponding geometry in the Conversion Geometry Snapshot from the current catalog entry.
+- Legacy parameters that contain standard IDs without a Conversion Geometry Snapshot resolve those IDs once during Legacy Param Migration; an external import records the added snapshot in its Import Normalization Report.
+- The first source **Base Standard** preset set contains `20×20`, `25×25`, `40×40`, `25×50`, `50×75`, and `50×100` millimetres.
+- The first target **Base Standard** preset set contains `Ø25`, `Ø28.5`, `Ø32`, `Ø40`, `Ø50`, `35×60`, `42×75`, and `70×105` millimetres.
+- A circular target Base Standard has a circular **Target Base Footprint Profile**.
+- The `35×60`, `42×75`, and `70×105` oval target Base Standards use the shared Base Standard profile exponents `2.05`, `2.08`, and `2.6` respectively.
+- An oval Target Base Footprint Profile reuses only its Base Standard's profile exponent; it does not inherit a Slot Definition's Ellipse Outer Offset, slot tolerance, or Conversion Clearance.
+- A Conversion Base's Target Base Footprint Profile defines its maximum bottom contact footprint.
+- A Custom Base Specification used as a source records its square or rectangular nominal identity separately from its Conversion Source Fit Geometry; a Custom Base Specification used as a target defines a round or oval outer footprint.
+- A custom oval Target Base Footprint Profile exposes a configurable profile exponent as its user-facing profile fullness.
+- A newly created custom oval target initializes its profile exponent from the project's shared default ellipse exponent configuration rather than defining a Conversion Base-specific default.
+- Once selected, a custom oval target's profile exponent is part of that Custom Base Specification's geometry and is consumed consistently by 2D preview, 3D generation, Drafts, and Persisted Param Artifacts.
+- Circular targets expose no profile-fullness parameter, and official oval Base Standards keep their fixed profile exponents.
+- Source and target specifications are not stored as fixed pairs; a geometrically compatible source-target combination forms a Conversion Base.
+- **Conversion Axis Alignment** automatically aligns each rectangular source and oval target by short axis and long axis; the mode exposes no manual quarter-turn option.
+- Rectangular source and oval target Custom Base Specification inputs use short-axis and long-axis dimensions rather than X/Y dimensions.
+- A source-target combination has **Geometric Conversion Compatibility** only when the aligned final Conversion Recess is strictly smaller than the target footprint on both principal axes, leaving positive retaining material in all four cardinal directions.
+- Geometric Conversion Compatibility imposes no minimum retaining width; a positive but thin retaining region remains generatable and exportable, and the user decides whether it is suitable to print.
+- Conversion Base Mode does not calculate or display a thin-retaining advisory threshold, remaining-material warning, or persisted risk acceptance; the user judges print suitability from the geometry and dimensions.
+- An equal recess and target dimension on either principal axis is incompatible because it leaves zero retaining material on that axis.
+- Changing a Source Base Specification, Target Base Specification, or Conversion Clearance preserves the user's independently selected source and target even when the resulting combination loses Geometric Conversion Compatibility.
+- Conversion Base Mode never silently substitutes a different target to repair an incompatible but otherwise recognized source-target selection.
+- An incompatible conversion keeps parameter editing, 2D geometry inspection, and Draft persistence available while blocking 3D model generation and STL export until the user explicitly repairs it.
+- Param normalization and Legacy Param Migration may repair missing, unknown, or malformed specification identities, but preserve a recognized geometrically incompatible combination without automatic target substitution.
+- **Conversion Geometry Validity** requires every numeric geometry value to be finite, every source and target principal dimension to be positive, floor thickness and recess depth to be positive, and Conversion Clearance and Side Bevel to be non-negative.
+- Conversion Source Corner Radius is valid from `0` through half of its source fit geometry's short axis.
+- A custom oval Target Base Footprint Profile requires a positive finite profile exponent.
+- A positive Side Bevel remains valid only while its upper outer profile is non-empty.
+- Conversion Base slider limits are common input ranges rather than Conversion Geometry Validity limits; direct numeric input may exceed them.
+- Param normalization does not clamp a finite value merely because it lies outside a common slider range.
+- A Conversion Base with invalid geometry keeps parameter editing and Draft persistence available while blocking 3D model generation and STL export until repaired.
+- Conversion Base Mode enables automatic 3D preview by default while keeping a user-controlled manual-preview option.
+- A valid, geometrically compatible committed parameter change requests an automatic 3D preview after approximately `300ms` without further changes.
+- Invalid or geometrically incompatible conversion parameters do not submit automatic 3D preview work.
+- A newer Conversion Base preview request supersedes older requests, and an older result cannot replace the latest preview state.
+- The Conversion Base automatic-preview preference is editor UI state rather than a Conversion Base parameter; ordinary Mode switches, reset, and Draft loading do not force it back to the default, and Persisted Param Artifacts do not contain it.
+- Selecting a specification, confirming a numeric field, or changing one structural option is one **Conversion Edit Transaction** and creates one Undo History step when committed parameters change.
+- A continuous Conversion Base slider gesture uses working parameters for live 2D feedback and commits at most one Conversion Edit Transaction when the gesture ends.
+- A committed invalid or geometrically incompatible state is still a Conversion Edit Transaction and remains undoable.
+- Ordinary Mode switches preserve Conversion Base Undo History; reset, accepted import, and Draft loading replace the Mode Editing Session and clear it.
+- Conversion Base automatic-preview preference and Personal Base Specification Library management are not Conversion Edit Transactions and do not enter the current Conversion Base's Undo History.
 - Equal outer width and depth produce a round **Conversion Base**; unequal dimensions produce an oval Conversion Base.
+- A **Conversion Recess** is rectangular because Conversion Base Mode accepts only square or rectangular Source Base Specifications.
+- A Conversion Recess derives its rounded-rectangle profile from the selected source's Conversion Source Corner Radius, and 2D preview, 3D generation, and compatibility checks consume the same derived profile.
 - A **Conversion Recess** preserves a floor and never cuts through the **Conversion Base**.
-- A **Conversion Recess** may meet the outer footprint at its corners, leaving four separate arc-shaped retaining sectors as shown in the reference drawing instead of forcing a continuous rectangular wall.
-- **Conversion Clearance** is `0.2mm` per side in the first release.
-- Final **Conversion Recess** width and depth equal the selected Source Base Standard dimensions plus `0.4mm` per axis.
+- A rectangular **Conversion Recess** inside a round or oval target footprint may meet the outer footprint at its corners, leaving four separate arc-shaped retaining sectors as shown in the reference drawing instead of forcing a continuous rectangular wall.
+- A Conversion Base forms a **Bonded Conversion Assembly** with its source base: the recess provides lateral location and adhesive provides retention.
+- Conversion Base Mode does not promise friction retention and adds no default clips, undercuts, snap features, or extraction notches.
+- A Bonded Conversion Assembly currently keeps one continuous flat Conversion Recess floor and adds no adhesive pocket, glue channel, reservoir, or drainage path.
+- A future removable conversion adapter is a separate assembly capability and must not be approximated by silently reducing Conversion Clearance.
+- One Conversion Base selects one uniform **Conversion Clearance** shared by both axes and all sides.
+- **Conversion Clearance** is an assembly gap rather than a retention force; it defaults to `0.2mm` per side and remains independently configurable without changing its Base Standard or Custom Base Specification.
+- Final **Conversion Recess** width and depth equal the selected **Conversion Source Fit Geometry** dimensions plus twice the selected Conversion Clearance on each axis.
+- Final Conversion Recess corner radius equals the selected **Conversion Source Corner Radius** plus Conversion Clearance, producing a uniform outward offset around both straight edges and corners.
+- 2D preview, 3D generation, and Geometric Conversion Compatibility consume the same outward-offset Conversion Recess profile.
+- Changing Conversion Clearance re-evaluates source-target geometric compatibility.
+- Conversion Base reuses the shared **Side Bevel** parameter semantics and defaults its bevel width to `0mm`, preserving vertical outer walls.
+- A positive Conversion Base Side Bevel keeps the Target Base Footprint Profile as the lower edge and offsets the upper outer profile inward by the configured bevel width.
+- Conversion Base Side Bevel is a structural parameter and is excluded from Base Standards, Custom Base Specifications, and the Conversion Geometry Snapshot.
+- Conversion Base 2D preview displays both the lower Target Base Footprint Profile and the inset upper profile when Side Bevel is positive.
+- Side Bevel blocks generation only when the upper outer profile degenerates to an empty shape; it creates no thin-wall advisory.
+- Source Base Specifications and Conversion Geometry Snapshots do not record source-base thickness.
+- Conversion Recess depth remains an independent user-selected structural parameter; Conversion Base Mode provides no automatic flush-depth action or source protrusion/recession calculation.
 - A Conversion Base's total height equals its floor thickness plus its Conversion Recess depth.
 - **Custom Stepped Tray** exposes all seven ellipse **Slot Definitions** already used by custom mode in addition to its circular definitions.
 - A Custom Stepped Tray ellipse **Slot Instance** is created from the shared definition and snapshots its width, height, **Ellipse Outer Offset**, **Ellipse Profile Exponent**, and **Slot Definition ID** without maintaining a separate preset copy.
@@ -574,12 +703,31 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - A **Draft Manager Dialog** may show drafts for the current **Mode** only.
 - A **Draft Manager Dialog** labels historical `stepped-cad` Draft Summaries as **Custom Stepped Tray** Drafts after canonicalization.
 - A **Draft Action Area** should remain broadly consistent across modes.
-- A **Mode Workspace** may own a **Mode**'s **Draft Binding**, **Draft Action Area** inputs, parameter panel inputs, and reset/import side effects.
+- A **Mode Workspace** may own a **Mode**'s **Draft Binding**, **Draft Action Area** inputs, parameter panel inputs, and the workspace half of Mode Editing Session replacement.
 - A **Mode Workspace** should not own viewport-specific 2D/3D editing details unless those details become shared across modes.
 - A **Mode Workspace Adapter** implements the shared **Mode Workspace** interface for one **Mode**.
-- A **Mode Workspace Registry** selects the active **Mode Workspace Adapter** for the current **Mode**.
 - **Mode Interaction State** belongs to one active **Mode** editing workflow, not to the page shell or a registry.
 - A **Mode Workspace** and **Mode Viewport Workspace** may share **Mode Interaction State** when left-panel controls and viewport interactions both read or write the same transient editor state.
+- A **Mode Editor Adapter** pairs the Mode Workspace Adapter and Mode Viewport Workspace Adapter for exactly one Mode while keeping their Interfaces separate.
+- A **Mode Editor Catalog** contains exactly one Mode Editor Adapter for every current Mode and is assembled through unconditional, statically ordered Hooks.
+- The **Mode Editor** owns the active Mode and exposes Mode lifecycle intents rather than a raw Mode setter.
+- An ordinary Mode switch asks the source Mode Editor Adapter to cancel its in-progress edit and clear its Mode Interaction State before activation changes, while preserving its Mode Editing Session.
+- Custom and stepped continuous slot transforms use the same Mode Editing Session Interface: begin creates working parameters, preview updates only those working parameters, commit creates one normalized persisted edit and one Undo History entry, and cancel discards the working parameters.
+- Custom continuous edits do not mutate committed parameters through legacy live-history updates.
+- Each Mode Viewport Workspace keeps its own 2D/3D view selection across ordinary Mode switches, while Mode Editing Session replacement resets the target Mode Viewport Workspace to its 2D view.
+- Reset, accepted import, and Draft loading replace the target Mode Editing Session as one operation that cancels working parameters, replaces committed normalized parameters, clears Undo History, invalidates derived previews, resets Mode Interaction State, and updates Draft Binding according to the replacement source.
+- A cross-Mode workspace replacement exits the source Mode, replaces the target Mode Editing Session, and activates the target Mode in that order.
+- File reading, historical migration, parameter normalization, and replacement-risk confirmation complete before Mode Editing Session replacement begins.
+- An Import Candidate keeps its target Mode paired with the corresponding Mode Param Snapshot so callers cannot independently select Mode and parameters.
+- An external import always requires its Import Normalization Report confirmation, while reset or Draft loading requires replacement confirmation only when it would overwrite Unsaved Draft Changes.
+- Cancelling replacement confirmation leaves the active Mode, every Mode Editing Session, Mode Interaction State, and Draft Binding unchanged.
+- The Mode Editor rechecks the target Mode's replacement risk before commit and refreshes the confirmation state when that risk has changed.
+- Each Mode Editing Session has a transient epoch captured by its whole-model preview, outline preview, split preview, and Layout Arrangement Proposal requests.
+- Mode Editing Session replacement advances its epoch without waiting for Worker cancellation; a result from an older epoch cannot update geometry, volume, loading state, diagnostics, or notifications and must dispose any returned render geometry.
+- Within one Mode Editing Session, only the latest request for one derived result may update that result's state.
+- An ordinary Mode switch preserves the source Mode Editing Session epoch and allows work for its committed parameters to finish while the Mode is inactive.
+- An in-progress model export continues from its captured Mode Param Snapshot across Mode switches or Mode Editing Session replacement.
+- A Stepped Editing Session is the `stepped` Mode's Mode Editing Session.
 - A **Stepped Layout Core** owns behavior shared by whole-model and split-enabled editing while excluding split-assembly-specific lifecycle.
 - **Stepped Split Orchestration** composes the **Stepped Layout Core** rather than being owned by it.
 - **Stepped Split Orchestration** owns split-preview generation, invalidation, disposal, and split-part export within `stepped`.
@@ -632,18 +780,42 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - Custom and stepped Contoured Footprints share smoothing and disconnection semantics and may deliberately produce more than one printable body.
 - Given the same Slot Instances and contour parameters, custom and stepped workflows receive identical 2D bodies from **Contoured Footprint Construction**.
 - 2D preview, 3D construction, dimensions, Contour Body Count, and base-hole edge validation consume the same Contoured Footprint Construction result.
+- In the main execution context, each Mode's layout-state Module is the sole caller of its Contoured Footprint Construction Adapter and explicitly supplies the committed authoritative result and optional working result to consumers.
+- The 2D viewport, effective dimensions, Contour Body Count, base-hole edge validation, and Tray Result Projection accept a construction result as input and do not reconstruct it from complete Mode parameters.
+- Custom and stepped Contoured Footprint Construction Adapters only project Mode parameters into core construction requests; they do not own result caching or lifecycle.
+- A Worker job assembly Module is the sole construction caller for that job and explicitly supplies the request-scoped result to its internal stages.
+- Contoured Footprint Construction results are not exposed through a hidden singleton, module-level memoization, or global lookup.
+- Within one execution context, one input parameter snapshot has exactly one authoritative **Contoured Footprint Construction** result.
+- The committed Contoured Footprint Construction result is transient derived state whose lifetime is scoped to one **Mode Editing Session** and one execution context; it is never persisted in a **Draft** or **Persisted Param Artifact**.
+- An ordinary **Mode** switch preserves that committed result, while a committed change to an input of Contoured Footprint Construction replaces it and replacement, reset, or destruction of the Mode Editing Session discards it.
+- Contoured Footprint Construction results are not retained in a process-wide fingerprint cache.
+- While **Rectangular Footprint** is active, Contoured Footprint Construction is not executed or consumed; an existing result remains dormant within its Mode Editing Session.
+- Changes limited to rectangular-only parameters do not invalidate that dormant result, while changes to **Slot Instances**, shared layout inputs, or contour parameters do.
+- Returning to Contoured Footprint reuses a still-valid dormant result or constructs exactly one replacement when its relevant inputs changed.
+- A Contoured Footprint Construction result derived from an in-progress continuous edit's working parameters is transient, drives only live 2D Contoured Footprint rendering, and is discarded when the edit is cancelled.
+- The main execution context constructs committed Contoured Footprint results synchronously when relevant committed inputs change.
+- While a visible 2D Contoured Footprint is being continuously edited, each rendered working-parameter snapshot produces at most one synchronous working result; hidden 2D or Rectangular Footprint views do not construct a working result.
+- Working-result construction is not debounced, and migration of main-context construction to a Worker belongs to a separate asynchronous derived-result lifecycle change only if profiling after deduplication still exceeds the interaction frame budget.
+- Dimensions, Contour Body Count, base-hole edge validation, Tray Result Projection, model generation, and export consume the result derived from committed normalized parameters rather than from working parameters.
+- Committing a continuous edit replaces the committed Contoured Footprint Construction result with the result derived from the newly committed normalized parameters.
+- A structured Contoured Footprint Construction failure is the authoritative result for its input parameter snapshot; consumers reuse it instead of independently reconstructing, throwing, or applying their own fallback.
+- An unchanged parameter snapshot does not retry an authoritative construction failure; committing repaired layout or contour parameters replaces it with a newly constructed result.
+- Persistent construction errors, preview blocking, model-generation blocking, and export blocking derive from that shared failure result.
 - **Contoured Footprint Construction** expresses its authoritative bodies in tray editing coordinates; 3D construction performs model-centering only when it consumes those bodies.
 - A recoverable smoothing failure may use an unsmoothed body only when the result records a construction diagnostic.
 - A smoothing fallback diagnostic remains visible as a non-blocking warning in the 2D preview and result summary without producing repeated transient notifications during live editing.
 - A non-empty slot cluster that cannot produce an authoritative body blocks preview, generation, and export instead of producing a partial tray.
+- A non-empty slot cluster that cannot produce an authoritative body keeps Slot Instance editing and Draft persistence available, displays a persistent construction error, and blocks only the Contoured Footprint preview, model generation, and export until the layout or contour parameters are repaired.
 - Separate execution contexts may recompute **Contoured Footprint Construction**, but equivalent inputs must produce semantically equivalent bodies, bounds, Contour Body Count, and diagnostics.
+- The main execution context does not transfer authoritative Geom2 bodies to a Worker; live 2D rendering consumes the result scoped to the current Mode Editing Session.
+- Each Worker model-generation or export job constructs one request-scoped authoritative result and shares it across that job's 3D construction, dimensions, Contour Body Count, diagnostics, and export stages.
+- A Worker releases the request-scoped result when its job ends and does not retain a cross-job Contoured Footprint Construction cache.
 - Custom trays initially use a 60mm smoothing radius and 0mm disconnection distance; those values remain stored while Rectangular Footprint is active.
 - A multi-body **Contour Body Count** does not block model generation or export, but must be visible in preview and result summary.
 - Base-hole fit validation evaluates each disconnected contoured body against its own exterior edges.
 - A **Mode Viewport Workspace** may own a **Mode**'s viewport wiring, preview-view switching, and viewport-only transient state.
 - A **Mode Viewport Workspace** should not own left-panel parameter editing or **Draft Binding** rules.
 - A **Mode Viewport Workspace Adapter** implements the shared **Mode Viewport Workspace** interface for one **Mode**.
-- A **Mode Viewport Workspace Registry** selects the active **Mode Viewport Workspace Adapter** for the current **Mode**.
 - A **Layout Editor Viewport** is the shape consumed by the layout canvas for 2D editing.
 - A **Layout Editor Viewport Adapter** projects a **Mode**'s local layout state into a **Layout Editor Viewport**.
 - A layout canvas should consume a **Layout Editor Viewport** instead of inferring **Mode** behavior from raw parameters.
@@ -770,6 +942,57 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 > **Dev:** "Does the 100mm option generate a 100mm hole?"
 > **Domain expert:** "No. It fits a 100mm base and generates a 100.4mm final slot after tolerance."
 >
+> **Dev:** "Can I change the 25×25mm Base Standard to 24.7×24.8mm after measuring my printed base?"
+> **Domain expert:** "No. Keep the Base Standard immutable and create a Custom Base Specification with the measured Conversion Source Fit Geometry."
+>
+> **Dev:** "Should my measured Custom Base Specification already include the 0.2mm printing gap?"
+> **Domain expert:** "No. Record the measured fit geometry as measured, then configure Conversion Clearance separately for this Conversion Base."
+>
+> **Dev:** "How does a 25×50mm rectangular source align inside a 35×60mm oval target when its stored X/Y order might differ?"
+> **Domain expert:** "Conversion Axis Alignment ignores raw X/Y entry order and aligns the 25mm short axis to 35mm and the 50mm long axis to 60mm."
+>
+> **Dev:** "Does the 35×60mm target use a generic mathematical ellipse?"
+> **Domain expert:** "No. Its Target Base Footprint Profile uses the shared Base Standard profile exponent 2.05 without applying slot offset or Conversion Clearance."
+>
+> **Dev:** "Where does a new custom oval target get its initial profile fullness?"
+> **Domain expert:** "It starts from the project's shared default ellipse exponent, then stores the selected exponent as part of its own Target Base Footprint Profile."
+>
+> **Dev:** "If the 35×60mm catalog profile is corrected later, does an old Draft change shape?"
+> **Domain expert:** "No. The Draft generates from its Conversion Geometry Snapshot; only explicitly reselecting the Base Standard captures the corrected catalog geometry."
+>
+> **Dev:** "Should a custom source reuse the tray's outer corner radius?"
+> **Domain expert:** "No. Its Conversion Source Corner Radius describes the measured source-base profile and is stored independently in the Conversion Geometry Snapshot."
+>
+> **Dev:** "Does adding 0.2mm clearance to a 1mm source corner radius keep the recess radius at 1mm?"
+> **Domain expert:** "No. Uniform outward offset produces a 1.2mm recess corner radius and adds 0.4mm to each overall axis."
+>
+> **Dev:** "Does a Ø32mm target with a Side Bevel stop having a Ø32mm target footprint?"
+> **Domain expert:** "No. Ø32mm remains the maximum bottom contact footprint; Side Bevel only insets the upper outer edge."
+>
+> **Dev:** "Does importing a file automatically add its custom target to my Personal Base Specification Library?"
+> **Domain expert:** "No. The imported conversion keeps its embedded geometry snapshot; add it to the personal library only through an explicit save action."
+>
+> **Dev:** "Can I export my whole Personal Base Specification Library to another device?"
+> **Domain expert:** "No. The library is a local reuse convenience without backup or synchronization; individual parameter artifacts preserve only their own conversion snapshots."
+>
+> **Dev:** "Will reducing Conversion Clearance make the source base reliably snap into place?"
+> **Domain expert:** "No. A Bonded Conversion Assembly uses the recess for location and adhesive for retention; removable retention needs a separate capability."
+>
+> **Dev:** "Should a Conversion Base be blocked when it leaves only 0.05mm of material on each side?"
+> **Domain expert:** "No. Positive material satisfies Geometric Conversion Compatibility; the user decides whether that geometry is suitable to print."
+>
+> **Dev:** "If changing the source makes the current target too small, should the editor pick another target for me?"
+> **Domain expert:** "No. Preserve both selections, show the incompatible 2D geometry, and wait for the user to choose how to repair it."
+>
+> **Dev:** "Should a 6mm recess depth be clamped because the common slider stops at 5mm?"
+> **Domain expert:** "No. Slider ranges are input conveniences; a finite positive depth satisfies Conversion Geometry Validity."
+>
+> **Dev:** "Does loading a Draft turn Conversion Base automatic preview back on after I disabled it?"
+> **Domain expert:** "No. Automatic preview is an editor preference, not part of the Draft or Conversion Base parameters."
+>
+> **Dev:** "Should dragging a clearance slider through twenty values create twenty undo steps?"
+> **Domain expert:** "No. The whole gesture is one Conversion Edit Transaction and commits at most one Undo History step."
+>
 > **Dev:** "Can Custom Stepped Tray generate each group as a full-height solid and union them?"
 > **Domain expert:** "No. Its internal CAD Stepped Construction should generate the sketch for each height band, extrude that band, then apply the holes."
 >
@@ -784,6 +1007,29 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 
 ## Flagged Ambiguities
 
+- "转换底盘" could imply a reversible workflow. Resolved: **Conversion Base** supports only square-or-rectangle-to-round-or-oval conversion and exposes no direction switch.
+- "批量生成转换底盘" could mean either reusing a specification or arranging repeated printable parts. Resolved: the Personal Base Specification Library supports reuse, while Conversion Base Mode generates one part and leaves duplication and print-bed layout to slicing software.
+- **Conversion Recess** could be read as shape-dependent. Resolved: it is always rectangular because this Mode accepts only square or rectangular Source Base Specifications.
+- "自定义规格" could be interpreted as editing an official preset. Resolved: a **Base Standard** is immutable; user-entered or measured geometry is a separately identified **Custom Base Specification**.
+- "保存自定义规格" could mean either preserving one conversion or creating a reusable preset. Resolved: a Conversion Geometry Snapshot preserves the conversion, while the **Personal Base Specification Library** provides explicit reusable personal entries.
+- A local Personal Base Specification Library could imply portable backup or synchronization. Resolved: the library has no bulk import, export, backup, restore, or cloud-sync capability.
+- "自定义尺寸" could include print compensation inside the measured source geometry. Resolved: nominal and measured geometry exclude **Conversion Clearance**, which is configured separately and applied uniformly per side.
+- "源底盘圆角" could mean the tray or target outer radius. Resolved: **Conversion Source Corner Radius** belongs only to the measured square or rectangular source fit geometry.
+- "单边间隙" could mean expanding only width and depth. Resolved: **Conversion Clearance** is a uniform outward profile offset, so it also increases the final recess corner radius.
+- A beveled Conversion Base could make the target standard dimension ambiguous between top and bottom edges. Resolved: the **Target Base Footprint Profile** defines the maximum bottom contact footprint; Side Bevel insets only the upper edge.
+- A measured Source Base Specification could imply that it also records physical thickness. Resolved: source specifications describe planar fit geometry only; recess depth remains an independent Conversion Base parameter.
+- Non-square dimensions could be interpreted as persisted X/Y orientation. Resolved: **Conversion Axis Alignment** canonicalizes them as short-axis × long-axis and aligns corresponding axes automatically.
+- "椭圆目标" could mean any mathematical ellipse with the selected width and depth. Resolved: an official oval **Target Base Footprint Profile** uses its shared Base Standard profile exponent without slot offset or clearance.
+- A custom oval's default profile fullness could drift from the rest of the project. Resolved: new custom oval targets read the project's shared default ellipse exponent, while the selected value is stored with the Custom Base Specification.
+- A Base Standard ID could be treated as sufficient to reproduce an old conversion. Resolved: persisted conversions generate from their **Conversion Geometry Snapshot**; the ID preserves catalog identity but does not replace geometry.
+- "适配" could imply either permanent bonding or removable retention. Resolved: a **Bonded Conversion Assembly** is permanently retained by adhesive, while the Conversion Recess only locates the source base.
+- Permanent bonding could imply that the model must provide a glue reservoir. Resolved: the current Bonded Conversion Assembly keeps a continuous flat recess floor and leaves adhesive application to the user.
+- "自动修复不兼容组合" could mean either repairing malformed data or replacing a valid user selection. Resolved: normalization may repair malformed identities but never substitutes another target solely because the selected pair is geometrically incompatible.
+- "参数范围" could mean either a convenient slider range or a geometry validity boundary. Resolved: Conversion Base sliders expose common ranges, while **Conversion Geometry Validity** enforces only finite, non-degenerate geometry.
+- "自动预览设置" could be interpreted as part of a saved conversion. Resolved: Conversion Base automatic preview is editor UI state and is excluded from Drafts and Persisted Param Artifacts.
+- "修改转换参数" could be treated as a Mode Editing Session replacement. Resolved: ordinary changes are **Conversion Edit Transactions**; only reset, accepted import, and Draft loading replace the session and clear Undo History.
+- "兼容" could imply that the Conversion Base is guaranteed printable or durable. Resolved: **Geometric Conversion Compatibility** only requires positive retaining material on both aligned axes; it does not impose a minimum printable width.
+- A user-owned printability decision could imply that the editor should still warn about thin retaining material. Resolved: Conversion Base Mode provides no thin-wall threshold or advisory; geometry and dimensions remain the user's evidence.
 - "凹槽定义" previously meant either a visible UI option or the generated hole geometry. Resolved: **Slot Definition** means the complete reusable geometry definition, including tolerance.
 - "方底盘" was used for both square and rectangular Old World bases. Resolved: use **Old World Rectangular Slot Definition** for the family, including square dimensions as a special case.
 - "30×60" could mean either grid orientation. Resolved: the first dimension follows X-axis columns and the second follows Y-axis rows.

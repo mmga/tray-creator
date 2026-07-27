@@ -16,7 +16,7 @@ describe("canvas dash styles", () => {
     });
   });
 
-  it("provides separate guide and alert rhythms", () => {
+  it("provides compact guide and alert rhythms", () => {
     expect(getCanvasDashAttributes("guide", 1).strokeDasharray).toBe("1 1");
     expect(getCanvasDashAttributes("alert", 1).strokeDasharray).toBe("1 1");
   });

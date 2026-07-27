@@ -554,7 +554,7 @@ describe("CanvasSlotLayer", { timeout: 15000 }, () => {
       </svg>,
     );
 
-    expect(container).toHaveTextContent("75x43.2");
+    expect(container).toHaveTextContent("75x42");
   });
 
   it("renders selected stepped slots with readable labels and forwards pointer handlers", () => {

@@ -26,6 +26,9 @@ interface ViewportTabsProps {
   isGenerating?: boolean;
   onGenerate: () => void;
   onGenerateSplitPreview?: () => void;
+  minimumCameraDistance?: React.ComponentProps<
+    typeof TrayViewer
+  >["minimumCameraDistance"];
 }
 
 export function ViewportTabs({
@@ -39,6 +42,7 @@ export function ViewportTabs({
   isGenerating,
   onGenerate,
   onGenerateSplitPreview,
+  minimumCameraDistance,
 }: ViewportTabsProps) {
   return (
     <Tabs
@@ -93,6 +97,7 @@ export function ViewportTabs({
             isGeneratingSplitPreview={isGeneratingSplitPreview}
             onRegenerate={onGenerate}
             onGenerateSplitPreview={onGenerateSplitPreview}
+            minimumCameraDistance={minimumCameraDistance}
           />
         ) : null}
       </div>

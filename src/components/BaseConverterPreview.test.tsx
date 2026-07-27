@@ -1,16 +1,24 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { BaseConverterPreview } from "@/components/BaseConverterPreview";
+import {
+  BASE_CONVERTER_DEFAULTS,
+  SOURCE_BASE_STANDARDS,
+  TARGET_BASE_STANDARDS,
+  createConversionGeometrySnapshot,
+} from "@/lib/base-converter-config";
 
 describe("BaseConverterPreview", () => {
   it("renders the selected standard conversion and fixed-clearance recess", () => {
     const { container } = render(
       <BaseConverterPreview params={{
+        ...BASE_CONVERTER_DEFAULTS,
         sourceStandardId: "source-50x100",
         targetStandardId: "target-ellipse-70x105",
-        floorThickness: 1.2,
-        recessDepth: 2,
-        sideBevelWidth: 0,
+        geometrySnapshot: createConversionGeometrySnapshot(
+          SOURCE_BASE_STANDARDS.find((item) => item.id === "source-50x100")!,
+          TARGET_BASE_STANDARDS.find((item) => item.id === "target-ellipse-70x105")!,
+        ),
       }} />,
     );
 
@@ -19,16 +27,38 @@ describe("BaseConverterPreview", () => {
     const recess = container.querySelector("rect[clip-path]");
     expect(recess).toHaveAttribute("width", "50.4");
     expect(recess).toHaveAttribute("height", "100.4");
+    expect(recess).toHaveAttribute("rx", "0.2");
+    expect(container.querySelector("clipPath path")).toHaveAttribute(
+      "d",
+      expect.stringContaining("M 35 0"),
+    );
+  });
+
+  it("shows the inset top outline when side bevel is enabled", () => {
+    const { container } = render(
+      <BaseConverterPreview
+        params={{
+          ...BASE_CONVERTER_DEFAULTS,
+          sideBevelWidth: 2,
+        }}
+      />,
+    );
+
+    expect(container.querySelector('path[stroke-dasharray="1 0.8"]'))
+      .toBeInTheDocument();
   });
 
   it("renders a circular recess for round-to-round conversion", () => {
+    const source = SOURCE_BASE_STANDARDS.find((item) =>
+      item.id === "source-circle-20")!;
+    const target = TARGET_BASE_STANDARDS.find((item) =>
+      item.id === "target-circle-25")!;
     const { container } = render(
       <BaseConverterPreview params={{
-        sourceStandardId: "source-circle-20",
-        targetStandardId: "target-circle-25",
-        floorThickness: 1.2,
-        recessDepth: 2,
-        sideBevelWidth: 1,
+        ...BASE_CONVERTER_DEFAULTS,
+        sourceStandardId: source.id,
+        targetStandardId: target.id,
+        geometrySnapshot: createConversionGeometrySnapshot(source, target),
       }} />,
     );
 
@@ -36,7 +66,5 @@ describe("BaseConverterPreview", () => {
     const recess = container.querySelector("ellipse[clip-path]");
     expect(recess).toHaveAttribute("rx", "10.2");
     expect(recess).toHaveAttribute("ry", "10.2");
-    expect(container.querySelector('ellipse[stroke-dasharray="1.2 0.8"]'))
-      .toHaveAttribute("rx", "11.5");
   });
 });

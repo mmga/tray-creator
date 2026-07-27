@@ -184,6 +184,27 @@ describe("ParamSlider", () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it("can treat slider bounds as a common range while accepting finite typed values outside it", () => {
+    const onChange = vi.fn();
+
+    render(
+      <ParamSlider
+        label="底厚"
+        value={1.2}
+        config={{ min: 0.8, max: 5, step: 0.1 }}
+        onChange={onChange}
+        allowOutOfRangeInput
+      />,
+    );
+
+    const input = screen.getByRole("spinbutton");
+    expect(input).not.toHaveAttribute("min");
+    expect(input).not.toHaveAttribute("max");
+    fireEvent.change(input, { target: { value: "8" } });
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledWith(8);
+  });
+
   it("keeps the slider step but blocks slider arrow keys", () => {
     const onChange = vi.fn();
     const onParentKeyDown = vi.fn();

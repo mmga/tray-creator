@@ -16,6 +16,8 @@ interface ParamSliderProps {
     onContinuousChange?: (v: number) => void;
     onContinuousChangeCommit?: () => void;
     onContinuousChangeCancel?: () => void;
+    /** 允许数字输入超出滑块常用范围，由调用方执行几何有效性校验。 */
+    allowOutOfRangeInput?: boolean;
     unit?: string;
 }
 
@@ -29,6 +31,7 @@ export function ParamSlider({
     onContinuousChange,
     onContinuousChangeCommit,
     onContinuousChangeCancel,
+    allowOutOfRangeInput = false,
     unit = "mm",
 }: ParamSliderProps) {
     // 防御 undefined：确保 input/slider 始终为受控状态
@@ -98,15 +101,24 @@ export function ParamSlider({
         if (
             inputDraft.trim() !== "" &&
             Number.isFinite(nextValue) &&
-            nextValue >= effectiveMin &&
-            nextValue <= effectiveMax
+            (
+                allowOutOfRangeInput
+                || (nextValue >= effectiveMin && nextValue <= effectiveMax)
+            )
         ) {
             handleValueChange(nextValue);
             return;
         }
 
         setInputDraft(String(safeValue));
-    }, [effectiveMax, effectiveMin, handleValueChange, inputDraft, safeValue]);
+    }, [
+        allowOutOfRangeInput,
+        effectiveMax,
+        effectiveMin,
+        handleValueChange,
+        inputDraft,
+        safeValue,
+    ]);
     const handleInputKeyDown = useCallback(
         (event: React.KeyboardEvent<HTMLInputElement>) => {
             if (event.key === "Enter") {
@@ -132,8 +144,8 @@ export function ParamSlider({
                     <Input
                         type="number"
                         value={displayedInputValue}
-                        min={effectiveMin}
-                        max={effectiveMax}
+                        min={allowOutOfRangeInput ? undefined : effectiveMin}
+                        max={allowOutOfRangeInput ? undefined : effectiveMax}
                         step="any"
                         onFocus={() => {
                             setInputDraft(String(safeValue));

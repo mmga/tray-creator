@@ -129,6 +129,10 @@ export function findCircleSlotDefinitionById(id: string | undefined) {
   return CIRCLE_SLOT_DEFINITIONS.find((definition) => definition.id === id);
 }
 
+export function findEllipseSlotDefinitionById(id: string | undefined) {
+  return ELLIPSE_SLOT_DEFINITIONS.find((definition) => definition.id === id);
+}
+
 export function findEllipseSlotDefinitionByGeometry(geometry: {
   width: number;
   height: number;

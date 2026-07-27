@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { measurements } from "@jscad/modeling";
-import { BASE_CONVERTER_DEFAULTS } from "@/lib/base-converter-config";
+import {
+  BASE_CONVERTER_DEFAULTS,
+  SOURCE_BASE_STANDARDS,
+  TARGET_BASE_STANDARDS,
+  createConversionGeometrySnapshot,
+} from "@/lib/base-converter-config";
 import { createBaseConverterModel } from "@/lib/base-converter-model";
 
 describe("base converter model", () => {
@@ -16,11 +21,13 @@ describe("base converter model", () => {
 
   it("creates the reference 50x100 to 70x105 oval conversion", () => {
     const geometry = createBaseConverterModel({
+      ...BASE_CONVERTER_DEFAULTS,
       sourceStandardId: "source-50x100",
       targetStandardId: "target-ellipse-70x105",
-      floorThickness: 1.2,
-      recessDepth: 2,
-      sideBevelWidth: 0,
+      geometrySnapshot: createConversionGeometrySnapshot(
+        SOURCE_BASE_STANDARDS.find((item) => item.id === "source-50x100")!,
+        TARGET_BASE_STANDARDS.find((item) => item.id === "target-ellipse-70x105")!,
+      ),
     });
     const [min, max] = measurements.measureBoundingBox(geometry);
 
@@ -30,33 +37,107 @@ describe("base converter model", () => {
   });
 
   it("creates a circular recess for round-to-round conversion", () => {
+    const target = TARGET_BASE_STANDARDS.find((item) =>
+      item.id === "target-circle-25")!;
+    const roundSource = SOURCE_BASE_STANDARDS.find((item) =>
+      item.id === "source-circle-20")!;
+    const squareSource = SOURCE_BASE_STANDARDS.find((item) =>
+      item.id === "source-20x20")!;
     const roundGeometry = createBaseConverterModel({
       ...BASE_CONVERTER_DEFAULTS,
-      sourceStandardId: "source-circle-20",
+      sourceStandardId: roundSource.id,
+      geometrySnapshot: createConversionGeometrySnapshot(roundSource, target),
     });
     const squareGeometry = createBaseConverterModel({
       ...BASE_CONVERTER_DEFAULTS,
-      sourceStandardId: "source-20x20",
+      sourceStandardId: squareSource.id,
+      geometrySnapshot: createConversionGeometrySnapshot(squareSource, target),
     });
 
     expect(measurements.measureVolume(roundGeometry))
       .toBeGreaterThan(measurements.measureVolume(squareGeometry));
   });
 
-  it("keeps the target bottom footprint and tapers the top edge", () => {
-    const straightGeometry = createBaseConverterModel({
+  it("uses the target fullness exponent instead of a fixed ellipse", () => {
+    const source = SOURCE_BASE_STANDARDS.find((item) => item.id === "source-20x20")!;
+    const target = TARGET_BASE_STANDARDS.find((item) => item.id === "target-ellipse-35x60")!;
+    const ellipseParams = {
       ...BASE_CONVERTER_DEFAULTS,
-      sideBevelWidth: 0,
-    });
-    const beveledGeometry = createBaseConverterModel({
-      ...BASE_CONVERTER_DEFAULTS,
-      sideBevelWidth: 1,
-    });
-    const [min, max] = measurements.measureBoundingBox(beveledGeometry);
+      sourceStandardId: source.id,
+      targetStandardId: target.id,
+      geometrySnapshot: {
+        ...createConversionGeometrySnapshot(source, target),
+        target: {
+          ...createConversionGeometrySnapshot(source, target).target,
+          profileExponent: 2,
+        },
+      },
+    };
+    const fullerParams = {
+      ...ellipseParams,
+      geometrySnapshot: {
+        ...ellipseParams.geometrySnapshot,
+        target: {
+          ...ellipseParams.geometrySnapshot.target,
+          profileExponent: 4,
+        },
+      },
+    };
 
-    expect(max[0] - min[0]).toBeCloseTo(25, 1);
-    expect(max[1] - min[1]).toBeCloseTo(25, 1);
-    expect(measurements.measureVolume(beveledGeometry))
-      .toBeLessThan(measurements.measureVolume(straightGeometry));
+    expect(measurements.measureVolume(createBaseConverterModel(fullerParams)))
+      .toBeGreaterThan(
+        measurements.measureVolume(createBaseConverterModel(ellipseParams)),
+      );
+  });
+
+  it("applies source corner radius and side bevel to the actual solid", () => {
+    const source = SOURCE_BASE_STANDARDS.find((item) => item.id === "source-25x25")!;
+    const target = TARGET_BASE_STANDARDS.find((item) => item.id === "target-circle-40")!;
+    const squareParams = {
+      ...BASE_CONVERTER_DEFAULTS,
+      sourceStandardId: source.id,
+      targetStandardId: target.id,
+      geometrySnapshot: createConversionGeometrySnapshot(source, target),
+    };
+    const roundedParams = {
+      ...squareParams,
+      geometrySnapshot: {
+        ...squareParams.geometrySnapshot,
+        source: {
+          ...squareParams.geometrySnapshot.source,
+          cornerRadius: 5,
+        },
+      },
+    };
+    const beveledParams = {
+      ...roundedParams,
+      sideBevelWidth: 2,
+    };
+    const squareVolume = measurements.measureVolume(
+      createBaseConverterModel(squareParams),
+    );
+    const roundedVolume = measurements.measureVolume(
+      createBaseConverterModel(roundedParams),
+    );
+    const beveledVolume = measurements.measureVolume(
+      createBaseConverterModel(beveledParams),
+    );
+
+    expect(roundedVolume).toBeGreaterThan(squareVolume);
+    expect(beveledVolume).toBeLessThan(roundedVolume);
+  });
+
+  it("rejects incompatible axis dimensions before generating a solid", () => {
+    const source = SOURCE_BASE_STANDARDS.find((item) => item.id === "source-50x100")!;
+    const target = TARGET_BASE_STANDARDS.find((item) => item.id === "target-circle-50")!;
+
+    expect(() =>
+      createBaseConverterModel({
+        ...BASE_CONVERTER_DEFAULTS,
+        sourceStandardId: source.id,
+        targetStandardId: target.id,
+        geometrySnapshot: createConversionGeometrySnapshot(source, target),
+      }),
+    ).toThrow("源底座凹槽不小于目标底座");
   });
 });

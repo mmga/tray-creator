@@ -22,6 +22,8 @@ interface TrayViewerProps {
   splitParts?: TrayViewerSplitPart[] | null;
   isGeneratingSplitPreview?: boolean;
   onGenerateSplitPreview?: () => void;
+  /** 小尺寸模型自动适配时使用的最小观察距离。 */
+  minimumCameraDistance?: number;
 }
 
 // 拆件预览零件配色与阶梯模式分组色共用同一调色板，保持视图颜色一致
@@ -85,8 +87,10 @@ function getSplitPartOffset(
  */
 function CameraAutoFit({
   items,
+  minimumDistance = 0,
 }: {
   items: { geometry: THREE.BufferGeometry; offset?: [number, number, number] }[];
+  minimumDistance?: number;
 }) {
   const { camera, controls } = useThree();
   const hasFittedRef = useRef(false);
@@ -115,7 +119,10 @@ function CameraAutoFit({
     const fov = (camera as THREE.PerspectiveCamera).fov;
     const fovRad = (fov * Math.PI) / 180;
     const center = sphere.center;
-    const distance = (sphere.radius / Math.sin(fovRad / 2)) * 0.8;
+    const distance = Math.max(
+      (sphere.radius / Math.sin(fovRad / 2)) * 0.8,
+      minimumDistance,
+    );
 
     // 从 45° 仰角观察
     const angle = Math.PI / 4;
@@ -133,7 +140,7 @@ function CameraAutoFit({
     }
 
     hasFittedRef.current = true;
-  }, [items, camera, controls]);
+  }, [items, minimumDistance, camera, controls]);
 
   return null;
 }
@@ -176,6 +183,7 @@ export default function TrayViewer({
   splitParts,
   isGeneratingSplitPreview,
   onGenerateSplitPreview,
+  minimumCameraDistance,
 }: TrayViewerProps) {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [viewerMode, setViewerMode] = useState<"solid" | "split">("solid");
@@ -412,12 +420,17 @@ export default function TrayViewer({
             <CameraAutoFit
               key={`split-${splitParts!.map((part) => part.threeGeometry.uuid).join("-")}`}
               items={splitFitItems}
+              minimumDistance={minimumCameraDistance}
             />
           </>
         ) : geometry ? (
           <>
             <TrayMesh geometry={geometry} />
-            <CameraAutoFit key={`solid-${geometry.uuid}`} items={[{ geometry }]} />
+            <CameraAutoFit
+              key={`solid-${geometry.uuid}`}
+              items={[{ geometry }]}
+              minimumDistance={minimumCameraDistance}
+            />
           </>
         ) : null}
 

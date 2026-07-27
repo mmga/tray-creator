@@ -38,7 +38,7 @@ git commit -m "fix: 支持完整输入托盘尺寸"
 - 修改：`src/components/canvas/canvas-components.test.tsx`
 
 1. 增加固定可用区域覆盖层断言，分别验证正常和越界颜色仍为金色、红色。
-2. 将 `data-fixed-usable-area` 的 `strokeWidth` 和 `strokeDasharray` 复用托盘外框的细线参数：`0.5 / zoom` 与 `${3 / zoom} ${3 / zoom}`；保留不可交互与现有颜色条件。
+2. 将 `data-fixed-usable-area` 的 `strokeWidth` 和 `strokeDasharray` 复用托盘外框的细线参数：`0.2 / zoom` 与 `${0.5 / zoom} ${0.5 / zoom}`；保留不可交互与现有颜色条件。
 3. 验证并提交：
 
 ```bash

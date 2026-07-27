@@ -17,8 +17,8 @@ export function useBaseConverterViewportWorkspace({
   const deactivate = useCallback(() => {}, []);
   const resetForSessionReplacement = useCallback(() => setRightView("2d"), []);
   const twoDView = useMemo(
-    () => <BaseConverterPreview params={model.params} />,
-    [model.params],
+    () => <BaseConverterPreview params={model.viewParams} />,
+    [model.viewParams],
   );
   const viewport = useMemo(() => (
     <ViewportTabs
@@ -29,6 +29,7 @@ export function useBaseConverterViewportWorkspace({
       isPreviewStale={model.isPreviewStale}
       isGenerating={model.isGenerating}
       onGenerate={model.handleGenerate}
+      minimumCameraDistance={120}
     />
   ), [model.handleGenerate, model.isGenerating, model.isPreviewStale, model.threeGeometry, rightView, twoDView]);
 

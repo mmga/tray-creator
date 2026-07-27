@@ -216,6 +216,20 @@ describe("TrayViewer", { timeout: 15000 }, () => {
     );
   });
 
+  it("keeps small geometry at a mode-provided minimum camera distance", () => {
+    render(
+      <TrayViewer
+        geometry={createGeometry()}
+        minimumCameraDistance={120}
+      />,
+    );
+
+    const [x, y, z] = useThreeState.camera.position.set.mock.calls[0];
+    expect(x).toBeCloseTo(120 * Math.cos(Math.PI / 4));
+    expect(y).toBeCloseTo(120 * Math.sin(Math.PI / 4));
+    expect(z).toBeCloseTo(120 * Math.cos(Math.PI / 4));
+  });
+
   it("requests and displays split-part preview data", () => {
     const onGenerateSplitPreview = vi.fn();
     const splitGeometry = createGeometry();

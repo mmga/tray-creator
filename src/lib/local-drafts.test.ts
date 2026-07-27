@@ -283,6 +283,85 @@ describe("local drafts", () => {
     expect(listDrafts("base-converter")).toEqual([record.item]);
   });
 
+  it("migrates legacy base converter drafts to reproducible geometry snapshots when read", () => {
+    vi.spyOn(crypto, "randomUUID").mockReturnValue("converter-legacy");
+    const record = createDraft(
+      "旧转换底盘",
+      "base-converter",
+      BASE_CONVERTER_DEFAULTS,
+    );
+    const key = `tray-creator:drafts:base-converter:${record.item.id}:v1`;
+    const stored = JSON.parse(localStorage.getItem(key)!);
+    stored.paramFile.params = {
+      sourceStandardId: "source-25x50",
+      targetStandardId: "target-ellipse-35x60",
+      floorThickness: 1.2,
+      recessDepth: 2,
+    };
+    localStorage.setItem(key, JSON.stringify(stored));
+
+    expect(getDraft("base-converter", record.item.id)?.paramFile.params)
+      .toMatchObject({
+        conversionClearance: 0.2,
+        sideBevelWidth: 0,
+        geometrySnapshot: {
+          source: {
+            standardId: "source-25x50",
+            fitWidth: 25,
+            fitDepth: 50,
+          },
+          target: {
+            standardId: "target-ellipse-35x60",
+            profileExponent: 2.05,
+          },
+        },
+      });
+  });
+
+  it("stores custom conversion snapshots and derives draft summaries from them", () => {
+    vi.spyOn(crypto, "randomUUID").mockReturnValue("converter-custom");
+    const params = {
+      ...BASE_CONVERTER_DEFAULTS,
+      sourceStandardId: "custom-source-draft",
+      targetStandardId: "custom-target-draft",
+      geometrySnapshot: {
+        source: {
+          customId: "custom-source-draft",
+          name: "草稿源规格",
+          shape: "rectangle" as const,
+          nominalWidth: 20,
+          nominalDepth: 40,
+          fitWidth: 19.8,
+          fitDepth: 39.7,
+          cornerRadius: 2,
+        },
+        target: {
+          customId: "custom-target-draft",
+          name: "草稿目标规格",
+          shape: "ellipse" as const,
+          width: 30,
+          depth: 50,
+          profileExponent: 3,
+        },
+      },
+    };
+
+    const record = createDraft(
+      "自定义转换底盘",
+      "base-converter",
+      params,
+    );
+
+    expect(record.paramFile.params).toEqual(params);
+    expect(record.item.summary).toEqual({
+      mode: "base-converter",
+      sourceLabel: "草稿源规格",
+      targetLabel: "草稿目标规格",
+      trayWidth: 30,
+      trayDepth: 50,
+    });
+  });
+
   it("stores and lists drafts independently per mode", () => {
     vi.spyOn(crypto, "randomUUID")
       .mockReturnValueOnce("grid-1")

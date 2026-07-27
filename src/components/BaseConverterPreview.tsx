@@ -3,12 +3,23 @@
 import { useId } from "react";
 import type { BaseConverterParams } from "@/types/custom-tray";
 import { resolveBaseConverterGeometry } from "@/lib/base-converter-config";
+import {
+  conversionProfileToSvgPath,
+  sampleConversionTargetProfile,
+} from "@/lib/base-converter-profile";
 
 export function BaseConverterPreview({ params }: { params: BaseConverterParams }) {
   const clipId = useId().replace(/:/g, "");
-  const { source, target, recess } = resolveBaseConverterGeometry(params);
-  const topWidth = target.width - params.sideBevelWidth * 2;
-  const topDepth = target.depth - params.sideBevelWidth * 2;
+  const { params: normalized, source, target, recess } =
+    resolveBaseConverterGeometry(params);
+  const targetPath = conversionProfileToSvgPath(
+    sampleConversionTargetProfile(target),
+  );
+  const topPath = normalized.sideBevelWidth > 0
+    ? conversionProfileToSvgPath(
+        sampleConversionTargetProfile(target, normalized.sideBevelWidth),
+      )
+    : null;
   const margin = Math.max(target.width, target.depth) * 0.12 + 4;
   const viewBox = `${-target.width / 2 - margin} ${-target.depth / 2 - margin} ${target.width + margin * 2} ${target.depth + margin * 2}`;
 
@@ -30,26 +41,24 @@ export function BaseConverterPreview({ params }: { params: BaseConverterParams }
       >
         <defs>
           <clipPath id={clipId}>
-            <ellipse rx={target.width / 2} ry={target.depth / 2} />
+            <path d={targetPath} />
           </clipPath>
         </defs>
-        <ellipse
-          rx={target.width / 2}
-          ry={target.depth / 2}
+        <path
+          d={targetPath}
           fill="rgba(214, 168, 79, 0.28)"
           stroke="#d6a84f"
           strokeWidth={0.8}
         />
-        {params.sideBevelWidth > 0 ? (
-          <ellipse
-            rx={topWidth / 2}
-            ry={topDepth / 2}
+        {topPath && (
+          <path
+            d={topPath}
             fill="none"
-            stroke="#d6a84f"
+            stroke="#a8844d"
             strokeWidth={0.35}
-            strokeDasharray="1.2 0.8"
+            strokeDasharray="1 0.8"
           />
-        ) : null}
+        )}
         {source.shape === "circle" ? (
           <ellipse
             rx={recess.width / 2}
@@ -65,6 +74,8 @@ export function BaseConverterPreview({ params }: { params: BaseConverterParams }
             y={-recess.depth / 2}
             width={recess.width}
             height={recess.depth}
+            rx={recess.cornerRadius}
+            ry={recess.cornerRadius}
             clipPath={`url(#${clipId})`}
             fill="rgba(14, 13, 11, 0.86)"
             stroke="#f0d8b8"
