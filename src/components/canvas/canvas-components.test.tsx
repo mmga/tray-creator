@@ -880,8 +880,8 @@ describe("CanvasOverlayLayer", { timeout: 15000 }, () => {
 
     const fixedArea = container.querySelector('[data-fixed-usable-area="true"]');
     expect(fixedArea).toHaveAttribute("stroke", "#d6a84f");
-    expect(fixedArea).toHaveAttribute("stroke-width", "0.5");
-    expect(fixedArea).toHaveAttribute("stroke-dasharray", "3 3");
+    expect(fixedArea).toHaveAttribute("stroke-width", "0.2");
+    expect(fixedArea).toHaveAttribute("stroke-dasharray", "0.5 0.5");
 
     rerender(
       renderOverlay(

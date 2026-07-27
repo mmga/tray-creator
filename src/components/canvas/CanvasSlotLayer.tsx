@@ -5,7 +5,10 @@ import { getCanvasDashAttributes } from "@/lib/canvas-dash-styles";
 import { getEllipsePolygon } from "@/lib/collision";
 import { getSlotLabelRotation } from "@/lib/canvas-slot-geometry";
 import type { CanvasCollisionState } from "@/lib/canvas-collision-model";
-import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
+import {
+  findEllipseSlotDefinitionById,
+  getFreeSlotProfileGeometry,
+} from "@/lib/slot-definitions";
 import type { FreeSlot, SlotGroup, SteppedSlot } from "@/types/custom-tray";
 
 interface CanvasSlotLayerProps {
@@ -125,6 +128,15 @@ export const CanvasSlotLayer = memo(function CanvasSlotLayer({
         const groupColor = isSteppedSlot ? groupMeta?.color ?? "#86efac" : null;
         const labelRotation = getSlotLabelRotation(slot.rotation);
         const boundaryDash = getCanvasDashAttributes("boundary", zoom);
+        const ellipseDefinition =
+          slot.shape === "ellipse"
+            ? findEllipseSlotDefinitionById(slot.slotDefinitionId)
+            : undefined;
+        const dimensionLabel =
+          ellipseDefinition?.name.replace(/mm$/, "") ??
+          (slot.width === slot.height
+            ? String(slot.width)
+            : `${slot.width}x${slot.height}`);
 
         return (
           <g
@@ -280,9 +292,7 @@ export const CanvasSlotLayer = memo(function CanvasSlotLayer({
                 pointerEvents="none"
                 style={{ userSelect: "none" }}
               >
-                {slot.width === slot.height
-                  ? slot.width
-                  : `${slot.width}x${slot.height}`}
+                {dimensionLabel}
               </text>
             </g>
           </g>
