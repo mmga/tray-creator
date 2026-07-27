@@ -209,3 +209,55 @@ export function resolveBaseConverterGeometry(params: BaseConverterParams) {
     ),
   };
 }
+
+export function validateBaseConverterParams(
+  params: BaseConverterParams,
+): string | null {
+  const { params: normalized, source, target, recess, compatible } =
+    resolveBaseConverterGeometry(params);
+
+  if (
+    !Number.isFinite(source.fitWidth)
+    || !Number.isFinite(source.fitDepth)
+    || !Number.isFinite(source.cornerRadius)
+    || source.fitWidth <= 0
+    || source.fitDepth <= 0
+    || source.cornerRadius < 0
+    || source.cornerRadius > Math.min(source.fitWidth, source.fitDepth) / 2
+  ) {
+    return "源底座尺寸或圆角无效";
+  }
+  if (
+    !Number.isFinite(target.width)
+    || !Number.isFinite(target.depth)
+    || !Number.isFinite(target.profileExponent)
+    || target.width <= 0
+    || target.depth <= 0
+    || target.profileExponent <= 0
+  ) {
+    return "目标底座尺寸或丰满度无效";
+  }
+  if (
+    normalized.floorThickness <= 0
+    || normalized.recessDepth <= 0
+    || normalized.conversionClearance < 0
+    || normalized.sideBevelWidth < 0
+  ) {
+    return "转换底盘厚度、深度、间隙或斜面参数无效";
+  }
+  if (
+    normalized.sideBevelWidth >= target.width / 2
+    || normalized.sideBevelWidth >= target.depth / 2
+  ) {
+    return "侧面斜面过大，顶面轮廓已消失";
+  }
+  if (
+    recess.cornerRadius > Math.min(recess.width, recess.depth) / 2
+  ) {
+    return "源底座圆角与间隙形成的凹槽无效";
+  }
+  if (!compatible) {
+    return "源底座凹槽不小于目标底座，无法生成 3D 模型";
+  }
+  return null;
+}

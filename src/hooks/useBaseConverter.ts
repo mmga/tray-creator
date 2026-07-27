@@ -6,6 +6,7 @@ import type { BaseConverterParams } from "@/types/custom-tray";
 import {
   BASE_CONVERTER_DEFAULTS,
   normalizeBaseConverterParams,
+  validateBaseConverterParams,
 } from "@/lib/base-converter-config";
 import {
   exportBaseConverterModelFiles,
@@ -47,6 +48,8 @@ export function useBaseConverter(): UseBaseConverterReturn {
       captureModeParamSnapshot("base-converter", params),
     fingerprintSnapshot: createModelGeometryFingerprint,
     normalize: normalizeBaseConverterParams,
+    validateSnapshot: (snapshot) =>
+      validateBaseConverterParams(snapshot.params),
     guard: () => trayWorkerService !== null,
     generatePreview: async (snapshot) =>
       generateBaseConverterPreview(snapshot.params, trayWorkerService!),

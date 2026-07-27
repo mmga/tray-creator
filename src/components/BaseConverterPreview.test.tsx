@@ -27,5 +27,24 @@ describe("BaseConverterPreview", () => {
     const recess = container.querySelector("rect[clip-path]");
     expect(recess).toHaveAttribute("width", "50.4");
     expect(recess).toHaveAttribute("height", "100.4");
+    expect(recess).toHaveAttribute("rx", "0.2");
+    expect(container.querySelector("clipPath path")).toHaveAttribute(
+      "d",
+      expect.stringContaining("M 35 0"),
+    );
+  });
+
+  it("shows the inset top outline when side bevel is enabled", () => {
+    const { container } = render(
+      <BaseConverterPreview
+        params={{
+          ...BASE_CONVERTER_DEFAULTS,
+          sideBevelWidth: 2,
+        }}
+      />,
+    );
+
+    expect(container.querySelector('path[stroke-dasharray="1 0.8"]'))
+      .toBeInTheDocument();
   });
 });

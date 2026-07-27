@@ -7,6 +7,7 @@ import {
   getConversionRecessDimensions,
   isBaseConversionCompatible,
   normalizeBaseConverterParams,
+  validateBaseConverterParams,
 } from "@/lib/base-converter-config";
 
 describe("base converter config", () => {
@@ -84,5 +85,36 @@ describe("base converter config", () => {
       standardId: "target-ellipse-35x60",
       profileExponent: 2.05,
     });
+  });
+
+  it("allows values beyond common slider ranges when geometry stays valid", () => {
+    const params = {
+      ...BASE_CONVERTER_DEFAULTS,
+      floorThickness: 8,
+      recessDepth: 9,
+    };
+
+    expect(validateBaseConverterParams(params)).toBeNull();
+  });
+
+  it("blocks incompatible pairs and collapsed bevel geometry", () => {
+    const source = SOURCE_BASE_STANDARDS.find((item) => item.id === "source-50x100")!;
+    const target = TARGET_BASE_STANDARDS.find((item) => item.id === "target-circle-50")!;
+    const incompatible = {
+      ...BASE_CONVERTER_DEFAULTS,
+      sourceStandardId: source.id,
+      targetStandardId: target.id,
+      geometrySnapshot: createConversionGeometrySnapshot(source, target),
+    };
+
+    expect(validateBaseConverterParams(incompatible)).toContain(
+      "源底座凹槽不小于目标底座",
+    );
+    expect(
+      validateBaseConverterParams({
+        ...BASE_CONVERTER_DEFAULTS,
+        sideBevelWidth: 13,
+      }),
+    ).toContain("侧面斜面过大");
   });
 });
