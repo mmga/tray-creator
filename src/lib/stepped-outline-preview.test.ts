@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
-import { buildSteppedOutlinePreview } from "@/lib/stepped-outline-preview";
+import { buildSteppedOutlinePreview } from "@/test/contoured-state";
 
 function polygonArea(points: { x: number; y: number }[]) {
   let area = 0;

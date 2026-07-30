@@ -34,6 +34,24 @@ import {
 import {
   packSlotsIntoShelves,
 } from "@/lib/stepped-optimize-shelf-packer";
+import {
+  constructSteppedContouredFootprintsOutcome,
+  projectSteppedContouredFootprintInput,
+  type ConstructedSteppedContouredFootprints,
+} from "@/lib/stepped-contoured-footprint";
+import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
+
+function constructProposalState(
+  params: SteppedLayoutParams,
+): ContouredFootprintState<ConstructedSteppedContouredFootprints> {
+  if (params.footprintStyle === "rectangular") return { status: "inactive" };
+  const outcome = constructSteppedContouredFootprintsOutcome(
+    projectSteppedContouredFootprintInput(params),
+  );
+  return outcome.ok
+    ? { status: "ready", value: outcome.value }
+    : { status: "failed", error: outcome.error };
+}
 
 type ProposalKind = "compact";
 
@@ -203,7 +221,10 @@ function finalizeProposal(
 ): SteppedOptimizationProposal {
   const compactedSlots = normalizeSlotsToOrigin(seed.slots, params.spacing);
   const compactedParams = { ...params, slots: compactedSlots };
-  const compactedDims = calculateSteppedEffectiveDimensions(compactedParams);
+  const compactedDims = calculateSteppedEffectiveDimensions(
+    compactedParams,
+    constructProposalState(compactedParams),
+  );
   const usesFixedRectangularFootprint =
     params.footprintStyle === "rectangular" &&
     params.traySizingMode === "fixed";
@@ -228,7 +249,10 @@ function finalizeProposal(
         }
       : params
     : trimSteppedBaseplate(compactedParams, compactedDims);
-  const contentDims = calculateSteppedEffectiveDimensions(nextParams);
+  const contentDims = calculateSteppedEffectiveDimensions(
+    nextParams,
+    constructProposalState(nextParams),
+  );
   const dims = usesFixedRectangularFootprint
     ? {
         ...contentDims,

@@ -4,7 +4,8 @@ import {
   type LayoutExtents,
 } from "@/lib/custom-layout-math";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
-import { constructSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
+import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
+import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 
 // SteppedLayoutExtents has the same shape as LayoutExtents — re-export to
@@ -13,6 +14,9 @@ export type { LayoutExtents as SteppedLayoutExtents } from "@/lib/custom-layout-
 
 export function calculateSteppedEffectiveDimensions(
   params: SteppedLayoutParams,
+  contouredState: ContouredFootprintState<ConstructedSteppedContouredFootprints> = {
+    status: "inactive",
+  },
 ): LayoutExtents {
   const boundarySpacing = params.boundarySpacingIndependent
     ? (params.boundarySpacing ?? params.spacing)
@@ -29,7 +33,9 @@ export function calculateSteppedEffectiveDimensions(
   }
 
   if (params.footprintStyle !== "rectangular") {
-    const bounds = constructSteppedContouredFootprints(params).bounds;
+    const bounds = contouredState.status === "ready"
+      ? contouredState.value.bounds
+      : null;
     if (bounds) {
       return {
         width: roundLayoutDimensionToTenth(bounds.maxX - bounds.minX),
@@ -37,6 +43,14 @@ export function calculateSteppedEffectiveDimensions(
         ...bounds,
       };
     }
+    return {
+      width: 0,
+      depth: 0,
+      minX: 0,
+      maxX: 0,
+      minY: 0,
+      maxY: 0,
+    };
   }
 
   let minX = Infinity;

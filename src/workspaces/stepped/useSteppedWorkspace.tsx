@@ -139,6 +139,7 @@ export function useSteppedWorkspace({
         }
         isGenerating={model.isGenerating}
         volume={model.volume}
+        contouredFootprintState={model.contouredFootprintState}
         baseHoleFitViolations={model.baseHoleFitViolations}
         selectedSlotIds={selectedSlotIds}
         activeGroupId={activeSteppedGroupId}

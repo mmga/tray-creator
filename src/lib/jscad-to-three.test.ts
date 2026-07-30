@@ -3,7 +3,7 @@ import { primitives } from "@jscad/modeling";
 import * as THREE from "three";
 import steppedSplitFragmentFixture from "@/lib/fixtures/tray-stepped-split-fragments.json";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
-import { createSteppedCadSplitParts } from "@/lib/stepped-cad-tray-model";
+import { createSteppedCadSplitParts } from "@/test/contoured-state";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 
 const { cuboid } = primitives;

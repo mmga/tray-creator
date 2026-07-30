@@ -161,8 +161,7 @@ export function useCustomWorkspace({
         isGenerating={model.isGenerating}
         isPreviewStale={model.isPreviewStale}
         volume={model.volume}
-        contouredFootprint={model.committedContouredFootprint}
-        contouredConstructionError={model.contouredConstructionError}
+        contouredFootprintState={model.contouredFootprintState}
         baseHoleFitViolations={model.baseHoleFitViolations}
         selectedSlotIds={interactionState.selectedSlotIds}
       />
@@ -177,8 +176,7 @@ export function useCustomWorkspace({
       model.updateParam,
       model.volume,
       model.baseHoleFitViolations,
-      model.committedContouredFootprint,
-      model.contouredConstructionError,
+      model.contouredFootprintState,
       interactionState.selectedSlotIds,
     ],
   );

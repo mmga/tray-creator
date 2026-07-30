@@ -59,8 +59,9 @@ export async function exportCustomModelFiles(
   geometry: Geom3,
   workerPort: CustomWorkerPort,
   downloadPort: DownloadPort,
+  effectiveDimensions: LayoutExtents,
 ): Promise<void> {
-  const stlFilename = getCustomSTLFilename(snapshot.params);
+  const stlFilename = getCustomSTLFilename(snapshot.params, effectiveDimensions);
   await exportModelArtifactBundle(
     snapshot,
     async () => {

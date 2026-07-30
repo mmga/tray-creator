@@ -3,7 +3,7 @@ import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
 import { buildCanvasCollisionState } from "@/lib/canvas-collision-model";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import { buildSteppedBridgeWarning } from "@/lib/stepped-bridge-warning";
-import { calculateSteppedEffectiveDimensions } from "@/lib/stepped-layout-math";
+import { calculateSteppedEffectiveDimensions } from "@/test/contoured-state";
 import {
   generateSteppedOptimizationProposals,
 } from "@/lib/stepped-global-optimize";

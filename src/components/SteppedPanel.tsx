@@ -70,6 +70,8 @@ import {
     getResolvedMagneticBaseHolePresets,
     type BaseHoleFitViolation,
 } from "@/lib/base-hole-rules";
+import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
+import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
 
 type SteppedGroup = SteppedLayoutParams["groups"][number];
 type SteppedSplitParamKey =
@@ -112,6 +114,7 @@ interface SteppedPanelSharedProps {
     ) => void;
     isGenerating: boolean;
     volume: number;
+    contouredFootprintState?: ContouredFootprintState<ConstructedSteppedContouredFootprints>;
     baseHoleFitViolations?: BaseHoleFitViolation[];
     selectedSlotIds: string[];
     activeGroupId?: string | null;
@@ -152,6 +155,7 @@ interface UseSteppedPanelStateOptions {
     volume: number;
     isGenerating: boolean;
     isPreviewStale: boolean;
+    contouredFootprintState: ContouredFootprintState<ConstructedSteppedContouredFootprints>;
     previewGroupId: string | null;
     onPreviewGroupChange: (groupId: string | null) => void;
     setParams: Dispatch<SetStateAction<SteppedLayoutParams>>;
@@ -188,6 +192,7 @@ function useSteppedPanelState(options: UseSteppedPanelStateOptions): UseSteppedP
         volume,
         isGenerating,
         isPreviewStale,
+        contouredFootprintState,
         previewGroupId,
         onPreviewGroupChange,
         setParams,
@@ -198,8 +203,8 @@ function useSteppedPanelState(options: UseSteppedPanelStateOptions): UseSteppedP
             volume,
             isGenerating,
             isPreviewStale,
-        }),
-        [effectiveDimensions, isGenerating, isPreviewStale, params, volume],
+        }, contouredFootprintState),
+        [contouredFootprintState, effectiveDimensions, isGenerating, isPreviewStale, params, volume],
     );
     const [pressedPreviewGroupId, setPressedPreviewGroupId] = useState<string | null>(null);
     const [lockedPreviewGroupId, setLockedPreviewGroupId] = useState<string | null>(null);
@@ -353,6 +358,7 @@ function SteppedPanelBody({
     params,
     effectiveDimensions,
     isPreviewStale,
+    contouredFootprintState = { status: "inactive" },
     updateParam,
     previewParam,
     setParams,
@@ -400,6 +406,7 @@ function SteppedPanelBody({
         volume,
         isGenerating,
         isPreviewStale,
+        contouredFootprintState,
         previewGroupId,
         onPreviewGroupChange,
         setParams,

@@ -146,7 +146,7 @@ describe("useSteppedLayout", () => {
     expect(result.current.outlinePreview).toEqual(outlinePreviewValue);
     expect(useSteppedOutlinePreviewMock).toHaveBeenCalledWith(
       expect.not.objectContaining({ activeGroupId: expect.anything() }),
-      trayWorkerServiceMock,
+      expect.objectContaining({ status: "ready" }),
       0,
     );
     expect(result.current.bridgeWarning).toBeNull();
@@ -493,6 +493,10 @@ describe("useSteppedLayout", () => {
       freshGeometry,
       trayWorkerServiceMock,
       browserDownloadPort,
+      expect.objectContaining({
+        width: expect.any(Number),
+        depth: expect.any(Number),
+      }),
     );
   });
 

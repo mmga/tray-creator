@@ -1,10 +1,8 @@
 import { MAX_BUILD_SIZE } from "@/lib/config";
 import { calculateCustomTrayFootprint } from "@/lib/custom-layout-math";
-import { constructSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
-import type {
-  ContouredFootprintConstructionError,
-  ConstructedContouredFootprint,
-} from "@/lib/contoured-footprint";
+import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
+import type { ConstructedContouredFootprint } from "@/lib/contoured-footprint";
+import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
 import { calculateTrayDimensions } from "@/lib/tray-model";
 import { resolveBaseConverterGeometry } from "@/lib/base-converter-config";
 import type {
@@ -182,10 +180,11 @@ export function projectCustomTrayResult(
   params: CustomLayoutParams,
   effectiveDimensions: { width: number; depth: number },
   state: ResultState,
-  constructedContoured?: ConstructedContouredFootprint | null,
-  contouredConstructionError?: ContouredFootprintConstructionError | null,
+  contouredState: ContouredFootprintState<ConstructedContouredFootprint> = {
+    status: "inactive",
+  },
 ): CustomTrayResultProjection {
-  const footprint = calculateCustomTrayFootprint(params, constructedContoured);
+  const footprint = calculateCustomTrayFootprint(params, contouredState);
   const modelDimensions = {
     width: footprint.width,
     depth: footprint.depth,
@@ -233,9 +232,11 @@ export function projectCustomTrayResult(
     footprintKind,
     contourBodyCount: footprint.contourBodyCount,
     footprintArea: finiteOrZero(common.dimensions.width * common.dimensions.depth),
-    footprintWarnings: contouredConstructionError
-      ? [contouredConstructionError.message]
-      : constructedContoured?.diagnostics.map((diagnostic) => diagnostic.message),
+    footprintWarnings: contouredState.status === "failed"
+      ? [contouredState.error.message]
+      : contouredState.status === "ready"
+        ? contouredState.value.diagnostics.map((diagnostic) => diagnostic.message)
+        : undefined,
   };
 }
 
@@ -244,10 +245,8 @@ export function projectSteppedTrayResult(
   params: SteppedLayoutParams,
   effectiveDimensions: { width: number; depth: number },
   state: ResultState,
+  contouredState: ContouredFootprintState<ConstructedSteppedContouredFootprints>,
 ): SteppedTrayResultProjection {
-  const constructedContoured = params.footprintStyle !== "rectangular"
-    ? constructSteppedContouredFootprints(params)
-    : undefined;
   const height =
     params.groups.length > 0
       ? Math.max(
@@ -267,9 +266,13 @@ export function projectSteppedTrayResult(
     slotCount: params.slots.length,
     itemLabel: `${params.groups.length} 组 · ${params.slots.length} 槽`,
     ...common,
-    footprintWarnings: constructedContoured?.diagnostics.map(
-      (diagnostic) => diagnostic.message,
-    ),
+    footprintWarnings: contouredState.status === "failed"
+      ? [contouredState.error.message]
+      : contouredState.status === "ready"
+        ? contouredState.value.diagnostics.map(
+            (diagnostic) => diagnostic.message,
+          )
+        : undefined,
     groupCount: params.groups.length,
     groups: params.groups.map((group) => ({
       id: group.id,

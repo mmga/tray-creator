@@ -1,6 +1,7 @@
 import {
   constructContouredFootprints,
   type ContouredFootprintConstructionError,
+  type ContouredFootprintPlan,
   type ConstructedContouredFootprint,
   type ContouredFootprintSlot,
 } from "@/lib/contoured-footprint";
@@ -10,6 +11,10 @@ import type { CustomLayoutParams, FreeSlot } from "@/types/custom-tray";
 export type CustomContouredFootprintOutcome =
   | { ok: true; value: ConstructedContouredFootprint }
   | { ok: false; error: ContouredFootprintConstructionError };
+
+export interface CustomContouredFootprintInput {
+  readonly plan: ContouredFootprintPlan;
+}
 
 export function projectCustomSlotToContoured(
   slot: FreeSlot,
@@ -24,21 +29,29 @@ export function projectCustomSlotToContoured(
   };
 }
 
-export function constructCustomContouredFootprintOutcome(
+export function projectCustomContouredFootprintInput(
   params: CustomLayoutParams,
+): CustomContouredFootprintInput {
+  return {
+    plan: {
+      requests: [{
+        key: "custom-baseplate",
+        slots: params.slots.map(projectCustomSlotToContoured),
+        slotSpacing: params.spacing,
+        boundarySpacing: params.boundarySpacingIndependent
+          ? params.boundarySpacing
+          : params.spacing,
+        smoothingRadius: params.smoothingRadius ?? 60,
+        disconnectDistance: params.disconnectDistance ?? 0,
+      }],
+    },
+  };
+}
+
+export function constructCustomContouredFootprintOutcome(
+  input: CustomContouredFootprintInput,
 ): CustomContouredFootprintOutcome {
-  const outcome = constructContouredFootprints({
-    requests: [{
-      key: "custom-baseplate",
-      slots: params.slots.map(projectCustomSlotToContoured),
-      slotSpacing: params.spacing,
-      boundarySpacing: params.boundarySpacingIndependent
-        ? params.boundarySpacing
-        : params.spacing,
-      smoothingRadius: params.smoothingRadius ?? 60,
-      disconnectDistance: params.disconnectDistance ?? 0,
-    }],
-  });
+  const outcome = constructContouredFootprints(input.plan);
   if (!outcome.ok) {
     return outcome;
   }
@@ -53,19 +66,4 @@ export function constructCustomContouredFootprintOutcome(
     };
   }
   return { ok: true, value: footprint };
-}
-
-/**
- * 旧的同步调用入口暂供尚未迁移的 Worker Implementation 使用。
- * 主线程布局状态 Module 应消费结构化 outcome，而非捕获这里抛出的异常。
- */
-export function constructCustomContouredFootprint(
-  params: CustomLayoutParams,
-): ConstructedContouredFootprint {
-  const outcome = constructCustomContouredFootprintOutcome(params);
-  if (outcome.ok) return outcome.value;
-  throw Object.assign(new Error(outcome.error.message), {
-    code: outcome.error.code,
-    constructionError: outcome.error,
-  });
 }

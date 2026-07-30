@@ -1,5 +1,8 @@
 import {
   constructContouredFootprints,
+  type ContouredFootprintConstructionError,
+  type ContouredFootprintConstructionOutcome,
+  type ContouredFootprintPlan,
   type ConstructedContouredFootprint,
   type ContouredFootprintBounds,
   type ContouredFootprintDiagnostic,
@@ -20,6 +23,17 @@ export interface ConstructedSteppedContouredFootprints {
   readonly groups: readonly ConstructedSteppedContouredGroup[];
   readonly bounds: ContouredFootprintBounds | null;
   readonly diagnostics: readonly ContouredFootprintDiagnostic[];
+}
+
+interface SteppedContouredGroupInput {
+  readonly groupId: string;
+  readonly columnHeight: number;
+  readonly requestKey: string;
+}
+
+export interface SteppedContouredFootprintInput {
+  readonly plan: ContouredFootprintPlan;
+  readonly groups: readonly SteppedContouredGroupInput[];
 }
 
 export function projectSteppedSlotToContoured(
@@ -56,9 +70,9 @@ function unionBounds(
  * 每个高度组的请求包含本组槽位和所有更高有效 column height 的槽位；同高度组互不
  * 纳入。Core Module 因而无需知道 group、height band 或 Stepped Mode 的任何概念。
  */
-export function constructSteppedContouredFootprints(
+export function projectSteppedContouredFootprintInput(
   params: SteppedLayoutParams,
-): ConstructedSteppedContouredFootprints {
+): SteppedContouredFootprintInput {
   const columnHeightByGroupId = new Map(
     params.groups.map((group) => [
       group.id,
@@ -82,49 +96,79 @@ export function constructSteppedContouredFootprints(
   const boundarySpacing = params.boundarySpacingIndependent
     ? (params.boundarySpacing ?? params.spacing)
     : params.spacing;
-  const requests = requestGroups.map((group) => {
+  const groups = requestGroups.map((group) => {
     const columnHeight = columnHeightByGroupId.get(group.id) ?? 3;
     const structure = getEffectiveGroupStructureParams(group, params);
     const slots = params.slots.filter((slot) =>
       slot.groupId === group.id ||
       (columnHeightByGroupId.get(slot.groupId) ?? 3) > columnHeight
     );
-    return {
-      key: `stepped-group:${group.id}`,
-      slots: slots.map(projectSteppedSlotToContoured),
-      slotSpacing: params.spacing,
-      boundarySpacing,
-      smoothingRadius: structure.smoothingRadius,
-      disconnectDistance: structure.disconnectDistance,
-    };
-  });
-
-  const outcome = constructContouredFootprints({ requests });
-  if (!outcome.ok) {
-    throw Object.assign(new Error(outcome.error.message), {
-      code: outcome.error.code,
-      constructionError: outcome.error,
-    });
-  }
-
-  const footprintByKey = new Map(
-    outcome.value.footprints.map((footprint) => [footprint.key, footprint]),
-  );
-  const groups = requestGroups.map((group): ConstructedSteppedContouredGroup => {
-    const footprint = footprintByKey.get(`stepped-group:${group.id}`);
-    if (!footprint) {
-      throw new Error(`高度组 ${group.id} 缺少权威轮廓构造结果`);
-    }
+    const requestKey = `stepped-group:${group.id}`;
     return {
       groupId: group.id,
-      columnHeight: columnHeightByGroupId.get(group.id) ?? 3,
-      footprint,
+      columnHeight,
+      requestKey,
+      request: {
+        key: requestKey,
+        slots: slots.map(projectSteppedSlotToContoured),
+        slotSpacing: params.spacing,
+        boundarySpacing,
+        smoothingRadius: structure.smoothingRadius,
+        disconnectDistance: structure.disconnectDistance,
+      },
     };
   });
+
+  return {
+    plan: { requests: groups.map((group) => group.request) },
+    groups: groups.map((group) => ({
+      groupId: group.groupId,
+      columnHeight: group.columnHeight,
+      requestKey: group.requestKey,
+    })),
+  };
+}
+
+export function selectSteppedContouredFootprints(
+  input: SteppedContouredFootprintInput,
+  outcome: Extract<ContouredFootprintConstructionOutcome, { ok: true }>,
+): ConstructedSteppedContouredFootprints | ContouredFootprintConstructionError {
+  const footprintByKey = new Map(
+    outcome.value.footprints.map((footprint) => [footprint.key, footprint] as const),
+  );
+  const groups: ConstructedSteppedContouredGroup[] = [];
+  for (const group of input.groups) {
+    const footprint = footprintByKey.get(group.requestKey);
+    if (!footprint) {
+      return {
+        code: "invalid-plan",
+        requestKey: group.requestKey,
+        message: `高度组 ${group.groupId} 缺少权威轮廓构造结果`,
+      };
+    }
+    groups.push({
+      groupId: group.groupId,
+      columnHeight: group.columnHeight,
+      footprint,
+    });
+  }
 
   return {
     groups,
     bounds: unionBounds(groups),
     diagnostics: outcome.value.diagnostics,
   };
+}
+
+export function constructSteppedContouredFootprintsOutcome(
+  input: SteppedContouredFootprintInput,
+):
+  | { ok: true; value: ConstructedSteppedContouredFootprints }
+  | { ok: false; error: ContouredFootprintConstructionError } {
+  const outcome = constructContouredFootprints(input.plan);
+  if (!outcome.ok) return outcome;
+  const selected = selectSteppedContouredFootprints(input, outcome);
+  return "code" in selected
+    ? { ok: false, error: selected }
+    : { ok: true, value: selected };
 }

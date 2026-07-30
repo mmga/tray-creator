@@ -24,6 +24,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
   });
   const splitModel = useSteppedCadSplitOrchestration({
     params: steppedModel.persistedParams,
+    contouredFootprintState: steppedModel.contouredFootprintState,
     transactionRevision: steppedModel.transactionRevision,
     edit: steppedModel.edit,
     previewEdit: steppedModel.previewEdit,

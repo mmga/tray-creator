@@ -104,6 +104,7 @@ describe("custom layout service", () => {
       geometry,
       workerPort,
       downloadPort,
+      effectiveDimensions,
     );
 
     expect(workerPort.exportSTL).toHaveBeenCalledWith(

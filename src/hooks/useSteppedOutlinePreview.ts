@@ -1,16 +1,9 @@
 "use client";
 
-import {
-  startTransition,
-  useCallback,
-  useDeferredValue,
-  useEffect,
-  useState,
-} from "react";
-import { recordPerfSample } from "@/lib/perf";
+import { useCallback, useMemo, useState } from "react";
 import { buildSteppedOutlinePreview } from "@/lib/stepped-outline-preview";
-import type { SteppedOutlinePreviewPort } from "@/lib/model-ports";
-import { useRequestSequence } from "@/hooks/useRequestSequence";
+import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
+import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
 import type {
   GroupOutlinePreview,
   SteppedLayoutParams,
@@ -24,93 +17,39 @@ interface UseSteppedOutlinePreviewResult {
 
 export function useSteppedOutlinePreview(
   params: SteppedLayoutParams,
-  previewPort: SteppedOutlinePreviewPort | null,
+  contouredState: ContouredFootprintState<ConstructedSteppedContouredFootprints>,
   sessionEpoch = 0,
 ): UseSteppedOutlinePreviewResult {
   const [isOutlinePreviewPaused, setIsOutlinePreviewPaused] = useState(false);
-  const [frozenOutlinePreviewParams, setFrozenOutlinePreviewParams] =
-    useState<SteppedLayoutParams | null>(null);
-  const deferredOutlineParams = useDeferredValue(
-    isOutlinePreviewPaused
-      ? (frozenOutlinePreviewParams ?? params)
-      : params,
-  );
-  const [outlinePreview, setOutlinePreview] =
+  const [frozenOutlinePreview, setFrozenOutlinePreview] =
     useState<GroupOutlinePreview[] | null>(null);
-  const { nextSeq, isStale } = useRequestSequence();
+  const liveOutlinePreview = useMemo(
+    () => {
+      void sessionEpoch;
+      if (isOutlinePreviewPaused) return frozenOutlinePreview;
+      return buildSteppedOutlinePreview(params, contouredState);
+    },
+    // sessionEpoch 明确使 session 替换失效，即使导入内容与当前内容完全相同。
+    [
+      contouredState,
+      frozenOutlinePreview,
+      isOutlinePreviewPaused,
+      params,
+      sessionEpoch,
+    ],
+  );
 
   const pauseOutlinePreview = useCallback(() => {
-    setFrozenOutlinePreviewParams(params);
+    setFrozenOutlinePreview(liveOutlinePreview);
     setIsOutlinePreviewPaused(true);
-  }, [params]);
+  }, [liveOutlinePreview]);
 
   const resumeOutlinePreview = useCallback(() => {
     setIsOutlinePreviewPaused(false);
-    setFrozenOutlinePreviewParams(null);
   }, []);
 
-  useEffect(() => {
-    const seq = nextSeq();
-    if (
-      deferredOutlineParams.slots.length === 0 ||
-      deferredOutlineParams.groups.length === 0
-    ) {
-      startTransition(() => {
-        setOutlinePreview(null);
-      });
-      return;
-    }
-
-    let isCancelled = false;
-    const applyOutlinePreview = (nextPreview: GroupOutlinePreview[] | null) => {
-      if (isCancelled || isStale(seq)) {
-        return;
-      }
-
-      startTransition(() => {
-        setOutlinePreview(nextPreview);
-      });
-    };
-
-    const runOutlinePreview = async () => {
-      try {
-        if (previewPort) {
-          const result =
-            await previewPort.generateSteppedOutlinePreview(
-              deferredOutlineParams,
-            );
-          if (result.durationMs >= 0) {
-            recordPerfSample("stepped.outline", result.durationMs);
-          }
-          applyOutlinePreview(result.outlinePreview);
-          return;
-        }
-
-        const startedAt =
-          typeof performance !== "undefined" ? performance.now() : 0;
-        const nextPreview = buildSteppedOutlinePreview(deferredOutlineParams);
-        if (typeof performance !== "undefined") {
-          recordPerfSample("stepped.outline", performance.now() - startedAt);
-        }
-        applyOutlinePreview(nextPreview);
-      } catch (err) {
-        if (isCancelled || isStale(seq)) {
-          return;
-        }
-
-        console.error("轮廓预览生成失败:", err);
-      }
-    };
-
-    void runOutlinePreview();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [deferredOutlineParams, previewPort, isStale, nextSeq, sessionEpoch]);
-
   return {
-    outlinePreview,
+    outlinePreview: liveOutlinePreview,
     pauseOutlinePreview,
     resumeOutlinePreview,
   };

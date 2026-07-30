@@ -7,9 +7,22 @@ import {
   calculateCustomEffectiveBaseplate,
   createCustomTrayModel,
 } from "@/lib/custom-tray-model";
+import {
+  constructCustomContouredFootprintOutcome,
+  projectCustomContouredFootprintInput,
+} from "@/lib/custom-contoured-footprint";
+import type { CustomLayoutParams } from "@/types/custom-tray";
 
 const { measureBoundingBox, measureVolume } = measurements;
 const { geom3 } = geometries;
+
+function readyState(params: CustomLayoutParams) {
+  const outcome = constructCustomContouredFootprintOutcome(
+    projectCustomContouredFootprintInput(params),
+  );
+  if (!outcome.ok) throw new Error(outcome.error.message);
+  return { status: "ready" as const, value: outcome.value };
+}
 
 function measureBoundsAtZ(
   model: ReturnType<typeof createCustomTrayModel>,
@@ -336,13 +349,14 @@ describe("custom tray model", () => {
       slots: [createCustomCircleSlot("a", 0, 0, 25)],
     };
 
-    const contouredModel = createCustomTrayModel(contouredParams);
+    const state = readyState(contouredParams);
+    const contouredModel = createCustomTrayModel(contouredParams, state);
     const rectangularModel = createCustomTrayModel(rectangularParams);
 
     expect(measureVolume(contouredModel)).toBeGreaterThan(0);
     expect(measureVolume(rectangularModel)).toBeGreaterThan(0);
     // contoured 不应用 side bevel，底面积应小于 rectangular（rectangular 因 bevel 外扩）
-    const contouredDims = calculateCustomTrayDimensions(contouredParams);
+    const contouredDims = calculateCustomTrayDimensions(contouredParams, state);
     const rectangularDims = calculateCustomTrayDimensions(rectangularParams);
     expect(rectangularDims.width).toBeGreaterThan(contouredDims.width);
   });
@@ -356,7 +370,7 @@ describe("custom tray model", () => {
         createCustomCircleSlot("b", 200, 200, 25),
       ],
     };
-    const model = createCustomTrayModel(params);
+    const model = createCustomTrayModel(params, readyState(params));
     expect(measureVolume(model)).toBeGreaterThan(0);
   });
 });

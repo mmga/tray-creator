@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { measureBoundingBox, measureVolume } from "@jscad/modeling/src/measurements";
 import { BASE_HOLE_CONFIG } from "@/lib/config";
-import { buildSteppedCadFeatureGraph } from "@/lib/stepped-cad-feature-graph";
 import {
+  buildSteppedCadFeatureGraph,
   createSteppedCadSplitParts,
   createSteppedCadTrayModel,
-} from "@/lib/stepped-cad-tray-model";
+} from "@/test/contoured-state";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 
 function createParams(): SteppedLayoutParams {

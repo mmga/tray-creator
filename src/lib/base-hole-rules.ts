@@ -13,15 +13,15 @@ import {
   resolveCustomBoundarySpacing,
   resolveCustomTraySizingMode,
 } from "@/lib/custom-layout-math";
-import { constructCustomContouredFootprint } from "@/lib/custom-contoured-footprint";
 import type { ConstructedContouredFootprint } from "@/lib/contoured-footprint";
+import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
 import { getGridSlotGeometry } from "@/lib/grid-config";
 import {
   getGridBoundarySpacingAxes,
   getGridSpacingAxes,
 } from "@/lib/tray-model";
 import { buildSteppedOutlinePreview } from "@/lib/stepped-outline-preview";
-import { constructSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
+import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import type {
   AppMode,
@@ -44,7 +44,8 @@ export interface BaseHoleFitViolation {
 }
 
 export interface BaseHoleFitOptions {
-  readonly customContouredFootprint?: ConstructedContouredFootprint | null;
+  readonly customContouredState?: ContouredFootprintState<ConstructedContouredFootprint>;
+  readonly steppedContouredState?: ContouredFootprintState<ConstructedSteppedContouredFootprints>;
 }
 
 interface BaseHoleSlot {
@@ -241,12 +242,14 @@ function buildGridSlots(params: TrayParams): BaseHoleSlot[] {
 
 function buildCustomSlots(
   params: CustomLayoutParams,
-  constructedContoured?: ConstructedContouredFootprint | null,
+  contouredState: ContouredFootprintState<ConstructedContouredFootprint> = {
+    status: "inactive",
+  },
 ): BaseHoleSlot[] {
-  const contoured = params.footprintStyle === "contoured"
-    ? (constructedContoured ?? constructCustomContouredFootprint(params))
+  const contoured = contouredState.status === "ready"
+    ? contouredState.value
     : undefined;
-  const footprint = calculateCustomTrayFootprint(params, contoured);
+  const footprint = calculateCustomTrayFootprint(params, contouredState);
 
   // contoured 分支：按各 contoured body 的外缘多边形评估磁吸孔（CONTEXT:629）
   if (footprint.footprintStyle === "contoured") {
@@ -316,15 +319,22 @@ function buildCustomSlots(
   });
 }
 
-function buildSteppedSlots(params: SteppedLayoutParams): BaseHoleSlot[] {
+function buildSteppedSlots(
+  params: SteppedLayoutParams,
+  contouredState: ContouredFootprintState<ConstructedSteppedContouredFootprints> = {
+    status: "inactive",
+  },
+): BaseHoleSlot[] {
   const groupById = new Map(params.groups.map((group) => [group.id, group]));
   // rectangular 时所有 outline 都是矩形（含最低层圆角），可用 isPointInRoundedRect 优化
   // contoured 时 outline 是任意多边形，用 isPointInPolygon
   const isRectangular = params.footprintStyle === "rectangular";
-  const outlines = isRectangular ? (buildSteppedOutlinePreview(params) ?? []) : [];
+  const outlines = isRectangular
+    ? (buildSteppedOutlinePreview(params, contouredState) ?? [])
+    : [];
   const contouredGroupById = new Map(
-    !isRectangular
-      ? constructSteppedContouredFootprints(params).groups.map((group) => [
+    !isRectangular && contouredState.status === "ready"
+      ? contouredState.value.groups.map((group) => [
           group.groupId,
           group.footprint,
         ])
@@ -472,10 +482,13 @@ function buildSlotsForMode(
     case "custom":
       return buildCustomSlots(
         params as CustomLayoutParams,
-        options?.customContouredFootprint,
+        options?.customContouredState,
       );
     case "stepped":
-      return buildSteppedSlots(params as SteppedLayoutParams);
+      return buildSteppedSlots(
+        params as SteppedLayoutParams,
+        options?.steppedContouredState,
+      );
   }
 }
 

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
-import { constructSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
+import {
+  constructSteppedContouredFootprintsOutcome,
+  projectSteppedContouredFootprintInput,
+} from "@/lib/stepped-contoured-footprint";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 
 function createParams(): SteppedLayoutParams {
@@ -49,9 +52,17 @@ function createParams(): SteppedLayoutParams {
   };
 }
 
+function construct(params: SteppedLayoutParams) {
+  const outcome = constructSteppedContouredFootprintsOutcome(
+    projectSteppedContouredFootprintInput(params),
+  );
+  if (!outcome.ok) throw new Error(outcome.error.message);
+  return outcome.value;
+}
+
 describe("stepped contoured footprint adapter", () => {
   it("为低高度组纳入更高槽位，但排除其他同高度组", () => {
-    const construction = constructSteppedContouredFootprints(createParams());
+    const construction = construct(createParams());
     const slotsByGroup = new Map(construction.groups.map((group) => [
       group.groupId,
       group.footprint.bodies.flatMap((body) => body.slotIds),
@@ -63,7 +74,7 @@ describe("stepped contoured footprint adapter", () => {
   });
 
   it("保留托盘编辑坐标，不在 Adapter 内居中", () => {
-    const construction = constructSteppedContouredFootprints(createParams());
+    const construction = construct(createParams());
     const high = construction.groups.find((group) => group.groupId === "high");
 
     expect(high?.footprint.bounds?.minX).toBeGreaterThan(180);

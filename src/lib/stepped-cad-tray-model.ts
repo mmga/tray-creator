@@ -20,6 +20,8 @@ import {
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 import { resolveSteppedBaseHoleStructure } from "@/lib/stepped-base-hole";
 import { MAGNET_POST_HOLE_BOTTOM_WALL } from "@/lib/stepped-config";
+import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
+import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
 import generalizeModule from "@jscad/modeling/src/operations/modifiers/generalize";
 
 const { intersect, subtract, union } = booleans;
@@ -56,8 +58,11 @@ function createEmptyGeom() {
 
 export function createSteppedCadTrayModel(
   params: SteppedLayoutParams,
+  contouredState: ContouredFootprintState<ConstructedSteppedContouredFootprints> = {
+    status: "inactive",
+  },
 ): Geom3 {
-  const graph = buildSteppedCadFeatureGraph(params);
+  const graph = buildSteppedCadFeatureGraph(params, contouredState);
   if (graph.groups.length === 0) {
     return createEmptyGeom();
   }
@@ -801,8 +806,11 @@ function buildInterfaceLocatorMap(
 export function createSteppedCadSplitParts(
   params: SteppedLayoutParams,
   grooveDepth = params.splitGrooveDepth ?? DEFAULT_INTERFACE_GROOVE_DEPTH,
+  contouredState: ContouredFootprintState<ConstructedSteppedContouredFootprints> = {
+    status: "inactive",
+  },
 ): SteppedSplitPartResult[] {
-  const graph = buildSteppedCadFeatureGraph(params);
+  const graph = buildSteppedCadFeatureGraph(params, contouredState);
   if (graph.groups.length === 0) {
     return [];
   }
@@ -981,8 +989,11 @@ export function createSteppedCadSplitParts(
 
 export function calculateSteppedCadTrayDimensions(
   params: SteppedLayoutParams,
+  contouredState: ContouredFootprintState<ConstructedSteppedContouredFootprints> = {
+    status: "inactive",
+  },
 ) {
-  const graph = buildSteppedCadFeatureGraph(params);
+  const graph = buildSteppedCadFeatureGraph(params, contouredState);
   return {
     width: graph.trayWidth,
     depth: graph.trayDepth,
@@ -992,6 +1003,9 @@ export function calculateSteppedCadTrayDimensions(
 
 export function calculateSteppedCadTrayVolume(
   params: SteppedLayoutParams,
+  contouredState: ContouredFootprintState<ConstructedSteppedContouredFootprints> = {
+    status: "inactive",
+  },
 ) {
-  return measureVolume(createSteppedCadTrayModel(params));
+  return measureVolume(createSteppedCadTrayModel(params, contouredState));
 }

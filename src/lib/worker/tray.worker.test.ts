@@ -157,6 +157,7 @@ describe("tray worker", () => {
 
     expect(createSteppedCadTrayModel).toHaveBeenCalledWith(
       STEPPED_LAYOUT_DEFAULTS,
+      expect.objectContaining({ status: "ready" }),
     );
     expect(workerSelf.postMessage).toHaveBeenCalledWith({
       type: "GENERATION_SUCCESS",
@@ -183,6 +184,7 @@ describe("tray worker", () => {
 
     expect(buildSteppedOutlinePreview).toHaveBeenCalledWith(
       STEPPED_LAYOUT_DEFAULTS,
+      expect.objectContaining({ status: "ready" }),
     );
     expect(workerSelf.postMessage).toHaveBeenCalledWith({
       type: "STEPPED_OUTLINE_PREVIEW_SUCCESS",
@@ -216,6 +218,8 @@ describe("tray worker", () => {
 
     expect(createSteppedCadSplitParts).toHaveBeenCalledWith(
       STEPPED_LAYOUT_DEFAULTS,
+      STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth,
+      expect.objectContaining({ status: "ready" }),
     );
     expect(workerSelf.postMessage).toHaveBeenCalledWith({
       type: "STEPPED_SPLIT_PARTS_SUCCESS",

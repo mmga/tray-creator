@@ -8,7 +8,6 @@ import type {
   SteppedWorkerPort,
 } from "@/lib/model-ports";
 import {
-  calculateSteppedEffectiveDimensions,
   type SteppedLayoutExtents,
 } from "@/lib/stepped-layout-math";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
@@ -59,8 +58,8 @@ export async function exportSteppedModelFiles(
   geometry: Geom3,
   workerPort: SteppedWorkerPort,
   downloadPort: DownloadPort,
+  effectiveDimensions: SteppedLayoutExtents,
 ): Promise<void> {
-  const effectiveDimensions = calculateSteppedEffectiveDimensions(snapshot.params);
   const stlFilename = getSteppedSTLFilename(snapshot.params, effectiveDimensions);
   await exportModelArtifactBundle(
     snapshot,
@@ -102,6 +101,7 @@ export async function exportSteppedSplitPartFiles(
   snapshot: ModeParamSnapshot<"stepped">,
   workerPort: SteppedWorkerPort,
   downloadPort: DownloadPort,
+  effectiveDimensions: SteppedLayoutExtents,
 ): Promise<void> {
   const { params } = snapshot;
   const { parts } = await workerPort.generateSteppedSplitParts(params);
@@ -109,7 +109,6 @@ export async function exportSteppedSplitPartFiles(
     throw new Error("当前模型没有可导出的分件");
   }
 
-  const effectiveDimensions = calculateSteppedEffectiveDimensions(params);
   const baseFilename = getSteppedSplitBaseFilename(params, effectiveDimensions);
   await exportModelArtifactBundle(
     snapshot,
