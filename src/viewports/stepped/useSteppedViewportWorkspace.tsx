@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { ModeInteractionState } from "@/hooks/useModeInteractionState";
-import type { UseSteppedLayoutReturn } from "@/hooks/useSteppedLayout";
+import type { SteppedViewportModel } from "@/hooks/useSteppedLayout";
 import type { TrayViewerSplitPart } from "@/components/TrayViewer";
 import { buildSteppedLayoutEditorViewportModel } from "@/viewports/layout-editor/steppedViewportModel";
 import { ViewportTabs } from "@/viewports/shared/ViewportTabs";
@@ -20,7 +20,7 @@ interface SteppedSplitPreview {
 }
 
 interface UseSteppedViewportWorkspaceOptions {
-  model: UseSteppedLayoutReturn;
+  model: SteppedViewportModel;
   interactionState: ModeInteractionState;
   splitPreview?: SteppedSplitPreview;
 }

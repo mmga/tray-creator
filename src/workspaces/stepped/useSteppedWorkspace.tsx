@@ -8,7 +8,7 @@ import { useWorkspaceDraftSupport } from "@/workspaces/shared";
 import type { ModeWorkspace } from "@/workspaces/types";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
-import type { UseSteppedLayoutReturn } from "@/hooks/useSteppedLayout";
+import type { SteppedWorkspaceModel } from "@/hooks/useSteppedLayout";
 import { exportParams } from "@/lib/param-download";
 import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import { available, modelExportAvailability, modelGenerationAvailability, type DraftActionResult, type SteppedDraftActionAreaAdapter } from "@/workspaces/draft-action-area";
@@ -19,7 +19,7 @@ const SteppedLayoutPanel = dynamic(() =>
 });
 
 interface UseSteppedWorkspaceOptions {
-  model: UseSteppedLayoutReturn;
+  model: SteppedWorkspaceModel;
   interactionState: ModeInteractionState;
   onRequestParamImport: (file: File) => Promise<DraftActionResult>;
   onRequestReset: () => void;
