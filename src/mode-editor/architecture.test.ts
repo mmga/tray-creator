@@ -30,13 +30,17 @@ describe("Mode Editor 架构守卫", () => {
     );
   });
 
-  it("Session 替换提交与 Viewport 重置集中在 Mode Editor", () => {
+  it("Session 替换提交与 Viewport 重置集中在 Mode Editor Adapter", () => {
     const editorSource = readProjectFile("src/hooks/useModeEditor.tsx");
+    const adapterSource = readProjectFile("src/mode-editor/adapters.ts");
     const pageSource = readProjectFile("src/app/page.tsx");
 
-    expect(editorSource).toContain("commitImportedCandidate");
-    expect(editorSource).toContain("commitDraftReplacement");
-    expect(editorSource).toContain("resetForSessionReplacement");
+    expect(editorSource).toContain("createModeEditorCatalog");
+    expect(editorSource).not.toMatch(/function commitImportedCandidate/);
+    expect(editorSource).not.toMatch(/function commitDraftReplacement/);
+    expect(adapterSource).toContain("commitReplacement");
+    expect(adapterSource).toContain("commitImport");
+    expect(adapterSource).toContain("resetForSessionReplacement");
     expect(pageSource).not.toMatch(
       /commitImport|commitDraftLoad|commitReset|resetForSessionReplacement/,
     );

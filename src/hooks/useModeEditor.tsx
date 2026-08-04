@@ -15,7 +15,18 @@ import {
   type ImportModeSelectionRequired,
 } from "@/lib/historical-param-artifact-reader";
 import { prepareParamImport } from "@/lib/param-io";
-import { createModeEditorCatalog } from "@/mode-editor/catalog";
+import {
+  commitImportedCandidate,
+  commitReplacement as commitCatalogReplacement,
+  createModeEditorCatalog,
+  prepareDraftReplacement as prepareCatalogDraftReplacement,
+  prepareReset,
+} from "@/mode-editor/catalog";
+import {
+  createModeEditorAdapter,
+  type ModeEditorReplacement,
+  type ReplacementRisk,
+} from "@/mode-editor/adapters";
 import type { AppMode } from "@/types/custom-tray";
 import { useBaseConverterViewportWorkspace } from "@/viewports/base-converter/useBaseConverterViewportWorkspace";
 import { useCustomViewportWorkspace } from "@/viewports/custom/useCustomViewportWorkspace";
@@ -26,8 +37,6 @@ import { useCustomWorkspace } from "@/workspaces/custom/useCustomWorkspace";
 import type { DraftActionResult } from "@/workspaces/draft-action-area";
 import { useGridWorkspace } from "@/workspaces/grid/useGridWorkspace";
 import { useSteppedWorkspace } from "@/workspaces/stepped/useSteppedWorkspace";
-import type { ModeWorkspaceReplacementTarget } from "@/workspaces/types";
-import type { PreparedDraftLoad } from "@/hooks/useModeDrafts";
 
 export type ModeEditorIntent =
   | { type: "switch-mode"; mode: AppMode }
@@ -54,36 +63,11 @@ export interface ModeEditor {
   perform: (intent: ModeEditorIntent) => Promise<ModeEditorResult>;
 }
 
-type DraftReplacementRequest = {
-  [M in AppMode]: {
-      kind: "draft";
-      mode: M;
-      prepared: PreparedDraftLoad<M>;
-    };
-}[AppMode];
-
-type ReplacementRequest =
-  | { kind: "reset"; mode: AppMode }
-  | DraftReplacementRequest;
-
-type ReplacementRisk = Pick<
-  ModeWorkspaceReplacementTarget<AppMode>,
-  "currentDraftId" | "hasUnsavedChanges" | "paramsRevision"
->;
+type ReplacementRequest = ModeEditorReplacement;
 
 interface PendingReplacement {
   request: ReplacementRequest;
   acknowledgedRisk: ReplacementRisk;
-}
-
-function readRisk(
-  target: ReplacementRisk,
-): ReplacementRisk {
-  return {
-    currentDraftId: target.currentDraftId,
-    hasUnsavedChanges: target.hasUnsavedChanges,
-    paramsRevision: target.paramsRevision,
-  };
 }
 
 function isSameRisk(left: ReplacementRisk, right: ReplacementRisk): boolean {
@@ -92,86 +76,6 @@ function isSameRisk(left: ReplacementRisk, right: ReplacementRisk): boolean {
     left.hasUnsavedChanges === right.hasUnsavedChanges &&
     left.paramsRevision === right.paramsRevision
   );
-}
-
-function commitDraftReplacement(
-  catalog: ReturnType<typeof createModeEditorCatalog>,
-  request: DraftReplacementRequest,
-): void {
-  switch (request.mode) {
-    case "grid":
-      catalog.grid.workspace.replacementTarget.commitDraftLoad(request.prepared);
-      return;
-    case "custom":
-      catalog.custom.workspace.replacementTarget.commitDraftLoad(request.prepared);
-      return;
-    case "base-converter":
-      catalog["base-converter"].workspace.replacementTarget.commitDraftLoad(
-        request.prepared,
-      );
-      return;
-    case "stepped":
-      catalog.stepped.workspace.replacementTarget.commitDraftLoad(
-        request.prepared,
-      );
-  }
-}
-
-function commitImportedCandidate(
-  catalog: ReturnType<typeof createModeEditorCatalog>,
-  candidate: ImportCandidate,
-): void {
-  switch (candidate.mode) {
-    case "grid":
-      catalog.grid.workspace.replacementTarget.commitImport(
-        candidate.snapshot.params,
-      );
-      return;
-    case "custom":
-      catalog.custom.workspace.replacementTarget.commitImport(
-        candidate.snapshot.params,
-      );
-      return;
-    case "base-converter":
-      catalog["base-converter"].workspace.replacementTarget.commitImport(
-        candidate.snapshot.params,
-      );
-      return;
-    case "stepped":
-      catalog.stepped.workspace.replacementTarget.commitImport(
-        candidate.snapshot.params,
-      );
-  }
-}
-
-function prepareDraftReplacement(
-  catalog: ReturnType<typeof createModeEditorCatalog>,
-  mode: AppMode,
-  draftId: string,
-): DraftReplacementRequest | null {
-  switch (mode) {
-    case "grid": {
-      const prepared =
-        catalog.grid.workspace.replacementTarget.prepareDraftLoad(draftId);
-      return prepared ? { kind: "draft", mode, prepared } : null;
-    }
-    case "custom": {
-      const prepared =
-        catalog.custom.workspace.replacementTarget.prepareDraftLoad(draftId);
-      return prepared ? { kind: "draft", mode, prepared } : null;
-    }
-    case "base-converter": {
-      const prepared = catalog[
-        "base-converter"
-      ].workspace.replacementTarget.prepareDraftLoad(draftId);
-      return prepared ? { kind: "draft", mode, prepared } : null;
-    }
-    case "stepped": {
-      const prepared =
-        catalog.stepped.workspace.replacementTarget.prepareDraftLoad(draftId);
-      return prepared ? { kind: "draft", mode, prepared } : null;
-    }
-  }
 }
 
 /** 页面唯一的 Mode 生命周期与 Editing Session 替换入口。 */
@@ -270,13 +174,13 @@ export function useModeEditor(initialMode: AppMode = "grid"): ModeEditor {
   }).workspace;
 
   const catalog = useMemo(() => createModeEditorCatalog({
-    grid: { workspace: gridWorkspace, viewport: gridViewport },
-    custom: { workspace: customWorkspace, viewport: customViewport },
-    "base-converter": {
-      workspace: baseConverterWorkspace,
-      viewport: baseConverterViewport,
-    },
-    stepped: { workspace: steppedWorkspace, viewport: steppedViewport },
+    grid: createModeEditorAdapter(gridWorkspace, gridViewport),
+    custom: createModeEditorAdapter(customWorkspace, customViewport),
+    "base-converter": createModeEditorAdapter(
+      baseConverterWorkspace,
+      baseConverterViewport,
+    ),
+    stepped: createModeEditorAdapter(steppedWorkspace, steppedViewport),
   }), [
     baseConverterViewport,
     baseConverterWorkspace,
@@ -298,20 +202,13 @@ export function useModeEditor(initialMode: AppMode = "grid"): ModeEditor {
   }, []);
 
   const commitReplacement = useCallback((request: ReplacementRequest) => {
-    const entry = catalog[request.mode];
-    if (request.kind === "reset") {
-      entry.workspace.replacementTarget.commitReset();
-    } else {
-      commitDraftReplacement(catalog, request);
-    }
-    entry.viewport.resetForSessionReplacement();
+    commitCatalogReplacement(catalog, request);
   }, [catalog]);
 
   const startReplacement = useCallback((
     request: ReplacementRequest,
   ): ModeEditorResult => {
-    const target = catalog[request.mode].workspace.replacementTarget;
-    const risk = readRisk(target);
+    const risk = catalog[request.mode].readReplacementRisk();
     if (risk.hasUnsavedChanges) {
       setPendingReplacement({ request, acknowledgedRisk: risk });
       return { status: "awaiting-confirmation" };
@@ -335,9 +232,7 @@ export function useModeEditor(initialMode: AppMode = "grid"): ModeEditor {
       } else {
         setModeSelection(null);
         setImportCandidate(preparation.candidate);
-        setImportRisk(readRisk(
-          catalog[preparation.candidate.mode].workspace.replacementTarget,
-        ));
+        setImportRisk(catalog[preparation.candidate.mode].readReplacementRisk());
       }
       return { status: "awaiting-confirmation" };
     } catch (error) {
@@ -354,17 +249,15 @@ export function useModeEditor(initialMode: AppMode = "grid"): ModeEditor {
   const confirmReplacement = useCallback((): ModeEditorResult => {
     if (importCandidate) {
       const entry = catalog[importCandidate.mode];
-      const target = entry.workspace.replacementTarget;
-      const currentRisk = readRisk(target);
+      const currentRisk = entry.readReplacementRisk();
       if (!importRisk || !isSameRisk(importRisk, currentRisk)) {
         setImportRisk(currentRisk);
         return { status: "awaiting-confirmation" };
       }
       if (importCandidate.mode !== mode) {
-        activeEntry.viewport.deactivate();
+        activeEntry.deactivate();
       }
       commitImportedCandidate(catalog, importCandidate);
-      entry.viewport.resetForSessionReplacement();
       setMode(importCandidate.mode);
       toast(
         "success",
@@ -378,9 +271,9 @@ export function useModeEditor(initialMode: AppMode = "grid"): ModeEditor {
     if (!pendingReplacement) {
       return { status: "error", message: "当前没有待确认的替换操作" };
     }
-    const target =
-      catalog[pendingReplacement.request.mode].workspace.replacementTarget;
-    const currentRisk = readRisk(target);
+    const currentRisk = catalog[
+      pendingReplacement.request.mode
+    ].readReplacementRisk();
     if (!isSameRisk(pendingReplacement.acknowledgedRisk, currentRisk)) {
       setPendingReplacement({
         request: pendingReplacement.request,
@@ -392,7 +285,7 @@ export function useModeEditor(initialMode: AppMode = "grid"): ModeEditor {
     setPendingReplacement(null);
     return { status: "completed" };
   }, [
-    activeEntry.viewport,
+    activeEntry,
     catalog,
     clearPendingImport,
     commitReplacement,
@@ -409,12 +302,12 @@ export function useModeEditor(initialMode: AppMode = "grid"): ModeEditor {
     switch (intent.type) {
       case "switch-mode":
         if (intent.mode !== mode) {
-          activeEntry.viewport.deactivate();
+          activeEntry.deactivate();
           setMode(intent.mode);
         }
         return { status: "completed" };
       case "request-reset":
-        return startReplacement({ kind: "reset", mode: intent.mode });
+        return startReplacement(prepareReset(catalog, intent.mode));
       case "request-param-import":
         return prepareImport(intent.file);
       case "select-import-mode":
@@ -423,7 +316,7 @@ export function useModeEditor(initialMode: AppMode = "grid"): ModeEditor {
         }
         return prepareImport(pendingImportFile, intent.mode);
       case "request-draft-load": {
-        const request = prepareDraftReplacement(
+        const request = prepareCatalogDraftReplacement(
           catalog,
           intent.mode,
           intent.draftId,
@@ -441,7 +334,7 @@ export function useModeEditor(initialMode: AppMode = "grid"): ModeEditor {
         return { status: "cancelled" };
     }
   }, [
-    activeEntry.viewport,
+    activeEntry,
     catalog,
     clearPendingImport,
     confirmReplacement,

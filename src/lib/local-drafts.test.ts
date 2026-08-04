@@ -176,7 +176,25 @@ describe("local drafts", () => {
     });
 
     expect(listDrafts("stepped")).toEqual([record.item]);
-    expect(getDraft("stepped", record.item.id)).toEqual(record);
+    const loaded = getDraft("stepped", record.item.id);
+    expect(loaded).toMatchObject({
+      storageVersion: 1,
+      item: record.item,
+      paramFile: {
+        version: 1,
+        mode: "stepped",
+        params: expect.objectContaining({
+          enableSplitAssembly: false,
+          baseHoleSize: "20",
+        }),
+      },
+    });
+    expect(loaded?.paramFile.params.slots[0]).toMatchObject({
+      slotDefinitionId: "circle-25",
+      slotWidth: 25.4,
+      slotHeight: 25.4,
+    });
+    expect(loaded?.paramFile.params).not.toHaveProperty("activeGroupId");
   });
 
   it("读取历史 CAD 草稿为统一阶梯，并在更新时迁移存储键", () => {
@@ -213,6 +231,25 @@ describe("local drafts", () => {
     updateDraft("stepped", id, "已迁移", params);
     expect(localStorage.getItem(`tray-creator:drafts:stepped:${id}:v1`)).not.toBeNull();
     expect(localStorage.getItem(`tray-creator:drafts:stepped-cad:${id}:v1`)).toBeNull();
+  });
+
+  it("当前阶梯 Draft 也通过 Historical Param Artifact Reader 归一化", () => {
+    const record = createDraft("待归一化阶梯", "stepped", createSteppedParams());
+    const key = `tray-creator:drafts:stepped:${record.item.id}:v1`;
+    const stored = JSON.parse(localStorage.getItem(key)!);
+    delete stored.paramFile.params.enableSplitAssembly;
+    delete stored.paramFile.params.slots[0].slotWidth;
+    delete stored.paramFile.params.slots[0].slotHeight;
+    localStorage.setItem(key, JSON.stringify(stored));
+
+    const loaded = getDraft("stepped", record.item.id);
+
+    expect(loaded?.paramFile.params.enableSplitAssembly).toBe(false);
+    expect(loaded?.paramFile.params.slots[0]).toMatchObject({
+      slotDefinitionId: "circle-25",
+      slotWidth: 25.4,
+      slotHeight: 25.4,
+    });
   });
 
   it("在阶梯草稿中发现历史简易阶梯并在更新时迁移存储键", () => {
@@ -465,8 +502,7 @@ describe("local drafts", () => {
     expect(getDraft("stepped", initial.item.id)?.item.title).toBe("Final Draft");
 
     exportDraft("stepped", initial.item.id);
-    const exportedParams = { ...nextParams };
-    delete exportedParams.activeGroupId;
+    const exportedParams = getDraft("stepped", initial.item.id)!.paramFile.params;
     expect(downloadParamFileMock).toHaveBeenCalledWith(
       {
         mode: "stepped",

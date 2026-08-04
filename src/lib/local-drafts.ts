@@ -8,7 +8,6 @@ import { buildDraftSummary } from "@/lib/draft-summary";
 import type { DraftParamsByMode } from "@/lib/draft-summary";
 import {
   extractCompatibilityFields,
-  isDraftMode,
   normalizeListItem,
   type DraftListItemCompatibilityByMode,
   type DraftListItemShape,
@@ -137,6 +136,13 @@ function buildListItem<M extends DraftMode>(
   };
 }
 
+function isKnownStoredParamMode(
+  value: unknown,
+): value is DraftMode | "simple-stepped" | "stepped-cad" {
+  return value === "grid" || value === "custom" || value === "base-converter" ||
+    value === "stepped" || value === "simple-stepped" || value === "stepped-cad";
+}
+
 function getDraftInternal<M extends DraftMode>(
   mode: M,
   id: string,
@@ -160,17 +166,7 @@ function getDraftInternal<M extends DraftMode>(
       return null;
     }
 
-    const recordMode = parsed.paramFile.mode === "stepped-cad" ||
-        parsed.paramFile.mode === "simple-stepped"
-      ? parsed.paramFile.mode
-      : isDraftMode(parsed.paramFile.mode)
-        ? parsed.paramFile.mode
-        : mode;
-    const canonicalRecordMode =
-      recordMode === "stepped-cad" || recordMode === "simple-stepped"
-        ? "stepped"
-        : recordMode;
-    if (canonicalRecordMode !== mode || parsed.paramFile.version !== 1) {
+    if (parsed.paramFile.version !== 1) {
       return null;
     }
 
@@ -178,22 +174,16 @@ function getDraftInternal<M extends DraftMode>(
     if (!rawParams || typeof rawParams !== "object") {
       return null;
     }
-    const params = (recordMode === "stepped-cad" || recordMode === "simple-stepped"
-      ? readDraftParamArtifact(
-          { version: 1, mode: recordMode, params: rawParams },
-          mode,
-        )
-      : mode === "base-converter"
-        ? readDraftParamArtifact(
-            { version: 1, mode, params: rawParams },
-            mode,
-          )
-      : mode === "stepped" &&
-          !("enableSplitAssembly" in (rawParams as object))
-        ? { ...rawParams, enableSplitAssembly: false }
-        : rawParams) as DraftParamsByMode[M];
+    const storedMode = isKnownStoredParamMode(parsed.paramFile.mode)
+      ? parsed.paramFile.mode
+      : mode;
+    const normalizedParams = readDraftParamArtifact(
+      { version: 1, mode: storedMode, params: rawParams },
+      mode,
+    );
+    const params = captureModeParamSnapshot(mode, normalizedParams).params;
 
-    const itemSource = recordMode === "simple-stepped"
+    const itemSource = storedMode === "simple-stepped"
       ? { ...parsed.item, mode: "stepped", summary: undefined }
       : parsed.item ?? {};
     const item = normalizeListItem(
