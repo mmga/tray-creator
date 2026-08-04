@@ -2,14 +2,18 @@ import { describe, expect, it } from "vitest";
 import downloadedTwoHeightRecessFixture from "@/lib/fixtures/tray-stepped-cad-download-two-height-recess.json";
 import { buildSteppedCadFeatureGraph } from "@/test/contoured-state";
 import { buildSteppedCadSplitProfilePlan } from "@/lib/stepped-cad-split-profiles";
+import { buildSteppedCadSplitPartitionPlan } from "@/lib/stepped-cad-split-partition-plan";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 
 function buildPlan(params: SteppedLayoutParams) {
   const graph = buildSteppedCadFeatureGraph(params);
-  return buildSteppedCadSplitProfilePlan({
+  const partitionPlan = buildSteppedCadSplitPartitionPlan({
     graph,
+    layoutGroups: params.groups,
+  });
+  return buildSteppedCadSplitProfilePlan({
+    partitionPlan,
     params: {
-      groups: params.groups,
       splitGrooveDepth: params.splitGrooveDepth,
       splitGrooveType: params.splitGrooveType,
       enableSplitRecess: params.enableSplitRecess,

@@ -17,6 +17,10 @@ import {
   buildSteppedCadSplitProfilePlan,
   type SteppedCadLayerProfilePlan,
 } from "@/lib/stepped-cad-split-profiles";
+import {
+  buildSteppedCadSplitPartitionPlan,
+  type SteppedCadSplitPartitionUnit,
+} from "@/lib/stepped-cad-split-partition-plan";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 import { resolveSteppedBaseHoleStructure } from "@/lib/stepped-base-hole";
 import { MAGNET_POST_HOLE_BOTTOM_WALL } from "@/lib/stepped-config";
@@ -28,13 +32,12 @@ const { intersect, subtract, union } = booleans;
 const { extrudeLinear } = extrusions;
 const { geom3 } = geometries;
 const { measureBoundingBox, measureVolume } = measurements;
-const { circle, ellipse, rectangle } = primitives;
+const { circle, ellipse } = primitives;
 const { rotateZ, translate } = transforms;
 
 const DEG_TO_RAD = Math.PI / 180;
 const FEATURE_EPSILON = 0.02;
 const LAYER_OVERLAP = 0.1;
-const PARTITION_MARGIN = 100;
 const DEFAULT_INTERFACE_GROOVE_DEPTH = 2;
 const INTERFACE_FOOTPRINT_SEGMENTS = 24;
 const LOCATOR_PIN_RADIUS = 3;
@@ -114,7 +117,6 @@ type SteppedCadFeatureGraph = ReturnType<typeof buildSteppedCadFeatureGraph>;
 type SteppedCadGroupFeature = SteppedCadFeatureGraph["groups"][number];
 type SteppedCadLayerFeature = SteppedCadFeatureGraph["layers"][number];
 type SteppedCadSlotHoleFeature = SteppedCadFeatureGraph["slotHoles"][number];
-type SteppedCadBaseHoleFeature = SteppedCadFeatureGraph["baseHoles"][number];
 type SteppedCadMagnetPostHoleFeature = SteppedCadFeatureGraph["magnetPostHoles"][number];
 
 function buildMagnetPostHoleSolid(hole: SteppedCadMagnetPostHoleFeature) {
@@ -140,25 +142,6 @@ function buildMagnetPostFloorSolid(
     ),
   );
 }
-
-type SteppedCadSplitUnit = {
-  key: string;
-  groups: SteppedCadGroupFeature[];
-  slotHoles: SteppedCadSlotHoleFeature[];
-  baseHoles: SteppedCadBaseHoleFeature[];
-  magnetPostHoles: SteppedCadMagnetPostHoleFeature[];
-  minHeight: number;
-  maxHeight: number;
-};
-
-type SteppedCadPartition = {
-  footprint: Geom2;
-};
-
-type PartitionedGroupFootprint = {
-  group: SteppedCadGroupFeature;
-  footprint: Geom2;
-};
 
 type LocatorPoint = {
   cx: number;
@@ -223,7 +206,7 @@ function buildBaseSolid(
   return layeredBase;
 }
 
-function getSlotCenter(slotHoles: SteppedCadSlotHoleFeature[]) {
+function getSlotCenter(slotHoles: readonly SteppedCadSlotHoleFeature[]) {
   const totals = slotHoles.reduce(
     (acc, slot) => ({
       x: acc.x + slot.cx,
@@ -238,173 +221,15 @@ function getSlotCenter(slotHoles: SteppedCadSlotHoleFeature[]) {
   };
 }
 
-function buildSplitUnitKeyByGroupId(
-  groups: SteppedCadGroupFeature[],
+function buildSplitPartLabel(
+  groups: readonly SteppedCadGroupFeature[],
   params: SteppedLayoutParams,
 ) {
-  const groupIds = new Set(groups.map((group) => group.groupId));
-  const parentByGroupId = new Map<string, string>();
-
-  for (const groupId of groupIds) {
-    parentByGroupId.set(groupId, groupId);
-  }
-
-  const find = (groupId: string): string => {
-    const parent = parentByGroupId.get(groupId) ?? groupId;
-    if (parent === groupId) {
-      return parent;
-    }
-    const root = find(parent);
-    parentByGroupId.set(groupId, root);
-    return root;
-  };
-
-  const unionKeys = (left: string, right: string) => {
-    const leftRoot = find(left);
-    const rightRoot = find(right);
-    if (leftRoot !== rightRoot) {
-      parentByGroupId.set(leftRoot, rightRoot);
-    }
-  };
-
-  for (const group of params.groups) {
-    const targetGroupId = group.splitPartGroupId;
-    if (targetGroupId && groupIds.has(group.id) && groupIds.has(targetGroupId)) {
-      unionKeys(group.id, targetGroupId);
-    }
-  }
-
-  const keyByGroupId = new Map<string, string>();
-  for (const groupId of groupIds) {
-    keyByGroupId.set(groupId, find(groupId));
-  }
-  return keyByGroupId;
-}
-
-function buildSplitUnits(
-  groups: SteppedCadGroupFeature[],
-  slotHoles: SteppedCadSlotHoleFeature[],
-  baseHoles: SteppedCadBaseHoleFeature[],
-  magnetPostHoles: SteppedCadMagnetPostHoleFeature[],
-  splitUnitKeyByGroupId: Map<string, string>,
-) {
-  const unitsByKey = new Map<string, SteppedCadSplitUnit>();
-
-  for (const group of groups) {
-    const key = splitUnitKeyByGroupId.get(group.groupId) ?? group.groupId;
-    const unit = unitsByKey.get(key) ?? {
-      key,
-      groups: [],
-      slotHoles: [],
-      baseHoles: [],
-      magnetPostHoles: [],
-      minHeight: group.columnHeight,
-      maxHeight: group.columnHeight,
-    };
-    unit.groups.push(group);
-    unit.minHeight = Math.min(unit.minHeight, group.columnHeight);
-    unit.maxHeight = Math.max(unit.maxHeight, group.columnHeight);
-    unitsByKey.set(key, unit);
-  }
-
-  for (const unit of unitsByKey.values()) {
-    const groupIds = new Set(unit.groups.map((group) => group.groupId));
-    unit.slotHoles = slotHoles.filter((slot) => groupIds.has(slot.groupId));
-    unit.baseHoles = baseHoles.filter((slot) => groupIds.has(slot.groupId));
-    unit.magnetPostHoles = magnetPostHoles.filter((slot) => groupIds.has(slot.groupId));
-    unit.groups.sort((left, right) => left.columnHeight - right.columnHeight);
-  }
-
-  return [...unitsByKey.values()].sort(
-    (left, right) =>
-      left.minHeight - right.minHeight || left.maxHeight - right.maxHeight,
-  );
-}
-
-function buildSameHeightPartitionMap(
-  units: SteppedCadSplitUnit[],
-  trayWidth: number,
-  trayDepth: number,
-) {
-  const partitions = new Map<string, SteppedCadPartition>();
-  const unitsByHeight = new Map<number, SteppedCadSplitUnit[]>();
-
-  for (const unit of units) {
-    const bucket = unitsByHeight.get(unit.minHeight) ?? [];
-    bucket.push(unit);
-    unitsByHeight.set(unit.minHeight, bucket);
-  }
-
-  for (const sameHeightUnits of unitsByHeight.values()) {
-    if (sameHeightUnits.length < 2) {
-      continue;
-    }
-
-    const entries = sameHeightUnits.map((unit) => ({
-      unit,
-      center: getSlotCenter(unit.slotHoles),
-    }));
-    const xSpread =
-      Math.max(...entries.map((entry) => entry.center.x)) -
-      Math.min(...entries.map((entry) => entry.center.x));
-    const ySpread =
-      Math.max(...entries.map((entry) => entry.center.y)) -
-      Math.min(...entries.map((entry) => entry.center.y));
-    const axis = xSpread >= ySpread ? "x" : "y";
-    const sorted = entries.sort((left, right) => left.center[axis] - right.center[axis]);
-
-    for (let index = 0; index < sorted.length; index += 1) {
-      const previousBoundary =
-        index === 0
-          ? (axis === "x" ? -trayWidth / 2 : -trayDepth / 2) - PARTITION_MARGIN
-          : (sorted[index - 1].center[axis] + sorted[index].center[axis]) / 2;
-      const nextBoundary =
-        index === sorted.length - 1
-          ? (axis === "x" ? trayWidth / 2 : trayDepth / 2) + PARTITION_MARGIN
-          : (sorted[index].center[axis] + sorted[index + 1].center[axis]) / 2;
-      const width =
-        axis === "x"
-          ? nextBoundary - previousBoundary
-          : trayWidth + PARTITION_MARGIN * 2;
-      const depth =
-        axis === "y"
-          ? nextBoundary - previousBoundary
-          : trayDepth + PARTITION_MARGIN * 2;
-      const centerX = axis === "x" ? (previousBoundary + nextBoundary) / 2 : 0;
-      const centerY = axis === "y" ? (previousBoundary + nextBoundary) / 2 : 0;
-
-      partitions.set(
-        sorted[index].unit.key,
-        {
-          footprint: rectangle({
-            size: [width, depth],
-            center: [centerX, centerY],
-          }),
-        },
-      );
-    }
-  }
-
-  return partitions;
-}
-
-function getSplitUnitExternalBaseHeight(
-  splitUnit: SteppedCadSplitUnit,
-  units: SteppedCadSplitUnit[],
-) {
-  const lowerHeights = units
-    .filter((unit) => unit.key !== splitUnit.key && unit.maxHeight < splitUnit.minHeight)
-    .map((unit) => unit.maxHeight);
-
-  return lowerHeights.length > 0 ? Math.max(...lowerHeights) : 0;
-}
-
-function buildSplitPartLabel(groups: SteppedCadGroupFeature[], params: SteppedLayoutParams) {
   const nameById = new Map(params.groups.map((group) => [group.id, group.name]));
   return groups.map((group) => nameById.get(group.groupId) ?? group.groupId).join(" + ");
 }
 
-function buildSplitPartIdLabel(groups: SteppedCadGroupFeature[]) {
+function buildSplitPartIdLabel(groups: readonly SteppedCadGroupFeature[]) {
   return groups
     .map((group) => group.groupId.replace(/[^a-zA-Z0-9_-]+/g, "_"))
     .join("_");
@@ -468,10 +293,6 @@ function isEmptyGeom2(geometry: Geom2 | null | undefined) {
   return !geometry || !Array.isArray(sides) || sides.length === 0;
 }
 
-function unionGeom2Parts(parts: Geom2[]) {
-  return parts.length === 1 ? parts[0] : (union(...parts) as Geom2);
-}
-
 function buildSolidFromFootprint(
   footprint: Geom2,
   fromHeight: number,
@@ -514,44 +335,6 @@ function buildBodyFromLayerProfiles(
     : (union(...bodySolids) as Geom3);
 }
 
-function getPartitionedGroupFootprints(
-  splitUnit: SteppedCadSplitUnit,
-  partitions: Map<string, SteppedCadPartition>,
-) {
-  const partition = partitions.get(splitUnit.key);
-  return splitUnit.groups
-    .map<PartitionedGroupFootprint | null>((group) => {
-      const clipped = partition
-        ? (intersect(group.footprint, partition.footprint) as Geom2)
-        : group.footprint;
-      return isEmptyGeom2(clipped)
-        ? null
-        : {
-            group,
-            footprint: clipped,
-          };
-    })
-    .filter((item): item is PartitionedGroupFootprint => item !== null);
-}
-
-function buildSupportFootprint(
-  splitUnit: SteppedCadSplitUnit,
-  partitions: Map<string, SteppedCadPartition>,
-  allowedGroupIds?: Set<string>,
-) {
-  const footprints = getPartitionedGroupFootprints(splitUnit, partitions)
-    .filter((entry) =>
-      allowedGroupIds ? allowedGroupIds.has(entry.group.groupId) : true,
-    )
-    .map((entry) => entry.footprint);
-
-  if (footprints.length === 0) {
-    return null;
-  }
-
-  return unionGeom2Parts(footprints);
-}
-
 function resolveSplitAssemblyMode(
   params: SteppedLayoutParams,
 ) {
@@ -588,7 +371,9 @@ function buildLocatorFootprint(point: LocatorPoint, clearance = 0) {
   ) as Geom2;
 }
 
-function selectInterfaceLocatorPoints(splitUnit: SteppedCadSplitUnit) {
+function selectInterfaceLocatorPoints(
+  splitUnit: SteppedCadSplitPartitionUnit,
+) {
   const candidates = splitUnit.slotHoles.map((slotHole) => ({
     cx: slotHole.cx,
     cy: slotHole.cy,
@@ -738,9 +523,8 @@ function buildLocatorSolid(
 }
 
 function buildInterfaceLocatorMap(
-  splitUnit: SteppedCadSplitUnit,
-  splitUnits: SteppedCadSplitUnit[],
-  partitions: Map<string, SteppedCadPartition>,
+  splitUnit: SteppedCadSplitPartitionUnit,
+  splitUnits: readonly SteppedCadSplitPartitionUnit[],
   baseHeight: number,
   grooveDepth: number,
 ) {
@@ -748,11 +532,11 @@ function buildInterfaceLocatorMap(
   const splitUnitHeights = new Set(splitUnit.groups.map((group) => group.columnHeight));
 
   for (const otherSplitUnit of splitUnits) {
-    if (otherSplitUnit.key === splitUnit.key) {
+    if (otherSplitUnit.unitKey === splitUnit.unitKey) {
       continue;
     }
 
-    const otherBaseHeight = getSplitUnitExternalBaseHeight(otherSplitUnit, splitUnits);
+    const otherBaseHeight = otherSplitUnit.externalBaseHeight;
     if (!splitUnitHeights.has(otherBaseHeight)) {
       continue;
     }
@@ -762,16 +546,9 @@ function buildInterfaceLocatorMap(
       continue;
     }
 
-    const contactGroupIds = new Set(
-      splitUnit.groups
-        .filter((group) => group.columnHeight === otherBaseHeight)
-        .map((group) => group.groupId),
-    );
-    const contactFootprint = buildSupportFootprint(
-      splitUnit,
-      partitions,
-      contactGroupIds,
-    );
+    const contactFootprint = splitUnit.supportFootprintsByHeight.find(
+      (entry) => entry.topHeight === otherBaseHeight,
+    )?.footprint ?? null;
     const points = filterLocatorPointsOnFootprint(
       selectInterfaceLocatorPoints(otherSplitUnit),
       contactFootprint,
@@ -815,24 +592,15 @@ export function createSteppedCadSplitParts(
     return [];
   }
 
-  const splitUnitKeyByGroupId = buildSplitUnitKeyByGroupId(graph.groups, params);
-  const splitUnits = buildSplitUnits(
-    graph.groups,
-    graph.slotHoles,
-    graph.baseHoles,
-    graph.magnetPostHoles,
-    splitUnitKeyByGroupId,
-  );
-  const partitions = buildSameHeightPartitionMap(
-    splitUnits,
-    graph.trayWidth,
-    graph.trayDepth,
-  );
+  const partitionPlan = buildSteppedCadSplitPartitionPlan({
+    graph,
+    layoutGroups: params.groups,
+  });
+  const splitUnits = partitionPlan.units;
   const assemblyMode = resolveSplitAssemblyMode(params);
   const splitProfilePlan = buildSteppedCadSplitProfilePlan({
-    graph,
+    partitionPlan,
     params: {
-      groups: params.groups,
       splitGrooveDepth: grooveDepth,
       splitGrooveType: params.splitGrooveType,
       enableSplitRecess: params.enableSplitRecess,
@@ -845,8 +613,8 @@ export function createSteppedCadSplitParts(
   );
 
   return splitUnits.flatMap((splitUnit, index) => {
-    const splitUnitBaseHeight = getSplitUnitExternalBaseHeight(splitUnit, splitUnits);
-    const profileUnit = profileUnitByKey.get(splitUnit.key);
+    const splitUnitBaseHeight = splitUnit.externalBaseHeight;
+    const profileUnit = profileUnitByKey.get(splitUnit.unitKey);
     if (!profileUnit) {
       return [];
     }
@@ -860,7 +628,6 @@ export function createSteppedCadSplitParts(
       const locators = buildInterfaceLocatorMap(
         splitUnit,
         splitUnits,
-        partitions,
         splitUnitBaseHeight,
         grooveDepth,
       );
@@ -868,7 +635,7 @@ export function createSteppedCadSplitParts(
         profileUnit.interfaceProfiles
           .filter(
             (profile) =>
-              profile.lowerUnitKey === splitUnit.key &&
+              profile.lowerUnitKey === splitUnit.unitKey &&
               profile.state === "active" &&
               profile.femaleDepth > 0,
           )
@@ -899,7 +666,7 @@ export function createSteppedCadSplitParts(
       if (splitUnitBaseHeight > 0) {
         const activeUpperInterfaces = profileUnit.interfaceProfiles.filter(
           (profile) =>
-            profile.upperUnitKey === splitUnit.key &&
+            profile.upperUnitKey === splitUnit.unitKey &&
             profile.state === "active" &&
             profile.maleDepth > 0,
         );
@@ -955,7 +722,12 @@ export function createSteppedCadSplitParts(
     let part = slotHoles.length > 0 ? subtract(body, ...slotHoles) : body;
 
     if (baseHoleStructure === "magnetic-base-hole") {
-      part = subtractBaseHoles(part, splitUnit.baseHoles, 0, params.baseHoleSize);
+      part = subtractBaseHoles(
+        part,
+        [...splitUnit.baseHoles],
+        0,
+        params.baseHoleSize,
+      );
     }
     if (
       baseHoleStructure === "magnet-post-hole" &&

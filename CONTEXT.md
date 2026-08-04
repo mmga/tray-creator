@@ -292,6 +292,10 @@ _Avoid_: Treating split assembly as a separate Mode, maintaining a second undo h
 The optional, default-off Custom Stepped Tray capability that reveals split grouping, assembly features, split preview, and split-part export when enabled.
 _Avoid_: A separate Mode, hiding ellipse slots with the capability, or showing its advanced controls in the default workflow.
 
+**Split Assembly Partition Plan**:
+The authoritative in-process plan that groups CAD Stepped Construction features into stable split units and records their same-height partitions, external base heights, feature ownership, and partitioned support footprints before Split Interface Profiles and 3D split bodies are built.
+_Avoid_: Re-deriving split units or partitions separately for Split Interface Profiles and 3D split bodies, or treating the plan as the source of male/female footprint geometry.
+
 **Dormant Split Configuration**:
 The preserved split grouping and assembly settings that remain stored but have no effect while Split Assembly Capability is disabled.
 _Avoid_: Clearing advanced settings when the capability is toggled off or applying hidden split settings to whole-model generation.
@@ -919,6 +923,9 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - **CAD Stepped Construction** builds one extruded body per height band.
 - **CAD Stepped Construction** applies slot holes and the selected **Base-hole Structure** after the stepped height bands are assembled.
 - A Custom Stepped Tray split part has at most one active **Split Assembly Groove Type**.
+- One split-part generation request derives exactly one **Split Assembly Partition Plan** from its CAD Stepped Construction features.
+- **Split Interface Profile** generation and 3D split-body generation consume the same Split Assembly Partition Plan.
+- A **Split Assembly Partition Plan** owns split-unit grouping, same-height partitioning, external base heights, feature ownership, and partitioned support footprints, but never defines male or female footprint geometry.
 - A **Profile Recess** uses the full upper contact-face outline as the male tenon profile.
 - The user-facing label for **Profile Recess** is "轮廓凹槽".
 - An **Inset Recess** uses the upper contact-face outline after a fixed 1mm inward inset as the male tenon profile.

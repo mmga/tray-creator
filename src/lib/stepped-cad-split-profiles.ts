@@ -1,46 +1,23 @@
-import { booleans, expansions, primitives, transforms } from "@jscad/modeling";
+import { booleans, expansions } from "@jscad/modeling";
 import type { Geom2 } from "@jscad/modeling/src/geometries/types";
 import { insetGeom2 } from "@/lib/outline-geometry";
 import type {
-  SteppedCadBaseHoleFeature,
-  SteppedCadFeatureGraph,
-  SteppedCadGroupFeature,
-  SteppedCadSlotHoleFeature,
-} from "@/lib/stepped-cad-feature-graph";
+  SteppedCadSplitPartitionPlan,
+  SteppedCadSplitPartitionUnit,
+} from "@/lib/stepped-cad-split-partition-plan";
 import type {
-  SlotGroup,
   SplitGrooveType,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 
 const { intersect, subtract, union } = booleans;
 const { offset } = expansions;
-const { circle } = primitives;
-const { translate } = transforms;
 
 const DEFAULT_INTERFACE_GROOVE_INSET = 1;
 const INSET_INTERFACE_GROOVE_INSET = 1;
 const DEFAULT_INTERFACE_CLEARANCE = 0.1;
 const INTERFACE_FOOTPRINT_SEGMENTS = 24;
 const LOCATOR_RECESS_DEPTH = 2;
-
-type SteppedCadSplitUnit = {
-  key: string;
-  groups: SteppedCadGroupFeature[];
-  slotHoles: SteppedCadSlotHoleFeature[];
-  baseHoles: SteppedCadBaseHoleFeature[];
-  minHeight: number;
-  maxHeight: number;
-};
-
-type SteppedCadPartition = {
-  footprint: Geom2;
-};
-
-type PartitionedGroupFootprint = {
-  group: SteppedCadGroupFeature;
-  footprint: Geom2;
-};
 
 type AssemblyMode = {
   enableRecess: boolean;
@@ -62,10 +39,9 @@ export interface SteppedCadSplitProfileIssue {
 }
 
 export interface SteppedCadSplitProfileRequest {
-  graph: SteppedCadFeatureGraph;
+  partitionPlan: SteppedCadSplitPartitionPlan;
   params: Pick<
     SteppedLayoutParams,
-    | "groups"
     | "splitGrooveDepth"
     | "splitGrooveType"
     | "enableSplitRecess"
@@ -178,242 +154,6 @@ function resolveAssemblyMode(
   };
 }
 
-function buildSplitUnitKeyByGroupId(
-  groups: SteppedCadGroupFeature[],
-  layoutGroups: Pick<SlotGroup, "id" | "splitPartGroupId">[],
-) {
-  const groupIds = new Set(groups.map((group) => group.groupId));
-  const parentByGroupId = new Map<string, string>();
-
-  for (const groupId of groupIds) {
-    parentByGroupId.set(groupId, groupId);
-  }
-
-  const find = (groupId: string): string => {
-    const parent = parentByGroupId.get(groupId) ?? groupId;
-    if (parent === groupId) {
-      return parent;
-    }
-    const root = find(parent);
-    parentByGroupId.set(groupId, root);
-    return root;
-  };
-
-  const unionKeys = (left: string, right: string) => {
-    const leftRoot = find(left);
-    const rightRoot = find(right);
-    if (leftRoot !== rightRoot) {
-      parentByGroupId.set(leftRoot, rightRoot);
-    }
-  };
-
-  for (const group of layoutGroups) {
-    const targetGroupId = group.splitPartGroupId;
-    if (targetGroupId && groupIds.has(group.id) && groupIds.has(targetGroupId)) {
-      unionKeys(group.id, targetGroupId);
-    }
-  }
-
-  const keyByGroupId = new Map<string, string>();
-  for (const groupId of groupIds) {
-    keyByGroupId.set(groupId, find(groupId));
-  }
-  return keyByGroupId;
-}
-
-function buildSplitUnits(
-  groups: SteppedCadGroupFeature[],
-  slotHoles: SteppedCadSlotHoleFeature[],
-  baseHoles: SteppedCadBaseHoleFeature[],
-  splitUnitKeyByGroupId: Map<string, string>,
-) {
-  const unitsByKey = new Map<string, SteppedCadSplitUnit>();
-
-  for (const group of groups) {
-    const key = splitUnitKeyByGroupId.get(group.groupId) ?? group.groupId;
-    const unit = unitsByKey.get(key) ?? {
-      key,
-      groups: [],
-      slotHoles: [],
-      baseHoles: [],
-      minHeight: group.columnHeight,
-      maxHeight: group.columnHeight,
-    };
-    unit.groups.push(group);
-    unit.minHeight = Math.min(unit.minHeight, group.columnHeight);
-    unit.maxHeight = Math.max(unit.maxHeight, group.columnHeight);
-    unitsByKey.set(key, unit);
-  }
-
-  for (const unit of unitsByKey.values()) {
-    const groupIds = new Set(unit.groups.map((group) => group.groupId));
-    unit.slotHoles = slotHoles.filter((slot) => groupIds.has(slot.groupId));
-    unit.baseHoles = baseHoles.filter((hole) => groupIds.has(hole.groupId));
-    unit.groups.sort((left, right) => left.columnHeight - right.columnHeight);
-  }
-
-  return [...unitsByKey.values()].sort(
-    (left, right) =>
-      left.minHeight - right.minHeight || left.maxHeight - right.maxHeight,
-  );
-}
-
-function getSlotCenter(slotHoles: SteppedCadSlotHoleFeature[]) {
-  const totals = slotHoles.reduce(
-    (acc, slot) => ({
-      x: acc.x + slot.cx,
-      y: acc.y + slot.cy,
-    }),
-    { x: 0, y: 0 },
-  );
-  const count = Math.max(slotHoles.length, 1);
-  return {
-    x: totals.x / count,
-    y: totals.y / count,
-  };
-}
-
-function buildSameHeightPartitionMap(
-  units: SteppedCadSplitUnit[],
-  trayWidth: number,
-  trayDepth: number,
-) {
-  const partitions = new Map<string, SteppedCadPartition>();
-  const unitsByHeight = new Map<number, SteppedCadSplitUnit[]>();
-
-  for (const unit of units) {
-    const bucket = unitsByHeight.get(unit.minHeight) ?? [];
-    bucket.push(unit);
-    unitsByHeight.set(unit.minHeight, bucket);
-  }
-
-  for (const sameHeightUnits of unitsByHeight.values()) {
-    if (sameHeightUnits.length < 2) {
-      continue;
-    }
-
-    const entries = sameHeightUnits.map((unit) => ({
-      unit,
-      center: getSlotCenter(unit.slotHoles),
-    }));
-    const xSpread =
-      Math.max(...entries.map((entry) => entry.center.x)) -
-      Math.min(...entries.map((entry) => entry.center.x));
-    const ySpread =
-      Math.max(...entries.map((entry) => entry.center.y)) -
-      Math.min(...entries.map((entry) => entry.center.y));
-    const axis = xSpread >= ySpread ? "x" : "y";
-    const sorted = entries.sort((left, right) => left.center[axis] - right.center[axis]);
-
-    for (let index = 0; index < sorted.length; index += 1) {
-      const previousBoundary =
-        index === 0
-          ? (axis === "x" ? -trayWidth / 2 : -trayDepth / 2) - 100
-          : (sorted[index - 1].center[axis] + sorted[index].center[axis]) / 2;
-      const nextBoundary =
-        index === sorted.length - 1
-          ? (axis === "x" ? trayWidth / 2 : trayDepth / 2) + 100
-          : (sorted[index].center[axis] + sorted[index + 1].center[axis]) / 2;
-      const width =
-        axis === "x"
-          ? nextBoundary - previousBoundary
-          : trayWidth + 200;
-      const depth =
-        axis === "y"
-          ? nextBoundary - previousBoundary
-          : trayDepth + 200;
-      const centerX = axis === "x" ? (previousBoundary + nextBoundary) / 2 : 0;
-      const centerY = axis === "y" ? (previousBoundary + nextBoundary) / 2 : 0;
-
-      partitions.set(sorted[index].unit.key, {
-        footprint: primitives.rectangle({
-          size: [width, depth],
-          center: [centerX, centerY],
-        }),
-      });
-    }
-  }
-
-  return partitions;
-}
-
-function getSplitUnitExternalBaseHeight(
-  splitUnit: SteppedCadSplitUnit,
-  units: SteppedCadSplitUnit[],
-) {
-  const lowerHeights = units
-    .filter((unit) => unit.key !== splitUnit.key && unit.maxHeight < splitUnit.minHeight)
-    .map((unit) => unit.maxHeight);
-
-  return lowerHeights.length > 0 ? Math.max(...lowerHeights) : 0;
-}
-
-function getPartitionedGroupFootprints(
-  splitUnit: SteppedCadSplitUnit,
-  partitions: Map<string, SteppedCadPartition>,
-) {
-  const partition = partitions.get(splitUnit.key);
-  return splitUnit.groups
-    .map<PartitionedGroupFootprint | null>((group) => {
-      const clipped = partition
-        ? (intersect(group.footprint, partition.footprint) as Geom2)
-        : group.footprint;
-      return isEmptyGeom2(clipped)
-        ? null
-        : {
-            group,
-            footprint: clipped,
-          };
-    })
-    .filter((item): item is PartitionedGroupFootprint => item !== null);
-}
-
-function buildSupportFootprint(
-  splitUnit: SteppedCadSplitUnit,
-  partitions: Map<string, SteppedCadPartition>,
-  allowedGroupIds?: Set<string>,
-) {
-  const footprints = getPartitionedGroupFootprints(splitUnit, partitions)
-    .filter((entry) =>
-      allowedGroupIds ? allowedGroupIds.has(entry.group.groupId) : true,
-    )
-    .map((entry) => entry.footprint);
-
-  if (footprints.length === 0) {
-    return null;
-  }
-
-  return unionGeom2Parts(footprints);
-}
-
-function buildInterfaceSupportFootprint(
-  splitUnit: SteppedCadSplitUnit,
-  partitions: Map<string, SteppedCadPartition>,
-) {
-  if (splitUnit.slotHoles.length === 0) {
-    return buildSupportFootprint(splitUnit, partitions);
-  }
-
-  const slotFootprints = splitUnit.slotHoles.map((slotHole) =>
-    translate(
-      [slotHole.cx, slotHole.cy],
-      circle({
-        radius: slotHole.connectorRadius,
-        segments: INTERFACE_FOOTPRINT_SEGMENTS,
-      }),
-    ) as Geom2,
-  );
-  const footprint = unionGeom2Parts(slotFootprints);
-  const partition = partitions.get(splitUnit.key);
-
-  if (!partition) {
-    return footprint;
-  }
-
-  const clipped = intersect(footprint, partition.footprint) as Geom2;
-  return isEmptyGeom2(clipped) ? footprint : clipped;
-}
-
 function insetInterfaceFootprint(footprint: Geom2) {
   try {
     return insetGeom2(
@@ -426,16 +166,15 @@ function insetInterfaceFootprint(footprint: Geom2) {
 }
 
 function buildSplitGrooveMaleFootprint(
-  splitUnit: SteppedCadSplitUnit,
-  partitions: Map<string, SteppedCadPartition>,
+  splitUnit: SteppedCadSplitPartitionUnit,
   grooveType: SplitGrooveType,
 ) {
-  const footprint = buildSupportFootprint(splitUnit, partitions);
+  const footprint = splitUnit.supportFootprint;
   if (!footprint || grooveType !== "inset") {
     return footprint;
   }
 
-  const insetParts = getPartitionedGroupFootprints(splitUnit, partitions)
+  const insetParts = splitUnit.partitionedGroups
     .map((entry) => {
       try {
         return insetGeom2(entry.footprint, INSET_INTERFACE_GROOVE_INSET);
@@ -494,8 +233,7 @@ function subtractGeom2Safe(
 }
 
 function buildInterfaceProfiles(
-  splitUnits: SteppedCadSplitUnit[],
-  partitions: Map<string, SteppedCadPartition>,
+  splitUnits: readonly SteppedCadSplitPartitionUnit[],
   assemblyMode: AssemblyMode,
   grooveDepth: number,
   issues: SteppedCadSplitProfileIssue[],
@@ -506,15 +244,15 @@ function buildInterfaceProfiles(
 
   const interfaces: SteppedCadSplitInterfaceProfile[] = [];
   for (const lowerUnit of splitUnits) {
-    const lowerBaseHeight = getSplitUnitExternalBaseHeight(lowerUnit, splitUnits);
+    const lowerBaseHeight = lowerUnit.externalBaseHeight;
     const lowerHeights = new Set(lowerUnit.groups.map((group) => group.columnHeight));
 
     for (const upperUnit of splitUnits) {
-      if (upperUnit.key === lowerUnit.key) {
+      if (upperUnit.unitKey === lowerUnit.unitKey) {
         continue;
       }
 
-      const interfaceHeight = getSplitUnitExternalBaseHeight(upperUnit, splitUnits);
+      const interfaceHeight = upperUnit.externalBaseHeight;
       if (!lowerHeights.has(interfaceHeight)) {
         continue;
       }
@@ -529,30 +267,23 @@ function buildInterfaceProfiles(
       }
 
       if (assemblyMode.enableRecess) {
-        const contactFootprint = buildSupportFootprint(upperUnit, partitions);
+        const contactFootprint = upperUnit.supportFootprint;
         if (!contactFootprint) {
           issues.push({
             code: "empty-contact-footprint",
-            unitKey: lowerUnit.key,
+            unitKey: lowerUnit.unitKey,
             interfaceHeight,
           });
           continue;
         }
 
-        const contactGroupIds = new Set(
-          lowerUnit.groups
-            .filter((group) => group.columnHeight === interfaceHeight)
-            .map((group) => group.groupId),
-        );
-        const lowerContactFootprint = buildSupportFootprint(
-          lowerUnit,
-          partitions,
-          contactGroupIds,
-        );
+        const lowerContactFootprint = lowerUnit.supportFootprintsByHeight.find(
+          (entry) => entry.topHeight === interfaceHeight,
+        )?.footprint ?? null;
         if (!lowerContactFootprint) {
           issues.push({
             code: "empty-contact-footprint",
-            unitKey: lowerUnit.key,
+            unitKey: lowerUnit.unitKey,
             interfaceHeight,
           });
           continue;
@@ -560,7 +291,6 @@ function buildInterfaceProfiles(
 
         const maleFootprint = buildSplitGrooveMaleFootprint(
           upperUnit,
-          partitions,
           assemblyMode.grooveType,
         );
         const maleDepth = Math.min(
@@ -584,12 +314,12 @@ function buildInterfaceProfiles(
             maleDepth,
             femaleDepth,
             state: "suppressed-empty-inset",
-            upperUnitKey: upperUnit.key,
-            lowerUnitKey: lowerUnit.key,
+            upperUnitKey: upperUnit.unitKey,
+            lowerUnitKey: lowerUnit.unitKey,
           });
           issues.push({
             code: "empty-male-after-inset",
-            unitKey: upperUnit.key,
+            unitKey: upperUnit.unitKey,
             interfaceHeight,
           });
           continue;
@@ -613,12 +343,12 @@ function buildInterfaceProfiles(
             maleDepth,
             femaleDepth,
             state: "suppressed-empty-clip",
-            upperUnitKey: upperUnit.key,
-            lowerUnitKey: lowerUnit.key,
+            upperUnitKey: upperUnit.unitKey,
+            lowerUnitKey: lowerUnit.unitKey,
           });
           issues.push({
             code: "empty-female-after-clip",
-            unitKey: lowerUnit.key,
+            unitKey: lowerUnit.unitKey,
             interfaceHeight,
           });
           continue;
@@ -633,17 +363,17 @@ function buildInterfaceProfiles(
           maleDepth,
           femaleDepth,
           state: "active",
-          upperUnitKey: upperUnit.key,
-          lowerUnitKey: lowerUnit.key,
+          upperUnitKey: upperUnit.unitKey,
+          lowerUnitKey: lowerUnit.unitKey,
         });
         continue;
       }
 
-      const contactFootprint = buildInterfaceSupportFootprint(upperUnit, partitions);
+      const contactFootprint = upperUnit.locatorSupportFootprint;
       if (!contactFootprint) {
         issues.push({
           code: "empty-contact-footprint",
-          unitKey: lowerUnit.key,
+          unitKey: lowerUnit.unitKey,
           interfaceHeight,
         });
         continue;
@@ -653,7 +383,7 @@ function buildInterfaceProfiles(
       if (isEmptyGeom2(pocketFootprint)) {
         issues.push({
           code: "empty-male-after-inset",
-          unitKey: upperUnit.key,
+          unitKey: upperUnit.unitKey,
           interfaceHeight,
         });
         continue;
@@ -668,8 +398,8 @@ function buildInterfaceProfiles(
         maleDepth: Math.min(grooveDepth, upperUnit.maxHeight - interfaceHeight),
         femaleDepth: Math.min(grooveDepth, lowerDepthCap),
         state: "active",
-        upperUnitKey: upperUnit.key,
-        lowerUnitKey: lowerUnit.key,
+        upperUnitKey: upperUnit.unitKey,
+        lowerUnitKey: lowerUnit.unitKey,
       });
     }
   }
@@ -678,21 +408,17 @@ function buildInterfaceProfiles(
 }
 
 function buildUnitLayerProfiles(
-  splitUnit: SteppedCadSplitUnit,
-  splitUnits: SteppedCadSplitUnit[],
-  partitions: Map<string, SteppedCadPartition>,
-  assemblyMode: AssemblyMode,
-  grooveDepth: number,
+  splitUnit: SteppedCadSplitPartitionUnit,
   interfaces: SteppedCadSplitInterfaceProfile[],
   issues: SteppedCadSplitProfileIssue[],
 ) {
-  const baseHeight = getSplitUnitExternalBaseHeight(splitUnit, splitUnits);
-  const groupFootprints = getPartitionedGroupFootprints(splitUnit, partitions);
+  const baseHeight = splitUnit.externalBaseHeight;
+  const groupFootprints = splitUnit.partitionedGroups;
   const layers: SteppedCadLayerProfilePlan[] = [];
 
   const activeLowerInterfaces = interfaces.filter(
     (item) =>
-      item.lowerUnitKey === splitUnit.key &&
+      item.lowerUnitKey === splitUnit.unitKey &&
       item.state === "active" &&
       item.femaleFootprint &&
       item.femaleDepth > 0,
@@ -742,7 +468,7 @@ function buildUnitLayerProfiles(
         entry.footprint,
         interfaceEntry.footprint,
         issues,
-        splitUnit.key,
+        splitUnit.unitKey,
         topHeight,
       );
       if (shellFootprint && !isEmptyGeom2(shellFootprint) && topHeight > lowerSliceTop) {
@@ -759,7 +485,7 @@ function buildUnitLayerProfiles(
 
   const activeUpperInterfaces = interfaces.filter(
     (item) =>
-      item.upperUnitKey === splitUnit.key &&
+      item.upperUnitKey === splitUnit.unitKey &&
       item.state === "active" &&
       item.maleFootprint &&
       item.maleDepth > 0,
@@ -785,10 +511,10 @@ function buildUnitLayerProfiles(
 }
 
 export function buildSteppedCadSplitProfilePlan({
-  graph,
+  partitionPlan,
   params,
 }: SteppedCadSplitProfileRequest): SteppedCadSplitProfilePlan {
-  if (graph.groups.length === 0) {
+  if (partitionPlan.units.length === 0) {
     return {
       units: [],
       interfaces: [],
@@ -796,49 +522,31 @@ export function buildSteppedCadSplitProfilePlan({
     };
   }
 
-  const splitUnitKeyByGroupId = buildSplitUnitKeyByGroupId(
-    graph.groups,
-    params.groups,
-  );
-  const splitUnits = buildSplitUnits(
-    graph.groups,
-    graph.slotHoles,
-    graph.baseHoles,
-    splitUnitKeyByGroupId,
-  );
-  const partitions = buildSameHeightPartitionMap(
-    splitUnits,
-    graph.trayWidth,
-    graph.trayDepth,
-  );
+  const splitUnits = partitionPlan.units;
   const assemblyMode = resolveAssemblyMode(params);
   const issues: SteppedCadSplitProfileIssue[] = [];
   const grooveDepth = Math.max(0, params.splitGrooveDepth ?? 0);
   const interfaces = buildInterfaceProfiles(
     splitUnits,
-    partitions,
     assemblyMode,
     grooveDepth,
     issues,
   );
 
   const units = splitUnits.map<SteppedCadSplitProfileUnit>((splitUnit) => {
-    const baseHeight = getSplitUnitExternalBaseHeight(splitUnit, splitUnits);
+    const baseHeight = splitUnit.externalBaseHeight;
     return {
-      unitKey: splitUnit.key,
-      groupIds: splitUnit.groups.map((group) => group.groupId),
+      unitKey: splitUnit.unitKey,
+      groupIds: [...splitUnit.groupIds],
       baseHeight,
       topHeight: splitUnit.maxHeight,
       interfaceProfiles: interfaces.filter(
         (item) =>
-          item.lowerUnitKey === splitUnit.key || item.upperUnitKey === splitUnit.key,
+          item.lowerUnitKey === splitUnit.unitKey ||
+          item.upperUnitKey === splitUnit.unitKey,
       ),
       layerProfiles: buildUnitLayerProfiles(
         splitUnit,
-        splitUnits,
-        partitions,
-        assemblyMode,
-        grooveDepth,
         interfaces,
         issues,
       ),
