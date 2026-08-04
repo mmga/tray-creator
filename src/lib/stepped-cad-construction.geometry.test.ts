@@ -160,7 +160,7 @@ function expectPartHasBaseHoleCavity(
   ).toBeGreaterThan(0);
 }
 
-describe("stepped cad tray model", () => {
+describe("CAD Stepped Construction geometry", () => {
   it("builds a non-empty main tray", () => {
     const geometry = createSteppedCadTrayModel(createParams());
     expect(measureVolume(geometry)).toBeGreaterThan(0);

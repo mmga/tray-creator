@@ -12,20 +12,25 @@ import {
   createMagnetPostHoleSolid,
   subtractBaseHoles,
 } from "@/lib/model-utils";
-import { buildSteppedCadFeatureGraph } from "@/lib/stepped-cad-feature-graph";
-import {
-  buildSteppedCadSplitProfilePlan,
-  type SteppedCadLayerProfilePlan,
+import type {
+  SteppedCadBaseHoleFeature,
+  SteppedCadFeatureGraph,
+  SteppedCadGroupFeature,
+  SteppedCadLayerFeature,
+  SteppedCadMagnetPostHoleFeature,
+  SteppedCadSlotHoleFeature,
+} from "@/lib/stepped-cad-feature-graph";
+import type {
+  SteppedCadLayerProfilePlan,
+  SteppedCadSplitProfilePlan,
 } from "@/lib/stepped-cad-split-profiles";
-import {
-  buildSteppedCadSplitPartitionPlan,
-  type SteppedCadSplitPartitionUnit,
+import type {
+  SteppedCadSplitPartitionPlan,
+  SteppedCadSplitPartitionUnit,
 } from "@/lib/stepped-cad-split-partition-plan";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 import { resolveSteppedBaseHoleStructure } from "@/lib/stepped-base-hole";
 import { MAGNET_POST_HOLE_BOTTOM_WALL } from "@/lib/stepped-config";
-import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
-import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
 import generalizeModule from "@jscad/modeling/src/operations/modifiers/generalize";
 
 const { intersect, subtract, union } = booleans;
@@ -38,7 +43,6 @@ const { rotateZ, translate } = transforms;
 const DEG_TO_RAD = Math.PI / 180;
 const FEATURE_EPSILON = 0.02;
 const LAYER_OVERLAP = 0.1;
-const DEFAULT_INTERFACE_GROOVE_DEPTH = 2;
 const INTERFACE_FOOTPRINT_SEGMENTS = 24;
 const LOCATOR_PIN_RADIUS = 3;
 const LOCATOR_CLEARANCE = 0.35;
@@ -59,65 +63,15 @@ function createEmptyGeom() {
   );
 }
 
-export function createSteppedCadTrayModel(
-  params: SteppedLayoutParams,
-  contouredState: ContouredFootprintState<ConstructedSteppedContouredFootprints> = {
-    status: "inactive",
-  },
+export function realizeSteppedCadWhole(
+  graph: SteppedCadFeatureGraph,
+  params: Readonly<SteppedLayoutParams>,
 ): Geom3 {
-  const graph = buildSteppedCadFeatureGraph(params, contouredState);
   if (graph.groups.length === 0) {
     return createEmptyGeom();
   }
-
-  const baseSolid = buildBaseSolid(
-    graph,
-    params.footprintStyle === "rectangular",
-  );
-
-  const slotHoles = graph.slotHoles.map((slotHole) =>
-    translate(
-      [slotHole.cx, slotHole.cy, slotHole.topHeight - slotHole.depth],
-      rotateZ(
-        slotHole.rotation * DEG_TO_RAD,
-        extrudeLinear(
-          { height: slotHole.depth + FEATURE_EPSILON },
-          slotHole.profile,
-        ),
-      ),
-    )
-  );
-  const magnetPostHoles = graph.magnetPostHoles.map(buildMagnetPostHoleSolid);
-  const baseHoleStructure = resolveSteppedBaseHoleStructure(params);
-
-  // 先批量切主槽，再切底板孔，与历史后端保持相同的布尔顺序；
-  // 先切小底孔会把实体面数提前放大，随后再切主槽的代价明显更高。
-  let tray = slotHoles.length > 0
-    ? subtract(baseSolid, ...slotHoles)
-    : baseSolid;
-  if (baseHoleStructure === "magnetic-base-hole") {
-    tray = subtractBaseHoles(tray, graph.baseHoles, 0, params.baseHoleSize);
-  }
-  if (baseHoleStructure === "magnet-post-hole" && magnetPostHoles.length > 0) {
-    tray = subtract(tray, ...magnetPostHoles);
-  }
-
-  // Rectangular Stepped Footprint 路径几何干净且由正向拉伸体开始，
-  // 跳过 mesh cleanup 与整模体积方向扫描；后者在含底板孔的小模型中会成为主要成本。
-  // Contoured 路径仍需 cleanup 修复 layer union 的相切退化。
-  if (params.footprintStyle === "rectangular") {
-    return tray;
-  }
-  return orientPositiveVolume(
-    cleanupIfBeneficial(tray, baseHoleStructure === "magnet-post-hole"),
-  );
+  return realizeCadEntity(buildWholeRealizationPlan(graph, params))!;
 }
-
-type SteppedCadFeatureGraph = ReturnType<typeof buildSteppedCadFeatureGraph>;
-type SteppedCadGroupFeature = SteppedCadFeatureGraph["groups"][number];
-type SteppedCadLayerFeature = SteppedCadFeatureGraph["layers"][number];
-type SteppedCadSlotHoleFeature = SteppedCadFeatureGraph["slotHoles"][number];
-type SteppedCadMagnetPostHoleFeature = SteppedCadFeatureGraph["magnetPostHoles"][number];
 
 function buildMagnetPostHoleSolid(hole: SteppedCadMagnetPostHoleFeature) {
   return createMagnetPostHoleSolid(
@@ -154,6 +108,71 @@ type InterfaceLocator = {
   depth: number;
   points: LocatorPoint[];
 };
+
+type CadBodyPlan =
+  | {
+      kind: "height-band-body";
+      graph: SteppedCadFeatureGraph;
+      skipCollapsedUnionCheck: boolean;
+    }
+  | {
+      kind: "profile-band-body";
+      layers: readonly SteppedCadLayerProfilePlan[];
+    };
+
+type CadSolidRecipe =
+  | { kind: "slot-hole"; feature: SteppedCadSlotHoleFeature }
+  | {
+      kind: "magnet-post-floor";
+      feature: SteppedCadSlotHoleFeature;
+      postHoleDepth: number;
+    }
+  | {
+      kind: "locator-pin";
+      point: LocatorPoint;
+      fromHeight: number;
+      depth: number;
+    }
+  | {
+      kind: "locator-socket";
+      point: LocatorPoint;
+      fromHeight: number;
+      depth: number;
+    };
+
+type CadBaseCutPlan =
+  | { kind: "none" }
+  | {
+      kind: "magnetic-base-hole";
+      holes: readonly SteppedCadBaseHoleFeature[];
+      fallbackSize: SteppedLayoutParams["baseHoleSize"];
+    }
+  | {
+      kind: "magnet-post-hole";
+      holes: readonly SteppedCadMagnetPostHoleFeature[];
+    };
+
+type CadFinishingPlan =
+  | { kind: "rectangular-fast-path" }
+  | {
+      kind: "repair";
+      preserveSmallFeatures: boolean;
+      rejectAtOrBelowVolume: number | null;
+    };
+
+interface CadEntityRealizationPlan {
+  body: CadBodyPlan;
+  assemblyAdditions: readonly CadSolidRecipe[];
+  assemblyCuts: readonly CadSolidRecipe[];
+  manufacturingAdditions: readonly CadSolidRecipe[];
+  primaryCuts: readonly CadSolidRecipe[];
+  baseCuts: CadBaseCutPlan;
+  finishing: CadFinishingPlan;
+}
+
+interface CadSplitPartRealizationPlan extends CadEntityRealizationPlan {
+  metadata: Omit<SteppedSplitPartResult, "geometry">;
+}
 
 function buildLayerSolid(layer: SteppedCadLayerFeature): Geom3 {
   const fromHeight =
@@ -580,34 +599,171 @@ function buildInterfaceLocatorMap(
   );
 }
 
-export function createSteppedCadSplitParts(
-  params: SteppedLayoutParams,
-  grooveDepth = params.splitGrooveDepth ?? DEFAULT_INTERFACE_GROOVE_DEPTH,
-  contouredState: ContouredFootprintState<ConstructedSteppedContouredFootprints> = {
-    status: "inactive",
-  },
-): SteppedSplitPartResult[] {
-  const graph = buildSteppedCadFeatureGraph(params, contouredState);
-  if (graph.groups.length === 0) {
-    return [];
+function buildBaseCutPlan(
+  structure: ReturnType<typeof resolveSteppedBaseHoleStructure>,
+  baseHoles: readonly SteppedCadBaseHoleFeature[],
+  magnetPostHoles: readonly SteppedCadMagnetPostHoleFeature[],
+  fallbackSize: SteppedLayoutParams["baseHoleSize"],
+): CadBaseCutPlan {
+  if (structure === "magnetic-base-hole") {
+    return {
+      kind: "magnetic-base-hole",
+      holes: baseHoles,
+      fallbackSize,
+    };
+  }
+  if (structure === "magnet-post-hole") {
+    return {
+      kind: "magnet-post-hole",
+      holes: magnetPostHoles,
+    };
+  }
+  return { kind: "none" };
+}
+
+function buildWholeRealizationPlan(
+  graph: SteppedCadFeatureGraph,
+  params: Readonly<SteppedLayoutParams>,
+): CadEntityRealizationPlan {
+  const baseHoleStructure = resolveSteppedBaseHoleStructure(params);
+  const rectangularFastPath = params.footprintStyle === "rectangular";
+  return {
+    body: {
+      kind: "height-band-body",
+      graph,
+      skipCollapsedUnionCheck: rectangularFastPath,
+    },
+    assemblyAdditions: [],
+    assemblyCuts: [],
+    manufacturingAdditions: [],
+    primaryCuts: graph.slotHoles.map((feature) => ({
+      kind: "slot-hole" as const,
+      feature,
+    })),
+    baseCuts: buildBaseCutPlan(
+      baseHoleStructure,
+      graph.baseHoles,
+      graph.magnetPostHoles,
+      params.baseHoleSize,
+    ),
+    finishing: rectangularFastPath
+      ? { kind: "rectangular-fast-path" }
+      : {
+          kind: "repair",
+          preserveSmallFeatures: baseHoleStructure === "magnet-post-hole",
+          rejectAtOrBelowVolume: null,
+        },
+  };
+}
+
+function realizeBody(plan: CadBodyPlan) {
+  return plan.kind === "height-band-body"
+    ? buildBaseSolid(plan.graph, plan.skipCollapsedUnionCheck)
+    : buildBodyFromLayerProfiles([...plan.layers]);
+}
+
+function realizeSolidRecipe(recipe: CadSolidRecipe): Geom3[] {
+  switch (recipe.kind) {
+    case "slot-hole":
+      return [buildSlotHoleSolid(recipe.feature)];
+    case "magnet-post-floor":
+      return [
+        buildMagnetPostFloorSolid(recipe.feature, recipe.postHoleDepth),
+      ];
+    case "locator-pin": {
+      const solid = buildLocatorSolid(
+        recipe.point,
+        recipe.fromHeight,
+        recipe.depth,
+      );
+      return solid ? [solid] : [];
+    }
+    case "locator-socket":
+      return buildLocatorBandSolids(
+        recipe.point,
+        recipe.fromHeight,
+        recipe.depth,
+        LOCATOR_CLEARANCE,
+      );
+  }
+}
+
+function realizeRecipes(recipes: readonly CadSolidRecipe[]) {
+  return recipes.flatMap(realizeSolidRecipe);
+}
+
+function applyAdditions(body: Geom3, recipes: readonly CadSolidRecipe[]) {
+  const solids = realizeRecipes(recipes);
+  return solids.length > 0 ? (union(body, ...solids) as Geom3) : body;
+}
+
+function applyCuts(body: Geom3, recipes: readonly CadSolidRecipe[]) {
+  const solids = realizeRecipes(recipes);
+  return solids.length > 0 ? (subtract(body, ...solids) as Geom3) : body;
+}
+
+function applyBaseCuts(body: Geom3, plan: CadBaseCutPlan) {
+  if (plan.kind === "magnetic-base-hole") {
+    return subtractBaseHoles(
+      body,
+      [...plan.holes],
+      0,
+      plan.fallbackSize,
+    );
+  }
+  if (plan.kind === "magnet-post-hole" && plan.holes.length > 0) {
+    return subtract(
+      body,
+      ...plan.holes.map(buildMagnetPostHoleSolid),
+    ) as Geom3;
+  }
+  return body;
+}
+
+function realizeCadEntity(plan: CadEntityRealizationPlan): Geom3 | null {
+  let body = realizeBody(plan.body);
+  if (!body) {
+    return null;
   }
 
-  const partitionPlan = buildSteppedCadSplitPartitionPlan({
-    graph,
-    layoutGroups: params.groups,
-  });
+  body = applyAdditions(body, plan.assemblyAdditions);
+  body = applyCuts(body, plan.assemblyCuts);
+  body = applyAdditions(body, plan.manufacturingAdditions);
+
+  // 主槽必须先于 Base-hole Structure；先切小底孔会放大后续布尔成本。
+  body = applyCuts(body, plan.primaryCuts);
+  body = applyBaseCuts(body, plan.baseCuts);
+
+  if (plan.finishing.kind === "rectangular-fast-path") {
+    return body;
+  }
+
+  const finished = orientPositiveVolume(
+    cleanupIfBeneficial(body, plan.finishing.preserveSmallFeatures),
+  );
+  if (
+    plan.finishing.rejectAtOrBelowVolume !== null &&
+    Math.abs(measureVolume(finished)) <= plan.finishing.rejectAtOrBelowVolume
+  ) {
+    return null;
+  }
+  return finished;
+}
+
+function buildSplitPartRealizationPlans({
+  partitionPlan,
+  splitProfilePlan,
+  params,
+}: {
+  partitionPlan: SteppedCadSplitPartitionPlan;
+  splitProfilePlan: SteppedCadSplitProfilePlan;
+  params: Readonly<SteppedLayoutParams>;
+},
+): CadSplitPartRealizationPlan[] {
+  const grooveDepth = params.splitGrooveDepth;
   const splitUnits = partitionPlan.units;
   const assemblyMode = resolveSplitAssemblyMode(params);
-  const splitProfilePlan = buildSteppedCadSplitProfilePlan({
-    partitionPlan,
-    params: {
-      splitGrooveDepth: grooveDepth,
-      splitGrooveType: params.splitGrooveType,
-      enableSplitRecess: params.enableSplitRecess,
-      enableSplitLocators: params.enableSplitLocators,
-      splitAssemblyMode: params.splitAssemblyMode,
-    },
-  });
+  const baseHoleStructure = resolveSteppedBaseHoleStructure(params);
   const profileUnitByKey = new Map(
     splitProfilePlan.units.map((unit) => [unit.unitKey, unit]),
   );
@@ -619,10 +775,8 @@ export function createSteppedCadSplitParts(
       return [];
     }
 
-    let body = buildBodyFromLayerProfiles(profileUnit.layerProfiles);
-    if (!body) {
-      return [];
-    }
+    const assemblyAdditions: CadSolidRecipe[] = [];
+    const assemblyCuts: CadSolidRecipe[] = [];
 
     if (assemblyMode.enableLocators && grooveDepth > 0) {
       const locators = buildInterfaceLocatorMap(
@@ -641,8 +795,8 @@ export function createSteppedCadSplitParts(
           )
           .map((profile) => [profile.interfaceHeight, profile] as const),
       );
-      const pinSolids = locators
-        .flatMap((locator) => {
+      assemblyAdditions.push(
+        ...locators.flatMap((locator): CadSolidRecipe[] => {
           if (
             assemblyMode.enableRecess &&
             !activeLowerInterfacesByHeight.has(locator.interfaceHeight)
@@ -654,14 +808,14 @@ export function createSteppedCadSplitParts(
             activeLowerInterfacesByHeight.get(locator.interfaceHeight)?.femaleDepth ?? 0;
           const pinBaseHeight =
             locator.interfaceHeight - femaleDepth - FEATURE_EPSILON;
-          return locator.points.map((point) =>
-            buildLocatorSolid(point, pinBaseHeight, locator.depth),
-          );
-        })
-        .filter((item): item is Geom3 => item !== null);
-      if (pinSolids.length > 0) {
-        body = union(body, ...pinSolids) as Geom3;
-      }
+          return locator.points.map((point) => ({
+            kind: "locator-pin",
+            point,
+            fromHeight: pinBaseHeight,
+            depth: locator.depth,
+          }));
+        }),
+      );
 
       if (splitUnitBaseHeight > 0) {
         const activeUpperInterfaces = profileUnit.interfaceProfiles.filter(
@@ -680,104 +834,79 @@ export function createSteppedCadSplitParts(
           );
           const socketBaseHeight =
             splitUnitBaseHeight - upperTabDepth - FEATURE_EPSILON;
-          const socketSolids = socketDepth > 0
-            ? selectInterfaceLocatorPoints(splitUnit)
-                .flatMap((point) =>
-                  buildLocatorBandSolids(
-                    point,
-                    socketBaseHeight,
-                    socketDepth,
-                    LOCATOR_CLEARANCE,
-                  )
-                )
-                .filter((item): item is Geom3 => item !== null)
-            : [];
-          if (socketSolids.length > 0) {
-            body = subtract(body, ...socketSolids) as Geom3;
+          if (socketDepth > 0) {
+            assemblyCuts.push(
+              ...selectInterfaceLocatorPoints(splitUnit).map((point) => ({
+                kind: "locator-socket" as const,
+                point,
+                fromHeight: socketBaseHeight,
+                depth: socketDepth,
+              })),
+            );
           }
         }
       }
     }
 
-    const baseHoleStructure = resolveSteppedBaseHoleStructure(params);
-    if (
-      baseHoleStructure === "magnet-post-hole" &&
-      splitUnit.magnetPostHoles.length > 0
-    ) {
+    const manufacturingAdditions: CadSolidRecipe[] = [];
+    if (baseHoleStructure === "magnet-post-hole") {
       const postDepthBySlotId = new Map(
         splitUnit.magnetPostHoles.map((hole) => [hole.id, hole.depth]),
       );
-      const floorSolids = splitUnit.slotHoles.flatMap((slotHole) => {
+      manufacturingAdditions.push(...splitUnit.slotHoles.flatMap((slotHole) => {
         const postDepth = postDepthBySlotId.get(slotHole.id);
         return postDepth === undefined
           ? []
-          : [buildMagnetPostFloorSolid(slotHole, postDepth)];
-      });
-      if (floorSolids.length > 0) {
-        body = union(body, ...floorSolids) as Geom3;
-      }
-    }
-
-    const slotHoles = splitUnit.slotHoles.map(buildSlotHoleSolid);
-    let part = slotHoles.length > 0 ? subtract(body, ...slotHoles) : body;
-
-    if (baseHoleStructure === "magnetic-base-hole") {
-      part = subtractBaseHoles(
-        part,
-        [...splitUnit.baseHoles],
-        0,
-        params.baseHoleSize,
-      );
-    }
-    if (
-      baseHoleStructure === "magnet-post-hole" &&
-      splitUnit.magnetPostHoles.length > 0
-    ) {
-      const postSolids = splitUnit.magnetPostHoles.map(buildMagnetPostHoleSolid);
-      part = subtract(
-        part,
-        ...postSolids,
-      );
-    }
-
-    part = orientPositiveVolume(
-      cleanupIfBeneficial(part, baseHoleStructure === "magnet-post-hole"),
-    );
-    if (Math.abs(measureVolume(part)) <= MIN_VALID_VOLUME) {
-      return [];
+          : [{
+              kind: "magnet-post-floor" as const,
+              feature: slotHole,
+              postHoleDepth: postDepth,
+            }];
+      }));
     }
 
     const filenameLabel = `part_${String(index + 1).padStart(2, "0")}_${buildSplitPartIdLabel(splitUnit.groups)}`;
     return [{
-      index,
-      filenameLabel,
-      label: buildSplitPartLabel(splitUnit.groups, params),
-      fromHeight: profileUnit.baseHeight,
-      toHeight: profileUnit.topHeight,
-      geometry: part,
+      body: {
+        kind: "profile-band-body",
+        layers: profileUnit.layerProfiles,
+      },
+      assemblyAdditions,
+      assemblyCuts,
+      manufacturingAdditions,
+      primaryCuts: splitUnit.slotHoles.map((feature) => ({
+        kind: "slot-hole" as const,
+        feature,
+      })),
+      baseCuts: buildBaseCutPlan(
+        baseHoleStructure,
+        splitUnit.baseHoles,
+        splitUnit.magnetPostHoles,
+        params.baseHoleSize,
+      ),
+      finishing: {
+        kind: "repair",
+        preserveSmallFeatures: baseHoleStructure === "magnet-post-hole",
+        rejectAtOrBelowVolume: MIN_VALID_VOLUME,
+      },
+      metadata: {
+        index,
+        filenameLabel,
+        label: buildSplitPartLabel(splitUnit.groups, params),
+        fromHeight: profileUnit.baseHeight,
+        toHeight: profileUnit.topHeight,
+      },
     }];
   });
 }
 
-export function calculateSteppedCadTrayDimensions(
-  params: SteppedLayoutParams,
-  contouredState: ContouredFootprintState<ConstructedSteppedContouredFootprints> = {
-    status: "inactive",
-  },
-) {
-  const graph = buildSteppedCadFeatureGraph(params, contouredState);
-  return {
-    width: graph.trayWidth,
-    depth: graph.trayDepth,
-    height: graph.maxHeight,
-  };
-}
-
-export function calculateSteppedCadTrayVolume(
-  params: SteppedLayoutParams,
-  contouredState: ContouredFootprintState<ConstructedSteppedContouredFootprints> = {
-    status: "inactive",
-  },
-) {
-  return measureVolume(createSteppedCadTrayModel(params, contouredState));
+export function realizeSteppedCadSplitParts(request: {
+  partitionPlan: SteppedCadSplitPartitionPlan;
+  splitProfilePlan: SteppedCadSplitProfilePlan;
+  params: Readonly<SteppedLayoutParams>;
+}): SteppedSplitPartResult[] {
+  return buildSplitPartRealizationPlans(request).flatMap((plan) => {
+    const geometry = realizeCadEntity(plan);
+    return geometry ? [{ ...plan.metadata, geometry }] : [];
+  });
 }

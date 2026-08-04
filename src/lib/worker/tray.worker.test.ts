@@ -25,7 +25,7 @@ vi.mock("../base-converter-model", () => ({
   createBaseConverterModel,
 }));
 
-vi.mock("../stepped-cad-tray-model", () => ({
+vi.mock("../stepped-cad-construction", () => ({
   createSteppedCadSplitParts,
   createSteppedCadTrayModel,
 }));
@@ -218,7 +218,6 @@ describe("tray worker", () => {
 
     expect(createSteppedCadSplitParts).toHaveBeenCalledWith(
       STEPPED_LAYOUT_DEFAULTS,
-      STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth,
       expect.objectContaining({ status: "ready" }),
     );
     expect(workerSelf.postMessage).toHaveBeenCalledWith({

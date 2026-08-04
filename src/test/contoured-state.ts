@@ -17,7 +17,7 @@ import { buildSteppedCadFeatureGraph as buildGraph } from "@/lib/stepped-cad-fea
 import {
   createSteppedCadSplitParts as createSplitParts,
   createSteppedCadTrayModel as createTrayModel,
-} from "@/lib/stepped-cad-tray-model";
+} from "@/lib/stepped-cad-construction";
 import { buildSteppedOutlinePreview as buildOutlinePreview } from "@/lib/stepped-outline-preview";
 import { calculateSteppedEffectiveDimensions as calculateDimensions } from "@/lib/stepped-layout-math";
 
@@ -53,12 +53,14 @@ export function createSteppedCadTrayModel(params: SteppedLayoutParams) {
 
 export function createSteppedCadSplitParts(
   params: SteppedLayoutParams,
-  grooveDepth = params.splitGrooveDepth,
+  grooveDepth?: number,
 ) {
+  const effectiveParams = grooveDepth === undefined
+    ? params
+    : { ...params, splitGrooveDepth: grooveDepth };
   return createSplitParts(
-    params,
-    grooveDepth,
-    steppedContouredStateForTest(params),
+    effectiveParams,
+    steppedContouredStateForTest(effectiveParams),
   );
 }
 

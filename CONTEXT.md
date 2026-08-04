@@ -261,8 +261,8 @@ The user-facing name “自定义阶梯底座” for the Stepped Tray workflow, 
 _Avoid_: CAD 阶梯底座, ordinary stepped mode, or using “custom” to imply a separate construction backend.
 
 **CAD Stepped Construction**:
-The Custom Stepped Tray modeling contract where each height band is generated from its own 2D sketch and then extruded before cuts are applied.
-_Avoid_: Treating the unified stepped model as an arbitrary union of per-group solids or exposing this contract as a Mode choice.
+The Custom Stepped Tray modeling contract where each height band is generated from its own 2D sketch and then extruded before ordered assembly additions and cuts, manufacturing additions, slot cuts, Base-hole Structure cuts, and geometry finishing are applied.
+_Avoid_: Treating the unified stepped model as an arbitrary union of per-group solids, exposing its realization stages to callers, or exposing this contract as a Mode choice.
 
 **Stepped Layout Core**:
 The stepped editing module that owns group and slot editing, undo history, outline preview, whole-model preview/export, base-hole derived fields, and layout optimization for `stepped`, while excluding split assembly orchestration.
@@ -922,6 +922,8 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - A tray selects exactly one **Base-hole Structure**.
 - **CAD Stepped Construction** builds one extruded body per height band.
 - **CAD Stepped Construction** applies slot holes and the selected **Base-hole Structure** after the stepped height bands are assembled.
+- A whole-model CAD Stepped Construction request never derives a **Split Assembly Partition Plan** or consumes dormant split configuration.
+- Whole-model and split-part CAD Stepped Construction requests expose separate construction operations while keeping their ordered 3D realization inside the same Module.
 - A Custom Stepped Tray split part has at most one active **Split Assembly Groove Type**.
 - One split-part generation request derives exactly one **Split Assembly Partition Plan** from its CAD Stepped Construction features.
 - **Split Interface Profile** generation and 3D split-body generation consume the same Split Assembly Partition Plan.

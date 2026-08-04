@@ -4,7 +4,7 @@ import { createBaseConverterModel } from "../base-converter-model";
 import {
   createSteppedCadSplitParts,
   createSteppedCadTrayModel,
-} from "../stepped-cad-tray-model";
+} from "../stepped-cad-construction";
 import { buildSteppedOutlinePreview } from "../stepped-outline-preview";
 import stlSerializer from "@jscad/stl-serializer";
 import { measureVolume } from "@jscad/modeling/src/measurements";
@@ -162,7 +162,6 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
       const contouredState = buildSteppedContouredState(req.params);
       const parts = createSteppedCadSplitParts(
         req.params,
-        req.params.splitGrooveDepth,
         contouredState,
       );
       self.postMessage({

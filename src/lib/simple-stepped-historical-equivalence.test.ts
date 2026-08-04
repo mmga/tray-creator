@@ -3,7 +3,7 @@ import { measurements } from "@jscad/modeling";
 import mixedRowsArtifact from "@/lib/fixtures/historical-simple-stepped-mixed-rows.json";
 import baseHolesArtifact from "@/lib/fixtures/historical-simple-stepped-base-holes.json";
 import { prepareParamFileObject } from "@/lib/historical-param-artifact-reader";
-import { createSteppedCadTrayModel } from "@/lib/stepped-cad-tray-model";
+import { createSteppedCadTrayModel } from "@/lib/stepped-cad-construction";
 import { buildSteppedCadFeatureGraph } from "@/lib/stepped-cad-feature-graph";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 

@@ -34,7 +34,7 @@ const DEG_TO_RAD = Math.PI / 180;
 
 /**
  * 保证几何体积为正，避免布尔运算后法线方向反转导致 measureVolume 返回负值。
- * 参考 stepped-cad-tray-model.ts 的同名实现。
+ * 参考 stepped-cad-realization.ts 的同名 Implementation。
  */
 function orientPositiveVolume(geometry: Geom3): Geom3 {
   return measureVolume(geometry) < 0 ? geom3.invert(geometry) : geometry;
