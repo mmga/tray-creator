@@ -1,8 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
-import { constructCustomContouredFootprint } from "@/lib/custom-contoured-footprint";
+import {
+  constructCustomContouredFootprintOutcome,
+  projectCustomContouredFootprintInput,
+} from "@/lib/custom-contoured-footprint";
 import type { CustomLayoutParams } from "@/types/custom-tray";
 import { buildCustomLayoutEditorViewportModel } from "@/viewports/layout-editor/customViewportModel";
+
+function readyState(params: CustomLayoutParams) {
+  const outcome = constructCustomContouredFootprintOutcome(
+    projectCustomContouredFootprintInput(params),
+  );
+  if (!outcome.ok) throw new Error(outcome.error.message);
+  return { status: "ready" as const, value: outcome.value };
+}
 
 describe("custom layout editor viewport model", () => {
   it("keeps automatic mode on the dynamic effective-baseplate overlay", () => {
@@ -47,7 +58,7 @@ describe("custom layout editor viewport model", () => {
     } satisfies CustomLayoutParams;
     const model = buildCustomLayoutEditorViewportModel(
       params,
-      constructCustomContouredFootprint(params),
+      readyState(params),
     );
     expect(model.trayFrame.showEffectiveBaseplate).toBe(false);
     expect(model.trayFrame.fixedUsableArea).toBeUndefined();
@@ -66,7 +77,7 @@ describe("custom layout editor viewport model", () => {
     } satisfies CustomLayoutParams;
     const model = buildCustomLayoutEditorViewportModel(
       params,
-      constructCustomContouredFootprint(params),
+      readyState(params),
     );
     expect(model.overlays.groupOutlines?.length).toBe(2);
   });
@@ -74,10 +85,12 @@ describe("custom layout editor viewport model", () => {
   it("contoured 构造失败时显示结构化错误而不要求 outline", () => {
     const model = buildCustomLayoutEditorViewportModel(
       { ...CUSTOM_LAYOUT_DEFAULTS, footprintStyle: "contoured" },
-      null,
       {
+        status: "failed",
+        error: {
         code: "invalid-contour-parameters",
         message: "轮廓参数无效",
+        },
       },
     );
 

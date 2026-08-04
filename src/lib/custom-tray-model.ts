@@ -13,10 +13,8 @@ import {
   calculateCustomTrayFootprint,
   roundLayoutDimensionToTenth,
 } from "@/lib/custom-layout-math";
-import {
-  constructCustomContouredFootprint,
-} from "@/lib/custom-contoured-footprint";
 import type { ConstructedContouredFootprint } from "@/lib/contoured-footprint";
+import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import {
   createBaseBody,
@@ -88,13 +86,21 @@ export function calculateCustomEffectiveBaseplate(params: CustomLayoutParams) {
  */
 export function createCustomTrayModel(
   params: CustomLayoutParams,
-  constructedContoured?: ConstructedContouredFootprint | null,
+  contouredState: ContouredFootprintState<ConstructedContouredFootprint> = {
+    status: "inactive",
+  },
 ): Geom3 {
   const { slots, baseThickness, holeDepth, cornerRadius, sideBevelWidth } = params;
-  const contoured = params.footprintStyle === "contoured"
-    ? (constructedContoured ?? constructCustomContouredFootprint(params))
-    : undefined;
-  const footprint = calculateCustomTrayFootprint(params, contoured);
+  if (params.footprintStyle === "contoured" && contouredState.status !== "ready") {
+    throw new Error(
+      contouredState.status === "failed"
+        ? contouredState.error.message
+        : "Contoured Footprint Construction 结果未激活",
+    );
+  }
+  const constructedContoured =
+    contouredState.status === "ready" ? contouredState.value : null;
+  const footprint = calculateCustomTrayFootprint(params, contouredState);
   const trayWidth = footprint.width;
   const trayDepth = footprint.depth;
   const totalHeight = baseThickness + holeDepth;
@@ -110,7 +116,7 @@ export function createCustomTrayModel(
   if (footprint.footprintStyle === "contoured") {
     body = createContouredBaseBody(
       params,
-      contoured!,
+      constructedContoured!,
       baseThickness + holeDepth,
     );
   } else {
@@ -220,12 +226,11 @@ function createContouredBaseBody(
  */
 export function calculateCustomTrayDimensions(
   params: CustomLayoutParams,
-  constructedContoured?: ConstructedContouredFootprint | null,
+  contouredState: ContouredFootprintState<ConstructedContouredFootprint> = {
+    status: "inactive",
+  },
 ) {
-  const contoured = params.footprintStyle === "contoured"
-    ? (constructedContoured ?? constructCustomContouredFootprint(params))
-    : undefined;
-  const footprint = calculateCustomTrayFootprint(params, contoured);
+  const footprint = calculateCustomTrayFootprint(params, contouredState);
   return {
     width: footprint.width,
     depth: footprint.depth,

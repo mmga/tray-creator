@@ -232,14 +232,15 @@ describe("useCustomLayout", () => {
     const { result } = renderHook(() => useCustomLayout());
 
     act(() => {
+      result.current.setContouredWorkingPreviewEnabled(true);
       result.current.updateParam("footprintStyle", "contoured");
       result.current.addSlot(25);
     });
 
     await waitFor(() => {
-      expect(result.current.committedContouredFootprint).not.toBeNull();
+      expect(result.current.contouredFootprintState.status).toBe("ready");
     });
-    const committed = result.current.committedContouredFootprint;
+    const committed = result.current.contouredFootprintState;
 
     act(() => {
       result.current.beginContinuousEdit();
@@ -248,9 +249,9 @@ describe("useCustomLayout", () => {
       ]);
     });
 
-    expect(result.current.committedContouredFootprint).toBe(committed);
-    expect(result.current.workingContouredFootprint).not.toBeNull();
-    expect(result.current.workingContouredFootprint).not.toBe(committed);
+    expect(result.current.contouredFootprintState).toBe(committed);
+    expect(result.current.workingContouredFootprintState.status).toBe("ready");
+    expect(result.current.workingContouredFootprintState).not.toBe(committed);
 
     act(() => {
       result.current.cancelContinuousEdit();
@@ -259,8 +260,10 @@ describe("useCustomLayout", () => {
       result.current.updateParam("footprintStyle", "contoured");
     });
 
-    expect(result.current.workingContouredFootprint).toBeNull();
-    expect(result.current.committedContouredFootprint).toBe(committed);
+    expect(result.current.workingContouredFootprintState).toEqual({
+      status: "inactive",
+    });
+    expect(result.current.contouredFootprintState).toBe(committed);
   });
 
   it("generates previews and exports the current custom layout", async () => {
@@ -316,6 +319,10 @@ describe("useCustomLayout", () => {
       geometry,
       trayWorkerServiceMock,
       browserDownloadPort,
+      expect.objectContaining({
+        width: expect.any(Number),
+        depth: expect.any(Number),
+      }),
     );
 
     act(() => {
@@ -330,6 +337,10 @@ describe("useCustomLayout", () => {
       refreshedGeometry,
       trayWorkerServiceMock,
       browserDownloadPort,
+      expect.objectContaining({
+        width: expect.any(Number),
+        depth: expect.any(Number),
+      }),
     );
     expect(threeGeometry.dispose).toHaveBeenCalledTimes(1);
   });

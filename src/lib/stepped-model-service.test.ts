@@ -75,6 +75,14 @@ describe("stepped model service", () => {
       geometry,
       workerPort,
       downloadPort,
+      {
+        width: 260,
+        depth: 260,
+        minX: 0,
+        maxX: 0,
+        minY: 0,
+        maxY: 0,
+      },
     );
 
     expect(workerPort.exportSTL).toHaveBeenCalledWith(
@@ -156,6 +164,14 @@ describe("stepped model service", () => {
       captureModeParamSnapshot("stepped", STEPPED_LAYOUT_DEFAULTS),
       workerPort,
       downloadPort,
+      {
+        width: 260,
+        depth: 260,
+        minX: 0,
+        maxX: 0,
+        minY: 0,
+        maxY: 0,
+      },
     );
 
     expect(workerPort.exportSTL).toHaveBeenCalledWith(

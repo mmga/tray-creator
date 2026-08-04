@@ -35,6 +35,11 @@ export function useSteppedViewportWorkspace({
   splitPreview,
 }: UseSteppedViewportWorkspaceOptions): UseSteppedViewportWorkspaceReturn {
   const [rightView, setRightView] = useState<"2d" | "3d">("2d");
+  const setContouredWorkingPreviewEnabled =
+    model.setContouredWorkingPreviewEnabled;
+  useEffect(() => {
+    setContouredWorkingPreviewEnabled?.(rightView === "2d");
+  }, [rightView, setContouredWorkingPreviewEnabled]);
   const {
     selectedSlotIds,
     previewGroupId,
@@ -74,10 +79,10 @@ export function useSteppedViewportWorkspace({
           params: model.params,
           focusedGroupId: previewGroupId,
           groupOutlines: model.outlinePreview,
-          contouredFootprints: model.workingContouredFootprints ??
-            model.committedContouredFootprints,
-          contouredConstructionError: model.workingContouredConstructionError ??
-            model.contouredConstructionError,
+          contouredState:
+            model.workingContouredFootprintState?.status !== "inactive"
+              ? (model.workingContouredFootprintState ?? { status: "inactive" })
+              : (model.contouredFootprintState ?? { status: "inactive" }),
         })}
         commands={{
           updateSlotPosition: model.updateSlotPosition,

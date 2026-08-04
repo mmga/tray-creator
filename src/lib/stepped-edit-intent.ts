@@ -26,6 +26,7 @@ import {
   type SteppedSlotUpdate,
 } from "@/lib/stepped-layout-slot-actions";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
+import type { SteppedLayoutExtents } from "@/lib/stepped-layout-math";
 
 type SteppedParamUpdateIntent = {
   [K in keyof SteppedLayoutParams]-?: {
@@ -48,7 +49,7 @@ export type SteppedEditIntent =
   | { type: "slots.insert"; slots: SymmetryInsertSlot[]; targetGroupId?: string }
   | { type: "slots.duplicate"; ids: string[] }
   | { type: "slots.move-to-group"; ids: string[]; targetGroupId: string }
-  | { type: "baseplate.trim" }
+  | { type: "baseplate.trim"; effectiveDimensions: SteppedLayoutExtents }
   | { type: "group.add" }
   | { type: "group.remove"; groupId: string }
   | { type: "group.height"; groupId: string; height: number }
@@ -126,7 +127,7 @@ export function applySteppedEditIntent(
       next = moveSteppedSlotsToGroup(params, intent.ids, intent.targetGroupId);
       break;
     case "baseplate.trim":
-      next = trimSteppedBaseplate(params);
+      next = trimSteppedBaseplate(params, intent.effectiveDimensions);
       break;
     case "group.add":
       next = addSteppedGroup(params, idFactory);

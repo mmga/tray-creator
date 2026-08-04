@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateSteppedEffectiveDimensions } from "@/lib/stepped-layout-math";
+import { calculateSteppedEffectiveDimensions } from "@/test/contoured-state";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 
 describe("stepped layout math", () => {

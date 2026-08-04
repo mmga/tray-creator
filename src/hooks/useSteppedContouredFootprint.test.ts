@@ -7,6 +7,7 @@ const constructOutcomeMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/stepped-contoured-footprint", () => ({
   constructSteppedContouredFootprintsOutcome: constructOutcomeMock,
+  projectSteppedContouredFootprintInput: (params: SteppedLayoutParams) => params,
 }));
 
 import { useSteppedContouredFootprint } from "@/hooks/useSteppedContouredFootprint";
@@ -32,6 +33,8 @@ describe("useSteppedContouredFootprint", () => {
       ({ persistedParams, workingParams }) => useSteppedContouredFootprint({
         persistedParams,
         workingParams,
+        sessionEpoch: 0,
+        workingEnabled: true,
       }),
       { initialProps: { persistedParams: contoured, workingParams: null } },
     );
@@ -47,7 +50,7 @@ describe("useSteppedContouredFootprint", () => {
       persistedParams: { ...contoured, footprintStyle: "rectangular", trayWidth: 180 },
       workingParams: null,
     });
-    expect(result.current.committed).toBeNull();
+    expect(result.current.committed).toEqual({ status: "inactive" });
 
     rerender({ persistedParams: contoured, workingParams: null });
     expect(constructOutcomeMock).toHaveBeenCalledTimes(1);
@@ -72,17 +75,31 @@ describe("useSteppedContouredFootprint", () => {
         : slot),
     };
     const { result, rerender } = renderHook(
-      ({ working }) => useSteppedContouredFootprint({ persistedParams, workingParams: working }),
+      ({ working }) => useSteppedContouredFootprint({
+        persistedParams,
+        workingParams: working,
+        sessionEpoch: 0,
+        workingEnabled: true,
+      }),
       { initialProps: { working: null as SteppedLayoutParams | null } },
     );
 
-    await waitFor(() => expect(result.current.committed?.error?.message).toBe("轮廓参数无效"));
+    await waitFor(() => expect(result.current.committed).toMatchObject({
+      status: "failed",
+      error: { message: "轮廓参数无效" },
+    }));
     rerender({ working: null });
     expect(constructOutcomeMock).toHaveBeenCalledTimes(1);
 
     rerender({ working: workingParams });
-    await waitFor(() => expect(result.current.working?.footprints).toBe(footprint));
-    expect(result.current.committed?.error?.message).toBe("轮廓参数无效");
+    await waitFor(() => expect(result.current.working).toEqual({
+      status: "ready",
+      value: footprint,
+    }));
+    expect(result.current.committed).toMatchObject({
+      status: "failed",
+      error: { message: "轮廓参数无效" },
+    });
     expect(constructOutcomeMock).toHaveBeenCalledTimes(2);
   });
 });

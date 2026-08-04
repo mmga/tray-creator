@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { useCustomLayout } from "@/hooks/useCustomLayout";
 import type { ModeInteractionState } from "@/hooks/useModeInteractionState";
@@ -22,6 +22,11 @@ export function useCustomViewportWorkspace({
   interactionState,
 }: UseCustomViewportWorkspaceOptions): ModeViewportWorkspace<"custom"> {
   const [rightView, setRightView] = useState<"2d" | "3d">("2d");
+  const setContouredWorkingPreviewEnabled =
+    model.setContouredWorkingPreviewEnabled;
+  useEffect(() => {
+    setContouredWorkingPreviewEnabled?.(rightView === "2d");
+  }, [rightView, setContouredWorkingPreviewEnabled]);
   const deactivate = useCallback(() => {
     model.cancelContinuousEdit();
     interactionState.resetInteractionState();
@@ -38,11 +43,9 @@ export function useCustomViewportWorkspace({
         isActive={rightView === "2d"}
         model={buildCustomLayoutEditorViewportModel(
           model.params,
-          model.workingContouredFootprint ?? model.committedContouredFootprint,
-          model.workingContouredFootprint
-            ? null
-            : model.workingContouredConstructionError ??
-              model.contouredConstructionError,
+          model.workingContouredFootprintState?.status !== "inactive"
+            ? (model.workingContouredFootprintState ?? { status: "inactive" })
+            : (model.contouredFootprintState ?? { status: "inactive" }),
         )}
         commands={{
           updateSlotPosition: model.updateSlotPosition,
@@ -65,13 +68,11 @@ export function useCustomViewportWorkspace({
       model.beginContinuousEdit,
       model.cancelContinuousEdit,
       model.commitContinuousEdit,
-      model.committedContouredFootprint,
-      model.contouredConstructionError,
+      model.contouredFootprintState,
       model.insertSlots,
       model.params,
       model.removeSlot,
-      model.workingContouredFootprint,
-      model.workingContouredConstructionError,
+      model.workingContouredFootprintState,
       model.undo,
       model.updateMultipleSlots,
       model.updateMultipleSlotsLive,

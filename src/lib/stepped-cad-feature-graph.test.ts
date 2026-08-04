@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSteppedCadFeatureGraph } from "@/lib/stepped-cad-feature-graph";
+import { buildSteppedCadFeatureGraph } from "@/test/contoured-state";
 import { geometries, measurements } from "@jscad/modeling";
 import { RENDER_CONFIG } from "@/lib/config";
 import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";

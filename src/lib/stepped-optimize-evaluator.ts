@@ -14,6 +14,12 @@ import {
   SYMMETRY_TOLERANCE,
   TARGET_WIDTH_TO_DEPTH_RATIO,
 } from "@/lib/stepped-optimize-config";
+import {
+  constructSteppedContouredFootprintsOutcome,
+  projectSteppedContouredFootprintInput,
+  type ConstructedSteppedContouredFootprints,
+} from "@/lib/stepped-contoured-footprint";
+import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
 
 export interface CompactCandidateEvaluation {
   width: number;
@@ -31,6 +37,18 @@ export interface CompactCandidateEvaluation {
 
 const { measureArea } = measurements;
 
+function constructCandidateState(
+  params: SteppedLayoutParams,
+): ContouredFootprintState<ConstructedSteppedContouredFootprints> {
+  if (params.footprintStyle === "rectangular") return { status: "inactive" };
+  const outcome = constructSteppedContouredFootprintsOutcome(
+    projectSteppedContouredFootprintInput(params),
+  );
+  return outcome.ok
+    ? { status: "ready", value: outcome.value }
+    : { status: "failed", error: outcome.error };
+}
+
 export function calculateHeightBandFootprintCost(
   params: SteppedLayoutParams,
   slots: SteppedSlot[],
@@ -40,7 +58,8 @@ export function calculateHeightBandFootprintCost(
   }
 
   const candidateParams = { ...params, slots };
-  const graph = buildSteppedCadFeatureGraph(candidateParams);
+  const candidateState = constructCandidateState(candidateParams);
+  const graph = buildSteppedCadFeatureGraph(candidateParams, candidateState);
   const heightByGroupId = new Map(
     graph.groups.map((group) => [group.groupId, group.columnHeight] as const),
   );
@@ -56,12 +75,16 @@ export function calculateHeightBandFootprintCost(
       if (groupHeight + 1e-6 < layer.toHeight) {
         return sum;
       }
-      const dims = calculateSteppedEffectiveDimensions({
+      const slotParams = {
         ...candidateParams,
         slots: [slot],
         boundarySpacing: 0,
         boundarySpacingIndependent: true,
-      });
+      };
+      const dims = calculateSteppedEffectiveDimensions(
+        slotParams,
+        constructCandidateState(slotParams),
+      );
       return sum + dims.width * dims.depth;
     }, 0);
 
@@ -79,10 +102,14 @@ export function evaluateCompactCandidate(
   symmetryPenalty: number,
   rowCount: number,
 ): CompactCandidateEvaluation {
-  const dims = calculateSteppedEffectiveDimensions({
+  const candidateParams = {
     ...params,
     slots,
-  });
+  };
+  const dims = calculateSteppedEffectiveDimensions(
+    candidateParams,
+    constructCandidateState(candidateParams),
+  );
   const widthToDepthRatio =
     dims.depth <= 0 ? Number.POSITIVE_INFINITY : dims.width / dims.depth;
   const aspectPenalty = Number(

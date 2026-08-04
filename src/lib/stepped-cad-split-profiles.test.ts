@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import downloadedTwoHeightRecessFixture from "@/lib/fixtures/tray-stepped-cad-download-two-height-recess.json";
-import { buildSteppedCadFeatureGraph } from "@/lib/stepped-cad-feature-graph";
+import { buildSteppedCadFeatureGraph } from "@/test/contoured-state";
 import { buildSteppedCadSplitProfilePlan } from "@/lib/stepped-cad-split-profiles";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 

@@ -2,8 +2,8 @@ import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
 import { RENDER_CONFIG } from "@/lib/config";
-import { constructCustomContouredFootprint } from "@/lib/custom-contoured-footprint";
 import type { ConstructedContouredFootprint } from "@/lib/contoured-footprint";
+import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
 import type { BaseplateFootprintStyle, CustomLayoutParams, FreeSlot } from "@/types/custom-tray";
 
 export type CustomTraySizingMode = "auto" | "fixed";
@@ -68,38 +68,6 @@ export function resolveCustomFootprintStyle(
   return params.footprintStyle === "contoured" ? "contoured" : "rectangular";
 }
 
-/**
- * 把自定义模式 FreeSlot 投影为 Contoured Footprint Construction 所需的通用槽位结构。
- * custom 与 stepped 通过各自的投影函数把自己的 Slot Instance 适配到同一形状。
- */
-/**
- * 为自定义模式派生 contoured footprint：返回 2D bodies 与外接矩形尺寸。
- * 仅在 footprintStyle === "contoured" 时被调用。
- */
-export function calculateCustomContouredFootprint(
-  params: CustomLayoutParams,
-): {
-  bodies: ReturnType<typeof constructCustomContouredFootprint>["bodies"][number]["geometry"][];
-  bodyCount: number;
-  minX: number;
-  maxX: number;
-  minY: number;
-  maxY: number;
-  diagnostics: ReturnType<typeof constructCustomContouredFootprint>["diagnostics"];
-} {
-  const result = constructCustomContouredFootprint(params);
-  const bounds = result.bounds;
-  return {
-    bodies: result.bodies.map((body) => body.geometry),
-    bodyCount: result.bodyCount,
-    minX: bounds?.minX ?? 0,
-    maxX: bounds?.maxX ?? 0,
-    minY: bounds?.minY ?? 0,
-    maxY: bounds?.maxY ?? 0,
-    diagnostics: result.diagnostics,
-  };
-}
-
 export function calculateCustomEffectiveDimensions(
   params: CustomLayoutParams,
 ): LayoutExtents {
@@ -152,7 +120,9 @@ export function calculateCustomEffectiveDimensions(
 
 export function calculateCustomTrayFootprint(
   params: CustomLayoutParams,
-  constructedContoured?: ConstructedContouredFootprint | null,
+  contouredState: ContouredFootprintState<ConstructedContouredFootprint> = {
+    status: "inactive",
+  },
 ): CustomTrayFootprint {
   const sizingMode = resolveCustomTraySizingMode(params);
   const footprintStyle = resolveCustomFootprintStyle(params);
@@ -160,7 +130,7 @@ export function calculateCustomTrayFootprint(
   // contoured 分支：底座贴合槽位轮廓，不应用 side bevel / fixed sizing / corner radius。
   // 这些字段保留为 Dormant Fixed Tray Configuration，切换回 rectangular 时复活（CONTEXT:607-608）。
   if (footprintStyle === "contoured") {
-    if (!constructedContoured) {
+    if (contouredState.status !== "ready") {
       return {
         sizingMode: "auto",
         footprintStyle,
@@ -174,7 +144,7 @@ export function calculateCustomTrayFootprint(
         contourBodyCount: 0,
       };
     }
-    const contoured = constructedContoured;
+    const contoured = contouredState.value;
     const width = roundLayoutDimensionToTenth(
       (contoured.bounds?.maxX ?? 0) - (contoured.bounds?.minX ?? 0),
     );

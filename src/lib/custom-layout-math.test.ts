@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
-import { constructCustomContouredFootprint } from "@/lib/custom-contoured-footprint";
 import {
-  calculateCustomContouredFootprint,
   calculateCustomEffectiveDimensions,
   calculateCustomTrayFootprint,
   calculateFixedCustomTrayUsableArea,
@@ -11,6 +9,19 @@ import {
   resolveCustomFootprintStyle,
   resolveCustomTraySizingMode,
 } from "@/lib/custom-layout-math";
+import {
+  constructCustomContouredFootprintOutcome,
+  projectCustomContouredFootprintInput,
+} from "@/lib/custom-contoured-footprint";
+import type { CustomLayoutParams } from "@/types/custom-tray";
+
+function readyState(params: CustomLayoutParams) {
+  const outcome = constructCustomContouredFootprintOutcome(
+    projectCustomContouredFootprintInput(params),
+  );
+  if (!outcome.ok) throw new Error(outcome.error.message);
+  return { status: "ready" as const, value: outcome.value };
+}
 
 describe("custom layout math", () => {
   it("resolves boundary spacing from either the shared spacing or the override", () => {
@@ -252,16 +263,14 @@ describe("custom layout math", () => {
       boundarySpacingIndependent: true,
     };
 
-    const footprint = calculateCustomTrayFootprint(
-      params,
-      constructCustomContouredFootprint(params),
-    );
+    const state = readyState(params);
+    const footprint = calculateCustomTrayFootprint(params, state);
     expect(footprint.footprintStyle).toBe("contoured");
     expect(footprint.contourBodyCount).toBe(1);
     expect(footprint.width).toBeGreaterThan(25);
     expect(footprint.depth).toBeGreaterThan(25);
 
-    const contoured = calculateCustomContouredFootprint(params);
+    const contoured = state.value;
     expect(contoured.bodyCount).toBe(1);
     expect(contoured.bodies.length).toBe(1);
   });
@@ -298,10 +307,7 @@ describe("custom layout math", () => {
       boundarySpacing: 5,
       boundarySpacingIndependent: true,
     };
-    const footprint = calculateCustomTrayFootprint(
-      params,
-      constructCustomContouredFootprint(params),
-    );
+    const footprint = calculateCustomTrayFootprint(params, readyState(params));
     expect(footprint.contourBodyCount).toBe(2);
   });
 
@@ -326,20 +332,22 @@ describe("custom layout math", () => {
         rotation: 0,
       },
     ];
-    const separated = calculateCustomContouredFootprint({
+    const separatedParams = {
       ...CUSTOM_LAYOUT_DEFAULTS,
       footprintStyle: "contoured",
       smoothingRadius: 1,
       disconnectDistance: 1,
       slots,
-    });
-    const bridged = calculateCustomContouredFootprint({
+    } satisfies CustomLayoutParams;
+    const bridgedParams = {
       ...CUSTOM_LAYOUT_DEFAULTS,
       footprintStyle: "contoured",
       smoothingRadius: 60,
       disconnectDistance: 0,
       slots,
-    });
+    } satisfies CustomLayoutParams;
+    const separated = readyState(separatedParams).value;
+    const bridged = readyState(bridgedParams).value;
 
     expect(separated.bodyCount).toBe(2);
     expect(bridged.bodyCount).toBe(1);

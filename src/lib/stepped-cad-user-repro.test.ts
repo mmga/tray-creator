@@ -11,9 +11,9 @@ import traySteppedCadUserReproFixture from "@/lib/fixtures/tray-stepped-cad-user
 import {
   createSteppedCadSplitParts,
   createSteppedCadTrayModel,
-} from "@/lib/stepped-cad-tray-model";
+  buildSteppedCadFeatureGraph,
+} from "@/test/contoured-state";
 import { insetGeom2 } from "@/lib/outline-geometry";
-import { buildSteppedCadFeatureGraph } from "@/lib/stepped-cad-feature-graph";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 import twoHeightRecessFixture from "@/lib/fixtures/tray-stepped-cad-two-height-recess.json";

@@ -11,7 +11,7 @@ import { resolveMagneticBaseHolePreset } from "@/lib/base-hole-config";
 import { roundLayoutDimensionToTenth } from "@/lib/custom-layout-math";
 import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
-import { constructSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
+import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
 import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
 import { getConnectivityRadius } from "@/lib/stepped-connectivity";
 import type { ContouredFootprintBounds } from "@/lib/contoured-footprint";
@@ -384,11 +384,21 @@ function buildRectangularGroupFootprint(
 
 export function buildSteppedCadFeatureGraph(
   params: SteppedLayoutParams,
-  constructedContoured?: ConstructedSteppedContouredFootprints | null,
+  contouredState: ContouredFootprintState<ConstructedSteppedContouredFootprints> = {
+    status: "inactive",
+  },
 ): SteppedCadFeatureGraph {
   const footprintStyle = resolveSteppedFootprintStyle(params);
-  const contouredConstruction = footprintStyle === "contoured"
-    ? (constructedContoured ?? constructSteppedContouredFootprints(params))
+  if (footprintStyle === "contoured" && contouredState.status !== "ready") {
+    throw new Error(
+      contouredState.status === "failed"
+        ? contouredState.error.message
+        : "Stepped Contoured Footprint Construction 结果未激活",
+    );
+  }
+  const contouredConstruction = footprintStyle === "contoured" &&
+      contouredState.status === "ready"
+    ? contouredState.value
     : null;
   const {
     trayWidth,

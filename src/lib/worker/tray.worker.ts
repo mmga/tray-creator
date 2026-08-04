@@ -6,8 +6,6 @@ import {
   createSteppedCadTrayModel,
 } from "../stepped-cad-tray-model";
 import { buildSteppedOutlinePreview } from "../stepped-outline-preview";
-import { constructCustomContouredFootprintOutcome } from "../custom-contoured-footprint";
-import { constructSteppedContouredFootprintsOutcome } from "../stepped-contoured-footprint";
 import stlSerializer from "@jscad/stl-serializer";
 import { measureVolume } from "@jscad/modeling/src/measurements";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
@@ -18,6 +16,41 @@ import type {
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import type { TrayParams } from "@/types/tray";
+import {
+  constructCustomContouredFootprintOutcome,
+  projectCustomContouredFootprintInput,
+} from "../custom-contoured-footprint";
+import {
+  constructSteppedContouredFootprintsOutcome,
+  projectSteppedContouredFootprintInput,
+  type ConstructedSteppedContouredFootprints,
+} from "../stepped-contoured-footprint";
+import type { ContouredFootprintState } from "../contoured-footprint-state";
+import type { ConstructedContouredFootprint } from "../contoured-footprint";
+
+function buildCustomContouredState(
+  params: CustomLayoutParams,
+): ContouredFootprintState<ConstructedContouredFootprint> {
+  if (params.footprintStyle !== "contoured") return { status: "inactive" };
+  const outcome = constructCustomContouredFootprintOutcome(
+    projectCustomContouredFootprintInput(params),
+  );
+  return outcome.ok
+    ? { status: "ready", value: outcome.value }
+    : { status: "failed", error: outcome.error };
+}
+
+function buildSteppedContouredState(
+  params: SteppedLayoutParams,
+): ContouredFootprintState<ConstructedSteppedContouredFootprints> {
+  if (params.footprintStyle === "rectangular") return { status: "inactive" };
+  const outcome = constructSteppedContouredFootprintsOutcome(
+    projectSteppedContouredFootprintInput(params),
+  );
+  return outcome.ok
+    ? { status: "ready", value: outcome.value }
+    : { status: "failed", error: outcome.error };
+}
 
 // 定义通信接口
 export type WorkerRequest =
@@ -97,18 +130,8 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
         volumeInfo: volume,
       });
     } else if (req.type === "GENERATE_CUSTOM") {
-      const contoured = req.params.footprintStyle === "contoured"
-        ? constructCustomContouredFootprintOutcome(req.params)
-        : null;
-      if (contoured && !contoured.ok) {
-        throw Object.assign(new Error(contoured.error.message), {
-          code: contoured.error.code,
-        });
-      }
-      const geometry = createCustomTrayModel(
-        req.params,
-        contoured?.ok ? contoured.value : undefined,
-      );
+      const contouredState = buildCustomContouredState(req.params);
+      const geometry = createCustomTrayModel(req.params, contouredState);
       const volume = measureVolume(geometry);
       self.postMessage({
         type: "GENERATION_SUCCESS",
@@ -126,11 +149,8 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
         volumeInfo: volume,
       });
     } else if (req.type === "GENERATE_STEPPED") {
-      const contoured = req.params.footprintStyle === "contoured"
-        ? constructSteppedContouredFootprintsOutcome(req.params)
-        : null;
-      if (contoured && !contoured.ok) throw new Error(contoured.error.message);
-      const geometry = createSteppedCadTrayModel(req.params, contoured?.ok ? contoured.value : undefined);
+      const contouredState = buildSteppedContouredState(req.params);
+      const geometry = createSteppedCadTrayModel(req.params, contouredState);
       const volume = measureVolume(geometry);
       self.postMessage({
         type: "GENERATION_SUCCESS",
@@ -139,11 +159,12 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
         volumeInfo: volume,
       });
     } else if (req.type === "GENERATE_STEPPED_SPLIT_PARTS") {
-      const contoured = req.params.footprintStyle === "contoured"
-        ? constructSteppedContouredFootprintsOutcome(req.params)
-        : null;
-      if (contoured && !contoured.ok) throw new Error(contoured.error.message);
-      const parts = createSteppedCadSplitParts(req.params, undefined, contoured?.ok ? contoured.value : undefined);
+      const contouredState = buildSteppedContouredState(req.params);
+      const parts = createSteppedCadSplitParts(
+        req.params,
+        req.params.splitGrooveDepth,
+        contouredState,
+      );
       self.postMessage({
         type: "STEPPED_SPLIT_PARTS_SUCCESS",
         requestId,
@@ -151,7 +172,11 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
       });
     } else if (req.type === "GENERATE_STEPPED_OUTLINE_PREVIEW") {
       const startedAt = performance.now();
-      const outlinePreview = buildSteppedOutlinePreview(req.params);
+      const contouredState = buildSteppedContouredState(req.params);
+      const outlinePreview = buildSteppedOutlinePreview(
+        req.params,
+        contouredState,
+      );
       self.postMessage({
         type: "STEPPED_OUTLINE_PREVIEW_SUCCESS",
         requestId,

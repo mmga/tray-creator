@@ -17,7 +17,6 @@ import {
   getFreeSlotProfileGeometry,
 } from "@/lib/slot-definitions";
 import {
-  calculateSteppedEffectiveDimensions,
   type SteppedLayoutExtents,
 } from "@/lib/stepped-layout-math";
 import type { IdFactory } from "@/lib/model-ports";
@@ -169,9 +168,7 @@ export function duplicateSteppedSlots(
 
 export function trimSteppedBaseplate(
   params: SteppedLayoutParams,
-  effectiveDimensions: SteppedLayoutExtents = calculateSteppedEffectiveDimensions(
-    params,
-  ),
+  effectiveDimensions: SteppedLayoutExtents,
 ): SteppedLayoutParams {
   return trimFreeSlotBaseplate(params, effectiveDimensions);
 }

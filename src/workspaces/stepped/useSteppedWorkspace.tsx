@@ -125,8 +125,6 @@ export function useSteppedWorkspace({
       <SteppedLayoutPanel
         params={model.params}
         effectiveDimensions={model.effectiveDimensions}
-        committedContouredFootprints={model.committedContouredFootprints}
-        contouredConstructionError={model.contouredConstructionError}
         isPreviewStale={model.isPreviewStale}
         setParams={model.setParams}
         actions={actions}
@@ -141,6 +139,7 @@ export function useSteppedWorkspace({
         }
         isGenerating={model.isGenerating}
         volume={model.volume}
+        contouredFootprintState={model.contouredFootprintState}
         baseHoleFitViolations={model.baseHoleFitViolations}
         selectedSlotIds={selectedSlotIds}
         activeGroupId={activeSteppedGroupId}

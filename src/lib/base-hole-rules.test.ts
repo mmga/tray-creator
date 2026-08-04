@@ -10,6 +10,8 @@ import {
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
+import { customContouredStateForTest } from "@/test/contoured-state";
+import type { CustomLayoutParams } from "@/types/custom-tray";
 
 describe("base hole rules", () => {
   it("按圆形直径或非圆形短边匹配磁吸孔", () => {
@@ -61,7 +63,7 @@ describe("base hole rules", () => {
   });
 
   it("报告磁铁桩孔大于槽位最短成品尺寸", () => {
-    const violations = validateBaseHoleFit("custom", {
+    const smallParams = {
       ...CUSTOM_LAYOUT_DEFAULTS,
       baseHoleStructure: "magnet-post-hole",
       magnetPostHoleDiameter: 15,
@@ -76,7 +78,8 @@ describe("base hole rules", () => {
         slotHeight: 10.4,
         rotation: 0,
       }],
-    });
+    };
+    const violations = validateBaseHoleFit("custom", smallParams as CustomLayoutParams);
     expect(violations).toMatchObject([
       { kind: "magnet-post-hole-fit", slotIds: ["small-slot"] },
     ]);
@@ -112,24 +115,30 @@ describe("base hole rules", () => {
   it("contoured footprint 按各自外缘评估磁吸孔边缘", () => {
     // 一个远离其它槽的槽位：contoured footprint 会在它周围形成独立的小实体，
     // 磁吸孔半径加 0.6mm 侧壁要求，对小槽位应触发不适配
-    const violations = validateBaseHoleFit("custom", {
+    const contouredSmallParams = {
       ...CUSTOM_LAYOUT_DEFAULTS,
       footprintStyle: "contoured",
       baseHoleStructure: "magnetic-base-hole",
       slots: [
         { id: "small", x: 0, y: 0, shape: "circle", width: 10, height: 10, rotation: 0 },
       ],
+    } satisfies CustomLayoutParams;
+    const violations = validateBaseHoleFit("custom", contouredSmallParams, {
+      customContouredState: customContouredStateForTest(contouredSmallParams),
     });
     expect(violations.some((item) => item.slotIds.includes("small"))).toBe(true);
 
     // 较大槽位在 contoured 下应能容纳对应磁吸孔
-    const ok = validateBaseHoleFit("custom", {
+    const largeParams = {
       ...CUSTOM_LAYOUT_DEFAULTS,
       footprintStyle: "contoured",
       baseHoleStructure: "magnetic-base-hole",
       slots: [
         { id: "large", x: 0, y: 0, shape: "circle", width: 40, height: 40, rotation: 0 },
       ],
+    } satisfies CustomLayoutParams;
+    const ok = validateBaseHoleFit("custom", largeParams, {
+      customContouredState: customContouredStateForTest(largeParams),
     });
     expect(ok.some((item) => item.slotIds.includes("large"))).toBe(false);
   });

@@ -17,7 +17,6 @@ import type * as THREE from "three";
 import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
 import type { EllipseSlotInstanceConfig } from "@/lib/slot-instance-factory";
 import { useSteppedOutlinePreview } from "@/hooks/useSteppedOutlinePreview";
-import { useSteppedContouredFootprint } from "@/hooks/useSteppedContouredFootprint";
 import { buildSteppedBridgeWarning } from "@/lib/stepped-bridge-warning";
 import type { BridgeWarning } from "@/lib/stepped-connectivity";
 import { applySteppedBaseHoleDerivedFields } from "@/lib/stepped-base-hole";
@@ -52,18 +51,13 @@ import {
   validateBaseHoleFit,
   type BaseHoleFitViolation,
 } from "@/lib/base-hole-rules";
-import type {
-  ConstructedSteppedContouredFootprints,
-} from "@/lib/stepped-contoured-footprint";
-import type { ContouredFootprintConstructionError } from "@/lib/contoured-footprint";
+import { useSteppedContouredFootprint } from "@/hooks/useSteppedContouredFootprint";
+import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
+import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
 
 export interface UseSteppedLayoutControllerReturn {
   params: SteppedLayoutParams;
   persistedParams: SteppedLayoutParams;
-  committedContouredFootprints: ConstructedSteppedContouredFootprints | null;
-  workingContouredFootprints: ConstructedSteppedContouredFootprints | null;
-  contouredConstructionError: ContouredFootprintConstructionError | null;
-  workingContouredConstructionError: ContouredFootprintConstructionError | null;
   transactionRevision: number;
   edit: (intent: SteppedEditIntent) => SteppedEditResult;
   previewEdit: (intent: SteppedContinuousEditIntent) => EditTransactionOutcome;
@@ -130,6 +124,9 @@ export interface UseSteppedLayoutControllerReturn {
   handleGenerate: () => void;
   handleExportSTL: () => void;
   outlinePreview: GroupOutlinePreview[] | null;
+  contouredFootprintState: ContouredFootprintState<ConstructedSteppedContouredFootprints>;
+  workingContouredFootprintState: ContouredFootprintState<ConstructedSteppedContouredFootprints>;
+  setContouredWorkingPreviewEnabled: (enabled: boolean) => void;
 }
 
 export interface SteppedEditResult {
@@ -151,6 +148,7 @@ interface UseSteppedLayoutControllerOptions<
     geometry: Geom3,
     workerPort: TWorkerPort,
     downloadPort: DownloadPort,
+    effectiveDimensions: SteppedLayoutExtents,
   ) => Promise<void>;
 }
 
@@ -159,13 +157,20 @@ export function useSteppedLayoutController<
   TWorkerPort extends STLExportWorkerPort & SteppedOutlinePreviewPort,
 >({
   mode,
-  generatePreview,
+  generatePreview: generatePreviewForMode,
   exportModel,
 }: UseSteppedLayoutControllerOptions<M, TWorkerPort>): UseSteppedLayoutControllerReturn {
   const [optimizationProposals, setOptimizationProposals] = useState<
     SteppedOptimizationProposal[]
   >([]);
   const [isOptimizingLayout, setIsOptimizingLayout] = useState(false);
+  const [
+    contouredWorkingPreviewEnabled,
+    setContouredWorkingPreviewEnabled,
+  ] = useState(false);
+  const contouredFootprintStateRef = useRef<
+    ContouredFootprintState<ConstructedSteppedContouredFootprints>
+  >({ status: "inactive" });
 
   const optimizationProposalsRef = useRef(optimizationProposals);
   const optimizationRequestIdRef = useRef(0);
@@ -173,9 +178,7 @@ export function useSteppedLayoutController<
   const optimizationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
-  useEffect(() => {
-    optimizationProposalsRef.current = optimizationProposals;
-  }, [optimizationProposals]);
+  optimizationProposalsRef.current = optimizationProposals;
 
   const cancelPendingOptimization = useCallback(() => {
     optimizationRequestIdRef.current += 1;
@@ -211,6 +214,7 @@ export function useSteppedLayoutController<
   const {
     params: persistedParams,
     viewParams: params,
+    workingParams,
     paramsRef,
     replaceParams: setParams,
     applyChange,
@@ -219,7 +223,6 @@ export function useSteppedLayoutController<
     commitContinuousEdit: commitContinuousEditTransaction,
     cancelContinuousEdit: cancelContinuousEditTransaction,
     hasActiveContinuousEdit,
-    workingParams,
     transactionRevision,
     sessionEpoch,
     undo,
@@ -228,8 +231,8 @@ export function useSteppedLayoutController<
     volume,
     isGenerating,
     isPreviewStale,
-    handleGenerate,
-    handleExportSTL,
+    handleGenerate: generatePreview,
+    handleExportSTL: exportSTL,
   } = useEditableParams<
     SteppedLayoutParams,
     ModeParamSnapshot<M>
@@ -243,7 +246,7 @@ export function useSteppedLayoutController<
       if (!workerPort) {
         return null;
       }
-      return generatePreview(snapshot.params, workerPort);
+      return generatePreviewForMode(snapshot.params, workerPort);
     },
     exportModel: async (snapshot, geometry) => {
       const workerPort = trayWorkerService as unknown as TWorkerPort | null;
@@ -255,9 +258,12 @@ export function useSteppedLayoutController<
         geometry,
         workerPort,
         browserDownloadPort,
+        calculateSteppedEffectiveDimensions(
+          snapshot.params,
+          contouredFootprintStateRef.current,
+        ),
       );
     },
-    // 权威构造结果在下方统一提供，避免生成前从相同快照再次构造轮廓。
     validateSnapshot: () => null,
     onInvalidate: () => {
       optimizationVariantRef.current = 0;
@@ -270,44 +276,45 @@ export function useSteppedLayoutController<
   const contouredFootprints = useSteppedContouredFootprint({
     persistedParams,
     workingParams,
+    sessionEpoch,
+    workingEnabled: contouredWorkingPreviewEnabled,
   });
-  const committedContouredFootprints = contouredFootprints.committed?.footprints ?? null;
-  const workingContouredFootprints = contouredFootprints.working?.footprints ?? null;
-  const contouredConstructionError = contouredFootprints.committed?.error ?? null;
-  const workingContouredConstructionError = contouredFootprints.working?.error ?? null;
+  const contouredFootprintState = contouredFootprints.committed;
+  useEffect(() => {
+    contouredFootprintStateRef.current = contouredFootprintState;
+  }, [contouredFootprintState]);
+  const workingContouredFootprintState = contouredFootprints.working;
 
   const baseHoleFitViolations = useMemo(
     () => validateBaseHoleFit(mode, persistedParams, {
-      steppedContouredFootprints: committedContouredFootprints,
+      steppedContouredState: contouredFootprintState,
     }),
-    [committedContouredFootprints, mode, persistedParams],
+    [contouredFootprintState, mode, persistedParams],
   );
-  const baseHoleFitBlockingReason = contouredConstructionError?.message ??
+  const baseHoleFitBlockingReason =
+    (contouredFootprintState.status === "failed"
+      ? contouredFootprintState.error.message
+      : null) ??
     getBaseHoleFitBlockingReason(baseHoleFitViolations);
 
-  const guardedHandleGenerate = useCallback(() => {
-    if (baseHoleFitBlockingReason) return;
-    handleGenerate();
-  }, [baseHoleFitBlockingReason, handleGenerate]);
+  const handleGenerate = useCallback(() => {
+    if (baseHoleFitBlockingReason) return Promise.resolve();
+    return generatePreview();
+  }, [baseHoleFitBlockingReason, generatePreview]);
 
-  const guardedHandleExportSTL = useCallback(() => {
-    if (baseHoleFitBlockingReason) return;
-    handleExportSTL();
-  }, [baseHoleFitBlockingReason, handleExportSTL]);
-
-  const calculateEffectiveDimensions = useCallback(
-    (current: SteppedLayoutParams = persistedParams) => {
-      return calculateSteppedEffectiveDimensions(
-        current,
-        current === persistedParams ? committedContouredFootprints : undefined,
-      );
-    },
-    [committedContouredFootprints, persistedParams],
-  );
+  const handleExportSTL = useCallback(() => {
+    if (baseHoleFitBlockingReason) return Promise.resolve();
+    return exportSTL();
+  }, [baseHoleFitBlockingReason, exportSTL]);
 
   const effectiveDimensions = useMemo(
-    () => calculateEffectiveDimensions(persistedParams),
-    [calculateEffectiveDimensions, persistedParams],
+    () => calculateSteppedEffectiveDimensions(
+      params,
+      workingContouredFootprintState.status !== "inactive"
+        ? workingContouredFootprintState
+        : contouredFootprintState,
+    ),
+    [contouredFootprintState, params, workingContouredFootprintState],
   );
 
   const edit = useCallback((intent: SteppedEditIntent): SteppedEditResult => {
@@ -384,9 +391,10 @@ export function useSteppedLayoutController<
     resumeOutlinePreview,
   } = useSteppedOutlinePreview(
     params,
-    trayWorkerService,
+    workingContouredFootprintState.status !== "inactive"
+      ? workingContouredFootprintState
+      : contouredFootprintState,
     sessionEpoch,
-    workingContouredFootprints ?? committedContouredFootprints,
   );
 
   const updateMultipleSlots = useCallback(
@@ -508,8 +516,8 @@ export function useSteppedLayoutController<
   );
 
   const trimBaseplate = useCallback(() => {
-    edit({ type: "baseplate.trim" });
-  }, [edit]);
+    edit({ type: "baseplate.trim", effectiveDimensions });
+  }, [edit, effectiveDimensions]);
 
   const bridgeWarning = useMemo<BridgeWarning | null>(() => {
     return buildSteppedBridgeWarning(params);
@@ -569,10 +577,6 @@ export function useSteppedLayoutController<
   return {
     params,
     persistedParams,
-    committedContouredFootprints,
-    workingContouredFootprints,
-    contouredConstructionError,
-    workingContouredConstructionError,
     transactionRevision,
     edit,
     previewEdit,
@@ -621,8 +625,11 @@ export function useSteppedLayoutController<
     clearOptimizationProposals,
     pauseOutlinePreview,
     resumeOutlinePreview,
-    handleGenerate: guardedHandleGenerate,
-    handleExportSTL: guardedHandleExportSTL,
+    handleGenerate,
+    handleExportSTL,
     outlinePreview,
+    contouredFootprintState,
+    workingContouredFootprintState,
+    setContouredWorkingPreviewEnabled,
   };
 }

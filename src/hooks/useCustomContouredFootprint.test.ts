@@ -7,6 +7,9 @@ const constructOutcomeMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/custom-contoured-footprint", () => ({
   constructCustomContouredFootprintOutcome: constructOutcomeMock,
+  projectCustomContouredFootprintInput: (params: CustomLayoutParams) => ({
+    plan: { requests: [{ key: "custom-baseplate", footprintStyle: params.footprintStyle }] },
+  }),
 }));
 
 import { useCustomContouredFootprint } from "@/hooks/useCustomContouredFootprint";
@@ -37,6 +40,8 @@ describe("useCustomContouredFootprint", () => {
       ({ persistedParams, workingParams }) => useCustomContouredFootprint({
         persistedParams,
         workingParams,
+        sessionEpoch: 0,
+        workingEnabled: true,
       }),
       { initialProps: { persistedParams: contoured, workingParams: null } },
     );
@@ -58,7 +63,7 @@ describe("useCustomContouredFootprint", () => {
       },
       workingParams: null,
     });
-    expect(result.current.committed).toBeNull();
+    expect(result.current.committed).toEqual({ status: "inactive" });
 
     rerender({ persistedParams: contoured, workingParams: null });
     expect(constructOutcomeMock).toHaveBeenCalledTimes(1);
@@ -81,18 +86,72 @@ describe("useCustomContouredFootprint", () => {
       ({ persistedParams }) => useCustomContouredFootprint({
         persistedParams,
         workingParams: null,
+        sessionEpoch: 0,
+        workingEnabled: true,
       }),
       { initialProps: { persistedParams: params } },
     );
 
     await waitFor(() => {
-      expect(result.current.committed?.error?.code).toBe(
+      expect(result.current.committed.status).toBe("failed");
+      if (result.current.committed.status !== "failed") return;
+      expect(result.current.committed.error.code).toBe(
         "invalid-contour-parameters",
       );
     });
     rerender({ persistedParams: { ...params } });
 
     expect(constructOutcomeMock).toHaveBeenCalledTimes(1);
-    expect(result.current.committed?.error?.message).toBe("轮廓参数无效");
+    expect(result.current.committed.status).toBe("failed");
+    if (result.current.committed.status === "failed") {
+      expect(result.current.committed.error.message).toBe("轮廓参数无效");
+    }
+  });
+
+  it("仅在 2D 工作预览启用时构造 working 结果", () => {
+    const persistedParams: CustomLayoutParams = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      footprintStyle: "contoured",
+    };
+    const workingParams = {
+      ...persistedParams,
+      spacing: persistedParams.spacing + 1,
+    };
+    const { result, rerender } = renderHook(
+      ({ workingEnabled }) => useCustomContouredFootprint({
+        persistedParams,
+        workingParams,
+        sessionEpoch: 0,
+        workingEnabled,
+      }),
+      { initialProps: { workingEnabled: false } },
+    );
+
+    expect(result.current.working).toEqual({ status: "inactive" });
+    expect(constructOutcomeMock).toHaveBeenCalledTimes(1);
+
+    rerender({ workingEnabled: true });
+    expect(result.current.working.status).toBe("ready");
+    expect(constructOutcomeMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("session 替换会清空休眠结果并重新构造", () => {
+    const persistedParams: CustomLayoutParams = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      footprintStyle: "contoured",
+    };
+    const { rerender } = renderHook(
+      ({ sessionEpoch }) => useCustomContouredFootprint({
+        persistedParams,
+        workingParams: null,
+        sessionEpoch,
+        workingEnabled: false,
+      }),
+      { initialProps: { sessionEpoch: 0 } },
+    );
+
+    expect(constructOutcomeMock).toHaveBeenCalledTimes(1);
+    rerender({ sessionEpoch: 1 });
+    expect(constructOutcomeMock).toHaveBeenCalledTimes(2);
   });
 });

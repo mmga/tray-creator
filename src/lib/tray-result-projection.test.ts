@@ -3,7 +3,10 @@ import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import { BASE_CONVERTER_DEFAULTS } from "@/lib/base-converter-config";
-import { constructCustomContouredFootprint } from "@/lib/custom-contoured-footprint";
+import {
+  constructCustomContouredFootprintOutcome,
+  projectCustomContouredFootprintInput,
+} from "@/lib/custom-contoured-footprint";
 import type { CustomLayoutParams } from "@/types/custom-tray";
 import {
   projectCustomTrayResult,
@@ -17,6 +20,14 @@ const idleState = {
   isGenerating: false,
   isPreviewStale: false,
 };
+
+function readyCustomState(params: CustomLayoutParams) {
+  const outcome = constructCustomContouredFootprintOutcome(
+    projectCustomContouredFootprintInput(params),
+  );
+  if (!outcome.ok) throw new Error(outcome.error.message);
+  return { status: "ready" as const, value: outcome.value };
+}
 
 describe("Tray Result Projection", () => {
   it("投影 grid 的 Slot Count、Grid Footprint Area 与独立状态", () => {
@@ -78,7 +89,7 @@ describe("Tray Result Projection", () => {
       // contoured 时 effectiveDimensions 被忽略，由派生 footprint 决定
       { width: 0, depth: 0 },
       idleState,
-      constructCustomContouredFootprint(params),
+      readyCustomState(params),
     );
     expect(contoured.footprintStyle).toBe("contoured");
     expect(contoured.footprintKind).toBe("contoured-footprint");
@@ -107,6 +118,7 @@ describe("Tray Result Projection", () => {
       STEPPED_LAYOUT_DEFAULTS,
       { width: 120, depth: 140 },
       idleState,
+      { status: "inactive" },
     );
     expect(stepped).toMatchObject({ mode: "stepped", groupCount: 1 });
   });

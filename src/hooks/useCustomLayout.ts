@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { browserDownloadPort } from "@/lib/download-port";
 import { randomIdFactory } from "@/lib/id-factory";
 import type { CustomLayoutParams } from "@/types/custom-tray";
@@ -19,7 +19,10 @@ import {
   updateCustomSlotRotation,
   type CustomSlotUpdate,
 } from "@/lib/custom-layout-actions";
-import { calculateCustomEffectiveDimensions } from "@/lib/custom-layout-math";
+import {
+  calculateCustomEffectiveDimensions,
+  calculateCustomTrayFootprint,
+} from "@/lib/custom-layout-math";
 import {
   exportCustomModelFiles,
   generateCustomPreview,
@@ -41,17 +44,16 @@ import {
   type BaseHoleFitViolation,
 } from "@/lib/base-hole-rules";
 import type {
-  ContouredFootprintConstructionError,
   ConstructedContouredFootprint,
 } from "@/lib/contoured-footprint";
+import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
 
 interface UseCustomLayoutReturn {
   params: CustomLayoutParams;
   persistedParams: CustomLayoutParams;
-  committedContouredFootprint: ConstructedContouredFootprint | null;
-  workingContouredFootprint: ConstructedContouredFootprint | null;
-  contouredConstructionError: ContouredFootprintConstructionError | null;
-  workingContouredConstructionError: ContouredFootprintConstructionError | null;
+  contouredFootprintState: ContouredFootprintState<ConstructedContouredFootprint>;
+  workingContouredFootprintState: ContouredFootprintState<ConstructedContouredFootprint>;
+  setContouredWorkingPreviewEnabled: (enabled: boolean) => void;
   setParams: React.Dispatch<React.SetStateAction<CustomLayoutParams>>;
   updateParam: <K extends keyof CustomLayoutParams>(
     key: K,
@@ -109,6 +111,13 @@ interface UseCustomLayoutReturn {
 }
 
 export function useCustomLayout(): UseCustomLayoutReturn {
+  const [
+    contouredWorkingPreviewEnabled,
+    setContouredWorkingPreviewEnabled,
+  ] = useState(false);
+  const contouredFootprintStateRef = useRef<
+    ContouredFootprintState<ConstructedContouredFootprint>
+  >({ status: "inactive" });
   const {
     params: persistedParams,
     viewParams: params,
@@ -121,6 +130,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     cancelContinuousEdit: cancelContinuousEditTransaction,
     hasActiveContinuousEdit,
     workingParams,
+    sessionEpoch,
     undo,
     canUndo,
     threeGeometry,
@@ -147,6 +157,20 @@ export function useCustomLayout(): UseCustomLayoutReturn {
         geometry,
         trayWorkerService!,
         browserDownloadPort,
+        (() => {
+          const footprint = calculateCustomTrayFootprint(
+            snapshot.params,
+            contouredFootprintStateRef.current,
+          );
+          return {
+            width: footprint.width,
+            depth: footprint.depth,
+            minX: footprint.minX,
+            maxX: footprint.maxX,
+            minY: footprint.minY,
+            maxY: footprint.maxY,
+          };
+        })(),
       );
     },
     // 主线程校验由下方的权威构造结果统一提供，避免生成前再次从快照重构轮廓。
@@ -156,21 +180,25 @@ export function useCustomLayout(): UseCustomLayoutReturn {
   const contouredFootprints = useCustomContouredFootprint({
     persistedParams,
     workingParams,
+    sessionEpoch,
+    workingEnabled: contouredWorkingPreviewEnabled,
   });
-  const committedContouredFootprint = contouredFootprints.committed?.footprint ?? null;
-  const workingContouredFootprint = contouredFootprints.working?.footprint ?? null;
-  const contouredConstructionError =
-    contouredFootprints.committed?.error ?? null;
-  const workingContouredConstructionError =
-    contouredFootprints.working?.error ?? null;
+  const contouredFootprintState = contouredFootprints.committed;
+  useEffect(() => {
+    contouredFootprintStateRef.current = contouredFootprintState;
+  }, [contouredFootprintState]);
+  const workingContouredFootprintState = contouredFootprints.working;
 
   const baseHoleFitViolations = useMemo(
     () => validateBaseHoleFit("custom", persistedParams, {
-      customContouredFootprint: committedContouredFootprint,
+      customContouredState: contouredFootprintState,
     }),
-    [committedContouredFootprint, persistedParams],
+    [contouredFootprintState, persistedParams],
   );
-  const baseHoleFitBlockingReason = contouredConstructionError?.message ??
+  const baseHoleFitBlockingReason =
+    (contouredFootprintState.status === "failed"
+      ? contouredFootprintState.error.message
+      : null) ??
     getBaseHoleFitBlockingReason(baseHoleFitViolations);
 
   const handleGenerate = useCallback(() => {
@@ -307,10 +335,9 @@ export function useCustomLayout(): UseCustomLayoutReturn {
   return {
     params,
     persistedParams,
-    committedContouredFootprint,
-    workingContouredFootprint,
-    contouredConstructionError,
-    workingContouredConstructionError,
+    contouredFootprintState,
+    workingContouredFootprintState,
+    setContouredWorkingPreviewEnabled,
     setParams,
     updateParam,
     addSlot,
