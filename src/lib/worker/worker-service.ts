@@ -35,6 +35,7 @@ function toWorkerError(reason: unknown, fallbackMessage: string): Error {
 class TrayWorkerService {
   private worker: Worker | null = null;
   private workerUnavailableReason: Error | null = null;
+  private explicitlyTerminated = false;
   private pendingRequests = new Map<string, PendingRequest>();
 
   constructor() {
@@ -50,10 +51,14 @@ class TrayWorkerService {
       });
       worker.onmessage = this.handleMessage.bind(this);
       worker.onerror = (event) => {
-        this.handleWorkerFailure(event, "后台建模 Worker 运行失败");
+        this.handleWorkerFailure(worker, event, "后台建模 Worker 运行失败");
       };
       worker.onmessageerror = (event) => {
-        this.handleWorkerFailure(event, "后台建模 Worker 响应无法读取");
+        this.handleWorkerFailure(
+          worker,
+          event,
+          "后台建模 Worker 响应无法读取",
+        );
       };
       this.worker = worker;
       this.workerUnavailableReason = null;
@@ -66,12 +71,16 @@ class TrayWorkerService {
     }
   }
 
-  private handleWorkerFailure(reason: unknown, fallbackMessage: string) {
+  private handleWorkerFailure(
+    failedWorker: Worker,
+    reason: unknown,
+    fallbackMessage: string,
+  ) {
+    if (this.worker !== failedWorker) return;
     const error = toWorkerError(reason, fallbackMessage);
-    const worker = this.worker;
     this.worker = null;
     this.workerUnavailableReason = error;
-    worker?.terminate();
+    failedWorker.terminate();
     this.rejectAllPending(error);
   }
 
@@ -100,6 +109,9 @@ class TrayWorkerService {
     createRequest: (requestId: string) => WorkerRequest,
     decodeResponse: (response: WorkerResponse) => TResult,
   ): Promise<TResult> {
+    if (!this.worker && !this.explicitlyTerminated) {
+      this.initWorker();
+    }
     const worker = this.worker;
     if (!worker) {
       return Promise.reject(
@@ -261,6 +273,7 @@ class TrayWorkerService {
   public terminate() {
     const worker = this.worker;
     this.worker = null;
+    this.explicitlyTerminated = true;
     worker?.terminate();
     const error = new Error("后台建模 Worker 已终止");
     this.workerUnavailableReason = error;

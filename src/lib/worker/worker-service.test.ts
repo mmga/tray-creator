@@ -305,6 +305,36 @@ describe("worker service", () => {
     ]);
   });
 
+  it("recreates a crashed worker for the next request", async () => {
+    const { trayWorkerService } = await import("@/lib/worker/worker-service");
+    const service = trayWorkerService!;
+    const crashedWorker = FakeWorker.instances[0];
+    const crashedRequest = service.generateGrid(DEFAULT_TRAY_PARAMS);
+
+    crashedWorker.emitError("worker crashed");
+    await expect(crashedRequest).rejects.toThrow("worker crashed");
+
+    const recoveryRequest = service.generateGrid(DEFAULT_TRAY_PARAMS);
+    expect(FakeWorker.instances).toHaveLength(2);
+    const recoveredWorker = FakeWorker.instances[1];
+    crashedWorker.emitError("late stale error");
+    expect(recoveredWorker.terminate).not.toHaveBeenCalled();
+    const request = recoveredWorker.postMessage.mock.calls[0]?.[0] as {
+      requestId: string;
+    };
+    recoveredWorker.emit({
+      type: "GENERATION_SUCCESS",
+      requestId: request.requestId,
+      geometry: { id: "recovered" } as never,
+      volumeInfo: 123,
+    });
+
+    await expect(recoveryRequest).resolves.toEqual({
+      geometry: { id: "recovered" },
+      volume: 123,
+    });
+  });
+
   it("rejects in-flight requests when terminated", async () => {
     const { trayWorkerService } = await import("@/lib/worker/worker-service");
     const service = trayWorkerService!;
