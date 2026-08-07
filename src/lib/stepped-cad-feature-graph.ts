@@ -190,6 +190,18 @@ export interface SteppedCadFeatureGraph {
   magnetPostHoles: SteppedCadMagnetPostHoleFeature[];
 }
 
+export interface SteppedCadFootprintPlan {
+  trayWidth: number;
+  trayDepth: number;
+  maxHeight: number;
+  groups: SteppedCadGroupFeature[];
+  layers: SteppedCadLayerFeature[];
+}
+
+interface ConstructedSteppedCadFootprintPlan extends SteppedCadFootprintPlan {
+  slots: NormalizedSlotData[];
+}
+
 function buildNormalizedSlotData(
   params: SteppedLayoutParams,
   contouredBounds: ContouredFootprintBounds | null = null,
@@ -382,12 +394,12 @@ function buildRectangularGroupFootprint(
   return buildRectangleFootprint(bounds, 0);
 }
 
-export function buildSteppedCadFeatureGraph(
+function constructSteppedCadFootprintPlan(
   params: SteppedLayoutParams,
   contouredState: ContouredFootprintState<ConstructedSteppedContouredFootprints> = {
     status: "inactive",
   },
-): SteppedCadFeatureGraph {
+): ConstructedSteppedCadFootprintPlan {
   const footprintStyle = resolveSteppedFootprintStyle(params);
   if (footprintStyle === "contoured" && contouredState.status !== "ready") {
     throw new Error(
@@ -414,9 +426,7 @@ export function buildSteppedCadFeatureGraph(
       maxHeight: 0,
       groups: [],
       layers: [],
-      slotHoles: [],
-      baseHoles: [],
-      magnetPostHoles: [],
+      slots,
     };
   }
 
@@ -529,6 +539,48 @@ export function buildSteppedCadFeatureGraph(
     previousHeight = height;
   }
 
+  const maxHeight = heights.length > 0 ? heights[heights.length - 1] : 0;
+
+  return {
+    trayWidth,
+    trayDepth,
+    maxHeight,
+    groups,
+    layers,
+    slots,
+  };
+}
+
+export function buildSteppedCadFootprintPlan(
+  params: SteppedLayoutParams,
+  contouredState: ContouredFootprintState<ConstructedSteppedContouredFootprints> = {
+    status: "inactive",
+  },
+): SteppedCadFootprintPlan {
+  const plan = constructSteppedCadFootprintPlan(
+    params,
+    contouredState,
+  );
+  return {
+    trayWidth: plan.trayWidth,
+    trayDepth: plan.trayDepth,
+    maxHeight: plan.maxHeight,
+    groups: plan.groups,
+    layers: plan.layers,
+  };
+}
+
+export function buildSteppedCadFeatureGraph(
+  params: SteppedLayoutParams,
+  contouredState: ContouredFootprintState<ConstructedSteppedContouredFootprints> = {
+    status: "inactive",
+  },
+): SteppedCadFeatureGraph {
+  const {
+    slots,
+    ...footprintPlan
+  } = constructSteppedCadFootprintPlan(params, contouredState);
+
   const slotHoles: SteppedCadSlotHoleFeature[] = slots.map((slot) => {
     const clampedDepth = Math.min(params.holeDepth, slot.columnHeight);
     return {
@@ -586,14 +638,8 @@ export function buildSteppedCadFeatureGraph(
     };
   });
 
-  const maxHeight = heights.length > 0 ? heights[heights.length - 1] : 0;
-
   return {
-    trayWidth,
-    trayDepth,
-    maxHeight,
-    groups,
-    layers,
+    ...footprintPlan,
     slotHoles,
     baseHoles,
     magnetPostHoles,

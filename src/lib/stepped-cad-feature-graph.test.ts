@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildSteppedCadFeatureGraph } from "@/test/contoured-state";
+import { buildSteppedCadFootprintPlan } from "@/lib/stepped-cad-feature-graph";
 import { geometries, measurements } from "@jscad/modeling";
 import { RENDER_CONFIG } from "@/lib/config";
 import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
@@ -67,6 +68,27 @@ function createParams(): SteppedLayoutParams {
 }
 
 describe("stepped cad feature graph", () => {
+  it("exposes footprint planning without CAD hole features", () => {
+    const params: SteppedLayoutParams = {
+      ...createParams(),
+      footprintStyle: "rectangular",
+      traySizingMode: "auto",
+    };
+    const plan = buildSteppedCadFootprintPlan(params);
+    const graph = buildSteppedCadFeatureGraph(params);
+
+    expect(plan).toEqual({
+      trayWidth: graph.trayWidth,
+      trayDepth: graph.trayDepth,
+      maxHeight: graph.maxHeight,
+      groups: graph.groups,
+      layers: graph.layers,
+    });
+    expect(plan).not.toHaveProperty("slotHoles");
+    expect(plan).not.toHaveProperty("baseHoles");
+    expect(plan).not.toHaveProperty("magnetPostHoles");
+  });
+
   it("builds layered additive features by unique group heights", () => {
     const graph = buildSteppedCadFeatureGraph(createParams());
 
