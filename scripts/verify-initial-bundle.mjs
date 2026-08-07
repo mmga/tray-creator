@@ -24,9 +24,12 @@ const initialChunks = pageManifest.clientModules[pageModuleKey].chunks.filter(
   (chunk) => typeof chunk === "string" && chunk.endsWith(".js"),
 );
 const threeRuntimeSignatures = ["BufferGeometry", "WebGLRenderer"];
+const maxInitialJavaScriptBytes = 500 * 1024;
+let initialJavaScriptBytes = 0;
 
 for (const chunk of initialChunks) {
   const source = await readFile(path.resolve(".next", chunk), "utf8");
+  initialJavaScriptBytes += Buffer.byteLength(source);
   const signature = threeRuntimeSignatures.find((value) => source.includes(value));
   if (signature) {
     throw new Error(
@@ -35,4 +38,12 @@ for (const chunk of initialChunks) {
   }
 }
 
-console.log(`已验证首页未同步加载 Three.js：${initialChunks.length} 个直接 chunk`);
+if (initialJavaScriptBytes > maxInitialJavaScriptBytes) {
+  throw new Error(
+    `首页直接 JavaScript 为 ${initialJavaScriptBytes} bytes，超过 ${maxInitialJavaScriptBytes} bytes 预算`,
+  );
+}
+
+console.log(
+  `已验证首页直接 JavaScript：${initialChunks.length} 个 chunk，${initialJavaScriptBytes} / ${maxInitialJavaScriptBytes} bytes，未同步加载 Three.js`,
+);
