@@ -10,8 +10,9 @@ import {
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
+import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import { customContouredStateForTest } from "@/test/contoured-state";
-import type { CustomLayoutParams } from "@/types/custom-tray";
+import type { CustomLayoutParams, SteppedLayoutParams } from "@/types/custom-tray";
 
 describe("base hole rules", () => {
   it("按圆形直径或非圆形短边匹配磁吸孔", () => {
@@ -45,6 +46,28 @@ describe("base hole rules", () => {
       baseHoleStructure: "magnet-post-hole",
       magnetPostHoleDepth: 3,
     })).toBe(4);
+  });
+
+  it("未启用底孔时在进入 Mode 槽位 Adapter 前返回", () => {
+    let slotsReadCount = 0;
+    const params = new Proxy(
+      {
+        ...STEPPED_LAYOUT_DEFAULTS,
+        baseHoleStructure: "none" as const,
+      },
+      {
+        get(target, property, receiver) {
+          if (property === "slots") {
+            slotsReadCount += 1;
+            throw new Error("无底孔校验不应读取槽位");
+          }
+          return Reflect.get(target, property, receiver);
+        },
+      },
+    ) as SteppedLayoutParams;
+
+    expect(validateBaseHoleFit("stepped", params)).toEqual([]);
+    expect(slotsReadCount).toBe(0);
   });
 
   it("按孔位结构自动提高平底和简易阶梯承载厚度", () => {

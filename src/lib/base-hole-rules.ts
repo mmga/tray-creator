@@ -533,5 +533,6 @@ export function validateBaseHoleFit(
   params: TrayParams | CustomLayoutParams | SteppedLayoutParams,
   options?: BaseHoleFitOptions,
 ): BaseHoleFitViolation[] {
+  if (params.baseHoleStructure === "none") return [];
   return validateSlots(params, buildSlotsForMode(mode, params, options));
 }
