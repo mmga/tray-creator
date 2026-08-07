@@ -91,15 +91,10 @@ export function useWorkspaceDraftSupport<M extends DraftMode>(
     exportDraftItem,
   } = useModeDrafts(options);
 
-  const [draftListVersion, setDraftListVersion] = useState(0);
+  const [draftList, setDraftList] = useState<AnyDraftListItem[]>([]);
   const refreshDraftList = useCallback(() => {
-    setDraftListVersion((version) => version + 1);
-  }, []);
-
-  const draftList = useMemo(() => {
-    void draftListVersion;
-    return getDraftList() as unknown as AnyDraftListItem[];
-  }, [draftListVersion, getDraftList]);
+    setDraftList(getDraftList() as unknown as AnyDraftListItem[]);
+  }, [getDraftList]);
 
   const openDraftDialog = useCallback(() => {
     refreshDraftList();
