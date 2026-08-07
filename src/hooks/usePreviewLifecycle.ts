@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type * as THREE from "three";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import { useToast } from "@/hooks/useToast";
@@ -48,9 +48,19 @@ export function usePreviewLifecycle<P, S>({
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPreviewStale, setIsPreviewStale] = useState(false);
   const geometryRef = useRef<Geom3 | null>(null);
+  const threeGeometryRef = useRef<THREE.BufferGeometry | null>(null);
   const geometryFingerprintRef = useRef<string | null>(null);
   const generatingSeqRef = useRef(0);
   const { nextSeq, isStale } = useRequestSequence();
+
+  useEffect(
+    () => () => {
+      nextSeq();
+      threeGeometryRef.current?.dispose();
+      threeGeometryRef.current = null;
+    },
+    [nextSeq],
+  );
 
   const invalidatePreview = useCallback(() => {
     nextSeq();
@@ -87,10 +97,9 @@ export function usePreviewLifecycle<P, S>({
       geometryRef.current = result.geometry;
       geometryFingerprintRef.current = fingerprintSnapshot(snapshot);
       setVolume(result.volume);
-      setThreeGeometry((prev) => {
-        prev?.dispose();
-        return result.threeGeometry;
-      });
+      threeGeometryRef.current?.dispose();
+      threeGeometryRef.current = result.threeGeometry;
+      setThreeGeometry(result.threeGeometry);
       setIsPreviewStale(false);
       return result.geometry;
     } catch (err) {
