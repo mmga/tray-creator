@@ -14,6 +14,8 @@ import type {
 } from "@/types/custom-tray";
 import type { TrayParams } from "@/types/tray";
 import {
+  MAX_PARAM_FILE_BYTES,
+  ParamFileSourceError,
   prepareParamImport,
 } from "@/lib/param-io";
 import { downloadParamFile } from "@/lib/param-download";
@@ -936,5 +938,65 @@ describe("param-io", () => {
       writable: true,
       value: previousFileReader,
     });
+  });
+
+  it("rejects oversized parameter files before starting FileReader", async () => {
+    const serialized = serializeParamFile("grid", DEFAULT_TRAY_PARAMS);
+    let constructorCalls = 0;
+    let readCalls = 0;
+
+    class TrackingFileReader {
+      result: string | ArrayBuffer | null = serialized;
+      error: DOMException | null = null;
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      onabort: (() => void) | null = null;
+
+      constructor() {
+        constructorCalls += 1;
+      }
+
+      readAsText() {
+        readCalls += 1;
+        this.onload?.();
+      }
+    }
+
+    const createSizedFile = (size: number) => ({
+      name: "grid.json",
+      size,
+    }) as File;
+    const previousFileReader = globalThis.FileReader;
+    Object.defineProperty(globalThis, "FileReader", {
+      configurable: true,
+      writable: true,
+      value: TrackingFileReader,
+    });
+
+    try {
+      await expect(prepareParamImport(
+        createSizedFile(MAX_PARAM_FILE_BYTES - 1),
+      )).resolves.toMatchObject({ status: "ready" });
+      await expect(prepareParamImport(
+        createSizedFile(MAX_PARAM_FILE_BYTES),
+      )).resolves.toMatchObject({ status: "ready" });
+
+      const oversizedRead = prepareParamImport(
+        createSizedFile(MAX_PARAM_FILE_BYTES + 1),
+      );
+      await expect(oversizedRead).rejects.toBeInstanceOf(ParamFileSourceError);
+      await expect(oversizedRead).rejects.toMatchObject({
+        code: "file-too-large",
+        message: "参数文件不能超过 5 MiB",
+      });
+      expect(constructorCalls).toBe(2);
+      expect(readCalls).toBe(2);
+    } finally {
+      Object.defineProperty(globalThis, "FileReader", {
+        configurable: true,
+        writable: true,
+        value: previousFileReader,
+      });
+    }
   });
 });
