@@ -130,24 +130,24 @@ describe("DraftManagerDialog", { timeout: 15000 }, () => {
       />,
     );
 
-    fireEvent.change(screen.getByPlaceholderText("草稿名称（留空自动生成）"), {
+    fireEvent.change(screen.getByRole("textbox", { name: "新草稿名称" }), {
       target: { value: "新草稿" },
     });
-    fireEvent.keyDown(screen.getByPlaceholderText("草稿名称（留空自动生成）"), {
+    fireEvent.keyDown(screen.getByRole("textbox", { name: "新草稿名称" }), {
       key: "Enter",
     });
     fireEvent.click(screen.getByRole("button", { name: /另存新草稿/ }));
     fireEvent.click(screen.getByRole("button", { name: /覆盖「当前草稿」/ }));
-    fireEvent.click(screen.getByRole("button", { name: /加载/ }));
-    fireEvent.click(screen.getByRole("button", { name: /重命名/ }));
+    fireEvent.click(screen.getByRole("button", { name: "加载草稿：当前草稿" }));
+    fireEvent.click(screen.getByRole("button", { name: "重命名草稿：当前草稿" }));
 
-    const renameInput = screen.getByDisplayValue("当前草稿");
+    const renameInput = screen.getByRole("textbox", { name: "重命名草稿：当前草稿" });
     fireEvent.change(renameInput, { target: { value: "重命名后的草稿" } });
     fireEvent.keyDown(renameInput, { key: "Enter" });
-    fireEvent.click(screen.getByRole("button", { name: /导出/ }));
-    fireEvent.click(screen.getByRole("button", { name: /删除/ }));
+    fireEvent.click(screen.getByRole("button", { name: "导出草稿：当前草稿" }));
+    fireEvent.click(screen.getByRole("button", { name: "删除草稿：当前草稿" }));
     expect(screen.getByText("确认删除？")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "删除" }));
+    fireEvent.click(screen.getByRole("button", { name: "确认删除草稿：当前草稿" }));
     fireEvent.click(screen.getByRole("button", { name: "关闭弹窗" }));
 
     expect(onDraftNameInputChange).toHaveBeenCalledWith("新草稿");
@@ -188,7 +188,7 @@ describe("DraftManagerDialog", { timeout: 15000 }, () => {
     expect(screen.getByText("阶梯模式草稿")).toBeInTheDocument();
     expect(screen.getByText("草稿数量已达上限，请在列表中删除不需要的草稿")).toBeInTheDocument();
     expect(screen.getByText("10 / 10")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("草稿名称（留空自动生成）")).toBeDisabled();
+    expect(screen.getByRole("textbox", { name: "新草稿名称" })).toBeDisabled();
     expect(screen.getByRole("button", { name: /另存新草稿/ })).toBeDisabled();
   });
 });

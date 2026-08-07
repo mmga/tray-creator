@@ -107,6 +107,7 @@ function DraftItemRow<TItem extends DraftManagerItem>({
         {editingTitle ? (
           <>
             <Input
+              aria-label={`重命名草稿：${item.title}`}
               value={pendingTitle}
               onChange={(event) => setPendingTitle(event.target.value)}
               onKeyDown={(event) => {
@@ -119,6 +120,7 @@ function DraftItemRow<TItem extends DraftManagerItem>({
             <button
               type="button"
               onClick={commitRename}
+              aria-label={`确认重命名草稿：${item.title}`}
               className="text-[#8cb880] transition-colors hover:text-[#a8d49a]"
               title="确认"
             >
@@ -127,6 +129,7 @@ function DraftItemRow<TItem extends DraftManagerItem>({
             <button
               type="button"
               onClick={cancelRename}
+              aria-label={`取消重命名草稿：${item.title}`}
               className="text-muted-foreground transition-colors hover:text-foreground"
               title="取消"
             >
@@ -167,6 +170,7 @@ function DraftItemRow<TItem extends DraftManagerItem>({
                 onDelete();
                 setConfirmDelete(false);
               }}
+              aria-label={`确认删除草稿：${item.title}`}
               className="rounded border border-red-800 px-2 py-0.5 text-[10px] text-red-400 transition-colors hover:text-red-300"
             >
               删除
@@ -174,6 +178,7 @@ function DraftItemRow<TItem extends DraftManagerItem>({
             <button
               type="button"
               onClick={() => setConfirmDelete(false)}
+              aria-label={`取消删除草稿：${item.title}`}
               className="rounded border border-[#2e2a24] px-2 py-0.5 text-[10px] text-muted-foreground transition-colors hover:text-foreground"
             >
               取消
@@ -184,6 +189,7 @@ function DraftItemRow<TItem extends DraftManagerItem>({
             <button
               type="button"
               onClick={onLoad}
+              aria-label={`加载草稿：${item.title}`}
               className="flex items-center gap-1 rounded border border-[#4a6741] px-2 py-0.5 text-[10px] text-[#8cb880] transition-colors hover:border-[#5a7a51] hover:text-[#a8d49a]"
             >
               <FolderOpen className="h-3 w-3" />
@@ -192,6 +198,7 @@ function DraftItemRow<TItem extends DraftManagerItem>({
             <button
               type="button"
               onClick={startRename}
+              aria-label={`重命名草稿：${item.title}`}
               className="flex items-center gap-1 rounded border border-[#2e2a24] px-2 py-0.5 text-[10px] text-muted-foreground transition-colors hover:border-[#3d372e] hover:text-foreground"
             >
               <Pencil className="h-3 w-3" />
@@ -200,6 +207,7 @@ function DraftItemRow<TItem extends DraftManagerItem>({
             <button
               type="button"
               onClick={onExport}
+              aria-label={`导出草稿：${item.title}`}
               className="flex items-center gap-1 rounded border border-[#2e2a24] px-2 py-0.5 text-[10px] text-muted-foreground transition-colors hover:border-[#3d372e] hover:text-foreground"
             >
               <Download className="h-3 w-3" />
@@ -208,6 +216,7 @@ function DraftItemRow<TItem extends DraftManagerItem>({
             <button
               type="button"
               onClick={() => setConfirmDelete(true)}
+              aria-label={`删除草稿：${item.title}`}
               className="ml-auto flex items-center gap-1 rounded border border-transparent px-2 py-0.5 text-[10px] text-muted-foreground/60 transition-colors hover:border-red-900 hover:text-red-400"
             >
               <Trash2 className="h-3 w-3" />
@@ -274,6 +283,7 @@ export function DraftManagerDialog<TItem extends DraftManagerItem>({
 
             <div className="flex gap-2">
               <Input
+                aria-label="新草稿名称"
                 value={draftNameInput}
                 onChange={(event) => onDraftNameInputChange(event.target.value)}
                 placeholder="草稿名称（留空自动生成）"
