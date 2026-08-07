@@ -206,9 +206,13 @@ export default function LayoutCanvas({
     () => (selectionBox ? getCanvasSelectionBoxRect(selectionBox) : null),
     [selectionBox],
   );
-  const selectedSymmetrySlots = slots.filter((slot) =>
-    effectiveSelectedIds.has(slot.id),
-  ) as SymmetrySlot[];
+  const selectedSymmetrySlots = useMemo(
+    () => Array.from(effectiveSelectedIds).flatMap((id) => {
+      const slot = slotById.get(id);
+      return slot ? [slot as SymmetrySlot] : [];
+    }),
+    [effectiveSelectedIds, slotById],
+  );
   const unselectedSymmetrySlots = useMemo(
     () =>
       slots.filter(
