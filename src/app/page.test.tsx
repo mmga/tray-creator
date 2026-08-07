@@ -834,6 +834,8 @@ describe("Home page", { timeout: 15000 }, () => {
     await waitFor(() => {
       expect(customModelMock.handleGenerate).toHaveBeenCalledTimes(1);
     });
+    expect(screen.getByTestId("layout-canvas").closest("[inert]")).not.toBeNull();
+    expect(screen.queryByRole("button", { name: "选择阶梯槽位" })).not.toBeInTheDocument();
     expect(screen.getByTestId("tray-viewer")).toHaveAttribute(
       "data-geometry-id",
       "custom-geometry",

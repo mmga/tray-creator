@@ -76,6 +76,8 @@ export function ViewportTabs({
       </div>
 
       <div
+        aria-hidden={rightView === "2d" ? undefined : "true"}
+        inert={rightView === "2d" ? undefined : true}
         className={`absolute inset-0 m-0 p-0 transition-opacity duration-150 ${
           rightView === "2d" ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
