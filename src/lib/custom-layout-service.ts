@@ -9,7 +9,7 @@ import type { CustomWorkerPort, DownloadPort } from "@/lib/model-ports";
 import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
 import type { ModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import { exportModelArtifactBundle } from "@/lib/model-artifact-bundle";
-import { generateCustomSTLFilename } from "@/lib/stl-export";
+import { generateCustomSTLFilename } from "@/lib/model-filenames";
 import type { CustomLayoutParams } from "@/types/custom-tray";
 
 export interface CustomPreviewResult {

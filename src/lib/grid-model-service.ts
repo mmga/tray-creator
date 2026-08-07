@@ -4,7 +4,7 @@ import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
 import type { ModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import { exportModelArtifactBundle } from "@/lib/model-artifact-bundle";
 import type { DownloadPort, GridWorkerPort } from "@/lib/model-ports";
-import { generateSTLFilename } from "@/lib/stl-export";
+import { generateSTLFilename } from "@/lib/model-filenames";
 import type { TrayParams } from "@/types/tray";
 import {
   getGridSlotGeometry,
