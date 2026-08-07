@@ -794,13 +794,24 @@ vi.mock("@/components/ui/tabs", async () => {
   };
 });
 
-import Home from "@/app/page";
+import { EditorBootstrapFallback } from "@/app/EditorBootstrapFallback";
+import TrayCreatorEditorRuntime from "@/app/TrayCreatorEditorRuntime";
 
 describe("Home page", { timeout: 15000 }, () => {
-  it("在窄屏采用上下分区，并为参数与视口区域提供名称", () => {
-    render(<Home />);
+  it("启动期间展示稳定骨架", () => {
+    render(<EditorBootstrapFallback />);
 
-    expect(screen.getByRole("complementary", { name: "参数面板" })).toHaveClass(
+    expect(
+      screen.getByRole("status", { name: "正在启动托盘编辑器" }),
+    ).toBeInTheDocument();
+  });
+
+  it("运行时就绪后提供具名响应式分区", () => {
+    render(<TrayCreatorEditorRuntime />);
+
+    expect(
+      screen.getByRole("complementary", { name: "参数面板" }),
+    ).toHaveClass(
       "h-[46%]",
       "w-full",
       "md:h-full",
@@ -849,7 +860,7 @@ describe("Home page", { timeout: 15000 }, () => {
   });
 
   it("switches to custom 3D view and regenerates stale previews", async () => {
-    render(<Home />);
+    render(<TrayCreatorEditorRuntime />);
 
     fireEvent.click(screen.getByRole("button", { name: "切到自定义" }));
     await screen.findByTestId("custom-panel");
@@ -872,7 +883,7 @@ describe("Home page", { timeout: 15000 }, () => {
   });
 
   it("moves focus between 2D and 3D tabs without activating them", async () => {
-    render(<Home />);
+    render(<TrayCreatorEditorRuntime />);
 
     fireEvent.click(screen.getByRole("button", { name: "切到自定义" }));
     await screen.findByTestId("custom-panel");
@@ -909,7 +920,7 @@ describe("Home page", { timeout: 15000 }, () => {
 
   it("wires base converter panel, 2D preview, and 3D generation", async () => {
     baseConverterModelMock.isPreviewStale = true;
-    render(<Home />);
+    render(<TrayCreatorEditorRuntime />);
 
     fireEvent.click(screen.getByRole("button", { name: "切到转换底盘" }));
     expect(await screen.findByText("底盘转换")).toBeInTheDocument();
@@ -930,7 +941,7 @@ describe("Home page", { timeout: 15000 }, () => {
   });
 
   it("syncs stepped selection to the active group, pauses outline preview, and resets stepped UI state on mode changes", async () => {
-    render(<Home />);
+    render(<TrayCreatorEditorRuntime />);
 
     fireEvent.click(screen.getByRole("button", { name: "切到阶梯" }));
     await screen.findByTestId("stepped-panel");
@@ -984,7 +995,7 @@ describe("Home page", { timeout: 15000 }, () => {
   it("wires stepped optimization actions and state through the page", async () => {
     steppedModelMock.isOptimizingLayout = true;
 
-    render(<Home />);
+    render(<TrayCreatorEditorRuntime />);
 
     fireEvent.click(screen.getByRole("button", { name: "切到阶梯" }));
     await screen.findByTestId("stepped-panel");
@@ -1014,14 +1025,14 @@ describe("Home page", { timeout: 15000 }, () => {
   });
 
   it("wires active mode draft dialog actions through the mode draft hooks and refreshes the list where needed", async () => {
-    const { rerender } = render(<Home />);
+    const { rerender } = render(<TrayCreatorEditorRuntime />);
     expect(screen.queryByTestId("draft-manager-dialog")).not.toBeInTheDocument();
     gridDraftsMock.getDraftList.mockClear();
 
     fireEvent.pointerDown(await screen.findByRole("button", { name: "更多操作" }));
     fireEvent.click(await screen.findByRole("menuitem", { name: "草稿列表" }));
     gridDraftsMock.isDialogOpen = true;
-    rerender(<Home />);
+    rerender(<TrayCreatorEditorRuntime />);
     await screen.findByTestId("draft-manager-dialog");
     fireEvent.click(screen.getByRole("button", { name: "草稿另存" }));
     fireEvent.click(screen.getByRole("button", { name: "覆盖草稿" }));

@@ -7,15 +7,24 @@ const readProjectFile = (path: string) =>
   readFileSync(projectFile(path), "utf8");
 
 describe("Mode Editor 架构守卫", () => {
-  it("页面只消费 active + perform，不持有 Mode 或模型", () => {
+  it("页面只负责延迟启动，Runtime 只消费 active + perform", () => {
     const pageSource = readProjectFile("src/app/page.tsx");
+    const runtimeSource = readProjectFile(
+      "src/app/TrayCreatorEditorRuntime.tsx",
+    );
 
     expect(pageSource).not.toMatch(/\buseState\b|\bsetMode\b/);
     expect(pageSource).not.toMatch(
       /useTrayModel|useCustomLayout|useBaseConverter|useSteppedLayout/,
     );
-    expect(pageSource).toContain("editor.active");
-    expect(pageSource).toContain("editor.perform");
+    expect(pageSource).toContain('dynamic(\n  () => import("./TrayCreatorEditorRuntime")');
+    expect(runtimeSource).not.toMatch(/\buseState\b|\bsetMode\b/);
+    expect(runtimeSource).not.toMatch(
+      /useTrayModel|useCustomLayout|useBaseConverter|useSteppedLayout/,
+    );
+    expect(runtimeSource).toContain("useModeEditor()");
+    expect(runtimeSource).toContain("editor.active");
+    expect(runtimeSource).toContain("editor.perform");
   });
 
   it("旧双 Registry 与透传 Hook 已删除", () => {

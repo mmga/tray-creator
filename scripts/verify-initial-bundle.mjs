@@ -23,17 +23,32 @@ if (!pageModuleKey) {
 const initialChunks = pageManifest.clientModules[pageModuleKey].chunks.filter(
   (chunk) => typeof chunk === "string" && chunk.endsWith(".js"),
 );
-const threeRuntimeSignatures = ["BufferGeometry", "WebGLRenderer"];
-const maxInitialJavaScriptBytes = 500 * 1024;
+const forbiddenRuntimeSignatures = [
+  {
+    label: "Three.js",
+    matches: (source) =>
+      ["BufferGeometry", "WebGLRenderer"].some((value) =>
+        source.includes(value),
+      ),
+  },
+  {
+    label: "JSCAD",
+    matches: (source) =>
+      source.includes("geom3") && source.includes("toPolygons"),
+  },
+];
+const maxInitialJavaScriptBytes = 16 * 1024;
 let initialJavaScriptBytes = 0;
 
 for (const chunk of initialChunks) {
   const source = await readFile(path.resolve(".next", chunk), "utf8");
   initialJavaScriptBytes += Buffer.byteLength(source);
-  const signature = threeRuntimeSignatures.find((value) => source.includes(value));
-  if (signature) {
+  const forbiddenRuntime = forbiddenRuntimeSignatures.find(({ matches }) =>
+    matches(source),
+  );
+  if (forbiddenRuntime) {
     throw new Error(
-      `首页同步 chunk ${chunk} 包含 Three.js 运行时签名 ${signature}`,
+      `首页同步 chunk ${chunk} 包含 ${forbiddenRuntime.label} 运行时签名`,
     );
   }
 }
@@ -45,5 +60,5 @@ if (initialJavaScriptBytes > maxInitialJavaScriptBytes) {
 }
 
 console.log(
-  `已验证首页直接 JavaScript：${initialChunks.length} 个 chunk，${initialJavaScriptBytes} / ${maxInitialJavaScriptBytes} bytes，未同步加载 Three.js`,
+  `已验证首页直接 JavaScript：${initialChunks.length} 个 chunk，${initialJavaScriptBytes} / ${maxInitialJavaScriptBytes} bytes，未同步加载 Three.js 或 JSCAD`,
 );
