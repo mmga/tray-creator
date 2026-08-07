@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { ModeReplacementConfirmDialog } from "@/components/ModeReplacementConfirmDialog";
 import { ParamImportDialog } from "@/components/ParamImportDialog";
 import { useBaseConverter } from "@/hooks/useBaseConverter";
@@ -450,7 +456,9 @@ export function useModeEditor(initialMode: AppMode = "grid"): ModeEditor {
     prepareImport,
     startReplacement,
   ]);
-  performRef.current = perform;
+  useLayoutEffect(() => {
+    performRef.current = perform;
+  }, [perform]);
 
   const overlays = (
     <>

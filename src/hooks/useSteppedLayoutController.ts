@@ -172,14 +172,11 @@ export function useSteppedLayoutController<
     ContouredFootprintState<ConstructedSteppedContouredFootprints>
   >({ status: "inactive" });
 
-  const optimizationProposalsRef = useRef(optimizationProposals);
   const optimizationRequestIdRef = useRef(0);
   const optimizationVariantRef = useRef(0);
   const optimizationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
-  optimizationProposalsRef.current = optimizationProposals;
-
   const cancelPendingOptimization = useCallback(() => {
     optimizationRequestIdRef.current += 1;
     if (optimizationTimeoutRef.current !== null) {
@@ -552,7 +549,7 @@ export function useSteppedLayoutController<
 
   const applyOptimizationProposal = useCallback(
     (proposalId: SteppedOptimizationProposal["id"]) => {
-      const proposal = optimizationProposalsRef.current.find(
+      const proposal = optimizationProposals.find(
         (entry) => entry.id === proposalId,
       );
       if (!proposal) {
@@ -561,7 +558,7 @@ export function useSteppedLayoutController<
 
       edit({ type: "params.replace", params: proposal.params });
     },
-    [edit],
+    [edit, optimizationProposals],
   );
 
   const beginContinuousEdit = useCallback(() => {
