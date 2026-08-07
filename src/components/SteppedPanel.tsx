@@ -425,19 +425,27 @@ function SteppedPanelBody({
         handleResetPerfSamples,
         formatAreaDelta,
     } = state;
-    const resolvedBaseHoleSizes = getResolvedMagneticBaseHolePresets(
-        "stepped",
-        params,
+    const resolvedBaseHoleSizes = useMemo(
+        () => getResolvedMagneticBaseHolePresets("stepped", params),
+        [params],
     );
-    const selectedSlot = params.slots.find((slot) => slot.id === selectedSlotIds[0]);
-    const selectedSlotMatch = selectedSlot ? {
-        label: `槽位 ${params.slots.indexOf(selectedSlot) + 1}`,
-        presetKey: resolveMagneticBaseHolePreset(
-            selectedSlot.shape,
-            selectedSlot.width,
-            selectedSlot.height,
-        ),
-    } : null;
+    const selectedSlotId = selectedSlotIds[0];
+    const selectedSlotMatch = useMemo(() => {
+        const selectedSlotIndex = params.slots.findIndex(
+            (slot) => slot.id === selectedSlotId,
+        );
+        if (selectedSlotIndex < 0) return null;
+
+        const selectedSlot = params.slots[selectedSlotIndex];
+        return {
+            label: `槽位 ${selectedSlotIndex + 1}`,
+            presetKey: resolveMagneticBaseHolePreset(
+                selectedSlot.shape,
+                selectedSlot.width,
+                selectedSlot.height,
+            ),
+        };
+    }, [params.slots, selectedSlotId]);
     const continuousParam = <K extends keyof SteppedLayoutParams>(
         key: K,
     ) => continuousSliderProps(
