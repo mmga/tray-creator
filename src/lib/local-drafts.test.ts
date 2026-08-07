@@ -175,7 +175,21 @@ describe("local drafts", () => {
     });
 
     expect(listDrafts("stepped")).toEqual([record.item]);
-    expect(getDraft("stepped", record.item.id)).toEqual(record);
+    expect(getDraft("stepped", record.item.id)).toMatchObject({
+      item: record.item,
+      paramFile: {
+        params: {
+          baseHoleSize: "20",
+          slots: [
+            expect.objectContaining({
+              slotDefinitionId: "circle-25",
+              slotWidth: 25.4,
+              slotHeight: 25.4,
+            }),
+          ],
+        },
+      },
+    });
   });
 
   it("读取历史 CAD 草稿为统一阶梯，并在更新时迁移存储键", () => {
@@ -315,6 +329,46 @@ describe("local drafts", () => {
           },
         },
       });
+  });
+
+  it("normalizes legacy fields in current-mode draft records", () => {
+    vi.spyOn(crypto, "randomUUID")
+      .mockReturnValueOnce("legacy-grid")
+      .mockReturnValueOnce("legacy-custom")
+      .mockReturnValueOnce("legacy-stepped");
+    const grid = createDraft("旧网格", "grid", createGridParams());
+    const custom = createDraft("旧自定义", "custom", createCustomParams());
+    const stepped = createDraft("旧阶梯", "stepped", createSteppedParams());
+
+    const removeFields = (mode: DraftMode, id: string, fields: string[]) => {
+      const key = `tray-creator:drafts:${mode}:${id}:v1`;
+      const stored = JSON.parse(localStorage.getItem(key)!);
+      for (const field of fields) {
+        delete stored.paramFile.params[field];
+      }
+      localStorage.setItem(key, JSON.stringify(stored));
+    };
+    removeFields("grid", grid.item.id, ["slotDefinitionId", "slotDiameter"]);
+    removeFields("custom", custom.item.id, ["footprintStyle", "smoothingRadius"]);
+    removeFields("stepped", stepped.item.id, [
+      "footprintStyle",
+      "boundarySpacing",
+      "boundarySpacingIndependent",
+    ]);
+
+    expect(getDraft("grid", grid.item.id)?.paramFile.params).toMatchObject({
+      slotDefinitionId: DEFAULT_TRAY_PARAMS.slotDefinitionId,
+      slotDiameter: DEFAULT_TRAY_PARAMS.slotDiameter,
+    });
+    expect(getDraft("custom", custom.item.id)?.paramFile.params).toMatchObject({
+      footprintStyle: "rectangular",
+      smoothingRadius: CUSTOM_LAYOUT_DEFAULTS.smoothingRadius,
+    });
+    expect(getDraft("stepped", stepped.item.id)?.paramFile.params).toMatchObject({
+      footprintStyle: "contoured",
+      boundarySpacing: STEPPED_LAYOUT_DEFAULTS.spacing,
+      boundarySpacingIndependent: false,
+    });
   });
 
   it("stores custom conversion snapshots and derives draft summaries from them", () => {
@@ -463,11 +517,15 @@ describe("local drafts", () => {
     expect(renamed.item.title).toBe("Final Draft");
     expect(getDraft("stepped", initial.item.id)?.item.title).toBe("Final Draft");
 
+    const normalizedParams = getDraft(
+      "stepped",
+      initial.item.id,
+    )!.paramFile.params;
     exportDraft("stepped", initial.item.id);
     expect(downloadParamFileMock).toHaveBeenCalledWith(
       {
         mode: "stepped",
-        params: nextParams,
+        params: normalizedParams,
       },
       "stepped-draft-final-draft.json",
     );

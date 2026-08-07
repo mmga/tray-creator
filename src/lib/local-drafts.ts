@@ -198,20 +198,10 @@ function getDraftInternal<M extends DraftMode>(
     if (!rawParams || typeof rawParams !== "object") {
       return null;
     }
-    const params = (recordMode === "stepped-cad" || recordMode === "simple-stepped"
-      ? readDraftParamArtifact(
-          { version: 1, mode: recordMode, params: rawParams },
-          mode,
-        )
-      : mode === "base-converter"
-        ? readDraftParamArtifact(
-            { version: 1, mode, params: rawParams },
-            mode,
-          )
-      : mode === "stepped" &&
-          !("enableSplitAssembly" in (rawParams as object))
-        ? { ...rawParams, enableSplitAssembly: false }
-        : rawParams) as DraftParamsByMode[M];
+    const params = readDraftParamArtifact(
+      { version: 1, mode: recordMode, params: rawParams },
+      mode,
+    ) as DraftParamsByMode[M];
 
     const itemSource = recordMode === "simple-stepped"
       ? { ...parsed.item, mode: "stepped", summary: undefined }
