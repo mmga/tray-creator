@@ -8,7 +8,7 @@
     "start": "node scripts/serve-static.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --max-warnings=0",
-    "test": "vitest run",
+    "test": "pnpm test:unit && pnpm test:integration && pnpm test:static-server",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:unit": "vitest run",
