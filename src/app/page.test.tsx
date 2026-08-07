@@ -716,20 +716,23 @@ vi.mock("@/components/ui/tabs", async () => {
   const TabsContext = ReactModule.createContext<{
     value?: string;
     onValueChange?: (value: string) => void;
+    activationMode?: "automatic" | "manual";
   }>({});
 
   return {
     Tabs({
       value,
       onValueChange,
+      activationMode,
       children,
     }: {
       value?: string;
       onValueChange?: (value: string) => void;
+      activationMode?: "automatic" | "manual";
       children: React.ReactNode;
     }) {
       return (
-        <TabsContext.Provider value={{ value, onValueChange }}>
+        <TabsContext.Provider value={{ value, onValueChange, activationMode }}>
           <div data-testid="tabs-root">{children}</div>
         </TabsContext.Provider>
       );
@@ -749,12 +752,13 @@ vi.mock("@/components/ui/tabs", async () => {
       children: React.ReactNode;
       onKeyDown?: React.KeyboardEventHandler<HTMLButtonElement>;
     }) {
-      const { value: activeValue, onValueChange } =
+      const { value: activeValue, onValueChange, activationMode } =
         ReactModule.useContext(TabsContext);
 
       return (
         <button
           type="button"
+          data-value={value}
           data-state={activeValue === value ? "active" : "inactive"}
           onClick={() => onValueChange?.(value)}
           onKeyDown={(event) => {
@@ -763,19 +767,14 @@ vi.mock("@/components/ui/tabs", async () => {
               return;
             }
 
-            if (event.key === "ArrowRight") {
-              if (value === "2d") {
-                onValueChange?.("3d");
-              } else if (value === "3d") {
-                onValueChange?.("2d");
-              }
-            }
-
-            if (event.key === "ArrowLeft") {
-              if (value === "3d") {
-                onValueChange?.("2d");
-              } else if (value === "2d") {
-                onValueChange?.("3d");
+            if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+              const nextValue = value === "2d" ? "3d" : "2d";
+              const nextTrigger = event.currentTarget.parentElement?.querySelector<HTMLButtonElement>(
+                `[data-value="${nextValue}"]`,
+              );
+              nextTrigger?.focus();
+              if (activationMode !== "manual") {
+                onValueChange?.(nextValue);
               }
             }
           }}
@@ -861,7 +860,7 @@ describe("Home page", { timeout: 15000 }, () => {
     );
   });
 
-  it("does not switch 2D and 3D views on left or right arrow keys", async () => {
+  it("moves focus between 2D and 3D tabs without activating them", async () => {
     render(<Home />);
 
     fireEvent.click(screen.getByRole("button", { name: "切到自定义" }));
@@ -870,6 +869,8 @@ describe("Home page", { timeout: 15000 }, () => {
     const twoDTrigger = screen.getByRole("button", { name: "2D 编辑" });
     twoDTrigger.focus();
     fireEvent.keyDown(twoDTrigger, { key: "ArrowRight" });
+
+    expect(screen.getByRole("button", { name: "3D 预览" })).toHaveFocus();
 
     expect(screen.getByRole("button", { name: "2D 编辑" })).toHaveAttribute(
       "data-state",
@@ -881,8 +882,9 @@ describe("Home page", { timeout: 15000 }, () => {
     );
 
     const threeDTrigger = screen.getByRole("button", { name: "3D 预览" });
-    threeDTrigger.focus();
     fireEvent.keyDown(threeDTrigger, { key: "ArrowLeft" });
+
+    expect(screen.getByRole("button", { name: "2D 编辑" })).toHaveFocus();
 
     expect(screen.getByRole("button", { name: "2D 编辑" })).toHaveAttribute(
       "data-state",
