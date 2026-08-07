@@ -641,6 +641,46 @@ describe("local drafts", () => {
     ).toBe(STEPPED_LAYOUT_DEFAULTS.trayWidth);
   });
 
+  it("rolls a deleted draft back when updating the index fails", () => {
+    vi.spyOn(crypto, "randomUUID").mockReturnValue("delete-rollback-id");
+    const initial = createDraft("保留草稿", "stepped", createSteppedParams());
+    const originalSetItem = Storage.prototype.setItem;
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (
+      this: Storage,
+      key,
+      value,
+    ) {
+      if (key === "tray-creator:drafts:index:v1") {
+        throw new DOMException("Quota exceeded");
+      }
+      return originalSetItem.call(this, key, value);
+    });
+
+    expect(() => deleteDraft("stepped", initial.item.id)).toThrow("存储失败");
+    expect(getDraft("stepped", initial.item.id)?.item.title).toBe("保留草稿");
+    expect(listDrafts("stepped")).toHaveLength(1);
+  });
+
+  it("keeps the draft index when deleting its record fails", () => {
+    vi.spyOn(crypto, "randomUUID").mockReturnValue("delete-failure-id");
+    const initial = createDraft("删除失败", "stepped", createSteppedParams());
+    const recordKey = `tray-creator:drafts:stepped:${initial.item.id}:v1`;
+    const originalRemoveItem = Storage.prototype.removeItem;
+    vi.spyOn(Storage.prototype, "removeItem").mockImplementation(function (
+      this: Storage,
+      key,
+    ) {
+      if (key === recordKey) {
+        throw new DOMException("Storage unavailable");
+      }
+      return originalRemoveItem.call(this, key);
+    });
+
+    expect(() => deleteDraft("stepped", initial.item.id)).toThrow("存储失败");
+    expect(getDraft("stepped", initial.item.id)?.item.title).toBe("删除失败");
+    expect(listDrafts("stepped")).toHaveLength(1);
+  });
+
   it("uses base-plate-only as the grid summary structure mode when enabled", () => {
     const record = createDraft(
       "仅底板",

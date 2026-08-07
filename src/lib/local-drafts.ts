@@ -98,6 +98,26 @@ function safeRemoveItem(key: string): void {
   }
 }
 
+function getItemOrThrow(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch (error) {
+    throw new Error(
+      `存储失败：${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+}
+
+function removeItemOrThrow(key: string): void {
+  try {
+    localStorage.removeItem(key);
+  } catch (error) {
+    throw new Error(
+      `存储失败：${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+}
+
 function readIndex(): AnyDraftListItem[] {
   const raw = safeGetItem(DRAFT_INDEX_KEY);
   if (!raw) return [];
@@ -387,13 +407,32 @@ export function renameDraft<M extends DraftMode>(
 }
 
 export function deleteDraft<M extends DraftMode>(mode: M, id: string): void {
-  safeRemoveItem(draftRecordKey(mode, id));
-  if (mode === "stepped") {
-    safeRemoveItem(draftRecordKey("stepped-cad", id));
-    safeRemoveItem(draftRecordKey("simple-stepped", id));
+  const recordSnapshots = getCompatibleDraftRecordKeys(mode, id).map((key) => ({
+    key,
+    raw: getItemOrThrow(key),
+  }));
+  const removedSnapshots: typeof recordSnapshots = [];
+
+  try {
+    for (const snapshot of recordSnapshots) {
+      if (snapshot.raw === null) continue;
+      removeItemOrThrow(snapshot.key);
+      removedSnapshots.push(snapshot);
+    }
+    const index = readIndex().filter((item) => item.id !== id);
+    writeIndex(index);
+  } catch (error) {
+    try {
+      for (const snapshot of removedSnapshots) {
+        safeSetItem(snapshot.key, snapshot.raw!);
+      }
+    } catch (rollbackError) {
+      throw new Error(
+        `删除草稿失败且回滚失败：${rollbackError instanceof Error ? rollbackError.message : String(rollbackError)}`,
+      );
+    }
+    throw error;
   }
-  const index = readIndex().filter((item) => item.id !== id);
-  writeIndex(index);
 }
 
 export function exportDraft<M extends DraftMode>(mode: M, id: string): void;
