@@ -4,6 +4,8 @@ import { useActionPanelResize } from "@/hooks/useActionPanelResize";
 
 describe("useActionPanelResize", () => {
   it("resizes within bounds and restores document styles after pointerup", () => {
+    document.body.style.cursor = "crosshair";
+    document.body.style.userSelect = "text";
     let frameCallback: FrameRequestCallback | null = null;
     const requestAnimationFrameSpy = vi
       .spyOn(window, "requestAnimationFrame")
@@ -53,8 +55,10 @@ describe("useActionPanelResize", () => {
     expect(result.current.actionPanelWidth).toBe(180);
     expect(cancelAnimationFrameSpy).toHaveBeenCalledTimes(1);
     expect(result.current.isResizingActionPanel).toBe(false);
-    expect(document.body.style.cursor).toBe("");
-    expect(document.body.style.userSelect).toBe("");
+    expect(document.body.style.cursor).toBe("crosshair");
+    expect(document.body.style.userSelect).toBe("text");
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
     requestAnimationFrameSpy.mockRestore();
     cancelAnimationFrameSpy.mockRestore();
   });

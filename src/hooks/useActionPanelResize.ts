@@ -83,6 +83,8 @@ export function useActionPanelResize({
     window.addEventListener("pointercancel", stopActionPanelResize);
     window.addEventListener("blur", stopActionPanelResize);
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    const previousBodyCursor = document.body.style.cursor;
+    const previousBodyUserSelect = document.body.style.userSelect;
     document.body.style.cursor = "col-resize";
     document.body.style.userSelect = "none";
 
@@ -92,8 +94,8 @@ export function useActionPanelResize({
       window.removeEventListener("pointercancel", stopActionPanelResize);
       window.removeEventListener("blur", stopActionPanelResize);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
+      document.body.style.cursor = previousBodyCursor;
+      document.body.style.userSelect = previousBodyUserSelect;
       if (resizeFrameRef.current !== null) {
         window.cancelAnimationFrame(resizeFrameRef.current);
         resizeFrameRef.current = null;
