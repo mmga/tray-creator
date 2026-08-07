@@ -251,7 +251,14 @@ export default function TrayViewer({
     >
       {/* Loading bar */}
       {isLoadingPreview && (
-        <div className="absolute top-0 left-0 right-0 z-30 h-0.5 bg-[#2a2518]">
+        <div
+          role="progressbar"
+          aria-label={isGeneratingSplitPreview && !isGenerating ? "正在生成拆件预览" : "正在生成模型预览"}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(loadingProgress * 100)}
+          className="absolute top-0 left-0 right-0 z-30 h-0.5 bg-[#2a2518]"
+        >
           <div
             className="h-full transition-[width] duration-200 ease-out"
             style={{

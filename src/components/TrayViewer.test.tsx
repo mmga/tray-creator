@@ -140,6 +140,10 @@ describe("TrayViewer", { timeout: 15000 }, () => {
     const progressBar = container.querySelector(
       'div[style*="width:"]',
     ) as HTMLDivElement | null;
+    expect(screen.getByRole("progressbar", { name: "正在生成模型预览" })).toHaveAttribute(
+      "aria-valuenow",
+      expect.stringMatching(/^[1-9]\d*$/),
+    );
     expect(progressBar).not.toBeNull();
     expect(Number.parseFloat(progressBar!.style.width)).toBeGreaterThan(0);
 
@@ -174,6 +178,7 @@ describe("TrayViewer", { timeout: 15000 }, () => {
     const progressBar = container.querySelector(
       'div[style*="width:"]',
     ) as HTMLDivElement | null;
+    expect(screen.getByRole("progressbar", { name: "正在生成拆件预览" })).toBeInTheDocument();
     expect(progressBar).not.toBeNull();
     expect(Number.parseFloat(progressBar!.style.width)).toBeGreaterThan(0);
 

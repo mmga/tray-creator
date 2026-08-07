@@ -6,10 +6,14 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 const TrayViewer = dynamic(() => import("@/components/TrayViewer"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full min-h-[400px] flex items-center justify-center bg-[#0a0908]">
+    <div
+      role="status"
+      aria-live="polite"
+      className="w-full h-full min-h-[400px] flex items-center justify-center bg-[#0a0908]"
+    >
       <div className="flex flex-col items-center gap-3 text-muted-foreground">
-        <div className="w-8 h-8 border-2 border-muted-foreground/40 border-t-primary rounded-full animate-spin" />
-        <p className="text-sm font-mono tracking-wider">LOADING FORGE...</p>
+        <div aria-hidden="true" className="w-8 h-8 border-2 border-muted-foreground/40 border-t-primary rounded-full animate-spin" />
+        <p className="text-sm font-mono tracking-wider">正在加载锻造视图…</p>
       </div>
     </div>
   ),
