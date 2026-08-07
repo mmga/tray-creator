@@ -499,6 +499,63 @@ describe("useSteppedLayout", () => {
     );
   });
 
+  it("导出刷新期间替换 Session 时仍使用开始时的 Snapshot 与派生尺寸", async () => {
+    randomIdFactoryMock.createId.mockReturnValue("slot-1");
+    const deferred = createDeferred<{
+      geometry: never;
+      threeGeometry: never;
+      volume: number;
+    }>();
+    const geometry = { id: "stepped-export-snapshot" } as never;
+    const threeGeometry = { dispose: vi.fn() };
+    generateSteppedPreviewMock.mockReturnValueOnce(deferred.promise);
+    exportSteppedModelFilesMock.mockResolvedValue(undefined);
+    const { result } = renderHook(() => useSteppedLayout());
+
+    act(() => {
+      result.current.addSlot(25);
+    });
+    await waitFor(() => {
+      expect(result.current.contouredFootprintState.status).toBe("ready");
+    });
+    const paramsAtExportStart = structuredClone(result.current.params);
+    const dimensionsAtExportStart = { ...result.current.effectiveDimensions };
+    let exportPromise: Promise<void> | undefined;
+
+    act(() => {
+      exportPromise = result.current.handleExportSTL();
+    });
+    act(() => {
+      result.current.setParams((current) => ({
+        ...current,
+        spacing: 18,
+      }));
+    });
+    expect(result.current.effectiveDimensions).not.toEqual(
+      dimensionsAtExportStart,
+    );
+
+    deferred.resolve({
+      geometry,
+      threeGeometry: threeGeometry as never,
+      volume: 50,
+    });
+    await act(async () => {
+      await exportPromise;
+    });
+
+    expect(exportSteppedModelFilesMock).toHaveBeenCalledWith(
+      { mode: "stepped", params: paramsAtExportStart },
+      geometry,
+      trayWorkerServiceMock,
+      browserDownloadPort,
+      dimensionsAtExportStart,
+    );
+    expect(threeGeometry.dispose).toHaveBeenCalledTimes(1);
+    expect(result.current.threeGeometry).toBeNull();
+    expect(result.current.isPreviewStale).toBe(true);
+  });
+
   it("surfaces export and generation errors through toast messages", async () => {
     randomIdFactoryMock.createId.mockReturnValue("slot-1");
     generateSteppedPreviewMock.mockRejectedValueOnce(new Error("boom"));

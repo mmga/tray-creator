@@ -121,8 +121,8 @@ export interface UseSteppedLayoutControllerReturn {
   clearOptimizationProposals: () => void;
   pauseOutlinePreview: () => void;
   resumeOutlinePreview: () => void;
-  handleGenerate: () => void;
-  handleExportSTL: () => void;
+  handleGenerate: () => Promise<void>;
+  handleExportSTL: () => Promise<void>;
   outlinePreview: GroupOutlinePreview[] | null;
   contouredFootprintState: ContouredFootprintState<ConstructedSteppedContouredFootprints>;
   workingContouredFootprintState: ContouredFootprintState<ConstructedSteppedContouredFootprints>;
@@ -229,11 +229,17 @@ export function useSteppedLayoutController<
     handleExportSTL: exportSTL,
   } = useEditableParams<
     SteppedLayoutParams,
-    ModeParamSnapshot<M>
+    ModeParamSnapshot<M>,
+    SteppedLayoutExtents
   >({
     initialState: () => normalizeParams(STEPPED_LAYOUT_DEFAULTS),
     captureSnapshot: (currentParams) =>
       captureModeParamSnapshot(mode, currentParams),
+    captureExportContext: (snapshot) =>
+      calculateSteppedEffectiveDimensions(
+        snapshot.params,
+        contouredFootprintStateRef.current,
+      ),
     fingerprintSnapshot: createModelGeometryFingerprint,
     generatePreview: async (snapshot) => {
       const workerPort = trayWorkerService as unknown as TWorkerPort | null;
@@ -242,7 +248,7 @@ export function useSteppedLayoutController<
       }
       return generatePreviewForMode(snapshot.params, workerPort);
     },
-    exportModel: async (snapshot, geometry) => {
+    exportModel: async (snapshot, geometry, effectiveDimensions) => {
       const workerPort = trayWorkerService as unknown as TWorkerPort | null;
       if (!workerPort) {
         return;
@@ -252,10 +258,7 @@ export function useSteppedLayoutController<
         geometry,
         workerPort,
         browserDownloadPort,
-        calculateSteppedEffectiveDimensions(
-          snapshot.params,
-          contouredFootprintStateRef.current,
-        ),
+        effectiveDimensions,
       );
     },
     validateSnapshot: () => null,

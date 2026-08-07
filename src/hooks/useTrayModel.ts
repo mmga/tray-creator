@@ -56,9 +56,10 @@ export function useTrayModel(): UseTrayModelReturn {
     transactionRevision,
     handleGenerate,
     handleExportSTL,
-  } = useEditableParams<TrayParams, ModeParamSnapshot<"grid">>({
+  } = useEditableParams<TrayParams, ModeParamSnapshot<"grid">, undefined>({
     initialState: () => resetGridParamsState(),
     captureSnapshot: (params) => captureModeParamSnapshot("grid", params),
+    captureExportContext: () => undefined,
     fingerprintSnapshot: createModelGeometryFingerprint,
     guard: () => trayWorkerService !== null,
     generatePreview: async (snapshot) =>

@@ -345,6 +345,57 @@ describe("useCustomLayout", () => {
     expect(threeGeometry.dispose).toHaveBeenCalledTimes(1);
   });
 
+  it("导出刷新期间编辑参数时仍使用开始时的 Snapshot 与派生尺寸", async () => {
+    randomIdFactoryMock.createId.mockReturnValue("slot-1");
+    const deferred = createDeferred<{
+      geometry: never;
+      threeGeometry: never;
+      volume: number;
+    }>();
+    const geometry = { id: "export-snapshot" } as never;
+    const threeGeometry = { dispose: vi.fn() };
+    generateCustomPreviewMock.mockReturnValueOnce(deferred.promise);
+    exportCustomModelFilesMock.mockResolvedValue(undefined);
+    const { result } = renderHook(() => useCustomLayout());
+
+    act(() => {
+      result.current.addSlot(25);
+    });
+    const paramsAtExportStart = structuredClone(result.current.params);
+    const dimensionsAtExportStart = { ...result.current.effectiveDimensions };
+    let exportPromise: Promise<void> | undefined;
+
+    act(() => {
+      exportPromise = result.current.handleExportSTL();
+    });
+    act(() => {
+      result.current.updateParam("spacing", 18);
+    });
+    expect(result.current.effectiveDimensions).not.toEqual(
+      dimensionsAtExportStart,
+    );
+
+    deferred.resolve({
+      geometry,
+      threeGeometry: threeGeometry as never,
+      volume: 25,
+    });
+    await act(async () => {
+      await exportPromise;
+    });
+
+    expect(exportCustomModelFilesMock).toHaveBeenCalledWith(
+      { mode: "custom", params: paramsAtExportStart },
+      geometry,
+      trayWorkerServiceMock,
+      browserDownloadPort,
+      dimensionsAtExportStart,
+    );
+    expect(threeGeometry.dispose).toHaveBeenCalledTimes(1);
+    expect(result.current.threeGeometry).toBeNull();
+    expect(result.current.isPreviewStale).toBe(true);
+  });
+
   it("surfaces generation and export failures through toast messages", async () => {
     randomIdFactoryMock.createId.mockReturnValue("slot-1");
     generateCustomPreviewMock.mockRejectedValueOnce(new Error("boom"));

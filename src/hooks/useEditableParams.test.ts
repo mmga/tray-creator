@@ -8,9 +8,10 @@ interface Params {
 
 function renderEditableParams(onInvalidate = vi.fn()) {
   return renderHook(() =>
-    useEditableParams<Params, Params>({
+    useEditableParams<Params, Params, undefined>({
       initialState: { value: 1 },
       captureSnapshot: structuredClone,
+      captureExportContext: () => undefined,
       fingerprintSnapshot: JSON.stringify,
       generatePreview: vi.fn().mockResolvedValue(null),
       exportModel: vi.fn().mockResolvedValue(undefined),
