@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "next build --webpack && node scripts/verify-worker-bundle.mjs",
+    "build": "next build --webpack && node scripts/verify-worker-bundle.mjs && node scripts/verify-initial-bundle.mjs",
     "start": "node scripts/serve-static.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --max-warnings=0",

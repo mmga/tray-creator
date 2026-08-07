@@ -1,6 +1,6 @@
 import type * as THREE from "three";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
-import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
+import { loadThreeGeometry } from "@/lib/three-geometry-loader";
 import type { ModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import { exportModelArtifactBundle } from "@/lib/model-artifact-bundle";
 import type {
@@ -20,9 +20,10 @@ export async function generateBaseConverterPreview(
   workerPort: BaseConverterWorkerPort,
 ): Promise<BaseConverterPreviewResult> {
   const result = await workerPort.generateBaseConverter(params);
+  const threeGeometry = await loadThreeGeometry(result.geometry);
   return {
     geometry: result.geometry,
-    threeGeometry: jscadToThreeGeometry(result.geometry),
+    threeGeometry,
     volume: result.volume,
   };
 }
