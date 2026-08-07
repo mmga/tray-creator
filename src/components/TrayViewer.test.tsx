@@ -87,7 +87,7 @@ describe("TrayViewer", { timeout: 15000 }, () => {
     vi.restoreAllMocks();
   });
 
-  it("requests regeneration only when the current 3D view is stale", () => {
+  it("仅通过明确按钮重新生成过期的 3D 预览", () => {
     const onRegenerate = vi.fn();
     const { rerender } = render(
       <TrayViewer
@@ -99,6 +99,9 @@ describe("TrayViewer", { timeout: 15000 }, () => {
     );
 
     fireEvent.click(screen.getByText("FORGE VIEW"));
+    expect(onRegenerate).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "预览待更新，重新锻造" }));
     expect(onRegenerate).toHaveBeenCalledTimes(1);
 
     rerender(
@@ -112,6 +115,7 @@ describe("TrayViewer", { timeout: 15000 }, () => {
 
     fireEvent.click(screen.getByText("FORGE VIEW"));
     expect(onRegenerate).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("button", { name: "预览待更新，重新锻造" })).not.toBeInTheDocument();
   });
 
   it("shows and resets the loading bar based on generate state", () => {

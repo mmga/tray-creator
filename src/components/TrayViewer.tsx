@@ -246,13 +246,8 @@ export default function TrayViewer({
 
   return (
     <div
-      className="relative w-full h-full min-h-[400px] overflow-hidden forged-viewport cursor-pointer"
+      className="relative w-full h-full min-h-[400px] overflow-hidden forged-viewport"
       style={{ backgroundColor: '#3d3b38' }}
-      onClick={() => {
-        if (isStale && onRegenerate) {
-          onRegenerate();
-        }
-      }}
     >
       {/* Loading bar */}
       {isLoadingPreview && (
@@ -286,6 +281,7 @@ export default function TrayViewer({
       <div className="absolute top-3 right-5 z-20 flex items-center gap-2 rounded border border-[#2e2a24] bg-[#12110e]/95 px-2 py-1 shadow-lg shadow-black/30">
         <button
           type="button"
+          aria-pressed={viewerMode === "solid"}
           onClick={(event) => {
             event.stopPropagation();
             setViewerMode("solid");
@@ -301,6 +297,7 @@ export default function TrayViewer({
         {hasSplitMode ? (
           <button
             type="button"
+            aria-pressed={viewerMode === "split"}
             onClick={(event) => {
               event.stopPropagation();
               setViewerMode("split");
@@ -316,9 +313,9 @@ export default function TrayViewer({
             }`}
           >
             {isGeneratingSplitPreview ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
+              <Loader2 aria-hidden="true" className="h-3 w-3 animate-spin" />
             ) : (
-              <Layers className="h-3 w-3" />
+              <Layers aria-hidden="true" className="h-3 w-3" />
             )}
             拆件
           </button>
@@ -346,6 +343,18 @@ export default function TrayViewer({
           </label>
         ) : null}
       </div>
+
+      {isStale && onRegenerate && !isGenerating ? (
+        <div className="pointer-events-none absolute inset-x-0 top-14 z-20 flex justify-center px-4">
+          <button
+            type="button"
+            onClick={onRegenerate}
+            className="pointer-events-auto rounded-sm border border-[#8d7432] bg-[#1b1710]/95 px-3 py-2 text-xs font-semibold text-[#e8d7a8] shadow-lg shadow-black/30 transition-colors hover:bg-[#2a2115] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c8a84e]"
+          >
+            预览待更新，重新锻造
+          </button>
+        </div>
+      ) : null}
 
       {showSplitPreview ? (
         <div className="absolute bottom-5 left-5 z-20 max-w-[260px] rounded border border-[#2e2a24] bg-[#12110e]/95 p-2 shadow-lg shadow-black/30">
