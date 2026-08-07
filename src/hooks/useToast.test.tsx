@@ -1,6 +1,9 @@
+import { Profiler } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ToastProvider, Toaster, useToast } from "@/hooks/useToast";
+
+const triggerRenderSpy = vi.fn();
 
 function ToastTrigger() {
   const { toast } = useToast();
@@ -14,13 +17,19 @@ function ToastTrigger() {
 function renderToasts() {
   return render(
     <ToastProvider>
-      <ToastTrigger />
+      <Profiler id="toast-trigger" onRender={triggerRenderSpy}>
+        <ToastTrigger />
+      </Profiler>
       <Toaster />
     </ToastProvider>,
   );
 }
 
 describe("ToastProvider", () => {
+  beforeEach(() => {
+    triggerRenderSpy.mockReset();
+  });
+
   afterEach(() => {
     vi.useRealTimers();
     vi.restoreAllMocks();
@@ -48,5 +57,15 @@ describe("ToastProvider", () => {
     unmount();
 
     expect(clearTimeoutSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not rerender action-only consumers when toast state changes", () => {
+    renderToasts();
+    expect(triggerRenderSpy).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "添加通知" }));
+
+    expect(screen.getByText("测试消息")).toBeInTheDocument();
+    expect(triggerRenderSpy).toHaveBeenCalledTimes(1);
   });
 });

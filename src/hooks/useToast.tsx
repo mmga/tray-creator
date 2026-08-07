@@ -5,6 +5,7 @@ import React, {
     useCallback,
     useContext,
     useEffect,
+    useMemo,
     useRef,
     useState,
 } from "react";
@@ -17,13 +18,13 @@ interface ToastItem {
     message: string;
 }
 
-interface ToastContextValue {
-    toasts: ToastItem[];
+interface ToastActions {
     toast: (type: ToastType, message: string) => void;
     dismiss: (id: string) => void;
 }
 
-const ToastContext = createContext<ToastContextValue | null>(null);
+const ToastStateContext = createContext<ToastItem[] | null>(null);
+const ToastActionsContext = createContext<ToastActions | null>(null);
 
 const TOAST_DURATION = 4000;
 
@@ -58,17 +59,20 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         },
         [dismiss]
     );
+    const actions = useMemo(() => ({ toast, dismiss }), [dismiss, toast]);
 
     return (
-        <ToastContext.Provider value={{ toasts, toast, dismiss }}>
-            {children}
-        </ToastContext.Provider>
+        <ToastActionsContext.Provider value={actions}>
+            <ToastStateContext.Provider value={toasts}>
+                {children}
+            </ToastStateContext.Provider>
+        </ToastActionsContext.Provider>
     );
 }
 
 export function useToast() {
-    const ctx = useContext(ToastContext);
-    if (!ctx) {
+    const actions = useContext(ToastActionsContext);
+    if (!actions) {
         // 在 provider 外部调用时回退到 console
         return {
             toast: (type: ToastType, message: string) => {
@@ -77,7 +81,7 @@ export function useToast() {
             },
         };
     }
-    return { toast: ctx.toast };
+    return { toast: actions.toast };
 }
 
 const typeStyles: Record<ToastType, string> = {
@@ -93,12 +97,13 @@ const typeIcons: Record<ToastType, string> = {
 };
 
 export function Toaster() {
-    const ctx = useContext(ToastContext);
-    if (!ctx) return null;
+    const toasts = useContext(ToastStateContext);
+    const actions = useContext(ToastActionsContext);
+    if (!toasts || !actions) return null;
 
     return (
         <div className="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2 max-w-sm">
-            {ctx.toasts.map((t) => (
+            {toasts.map((t) => (
                 <div
                     key={t.id}
                     className={`flex items-start gap-2 px-4 py-3 rounded-lg border shadow-lg text-sm animate-in slide-in-from-right-full duration-300 ${typeStyles[t.type]}`}
@@ -107,7 +112,7 @@ export function Toaster() {
                     <span className="font-bold text-base leading-none mt-0.5">{typeIcons[t.type]}</span>
                     <span className="flex-1 break-words">{t.message}</span>
                     <button
-                        onClick={() => ctx.dismiss(t.id)}
+                        onClick={() => actions.dismiss(t.id)}
                         className="opacity-50 hover:opacity-100 transition-opacity text-xs ml-2 mt-0.5"
                         aria-label="关闭"
                     >
