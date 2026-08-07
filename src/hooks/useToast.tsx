@@ -1,6 +1,13 @@
 "use client";
 
-import React, { createContext, useCallback, useContext, useState, useRef } from "react";
+import React, {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 
 type ToastType = "success" | "error" | "info";
 
@@ -23,16 +30,31 @@ const TOAST_DURATION = 4000;
 export function ToastProvider({ children }: { children: React.ReactNode }) {
     const [toasts, setToasts] = useState<ToastItem[]>([]);
     const idCounter = useRef(0);
+    const timersRef = useRef(new Map<string, number>());
 
     const dismiss = useCallback((id: string) => {
+        const timer = timersRef.current.get(id);
+        if (timer !== undefined) {
+            window.clearTimeout(timer);
+            timersRef.current.delete(id);
+        }
         setToasts((prev) => prev.filter((t) => t.id !== id));
     }, []);
+
+    useEffect(
+        () => () => {
+            timersRef.current.forEach((timer) => window.clearTimeout(timer));
+            timersRef.current.clear();
+        },
+        [],
+    );
 
     const toast = useCallback(
         (type: ToastType, message: string) => {
             const id = `toast_${++idCounter.current}`;
             setToasts((prev) => [...prev, { id, type, message }]);
-            setTimeout(() => dismiss(id), TOAST_DURATION);
+            const timer = window.setTimeout(() => dismiss(id), TOAST_DURATION);
+            timersRef.current.set(id, timer);
         },
         [dismiss]
     );

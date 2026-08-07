@@ -1,0 +1,52 @@
+import { fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { ToastProvider, Toaster, useToast } from "@/hooks/useToast";
+
+function ToastTrigger() {
+  const { toast } = useToast();
+  return (
+    <button type="button" onClick={() => toast("info", "测试消息")}>
+      添加通知
+    </button>
+  );
+}
+
+function renderToasts() {
+  return render(
+    <ToastProvider>
+      <ToastTrigger />
+      <Toaster />
+    </ToastProvider>,
+  );
+}
+
+describe("ToastProvider", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it("clears the auto-dismiss timer when a toast is dismissed manually", () => {
+    vi.useFakeTimers();
+    const clearTimeoutSpy = vi.spyOn(window, "clearTimeout");
+    renderToasts();
+
+    fireEvent.click(screen.getByRole("button", { name: "添加通知" }));
+    fireEvent.click(screen.getByRole("button", { name: "关闭" }));
+
+    expect(screen.queryByText("测试消息")).not.toBeInTheDocument();
+    expect(clearTimeoutSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("clears every outstanding timer when the provider unmounts", () => {
+    vi.useFakeTimers();
+    const clearTimeoutSpy = vi.spyOn(window, "clearTimeout");
+    const { unmount } = renderToasts();
+    fireEvent.click(screen.getByRole("button", { name: "添加通知" }));
+    fireEvent.click(screen.getByRole("button", { name: "添加通知" }));
+
+    unmount();
+
+    expect(clearTimeoutSpy).toHaveBeenCalledTimes(2);
+  });
+});
