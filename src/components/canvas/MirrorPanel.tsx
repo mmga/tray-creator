@@ -336,10 +336,10 @@ export default function MirrorPanel({
           <div className="mt-1 text-[10px] text-muted-foreground/70">以托盘中心轴为基准，检查全部槽位是否已形成对称布局。</div>
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <button className={actionBtnClass} onClick={() => handleCheckSymmetry("mirror-x")}>
+          <button type="button" aria-label="检查左右对称" className={actionBtnClass} onClick={() => handleCheckSymmetry("mirror-x")}>
             <SearchCheck size={15} /> 左右对称
           </button>
-          <button className={actionBtnClass} onClick={() => handleCheckSymmetry("mirror-y")}>
+          <button type="button" aria-label="检查上下对称" className={actionBtnClass} onClick={() => handleCheckSymmetry("mirror-y")}>
             <SearchCheck size={15} /> 上下对称
           </button>
         </div>
@@ -351,10 +351,10 @@ export default function MirrorPanel({
           <div className="mt-1 text-[10px] text-muted-foreground/70">以托盘中心轴翻转当前选中的凹槽。</div>
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <button className={actionBtnClass} disabled={!hasSelection} onClick={() => handleMirrorMove("mirror-x")}>
+          <button type="button" aria-label="左右镜像移动" className={actionBtnClass} disabled={!hasSelection} onClick={() => handleMirrorMove("mirror-x")}>
             <FlipHorizontal size={15} /> 左右镜
           </button>
-          <button className={actionBtnClass} disabled={!hasSelection} onClick={() => handleMirrorMove("mirror-y")}>
+          <button type="button" aria-label="上下镜像移动" className={actionBtnClass} disabled={!hasSelection} onClick={() => handleMirrorMove("mirror-y")}>
             <FlipVertical size={15} /> 上下镜
           </button>
         </div>
@@ -366,10 +366,10 @@ export default function MirrorPanel({
           <div className="mt-1 text-[10px] text-muted-foreground/70">生成对称副本，并自动过滤重合或间距冲突。</div>
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <button className={actionBtnClass} disabled={!hasSelection || !onInsertSlots} onClick={() => handleMirrorCopy("mirror-x")}>
+          <button type="button" aria-label="左右镜像复制" className={actionBtnClass} disabled={!hasSelection || !onInsertSlots} onClick={() => handleMirrorCopy("mirror-x")}>
             <Copy size={15} /> 左右复
           </button>
-          <button className={actionBtnClass} disabled={!hasSelection || !onInsertSlots} onClick={() => handleMirrorCopy("mirror-y")}>
+          <button type="button" aria-label="上下镜像复制" className={actionBtnClass} disabled={!hasSelection || !onInsertSlots} onClick={() => handleMirrorCopy("mirror-y")}>
             <Copy size={15} /> 上下复
           </button>
         </div>

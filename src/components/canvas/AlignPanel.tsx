@@ -217,22 +217,22 @@ export default function AlignPanel({
           <div className="mt-1 text-[10px] text-muted-foreground/70">按所选凹槽的外接边界快速归整。</div>
         </div>
         <div className="grid grid-cols-3 gap-2">
-          <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("left")}>
+          <button type="button" aria-label="左对齐" className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("left")}>
             <AlignLeft size={15} /> 左
           </button>
-          <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("center-x")}>
+          <button type="button" aria-label="水平居中对齐" className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("center-x")}>
             <AlignCenterHorizontal size={15} /> 中
           </button>
-          <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("right")}>
+          <button type="button" aria-label="右对齐" className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("right")}>
             <AlignRight size={15} /> 右
           </button>
-          <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("top")}>
+          <button type="button" aria-label="顶部对齐" className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("top")}>
             <AlignStartVertical size={15} /> 上
           </button>
-          <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("center-y")}>
+          <button type="button" aria-label="垂直居中对齐" className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("center-y")}>
             <AlignCenterVertical size={15} /> 中
           </button>
-          <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("bottom")}>
+          <button type="button" aria-label="底部对齐" className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleAlign("bottom")}>
             <AlignEndVertical size={15} /> 下
           </button>
         </div>
@@ -244,10 +244,10 @@ export default function AlignPanel({
           <div className="mt-1 text-[10px] text-muted-foreground/70">保持当前选区中心，按槽距重新铺开。</div>
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleArrange("row")}>
+          <button type="button" aria-label="排成一排" className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleArrange("row")}>
             <Rows2 size={15} /> 一排
           </button>
-          <button className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleArrange("column")}>
+          <button type="button" aria-label="排成一列" className={actionBtnClass} disabled={!hasMultiple} onClick={() => handleArrange("column")}>
             <Columns2 size={15} /> 一列
           </button>
         </div>
