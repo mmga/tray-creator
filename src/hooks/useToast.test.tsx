@@ -76,12 +76,19 @@ describe("ToastProvider", () => {
   });
 
   it("仅将错误通知作为紧急告警播报", () => {
-    renderToasts();
+    const { container } = renderToasts();
 
     fireEvent.click(screen.getByRole("button", { name: "添加通知" }));
     fireEvent.click(screen.getByRole("button", { name: "添加错误" }));
 
     expect(screen.getByRole("status")).toHaveTextContent("测试消息");
     expect(screen.getByRole("alert")).toHaveTextContent("测试错误");
+    expect(container.querySelector('[aria-label="通知"]')).toHaveClass(
+      "left-4",
+      "right-4",
+      "max-w-[calc(100vw-2rem)]",
+      "sm:left-auto",
+      "sm:max-w-sm",
+    );
   });
 });

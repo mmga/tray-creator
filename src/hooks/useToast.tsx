@@ -103,7 +103,7 @@ export function Toaster() {
 
     return (
         <div
-            className="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2 max-w-sm"
+            className="fixed bottom-4 left-4 right-4 z-[9999] flex max-w-[calc(100vw-2rem)] flex-col gap-2 sm:left-auto sm:max-w-sm"
             aria-label="通知"
         >
             {toasts.map((t) => (
