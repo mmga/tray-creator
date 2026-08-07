@@ -33,6 +33,7 @@ import {
   type PersonalBaseSpecification,
 } from "@/lib/personal-base-specifications";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/useToast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -181,6 +182,7 @@ export default function BaseConverterPanel({
   isPreviewStale,
   volume,
 }: BaseConverterPanelProps) {
+  const { toast } = useToast();
   const [personalSpecifications, setPersonalSpecifications] = useState<
     PersonalBaseSpecification[]
   >(() => loadPersonalBaseSpecifications());
@@ -251,12 +253,20 @@ export default function BaseConverterPanel({
       : createPersonalSpecificationId("source");
     const geometry = customSourceSnapshot(sourceDraft, id);
     if (save) {
-      setPersonalSpecifications(savePersonalBaseSpecification({
-        id,
-        role: "source",
-        name: geometry.name,
-        geometry,
-      }));
+      try {
+        setPersonalSpecifications(savePersonalBaseSpecification({
+          id,
+          role: "source",
+          name: geometry.name,
+          geometry,
+        }));
+      } catch (error) {
+        toast(
+          "error",
+          `个人规格保存失败：${error instanceof Error ? error.message : "浏览器存储不可用"}`,
+        );
+        return;
+      }
       setEditingSourceId(null);
     }
     updateParams((previous) => ({
@@ -271,12 +281,20 @@ export default function BaseConverterPanel({
       : createPersonalSpecificationId("target");
     const geometry = customTargetSnapshot(targetDraft, id);
     if (save) {
-      setPersonalSpecifications(savePersonalBaseSpecification({
-        id,
-        role: "target",
-        name: geometry.name,
-        geometry,
-      }));
+      try {
+        setPersonalSpecifications(savePersonalBaseSpecification({
+          id,
+          role: "target",
+          name: geometry.name,
+          geometry,
+        }));
+      } catch (error) {
+        toast(
+          "error",
+          `个人规格保存失败：${error instanceof Error ? error.message : "浏览器存储不可用"}`,
+        );
+        return;
+      }
       setEditingTargetId(null);
     }
     updateParams((previous) => ({
@@ -286,7 +304,15 @@ export default function BaseConverterPanel({
     }));
   };
   const removePersonal = (id: string) => {
-    setPersonalSpecifications(deletePersonalBaseSpecification(id));
+    try {
+      setPersonalSpecifications(deletePersonalBaseSpecification(id));
+    } catch (error) {
+      toast(
+        "error",
+        `个人规格删除失败：${error instanceof Error ? error.message : "浏览器存储不可用"}`,
+      );
+      return;
+    }
     if (editingSourceId === id) setEditingSourceId(null);
     if (editingTargetId === id) setEditingTargetId(null);
   };
