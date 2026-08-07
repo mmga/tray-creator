@@ -182,6 +182,51 @@ function ContextLostHandler() {
   return null;
 }
 
+function ViewerLoadingBar({ kind }: { kind: "model" | "split" }) {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const startTime = Date.now();
+    const expectedDuration = kind === "split" ? 9000 : 15000;
+    let intervalId: number | null = null;
+    const frameId = window.requestAnimationFrame(() => {
+      setProgress(0);
+
+      const updateProgress = () => {
+        const elapsed = Date.now() - startTime;
+        setProgress(Math.min(elapsed / expectedDuration, 0.85));
+      };
+
+      updateProgress();
+      intervalId = window.setInterval(updateProgress, 100);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      if (intervalId !== null) window.clearInterval(intervalId);
+    };
+  }, [kind]);
+
+  return (
+    <div
+      role="progressbar"
+      aria-label={kind === "split" ? "正在生成拆件预览" : "正在生成模型预览"}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(progress * 100)}
+      className="absolute top-0 left-0 right-0 z-30 h-0.5 bg-[#2a2518]"
+    >
+      <div
+        className="h-full transition-[width] duration-200 ease-out"
+        style={{
+          width: `${progress * 100}%`,
+          backgroundColor: kind === "split" ? "#8cb880" : "#c8a84e",
+        }}
+      />
+    </div>
+  );
+}
+
 export default function TrayViewer({
   geometry,
   isStale,
@@ -192,7 +237,6 @@ export default function TrayViewer({
   onGenerateSplitPreview,
   minimumCameraDistance,
 }: TrayViewerProps) {
-  const [loadingProgress, setLoadingProgress] = useState(0);
   const [viewerMode, setViewerMode] = useState<"solid" | "split">("solid");
   const [explosionDistance, setExplosionDistance] = useState(42);
   const isLoadingPreview = Boolean(isGenerating || isGeneratingSplitPreview);
@@ -208,68 +252,15 @@ export default function TrayViewer({
     [explosionDistance, splitParts],
   );
 
-  useEffect(() => {
-    let frameId: number | null = null;
-    let intervalId: number | null = null;
-
-    if (isLoadingPreview) {
-      const startTime = Date.now();
-      const expectedDuration = isGeneratingSplitPreview && !isGenerating
-        ? 9000
-        : 15000;
-      frameId = window.requestAnimationFrame(() => {
-        setLoadingProgress(0);
-
-        const updateProgress = () => {
-          const elapsed = Date.now() - startTime;
-          setLoadingProgress(Math.min(elapsed / expectedDuration, 0.85));
-        };
-
-        updateProgress();
-        intervalId = window.setInterval(updateProgress, 100);
-      });
-    } else {
-      frameId = window.requestAnimationFrame(() => {
-        setLoadingProgress(0);
-      });
-    }
-
-    return () => {
-      if (frameId !== null) {
-        window.cancelAnimationFrame(frameId);
-      }
-      if (intervalId !== null) {
-        window.clearInterval(intervalId);
-      }
-    };
-  }, [isGenerating, isGeneratingSplitPreview, isLoadingPreview]);
-
   return (
     <div
       className="relative w-full h-full min-h-[400px] overflow-hidden forged-viewport"
       style={{ backgroundColor: '#3d3b38' }}
     >
       {/* Loading bar */}
-      {isLoadingPreview && (
-        <div
-          role="progressbar"
-          aria-label={isGeneratingSplitPreview && !isGenerating ? "正在生成拆件预览" : "正在生成模型预览"}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={Math.round(loadingProgress * 100)}
-          className="absolute top-0 left-0 right-0 z-30 h-0.5 bg-[#2a2518]"
-        >
-          <div
-            className="h-full transition-[width] duration-200 ease-out"
-            style={{
-              width: `${loadingProgress * 100}%`,
-              backgroundColor: isGeneratingSplitPreview && !isGenerating
-                ? "#8cb880"
-                : "#c8a84e",
-            }}
-          />
-        </div>
-      )}
+      {isLoadingPreview ? (
+        <ViewerLoadingBar kind={isGeneratingSplitPreview && !isGenerating ? "split" : "model"} />
+      ) : null}
       {/* Corner rivets */}
       <div className="absolute top-3 left-3 rivet z-10" />
       <div className="absolute top-3 right-3 rivet z-10" />

@@ -7,6 +7,7 @@ import TrayViewer from "@/components/TrayViewer";
 const {
   useThreeState,
   orbitControlsPropsSpy,
+  canvasRenderSpy,
   canvasCreatedGlSpy,
   glDomElement,
 } = vi.hoisted(() => {
@@ -30,6 +31,7 @@ const {
   return {
     useThreeState: { camera, controls, gl },
     orbitControlsPropsSpy: vi.fn(),
+    canvasRenderSpy: vi.fn(),
     canvasCreatedGlSpy: gl,
     glDomElement: glDom,
   };
@@ -46,6 +48,7 @@ vi.mock("@react-three/fiber", async () => {
       children: React.ReactNode;
       onCreated?: (state: { gl: typeof canvasCreatedGlSpy }) => void;
     }) {
+      canvasRenderSpy();
       ReactModule.useEffect(() => {
         onCreated?.({ gl: canvasCreatedGlSpy });
       }, [onCreated]);
@@ -80,6 +83,7 @@ describe("TrayViewer", { timeout: 15000 }, () => {
     glDomElement.addEventListener.mockReset();
     glDomElement.removeEventListener.mockReset();
     orbitControlsPropsSpy.mockReset();
+    canvasRenderSpy.mockReset();
     vi.spyOn(console, "error").mockImplementation(() => undefined);
   });
 
@@ -133,6 +137,7 @@ describe("TrayViewer", { timeout: 15000 }, () => {
     const { container, rerender } = render(
       <TrayViewer geometry={null} isGenerating={true} />,
     );
+    const canvasRendersBeforeProgress = canvasRenderSpy.mock.calls.length;
 
     act(() => {
       vi.advanceTimersByTime(1500);
@@ -146,6 +151,7 @@ describe("TrayViewer", { timeout: 15000 }, () => {
     );
     expect(progressBar).not.toBeNull();
     expect(Number.parseFloat(progressBar!.style.width)).toBeGreaterThan(0);
+    expect(canvasRenderSpy).toHaveBeenCalledTimes(canvasRendersBeforeProgress);
 
     rerender(<TrayViewer geometry={null} isGenerating={false} />);
     expect(container.querySelector('div[style*="width:"]')).toBeNull();
