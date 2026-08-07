@@ -33,6 +33,7 @@ import {
   type PersonalBaseSpecification,
 } from "@/lib/personal-base-specifications";
 import { Button } from "@/components/ui/button";
+import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
 import { useToast } from "@/hooks/useToast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -118,12 +119,11 @@ function NumericField({
   return (
     <div className="space-y-1">
       <Label htmlFor={inputId} className="text-xs text-muted-foreground">{label}</Label>
-      <Input
+      <DraftNumberInput
         id={inputId}
-        type="number"
         step="any"
         value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
+        onValueChange={onChange}
         className="h-8 bg-[#1c1a16] border-[#2e2a24] font-mono"
       />
     </div>
