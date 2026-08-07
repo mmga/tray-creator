@@ -86,6 +86,26 @@ function schedulePerfListeners() {
   });
 }
 
+function persistPerfEnabled(enabled: boolean) {
+  try {
+    if (enabled) {
+      window.localStorage.setItem(PERF_STORAGE_KEY, "1");
+    } else {
+      window.localStorage.removeItem(PERF_STORAGE_KEY);
+    }
+  } catch {
+    // 性能诊断是可选能力，存储不可用时仍保留当前页面的查询参数语义。
+  }
+}
+
+function readPersistedPerfEnabled() {
+  try {
+    return window.localStorage.getItem(PERF_STORAGE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
 function resolvePerfEnabled() {
   if (typeof window === "undefined") {
     return false;
@@ -94,16 +114,16 @@ function resolvePerfEnabled() {
   const params = new URLSearchParams(window.location.search);
   const queryValue = params.get("perf");
   if (queryValue === "1") {
-    window.localStorage.setItem(PERF_STORAGE_KEY, "1");
+    persistPerfEnabled(true);
     return true;
   }
 
   if (queryValue === "0") {
-    window.localStorage.removeItem(PERF_STORAGE_KEY);
+    persistPerfEnabled(false);
     return false;
   }
 
-  return window.localStorage.getItem(PERF_STORAGE_KEY) === "1";
+  return readPersistedPerfEnabled();
 }
 
 export function isPerfEnabled() {
