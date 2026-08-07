@@ -1,12 +1,23 @@
 "use client";
 
-import { useCallback, useMemo, useState, type ReactNode } from "react";
-import { DraftManagerDialog } from "@/components/DraftManagerDialog";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import type { DraftManagerDialogProps } from "@/components/DraftManagerDialog";
 import { useModeDrafts } from "@/hooks/useModeDrafts";
 import type { UseModeDraftsOptions } from "@/hooks/useModeDrafts";
 import type { PreparedDraftLoad } from "@/hooks/useModeDrafts";
 import type { AnyDraftListItem, DraftMode } from "@/lib/local-drafts";
+
+const DraftManagerDialog = lazy(async () => {
+  const importedModule = await import("@/components/DraftManagerDialog");
+  return { default: importedModule.DraftManagerDialog<AnyDraftListItem> };
+});
 
 function renderDraftSummary(item: AnyDraftListItem): ReactNode {
   switch (item.mode) {
@@ -170,8 +181,12 @@ export function useWorkspaceDraftSupport<M extends DraftMode>(
   );
 
   const overlays = useMemo(
-    () => <DraftManagerDialog {...draftDialogProps} />,
-    [draftDialogProps],
+    () => isDialogOpen ? (
+      <Suspense fallback={null}>
+        <DraftManagerDialog {...draftDialogProps} />
+      </Suspense>
+    ) : null,
+    [draftDialogProps, isDialogOpen],
   );
 
   return {

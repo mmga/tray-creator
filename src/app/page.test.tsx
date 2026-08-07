@@ -472,8 +472,16 @@ vi.mock("@/components/ModeTabs", () => ({
 }));
 
 vi.mock("@/components/ParameterPanel", () => ({
-  default() {
-    return <div data-testid="parameter-panel" />;
+  default({
+    actions,
+  }: {
+    actions?: React.ReactNode;
+  }) {
+    return (
+      <div data-testid="parameter-panel">
+        {actions}
+      </div>
+    );
   },
 }));
 
@@ -818,6 +826,9 @@ describe("Home page", { timeout: 15000 }, () => {
     steppedModelMock.applyOptimizationProposal.mockReset();
     steppedModelMock.clearOptimizationProposals.mockReset();
     steppedModelMock.isOptimizingLayout = false;
+    gridDraftsMock.isDialogOpen = false;
+    customDraftsMock.isDialogOpen = false;
+    steppedDraftsMock.isDialogOpen = true;
     for (const draftMock of [
       gridDraftsMock,
       customDraftsMock,
@@ -1003,11 +1014,15 @@ describe("Home page", { timeout: 15000 }, () => {
   });
 
   it("wires active mode draft dialog actions through the mode draft hooks and refreshes the list where needed", async () => {
-    render(<Home />);
-    await screen.findByTestId("draft-manager-dialog");
+    const { rerender } = render(<Home />);
+    expect(screen.queryByTestId("draft-manager-dialog")).not.toBeInTheDocument();
     gridDraftsMock.getDraftList.mockClear();
 
-    fireEvent.click(screen.getByRole("button", { name: "打开草稿弹窗" }));
+    fireEvent.pointerDown(await screen.findByRole("button", { name: "更多操作" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "草稿列表" }));
+    gridDraftsMock.isDialogOpen = true;
+    rerender(<Home />);
+    await screen.findByTestId("draft-manager-dialog");
     fireEvent.click(screen.getByRole("button", { name: "草稿另存" }));
     fireEvent.click(screen.getByRole("button", { name: "覆盖草稿" }));
     fireEvent.click(screen.getByRole("button", { name: "加载草稿" }));

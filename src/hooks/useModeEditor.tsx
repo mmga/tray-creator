@@ -1,14 +1,14 @@
 "use client";
 
 import {
+  lazy,
+  Suspense,
   useCallback,
   useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
-import { ModeReplacementConfirmDialog } from "@/components/ModeReplacementConfirmDialog";
-import { ParamImportDialog } from "@/components/ParamImportDialog";
 import { useBaseConverter } from "@/hooks/useBaseConverter";
 import { useCustomLayout } from "@/hooks/useCustomLayout";
 import { useModeInteractionState } from "@/hooks/useModeInteractionState";
@@ -34,6 +34,16 @@ import { useGridWorkspace } from "@/workspaces/grid/useGridWorkspace";
 import { useSteppedWorkspace } from "@/workspaces/stepped/useSteppedWorkspace";
 import type { ModeWorkspaceReplacementTarget } from "@/workspaces/types";
 import type { PreparedDraftLoad } from "@/hooks/useModeDrafts";
+
+const ParamImportDialog = lazy(async () => {
+  const importedModule = await import("@/components/ParamImportDialog");
+  return { default: importedModule.ParamImportDialog };
+});
+
+const ModeReplacementConfirmDialog = lazy(async () => {
+  const importedModule = await import("@/components/ModeReplacementConfirmDialog");
+  return { default: importedModule.ModeReplacementConfirmDialog };
+});
 
 export type ModeEditorIntent =
   | { type: "switch-mode"; mode: AppMode }
@@ -463,32 +473,40 @@ export function useModeEditor(initialMode: AppMode = "grid"): ModeEditor {
   const overlays = (
     <>
       {activeEntry.workspace.overlays}
-      <ParamImportDialog
-        currentMode={mode}
-        modeSelection={modeSelection}
-        candidate={importCandidate}
-        targetRisk={importRisk}
-        isPreparing={isPreparingImport}
-        onSelectMode={(selectedMode) => {
-          void perform({ type: "select-import-mode", mode: selectedMode });
-        }}
-        onCancel={() => {
-          void perform({ type: "cancel-replacement" });
-        }}
-        onConfirm={() => {
-          void perform({ type: "confirm-replacement" });
-        }}
-      />
-      <ModeReplacementConfirmDialog
-        mode={pendingReplacement?.request.mode ?? null}
-        kind={pendingReplacement?.request.kind ?? null}
-        onCancel={() => {
-          void perform({ type: "cancel-replacement" });
-        }}
-        onConfirm={() => {
-          void perform({ type: "confirm-replacement" });
-        }}
-      />
+      {modeSelection || importCandidate ? (
+        <Suspense fallback={null}>
+          <ParamImportDialog
+            currentMode={mode}
+            modeSelection={modeSelection}
+            candidate={importCandidate}
+            targetRisk={importRisk}
+            isPreparing={isPreparingImport}
+            onSelectMode={(selectedMode) => {
+              void perform({ type: "select-import-mode", mode: selectedMode });
+            }}
+            onCancel={() => {
+              void perform({ type: "cancel-replacement" });
+            }}
+            onConfirm={() => {
+              void perform({ type: "confirm-replacement" });
+            }}
+          />
+        </Suspense>
+      ) : null}
+      {pendingReplacement ? (
+        <Suspense fallback={null}>
+          <ModeReplacementConfirmDialog
+            mode={pendingReplacement.request.mode}
+            kind={pendingReplacement.request.kind}
+            onCancel={() => {
+              void perform({ type: "cancel-replacement" });
+            }}
+            onConfirm={() => {
+              void perform({ type: "confirm-replacement" });
+            }}
+          />
+        </Suspense>
+      ) : null}
     </>
   );
 
