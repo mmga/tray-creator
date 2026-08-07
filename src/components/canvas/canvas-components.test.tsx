@@ -707,7 +707,7 @@ describe("CanvasStatusBar", () => {
       },
     ];
 
-    render(
+    const { container } = render(
       <CanvasStatusBar
         trayWidth={100}
         trayDepth={80}
@@ -724,6 +724,15 @@ describe("CanvasStatusBar", () => {
     expect(screen.getByText(/2 ITEMS SELECTED/)).toHaveTextContent(
       "EDGE GAP: 15.0mm | X:15.0 Y:0.0",
     );
+    expect(screen.getByText("CANVAS: 100mm × 80mm")).toHaveClass(
+      "hidden",
+      "sm:inline",
+    );
+    expect(screen.getByText(/2 ITEMS SELECTED/)).toHaveClass(
+      "max-w-full",
+      "truncate",
+    );
+    expect(container.firstElementChild).toHaveClass("min-w-0", "gap-2");
   });
 });
 

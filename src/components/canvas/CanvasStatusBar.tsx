@@ -110,9 +110,9 @@ export function CanvasStatusBar({
     const boundaryDistance = getTwoSlotBoundaryDistance(selectedSlots);
 
     return (
-        <div className="absolute bottom-2 left-2 right-12 flex items-end justify-between pointer-events-none px-2 pb-1 gap-4">
-            <div className="text-[10px] text-muted-foreground/60 font-mono flex flex-wrap gap-4">
-                <span>
+        <div className="pointer-events-none absolute bottom-2 left-1 right-12 flex min-w-0 items-end justify-between gap-2 px-2 pb-1 lg:left-2 lg:gap-4">
+            <div className="flex min-w-0 flex-1 flex-wrap gap-x-2 gap-y-1 font-mono text-[10px] text-muted-foreground/60 lg:gap-x-4">
+                <span className="hidden sm:inline">
                     CANVAS: {trayWidth}mm × {trayDepth}mm
                 </span>
                 <span>ZOOM: {Math.round(zoom * 100)}%</span>
@@ -135,14 +135,14 @@ export function CanvasStatusBar({
                 ) : null}
 
                 {selectedSlot && (
-                    <span className="text-orange-400">
+                    <span className="max-w-full truncate text-orange-400">
                         ID:{selectedSlot.id.slice(0, 4)} | X:{selectedSlot.x.toFixed(1)} Y:{selectedSlot.y.toFixed(1)} | W:{selectedSlot.width} H:
                         {selectedSlot.height} | R:{Math.round(selectedSlot.rotation)}°
                     </span>
                 )}
 
                 {selectedIds.size > 1 && (
-                    <span className="text-orange-400">
+                    <span className="max-w-full truncate text-orange-400">
                         {selectedIds.size} ITEMS SELECTED
                         {boundaryDistance
                             ? ` | EDGE GAP: ${boundaryDistance.distance.toFixed(1)}mm | X:${boundaryDistance.gapX.toFixed(1)} Y:${boundaryDistance.gapY.toFixed(1)}`
@@ -152,7 +152,7 @@ export function CanvasStatusBar({
             </div>
 
             {perfState.enabled && perfState.metrics.length > 0 && (
-                <div className="text-[10px] font-mono flex flex-wrap justify-end gap-3 text-slate-300/80">
+                <div className="hidden shrink-0 flex-wrap justify-end gap-3 font-mono text-[10px] text-slate-300/80 md:flex">
                     <span className="text-slate-500">PERF last/avg/max</span>
                     {perfState.metrics.map((metric) => (
                         <span key={metric.name} className="text-sky-300/90">
