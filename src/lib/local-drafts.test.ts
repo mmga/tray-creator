@@ -699,6 +699,61 @@ describe("local drafts", () => {
     ).toBe(STEPPED_LAYOUT_DEFAULTS.trayWidth);
   });
 
+  it("reports when a failed create cannot remove its orphan record", () => {
+    vi.spyOn(crypto, "randomUUID").mockReturnValue("orphaned-create-id");
+    const originalSetItem = Storage.prototype.setItem;
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (
+      this: Storage,
+      key,
+      value,
+    ) {
+      if (key === "tray-creator:drafts:index:v1") {
+        throw new DOMException("Quota exceeded");
+      }
+      return originalSetItem.call(this, key, value);
+    });
+    vi.spyOn(Storage.prototype, "removeItem").mockImplementation(() => {
+      throw new DOMException("Storage unavailable");
+    });
+
+    expect(() =>
+      createDraft("孤儿草稿", "stepped", createSteppedParams()),
+    ).toThrow("保存草稿失败且回滚失败");
+  });
+
+  it("reports when a failed update cannot restore its previous record", () => {
+    vi.spyOn(crypto, "randomUUID").mockReturnValue("unrestored-update-id");
+    const initial = createDraft("原始标题", "stepped", createSteppedParams());
+    const recordKey = `tray-creator:drafts:stepped:${initial.item.id}:v1`;
+    const originalSetItem = Storage.prototype.setItem;
+    let recordWriteCount = 0;
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (
+      this: Storage,
+      key,
+      value,
+    ) {
+      if (key === recordKey) {
+        recordWriteCount += 1;
+        if (recordWriteCount === 2) {
+          throw new DOMException("Storage unavailable");
+        }
+      }
+      if (key === "tray-creator:drafts:index:v1") {
+        throw new DOMException("Quota exceeded");
+      }
+      return originalSetItem.call(this, key, value);
+    });
+
+    expect(() =>
+      updateDraft(
+        "stepped",
+        initial.item.id,
+        "不会完整提交",
+        createSteppedParams({ trayWidth: 180 }),
+      ),
+    ).toThrow("保存草稿失败且回滚失败");
+  });
+
   it("rolls a deleted draft back when updating the index fails", () => {
     vi.spyOn(crypto, "randomUUID").mockReturnValue("delete-rollback-id");
     const initial = createDraft("保留草稿", "stepped", createSteppedParams());

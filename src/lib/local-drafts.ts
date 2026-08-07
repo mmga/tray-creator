@@ -118,6 +118,10 @@ function removeItemOrThrow(key: string): void {
   }
 }
 
+function describeStorageError(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 function readIndex(): AnyDraftListItem[] {
   const raw = safeGetItem(DRAFT_INDEX_KEY);
   if (!raw) return [];
@@ -271,10 +275,16 @@ function commitDraft<M extends DraftMode>(
       : [...index, result.item as AnyDraftListItem];
     writeIndex(nextIndex);
   } catch (error) {
-    if (strategy === "remove") {
-      safeRemoveItem(key);
-    } else if (existingRaw !== null) {
-      safeSetItem(key, existingRaw);
+    try {
+      if (strategy === "remove") {
+        removeItemOrThrow(key);
+      } else if (existingRaw !== null) {
+        safeSetItem(key, existingRaw);
+      }
+    } catch (rollbackError) {
+      throw new Error(
+        `保存草稿失败且回滚失败：原始错误：${describeStorageError(error)}；回滚错误：${describeStorageError(rollbackError)}`,
+      );
     }
     throw error;
   }
