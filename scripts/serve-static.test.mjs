@@ -22,13 +22,17 @@ async function withServer(run) {
   }
 }
 
+function request(url) {
+  return fetch(url, { headers: { Connection: "close" } });
+}
+
 test("serves exported pages and immutable Next assets", async () => {
   await withServer(async (origin) => {
-    const page = await fetch(`${origin}/`);
+    const page = await request(`${origin}/`);
     assert.equal(page.status, 200);
     assert.equal(await page.text(), "<h1>首页</h1>");
 
-    const asset = await fetch(`${origin}/_next/static/app.js`);
+    const asset = await request(`${origin}/_next/static/app.js`);
     assert.equal(asset.status, 200);
     assert.equal(asset.headers.get("content-type"), "text/javascript; charset=utf-8");
     assert.equal(
@@ -40,11 +44,11 @@ test("serves exported pages and immutable Next assets", async () => {
 
 test("returns the exported 404 page without leaking files above the root", async () => {
   await withServer(async (origin) => {
-    const missing = await fetch(`${origin}/missing`);
+    const missing = await request(`${origin}/missing`);
     assert.equal(missing.status, 404);
     assert.equal(await missing.text(), "<h1>未找到</h1>");
 
-    const traversal = await fetch(`${origin}/%2e%2e/%2e%2e/package.json`);
+    const traversal = await request(`${origin}/%2e%2e/%2e%2e/package.json`);
     assert.equal(traversal.status, 404);
     assert.equal(await traversal.text(), "<h1>未找到</h1>");
   });
