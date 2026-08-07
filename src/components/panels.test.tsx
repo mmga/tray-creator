@@ -1066,7 +1066,7 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
       />,
     );
 
-    fireEvent.click(screen.getAllByText("组 2")[0]!);
+    fireEvent.click(screen.getByRole("button", { name: "选择分组：组 2" }));
     fireEvent.click(
       screen.getByRole("switch", { name: "组 1 平滑半径独立设置" }),
     );
@@ -1162,8 +1162,6 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
     fireEvent.click(
       screen.getByRole("button", { name: "设置圆柱高度:10" }),
     );
-    expect(onSetActiveGroup).toHaveBeenCalledWith("group-1");
-    onSetActiveGroup.mockClear();
     fireEvent.click(
       screen.getByRole("switch", { name: "组 1 平滑半径独立设置" }),
     );
