@@ -12,6 +12,7 @@ import {
 import { useBaseConverter } from "@/hooks/useBaseConverter";
 import { useCustomLayout } from "@/hooks/useCustomLayout";
 import { useModeInteractionState } from "@/hooks/useModeInteractionState";
+import { useRequestSequence } from "@/hooks/useRequestSequence";
 import { useSteppedLayout } from "@/hooks/useSteppedLayout";
 import { useToast } from "@/hooks/useToast";
 import { useTrayModel } from "@/hooks/useTrayModel";
@@ -203,6 +204,8 @@ export function useModeEditor(initialMode: AppMode = "grid"): ModeEditor {
   const [pendingReplacement, setPendingReplacement] =
     useState<PendingReplacement | null>(null);
   const [isPreparingImport, setIsPreparingImport] = useState(false);
+  const { nextSeq: nextImportSeq, isStale: isImportStale } =
+    useRequestSequence();
 
   const gridModel = useTrayModel();
   const customModel = useCustomLayout();
@@ -306,12 +309,13 @@ export function useModeEditor(initialMode: AppMode = "grid"): ModeEditor {
   const activeEntry = catalog[mode];
 
   const clearPendingImport = useCallback(() => {
+    nextImportSeq();
     setPendingImportFile(null);
     setModeSelection(null);
     setImportCandidate(null);
     setImportRisk(null);
     setIsPreparingImport(false);
-  }, []);
+  }, [nextImportSeq]);
 
   const commitReplacement = useCallback((request: ReplacementRequest) => {
     const entry = catalog[request.mode];
@@ -340,9 +344,13 @@ export function useModeEditor(initialMode: AppMode = "grid"): ModeEditor {
     file: File,
     selectedMode?: AppMode,
   ): Promise<ModeEditorResult> => {
+    const requestSeq = nextImportSeq();
     setIsPreparingImport(true);
     try {
       const preparation = await prepareParamImport(file, selectedMode);
+      if (isImportStale(requestSeq)) {
+        return { status: "cancelled" };
+      }
       setPendingImportFile(file);
       if (preparation.status === "mode-selection-required") {
         setModeSelection(preparation);
@@ -357,15 +365,25 @@ export function useModeEditor(initialMode: AppMode = "grid"): ModeEditor {
       }
       return { status: "awaiting-confirmation" };
     } catch (error) {
+      if (isImportStale(requestSeq)) {
+        return { status: "cancelled" };
+      }
       clearPendingImport();
       return {
         status: "error",
         message: `参数文件处理失败：${error instanceof Error ? error.message : "未知错误"}`,
       };
     } finally {
-      setIsPreparingImport(false);
+      if (!isImportStale(requestSeq)) {
+        setIsPreparingImport(false);
+      }
     }
-  }, [catalog, clearPendingImport]);
+  }, [
+    catalog,
+    clearPendingImport,
+    isImportStale,
+    nextImportSeq,
+  ]);
 
   const confirmReplacement = useCallback((): ModeEditorResult => {
     if (importCandidate) {
