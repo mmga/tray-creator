@@ -103,7 +103,6 @@ function createSteppedParams(
     ...STEPPED_LAYOUT_DEFAULTS,
     ...overrides,
     groups,
-    activeGroupId: overrides.activeGroupId ?? groups[0].id,
     slots:
       overrides.slots?.map((slot) => ({ ...slot })) ?? [
         {
@@ -465,12 +464,10 @@ describe("local drafts", () => {
     expect(getDraft("stepped", initial.item.id)?.item.title).toBe("Final Draft");
 
     exportDraft("stepped", initial.item.id);
-    const exportedParams = { ...nextParams };
-    delete exportedParams.activeGroupId;
     expect(downloadParamFileMock).toHaveBeenCalledWith(
       {
         mode: "stepped",
-        params: exportedParams,
+        params: nextParams,
       },
       "stepped-draft-final-draft.json",
     );

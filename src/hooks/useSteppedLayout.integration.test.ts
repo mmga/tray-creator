@@ -271,7 +271,6 @@ describe("useSteppedLayout", () => {
             bottomHeight: 5,
           },
         ],
-        activeGroupId: "group-1",
         slots: [
           {
             id: "slot-1",

@@ -16,7 +16,6 @@ function createParams() {
       { ...STEPPED_LAYOUT_DEFAULTS.groups[0], id: "low", bottomHeight: 10 },
       { ...STEPPED_LAYOUT_DEFAULTS.groups[0], id: "high", bottomHeight: 25 },
     ],
-    activeGroupId: "low",
   };
 }
 

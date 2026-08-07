@@ -391,6 +391,15 @@ export function migrateSteppedLegacyShape(
   recorder?: ImportNormalizationRecorder,
 ) {
   const obj = params as unknown as Record<string, unknown>;
+  if ("activeGroupId" in obj) {
+    recorder?.retire({
+      path: "activeGroupId",
+      label: "旧激活阶梯组",
+      previousValue: obj.activeGroupId,
+      reason: "当前激活组属于 Mode Interaction State，不再写入阶梯参数",
+    });
+    delete obj.activeGroupId;
+  }
   let slots = obj.slots as Record<string, unknown>[];
   const hasLegacyBottomHeight = slots.some(
     (slot) => typeof slot.bottomHeight === "number" && !slot.groupId,
@@ -455,7 +464,6 @@ export function migrateSteppedLegacyShape(
     }
 
     obj.groups = sortedGroups;
-    obj.activeGroupId = sortedGroups[0].id;
     obj.slots = migratedSlots;
     slots = obj.slots as Record<string, unknown>[];
     recordMigration(recorder, {

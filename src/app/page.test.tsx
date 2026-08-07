@@ -94,7 +94,6 @@ const {
         groupDisconnectDistance: 0,
       },
     ],
-    activeGroupId: "group-1",
     spacing: 5,
     holeDepth: 3,
     splitGrooveDepth: 2,

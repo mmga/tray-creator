@@ -303,7 +303,6 @@ export function migrateCustomParamsToStepped(
         }),
       },
     ],
-    activeGroupId: defaultGroupId,
     spacing: customParams.spacing,
     holeDepth: customParams.holeDepth || 3,
     splitGrooveDepth: STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth,
@@ -661,13 +660,6 @@ function normalizeSteppedSlotInstances(
   const groupIds = new Set(
     (obj.groups as { id: string }[]).map((group) => group.id),
   );
-  if (
-    typeof obj.activeGroupId !== "string" ||
-    !groupIds.has(obj.activeGroupId as string)
-  ) {
-    obj.activeGroupId = (obj.groups as { id: string }[])[0]?.id ?? "";
-  }
-
   let normalizedSnapshotCount = 0;
   for (let index = 0; index < slots.length; index += 1) {
     const slot = slots[index];

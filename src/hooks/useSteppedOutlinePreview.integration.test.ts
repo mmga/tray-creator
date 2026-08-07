@@ -25,7 +25,6 @@ function createSteppedParams(
     // Worker/local async preview 仅服务 Rectangular；Contoured 直接消费权威构造结果。
     footprintStyle: overrides.footprintStyle ?? "rectangular",
     groups,
-    activeGroupId: overrides.activeGroupId ?? groups[0].id,
     slots: overrides.slots?.map((slot) => ({ ...slot })) ?? [{
       id: "slot-1",
       x: 30,

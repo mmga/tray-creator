@@ -321,6 +321,7 @@ describe("param-io", () => {
         mode: "stepped",
         params: {
           ...STEPPED_LAYOUT_DEFAULTS,
+          activeGroupId: STEPPED_LAYOUT_DEFAULTS.groups[0].id,
           groups: STEPPED_LAYOUT_DEFAULTS.groups.map((group, index) => ({
             ...group,
             splitPartGroupId: index === 0 ? "legacy-target" : null,
@@ -339,7 +340,14 @@ describe("param-io", () => {
           path: "groups[0].splitPartGroupId",
           previousValue: "legacy-target",
         }),
+        expect.objectContaining({
+          path: "activeGroupId",
+          previousValue: STEPPED_LAYOUT_DEFAULTS.groups[0].id,
+        }),
       ]),
+    );
+    expect(preparation.candidate.snapshot.params).not.toHaveProperty(
+      "activeGroupId",
     );
     expect(
       "splitPartGroupId" in
@@ -711,7 +719,7 @@ describe("param-io", () => {
       STEPPED_LAYOUT_DEFAULTS.disconnectDistance,
     );
     expect(parsed.groups).toHaveLength(2);
-    expect(parsed.activeGroupId).toBe(parsed.groups[0].id);
+    expect(parsed).not.toHaveProperty("activeGroupId");
     expect(parsed.groups[0].bottomHeight).toBe(14);
     expect(parsed.groups[1].bottomHeight).toBe(18);
     expect(parsed.groups[0].groupSmoothingRadius).toBe(150);

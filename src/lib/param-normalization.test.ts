@@ -63,7 +63,7 @@ describe("param normalization", () => {
           width: 100,
           height: 100,
           rotation: 0,
-          groupId: STEPPED_LAYOUT_DEFAULTS.activeGroupId,
+          groupId: STEPPED_LAYOUT_DEFAULTS.groups[0].id,
         },
       ],
     } as unknown as SteppedLayoutParams) as SteppedLayoutParams;
@@ -164,7 +164,7 @@ describe("param normalization", () => {
     const migrated = migrateCustomParamsToStepped(customParams) as SteppedLayoutParams;
 
     expect(migrated.groups).toHaveLength(1);
-    expect(migrated.activeGroupId).toBe(migrated.groups[0].id);
+    expect(migrated).not.toHaveProperty("activeGroupId");
     expect(migrated.slots[0]).toMatchObject({
       id: "custom-slot",
       shape: "circle",
@@ -311,7 +311,7 @@ describe("param normalization", () => {
     } as unknown as SteppedLayoutParams) as SteppedLayoutParams;
 
     expect(normalized.groups).toHaveLength(1);
-    expect(normalized.activeGroupId).toBe(normalized.groups[0].id);
+    expect(normalized).not.toHaveProperty("activeGroupId");
     expect(normalized.groups[0]).toMatchObject({
       bottomHeight: 8,
       groupSmoothingRadius: 25,

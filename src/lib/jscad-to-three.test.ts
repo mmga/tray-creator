@@ -44,7 +44,7 @@ describe("jscad to three geometry", () => {
 
   it("converts cad split parts from stepped fixture without null polygon vertices", { timeout: 30000 }, () => {
     const parts = createSteppedCadSplitParts(
-      steppedSplitFragmentFixture.params as SteppedLayoutParams,
+      steppedSplitFragmentFixture.params as unknown as SteppedLayoutParams,
     );
 
     expect(parts.length).toBeGreaterThan(0);

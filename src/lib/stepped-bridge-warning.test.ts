@@ -44,7 +44,6 @@ describe("stepped bridge warning", () => {
         ...STEPPED_LAYOUT_DEFAULTS,
         smoothingRadius: 0,
         groups: [lowGroup, highGroup],
-        activeGroupId: lowGroup.id,
         slots: [
           {
             id: "low-1",

@@ -55,7 +55,6 @@ function createParams(): SteppedLayoutParams {
         bottomHeight: 10,
       },
     ],
-    activeGroupId: "group-1",
   };
 }
 

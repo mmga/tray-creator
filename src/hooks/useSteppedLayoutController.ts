@@ -193,10 +193,7 @@ export function useSteppedLayoutController<
 
   const normalizeParams = useCallback(
     (nextParams: SteppedLayoutParams) => {
-      const normalized = applySteppedBaseHoleDerivedFields(nextParams);
-      const persisted = { ...normalized };
-      delete persisted.activeGroupId;
-      return persisted as SteppedLayoutParams;
+      return applySteppedBaseHoleDerivedFields(nextParams);
     },
     [],
   );

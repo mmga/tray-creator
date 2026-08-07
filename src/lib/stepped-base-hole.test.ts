@@ -17,7 +17,6 @@ function createParams(
     ...STEPPED_LAYOUT_DEFAULTS,
     baseHoleStructure: "magnetic-base-hole",
     groups: [group],
-    activeGroupId: group.id,
     slots: [{
       id: "slot-1",
       groupId: group.id,

@@ -321,7 +321,6 @@ function createSteppedParams(
         groupDisconnectDistance: 0,
       },
     ],
-    activeGroupId: "group-1",
     spacing: 5,
     holeDepth: 3,
     splitGrooveDepth: 2,
@@ -734,7 +733,6 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
               groupDisconnectDistance: 0,
             },
           ],
-          activeGroupId: "low",
           slots: [
             {
               id: "low-slot",

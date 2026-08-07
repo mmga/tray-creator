@@ -28,7 +28,6 @@ function createParams() {
         bottomHeight: 18,
       },
     ],
-    activeGroupId: "group-1",
     spacing: 5,
     smoothingRadius: 12,
     disconnectDistance: 0,
@@ -105,7 +104,7 @@ describe("stepped global optimize", () => {
     const [proposal] = generateSteppedOptimizationProposals(params);
 
     expect(proposal).toBeTruthy();
-    expect(proposal.params.activeGroupId).toBe(params.activeGroupId);
+    expect(proposal.params).not.toHaveProperty("activeGroupId");
     expect(proposal.params.groups).toEqual(params.groups);
     expect(proposal.params.slots).toHaveLength(params.slots.length);
     expect(proposal.params.slots.map((slot) => slot.id).sort()).toEqual(

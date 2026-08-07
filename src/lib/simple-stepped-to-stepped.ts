@@ -96,7 +96,6 @@ export function convertSimpleSteppedToStepped(
     trayDepth: derived.trayDepth,
     slots,
     groups,
-    activeGroupId: groups[0]?.id ?? "",
     spacing: simpleParams.spacing,
     // simple-stepped 的 outerMargin 对应 stepped 的 boundarySpacing（行带外缘到托盘边缘）
     boundarySpacing: simpleParams.outerMarginIndependent

@@ -8,10 +8,7 @@ import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 
 describe("Model Geometry Fingerprint", () => {
   it("does not capture the Active Stepped Group as persisted params", () => {
-    const snapshot = captureModeParamSnapshot("stepped", {
-      ...STEPPED_LAYOUT_DEFAULTS,
-      activeGroupId: "group-transient",
-    });
+    const snapshot = captureModeParamSnapshot("stepped", STEPPED_LAYOUT_DEFAULTS);
 
     expect(snapshot.params).not.toHaveProperty("activeGroupId");
   });
