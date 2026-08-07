@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useId, useMemo, useState, type ReactNode } from "react";
 import {
   ArrowRightLeft,
   Library,
@@ -113,11 +113,12 @@ function NumericField({
   value: number;
   onChange: (value: number) => void;
 }) {
+  const inputId = useId();
   return (
     <div className="space-y-1">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
+      <Label htmlFor={inputId} className="text-xs text-muted-foreground">{label}</Label>
       <Input
-        aria-label={label}
+        id={inputId}
         type="number"
         step="any"
         value={value}
@@ -352,11 +353,11 @@ export default function BaseConverterPanel({
           >
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <Label className="text-sm text-muted-foreground">
+                <Label htmlFor="base-converter-source-standard" className="text-sm text-muted-foreground">
                   原底盘
                 </Label>
                 <Select value={params.sourceStandardId} onValueChange={selectSource}>
-                  <SelectTrigger className="bg-[#1c1a16] border-[#2e2a24]">
+                  <SelectTrigger id="base-converter-source-standard" className="bg-[#1c1a16] border-[#2e2a24]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-[#16140f] border-[#2e2a24]">
@@ -380,11 +381,11 @@ export default function BaseConverterPanel({
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-sm text-muted-foreground">
+                <Label htmlFor="base-converter-target-standard" className="text-sm text-muted-foreground">
                   目标圆形 / 椭圆底盘
                 </Label>
                 <Select value={params.targetStandardId} onValueChange={selectTarget}>
-                  <SelectTrigger className="bg-[#1c1a16] border-[#2e2a24]">
+                  <SelectTrigger id="base-converter-target-standard" className="bg-[#1c1a16] border-[#2e2a24]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-[#16140f] border-[#2e2a24]">

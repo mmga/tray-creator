@@ -53,7 +53,7 @@ describe("BaseConverterPanel", () => {
     expect(screen.getByText("凹槽深度 / 挡边高度")).toBeInTheDocument();
     expect(screen.getByText("侧面斜面宽度")).toBeInTheDocument();
 
-    fireEvent.click(screen.getAllByRole("combobox")[1]);
+    fireEvent.click(screen.getByRole("combobox", { name: "目标圆形 / 椭圆底盘" }));
     const incompatibleOption = screen
       .getAllByText("标准 · 圆形 · Ø25mm")
       .map((element) => element.closest('[role="option"]'))
@@ -105,7 +105,7 @@ describe("BaseConverterPanel", () => {
       geometrySnapshot: createConversionGeometrySnapshot(source, target),
     });
 
-    fireEvent.click(screen.getAllByRole("combobox")[0]);
+    fireEvent.click(screen.getByRole("combobox", { name: "原底盘" }));
     expect(
       screen.getAllByText("标准 · 圆形 · Ø20mm")
         .some((element) => element.closest('[role="option"]')),
