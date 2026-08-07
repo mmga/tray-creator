@@ -49,6 +49,13 @@ function TrayMesh({
     return new THREE.EdgesGeometry(geometry, RENDER_CONFIG.edgeThreshold);
   }, [geometry]);
 
+  useEffect(
+    () => () => {
+      edgesGeometry.dispose();
+    },
+    [edgesGeometry],
+  );
+
   useEffect(() => {
     if (meshRef.current && geometry) {
       meshRef.current.geometry = geometry;

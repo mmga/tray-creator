@@ -320,4 +320,15 @@ describe("TrayViewer", { timeout: 15000 }, () => {
       restoredHandler,
     );
   });
+
+  it("releases derived edge geometry on unmount", () => {
+    const disposeSpy = vi.spyOn(THREE.EdgesGeometry.prototype, "dispose");
+    const { unmount } = render(
+      <TrayViewer geometry={createGeometry()} />,
+    );
+
+    unmount();
+
+    expect(disposeSpy).toHaveBeenCalledTimes(1);
+  });
 });
