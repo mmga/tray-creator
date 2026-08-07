@@ -102,21 +102,26 @@ export function Toaster() {
     if (!toasts || !actions) return null;
 
     return (
-        <div className="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2 max-w-sm">
+        <div
+            className="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2 max-w-sm"
+            aria-label="通知"
+        >
             {toasts.map((t) => (
                 <div
                     key={t.id}
                     className={`flex items-start gap-2 px-4 py-3 rounded-lg border shadow-lg text-sm animate-in slide-in-from-right-full duration-300 ${typeStyles[t.type]}`}
-                    role="alert"
+                    role={t.type === "error" ? "alert" : "status"}
+                    aria-atomic="true"
                 >
-                    <span className="font-bold text-base leading-none mt-0.5">{typeIcons[t.type]}</span>
+                    <span aria-hidden="true" className="font-bold text-base leading-none mt-0.5">{typeIcons[t.type]}</span>
                     <span className="flex-1 break-words">{t.message}</span>
                     <button
+                        type="button"
                         onClick={() => actions.dismiss(t.id)}
-                        className="opacity-50 hover:opacity-100 transition-opacity text-xs ml-2 mt-0.5"
-                        aria-label="关闭"
+                        className="rounded opacity-50 hover:opacity-100 transition-opacity text-xs ml-2 mt-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current"
+                        aria-label={`关闭通知：${t.message}`}
                     >
-                        ✕
+                        <span aria-hidden="true">✕</span>
                     </button>
                 </div>
             ))}

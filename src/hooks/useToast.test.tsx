@@ -8,9 +8,14 @@ const triggerRenderSpy = vi.fn();
 function ToastTrigger() {
   const { toast } = useToast();
   return (
-    <button type="button" onClick={() => toast("info", "测试消息")}>
-      添加通知
-    </button>
+    <>
+      <button type="button" onClick={() => toast("info", "测试消息")}>
+        添加通知
+      </button>
+      <button type="button" onClick={() => toast("error", "测试错误")}>
+        添加错误
+      </button>
+    </>
   );
 }
 
@@ -41,7 +46,8 @@ describe("ToastProvider", () => {
     renderToasts();
 
     fireEvent.click(screen.getByRole("button", { name: "添加通知" }));
-    fireEvent.click(screen.getByRole("button", { name: "关闭" }));
+    expect(screen.getByRole("status")).toHaveTextContent("测试消息");
+    fireEvent.click(screen.getByRole("button", { name: "关闭通知：测试消息" }));
 
     expect(screen.queryByText("测试消息")).not.toBeInTheDocument();
     expect(clearTimeoutSpy).toHaveBeenCalledTimes(1);
@@ -67,5 +73,15 @@ describe("ToastProvider", () => {
 
     expect(screen.getByText("测试消息")).toBeInTheDocument();
     expect(triggerRenderSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("仅将错误通知作为紧急告警播报", () => {
+    renderToasts();
+
+    fireEvent.click(screen.getByRole("button", { name: "添加通知" }));
+    fireEvent.click(screen.getByRole("button", { name: "添加错误" }));
+
+    expect(screen.getByRole("status")).toHaveTextContent("测试消息");
+    expect(screen.getByRole("alert")).toHaveTextContent("测试错误");
   });
 });
