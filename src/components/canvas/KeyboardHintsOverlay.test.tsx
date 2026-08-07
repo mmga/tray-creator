@@ -15,6 +15,7 @@ describe("KeyboardHintsOverlay", () => {
 
         expect(screen.getByRole("dialog", { name: "快捷键" })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "关闭快捷键帮助" })).toHaveFocus();
+        expect(screen.getByText("微调位置（0.1mm）")).toBeInTheDocument();
 
         trigger.focus();
         fireEvent.keyDown(window, { key: "Tab" });

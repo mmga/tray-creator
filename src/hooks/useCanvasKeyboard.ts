@@ -21,6 +21,26 @@ interface UseCanvasKeyboardOptions {
   setShowHints: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
+const INTERACTIVE_TARGET_SELECTOR = [
+  "input",
+  "textarea",
+  "select",
+  "button",
+  "a[href]",
+  "summary",
+  "[role='button']",
+  "[role='slider']",
+  "[role='switch']",
+  "[role='tab']",
+].join(",");
+
+function isInteractiveKeyboardTarget(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && (
+    target.isContentEditable
+    || target.closest(INTERACTIVE_TARGET_SELECTOR) !== null
+  );
+}
+
 /**
  * 画布键盘事件 hook
  *
@@ -47,18 +67,13 @@ export function useCanvasKeyboard({
   const clipboardRef = useRef<string[]>([]);
 
   const handleKeyDown = useEffectEvent((event: KeyboardEvent) => {
-    const tag = (event.target as HTMLElement)?.tagName;
-    const isEditable =
-      tag === "INPUT" ||
-      tag === "TEXTAREA" ||
-      tag === "SELECT" ||
-      (event.target as HTMLElement)?.isContentEditable;
-    if (isEditable) {
+    if (isInteractiveKeyboardTarget(event.target)) {
       return;
     }
 
-    if (event.code === "Space" && !event.repeat) {
-      setIsSpacePressed(true);
+    if (event.code === "Space") {
+      event.preventDefault();
+      if (!event.repeat) setIsSpacePressed(true);
     }
 
     const arrowCodes = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
@@ -132,7 +147,11 @@ export function useCanvasKeyboard({
   });
 
   const handleKeyUp = useEffectEvent((event: KeyboardEvent) => {
+    if (isInteractiveKeyboardTarget(event.target)) {
+      return;
+    }
     if (event.code === "Space") {
+      event.preventDefault();
       setIsSpacePressed(false);
       setIsPanning(false);
     }

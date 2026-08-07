@@ -76,13 +76,17 @@ export function KeyboardHintsOverlay({ showHints, onClose }: KeyboardHintsOverla
                     </kbd>
                     <span className="text-muted-foreground">删除选中凹槽</span>
                     <kbd className="px-1.5 py-0.5 bg-[#1c1a16] border border-[#2e2a24] rounded text-center font-mono text-primary/80">
-                        Ctrl+Z
+                        Ctrl/⌘ + Z
                     </kbd>
                     <span className="text-muted-foreground">撤销</span>
                     <kbd className="px-1.5 py-0.5 bg-[#1c1a16] border border-[#2e2a24] rounded text-center font-mono text-primary/80">
+                        Ctrl/⌘ + C / V
+                    </kbd>
+                    <span className="text-muted-foreground">复制 / 粘贴选中凹槽</span>
+                    <kbd className="px-1.5 py-0.5 bg-[#1c1a16] border border-[#2e2a24] rounded text-center font-mono text-primary/80">
                         ↑ ↓ ← →
                     </kbd>
-                    <span className="text-muted-foreground">微调位置（1mm）</span>
+                    <span className="text-muted-foreground">微调位置（0.1mm）</span>
                     <kbd className="px-1.5 py-0.5 bg-[#1c1a16] border border-[#2e2a24] rounded text-center font-mono text-primary/80">
                         Space + 拖
                     </kbd>
