@@ -5,7 +5,6 @@ import {
 } from "@/lib/current-param-artifact-encoder";
 import {
   captureModeParamSnapshot,
-  type ExportableParams,
   type ModeParamSnapshot,
   type ParamsByMode,
 } from "@/lib/mode-param-snapshot";
@@ -43,13 +42,15 @@ function getModeLabel(mode: HistoricalMode): string {
   return APP_MODE_LABELS[mode];
 }
 
+type ImportCandidateForMode<M extends AppMode> = {
+  fileName: string;
+  mode: M;
+  snapshot: ModeParamSnapshot<M>;
+  report: ImportNormalizationReport;
+};
+
 export type ImportCandidate = {
-  [M in AppMode]: {
-    fileName: string;
-    mode: M;
-    snapshot: ModeParamSnapshot<M>;
-    report: ImportNormalizationReport;
-  };
+  [M in AppMode]: ImportCandidateForMode<M>;
 }[AppMode];
 
 export interface ImportModeSelectionRequired {
@@ -104,10 +105,12 @@ function isHistoricalMode(value: unknown): value is HistoricalMode {
   return typeof value === "string" && HISTORICAL_MODES.includes(value as HistoricalMode);
 }
 
-function cloneParamValue(value: Record<string, unknown>): ExportableParams {
+function cloneParamValue<M extends AppMode>(
+  value: Record<string, unknown>,
+): ParamsByMode[M] {
   return (typeof structuredClone === "function"
     ? structuredClone(value)
-    : JSON.parse(JSON.stringify(value))) as ExportableParams;
+    : JSON.parse(JSON.stringify(value))) as ParamsByMode[M];
 }
 
 function detectModesFromParamShape(data: Record<string, unknown>): AppMode[] {
@@ -236,14 +239,14 @@ function decodeParamArtifact(data: unknown): DecodedParamArtifact {
 function normalizeForMode<M extends AppMode>(
   mode: M,
   rawParams: Record<string, unknown>,
-  recorder?: Parameters<typeof normalizeParamsForMode>[2],
+  recorder?: ImportNormalizationRecorder,
 ): ParamsByMode[M] {
   try {
     return normalizeParamsForMode(
       mode,
-      cloneParamValue(rawParams),
+      cloneParamValue<M>(rawParams),
       recorder,
-    ) as ParamsByMode[M];
+    );
   } catch (error) {
     if (error instanceof ParamArtifactReadError) {
       throw error;
@@ -291,7 +294,7 @@ function createImportCandidateForMode<M extends AppMode>(
   declaredMode: HistoricalMode | null,
   modeResolution: ImportNormalizationReport["modeResolution"],
   fileName: string,
-): Extract<ImportCandidate, { mode: M }> {
+): ImportCandidateForMode<M> {
   const { recorder, adjustments, retiredFields } =
     createImportNormalizationRecorder();
 
@@ -330,7 +333,7 @@ function createImportCandidateForMode<M extends AppMode>(
       adjustments,
       retiredFields,
     },
-  } as unknown as Extract<ImportCandidate, { mode: M }>;
+  };
 }
 
 function createImportCandidate(
@@ -342,12 +345,33 @@ function createImportCandidate(
 ): ImportCandidate {
   switch (targetMode) {
     case "grid":
+      return createImportCandidateForMode(
+        rawParams,
+        "grid",
+        declaredMode,
+        modeResolution,
+        fileName,
+      );
     case "custom":
+      return createImportCandidateForMode(
+        rawParams,
+        "custom",
+        declaredMode,
+        modeResolution,
+        fileName,
+      );
     case "base-converter":
+      return createImportCandidateForMode(
+        rawParams,
+        "base-converter",
+        declaredMode,
+        modeResolution,
+        fileName,
+      );
     case "stepped":
       return createImportCandidateForMode(
         rawParams,
-        targetMode,
+        "stepped",
         declaredMode,
         modeResolution,
         fileName,

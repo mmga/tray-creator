@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
+import { BASE_CONVERTER_DEFAULTS } from "@/lib/base-converter-config";
 import { getBaseHoleMinBaseThickness, MAX_BUILD_SIZE } from "@/lib/config";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
@@ -10,11 +11,31 @@ import {
   normalizeParamsForMode,
 } from "@/lib/param-normalization";
 import type {
+  BaseConverterParams,
   CustomLayoutParams,
   SimpleSteppedLayoutParams,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import type { TrayParams } from "@/types/tray";
+
+describe("Param Normalization Catalog types", () => {
+  it("keeps Mode and normalized params paired", () => {
+    expectTypeOf(normalizeParamsForMode("grid", { ...DEFAULT_TRAY_PARAMS }))
+      .toEqualTypeOf<TrayParams>();
+    expectTypeOf(normalizeParamsForMode("custom", { ...CUSTOM_LAYOUT_DEFAULTS }))
+      .toEqualTypeOf<CustomLayoutParams>();
+    expectTypeOf(normalizeParamsForMode("stepped", { ...STEPPED_LAYOUT_DEFAULTS }))
+      .toEqualTypeOf<SteppedLayoutParams>();
+    expectTypeOf(normalizeParamsForMode("base-converter", {
+      ...BASE_CONVERTER_DEFAULTS,
+    })).toEqualTypeOf<BaseConverterParams>();
+
+    if (false) {
+      // @ts-expect-error grid Mode 不能消费 custom 参数。
+      normalizeParamsForMode("grid", CUSTOM_LAYOUT_DEFAULTS);
+    }
+  });
+});
 
 describe("param normalization", () => {
   it("recognizes legacy 100mm slots across all modes", () => {
