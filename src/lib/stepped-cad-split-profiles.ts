@@ -681,8 +681,6 @@ function buildUnitLayerProfiles(
   splitUnit: SteppedCadSplitUnit,
   splitUnits: SteppedCadSplitUnit[],
   partitions: Map<string, SteppedCadPartition>,
-  assemblyMode: AssemblyMode,
-  grooveDepth: number,
   interfaces: SteppedCadSplitInterfaceProfile[],
   issues: SteppedCadSplitProfileIssue[],
 ) {
@@ -837,8 +835,6 @@ export function buildSteppedCadSplitProfilePlan({
         splitUnit,
         splitUnits,
         partitions,
-        assemblyMode,
-        grooveDepth,
         interfaces,
         issues,
       ),
