@@ -19,8 +19,18 @@ export function useActionPanelResize({
     startX: number;
     startWidth: number;
   } | null>(null);
+  const resizeFrameRef = useRef<number | null>(null);
+  const pendingWidthRef = useRef<number | null>(null);
 
   const stopActionPanelResize = useCallback(() => {
+    if (resizeFrameRef.current !== null) {
+      window.cancelAnimationFrame(resizeFrameRef.current);
+      resizeFrameRef.current = null;
+    }
+    if (pendingWidthRef.current !== null) {
+      setActionPanelWidth(pendingWidthRef.current);
+      pendingWidthRef.current = null;
+    }
     resizeActionPanelRef.current = null;
     setIsResizingActionPanel(false);
   }, []);
@@ -52,7 +62,14 @@ export function useActionPanelResize({
         minWidth,
         Math.min(maxWidth, state.startWidth - delta),
       );
-      setActionPanelWidth(nextWidth);
+      pendingWidthRef.current = nextWidth;
+      if (resizeFrameRef.current !== null) return;
+      resizeFrameRef.current = window.requestAnimationFrame(() => {
+        resizeFrameRef.current = null;
+        const pendingWidth = pendingWidthRef.current;
+        pendingWidthRef.current = null;
+        if (pendingWidth !== null) setActionPanelWidth(pendingWidth);
+      });
     };
 
     const handleVisibilityChange = () => {
@@ -77,6 +94,10 @@ export function useActionPanelResize({
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
+      if (resizeFrameRef.current !== null) {
+        window.cancelAnimationFrame(resizeFrameRef.current);
+        resizeFrameRef.current = null;
+      }
     };
   }, [isResizingActionPanel, maxWidth, minWidth, stopActionPanelResize]);
 
