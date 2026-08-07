@@ -790,6 +790,21 @@ vi.mock("@/components/ui/tabs", async () => {
 import Home from "@/app/page";
 
 describe("Home page", { timeout: 15000 }, () => {
+  it("在窄屏采用上下分区，并为参数与视口区域提供名称", () => {
+    render(<Home />);
+
+    expect(screen.getByRole("complementary", { name: "参数面板" })).toHaveClass(
+      "h-[46%]",
+      "w-full",
+      "md:h-full",
+      "md:w-[380px]",
+    );
+    expect(screen.getByRole("region", { name: "建模视口" })).toHaveClass(
+      "min-h-0",
+      "min-w-0",
+    );
+  });
+
   beforeEach(() => {
     gridModelMock.handleGenerate.mockReset();
     customModelMock.handleGenerate.mockReset();

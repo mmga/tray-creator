@@ -33,9 +33,11 @@ vi.mock("@/components/ui/tabs", async () => {
     TabsTrigger({
       value,
       children,
+      "aria-label": ariaLabel,
     }: {
       value: string;
       children: React.ReactNode;
+      "aria-label"?: string;
     }) {
       const { value: activeValue, onValueChange } =
         ReactModule.useContext(TabsContext);
@@ -43,6 +45,7 @@ vi.mock("@/components/ui/tabs", async () => {
       return (
         <button
           type="button"
+          aria-label={ariaLabel}
           data-state={activeValue === value ? "active" : "inactive"}
           onClick={() => onValueChange?.(value)}
         >

@@ -48,19 +48,22 @@ export default function Home() {
       />
 
       {/* ===== 主布局: 左右分栏 ===== */}
-      <main className="flex flex-row flex-1 overflow-hidden">
+      <main className="flex flex-1 flex-col overflow-hidden md:flex-row">
         {/* Left Panel */}
-        <aside className="h-full w-[380px] min-w-[320px] shrink-0 overflow-hidden bg-[#0e0d0b]">
+        <aside
+          aria-label="参数面板"
+          className="h-[46%] w-full min-w-0 shrink-0 overflow-hidden bg-[#0e0d0b] md:h-full md:w-[380px] md:min-w-[320px]"
+        >
           <div className="h-full min-h-0">{editor.active.panel}</div>
         </aside>
 
         {/* Divider */}
-        <div className="w-[3px] shrink-0 bg-gradient-to-b from-[#2e2a24] via-[#3d372e] to-[#2e2a24] relative">
-          <div className="absolute top-0 left-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-[#b8963a20] to-transparent" />
+        <div className="relative h-[3px] w-full shrink-0 bg-gradient-to-r from-[#2e2a24] via-[#3d372e] to-[#2e2a24] md:h-full md:w-[3px] md:bg-gradient-to-b">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#b8963a20] to-transparent md:bg-gradient-to-b" />
         </div>
 
         {/* Right Viewport */}
-        <section className="flex-1 bg-[#0a0908] relative flex flex-col">
+        <section aria-label="建模视口" className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-[#0a0908]">
           {editor.active.viewport}
         </section>
       </main>
