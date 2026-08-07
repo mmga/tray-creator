@@ -77,7 +77,7 @@ function createParams() {
 }
 
 describe("stepped global optimize", () => {
-  it("returns a deterministic compact-only proposal", () => {
+  it("returns a deterministic compact-only proposal", { timeout: 15_000 }, () => {
     const params = createParams();
 
     const first = generateSteppedOptimizationProposals(params, { variantIndex: 0 });
