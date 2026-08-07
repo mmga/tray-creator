@@ -12,11 +12,14 @@ export interface CanvasSelectionRect {
 
 type SelectableSlot = Pick<FreeSlot, "id">;
 
-export function sanitizeCanvasSelectedIds<TSlot extends SelectableSlot>(
+interface SelectableIdLookup {
+  has(id: string): boolean;
+}
+
+export function sanitizeCanvasSelectedIds(
   selectedIds: ReadonlySet<string>,
-  slots: ReadonlyArray<TSlot>,
+  validIds: SelectableIdLookup,
 ) {
-  const validIds = new Set(slots.map((slot) => slot.id));
   return new Set(Array.from(selectedIds).filter((id) => validIds.has(id)));
 }
 

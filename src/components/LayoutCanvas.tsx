@@ -192,16 +192,15 @@ export default function LayoutCanvas({
       ),
     [slots],
   );
-  const slotIds = useMemo(() => new Set<string>(slots.map((slot) => slot.id)), [slots]);
   const isActionPanelExpanded = activeActionTab !== null;
   const effectiveSelectedIds = useMemo(
-    () => sanitizeCanvasSelectedIds(selectedIds, slots),
-    [selectedIds, slots],
+    () => sanitizeCanvasSelectedIds(selectedIds, slotById),
+    [selectedIds, slotById],
   );
   const effectiveDraggingId =
-    draggingId && slotIds.has(draggingId) ? draggingId : null;
+    draggingId && slotById.has(draggingId) ? draggingId : null;
   const effectiveHoveredId =
-    hoveredId && slotIds.has(hoveredId) ? hoveredId : null;
+    hoveredId && slotById.has(hoveredId) ? hoveredId : null;
   const selectionBoxRect = useMemo(
     () => (selectionBox ? getCanvasSelectionBoxRect(selectionBox) : null),
     [selectionBox],
