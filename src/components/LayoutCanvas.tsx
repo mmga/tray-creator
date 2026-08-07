@@ -947,7 +947,7 @@ export default function LayoutCanvas({
         />
 
         {isEffectiveOversized && (
-          <div className="absolute top-14 right-3 z-72 px-3 py-1.5 bg-[#3b1515]/90 border border-[#8b1a1a] rounded-sm text-xs text-[#f2b8b8] font-mono backdrop-blur-sm">
+          <div role="alert" className="absolute top-14 right-3 z-72 px-3 py-1.5 bg-[#3b1515]/90 border border-[#8b1a1a] rounded-sm text-xs text-[#f2b8b8] font-mono backdrop-blur-sm">
             {fixedUsableArea ? "打印边框超限" : "有效底板超限"}:{" "}
             {(fixedUsableArea ? trayWidth : effectiveBaseplate.width).toFixed(0)}{" "}
             ×{" "}
@@ -957,7 +957,7 @@ export default function LayoutCanvas({
         )}
 
         {fixedBoundaryViolationCount > 0 && (
-          <div className={`absolute ${isEffectiveOversized ? "top-24" : "top-14"} right-3 z-72 px-3 py-1.5 bg-[#3b1515]/90 border border-[#8b1a1a] rounded-sm text-xs text-[#f2b8b8] font-mono backdrop-blur-sm`}>
+          <div role="alert" className={`absolute ${isEffectiveOversized ? "top-24" : "top-14"} right-3 z-72 px-3 py-1.5 bg-[#3b1515]/90 border border-[#8b1a1a] rounded-sm text-xs text-[#f2b8b8] font-mono backdrop-blur-sm`}>
             有 {fixedBoundaryViolationCount} 个凹槽超出可用区域
           </div>
         )}

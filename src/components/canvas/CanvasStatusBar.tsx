@@ -116,14 +116,23 @@ export function CanvasStatusBar({
                     CANVAS: {trayWidth}mm × {trayDepth}mm
                 </span>
                 <span>ZOOM: {Math.round(zoom * 100)}%</span>
-                <span className={collisionErrorCount > 0 ? "text-red-400" : "text-emerald-400"}>
+                <span
+                    role="status"
+                    aria-live="polite"
+                    aria-label={`布局碰撞错误：${collisionErrorCount}`}
+                    className={collisionErrorCount > 0 ? "text-red-400" : "text-emerald-400"}
+                >
                     ERRORS: {collisionErrorCount}
                 </span>
-                {footprintWarnings.map((warning, index) => (
-                    <span key={`${warning}-${index}`} className="text-amber-300">
-                        贴合轮廓警告：{warning}
+                {footprintWarnings.length > 0 ? (
+                    <span role="status" aria-live="polite" className="contents">
+                        {footprintWarnings.map((warning, index) => (
+                            <span key={`${warning}-${index}`} className="text-amber-300">
+                                贴合轮廓警告：{warning}
+                            </span>
+                        ))}
                     </span>
-                ))}
+                ) : null}
 
                 {selectedSlot && (
                     <span className="text-orange-400">

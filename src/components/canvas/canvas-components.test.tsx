@@ -713,9 +713,13 @@ describe("CanvasStatusBar", () => {
         zoom={1}
         selectedIds={new Set(["slot-1", "slot-2"])}
         slots={slots}
+        collisionErrorCount={2}
+        footprintWarnings={["轮廓已拆分"]}
       />,
     );
 
+    expect(screen.getByRole("status", { name: "布局碰撞错误：2" })).toHaveTextContent("ERRORS: 2");
+    expect(screen.getByText("贴合轮廓警告：轮廓已拆分")).toBeInTheDocument();
     expect(screen.getByText(/2 ITEMS SELECTED/)).toHaveTextContent(
       "EDGE GAP: 15.0mm | X:15.0 Y:0.0",
     );

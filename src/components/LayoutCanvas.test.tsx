@@ -657,6 +657,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
       "true",
     );
     expect(screen.getByText(/有效底板超限/)).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("有效底板超限");
   });
 
   it("forwards stepped outline preview and focused group state to canvas layers", () => {
