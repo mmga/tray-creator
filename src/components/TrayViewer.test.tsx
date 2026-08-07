@@ -93,7 +93,7 @@ describe("TrayViewer", { timeout: 15000 }, () => {
 
   it("仅通过明确按钮重新生成过期的 3D 预览", () => {
     const onRegenerate = vi.fn();
-    const { rerender } = render(
+    const { container, rerender } = render(
       <TrayViewer
         geometry={null}
         isStale={true}
@@ -101,6 +101,7 @@ describe("TrayViewer", { timeout: 15000 }, () => {
         onRegenerate={onRegenerate}
       />,
     );
+    expect(container.firstElementChild).toHaveClass("min-h-0", "md:min-h-[400px]");
 
     fireEvent.click(screen.getByText("FORGE VIEW"));
     expect(onRegenerate).not.toHaveBeenCalled();

@@ -254,7 +254,7 @@ export default function TrayViewer({
 
   return (
     <div
-      className="relative w-full h-full min-h-[400px] overflow-hidden forged-viewport"
+      className="relative w-full h-full min-h-0 overflow-hidden forged-viewport md:min-h-[400px]"
       style={{ backgroundColor: '#3d3b38' }}
     >
       {/* Loading bar */}
