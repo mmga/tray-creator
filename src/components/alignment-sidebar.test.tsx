@@ -73,7 +73,7 @@ describe("EditSidebar", { timeout: 15000 }, () => {
       },
     ];
 
-    render(
+    const { container } = render(
       <EditSidebar
         tabs={tabs}
         activeTabId="align"
@@ -85,6 +85,12 @@ describe("EditSidebar", { timeout: 15000 }, () => {
     expect(screen.getByText("align-content")).toBeInTheDocument();
     expect(screen.getByText("2 selected")).toBeInTheDocument();
     expect(screen.getByText("边缘对齐与等距排布")).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "布局工具分类" })).toHaveClass(
+      "h-14",
+      "w-full",
+      "lg:w-[68px]",
+    );
+    expect(container.firstElementChild).toHaveClass("flex-col", "lg:flex-row");
 
     fireEvent.click(screen.getAllByRole("button", { name: /对齐/ })[0]!);
     fireEvent.click(screen.getByRole("button", { name: /镜像/ }));

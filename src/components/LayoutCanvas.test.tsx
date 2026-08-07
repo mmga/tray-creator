@@ -595,6 +595,11 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "打开镜像面板" }));
+    expect(screen.getByRole("complementary", { name: "布局工具" })).toHaveClass(
+      "w-full",
+      "h-1/2",
+      "lg:h-full",
+    );
     expect(screen.getByTestId("alignment-toolbar")).toHaveAttribute(
       "data-active-tab-id",
       "mirror",

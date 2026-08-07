@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback, useEffect, useMemo } from "react";
+import { useRef, useState, useCallback, useEffect, useMemo, type CSSProperties } from "react";
 import type {
   FreeSlot,
   SteppedSlot,
@@ -969,7 +969,7 @@ export default function LayoutCanvas({
       </div>
 
       <div
-        className={`shrink-0 cursor-col-resize items-stretch justify-center bg-[#100d0a] transition-[width,opacity] duration-150 flex ${isActionPanelExpanded ? "w-0.75 opacity-100" : "pointer-events-none w-0 opacity-0"}`}
+        className={`hidden shrink-0 cursor-col-resize items-stretch justify-center bg-[#100d0a] transition-[width,opacity] duration-150 lg:flex ${isActionPanelExpanded ? "lg:w-0.75 lg:opacity-100" : "pointer-events-none lg:w-0 lg:opacity-0"}`}
         onPointerDown={(event) => {
           event.preventDefault();
           event.currentTarget.setPointerCapture(event.pointerId);
@@ -980,12 +980,13 @@ export default function LayoutCanvas({
       </div>
 
       <aside
-        className={`shrink-0 border-l border-[#2e2a24] bg-[#100d0a] block ${isResizingActionPanel ? "" : "transition-[width] duration-150"}`}
+        aria-label="布局工具"
+        className={`block w-full shrink-0 border-t border-[#2e2a24] bg-[#100d0a] lg:h-full lg:w-[var(--action-panel-width)] lg:border-l lg:border-t-0 ${isActionPanelExpanded ? "h-1/2" : "h-14"} ${isResizingActionPanel ? "" : "transition-[width,height] duration-150"}`}
         style={{
-          width: isActionPanelExpanded
+          "--action-panel-width": `${isActionPanelExpanded
             ? ACTION_PANEL_TAB_RAIL_WIDTH + actionPanelWidth
-            : ACTION_PANEL_TAB_RAIL_WIDTH,
-        }}
+            : ACTION_PANEL_TAB_RAIL_WIDTH}px`,
+        } as CSSProperties}
       >
         <AlignmentToolbar
           selectedIds={effectiveSelectedIds}
