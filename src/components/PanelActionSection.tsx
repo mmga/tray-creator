@@ -23,6 +23,13 @@ export function PanelActionSection({ adapter }: { adapter: DraftActionAreaAdapte
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { state } = adapter;
+  const blockedMessages = [
+    state.generate.state === "blocked" ? `锻造：${state.generate.reason}` : null,
+    state.exportWhole.state === "blocked" ? `完整导出：${state.exportWhole.reason}` : null,
+    adapter.kind === "stepped" && adapter.state.exportSplit.state === "blocked"
+      ? `分件导出：${adapter.state.exportSplit.reason}`
+      : null,
+  ].filter((message): message is string => message !== null);
 
   const reportResult = (result: DraftActionResult) => {
     if (result.status === "error") toast("error", result.message);
@@ -42,6 +49,15 @@ export function PanelActionSection({ adapter }: { adapter: DraftActionAreaAdapte
   return (
     <div className="relative flex flex-col gap-2">
       {state.stale ? <div className="rounded-sm border border-[#5a4a2a] bg-[#2a2518]/95 px-3 py-1.5 text-[11px] text-[#d7b95d]">当前预览已过期，请重新锻造。</div> : null}
+      {blockedMessages.length > 0 ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="rounded-sm border border-[#633737] bg-[#281717]/95 px-3 py-1.5 text-[11px] text-[#e0a0a0]"
+        >
+          暂不可操作：{blockedMessages.join("；")}
+        </div>
+      ) : null}
       {state.hasUnsavedChanges ? <div className="absolute -top-1 right-0 size-2 rounded-full bg-[#e3c774] shadow-[0_0_8px_#e3c774]" title="有未保存修改"><span className="sr-only">有未保存修改</span></div> : null}
       <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleFileChange} />
 
