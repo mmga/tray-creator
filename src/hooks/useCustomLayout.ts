@@ -22,6 +22,7 @@ import {
 import {
   calculateCustomEffectiveDimensions,
   calculateCustomTrayFootprint,
+  type LayoutExtents,
 } from "@/lib/custom-layout-math";
 import {
   exportCustomModelFiles,
@@ -106,8 +107,8 @@ interface UseCustomLayoutReturn {
   transactionRevision: number;
   baseHoleFitViolations: BaseHoleFitViolation[];
   baseHoleFitBlockingReason: string | null;
-  handleGenerate: () => void;
-  handleExportSTL: () => void;
+  handleGenerate: () => Promise<void>;
+  handleExportSTL: () => Promise<void>;
 }
 
 export function useCustomLayout(): UseCustomLayoutReturn {
@@ -142,35 +143,37 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     handleExportSTL: exportSTL,
   } = useEditableParams<
     CustomLayoutParams,
-    ModeParamSnapshot<"custom">
+    ModeParamSnapshot<"custom">,
+    LayoutExtents
   >({
     initialState: CUSTOM_LAYOUT_DEFAULTS,
     normalize: applyFlatTrayBaseHoleSupportingThickness,
     captureSnapshot: (params) => captureModeParamSnapshot("custom", params),
+    captureExportContext: (snapshot) => {
+      const footprint = calculateCustomTrayFootprint(
+        snapshot.params,
+        contouredFootprintStateRef.current,
+      );
+      return {
+        width: footprint.width,
+        depth: footprint.depth,
+        minX: footprint.minX,
+        maxX: footprint.maxX,
+        minY: footprint.minY,
+        maxY: footprint.maxY,
+      };
+    },
     fingerprintSnapshot: createModelGeometryFingerprint,
     guard: () => trayWorkerService !== null,
     generatePreview: async (snapshot) =>
       generateCustomPreview(snapshot.params, trayWorkerService!),
-    exportModel: async (snapshot, geometry) => {
+    exportModel: async (snapshot, geometry, effectiveDimensions) => {
       await exportCustomModelFiles(
         snapshot,
         geometry,
         trayWorkerService!,
         browserDownloadPort,
-        (() => {
-          const footprint = calculateCustomTrayFootprint(
-            snapshot.params,
-            contouredFootprintStateRef.current,
-          );
-          return {
-            width: footprint.width,
-            depth: footprint.depth,
-            minX: footprint.minX,
-            maxX: footprint.maxX,
-            minY: footprint.minY,
-            maxY: footprint.maxY,
-          };
-        })(),
+        effectiveDimensions,
       );
     },
     // 主线程校验由下方的权威构造结果统一提供，避免生成前再次从快照重构轮廓。

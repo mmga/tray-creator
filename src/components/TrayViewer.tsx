@@ -49,6 +49,13 @@ function TrayMesh({
     return new THREE.EdgesGeometry(geometry, RENDER_CONFIG.edgeThreshold);
   }, [geometry]);
 
+  useEffect(
+    () => () => {
+      edgesGeometry.dispose();
+    },
+    [edgesGeometry],
+  );
+
   useEffect(() => {
     if (meshRef.current && geometry) {
       meshRef.current.geometry = geometry;
@@ -175,6 +182,51 @@ function ContextLostHandler() {
   return null;
 }
 
+function ViewerLoadingBar({ kind }: { kind: "model" | "split" }) {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const startTime = Date.now();
+    const expectedDuration = kind === "split" ? 9000 : 15000;
+    let intervalId: number | null = null;
+    const frameId = window.requestAnimationFrame(() => {
+      setProgress(0);
+
+      const updateProgress = () => {
+        const elapsed = Date.now() - startTime;
+        setProgress(Math.min(elapsed / expectedDuration, 0.85));
+      };
+
+      updateProgress();
+      intervalId = window.setInterval(updateProgress, 100);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      if (intervalId !== null) window.clearInterval(intervalId);
+    };
+  }, [kind]);
+
+  return (
+    <div
+      role="progressbar"
+      aria-label={kind === "split" ? "正在生成拆件预览" : "正在生成模型预览"}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(progress * 100)}
+      className="absolute top-0 left-0 right-0 z-30 h-0.5 bg-[#2a2518]"
+    >
+      <div
+        className="h-full transition-[width] duration-200 ease-out"
+        style={{
+          width: `${progress * 100}%`,
+          backgroundColor: kind === "split" ? "#8cb880" : "#c8a84e",
+        }}
+      />
+    </div>
+  );
+}
+
 export default function TrayViewer({
   geometry,
   isStale,
@@ -185,7 +237,6 @@ export default function TrayViewer({
   onGenerateSplitPreview,
   minimumCameraDistance,
 }: TrayViewerProps) {
-  const [loadingProgress, setLoadingProgress] = useState(0);
   const [viewerMode, setViewerMode] = useState<"solid" | "split">("solid");
   const [explosionDistance, setExplosionDistance] = useState(42);
   const isLoadingPreview = Boolean(isGenerating || isGeneratingSplitPreview);
@@ -201,66 +252,15 @@ export default function TrayViewer({
     [explosionDistance, splitParts],
   );
 
-  useEffect(() => {
-    let frameId: number | null = null;
-    let intervalId: number | null = null;
-
-    if (isLoadingPreview) {
-      const startTime = Date.now();
-      const expectedDuration = isGeneratingSplitPreview && !isGenerating
-        ? 9000
-        : 15000;
-      frameId = window.requestAnimationFrame(() => {
-        setLoadingProgress(0);
-
-        const updateProgress = () => {
-          const elapsed = Date.now() - startTime;
-          setLoadingProgress(Math.min(elapsed / expectedDuration, 0.85));
-        };
-
-        updateProgress();
-        intervalId = window.setInterval(updateProgress, 100);
-      });
-    } else {
-      frameId = window.requestAnimationFrame(() => {
-        setLoadingProgress(0);
-      });
-    }
-
-    return () => {
-      if (frameId !== null) {
-        window.cancelAnimationFrame(frameId);
-      }
-      if (intervalId !== null) {
-        window.clearInterval(intervalId);
-      }
-    };
-  }, [isGenerating, isGeneratingSplitPreview, isLoadingPreview]);
-
   return (
     <div
-      className="relative w-full h-full min-h-[400px] overflow-hidden forged-viewport cursor-pointer"
+      className="relative w-full h-full min-h-0 overflow-hidden forged-viewport md:min-h-[400px]"
       style={{ backgroundColor: '#3d3b38' }}
-      onClick={() => {
-        if (isStale && onRegenerate) {
-          onRegenerate();
-        }
-      }}
     >
       {/* Loading bar */}
-      {isLoadingPreview && (
-        <div className="absolute top-0 left-0 right-0 z-30 h-0.5 bg-[#2a2518]">
-          <div
-            className="h-full transition-[width] duration-200 ease-out"
-            style={{
-              width: `${loadingProgress * 100}%`,
-              backgroundColor: isGeneratingSplitPreview && !isGenerating
-                ? "#8cb880"
-                : "#c8a84e",
-            }}
-          />
-        </div>
-      )}
+      {isLoadingPreview ? (
+        <ViewerLoadingBar kind={isGeneratingSplitPreview && !isGenerating ? "split" : "model"} />
+      ) : null}
       {/* Corner rivets */}
       <div className="absolute top-3 left-3 rivet z-10" />
       <div className="absolute top-3 right-3 rivet z-10" />
@@ -279,6 +279,7 @@ export default function TrayViewer({
       <div className="absolute top-3 right-5 z-20 flex items-center gap-2 rounded border border-[#2e2a24] bg-[#12110e]/95 px-2 py-1 shadow-lg shadow-black/30">
         <button
           type="button"
+          aria-pressed={viewerMode === "solid"}
           onClick={(event) => {
             event.stopPropagation();
             setViewerMode("solid");
@@ -294,6 +295,7 @@ export default function TrayViewer({
         {hasSplitMode ? (
           <button
             type="button"
+            aria-pressed={viewerMode === "split"}
             onClick={(event) => {
               event.stopPropagation();
               setViewerMode("split");
@@ -309,9 +311,9 @@ export default function TrayViewer({
             }`}
           >
             {isGeneratingSplitPreview ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
+              <Loader2 aria-hidden="true" className="h-3 w-3 animate-spin" />
             ) : (
-              <Layers className="h-3 w-3" />
+              <Layers aria-hidden="true" className="h-3 w-3" />
             )}
             拆件
           </button>
@@ -339,6 +341,18 @@ export default function TrayViewer({
           </label>
         ) : null}
       </div>
+
+      {isStale && onRegenerate && !isGenerating ? (
+        <div className="pointer-events-none absolute inset-x-0 top-14 z-20 flex justify-center px-4">
+          <button
+            type="button"
+            onClick={onRegenerate}
+            className="pointer-events-auto rounded-sm border border-[#8d7432] bg-[#1b1710]/95 px-3 py-2 text-xs font-semibold text-[#e8d7a8] shadow-lg shadow-black/30 transition-colors hover:bg-[#2a2115] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c8a84e]"
+          >
+            预览待更新，重新锻造
+          </button>
+        </div>
+      ) : null}
 
       {showSplitPreview ? (
         <div className="absolute bottom-5 left-5 z-20 max-w-[260px] rounded border border-[#2e2a24] bg-[#12110e]/95 p-2 shadow-lg shadow-black/30">

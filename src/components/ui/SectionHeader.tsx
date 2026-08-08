@@ -37,31 +37,36 @@ export function SectionHeader({
         <div>
             {/* 标题行 */}
             <div
-                className={`relative pb-3 mb-1 ${canCollapse ? 'cursor-pointer select-none active:opacity-80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/60' : ''}`}
-                onClick={canCollapse ? () => setIsOpen(prev => !prev) : undefined}
-                onKeyDown={canCollapse ? (event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        setIsOpen(prev => !prev);
-                    }
-                } : undefined}
-                role={canCollapse ? "button" : undefined}
-                tabIndex={canCollapse ? 0 : undefined}
-                aria-expanded={canCollapse ? isOpen : undefined}
+                className="relative pb-3 mb-1"
             >
-                <div className="flex items-center gap-2.5">
-                    <div className="flex items-center justify-center w-6 h-6 border border-primary/40 bg-[#1c1a16]">
-                        <Icon className="w-3.5 h-3.5 text-primary" />
-                    </div>
-                    <h3 className="text-xs font-bold text-primary/90 tracking-[0.2em] uppercase parchment-glow flex-1">
-                        {title}
-                    </h3>
-                    {canCollapse && (
+                {canCollapse ? (
+                    <button
+                        type="button"
+                        onClick={() => setIsOpen(prev => !prev)}
+                        aria-expanded={isOpen}
+                        className="flex w-full select-none items-center gap-2.5 text-left active:opacity-80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/60"
+                    >
+                        <span className="flex items-center justify-center w-6 h-6 border border-primary/40 bg-[#1c1a16]">
+                            <Icon aria-hidden="true" className="w-3.5 h-3.5 text-primary" />
+                        </span>
+                        <span className="text-xs font-bold text-primary/90 tracking-[0.2em] uppercase parchment-glow flex-1">
+                            {title}
+                        </span>
                         <ChevronDown
+                            aria-hidden="true"
                             className={`w-4 h-4 text-primary/60 transition-transform duration-200 ${isOpen ? 'rotate-180' : 'rotate-0'}`}
                         />
-                    )}
-                </div>
+                    </button>
+                ) : (
+                    <div className="flex items-center gap-2.5">
+                        <div className="flex items-center justify-center w-6 h-6 border border-primary/40 bg-[#1c1a16]">
+                            <Icon aria-hidden="true" className="w-3.5 h-3.5 text-primary" />
+                        </div>
+                        <h3 className="text-xs font-bold text-primary/90 tracking-[0.2em] uppercase parchment-glow flex-1">
+                            {title}
+                        </h3>
+                    </div>
+                )}
                 {/* 折叠态摘要 */}
                 {canCollapse && !isOpen && summary && (
                     <p className="text-[10px] text-muted-foreground/60 mt-1.5 ml-8.5 truncate">
@@ -74,7 +79,11 @@ export function SectionHeader({
 
             {/* 可折叠内容区 */}
             {children != null && (
-                <div className={`grid transition-[grid-template-rows,opacity] duration-200 ease-in-out ${canCollapse && !isOpen ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr] opacity-100'}`}>
+                <div
+                    aria-hidden={canCollapse && !isOpen ? "true" : undefined}
+                    inert={canCollapse && !isOpen ? true : undefined}
+                    className={`grid transition-[grid-template-rows,opacity] duration-200 ease-in-out ${canCollapse && !isOpen ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr] opacity-100'}`}
+                >
                     <div className="min-h-0 overflow-hidden">{children}</div>
                 </div>
             )}

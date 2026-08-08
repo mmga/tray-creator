@@ -44,12 +44,9 @@ import type { BaseHoleStructure } from "@/types/tray";
 import {
   applyFlatTrayBaseHoleSupportingThickness,
 } from "@/lib/base-hole-rules";
+import type { ParamsByMode } from "@/lib/mode-param-snapshot";
 
-export type NormalizableParams =
-  | TrayParams
-  | BaseConverterParams
-  | CustomLayoutParams
-  | SteppedLayoutParams;
+type NormalizableParams = ParamsByMode[AppMode];
 
 type ParamNormalizationStep<T extends NormalizableParams> = (
   params: T,
@@ -61,6 +58,17 @@ type ParamNormalizationPipeline<T extends NormalizableParams> = {
   migrateLegacyShape: ParamNormalizationStep<T>;
   normalizeSlotInstances: ParamNormalizationStep<T>;
   clampAndFillDerivedFields: ParamNormalizationStep<T>;
+};
+
+type ParamNormalizationAdapter<M extends AppMode> = {
+  normalize: (
+    params: ParamsByMode[M],
+    recorder?: ImportNormalizationRecorder,
+  ) => ParamsByMode[M];
+};
+
+type ParamNormalizationCatalog = {
+  [M in AppMode]: ParamNormalizationAdapter<M>;
 };
 
 function getRawSteppedSplitRecessEnabled(obj: Record<string, unknown>) {
@@ -186,93 +194,76 @@ function runParamNormalizationPipeline<T extends NormalizableParams>(
   return params;
 }
 
-export function normalizeParamsForMode(
-  mode: AppMode,
-  params: NormalizableParams,
+function normalizeBaseConverterParamsForMode(
+  raw: BaseConverterParams,
   recorder?: ImportNormalizationRecorder,
-): NormalizableParams {
-  const resolvedMode = mode;
-
-  if (resolvedMode === "base-converter") {
-    const raw = params as BaseConverterParams;
-    if (typeof raw.sourceStandardId !== "string") {
-      throw new Error("缺少或无效的字段: sourceStandardId");
+): BaseConverterParams {
+  if (typeof raw.sourceStandardId !== "string") {
+    throw new Error("缺少或无效的字段: sourceStandardId");
+  }
+  if (typeof raw.targetStandardId !== "string") {
+    throw new Error("缺少或无效的字段: targetStandardId");
+  }
+  requireNumber(raw as unknown as Record<string, unknown>, "floorThickness");
+  requireNumber(raw as unknown as Record<string, unknown>, "recessDepth");
+  const normalized = normalizeBaseConverterParams(raw);
+  const labels: Record<keyof BaseConverterParams, string> = {
+    sourceStandardId: "原底盘标准",
+    targetStandardId: "目标底盘标准",
+    geometrySnapshot: "转换几何快照",
+    conversionClearance: "单边装配间隙",
+    floorThickness: "底部保留厚度",
+    recessDepth: "凹槽深度",
+    sideBevelWidth: "侧面斜面宽度",
+  };
+  const valuesEqual = (left: unknown, right: unknown) => {
+    if (Object.is(left, right)) return true;
+    if (
+      left !== null
+      && right !== null
+      && typeof left === "object"
+      && typeof right === "object"
+    ) {
+      return JSON.stringify(left) === JSON.stringify(right);
     }
-    if (typeof raw.targetStandardId !== "string") {
-      throw new Error("缺少或无效的字段: targetStandardId");
-    }
-    requireNumber(raw as unknown as Record<string, unknown>, "floorThickness");
-    requireNumber(raw as unknown as Record<string, unknown>, "recessDepth");
-    const normalized = normalizeBaseConverterParams(raw);
-    const labels: Record<keyof BaseConverterParams, string> = {
-      sourceStandardId: "原底盘标准",
-      targetStandardId: "目标底盘标准",
-      geometrySnapshot: "转换几何快照",
-      conversionClearance: "单边装配间隙",
-      floorThickness: "底部保留厚度",
-      recessDepth: "凹槽深度",
-      sideBevelWidth: "侧面斜面宽度",
-    };
-    const valuesEqual = (left: unknown, right: unknown) => {
-      if (Object.is(left, right)) return true;
-      if (
-        left !== null
-        && right !== null
-        && typeof left === "object"
-        && typeof right === "object"
-      ) {
-        return JSON.stringify(left) === JSON.stringify(right);
-      }
-      return false;
-    };
-    for (const key of [
-      "sourceStandardId",
-      "targetStandardId",
-      "geometrySnapshot",
-      "conversionClearance",
-      "floorThickness",
-      "recessDepth",
-      "sideBevelWidth",
-    ] as const) {
-      if (!valuesEqual(normalized[key], raw[key])) {
-        const adjustment = {
-          path: key,
-          label: labels[key],
-          previousValue: raw[key],
-          normalizedValue: normalized[key],
-          reason: key === "geometrySnapshot"
-            ? "已从历史标准 ID 补齐可复现的转换几何快照"
-            : "已补齐或修复当前转换底盘参数",
-        };
-        if (key === "geometrySnapshot") {
-          recordMigration(recorder, adjustment);
-        } else {
-          recordValueAdjustment(recorder, adjustment);
-        }
+    return false;
+  };
+  for (const key of [
+    "sourceStandardId",
+    "targetStandardId",
+    "geometrySnapshot",
+    "conversionClearance",
+    "floorThickness",
+    "recessDepth",
+    "sideBevelWidth",
+  ] as const) {
+    if (!valuesEqual(normalized[key], raw[key])) {
+      const adjustment = {
+        path: key,
+        label: labels[key],
+        previousValue: raw[key],
+        normalizedValue: normalized[key],
+        reason: key === "geometrySnapshot"
+          ? "已从历史标准 ID 补齐可复现的转换几何快照"
+          : "已补齐或修复当前转换底盘参数",
+      };
+      if (key === "geometrySnapshot") {
+        recordMigration(recorder, adjustment);
+      } else {
+        recordValueAdjustment(recorder, adjustment);
       }
     }
-    return normalized;
   }
+  return normalized;
+}
 
-  if (resolvedMode === "grid") {
-    return runParamNormalizationPipeline(
-      params as TrayParams,
-      gridParamNormalizationPipeline,
-      recorder,
-    );
-  }
-  if (resolvedMode === "stepped") {
-    return runParamNormalizationPipeline(
-      params as SteppedLayoutParams,
-      steppedParamNormalizationPipeline,
-      recorder,
-    );
-  }
-  return runParamNormalizationPipeline(
-    params as CustomLayoutParams,
-    customParamNormalizationPipeline,
-    recorder,
-  );
+export function normalizeParamsForMode<M extends AppMode>(
+  mode: M,
+  params: ParamsByMode[M],
+  recorder?: ImportNormalizationRecorder,
+): ParamsByMode[M] {
+  const adapter: ParamNormalizationAdapter<M> = paramNormalizationCatalog[mode];
+  return adapter.normalize(params, recorder);
 }
 
 export function migrateCustomParamsToStepped(
@@ -303,7 +294,6 @@ export function migrateCustomParamsToStepped(
         }),
       },
     ],
-    activeGroupId: defaultGroupId,
     spacing: customParams.spacing,
     holeDepth: customParams.holeDepth || 3,
     splitGrooveDepth: STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth,
@@ -346,6 +336,33 @@ const steppedParamNormalizationPipeline: ParamNormalizationPipeline<SteppedLayou
     normalizeSlotInstances: normalizeSteppedSlotInstances,
     clampAndFillDerivedFields: clampAndFillSteppedDerivedFields,
   };
+
+const paramNormalizationCatalog: ParamNormalizationCatalog = {
+  grid: {
+    normalize: (params, recorder) => runParamNormalizationPipeline(
+      params,
+      gridParamNormalizationPipeline,
+      recorder,
+    ),
+  },
+  custom: {
+    normalize: (params, recorder) => runParamNormalizationPipeline(
+      params,
+      customParamNormalizationPipeline,
+      recorder,
+    ),
+  },
+  "base-converter": {
+    normalize: normalizeBaseConverterParamsForMode,
+  },
+  stepped: {
+    normalize: (params, recorder) => runParamNormalizationPipeline(
+      params,
+      steppedParamNormalizationPipeline,
+      recorder,
+    ),
+  },
+};
 
 function validateGridRequiredFields(params: TrayParams) {
   const obj = params as unknown as Record<string, unknown>;
@@ -661,13 +678,6 @@ function normalizeSteppedSlotInstances(
   const groupIds = new Set(
     (obj.groups as { id: string }[]).map((group) => group.id),
   );
-  if (
-    typeof obj.activeGroupId !== "string" ||
-    !groupIds.has(obj.activeGroupId as string)
-  ) {
-    obj.activeGroupId = (obj.groups as { id: string }[])[0]?.id ?? "";
-  }
-
   let normalizedSnapshotCount = 0;
   for (let index = 0; index < slots.length; index += 1) {
     const slot = slots[index];

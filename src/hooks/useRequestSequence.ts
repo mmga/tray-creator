@@ -3,9 +3,9 @@ import { useRef, useCallback } from "react";
 /**
  * 请求序列号竞态保护原语。
  *
- * 提供"自增序列号 + 版本比对"的最小共享逻辑，供 usePreviewLifecycle
- * 和 useSteppedOutlinePreview 复用。两者各自的成功路径/错误处理/
- * startTransition 不同，只共享这个序列号原语。
+ * 提供"自增序列号 + 版本比对"的最小共享逻辑，供异步预览和
+ * Mode Editor 导入准备复用。调用方各自保留成功路径与错误处理，
+ * 这里只共享 latest-wins 所有权原语。
  */
 export function useRequestSequence() {
   const seqRef = useRef(0);

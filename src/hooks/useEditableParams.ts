@@ -26,12 +26,14 @@ export type EditTransactionOutcome =
   | { status: "unchanged" }
   | { status: "rejected"; code: "edit-already-active" | "edit-not-active" };
 
-interface UseEditableParamsOptions<P, S> {
+interface UseEditableParamsOptions<P, S, E> {
   initialState: P | (() => P);
   captureSnapshot: (params: P) => S;
+  /** 捕获文件名、尺寸等导出派生值，禁止在 exportModel 中重新读取当前编辑状态。 */
+  captureExportContext: (snapshot: S) => E;
   fingerprintSnapshot: (snapshot: S) => string;
   generatePreview: (snapshot: S) => Promise<PreviewLifecycleResult | null>;
-  exportModel: (snapshot: S, geometry: Geom3) => Promise<void>;
+  exportModel: (snapshot: S, geometry: Geom3, context: E) => Promise<void>;
   validateSnapshot?: (snapshot: S) => string | null;
   /**
    * 可选守卫：返回 false 时 generatePreview/exportModel 不执行
@@ -92,9 +94,10 @@ export interface UseEditableParamsReturn<P> {
  * 调用方用 applyChange((prev) => removeSlot(prev, id), { history: "save" })
  * 一行表达，无需手写 pushState→setParams→invalidate 三步咒语。
  */
-export function useEditableParams<P, S>({
+export function useEditableParams<P, S, E>({
   initialState,
   captureSnapshot,
+  captureExportContext,
   fingerprintSnapshot,
   generatePreview,
   exportModel,
@@ -103,7 +106,7 @@ export function useEditableParams<P, S>({
   normalize,
   onInvalidate,
   areEqual = Object.is,
-}: UseEditableParamsOptions<P, S>): UseEditableParamsReturn<P> {
+}: UseEditableParamsOptions<P, S, E>): UseEditableParamsReturn<P> {
   const [params, internalSetParams] = useState<P>(initialState);
   const [workingParams, internalSetWorkingParams] = useState<P | null>(null);
   const [transactionRevision, setTransactionRevision] = useState(0);
@@ -137,9 +140,9 @@ export function useEditableParams<P, S>({
     [generatePreview, guard],
   );
   const guardedExportModel = useCallback(
-    async (snapshot: S, geometry: Geom3): Promise<void> => {
+    async (snapshot: S, geometry: Geom3, context: E): Promise<void> => {
       if (guard && !guard()) return;
-      return exportModel(snapshot, geometry);
+      return exportModel(snapshot, geometry, context);
     },
     [exportModel, guard],
   );
@@ -152,9 +155,10 @@ export function useEditableParams<P, S>({
     invalidatePreview,
     handleGenerate,
     handleExportSTL,
-  } = usePreviewLifecycle<P, S>({
+  } = usePreviewLifecycle<P, S, E>({
     getParams: () => paramsRef.current,
     captureSnapshot,
+    captureExportContext,
     fingerprintSnapshot,
     generatePreview: guardedGeneratePreview,
     exportModel: guardedExportModel,

@@ -17,7 +17,7 @@ import type {
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
 import { useState, type ReactNode } from "react";
 import {
   Plus,
@@ -147,16 +147,13 @@ export default function CustomPanel({
               >
                 自定义直径
               </Label>
-              <Input
+              <DraftNumberInput
                 id="custom-circle-diameter"
-                type="number"
                 min={1}
                 max={200}
                 step={0.1}
                 value={customCircleDiameter}
-                onChange={(event) =>
-                  setCustomCircleDiameter(Number(event.target.value))
-                }
+                onValueChange={setCustomCircleDiameter}
                 className="h-9 min-w-0 flex-1 border-[#2e2a24] bg-[#120f0c] font-mono text-sm"
               />
               <Button

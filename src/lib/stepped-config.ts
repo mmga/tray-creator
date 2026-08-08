@@ -37,7 +37,6 @@ export const STEPPED_LAYOUT_DEFAULTS: SteppedLayoutParams = {
       }),
     } satisfies SlotGroup,
   ],
-  activeGroupId: STEPPED_DEFAULT_GROUP_ID,
   spacing: 5,
   boundarySpacing: STEPPED_DEFAULT_BOUNDARY_SPACING,
   boundarySpacingIndependent: false,

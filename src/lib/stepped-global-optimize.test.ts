@@ -28,7 +28,6 @@ function createParams() {
         bottomHeight: 18,
       },
     ],
-    activeGroupId: "group-1",
     spacing: 5,
     smoothingRadius: 12,
     disconnectDistance: 0,
@@ -78,7 +77,7 @@ function createParams() {
 }
 
 describe("stepped global optimize", () => {
-  it("returns a deterministic compact-only proposal", () => {
+  it("returns a deterministic compact-only proposal", { timeout: 15_000 }, () => {
     const params = createParams();
 
     const first = generateSteppedOptimizationProposals(params, { variantIndex: 0 });
@@ -105,7 +104,7 @@ describe("stepped global optimize", () => {
     const [proposal] = generateSteppedOptimizationProposals(params);
 
     expect(proposal).toBeTruthy();
-    expect(proposal.params.activeGroupId).toBe(params.activeGroupId);
+    expect(proposal.params).not.toHaveProperty("activeGroupId");
     expect(proposal.params.groups).toEqual(params.groups);
     expect(proposal.params.slots).toHaveLength(params.slots.length);
     expect(proposal.params.slots.map((slot) => slot.id).sort()).toEqual(

@@ -1,12 +1,23 @@
 "use client";
 
-import { useCallback, useMemo, useState, type ReactNode } from "react";
-import { DraftManagerDialog } from "@/components/DraftManagerDialog";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import type { DraftManagerDialogProps } from "@/components/DraftManagerDialog";
 import { useModeDrafts } from "@/hooks/useModeDrafts";
 import type { UseModeDraftsOptions } from "@/hooks/useModeDrafts";
 import type { PreparedDraftLoad } from "@/hooks/useModeDrafts";
 import type { AnyDraftListItem, DraftMode } from "@/lib/local-drafts";
+
+const DraftManagerDialog = lazy(async () => {
+  const importedModule = await import("@/components/DraftManagerDialog");
+  return { default: importedModule.DraftManagerDialog<AnyDraftListItem> };
+});
 
 function renderDraftSummary(item: AnyDraftListItem): ReactNode {
   switch (item.mode) {
@@ -91,15 +102,10 @@ export function useWorkspaceDraftSupport<M extends DraftMode>(
     exportDraftItem,
   } = useModeDrafts(options);
 
-  const [draftListVersion, setDraftListVersion] = useState(0);
+  const [draftList, setDraftList] = useState<AnyDraftListItem[]>([]);
   const refreshDraftList = useCallback(() => {
-    setDraftListVersion((version) => version + 1);
-  }, []);
-
-  const draftList = useMemo(() => {
-    void draftListVersion;
-    return getDraftList() as unknown as AnyDraftListItem[];
-  }, [draftListVersion, getDraftList]);
+    setDraftList(getDraftList() as unknown as AnyDraftListItem[]);
+  }, [getDraftList]);
 
   const openDraftDialog = useCallback(() => {
     refreshDraftList();
@@ -175,8 +181,12 @@ export function useWorkspaceDraftSupport<M extends DraftMode>(
   );
 
   const overlays = useMemo(
-    () => <DraftManagerDialog {...draftDialogProps} />,
-    [draftDialogProps],
+    () => isDialogOpen ? (
+      <Suspense fallback={null}>
+        <DraftManagerDialog {...draftDialogProps} />
+      </Suspense>
+    ) : null,
+    [draftDialogProps, isDialogOpen],
   );
 
   return {

@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { browserDownloadPort } from "@/lib/download-port";
 import { useToast } from "@/hooks/useToast";
 import type {
@@ -88,9 +94,7 @@ export function useSteppedCadSplitOrchestration(
     exportSplitParts,
   } = options;
   const { toast } = useToast();
-  const paramsRef = useRef(params);
   const revisionRef = useRef(transactionRevision);
-  const contouredFootprintStateRef = useRef(contouredFootprintState);
   const previousRevisionRef = useRef(transactionRevision);
   const splitPreviewPartsRef =
     useRef<SteppedSplitPreviewPart[] | null>(null);
@@ -100,10 +104,6 @@ export function useSteppedCadSplitOrchestration(
   >(null);
   const [isGeneratingSplitPreview, setIsGeneratingSplitPreview] =
     useState(false);
-  paramsRef.current = params;
-  revisionRef.current = transactionRevision;
-  contouredFootprintStateRef.current = contouredFootprintState;
-
   const updateSplitParam = useCallback(<K extends SteppedSplitParamKey>(
     key: K,
     value: SteppedLayoutParams[K],
@@ -156,7 +156,8 @@ export function useSteppedCadSplitOrchestration(
     [],
   );
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    revisionRef.current = transactionRevision;
     if (previousRevisionRef.current !== transactionRevision) {
       previousRevisionRef.current = transactionRevision;
       clearSplitPreview();
@@ -164,7 +165,7 @@ export function useSteppedCadSplitOrchestration(
   }, [clearSplitPreview, transactionRevision]);
 
   const handleGenerateSplitPreview = useCallback(async () => {
-    if (!paramsRef.current.enableSplitAssembly) {
+    if (!params.enableSplitAssembly) {
       toast("error", "请先启用分件与装配");
       return;
     }
@@ -174,11 +175,11 @@ export function useSteppedCadSplitOrchestration(
       return;
     }
 
-    const currentParams = paramsRef.current;
-    const generationRevision = revisionRef.current;
+    const currentParams = params;
+    const generationRevision = transactionRevision;
     const requestId = splitPreviewRequestRef.current + 1;
     splitPreviewRequestRef.current = requestId;
-    const currentState = contouredFootprintStateRef.current;
+    const currentState = contouredFootprintState;
     const blockingReason =
       (currentState.status === "failed" ? currentState.error.message : null) ??
       getBaseHoleFitBlockingReason(
@@ -221,10 +222,17 @@ export function useSteppedCadSplitOrchestration(
         setIsGeneratingSplitPreview(false);
       }
     }
-  }, [generateSplitPreview, replaceSplitPreviewParts, toast]);
+  }, [
+    contouredFootprintState,
+    generateSplitPreview,
+    params,
+    replaceSplitPreviewParts,
+    toast,
+    transactionRevision,
+  ]);
 
   const handleExportSplitParts = useCallback(async () => {
-    if (!paramsRef.current.enableSplitAssembly) {
+    if (!params.enableSplitAssembly) {
       toast("error", "请先启用分件与装配");
       return;
     }
@@ -234,8 +242,8 @@ export function useSteppedCadSplitOrchestration(
       return;
     }
 
-    const currentParams = paramsRef.current;
-    const currentState = contouredFootprintStateRef.current;
+    const currentParams = params;
+    const currentState = contouredFootprintState;
     const blockingReason =
       (currentState.status === "failed" ? currentState.error.message : null) ??
       getBaseHoleFitBlockingReason(
@@ -267,7 +275,7 @@ export function useSteppedCadSplitOrchestration(
         `分件导出失败：${err instanceof Error ? err.message : "未知错误"}`,
       );
     }
-  }, [exportSplitParts, toast]);
+  }, [contouredFootprintState, exportSplitParts, params, toast]);
 
   return {
     splitPreviewParts,

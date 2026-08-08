@@ -425,19 +425,27 @@ function SteppedPanelBody({
         handleResetPerfSamples,
         formatAreaDelta,
     } = state;
-    const resolvedBaseHoleSizes = getResolvedMagneticBaseHolePresets(
-        "stepped",
-        params,
+    const resolvedBaseHoleSizes = useMemo(
+        () => getResolvedMagneticBaseHolePresets("stepped", params),
+        [params],
     );
-    const selectedSlot = params.slots.find((slot) => slot.id === selectedSlotIds[0]);
-    const selectedSlotMatch = selectedSlot ? {
-        label: `槽位 ${params.slots.indexOf(selectedSlot) + 1}`,
-        presetKey: resolveMagneticBaseHolePreset(
-            selectedSlot.shape,
-            selectedSlot.width,
-            selectedSlot.height,
-        ),
-    } : null;
+    const selectedSlotId = selectedSlotIds[0];
+    const selectedSlotMatch = useMemo(() => {
+        const selectedSlotIndex = params.slots.findIndex(
+            (slot) => slot.id === selectedSlotId,
+        );
+        if (selectedSlotIndex < 0) return null;
+
+        const selectedSlot = params.slots[selectedSlotIndex];
+        return {
+            label: `槽位 ${selectedSlotIndex + 1}`,
+            presetKey: resolveMagneticBaseHolePreset(
+                selectedSlot.shape,
+                selectedSlot.width,
+                selectedSlot.height,
+            ),
+        };
+    }, [params.slots, selectedSlotId]);
     const continuousParam = <K extends keyof SteppedLayoutParams>(
         key: K,
     ) => continuousSliderProps(
@@ -553,21 +561,35 @@ function SteppedPanelBody({
                                 return (
                                     <div
                                         key={group.id}
-                                        onClick={() => onSetActiveGroup(group.id)}
-                                        className={`rounded cursor-pointer transition-all duration-150 border ${isActive ? "bg-[#1c1a16]" : "border-transparent hover:bg-[#1c1a16]/50"
+                                        className={`rounded transition-colors duration-150 border ${isActive ? "bg-[#1c1a16]" : "border-transparent hover:bg-[#1c1a16]/50"
                                             }`}
                                         style={isActive ? { borderColor: group.color + "50" } : {}}
                                     >
                                         {/* 分组行顶部 */}
                                         <div className="flex items-center gap-2 px-2 pt-2 pb-1">
-                                            <div
-                                                className={`w-2 h-2 rounded-full shrink-0 transition-opacity ${isActive ? "" : "opacity-25"}`}
-                                                style={{ background: group.color }}
-                                            />
-                                            <div className="w-3 h-3 rounded-sm shrink-0" style={{ background: group.color }} />
-                                            <span className="text-xs font-medium text-foreground/90 flex-1 truncate">{group.name}</span>
-                                            <span className="text-[10px] text-muted-foreground shrink-0">{groupSlotCount} 个凹槽</span>
                                             <button
+                                                type="button"
+                                                aria-label={`选择分组：${group.name}`}
+                                                aria-pressed={isActive}
+                                                onClick={() => onSetActiveGroup(group.id)}
+                                                className="flex min-w-0 flex-1 items-center gap-2 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+                                            >
+                                                <span
+                                                    aria-hidden="true"
+                                                    className={`w-2 h-2 rounded-full shrink-0 transition-opacity ${isActive ? "" : "opacity-25"}`}
+                                                    style={{ background: group.color }}
+                                                />
+                                                <span
+                                                    aria-hidden="true"
+                                                    className="w-3 h-3 rounded-sm shrink-0"
+                                                    style={{ background: group.color }}
+                                                />
+                                                <span className="text-xs font-medium text-foreground/90 flex-1 truncate">{group.name}</span>
+                                                <span className="text-[10px] text-muted-foreground shrink-0">{groupSlotCount} 个凹槽</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                aria-label="按住仅查看当前组"
                                                 onClick={(e) => e.stopPropagation()}
                                                 onPointerDown={(e) => {
                                                     e.stopPropagation();
@@ -607,34 +629,40 @@ function SteppedPanelBody({
                                                     toggleLockedPreviewGroup(group.id);
                                                 }}
                                                 aria-pressed={isPreviewing}
-                                                className={`w-6 h-6 shrink-0 flex items-center justify-center rounded transition-colors ${isPreviewing ? "bg-[#2a2115] text-[#f0d8b8]" : "text-muted-foreground/50 hover:text-foreground hover:bg-[#1c1a16]"}`}
+                                                className={`w-6 h-6 shrink-0 flex items-center justify-center rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 ${isPreviewing ? "bg-[#2a2115] text-[#f0d8b8]" : "text-muted-foreground/50 hover:text-foreground hover:bg-[#1c1a16]"}`}
                                                 title="按住仅查看当前组"
                                             >
-                                                <Eye className="w-3.5 h-3.5" />
+                                                <Eye aria-hidden="true" className="w-3.5 h-3.5" />
                                             </button>
                                             <button
+                                                type="button"
+                                                aria-label="上移"
                                                 onClick={(e) => { e.stopPropagation(); onReorderGroups(groupIndex, groupIndex - 1); }}
                                                 disabled={groupIndex === 0}
-                                                className="w-5 h-5 shrink-0 flex items-center justify-center text-muted-foreground/40 hover:text-foreground disabled:opacity-20 disabled:cursor-not-allowed rounded transition-colors"
+                                                className="w-5 h-5 shrink-0 flex items-center justify-center text-muted-foreground/40 hover:text-foreground disabled:opacity-20 disabled:cursor-not-allowed rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
                                                 title="上移"
                                             >
-                                                <ChevronUp className="w-3 h-3" />
+                                                <ChevronUp aria-hidden="true" className="w-3 h-3" />
                                             </button>
                                             <button
+                                                type="button"
+                                                aria-label="下移"
                                                 onClick={(e) => { e.stopPropagation(); onReorderGroups(groupIndex, groupIndex + 1); }}
                                                 disabled={groupIndex === params.groups.length - 1}
-                                                className="w-5 h-5 shrink-0 flex items-center justify-center text-muted-foreground/40 hover:text-foreground disabled:opacity-20 disabled:cursor-not-allowed rounded transition-colors"
+                                                className="w-5 h-5 shrink-0 flex items-center justify-center text-muted-foreground/40 hover:text-foreground disabled:opacity-20 disabled:cursor-not-allowed rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
                                                 title="下移"
                                             >
-                                                <ChevronDown className="w-3 h-3" />
+                                                <ChevronDown aria-hidden="true" className="w-3 h-3" />
                                             </button>
                                             <button
+                                                type="button"
+                                                aria-label="删除组（同时删除组内所有凹槽）"
                                                 onClick={(e) => { e.stopPropagation(); onRemoveGroup(group.id); }}
                                                 disabled={params.groups.length <= 1}
-                                                className="w-5 h-5 shrink-0 flex items-center justify-center text-muted-foreground/40 hover:text-red-400 disabled:opacity-20 disabled:cursor-not-allowed rounded transition-colors"
+                                                className="w-5 h-5 shrink-0 flex items-center justify-center text-muted-foreground/40 hover:text-red-400 disabled:opacity-20 disabled:cursor-not-allowed rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
                                                 title="删除组（同时删除组内所有凹槽）"
                                             >
-                                                <Trash2 className="w-3 h-3" />
+                                                <Trash2 aria-hidden="true" className="w-3 h-3" />
                                             </button>
                                         </div>
                                         {/* 高度滑杆（仅激活组展开） */}

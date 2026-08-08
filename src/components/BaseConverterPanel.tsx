@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useId, useMemo, useState, type ReactNode } from "react";
 import {
   ArrowRightLeft,
   Library,
@@ -33,6 +33,8 @@ import {
   type PersonalBaseSpecification,
 } from "@/lib/personal-base-specifications";
 import { Button } from "@/components/ui/button";
+import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
+import { useToast } from "@/hooks/useToast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -113,15 +115,15 @@ function NumericField({
   value: number;
   onChange: (value: number) => void;
 }) {
+  const inputId = useId();
   return (
     <div className="space-y-1">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      <Input
-        aria-label={label}
-        type="number"
+      <Label htmlFor={inputId} className="text-xs text-muted-foreground">{label}</Label>
+      <DraftNumberInput
+        id={inputId}
         step="any"
         value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
+        onValueChange={onChange}
         className="h-8 bg-[#1c1a16] border-[#2e2a24] font-mono"
       />
     </div>
@@ -180,6 +182,7 @@ export default function BaseConverterPanel({
   isPreviewStale,
   volume,
 }: BaseConverterPanelProps) {
+  const { toast } = useToast();
   const [personalSpecifications, setPersonalSpecifications] = useState<
     PersonalBaseSpecification[]
   >(() => loadPersonalBaseSpecifications());
@@ -250,12 +253,20 @@ export default function BaseConverterPanel({
       : createPersonalSpecificationId("source");
     const geometry = customSourceSnapshot(sourceDraft, id);
     if (save) {
-      setPersonalSpecifications(savePersonalBaseSpecification({
-        id,
-        role: "source",
-        name: geometry.name,
-        geometry,
-      }));
+      try {
+        setPersonalSpecifications(savePersonalBaseSpecification({
+          id,
+          role: "source",
+          name: geometry.name,
+          geometry,
+        }));
+      } catch (error) {
+        toast(
+          "error",
+          `个人规格保存失败：${error instanceof Error ? error.message : "浏览器存储不可用"}`,
+        );
+        return;
+      }
       setEditingSourceId(null);
     }
     updateParams((previous) => ({
@@ -270,12 +281,20 @@ export default function BaseConverterPanel({
       : createPersonalSpecificationId("target");
     const geometry = customTargetSnapshot(targetDraft, id);
     if (save) {
-      setPersonalSpecifications(savePersonalBaseSpecification({
-        id,
-        role: "target",
-        name: geometry.name,
-        geometry,
-      }));
+      try {
+        setPersonalSpecifications(savePersonalBaseSpecification({
+          id,
+          role: "target",
+          name: geometry.name,
+          geometry,
+        }));
+      } catch (error) {
+        toast(
+          "error",
+          `个人规格保存失败：${error instanceof Error ? error.message : "浏览器存储不可用"}`,
+        );
+        return;
+      }
       setEditingTargetId(null);
     }
     updateParams((previous) => ({
@@ -285,7 +304,15 @@ export default function BaseConverterPanel({
     }));
   };
   const removePersonal = (id: string) => {
-    setPersonalSpecifications(deletePersonalBaseSpecification(id));
+    try {
+      setPersonalSpecifications(deletePersonalBaseSpecification(id));
+    } catch (error) {
+      toast(
+        "error",
+        `个人规格删除失败：${error instanceof Error ? error.message : "浏览器存储不可用"}`,
+      );
+      return;
+    }
     if (editingSourceId === id) setEditingSourceId(null);
     if (editingTargetId === id) setEditingTargetId(null);
   };
@@ -352,11 +379,11 @@ export default function BaseConverterPanel({
           >
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <Label className="text-sm text-muted-foreground">
+                <Label htmlFor="base-converter-source-standard" className="text-sm text-muted-foreground">
                   原底盘
                 </Label>
                 <Select value={params.sourceStandardId} onValueChange={selectSource}>
-                  <SelectTrigger className="bg-[#1c1a16] border-[#2e2a24]">
+                  <SelectTrigger id="base-converter-source-standard" className="bg-[#1c1a16] border-[#2e2a24]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-[#16140f] border-[#2e2a24]">
@@ -380,11 +407,11 @@ export default function BaseConverterPanel({
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-sm text-muted-foreground">
+                <Label htmlFor="base-converter-target-standard" className="text-sm text-muted-foreground">
                   目标圆形 / 椭圆底盘
                 </Label>
                 <Select value={params.targetStandardId} onValueChange={selectTarget}>
-                  <SelectTrigger className="bg-[#1c1a16] border-[#2e2a24]">
+                  <SelectTrigger id="base-converter-target-standard" className="bg-[#1c1a16] border-[#2e2a24]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-[#16140f] border-[#2e2a24]">

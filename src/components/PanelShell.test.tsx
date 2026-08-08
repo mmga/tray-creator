@@ -1,4 +1,3 @@
-import * as React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { Wrench } from "lucide-react";
@@ -16,14 +15,18 @@ describe("PanelShell", () => {
 });
 
 describe("SectionHeader", () => {
-  it("支持 Enter 和 Space 键折叠，并且展开态不设置固定最大高度", () => {
-    render(<SectionHeader icon={Wrench} title="制造结构" collapsible defaultOpen><div data-testid="long-content">长内容</div></SectionHeader>);
+  it("使用原生按钮折叠，并从键盘与辅助技术隐藏折叠内容", () => {
+    render(<SectionHeader icon={Wrench} title="制造结构" collapsible defaultOpen><div data-testid="long-content"><button type="button">内部操作</button></div></SectionHeader>);
     const trigger = screen.getByRole("button", { name: /制造结构/ });
+    expect(trigger.tagName).toBe("BUTTON");
     expect(trigger).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByTestId("long-content").parentElement).not.toHaveClass("max-h-500");
-    fireEvent.keyDown(trigger, { key: "Enter" });
+    fireEvent.click(trigger);
     expect(trigger).toHaveAttribute("aria-expanded", "false");
-    fireEvent.keyDown(trigger, { key: " " });
+    expect(screen.getByTestId("long-content").parentElement?.parentElement).toHaveAttribute("inert");
+    expect(screen.queryByRole("button", { name: "内部操作" })).not.toBeInTheDocument();
+    fireEvent.click(trigger);
     expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("button", { name: "内部操作" })).toBeInTheDocument();
   });
 });

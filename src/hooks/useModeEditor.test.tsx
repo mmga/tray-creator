@@ -228,4 +228,62 @@ describe("useModeEditor", () => {
     expect(viewports.custom.resetForSessionReplacement).toHaveBeenCalledTimes(1);
     expect(result.current.active.mode).toBe("custom");
   });
+
+  it("连续准备多个导入时只允许最新请求发布 Import Candidate", async () => {
+    let resolveFirstImport: ((value: unknown) => void) | undefined;
+    const firstImport = new Promise((resolve) => {
+      resolveFirstImport = resolve;
+    });
+    prepareParamImportMock
+      .mockReturnValueOnce(firstImport)
+      .mockResolvedValueOnce({
+        status: "ready",
+        candidate: {
+          fileName: "custom-latest.json",
+          mode: "custom",
+          snapshot: { mode: "custom", params: { trayWidth: 180 } },
+          report: { adjustments: [], retiredFields: [] },
+        },
+      });
+    const { result } = renderHook(() => useModeEditor("grid"));
+    let firstResultPromise: Promise<unknown> | undefined;
+
+    act(() => {
+      firstResultPromise = result.current.perform({
+        type: "request-param-import",
+        file: new File(["{}"], "grid-slow.json"),
+      });
+    });
+    await act(async () => {
+      expect(await result.current.perform({
+        type: "request-param-import",
+        file: new File(["{}"], "custom-latest.json"),
+      })).toEqual({ status: "awaiting-confirmation" });
+    });
+
+    let firstResult: unknown;
+    await act(async () => {
+      resolveFirstImport?.({
+        status: "ready",
+        candidate: {
+          fileName: "grid-slow.json",
+          mode: "grid",
+          snapshot: { mode: "grid", params: { rows: 9 } },
+          report: { adjustments: [], retiredFields: [] },
+        },
+      });
+      firstResult = await firstResultPromise;
+    });
+    expect(firstResult).toEqual({ status: "cancelled" });
+
+    await act(async () => {
+      expect(await result.current.perform({
+        type: "confirm-replacement",
+      })).toEqual({ status: "completed" });
+    });
+    expect(
+      workspaces.custom.replacementTarget.commitImport,
+    ).toHaveBeenCalledWith({ trayWidth: 180 });
+    expect(workspaces.grid.replacementTarget.commitImport).not.toHaveBeenCalled();
+  });
 });

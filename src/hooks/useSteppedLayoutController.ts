@@ -121,8 +121,8 @@ export interface UseSteppedLayoutControllerReturn {
   clearOptimizationProposals: () => void;
   pauseOutlinePreview: () => void;
   resumeOutlinePreview: () => void;
-  handleGenerate: () => void;
-  handleExportSTL: () => void;
+  handleGenerate: () => Promise<void>;
+  handleExportSTL: () => Promise<void>;
   outlinePreview: GroupOutlinePreview[] | null;
   contouredFootprintState: ContouredFootprintState<ConstructedSteppedContouredFootprints>;
   workingContouredFootprintState: ContouredFootprintState<ConstructedSteppedContouredFootprints>;
@@ -172,14 +172,11 @@ export function useSteppedLayoutController<
     ContouredFootprintState<ConstructedSteppedContouredFootprints>
   >({ status: "inactive" });
 
-  const optimizationProposalsRef = useRef(optimizationProposals);
   const optimizationRequestIdRef = useRef(0);
   const optimizationVariantRef = useRef(0);
   const optimizationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
-  optimizationProposalsRef.current = optimizationProposals;
-
   const cancelPendingOptimization = useCallback(() => {
     optimizationRequestIdRef.current += 1;
     if (optimizationTimeoutRef.current !== null) {
@@ -196,10 +193,7 @@ export function useSteppedLayoutController<
 
   const normalizeParams = useCallback(
     (nextParams: SteppedLayoutParams) => {
-      const normalized = applySteppedBaseHoleDerivedFields(nextParams);
-      const persisted = { ...normalized };
-      delete persisted.activeGroupId;
-      return persisted as SteppedLayoutParams;
+      return applySteppedBaseHoleDerivedFields(nextParams);
     },
     [],
   );
@@ -235,11 +229,17 @@ export function useSteppedLayoutController<
     handleExportSTL: exportSTL,
   } = useEditableParams<
     SteppedLayoutParams,
-    ModeParamSnapshot<M>
+    ModeParamSnapshot<M>,
+    SteppedLayoutExtents
   >({
     initialState: () => normalizeParams(STEPPED_LAYOUT_DEFAULTS),
     captureSnapshot: (currentParams) =>
       captureModeParamSnapshot(mode, currentParams),
+    captureExportContext: (snapshot) =>
+      calculateSteppedEffectiveDimensions(
+        snapshot.params,
+        contouredFootprintStateRef.current,
+      ),
     fingerprintSnapshot: createModelGeometryFingerprint,
     generatePreview: async (snapshot) => {
       const workerPort = trayWorkerService as unknown as TWorkerPort | null;
@@ -248,7 +248,7 @@ export function useSteppedLayoutController<
       }
       return generatePreviewForMode(snapshot.params, workerPort);
     },
-    exportModel: async (snapshot, geometry) => {
+    exportModel: async (snapshot, geometry, effectiveDimensions) => {
       const workerPort = trayWorkerService as unknown as TWorkerPort | null;
       if (!workerPort) {
         return;
@@ -258,10 +258,7 @@ export function useSteppedLayoutController<
         geometry,
         workerPort,
         browserDownloadPort,
-        calculateSteppedEffectiveDimensions(
-          snapshot.params,
-          contouredFootprintStateRef.current,
-        ),
+        effectiveDimensions,
       );
     },
     validateSnapshot: () => null,
@@ -552,7 +549,7 @@ export function useSteppedLayoutController<
 
   const applyOptimizationProposal = useCallback(
     (proposalId: SteppedOptimizationProposal["id"]) => {
-      const proposal = optimizationProposalsRef.current.find(
+      const proposal = optimizationProposals.find(
         (entry) => entry.id === proposalId,
       );
       if (!proposal) {
@@ -561,7 +558,7 @@ export function useSteppedLayoutController<
 
       edit({ type: "params.replace", params: proposal.params });
     },
-    [edit],
+    [edit, optimizationProposals],
   );
 
   const beginContinuousEdit = useCallback(() => {

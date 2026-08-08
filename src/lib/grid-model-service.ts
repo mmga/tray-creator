@@ -1,10 +1,10 @@
 import type * as THREE from "three";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
-import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
+import { loadThreeGeometry } from "@/lib/three-geometry-loader";
 import type { ModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import { exportModelArtifactBundle } from "@/lib/model-artifact-bundle";
 import type { DownloadPort, GridWorkerPort } from "@/lib/model-ports";
-import { generateSTLFilename } from "@/lib/stl-export";
+import { generateSTLFilename } from "@/lib/model-filenames";
 import type { TrayParams } from "@/types/tray";
 import {
   getGridSlotGeometry,
@@ -22,10 +22,11 @@ export async function generateGridPreview(
   workerPort: GridWorkerPort,
 ): Promise<GridPreviewResult> {
   const result = await workerPort.generateGrid(params);
+  const threeGeometry = await loadThreeGeometry(result.geometry);
 
   return {
     geometry: result.geometry,
-    threeGeometry: jscadToThreeGeometry(result.geometry),
+    threeGeometry,
     volume: result.volume,
   };
 }

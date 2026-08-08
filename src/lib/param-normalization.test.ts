@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
+import { BASE_CONVERTER_DEFAULTS } from "@/lib/base-converter-config";
 import { getBaseHoleMinBaseThickness, MAX_BUILD_SIZE } from "@/lib/config";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
@@ -10,11 +11,31 @@ import {
   normalizeParamsForMode,
 } from "@/lib/param-normalization";
 import type {
+  BaseConverterParams,
   CustomLayoutParams,
   SimpleSteppedLayoutParams,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import type { TrayParams } from "@/types/tray";
+
+describe("Param Normalization Catalog types", () => {
+  it("keeps Mode and normalized params paired", () => {
+    expectTypeOf(normalizeParamsForMode("grid", { ...DEFAULT_TRAY_PARAMS }))
+      .toEqualTypeOf<TrayParams>();
+    expectTypeOf(normalizeParamsForMode("custom", { ...CUSTOM_LAYOUT_DEFAULTS }))
+      .toEqualTypeOf<CustomLayoutParams>();
+    expectTypeOf(normalizeParamsForMode("stepped", { ...STEPPED_LAYOUT_DEFAULTS }))
+      .toEqualTypeOf<SteppedLayoutParams>();
+    expectTypeOf(normalizeParamsForMode("base-converter", {
+      ...BASE_CONVERTER_DEFAULTS,
+    })).toEqualTypeOf<BaseConverterParams>();
+
+    if (false) {
+      // @ts-expect-error grid Mode 不能消费 custom 参数。
+      normalizeParamsForMode("grid", CUSTOM_LAYOUT_DEFAULTS);
+    }
+  });
+});
 
 describe("param normalization", () => {
   it("recognizes legacy 100mm slots across all modes", () => {
@@ -63,7 +84,7 @@ describe("param normalization", () => {
           width: 100,
           height: 100,
           rotation: 0,
-          groupId: STEPPED_LAYOUT_DEFAULTS.activeGroupId,
+          groupId: STEPPED_LAYOUT_DEFAULTS.groups[0].id,
         },
       ],
     } as unknown as SteppedLayoutParams) as SteppedLayoutParams;
@@ -164,7 +185,7 @@ describe("param normalization", () => {
     const migrated = migrateCustomParamsToStepped(customParams) as SteppedLayoutParams;
 
     expect(migrated.groups).toHaveLength(1);
-    expect(migrated.activeGroupId).toBe(migrated.groups[0].id);
+    expect(migrated).not.toHaveProperty("activeGroupId");
     expect(migrated.slots[0]).toMatchObject({
       id: "custom-slot",
       shape: "circle",
@@ -311,7 +332,7 @@ describe("param normalization", () => {
     } as unknown as SteppedLayoutParams) as SteppedLayoutParams;
 
     expect(normalized.groups).toHaveLength(1);
-    expect(normalized.activeGroupId).toBe(normalized.groups[0].id);
+    expect(normalized).not.toHaveProperty("activeGroupId");
     expect(normalized.groups[0]).toMatchObject({
       bottomHeight: 8,
       groupSmoothingRadius: 25,

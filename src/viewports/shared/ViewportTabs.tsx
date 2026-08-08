@@ -6,10 +6,14 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 const TrayViewer = dynamic(() => import("@/components/TrayViewer"), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full min-h-[400px] flex items-center justify-center bg-[#0a0908]">
+    <div
+      role="status"
+      aria-live="polite"
+      className="w-full h-full min-h-0 flex items-center justify-center bg-[#0a0908] md:min-h-[400px]"
+    >
       <div className="flex flex-col items-center gap-3 text-muted-foreground">
-        <div className="w-8 h-8 border-2 border-muted-foreground/40 border-t-primary rounded-full animate-spin" />
-        <p className="text-sm font-mono tracking-wider">LOADING FORGE...</p>
+        <div aria-hidden="true" className="w-8 h-8 border-2 border-muted-foreground/40 border-t-primary rounded-full animate-spin" />
+        <p className="text-sm font-mono tracking-wider">正在加载锻造视图…</p>
       </div>
     </div>
   ),
@@ -47,6 +51,7 @@ export function ViewportTabs({
   return (
     <Tabs
       value={rightView}
+      activationMode="manual"
       onValueChange={(value) => {
         const nextView = value as "2d" | "3d";
         onRightViewChange(nextView);
@@ -57,15 +62,7 @@ export function ViewportTabs({
       className="flex-1 flex flex-col relative"
     >
       <div className="absolute top-3 left-5 z-20">
-        <TabsList
-          className="bg-[#1c1a16] border border-[#2e2a24]"
-          onKeyDownCapture={(event) => {
-            if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-              event.preventDefault();
-              event.stopPropagation();
-            }
-          }}
-        >
+        <TabsList className="bg-[#1c1a16] border border-[#2e2a24]">
           <TabsTrigger value="2d" className="text-xs">
             2D 编辑
           </TabsTrigger>
@@ -76,6 +73,8 @@ export function ViewportTabs({
       </div>
 
       <div
+        aria-hidden={rightView === "2d" ? undefined : "true"}
+        inert={rightView === "2d" ? undefined : true}
         className={`absolute inset-0 m-0 p-0 transition-opacity duration-150 ${
           rightView === "2d" ? "opacity-100" : "pointer-events-none opacity-0"
         }`}

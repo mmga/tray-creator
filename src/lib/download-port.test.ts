@@ -25,4 +25,19 @@ describe("browserDownloadPort", () => {
     expect(link.href).toBe("blob:mock");
     expect(clickSpy).toHaveBeenCalledTimes(1);
   });
+
+  it("cleans up the temporary link and blob URL when clicking fails", () => {
+    const blob = new Blob(["hello"], { type: "text/plain" });
+    const removeChildSpy = vi.spyOn(document.body, "removeChild");
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {
+      throw new Error("download blocked");
+    });
+
+    expect(() =>
+      browserDownloadPort.downloadBlob(blob, "fixture.txt"),
+    ).toThrow("download blocked");
+
+    expect(removeChildSpy).toHaveBeenCalledTimes(1);
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:mock");
+  });
 });

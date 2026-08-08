@@ -54,11 +54,13 @@ interface UseBaseConverterReturn {
 export function useBaseConverter(): UseBaseConverterReturn {
   const model = useEditableParams<
     BaseConverterParams,
-    ModeParamSnapshot<"base-converter">
+    ModeParamSnapshot<"base-converter">,
+    undefined
   >({
     initialState: BASE_CONVERTER_DEFAULTS,
     captureSnapshot: (params) =>
       captureModeParamSnapshot("base-converter", params),
+    captureExportContext: () => undefined,
     fingerprintSnapshot: createModelGeometryFingerprint,
     normalize: normalizeBaseConverterParams,
     validateSnapshot: (snapshot) =>

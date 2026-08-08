@@ -21,6 +21,26 @@ interface UseCanvasKeyboardOptions {
   setShowHints: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
+const INTERACTIVE_TARGET_SELECTOR = [
+  "input",
+  "textarea",
+  "select",
+  "button",
+  "a[href]",
+  "summary",
+  "[role='button']",
+  "[role='slider']",
+  "[role='switch']",
+  "[role='tab']",
+].join(",");
+
+function isInteractiveKeyboardTarget(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && (
+    target.isContentEditable
+    || target.closest(INTERACTIVE_TARGET_SELECTOR) !== null
+  );
+}
+
 /**
  * 画布键盘事件 hook
  *
@@ -45,20 +65,26 @@ export function useCanvasKeyboard({
   setShowHints,
 }: UseCanvasKeyboardOptions) {
   const clipboardRef = useRef<string[]>([]);
+  const spaceShortcutActiveRef = useRef(false);
+
+  const releaseSpaceShortcut = useEffectEvent(() => {
+    if (!spaceShortcutActiveRef.current) return;
+    spaceShortcutActiveRef.current = false;
+    setIsSpacePressed(false);
+    setIsPanning(false);
+  });
 
   const handleKeyDown = useEffectEvent((event: KeyboardEvent) => {
-    const tag = (event.target as HTMLElement)?.tagName;
-    const isEditable =
-      tag === "INPUT" ||
-      tag === "TEXTAREA" ||
-      tag === "SELECT" ||
-      (event.target as HTMLElement)?.isContentEditable;
-    if (isEditable) {
+    if (isInteractiveKeyboardTarget(event.target)) {
       return;
     }
 
-    if (event.code === "Space" && !event.repeat) {
-      setIsSpacePressed(true);
+    if (event.code === "Space") {
+      event.preventDefault();
+      if (!event.repeat) {
+        spaceShortcutActiveRef.current = true;
+        setIsSpacePressed(true);
+      }
     }
 
     const arrowCodes = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
@@ -92,6 +118,7 @@ export function useCanvasKeyboard({
 
     if ((event.ctrlKey || event.metaKey) && event.key === "c") {
       if (selectedIdsRef.current.size > 0) {
+        event.preventDefault();
         clipboardRef.current = Array.from(selectedIdsRef.current);
       }
       return;
@@ -99,6 +126,7 @@ export function useCanvasKeyboard({
 
     if ((event.ctrlKey || event.metaKey) && event.key === "v") {
       if (clipboardRef.current.length > 0 && onDuplicateSlots) {
+        event.preventDefault();
         const newIds = onDuplicateSlots(clipboardRef.current);
         if (newIds) {
           setSelectedIds(new Set(newIds));
@@ -132,9 +160,9 @@ export function useCanvasKeyboard({
   });
 
   const handleKeyUp = useEffectEvent((event: KeyboardEvent) => {
-    if (event.code === "Space") {
-      setIsSpacePressed(false);
-      setIsPanning(false);
+    if (event.code === "Space" && spaceShortcutActiveRef.current) {
+      event.preventDefault();
+      releaseSpaceShortcut();
     }
   });
 
@@ -149,12 +177,18 @@ export function useCanvasKeyboard({
     const onKeyUp = (event: KeyboardEvent) => {
       handleKeyUp(event);
     };
+    const onBlur = () => {
+      releaseSpaceShortcut();
+    };
 
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", onBlur);
     return () => {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", onBlur);
+      releaseSpaceShortcut();
     };
   }, [enabled]);
 }

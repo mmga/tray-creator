@@ -27,6 +27,7 @@ function dispatchKeyboardEvent(
     ...init,
   });
   target.dispatchEvent(event);
+  return event;
 }
 
 describe("useCanvasKeyboard", () => {
@@ -66,7 +67,7 @@ describe("useCanvasKeyboard", () => {
     } as React.RefObject<FreeSlot[]>;
   });
 
-  it("moves selected slots with arrow keys and ignores editable targets", () => {
+  it("moves selected slots with arrow keys and ignores interactive targets", () => {
     renderHook(() =>
       useCanvasKeyboard({
         selectedIdsRef,
@@ -102,6 +103,19 @@ describe("useCanvasKeyboard", () => {
     });
 
     expect(onUpdateSlots).toHaveBeenCalledTimes(1);
+
+    const button = document.createElement("button");
+    document.body.appendChild(button);
+
+    act(() => {
+      dispatchKeyboardEvent("keydown", { code: "ArrowLeft" }, button);
+      dispatchKeyboardEvent("keydown", { code: "Delete" }, button);
+    });
+
+    expect(onUpdateSlots).toHaveBeenCalledTimes(1);
+    expect(onRemoveSlot).not.toHaveBeenCalled();
+    input.remove();
+    button.remove();
   });
 
   it("routes delete, duplicate, undo, escape, and hint toggles through the expected handlers", () => {
@@ -169,21 +183,70 @@ describe("useCanvasKeyboard", () => {
       },
     );
 
+    let keyDownEvent!: KeyboardEvent;
+    let keyUpEvent!: KeyboardEvent;
     act(() => {
-      dispatchKeyboardEvent("keydown", { code: "Space" });
-      dispatchKeyboardEvent("keyup", { code: "Space" });
+      keyDownEvent = dispatchKeyboardEvent("keydown", { code: "Space" });
+      keyUpEvent = dispatchKeyboardEvent("keyup", { code: "Space" });
     });
 
     expect(setIsSpacePressed).toHaveBeenNthCalledWith(1, true);
     expect(setIsSpacePressed).toHaveBeenNthCalledWith(2, false);
     expect(setIsPanning).toHaveBeenCalledWith(false);
+    expect(keyDownEvent.defaultPrevented).toBe(true);
+    expect(keyUpEvent.defaultPrevented).toBe(true);
 
+    act(() => {
+      dispatchKeyboardEvent("keydown", { code: "Space" });
+      window.dispatchEvent(new Event("blur"));
+    });
+
+    expect(setIsSpacePressed).toHaveBeenNthCalledWith(3, true);
+    expect(setIsSpacePressed).toHaveBeenNthCalledWith(4, false);
+    expect(setIsPanning).toHaveBeenCalledTimes(2);
+
+    act(() => {
+      dispatchKeyboardEvent("keydown", { code: "Space" });
+    });
     rerender({ enabled: false });
+
+    expect(setIsSpacePressed).toHaveBeenNthCalledWith(5, true);
+    expect(setIsSpacePressed).toHaveBeenNthCalledWith(6, false);
+    expect(setIsPanning).toHaveBeenCalledTimes(3);
 
     act(() => {
       dispatchKeyboardEvent("keydown", { code: "ArrowUp" });
     });
 
     expect(onUpdateSlot).not.toHaveBeenCalled();
+  });
+
+  it("prevents browser copy and paste only when handling selected slots", () => {
+    onDuplicateSlots.mockReturnValue(["copy-1"]);
+    renderHook(() =>
+      useCanvasKeyboard({
+        selectedIdsRef,
+        slotsRef,
+        onUpdateSlot,
+        onRemoveSlot,
+        onDuplicateSlots,
+        setSelectedIds,
+        setIsRotating,
+        setIsSpacePressed,
+        setIsPanning,
+        setShowHints,
+      }),
+    );
+
+    let copyEvent!: KeyboardEvent;
+    let pasteEvent!: KeyboardEvent;
+    act(() => {
+      copyEvent = dispatchKeyboardEvent("keydown", { key: "c", ctrlKey: true });
+      pasteEvent = dispatchKeyboardEvent("keydown", { key: "v", ctrlKey: true });
+    });
+
+    expect(copyEvent.defaultPrevented).toBe(true);
+    expect(pasteEvent.defaultPrevented).toBe(true);
+    expect(onDuplicateSlots).toHaveBeenCalledWith(["slot-1", "slot-2"]);
   });
 });

@@ -29,15 +29,9 @@ export function captureModeParamSnapshot<M extends AppMode>(
   mode: M,
   params: ParamsByMode[M],
 ): ModeParamSnapshot<M> {
-  const copiedParams = structuredClone(params) as ParamsByMode[M] & {
-    activeGroupId?: string;
-  };
-  if (mode === "stepped") {
-    delete copiedParams.activeGroupId;
-  }
   return {
     mode,
-    params: copiedParams,
+    params: structuredClone(params),
   };
 }
 

@@ -257,7 +257,7 @@ function SteppedLayoutPanel(
     onUpdateGroupSplitPartTarget = vi.fn(),
     ...rest
   } = props;
-  const requestedActiveGroupId = rest.activeGroupId ?? rest.params.activeGroupId;
+  const requestedActiveGroupId = rest.activeGroupId;
   const activeGroupId = rest.params.groups.some(
     (group) => group.id === requestedActiveGroupId,
   )
@@ -313,7 +313,6 @@ function createSteppedParams(overrides?: Partial<SteppedLayoutParams>) {
         groupDisconnectDistance: 6,
       },
     ],
-    activeGroupId: "group-1",
     ...overrides,
   };
 }
@@ -1067,7 +1066,7 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
       />,
     );
 
-    fireEvent.click(screen.getAllByText("组 2")[0]!);
+    fireEvent.click(screen.getByRole("button", { name: "选择分组：组 2" }));
     fireEvent.click(
       screen.getByRole("switch", { name: "组 1 平滑半径独立设置" }),
     );
@@ -1163,8 +1162,6 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
     fireEvent.click(
       screen.getByRole("button", { name: "设置圆柱高度:10" }),
     );
-    expect(onSetActiveGroup).toHaveBeenCalledWith("group-1");
-    onSetActiveGroup.mockClear();
     fireEvent.click(
       screen.getByRole("switch", { name: "组 1 平滑半径独立设置" }),
     );
@@ -1296,7 +1293,6 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
     render(
       <SteppedLayoutPanel
         params={createSteppedParams({
-          activeGroupId: "group-2",
           spacing: 5,
           holeDepth: 3,
           splitGrooveDepth: 2,
@@ -1304,6 +1300,7 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
           smoothingRadius: 14,
           disconnectDistance: 2,
         })}
+        activeGroupId="group-2"
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}
         updateParam={updateParam}
@@ -1689,7 +1686,6 @@ describe("SteppedLayoutPanel", { timeout: 15000 }, () => {
           ...nextParams,
           slots: [],
           groups: [nextParams.groups[0]!],
-          activeGroupId: "group-1",
         }}
         effectiveDimensions={{ width: 120, depth: 140 }}
         isPreviewStale={false}

@@ -10,7 +10,7 @@ import type {
 import {
   type SteppedLayoutExtents,
 } from "@/lib/stepped-layout-math";
-import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
+import { loadThreeGeometry } from "@/lib/three-geometry-loader";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 
 export interface SteppedPreviewResult {
@@ -29,10 +29,11 @@ export async function generateSteppedPreview(
   workerPort: SteppedWorkerPort,
 ): Promise<SteppedPreviewResult> {
   const result = await workerPort.generateStepped(params);
+  const threeGeometry = await loadThreeGeometry(result.geometry);
 
   return {
     geometry: result.geometry,
-    threeGeometry: jscadToThreeGeometry(result.geometry),
+    threeGeometry,
     volume: result.volume,
   };
 }
@@ -77,10 +78,10 @@ export async function generateSteppedSplitPreview(
 ): Promise<SteppedSplitPreviewPart[]> {
   const { parts } = await workerPort.generateSteppedSplitParts(params);
 
-  return parts.map(({ geometry, ...part }) => ({
+  return Promise.all(parts.map(async ({ geometry, ...part }) => ({
     ...part,
-    threeGeometry: jscadToThreeGeometry(geometry),
-  }));
+    threeGeometry: await loadThreeGeometry(geometry),
+  })));
 }
 
 export function getSteppedSplitBaseFilename(

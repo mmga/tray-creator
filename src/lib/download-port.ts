@@ -6,9 +6,16 @@ export const browserDownloadPort: DownloadPort = {
     const link = document.createElement("a");
     link.href = url;
     link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    let appended = false;
+    try {
+      document.body.appendChild(link);
+      appended = true;
+      link.click();
+    } finally {
+      if (appended && link.parentNode === document.body) {
+        document.body.removeChild(link);
+      }
+      URL.revokeObjectURL(url);
+    }
   },
 };

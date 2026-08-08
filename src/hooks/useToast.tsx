@@ -1,6 +1,14 @@
 "use client";
 
-import React, { createContext, useCallback, useContext, useState, useRef } from "react";
+import React, {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 
 type ToastType = "success" | "error" | "info";
 
@@ -10,43 +18,61 @@ interface ToastItem {
     message: string;
 }
 
-interface ToastContextValue {
-    toasts: ToastItem[];
+interface ToastActions {
     toast: (type: ToastType, message: string) => void;
     dismiss: (id: string) => void;
 }
 
-const ToastContext = createContext<ToastContextValue | null>(null);
+const ToastStateContext = createContext<ToastItem[] | null>(null);
+const ToastActionsContext = createContext<ToastActions | null>(null);
 
 const TOAST_DURATION = 4000;
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
     const [toasts, setToasts] = useState<ToastItem[]>([]);
     const idCounter = useRef(0);
+    const timersRef = useRef(new Map<string, number>());
 
     const dismiss = useCallback((id: string) => {
+        const timer = timersRef.current.get(id);
+        if (timer !== undefined) {
+            window.clearTimeout(timer);
+            timersRef.current.delete(id);
+        }
         setToasts((prev) => prev.filter((t) => t.id !== id));
     }, []);
+
+    useEffect(
+        () => () => {
+            timersRef.current.forEach((timer) => window.clearTimeout(timer));
+            timersRef.current.clear();
+        },
+        [],
+    );
 
     const toast = useCallback(
         (type: ToastType, message: string) => {
             const id = `toast_${++idCounter.current}`;
             setToasts((prev) => [...prev, { id, type, message }]);
-            setTimeout(() => dismiss(id), TOAST_DURATION);
+            const timer = window.setTimeout(() => dismiss(id), TOAST_DURATION);
+            timersRef.current.set(id, timer);
         },
         [dismiss]
     );
+    const actions = useMemo(() => ({ toast, dismiss }), [dismiss, toast]);
 
     return (
-        <ToastContext.Provider value={{ toasts, toast, dismiss }}>
-            {children}
-        </ToastContext.Provider>
+        <ToastActionsContext.Provider value={actions}>
+            <ToastStateContext.Provider value={toasts}>
+                {children}
+            </ToastStateContext.Provider>
+        </ToastActionsContext.Provider>
     );
 }
 
 export function useToast() {
-    const ctx = useContext(ToastContext);
-    if (!ctx) {
+    const actions = useContext(ToastActionsContext);
+    if (!actions) {
         // 在 provider 外部调用时回退到 console
         return {
             toast: (type: ToastType, message: string) => {
@@ -55,7 +81,7 @@ export function useToast() {
             },
         };
     }
-    return { toast: ctx.toast };
+    return { toast: actions.toast };
 }
 
 const typeStyles: Record<ToastType, string> = {
@@ -71,25 +97,31 @@ const typeIcons: Record<ToastType, string> = {
 };
 
 export function Toaster() {
-    const ctx = useContext(ToastContext);
-    if (!ctx) return null;
+    const toasts = useContext(ToastStateContext);
+    const actions = useContext(ToastActionsContext);
+    if (!toasts || !actions) return null;
 
     return (
-        <div className="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2 max-w-sm">
-            {ctx.toasts.map((t) => (
+        <div
+            className="fixed bottom-4 left-4 right-4 z-[9999] flex max-w-[calc(100vw-2rem)] flex-col gap-2 sm:left-auto sm:max-w-sm"
+            aria-label="通知"
+        >
+            {toasts.map((t) => (
                 <div
                     key={t.id}
                     className={`flex items-start gap-2 px-4 py-3 rounded-lg border shadow-lg text-sm animate-in slide-in-from-right-full duration-300 ${typeStyles[t.type]}`}
-                    role="alert"
+                    role={t.type === "error" ? "alert" : "status"}
+                    aria-atomic="true"
                 >
-                    <span className="font-bold text-base leading-none mt-0.5">{typeIcons[t.type]}</span>
+                    <span aria-hidden="true" className="font-bold text-base leading-none mt-0.5">{typeIcons[t.type]}</span>
                     <span className="flex-1 break-words">{t.message}</span>
                     <button
-                        onClick={() => ctx.dismiss(t.id)}
-                        className="opacity-50 hover:opacity-100 transition-opacity text-xs ml-2 mt-0.5"
-                        aria-label="关闭"
+                        type="button"
+                        onClick={() => actions.dismiss(t.id)}
+                        className="rounded opacity-50 hover:opacity-100 transition-opacity text-xs ml-2 mt-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current"
+                        aria-label={`关闭通知：${t.message}`}
                     >
-                        ✕
+                        <span aria-hidden="true">✕</span>
                     </button>
                 </div>
             ))}

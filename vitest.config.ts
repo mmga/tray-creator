@@ -19,20 +19,58 @@ export default defineConfig({
     env: {
       NODE_ENV: "test",
     },
-    environment: "jsdom",
-    setupFiles: ["./src/test/setup.ts"],
-    include: [
-      "src/**/*.test.ts",
-      "src/**/*.test.tsx",
-      "src/**/*.spec.ts",
-      "src/**/*.spec.tsx",
-    ],
-    exclude: [
-      "src/**/*.integration.test.ts",
-      "src/**/*.integration.test.tsx",
-      "src/**/*.performance.test.ts",
-      ".next/**",
-      "node_modules/**",
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "node",
+          environment: "node",
+          setupFiles: ["./src/test/setup-node.ts"],
+          include: [
+            "src/lib/**/*.test.ts",
+            "src/mode-editor/**/*.test.ts",
+          ],
+          exclude: [
+            "src/lib/download-port.test.ts",
+            "src/lib/local-drafts.test.ts",
+            "src/lib/param-io.test.ts",
+            "src/lib/personal-base-specifications.test.ts",
+            "src/lib/stl-export.test.ts",
+            "src/lib/worker/worker-service.test.ts",
+            "src/**/*.integration.test.ts",
+            "src/**/*.performance.test.ts",
+          ],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "dom",
+          environment: "jsdom",
+          setupFiles: ["./src/test/setup.ts"],
+          include: [
+            "src/app/**/*.test.tsx",
+            "src/components/**/*.test.ts",
+            "src/components/**/*.test.tsx",
+            "src/hooks/**/*.test.ts",
+            "src/hooks/**/*.test.tsx",
+            "src/viewports/**/*.test.ts",
+            "src/viewports/**/*.test.tsx",
+            "src/workspaces/**/*.test.ts",
+            "src/workspaces/**/*.test.tsx",
+            "src/lib/download-port.test.ts",
+            "src/lib/local-drafts.test.ts",
+            "src/lib/param-io.test.ts",
+            "src/lib/personal-base-specifications.test.ts",
+            "src/lib/stl-export.test.ts",
+            "src/lib/worker/worker-service.test.ts",
+          ],
+          exclude: [
+            "src/**/*.integration.test.ts",
+            "src/**/*.integration.test.tsx",
+          ],
+        },
+      },
     ],
     coverage: {
       provider: "v8",

@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import BaseConverterPanel from "@/components/BaseConverterPanel";
+import { ToastProvider, Toaster } from "@/hooks/useToast";
 import {
   BASE_CONVERTER_DEFAULTS,
   SOURCE_BASE_STANDARDS,
@@ -28,7 +29,15 @@ function renderPanel(
     volume: 0,
     ...overrides,
   };
-  return { ...render(<BaseConverterPanel {...props} />), props };
+  return {
+    ...render(
+      <ToastProvider>
+        <BaseConverterPanel {...props} />
+        <Toaster />
+      </ToastProvider>,
+    ),
+    props,
+  };
 }
 
 describe("BaseConverterPanel", () => {
@@ -53,7 +62,7 @@ describe("BaseConverterPanel", () => {
     expect(screen.getByText("凹槽深度 / 挡边高度")).toBeInTheDocument();
     expect(screen.getByText("侧面斜面宽度")).toBeInTheDocument();
 
-    fireEvent.click(screen.getAllByRole("combobox")[1]);
+    fireEvent.click(screen.getByRole("combobox", { name: "目标圆形 / 椭圆底盘" }));
     const incompatibleOption = screen
       .getAllByText("标准 · 圆形 · Ø25mm")
       .map((element) => element.closest('[role="option"]'))
@@ -105,10 +114,27 @@ describe("BaseConverterPanel", () => {
       geometrySnapshot: createConversionGeometrySnapshot(source, target),
     });
 
-    fireEvent.click(screen.getAllByRole("combobox")[0]);
+    fireEvent.click(screen.getByRole("combobox", { name: "原底盘" }));
     expect(
       screen.getAllByText("标准 · 圆形 · Ø20mm")
         .some((element) => element.closest('[role="option"]')),
     ).toBe(true);
+  });
+
+  it("does not apply a personal specification when browser storage rejects it", () => {
+    const updateParams = vi.fn();
+    vi.spyOn(Storage.prototype, "setItem").mockImplementationOnce(() => {
+      throw new Error("quota exceeded");
+    });
+    renderPanel(BASE_CONVERTER_DEFAULTS, { updateParams });
+
+    fireEvent.click(screen.getByRole("button", { name: /自定义与个人规格/ }));
+    fireEvent.click(screen.getAllByRole("button", { name: "保存并应用" })[0]);
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "个人规格保存失败：quota exceeded",
+    );
+    expect(updateParams).not.toHaveBeenCalled();
+    expect(screen.queryByText("个人规格库")).not.toBeInTheDocument();
   });
 });

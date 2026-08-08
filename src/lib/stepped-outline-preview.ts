@@ -3,7 +3,7 @@ import type {
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import { geometries } from "@jscad/modeling";
-import { buildSteppedCadFeatureGraph } from "@/lib/stepped-cad-feature-graph";
+import { buildSteppedCadFootprintPlan } from "@/lib/stepped-cad-feature-graph";
 import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
 import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
 
@@ -40,7 +40,7 @@ export function buildSteppedOutlinePreview(
     return null;
   }
 
-  // Rectangular 分支：复用 feature-graph 已经派生的 group footprint（每个是矩形 Geom2）
+  // Rectangular 分支：复用 Footprint Plan 已派生的 group footprint（每个是矩形 Geom2）
   // 直接提取外轮廓点列，最低层连续矩形+圆角，更高层分组矩形（CONTEXT:601）
   if (params.footprintStyle === "rectangular") {
     return buildRectangularSteppedOutlinePreview(params);
@@ -73,7 +73,7 @@ export function buildSteppedOutlinePreview(
 
 /**
  * 为 Rectangular Stepped Footprint 派生 2D 预览。
- * 复用 buildSteppedCadFeatureGraph 中已经按 style 派生的 group footprint：
+ * 复用 Stepped Footprint Plan 中已经按 style 派生的 group footprint：
  * - 最低 columnHeight 分组：整体轴对齐包络 + cornerRadius 圆角
  * - 更高分组：各自轴对齐包络，直角
  * 这样 2D 预览与 3D 生成消费同一个 footprint（CONTEXT:626）。
@@ -81,8 +81,8 @@ export function buildSteppedOutlinePreview(
 function buildRectangularSteppedOutlinePreview(
   params: SteppedLayoutParams,
 ): GroupOutlinePreview[] | null {
-  const graph = buildSteppedCadFeatureGraph(params, { status: "inactive" });
-  if (graph.groups.length === 0 || graph.layers.length === 0) {
+  const plan = buildSteppedCadFootprintPlan(params, { status: "inactive" });
+  if (plan.groups.length === 0 || plan.layers.length === 0) {
     return null;
   }
 
@@ -91,10 +91,10 @@ function buildRectangularSteppedOutlinePreview(
     { color: group.color, bottomHeight: group.bottomHeight },
   ]));
 
-  const lowestLayer = graph.layers[0];
-  const lowestGroup = graph.groups.find(
+  const lowestLayer = plan.layers[0];
+  const lowestGroup = plan.groups.find(
     (group) => Math.abs(group.columnHeight - lowestLayer.toHeight) <= 1e-6,
-  ) ?? graph.groups[0];
+  ) ?? plan.groups[0];
   const lowestPoints = getLargestOutlinePoints(lowestLayer.footprint);
   const lowestMeta = groupMetaById.get(lowestGroup.groupId);
   const previews: GroupOutlinePreview[] = lowestPoints && lowestPoints.length >= 3
@@ -107,7 +107,7 @@ function buildRectangularSteppedOutlinePreview(
       }]
     : [];
 
-  graph.groups
+  plan.groups
     .filter((groupFeature) => groupFeature.columnHeight > lowestLayer.toHeight + 1e-6)
     .forEach((groupFeature, index) => {
     const points = getLargestOutlinePoints(groupFeature.footprint);

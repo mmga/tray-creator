@@ -33,7 +33,6 @@ function createParams(): SteppedLayoutParams {
         bottomHeight: 10,
       },
     ],
-    activeGroupId: "low",
     slots: [
       {
         id: "low-slot",
@@ -113,7 +112,6 @@ describe("stepped outline preview", () => {
   it("keeps a CAD ellipse outline preview elliptical and rotated", () => {
     const params = createParams();
     params.groups = [params.groups[0]];
-    params.activeGroupId = "high";
     params.slots = [
       {
         id: "ellipse-slot",

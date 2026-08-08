@@ -1,5 +1,0 @@
-Loaded 232 files (191 code).
-Warning: compute-batches: community size 36 > max 35 — splitting via alphabetical chunking — modularity may decrease
-Info: compute-batches: merged 13 small batches (13 files) into 1 misc batches — singletons and orphans consolidated
-Warning: compute-batches: neighborMap for src/types/custom-tray.ts has high 1-hop degree 85 — exceeds soft cap of 50 — keeping top 50 cross-batch entries (19 dropped by degree sort)
-Wrote 14 batches (sizes: max=35, min=4) to /Users/bianyunpeng/Desktop/project/mmga/tray-creator/.understand-anything/intermediate/batches.json

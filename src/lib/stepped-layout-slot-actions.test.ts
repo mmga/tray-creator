@@ -55,7 +55,7 @@ describe("stepped slot actions", () => {
       id: "slot-2",
       x: 130.4,
       y: 80,
-      groupId: STEPPED_LAYOUT_DEFAULTS.activeGroupId,
+      groupId: STEPPED_LAYOUT_DEFAULTS.groups[0].id,
     });
   });
 
@@ -86,7 +86,7 @@ describe("stepped slot actions", () => {
       slotDefinitionId: preset.id,
       outerOffset: preset.outerOffset,
       profileExponent: preset.profileExponent,
-      groupId: STEPPED_LAYOUT_DEFAULTS.activeGroupId,
+      groupId: STEPPED_LAYOUT_DEFAULTS.groups[0].id,
     });
   });
 
@@ -119,7 +119,7 @@ describe("stepped slot actions", () => {
     );
     expect(inserted.slots[1]).toMatchObject({
       id: "slot-2",
-      groupId: STEPPED_LAYOUT_DEFAULTS.activeGroupId,
+      groupId: STEPPED_LAYOUT_DEFAULTS.groups[0].id,
     });
 
     const duplicated = duplicateSteppedSlots(

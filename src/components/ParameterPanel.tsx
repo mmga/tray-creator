@@ -142,12 +142,12 @@ export default function ParameterPanel({
           <div className="space-y-4">
             {/* 底座预设 */}
             <div className="space-y-1.5">
-              <Label className="text-sm text-muted-foreground">底座规格</Label>
+              <Label htmlFor="grid-base-preset" className="text-sm text-muted-foreground">底座规格</Label>
               <Select
                 value={selectedPresetValue}
                 onValueChange={handlePresetChange}
               >
-                <SelectTrigger className="bg-[#1c1a16] border-[#2e2a24] text-foreground hover:border-primary/40 cursor-pointer transition-all duration-200">
+                <SelectTrigger id="grid-base-preset" className="bg-[#1c1a16] border-[#2e2a24] text-foreground hover:border-primary/40 cursor-pointer transition-all duration-200">
                   <SelectValue placeholder="选择底座规格" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#16140f] border-[#2e2a24]">

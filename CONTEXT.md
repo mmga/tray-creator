@@ -312,6 +312,10 @@ _Avoid_: Using “保留简易阶梯功能” to imply that row creation, automa
 A Stepped Tray footprint whose lowest height layer is one continuous rectangle around all Slot Instances while each higher height band uses the rectangular envelopes of the groups that continue above it.
 _Avoid_: Independent disconnected rectangles at the lowest layer, one full-size rectangle at every height, or treating the choice as only a visual edge treatment.
 
+**Stepped Footprint Plan**:
+A transient shared projection of normalized tray dimensions, group footprints, and height-band layers before slot-hole, base-hole, or magnet-post-hole features are constructed.
+_Avoid_: Building the complete CAD feature graph for a 2D footprint consumer, or duplicating stepped group and height-band footprint rules in preview Adapters.
+
 **Rectangular Footprint**:
 A baseplate footprint bounded by one rectangular envelope, with an optional corner radius on its outer boundary.
 _Avoid_: Using the term for each independent stepped height-group rectangle or assuming that every upper stepped band inherits the outer corner radius.
@@ -762,6 +766,8 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - A **Rectangular Stepped Footprint** may use automatic sizing from all Slot Instances or a Fixed Tray Outer Footprint for its continuous lowest layer.
 - Fixed sizing changes only the continuous lowest layer; higher rectangular height bands remain derived from their groups' Slot Instances and Boundary Spacing.
 - Automatic lowest-layer and group-level rectangular footprints use **Axis-aligned Rectangular Envelopes**.
+- **CAD Stepped Construction** extends one **Stepped Footprint Plan** with slot-hole and Base-hole Structure features.
+- Rectangular stepped 2D preview consumes the **Stepped Footprint Plan** without constructing CAD hole features.
 - Each height group's Axis-aligned Rectangular Envelope contains all of that group's Slot Instances as one rectangle, including the empty planar space between them.
 - One tray has exactly one **Baseplate Footprint Style**; height groups cannot override it.
 - A custom tray with **Contoured Footprint** always derives its active footprint from Slot Instances and cannot simultaneously have an active **Fixed Tray Outer Footprint**.

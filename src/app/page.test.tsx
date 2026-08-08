@@ -94,7 +94,6 @@ const {
         groupDisconnectDistance: 0,
       },
     ],
-    activeGroupId: "group-1",
     spacing: 5,
     holeDepth: 3,
     splitGrooveDepth: 2,
@@ -473,8 +472,16 @@ vi.mock("@/components/ModeTabs", () => ({
 }));
 
 vi.mock("@/components/ParameterPanel", () => ({
-  default() {
-    return <div data-testid="parameter-panel" />;
+  default({
+    actions,
+  }: {
+    actions?: React.ReactNode;
+  }) {
+    return (
+      <div data-testid="parameter-panel">
+        {actions}
+      </div>
+    );
   },
 }));
 
@@ -717,20 +724,23 @@ vi.mock("@/components/ui/tabs", async () => {
   const TabsContext = ReactModule.createContext<{
     value?: string;
     onValueChange?: (value: string) => void;
+    activationMode?: "automatic" | "manual";
   }>({});
 
   return {
     Tabs({
       value,
       onValueChange,
+      activationMode,
       children,
     }: {
       value?: string;
       onValueChange?: (value: string) => void;
+      activationMode?: "automatic" | "manual";
       children: React.ReactNode;
     }) {
       return (
-        <TabsContext.Provider value={{ value, onValueChange }}>
+        <TabsContext.Provider value={{ value, onValueChange, activationMode }}>
           <div data-testid="tabs-root">{children}</div>
         </TabsContext.Provider>
       );
@@ -750,12 +760,13 @@ vi.mock("@/components/ui/tabs", async () => {
       children: React.ReactNode;
       onKeyDown?: React.KeyboardEventHandler<HTMLButtonElement>;
     }) {
-      const { value: activeValue, onValueChange } =
+      const { value: activeValue, onValueChange, activationMode } =
         ReactModule.useContext(TabsContext);
 
       return (
         <button
           type="button"
+          data-value={value}
           data-state={activeValue === value ? "active" : "inactive"}
           onClick={() => onValueChange?.(value)}
           onKeyDown={(event) => {
@@ -764,19 +775,14 @@ vi.mock("@/components/ui/tabs", async () => {
               return;
             }
 
-            if (event.key === "ArrowRight") {
-              if (value === "2d") {
-                onValueChange?.("3d");
-              } else if (value === "3d") {
-                onValueChange?.("2d");
-              }
-            }
-
-            if (event.key === "ArrowLeft") {
-              if (value === "3d") {
-                onValueChange?.("2d");
-              } else if (value === "2d") {
-                onValueChange?.("3d");
+            if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+              const nextValue = value === "2d" ? "3d" : "2d";
+              const nextTrigger = event.currentTarget.parentElement?.querySelector<HTMLButtonElement>(
+                `[data-value="${nextValue}"]`,
+              );
+              nextTrigger?.focus();
+              if (activationMode !== "manual") {
+                onValueChange?.(nextValue);
               }
             }
           }}
@@ -788,9 +794,35 @@ vi.mock("@/components/ui/tabs", async () => {
   };
 });
 
-import Home from "@/app/page";
+import { EditorBootstrapFallback } from "@/app/EditorBootstrapFallback";
+import TrayCreatorEditorRuntime from "@/app/TrayCreatorEditorRuntime";
 
 describe("Home page", { timeout: 15000 }, () => {
+  it("启动期间展示稳定骨架", () => {
+    render(<EditorBootstrapFallback />);
+
+    expect(
+      screen.getByRole("status", { name: "正在启动托盘编辑器" }),
+    ).toBeInTheDocument();
+  });
+
+  it("运行时就绪后提供具名响应式分区", () => {
+    render(<TrayCreatorEditorRuntime />);
+
+    expect(
+      screen.getByRole("complementary", { name: "参数面板" }),
+    ).toHaveClass(
+      "h-[46%]",
+      "w-full",
+      "md:h-full",
+      "md:w-[380px]",
+    );
+    expect(screen.getByRole("region", { name: "建模视口" })).toHaveClass(
+      "min-h-0",
+      "min-w-0",
+    );
+  });
+
   beforeEach(() => {
     gridModelMock.handleGenerate.mockReset();
     customModelMock.handleGenerate.mockReset();
@@ -805,6 +837,9 @@ describe("Home page", { timeout: 15000 }, () => {
     steppedModelMock.applyOptimizationProposal.mockReset();
     steppedModelMock.clearOptimizationProposals.mockReset();
     steppedModelMock.isOptimizingLayout = false;
+    gridDraftsMock.isDialogOpen = false;
+    customDraftsMock.isDialogOpen = false;
+    steppedDraftsMock.isDialogOpen = true;
     for (const draftMock of [
       gridDraftsMock,
       customDraftsMock,
@@ -825,7 +860,7 @@ describe("Home page", { timeout: 15000 }, () => {
   });
 
   it("switches to custom 3D view and regenerates stale previews", async () => {
-    render(<Home />);
+    render(<TrayCreatorEditorRuntime />);
 
     fireEvent.click(screen.getByRole("button", { name: "切到自定义" }));
     await screen.findByTestId("custom-panel");
@@ -835,6 +870,8 @@ describe("Home page", { timeout: 15000 }, () => {
     await waitFor(() => {
       expect(customModelMock.handleGenerate).toHaveBeenCalledTimes(1);
     });
+    expect(screen.getByTestId("layout-canvas").closest("[inert]")).not.toBeNull();
+    expect(screen.queryByRole("button", { name: "选择阶梯槽位" })).not.toBeInTheDocument();
     expect(screen.getByTestId("tray-viewer")).toHaveAttribute(
       "data-geometry-id",
       "custom-geometry",
@@ -845,8 +882,8 @@ describe("Home page", { timeout: 15000 }, () => {
     );
   });
 
-  it("does not switch 2D and 3D views on left or right arrow keys", async () => {
-    render(<Home />);
+  it("moves focus between 2D and 3D tabs without activating them", async () => {
+    render(<TrayCreatorEditorRuntime />);
 
     fireEvent.click(screen.getByRole("button", { name: "切到自定义" }));
     await screen.findByTestId("custom-panel");
@@ -854,6 +891,8 @@ describe("Home page", { timeout: 15000 }, () => {
     const twoDTrigger = screen.getByRole("button", { name: "2D 编辑" });
     twoDTrigger.focus();
     fireEvent.keyDown(twoDTrigger, { key: "ArrowRight" });
+
+    expect(screen.getByRole("button", { name: "3D 预览" })).toHaveFocus();
 
     expect(screen.getByRole("button", { name: "2D 编辑" })).toHaveAttribute(
       "data-state",
@@ -865,8 +904,9 @@ describe("Home page", { timeout: 15000 }, () => {
     );
 
     const threeDTrigger = screen.getByRole("button", { name: "3D 预览" });
-    threeDTrigger.focus();
     fireEvent.keyDown(threeDTrigger, { key: "ArrowLeft" });
+
+    expect(screen.getByRole("button", { name: "2D 编辑" })).toHaveFocus();
 
     expect(screen.getByRole("button", { name: "2D 编辑" })).toHaveAttribute(
       "data-state",
@@ -880,7 +920,7 @@ describe("Home page", { timeout: 15000 }, () => {
 
   it("wires base converter panel, 2D preview, and 3D generation", async () => {
     baseConverterModelMock.isPreviewStale = true;
-    render(<Home />);
+    render(<TrayCreatorEditorRuntime />);
 
     fireEvent.click(screen.getByRole("button", { name: "切到转换底盘" }));
     expect(await screen.findByText("底盘转换")).toBeInTheDocument();
@@ -901,7 +941,7 @@ describe("Home page", { timeout: 15000 }, () => {
   });
 
   it("syncs stepped selection to the active group, pauses outline preview, and resets stepped UI state on mode changes", async () => {
-    render(<Home />);
+    render(<TrayCreatorEditorRuntime />);
 
     fireEvent.click(screen.getByRole("button", { name: "切到阶梯" }));
     await screen.findByTestId("stepped-panel");
@@ -955,7 +995,7 @@ describe("Home page", { timeout: 15000 }, () => {
   it("wires stepped optimization actions and state through the page", async () => {
     steppedModelMock.isOptimizingLayout = true;
 
-    render(<Home />);
+    render(<TrayCreatorEditorRuntime />);
 
     fireEvent.click(screen.getByRole("button", { name: "切到阶梯" }));
     await screen.findByTestId("stepped-panel");
@@ -985,11 +1025,15 @@ describe("Home page", { timeout: 15000 }, () => {
   });
 
   it("wires active mode draft dialog actions through the mode draft hooks and refreshes the list where needed", async () => {
-    render(<Home />);
-    await screen.findByTestId("draft-manager-dialog");
+    const { rerender } = render(<TrayCreatorEditorRuntime />);
+    expect(screen.queryByTestId("draft-manager-dialog")).not.toBeInTheDocument();
     gridDraftsMock.getDraftList.mockClear();
 
-    fireEvent.click(screen.getByRole("button", { name: "打开草稿弹窗" }));
+    fireEvent.pointerDown(await screen.findByRole("button", { name: "更多操作" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "草稿列表" }));
+    gridDraftsMock.isDialogOpen = true;
+    rerender(<TrayCreatorEditorRuntime />);
+    await screen.findByTestId("draft-manager-dialog");
     fireEvent.click(screen.getByRole("button", { name: "草稿另存" }));
     fireEvent.click(screen.getByRole("button", { name: "覆盖草稿" }));
     fireEvent.click(screen.getByRole("button", { name: "加载草稿" }));

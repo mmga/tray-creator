@@ -43,6 +43,7 @@ describe("usePreviewLifecycle", () => {
       usePreviewLifecycle({
         getParams: () => params,
         captureSnapshot: (current) => structuredClone(current),
+        captureExportContext: () => undefined,
         fingerprintSnapshot: (snapshot) => JSON.stringify(snapshot),
         generatePreview,
         exportModel,
@@ -60,7 +61,58 @@ describe("usePreviewLifecycle", () => {
 
     expect(generatePreview).toHaveBeenCalledTimes(2);
     expect(generatePreview).toHaveBeenLastCalledWith({ rows: 2 });
-    expect(exportModel).toHaveBeenCalledWith({ rows: 2 }, secondGeometry);
+    expect(exportModel).toHaveBeenCalledWith(
+      { rows: 2 },
+      secondGeometry,
+      undefined,
+    );
+  });
+
+  it("导出开始时原子捕获上下文，并在 Snapshot 失效后继续导出旧几何", async () => {
+    let params = { rows: 1 };
+    const deferred = createDeferred<{
+      geometry: never;
+      threeGeometry: { dispose: () => void };
+      volume: number;
+    }>();
+    const geometry = { id: "exported" } as never;
+    const threeGeometry = { dispose: vi.fn() };
+    const exportModel = vi.fn().mockResolvedValue(undefined);
+    const { result } = renderHook(() =>
+      usePreviewLifecycle({
+        getParams: () => params,
+        captureSnapshot: (current: { rows: number }) =>
+          structuredClone(current),
+        captureExportContext: (snapshot) => ({
+          rowsAtExportStart: snapshot.rows,
+        }),
+        fingerprintSnapshot: JSON.stringify,
+        generatePreview: vi.fn().mockReturnValue(deferred.promise),
+        exportModel,
+      }),
+    );
+    let exportPromise: Promise<void> | undefined;
+
+    act(() => {
+      exportPromise = result.current.handleExportSTL();
+    });
+    params = { rows: 2 };
+    act(() => {
+      result.current.invalidatePreview();
+    });
+    deferred.resolve({ geometry, threeGeometry, volume: 1 });
+    await act(async () => {
+      await exportPromise;
+    });
+
+    expect(exportModel).toHaveBeenCalledWith(
+      { rows: 1 },
+      geometry,
+      { rowsAtExportStart: 1 },
+    );
+    expect(threeGeometry.dispose).toHaveBeenCalledTimes(1);
+    expect(result.current.threeGeometry).toBeNull();
+    expect(result.current.isPreviewStale).toBe(true);
   });
 
   it("Snapshot 校验失败时同时阻断生成和导出", async () => {
@@ -70,6 +122,7 @@ describe("usePreviewLifecycle", () => {
       usePreviewLifecycle({
         getParams: () => ({ rows: 1 }),
         captureSnapshot: (current) => current,
+        captureExportContext: () => undefined,
         fingerprintSnapshot: JSON.stringify,
         generatePreview,
         exportModel,
@@ -107,6 +160,7 @@ describe("usePreviewLifecycle", () => {
       usePreviewLifecycle({
         getParams: () => ({ rows: 1 }),
         captureSnapshot: (current) => current,
+        captureExportContext: () => undefined,
         fingerprintSnapshot: JSON.stringify,
         generatePreview,
         exportModel: vi.fn(),
@@ -123,5 +177,64 @@ describe("usePreviewLifecycle", () => {
     await act(async () => { await Promise.resolve(); });
     expect(result.current.isGenerating).toBe(false);
     expect(firstGeometry.dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it("卸载时释放当前预览几何体", async () => {
+    const threeGeometry = { dispose: vi.fn() };
+    const { result, unmount } = renderHook(() =>
+      usePreviewLifecycle({
+        getParams: () => ({ rows: 1 }),
+        captureSnapshot: (current) => current,
+        captureExportContext: () => undefined,
+        fingerprintSnapshot: JSON.stringify,
+        generatePreview: vi.fn().mockResolvedValue({
+          geometry: {} as never,
+          threeGeometry,
+          volume: 1,
+        }),
+        exportModel: vi.fn(),
+      }),
+    );
+
+    await act(async () => {
+      await result.current.handleGenerate();
+    });
+    unmount();
+
+    expect(threeGeometry.dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it("卸载后释放迟到请求的几何体而不接纳结果", async () => {
+    const deferred = createDeferred<{
+      geometry: never;
+      threeGeometry: { dispose: () => void };
+      volume: number;
+    }>();
+    const threeGeometry = { dispose: vi.fn() };
+    const { result, unmount } = renderHook(() =>
+      usePreviewLifecycle({
+        getParams: () => ({ rows: 1 }),
+        captureSnapshot: (current) => current,
+        captureExportContext: () => undefined,
+        fingerprintSnapshot: JSON.stringify,
+        generatePreview: vi.fn().mockReturnValue(deferred.promise),
+        exportModel: vi.fn(),
+      }),
+    );
+
+    act(() => {
+      void result.current.handleGenerate();
+    });
+    unmount();
+    deferred.resolve({
+      geometry: {} as never,
+      threeGeometry,
+      volume: 1,
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(threeGeometry.dispose).toHaveBeenCalledTimes(1);
   });
 });

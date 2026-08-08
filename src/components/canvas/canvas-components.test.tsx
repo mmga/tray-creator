@@ -94,7 +94,7 @@ describe("MirrorPanel", { timeout: 15000 }, () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /左右镜/ }));
+    fireEvent.click(screen.getByRole("button", { name: "左右镜像移动" }));
 
     expect(onUpdateSlots).toHaveBeenCalledWith([
       {
@@ -168,7 +168,7 @@ describe("MirrorPanel", { timeout: 15000 }, () => {
       ).toHaveTextContent("左右重合1");
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /左右复/ }));
+    fireEvent.click(screen.getByRole("button", { name: "左右镜像复制" }));
 
     expect(onInsertSlots).toHaveBeenCalledWith([
       {
@@ -276,7 +276,7 @@ describe("MirrorPanel", { timeout: 15000 }, () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /左右复/ }));
+    fireEvent.click(screen.getByRole("button", { name: "左右镜像复制" }));
 
     expect(onInsertSlots).toHaveBeenCalledWith([
       {
@@ -335,7 +335,7 @@ describe("MirrorPanel", { timeout: 15000 }, () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /左右对称/ }));
+    fireEvent.click(screen.getByRole("button", { name: "检查左右对称" }));
 
     expect(toastMock).toHaveBeenCalledWith(
       "success",
@@ -381,7 +381,7 @@ describe("MirrorPanel", { timeout: 15000 }, () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /左右对称/ }));
+    fireEvent.click(screen.getByRole("button", { name: "检查左右对称" }));
 
     expect(toastMock).toHaveBeenCalledWith(
       "info",
@@ -414,13 +414,14 @@ describe("AlignPanel", { timeout: 15000 }, () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: /左/ })).toBeDisabled();
-    expect(screen.getAllByRole("button", { name: /中/ })).toHaveLength(2);
-    expect(screen.getByRole("button", { name: /右/ })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /上/ })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /下/ })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /一排/ })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /一列/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "左对齐" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "水平居中对齐" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "垂直居中对齐" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "右对齐" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "顶部对齐" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "底部对齐" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "排成一排" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "排成一列" })).toBeDisabled();
     expect(screen.getByText("排布间距自动使用当前槽距 6 mm。")).toBeInTheDocument();
   });
 
@@ -464,7 +465,7 @@ describe("AlignPanel", { timeout: 15000 }, () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /左/ }));
+    fireEvent.click(screen.getByRole("button", { name: "左对齐" }));
     expect(onUpdateSlots).toHaveBeenLastCalledWith([
       { id: "slot-1", x: 20, y: 20 },
       { id: "slot-2", x: 20, y: 60 },
@@ -478,14 +479,14 @@ describe("AlignPanel", { timeout: 15000 }, () => {
       { id: "slot-3", x: 60, y: 30 },
     ]);
 
-    fireEvent.click(screen.getByRole("button", { name: /右/ }));
+    fireEvent.click(screen.getByRole("button", { name: "右对齐" }));
     expect(onUpdateSlots).toHaveBeenLastCalledWith([
       { id: "slot-1", x: 100, y: 20 },
       { id: "slot-2", x: 100, y: 60 },
       { id: "slot-3", x: 100, y: 30 },
     ]);
 
-    fireEvent.click(screen.getByRole("button", { name: /上/ }));
+    fireEvent.click(screen.getByRole("button", { name: "顶部对齐" }));
     expect(onUpdateSlots).toHaveBeenLastCalledWith([
       { id: "slot-1", x: 20, y: 60 },
       { id: "slot-2", x: 60, y: 60 },
@@ -499,21 +500,21 @@ describe("AlignPanel", { timeout: 15000 }, () => {
       { id: "slot-3", x: 100, y: 40 },
     ]);
 
-    fireEvent.click(screen.getByRole("button", { name: /下/ }));
+    fireEvent.click(screen.getByRole("button", { name: "底部对齐" }));
     expect(onUpdateSlots).toHaveBeenLastCalledWith([
       { id: "slot-1", x: 20, y: 20 },
       { id: "slot-2", x: 60, y: 20 },
       { id: "slot-3", x: 100, y: 20 },
     ]);
 
-    fireEvent.click(screen.getByRole("button", { name: /一排/ }));
+    fireEvent.click(screen.getByRole("button", { name: "排成一排" }));
     expect(onUpdateSlots).toHaveBeenLastCalledWith([
       { id: "slot-1", x: 28.6, y: 40 },
       { id: "slot-2", x: 60, y: 40 },
       { id: "slot-3", x: 91.4, y: 40 },
     ]);
 
-    fireEvent.click(screen.getByRole("button", { name: /一列/ }));
+    fireEvent.click(screen.getByRole("button", { name: "排成一列" }));
     expect(onUpdateSlots).toHaveBeenLastCalledWith([
       { id: "slot-1", x: 60, y: 8.6 },
       { id: "slot-3", x: 60, y: 40 },
@@ -706,19 +707,32 @@ describe("CanvasStatusBar", () => {
       },
     ];
 
-    render(
+    const { container } = render(
       <CanvasStatusBar
         trayWidth={100}
         trayDepth={80}
         zoom={1}
         selectedIds={new Set(["slot-1", "slot-2"])}
         slots={slots}
+        collisionErrorCount={2}
+        footprintWarnings={["轮廓已拆分"]}
       />,
     );
 
+    expect(screen.getByRole("status", { name: "布局碰撞错误：2" })).toHaveTextContent("ERRORS: 2");
+    expect(screen.getByText("贴合轮廓警告：轮廓已拆分")).toBeInTheDocument();
     expect(screen.getByText(/2 ITEMS SELECTED/)).toHaveTextContent(
       "EDGE GAP: 15.0mm | X:15.0 Y:0.0",
     );
+    expect(screen.getByText("CANVAS: 100mm × 80mm")).toHaveClass(
+      "hidden",
+      "sm:inline",
+    );
+    expect(screen.getByText(/2 ITEMS SELECTED/)).toHaveClass(
+      "max-w-full",
+      "truncate",
+    );
+    expect(container.firstElementChild).toHaveClass("min-w-0", "gap-2");
   });
 });
 

@@ -72,7 +72,6 @@ function buildBaseParams(): SteppedLayoutParams {
         groupDisconnectDistance: 0,
       },
     ],
-    activeGroupId: "group-low",
     spacing: 0,
     holeDepth: 3,
     splitGrooveDepth: 2,
@@ -221,7 +220,6 @@ describe("stepped cad split profiles", () => {
           groupDisconnectDistance: 0,
         },
       ],
-      activeGroupId: "group-low-left",
       enableSplitRecess: true,
       splitGrooveType: "inset",
     };

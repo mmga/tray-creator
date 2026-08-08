@@ -9,12 +9,14 @@ import {
 describe("canvas selection model", () => {
   it("filters selected ids that are no longer present", () => {
     const selectedIds = new Set(["slot-a", "slot-b", "slot-c"]);
-    const slots = [{ id: "slot-a" }, { id: "slot-c" }];
-
-    expect(Array.from(sanitizeCanvasSelectedIds(selectedIds, slots))).toEqual([
-      "slot-a",
-      "slot-c",
+    const slotById = new Map([
+      ["slot-a", { id: "slot-a" }],
+      ["slot-c", { id: "slot-c" }],
     ]);
+
+    expect(
+      Array.from(sanitizeCanvasSelectedIds(selectedIds, slotById)),
+    ).toEqual(["slot-a", "slot-c"]);
   });
 
   it("builds a rectangle and collects projected slots inside it", () => {

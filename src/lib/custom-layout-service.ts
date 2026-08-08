@@ -6,10 +6,10 @@ import {
   type LayoutExtents,
 } from "@/lib/custom-layout-math";
 import type { CustomWorkerPort, DownloadPort } from "@/lib/model-ports";
-import { jscadToThreeGeometry } from "@/lib/jscad-to-three";
+import { loadThreeGeometry } from "@/lib/three-geometry-loader";
 import type { ModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import { exportModelArtifactBundle } from "@/lib/model-artifact-bundle";
-import { generateCustomSTLFilename } from "@/lib/stl-export";
+import { generateCustomSTLFilename } from "@/lib/model-filenames";
 import type { CustomLayoutParams } from "@/types/custom-tray";
 
 export interface CustomPreviewResult {
@@ -23,10 +23,11 @@ export async function generateCustomPreview(
   workerPort: CustomWorkerPort,
 ): Promise<CustomPreviewResult> {
   const result = await workerPort.generateCustom(params);
+  const threeGeometry = await loadThreeGeometry(result.geometry);
 
   return {
     geometry: result.geometry,
-    threeGeometry: jscadToThreeGeometry(result.geometry),
+    threeGeometry,
     volume: result.volume,
   };
 }

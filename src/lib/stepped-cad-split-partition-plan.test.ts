@@ -27,7 +27,6 @@ function buildParams(): SteppedLayoutParams {
     enableSplitAssembly: true,
     baseHoleStructure: "magnet-post-hole",
     groups: [group("low", 10), group("high", 20)],
-    activeGroupId: "low",
     slots: [
       {
         id: "slot-low",

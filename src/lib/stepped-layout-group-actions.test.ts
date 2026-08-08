@@ -36,7 +36,6 @@ function createParams() {
         bottomHeight: 18,
       },
     ],
-    activeGroupId: STEPPED_LAYOUT_DEFAULTS.groups[0].id,
     slots: [
       {
         id: "slot-1",
@@ -77,7 +76,7 @@ describe("stepped group actions", () => {
       useGroupDisconnectDistance: false,
       groupDisconnectDistance: 12,
     });
-    expect(next.activeGroupId).toBe(createParams().activeGroupId);
+    expect(next).not.toHaveProperty("activeGroupId");
   });
 
   it("removes groups, their slots, and protects the last remaining group", () => {
@@ -102,7 +101,7 @@ describe("stepped group actions", () => {
     ]);
     expect(removed.groups[0].splitPartGroupId).toBeUndefined();
     expect(removed.slots.map((slot) => slot.id)).toEqual(["slot-1"]);
-    expect(removed.activeGroupId).toBe(STEPPED_LAYOUT_DEFAULTS.groups[0].id);
+    expect(removed).not.toHaveProperty("activeGroupId");
   });
 
   it("updates group properties, selection target, and ordering", () => {

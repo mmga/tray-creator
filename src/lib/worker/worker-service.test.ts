@@ -10,6 +10,7 @@ class FakeWorker {
 
   onmessage: ((event: MessageEvent<WorkerResponse>) => unknown) | null = null;
   onerror: ((event: ErrorEvent) => unknown) | null = null;
+  onmessageerror: ((event: MessageEvent) => unknown) | null = null;
   postMessage = vi.fn();
   terminate = vi.fn();
 
@@ -22,6 +23,26 @@ class FakeWorker {
   emit(data: WorkerResponse) {
     this.onmessage?.({ data } as MessageEvent<WorkerResponse>);
   }
+
+  emitError(message: string) {
+    this.onerror?.({ message } as ErrorEvent);
+  }
+
+  emitMessageError() {
+    this.onmessageerror?.({ data: null } as MessageEvent);
+  }
+}
+
+async function observeSettlement(promise: Promise<unknown>) {
+  return Promise.race([
+    promise.then(
+      () => ({ status: "resolved" as const }),
+      (error: unknown) => ({ status: "rejected" as const, error }),
+    ),
+    new Promise<{ status: "pending" }>((resolve) => {
+      setTimeout(() => resolve({ status: "pending" }), 0);
+    }),
+  ]);
 }
 
 describe("worker service", () => {
@@ -236,5 +257,104 @@ describe("worker service", () => {
 
     service.terminate();
     expect(worker.terminate).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects requests immediately after the worker becomes unavailable", async () => {
+    const { trayWorkerService } = await import("@/lib/worker/worker-service");
+    const service = trayWorkerService!;
+
+    service.terminate();
+
+    const settlement = await observeSettlement(
+      service.generateGrid(DEFAULT_TRAY_PARAMS),
+    );
+    expect(settlement).toMatchObject({ status: "rejected" });
+  });
+
+  it("keeps the service callable when worker initialization fails", async () => {
+    vi.stubGlobal("Worker", vi.fn(() => {
+      throw new Error("worker script missing");
+    }));
+    const { trayWorkerService } = await import("@/lib/worker/worker-service");
+
+    expect(trayWorkerService).not.toBeNull();
+    await expect(
+      trayWorkerService!.generateGrid(DEFAULT_TRAY_PARAMS),
+    ).rejects.toThrow("worker script missing");
+  });
+
+  it.each([
+    ["error", (worker: FakeWorker) => worker.emitError("worker crashed")],
+    ["messageerror", (worker: FakeWorker) => worker.emitMessageError()],
+  ])("rejects every in-flight request on worker %s", async (_, failWorker) => {
+    const { trayWorkerService } = await import("@/lib/worker/worker-service");
+    const service = trayWorkerService!;
+    const worker = FakeWorker.instances[0];
+    const gridPromise = service.generateGrid(DEFAULT_TRAY_PARAMS);
+    const customPromise = service.generateCustom(CUSTOM_LAYOUT_DEFAULTS);
+
+    failWorker(worker);
+
+    const settlements = await Promise.all([
+      observeSettlement(gridPromise),
+      observeSettlement(customPromise),
+    ]);
+    expect(settlements).toEqual([
+      expect.objectContaining({ status: "rejected" }),
+      expect.objectContaining({ status: "rejected" }),
+    ]);
+  });
+
+  it("recreates a crashed worker for the next request", async () => {
+    const { trayWorkerService } = await import("@/lib/worker/worker-service");
+    const service = trayWorkerService!;
+    const crashedWorker = FakeWorker.instances[0];
+    const crashedRequest = service.generateGrid(DEFAULT_TRAY_PARAMS);
+
+    crashedWorker.emitError("worker crashed");
+    await expect(crashedRequest).rejects.toThrow("worker crashed");
+
+    const recoveryRequest = service.generateGrid(DEFAULT_TRAY_PARAMS);
+    expect(FakeWorker.instances).toHaveLength(2);
+    const recoveredWorker = FakeWorker.instances[1];
+    crashedWorker.emitError("late stale error");
+    expect(recoveredWorker.terminate).not.toHaveBeenCalled();
+    const request = recoveredWorker.postMessage.mock.calls[0]?.[0] as {
+      requestId: string;
+    };
+    recoveredWorker.emit({
+      type: "GENERATION_SUCCESS",
+      requestId: request.requestId,
+      geometry: { id: "recovered" } as never,
+      volumeInfo: 123,
+    });
+
+    await expect(recoveryRequest).resolves.toEqual({
+      geometry: { id: "recovered" },
+      volume: 123,
+    });
+  });
+
+  it("rejects in-flight requests when terminated", async () => {
+    const { trayWorkerService } = await import("@/lib/worker/worker-service");
+    const service = trayWorkerService!;
+    const promise = service.generateGrid(DEFAULT_TRAY_PARAMS);
+
+    service.terminate();
+
+    const settlement = await observeSettlement(promise);
+    expect(settlement).toMatchObject({ status: "rejected" });
+  });
+
+  it("propagates synchronous postMessage failures", async () => {
+    const { trayWorkerService } = await import("@/lib/worker/worker-service");
+    const worker = FakeWorker.instances[0];
+    worker.postMessage.mockImplementationOnce(() => {
+      throw new Error("structured clone failed");
+    });
+
+    await expect(
+      trayWorkerService!.generateGrid(DEFAULT_TRAY_PARAMS),
+    ).rejects.toThrow("structured clone failed");
   });
 });

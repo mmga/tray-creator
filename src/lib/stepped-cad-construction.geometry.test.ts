@@ -57,7 +57,6 @@ function createParams(): SteppedLayoutParams {
         groupDisconnectDistance: 0,
       },
     ],
-    activeGroupId: "group-low",
     spacing: 5,
     holeDepth: 3,
     splitGrooveDepth: 2,

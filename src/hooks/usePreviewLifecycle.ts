@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type * as THREE from "three";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import { useToast } from "@/hooks/useToast";
@@ -12,12 +12,14 @@ export interface PreviewLifecycleResult {
   volume: number;
 }
 
-interface UsePreviewLifecycleOptions<P, S> {
+interface UsePreviewLifecycleOptions<P, S, E> {
   getParams: () => P;
   captureSnapshot: (params: P) => S;
+  /** 校验通过后、任何异步生成前调用；返回值必须与 Snapshot 配对且不再引用可变状态。 */
+  captureExportContext: (snapshot: S) => E;
   fingerprintSnapshot: (snapshot: S) => string;
   generatePreview: (snapshot: S) => Promise<PreviewLifecycleResult | null>;
-  exportModel: (snapshot: S, geometry: Geom3) => Promise<void>;
+  exportModel: (snapshot: S, geometry: Geom3, context: E) => Promise<void>;
   validateSnapshot?: (snapshot: S) => string | null;
   onInvalidate?: () => void;
 }
@@ -32,15 +34,16 @@ interface UsePreviewLifecycleReturn {
   handleExportSTL: () => Promise<void>;
 }
 
-export function usePreviewLifecycle<P, S>({
+export function usePreviewLifecycle<P, S, E>({
   getParams,
   captureSnapshot,
+  captureExportContext,
   fingerprintSnapshot,
   generatePreview,
   exportModel,
   validateSnapshot,
   onInvalidate,
-}: UsePreviewLifecycleOptions<P, S>): UsePreviewLifecycleReturn {
+}: UsePreviewLifecycleOptions<P, S, E>): UsePreviewLifecycleReturn {
   const { toast } = useToast();
   const [threeGeometry, setThreeGeometry] =
     useState<THREE.BufferGeometry | null>(null);
@@ -48,9 +51,19 @@ export function usePreviewLifecycle<P, S>({
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPreviewStale, setIsPreviewStale] = useState(false);
   const geometryRef = useRef<Geom3 | null>(null);
+  const threeGeometryRef = useRef<THREE.BufferGeometry | null>(null);
   const geometryFingerprintRef = useRef<string | null>(null);
   const generatingSeqRef = useRef(0);
   const { nextSeq, isStale } = useRequestSequence();
+
+  useEffect(
+    () => () => {
+      nextSeq();
+      threeGeometryRef.current?.dispose();
+      threeGeometryRef.current = null;
+    },
+    [nextSeq],
+  );
 
   const invalidatePreview = useCallback(() => {
     nextSeq();
@@ -64,6 +77,7 @@ export function usePreviewLifecycle<P, S>({
 
   const generateCurrentPreview = useCallback(async (
     snapshot: S,
+    preserveStaleGeometryForExport = false,
   ): Promise<Geom3 | null> => {
     const blockingReason = validateSnapshot?.(snapshot);
     if (blockingReason) {
@@ -81,20 +95,19 @@ export function usePreviewLifecycle<P, S>({
 
       if (isStale(seq)) {
         result.threeGeometry.dispose();
-        return null;
+        return preserveStaleGeometryForExport ? result.geometry : null;
       }
 
       geometryRef.current = result.geometry;
       geometryFingerprintRef.current = fingerprintSnapshot(snapshot);
       setVolume(result.volume);
-      setThreeGeometry((prev) => {
-        prev?.dispose();
-        return result.threeGeometry;
-      });
+      threeGeometryRef.current?.dispose();
+      threeGeometryRef.current = result.threeGeometry;
+      setThreeGeometry(result.threeGeometry);
       setIsPreviewStale(false);
       return result.geometry;
     } catch (err) {
-      if (isStale(seq)) {
+      if (isStale(seq) && !preserveStaleGeometryForExport) {
         return null;
       }
       console.error("生成失败:", err);
@@ -121,12 +134,13 @@ export function usePreviewLifecycle<P, S>({
       toast("error", blockingReason);
       return;
     }
+    const exportContext = captureExportContext(snapshot);
     const fingerprint = fingerprintSnapshot(snapshot);
     const needsFreshPreview =
       !geometryRef.current || geometryFingerprintRef.current !== fingerprint;
     const geometry =
       needsFreshPreview
-        ? await generateCurrentPreview(snapshot)
+        ? await generateCurrentPreview(snapshot, true)
         : geometryRef.current;
 
     if (!geometry) {
@@ -137,7 +151,7 @@ export function usePreviewLifecycle<P, S>({
     }
 
     try {
-      await exportModel(snapshot, geometry);
+      await exportModel(snapshot, geometry, exportContext);
     } catch (err) {
       console.error("STL导出失败:", err);
       toast(
@@ -147,6 +161,7 @@ export function usePreviewLifecycle<P, S>({
     }
   }, [
     captureSnapshot,
+    captureExportContext,
     exportModel,
     fingerprintSnapshot,
     generateCurrentPreview,

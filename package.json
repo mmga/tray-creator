@@ -3,17 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "next dev --webpack",
+    "build": "next build --webpack && node scripts/verify-worker-bundle.mjs && node scripts/verify-initial-bundle.mjs",
+    "start": "node scripts/serve-static.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --max-warnings=0",
-    "test": "vitest run",
+    "test": "pnpm test:unit && pnpm test:integration && pnpm test:static-server",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:unit": "vitest run",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "test:performance": "vitest run --config vitest.performance.config.ts"
+    "test:performance": "vitest run --config vitest.performance.config.ts",
+    "test:static-server": "node --test scripts/serve-static.test.mjs"
   },
   "dependencies": {
     "@jscad/modeling": "^2.12.7",

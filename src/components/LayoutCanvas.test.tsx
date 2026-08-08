@@ -321,7 +321,6 @@ function createSteppedParams(
         groupDisconnectDistance: 0,
       },
     ],
-    activeGroupId: "group-1",
     spacing: 5,
     holeDepth: 3,
     splitGrooveDepth: 2,
@@ -596,6 +595,11 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "打开镜像面板" }));
+    expect(screen.getByRole("complementary", { name: "布局工具" })).toHaveClass(
+      "w-full",
+      "h-1/2",
+      "lg:h-full",
+    );
     expect(screen.getByTestId("alignment-toolbar")).toHaveAttribute(
       "data-active-tab-id",
       "mirror",
@@ -658,6 +662,7 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
       "true",
     );
     expect(screen.getByText(/有效底板超限/)).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("有效底板超限");
   });
 
   it("forwards stepped outline preview and focused group state to canvas layers", () => {
@@ -734,7 +739,6 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
               groupDisconnectDistance: 0,
             },
           ],
-          activeGroupId: "low",
           slots: [
             {
               id: "low-slot",

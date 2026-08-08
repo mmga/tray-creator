@@ -128,7 +128,6 @@ export function buildSteppedPerfFixture(
     trayDepth: config.trayDepth,
     slots,
     groups,
-    activeGroupId: groups[0]?.id ?? "",
     spacing: config.spacing,
     holeDepth: config.holeDepth,
     splitGrooveDepth: 2,

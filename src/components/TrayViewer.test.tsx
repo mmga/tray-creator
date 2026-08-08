@@ -7,6 +7,7 @@ import TrayViewer from "@/components/TrayViewer";
 const {
   useThreeState,
   orbitControlsPropsSpy,
+  canvasRenderSpy,
   canvasCreatedGlSpy,
   glDomElement,
 } = vi.hoisted(() => {
@@ -30,6 +31,7 @@ const {
   return {
     useThreeState: { camera, controls, gl },
     orbitControlsPropsSpy: vi.fn(),
+    canvasRenderSpy: vi.fn(),
     canvasCreatedGlSpy: gl,
     glDomElement: glDom,
   };
@@ -46,6 +48,7 @@ vi.mock("@react-three/fiber", async () => {
       children: React.ReactNode;
       onCreated?: (state: { gl: typeof canvasCreatedGlSpy }) => void;
     }) {
+      canvasRenderSpy();
       ReactModule.useEffect(() => {
         onCreated?.({ gl: canvasCreatedGlSpy });
       }, [onCreated]);
@@ -80,6 +83,7 @@ describe("TrayViewer", { timeout: 15000 }, () => {
     glDomElement.addEventListener.mockReset();
     glDomElement.removeEventListener.mockReset();
     orbitControlsPropsSpy.mockReset();
+    canvasRenderSpy.mockReset();
     vi.spyOn(console, "error").mockImplementation(() => undefined);
   });
 
@@ -87,9 +91,9 @@ describe("TrayViewer", { timeout: 15000 }, () => {
     vi.restoreAllMocks();
   });
 
-  it("requests regeneration only when the current 3D view is stale", () => {
+  it("仅通过明确按钮重新生成过期的 3D 预览", () => {
     const onRegenerate = vi.fn();
-    const { rerender } = render(
+    const { container, rerender } = render(
       <TrayViewer
         geometry={null}
         isStale={true}
@@ -97,8 +101,12 @@ describe("TrayViewer", { timeout: 15000 }, () => {
         onRegenerate={onRegenerate}
       />,
     );
+    expect(container.firstElementChild).toHaveClass("min-h-0", "md:min-h-[400px]");
 
     fireEvent.click(screen.getByText("FORGE VIEW"));
+    expect(onRegenerate).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "预览待更新，重新锻造" }));
     expect(onRegenerate).toHaveBeenCalledTimes(1);
 
     rerender(
@@ -112,6 +120,7 @@ describe("TrayViewer", { timeout: 15000 }, () => {
 
     fireEvent.click(screen.getByText("FORGE VIEW"));
     expect(onRegenerate).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("button", { name: "预览待更新，重新锻造" })).not.toBeInTheDocument();
   });
 
   it("shows and resets the loading bar based on generate state", () => {
@@ -129,6 +138,7 @@ describe("TrayViewer", { timeout: 15000 }, () => {
     const { container, rerender } = render(
       <TrayViewer geometry={null} isGenerating={true} />,
     );
+    const canvasRendersBeforeProgress = canvasRenderSpy.mock.calls.length;
 
     act(() => {
       vi.advanceTimersByTime(1500);
@@ -136,8 +146,13 @@ describe("TrayViewer", { timeout: 15000 }, () => {
     const progressBar = container.querySelector(
       'div[style*="width:"]',
     ) as HTMLDivElement | null;
+    expect(screen.getByRole("progressbar", { name: "正在生成模型预览" })).toHaveAttribute(
+      "aria-valuenow",
+      expect.stringMatching(/^[1-9]\d*$/),
+    );
     expect(progressBar).not.toBeNull();
     expect(Number.parseFloat(progressBar!.style.width)).toBeGreaterThan(0);
+    expect(canvasRenderSpy).toHaveBeenCalledTimes(canvasRendersBeforeProgress);
 
     rerender(<TrayViewer geometry={null} isGenerating={false} />);
     expect(container.querySelector('div[style*="width:"]')).toBeNull();
@@ -170,6 +185,7 @@ describe("TrayViewer", { timeout: 15000 }, () => {
     const progressBar = container.querySelector(
       'div[style*="width:"]',
     ) as HTMLDivElement | null;
+    expect(screen.getByRole("progressbar", { name: "正在生成拆件预览" })).toBeInTheDocument();
     expect(progressBar).not.toBeNull();
     expect(Number.parseFloat(progressBar!.style.width)).toBeGreaterThan(0);
 
@@ -319,5 +335,16 @@ describe("TrayViewer", { timeout: 15000 }, () => {
       "webglcontextrestored",
       restoredHandler,
     );
+  });
+
+  it("releases derived edge geometry on unmount", () => {
+    const disposeSpy = vi.spyOn(THREE.EdgesGeometry.prototype, "dispose");
+    const { unmount } = render(
+      <TrayViewer geometry={createGeometry()} />,
+    );
+
+    unmount();
+
+    expect(disposeSpy).toHaveBeenCalledTimes(1);
   });
 });

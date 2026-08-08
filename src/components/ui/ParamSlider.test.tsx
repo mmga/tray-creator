@@ -14,6 +14,8 @@ vi.mock("@/components/ui/slider", () => ({
     onPointerCancel,
     onValueChange,
     onValueCommit,
+    "aria-label": ariaLabel,
+    "aria-describedby": ariaDescribedBy,
   }: {
     value: number[];
     min: number;
@@ -24,6 +26,8 @@ vi.mock("@/components/ui/slider", () => ({
     onPointerCancel?: React.PointerEventHandler<HTMLDivElement>;
     onValueChange?: (value: number[]) => void;
     onValueCommit?: (value: number[]) => void;
+    "aria-label"?: string;
+    "aria-describedby"?: string;
   }) {
     return (
       <div
@@ -39,6 +43,8 @@ vi.mock("@/components/ui/slider", () => ({
         />
         <div
           role="slider"
+          aria-label={ariaLabel}
+          aria-describedby={ariaDescribedBy}
           aria-valuenow={value[0]}
           tabIndex={0}
           onKeyDownCapture={onKeyDownCapture}
@@ -64,6 +70,22 @@ vi.mock("@/components/ui/slider", () => ({
 }));
 
 describe("ParamSlider", () => {
+  it("将可见标签和单位关联到输入及滑块", () => {
+    render(
+      <ParamSlider
+        label="长度"
+        value={10}
+        config={{ min: 0, max: 20, step: 1 }}
+        onChange={vi.fn()}
+      />,
+    );
+
+    const input = screen.getByRole("spinbutton", { name: "长度" });
+    const slider = screen.getByRole("slider", { name: "长度滑块" });
+    expect(input).toHaveAccessibleDescription("mm");
+    expect(slider).toHaveAccessibleDescription("mm");
+  });
+
   it("expands slider bounds to contain the current controlled value", () => {
     const onChange = vi.fn();
 
