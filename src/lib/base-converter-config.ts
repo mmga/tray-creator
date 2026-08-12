@@ -1,5 +1,6 @@
 import { DEFAULT_ELLIPSE_PROFILE_EXPONENT } from "@/lib/slot-definitions";
 import { validatePushFitHexHolePlacement } from "@/lib/push-fit-hex-hole";
+import { ROUND_BASE_SHELL_THICKNESS } from "@/lib/round-base-profile";
 import type {
   BaseGenerationKind,
   BaseConverterParams,
@@ -350,6 +351,9 @@ export function validateBaseConverterParams(
     }
     if (!Number.isFinite(profile.height) || profile.height <= 0) {
       return "圆形底盘高度无效";
+    }
+    if (profile.height <= ROUND_BASE_SHELL_THICKNESS) {
+      return `圆形底盘高度必须大于 ${ROUND_BASE_SHELL_THICKNESS}mm 壳厚`;
     }
     if (!Number.isFinite(profile.topInset) || profile.topInset < 0) {
       return "圆形底盘顶部内缩无效";

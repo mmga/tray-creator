@@ -125,6 +125,7 @@ describe("BaseConverterPanel", () => {
     );
 
     expect(screen.getByText("首版参考值")).toBeInTheDocument();
+    expect(screen.getByText("底部开腔 · 顶板/侧壁 2mm")).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "战锤圆形底盘规格" })).toBeInTheDocument();
     expect(screen.getByLabelText("底盘总高 mm")).toHaveValue(4);
     expect(screen.getByLabelText("顶部单边内缩 mm")).toHaveValue(1.5);

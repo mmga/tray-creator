@@ -4,6 +4,7 @@ import { useId } from "react";
 import { CircleDot, Hexagon } from "lucide-react";
 import type { BaseConverterParams } from "@/types/custom-tray";
 import { ROUND_BASE_STANDARDS } from "@/lib/base-converter-config";
+import { ROUND_BASE_SHELL_THICKNESS } from "@/lib/round-base-profile";
 import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
 import { Label } from "@/components/ui/label";
 import {
@@ -88,6 +89,9 @@ export function RoundBaseConfig({ params, updateParams }: RoundBaseConfigProps) 
           <div className="rounded-sm border border-primary/25 bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
             <span className="font-semibold text-primary">首版参考值</span>
             <span> · 可按实测尺寸继续修改，不会改变原有转换底盘参数。</span>
+            <div className="mt-1 font-mono text-[#d8d1c5]">
+              底部开腔 · 顶板/侧壁 {ROUND_BASE_SHELL_THICKNESS}mm
+            </div>
           </div>
 
           <div className="space-y-1.5">

@@ -219,6 +219,15 @@ describe("base converter config", () => {
       generationKind: "plain",
       roundBaseSnapshot: {
         ...BASE_CONVERTER_DEFAULTS.roundBaseSnapshot,
+        height: 2,
+      },
+    })).toContain("必须大于 2mm 壳厚");
+
+    expect(validateBaseConverterParams({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+      roundBaseSnapshot: {
+        ...BASE_CONVERTER_DEFAULTS.roundBaseSnapshot,
         topInset: 16,
       },
     })).toContain("顶部轮廓已消失");

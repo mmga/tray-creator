@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { measurements } from "@jscad/modeling";
+import {
+  booleans,
+  measurements,
+  primitives,
+  transforms,
+} from "@jscad/modeling";
 import {
   BASE_CONVERTER_DEFAULTS,
   ROUND_BASE_STANDARDS,
@@ -11,6 +16,26 @@ import { createBaseConverterModel } from "@/lib/base-converter-model";
 import { getBaseConverterSTLFilename } from "@/lib/base-converter-model-service";
 
 describe("base converter model", () => {
+  it.each(ROUND_BASE_STANDARDS)(
+    "leaves the center of the $name underside open",
+    (standard) => {
+    const geometry = createBaseConverterModel({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+      roundBaseStandardId: standard.standardId,
+      roundBaseSnapshot: standard,
+    });
+    const undersideProbe = transforms.translate(
+      [0, 0, 0.85],
+      primitives.cylinder({ radius: 5, height: 1.3, segments: 32 }),
+    );
+
+    expect(measurements.measureVolume(
+      booleans.intersect(geometry, undersideProbe),
+    )).toBeCloseTo(0, 6);
+    },
+  );
+
   it.each(ROUND_BASE_STANDARDS)(
     "builds plain $name with its snapshotted diameter and height",
     (standard) => {
@@ -51,7 +76,7 @@ describe("base converter model", () => {
     );
     expect(
       measurements.measureVolume(plain) - measurements.measureVolume(pushFit),
-    ).toBeCloseTo(18 * Math.sqrt(3), 3);
+    ).toBeCloseTo(9 * Math.sqrt(3), 3);
   });
 
   it("uses the editable top inset to taper a plain base", () => {
@@ -71,9 +96,11 @@ describe("base converter model", () => {
     expect(measurements.measureVolume(tapered)).toBeLessThan(
       measurements.measureVolume(cylinder),
     );
-    expect(measurements.measureBoundingBox(tapered)).toEqual(
-      measurements.measureBoundingBox(cylinder),
-    );
+    const taperedBounds = measurements.measureBoundingBox(tapered).flat();
+    const cylinderBounds = measurements.measureBoundingBox(cylinder).flat();
+    taperedBounds.forEach((value, index) => {
+      expect(value).toBeCloseTo(cylinderBounds[index], 8);
+    });
   });
 
   it("builds the selected target footprint and preserves the recess floor", () => {
