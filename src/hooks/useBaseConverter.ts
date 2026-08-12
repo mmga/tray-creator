@@ -36,6 +36,9 @@ interface UseBaseConverterReturn {
     key: K,
     value: BaseConverterParams[K],
   ) => void;
+  previewParams: (
+    mutate: (params: BaseConverterParams) => BaseConverterParams,
+  ) => void;
   commitContinuousEdit: () => void;
   cancelContinuousEdit: () => void;
   undo: () => void;
@@ -108,6 +111,12 @@ export function useBaseConverter(): UseBaseConverterReturn {
     },
     [model],
   );
+  const previewParams = useCallback(
+    (mutate: (params: BaseConverterParams) => BaseConverterParams) => {
+      model.previewContinuousEdit(mutate);
+    },
+    [model],
+  );
   const commitContinuousEdit = useCallback(() => {
     model.commitContinuousEdit();
   }, [model]);
@@ -130,6 +139,7 @@ export function useBaseConverter(): UseBaseConverterReturn {
     updateParams,
     beginContinuousEdit,
     previewParam,
+    previewParams,
     commitContinuousEdit,
     cancelContinuousEdit,
     undo: model.undo,

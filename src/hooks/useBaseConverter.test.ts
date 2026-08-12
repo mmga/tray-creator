@@ -41,6 +41,28 @@ describe("useBaseConverter", () => {
     expect(result.current.params.conversionClearance).toBe(0.2);
   });
 
+  it("previews nested push-fit offsets and commits the whole drag as one undo step", () => {
+    const { result } = renderHook(() => useBaseConverter());
+
+    act(() => {
+      result.current.beginContinuousEdit();
+      result.current.previewParams((params) => ({
+        ...params,
+        pushFitHexHole: { ...params.pushFitHexHole, offsetX: 2, offsetY: -1 },
+      }));
+      result.current.previewParams((params) => ({
+        ...params,
+        pushFitHexHole: { ...params.pushFitHexHole, offsetX: 3, offsetY: -2 },
+      }));
+    });
+
+    expect(result.current.params.pushFitHexHole).toMatchObject({ offsetX: 0, offsetY: 0 });
+    expect(result.current.viewParams.pushFitHexHole).toMatchObject({ offsetX: 3, offsetY: -2 });
+    act(() => result.current.commitContinuousEdit());
+    act(() => result.current.undo());
+    expect(result.current.params.pushFitHexHole).toMatchObject({ offsetX: 0, offsetY: 0 });
+  });
+
   it("clears undo history when a replacement session is loaded", () => {
     const { result } = renderHook(() => useBaseConverter());
 

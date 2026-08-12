@@ -1,6 +1,9 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
-import { BaseConverterPreview } from "@/components/BaseConverterPreview";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import {
+  BaseConverterPreview,
+  clientPointToSvgPoint,
+} from "@/components/BaseConverterPreview";
 import {
   BASE_CONVERTER_DEFAULTS,
   SOURCE_BASE_STANDARDS,
@@ -9,6 +12,14 @@ import {
 } from "@/lib/base-converter-config";
 
 describe("BaseConverterPreview", () => {
+  it("converts client coordinates through a centered meet viewBox", () => {
+    expect(clientPointToSvgPoint(
+      { x: 200, y: 100 },
+      { left: 0, top: 0, width: 300, height: 200 },
+      { x: -20, y: -20, width: 40, height: 40 },
+    )).toEqual({ x: 10, y: 0 });
+  });
+
   it("renders the ordinary round base with its inset top outline", () => {
     const { container } = render(
       <BaseConverterPreview
@@ -41,8 +52,77 @@ describe("BaseConverterPreview", () => {
     expect(container.querySelector('[data-shape="push-fit-hole"]'))
       .toHaveAttribute(
         "points",
-        "3.732,-1 2.866,0.5 1.134,0.5 0.268,-1 1.134,-2.5 2.866,-2.5",
+        "3.732,1 2.866,-0.5 1.134,-0.5 0.268,1 1.134,2.5 2.866,2.5",
       );
+  });
+
+  it("captures pointer dragging, previews offsets, and commits or cancels once", () => {
+    const beginContinuousEdit = vi.fn(() => true);
+    const previewParams = vi.fn();
+    const commitContinuousEdit = vi.fn();
+    const cancelContinuousEdit = vi.fn();
+    const setPointerCapture = vi.fn();
+    Object.defineProperty(SVGElement.prototype, "setPointerCapture", {
+      configurable: true,
+      value: setPointerCapture,
+    });
+    const { container } = render(
+      <BaseConverterPreview
+        params={{ ...BASE_CONVERTER_DEFAULTS, generationKind: "push-fit" }}
+        beginContinuousEdit={beginContinuousEdit}
+        previewParams={previewParams}
+        commitContinuousEdit={commitContinuousEdit}
+        cancelContinuousEdit={cancelContinuousEdit}
+      />,
+    );
+    const svg = container.querySelector("svg")!;
+    vi.spyOn(svg, "getBoundingClientRect").mockReturnValue({
+      left: 0, top: 0, width: 200, height: 200,
+      right: 200, bottom: 200, x: 0, y: 0, toJSON: () => ({}),
+    });
+    const hole = screen.getByRole("button", { name: "拖动简版六边孔" });
+
+    fireEvent.pointerDown(hole, { pointerId: 7, clientX: 100, clientY: 100 });
+    fireEvent.pointerMove(hole, { pointerId: 7, clientX: 120, clientY: 90 });
+    fireEvent.pointerUp(hole, { pointerId: 7 });
+
+    expect(beginContinuousEdit).toHaveBeenCalledTimes(1);
+    expect(setPointerCapture).toHaveBeenCalledWith(7);
+    expect(previewParams).toHaveBeenCalledTimes(1);
+    const mutate = previewParams.mock.calls[0][0];
+    expect(mutate(BASE_CONVERTER_DEFAULTS).pushFitHexHole).toMatchObject({
+      offsetX: expect.closeTo(4.768, 3),
+      offsetY: expect.closeTo(2.384, 3),
+    });
+    expect(commitContinuousEdit).toHaveBeenCalledTimes(1);
+
+    fireEvent.pointerDown(hole, { pointerId: 8, clientX: 100, clientY: 100 });
+    fireEvent.pointerCancel(hole, { pointerId: 8 });
+    expect(cancelContinuousEdit).toHaveBeenCalledTimes(1);
+
+    fireEvent.pointerDown(hole, { pointerId: 9, clientX: 100, clientY: 100 });
+    fireEvent.keyDown(hole, { key: "Escape" });
+    expect(cancelContinuousEdit).toHaveBeenCalledTimes(2);
+  });
+
+  it("moves a focused hole by 0.1mm or 1mm with arrow keys", () => {
+    const updateParams = vi.fn();
+    render(
+      <BaseConverterPreview
+        params={{ ...BASE_CONVERTER_DEFAULTS, generationKind: "push-fit" }}
+        updateParams={updateParams}
+      />,
+    );
+    const hole = screen.getByRole("button", { name: "拖动简版六边孔" });
+
+    fireEvent.keyDown(hole, { key: "ArrowRight" });
+    fireEvent.keyDown(hole, { key: "ArrowUp", shiftKey: true });
+
+    expect(updateParams).toHaveBeenCalledTimes(2);
+    expect(updateParams.mock.calls[0][0](BASE_CONVERTER_DEFAULTS).pushFitHexHole)
+      .toMatchObject({ offsetX: 0.1, offsetY: 0 });
+    expect(updateParams.mock.calls[1][0](BASE_CONVERTER_DEFAULTS).pushFitHexHole)
+      .toMatchObject({ offsetX: 0, offsetY: 1 });
   });
 
   it("renders the selected standard conversion and fixed-clearance recess", () => {

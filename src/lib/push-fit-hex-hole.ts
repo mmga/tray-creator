@@ -39,3 +39,37 @@ export function validatePushFitHexHolePlacement(
     ? null
     : `简版六边形孔必须保留至少 ${minimumWall}mm 顶面壁厚`;
 }
+
+export function clampPushFitHexHoleOffset(
+  profile: RoundBaseProfileSnapshot,
+  hole: PushFitHexHoleParams,
+  desired: Point2D,
+): Point2D {
+  const isLegal = (point: Point2D) => validatePushFitHexHolePlacement(profile, {
+    ...hole,
+    offsetX: point.x,
+    offsetY: point.y,
+  }) === null;
+  if (isLegal(desired)) return desired;
+
+  const current = { x: hole.offsetX, y: hole.offsetY };
+  const origin = { x: 0, y: 0 };
+  const start = isLegal(current) ? current : isLegal(origin) ? origin : current;
+  if (!isLegal(start)) return current;
+
+  let low = 0;
+  let high = 1;
+  for (let iteration = 0; iteration < 28; iteration += 1) {
+    const ratio = (low + high) / 2;
+    const candidate = {
+      x: start.x + (desired.x - start.x) * ratio,
+      y: start.y + (desired.y - start.y) * ratio,
+    };
+    if (isLegal(candidate)) low = ratio;
+    else high = ratio;
+  }
+  return {
+    x: start.x + (desired.x - start.x) * low,
+    y: start.y + (desired.y - start.y) * low,
+  };
+}

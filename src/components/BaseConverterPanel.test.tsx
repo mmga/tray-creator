@@ -149,6 +149,18 @@ describe("BaseConverterPanel", () => {
     expect(screen.getByLabelText("六边孔对边距 mm")).toHaveValue(3);
     expect(screen.getByLabelText("孔位 X mm")).toHaveValue(0);
     expect(screen.getByLabelText("孔位 Y mm")).toHaveValue(0);
+    expect(screen.getByText(/右为 \+X，上为 \+Y/)).toBeInTheDocument();
+  });
+
+  it("keeps an invalid manually entered push-fit hole editable with a clear warning", () => {
+    renderPanel({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "push-fit",
+      pushFitHexHole: { acrossFlats: 3, offsetX: 30, offsetY: 0 },
+    });
+
+    expect(screen.getByRole("alert")).toHaveTextContent("至少 0.6mm 顶面壁厚");
+    expect(screen.getByLabelText("孔位 X mm")).toHaveValue(30);
   });
 
   it("offers circular source standards", () => {

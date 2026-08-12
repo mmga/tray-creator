@@ -17,8 +17,24 @@ export function useBaseConverterViewportWorkspace({
   const deactivate = useCallback(() => {}, []);
   const resetForSessionReplacement = useCallback(() => setRightView("2d"), []);
   const twoDView = useMemo(
-    () => <BaseConverterPreview params={model.viewParams} />,
-    [model.viewParams],
+    () => (
+      <BaseConverterPreview
+        params={model.viewParams}
+        beginContinuousEdit={model.beginContinuousEdit}
+        previewParams={model.previewParams}
+        commitContinuousEdit={model.commitContinuousEdit}
+        cancelContinuousEdit={model.cancelContinuousEdit}
+        updateParams={model.updateParams}
+      />
+    ),
+    [
+      model.beginContinuousEdit,
+      model.cancelContinuousEdit,
+      model.commitContinuousEdit,
+      model.previewParams,
+      model.updateParams,
+      model.viewParams,
+    ],
   );
   const viewport = useMemo(() => (
     <ViewportTabs

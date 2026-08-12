@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useRef, type KeyboardEvent, type PointerEvent } from "react";
 import type { BaseConverterParams } from "@/types/custom-tray";
 import {
   normalizeBaseConverterParams,
@@ -11,7 +11,47 @@ import {
   sampleConversionTargetProfile,
 } from "@/lib/base-converter-profile";
 import { getRoundBaseTopDiameter } from "@/lib/round-base-profile";
-import { createPushFitHexHoleVertices } from "@/lib/push-fit-hex-hole";
+import {
+  clampPushFitHexHoleOffset,
+  createPushFitHexHoleVertices,
+} from "@/lib/push-fit-hex-hole";
+
+interface BaseConverterPreviewProps {
+  params: BaseConverterParams;
+  beginContinuousEdit?: () => boolean;
+  previewParams?: (
+    mutate: (params: BaseConverterParams) => BaseConverterParams,
+  ) => void;
+  commitContinuousEdit?: () => void;
+  cancelContinuousEdit?: () => void;
+  updateParams?: (
+    mutate: (params: BaseConverterParams) => BaseConverterParams,
+  ) => void;
+}
+
+interface SvgViewBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export function clientPointToSvgPoint(
+  client: { x: number; y: number },
+  rect: Pick<DOMRect, "left" | "top" | "width" | "height">,
+  viewBox: SvgViewBox,
+) {
+  const scale = Math.min(
+    rect.width / viewBox.width,
+    rect.height / viewBox.height,
+  );
+  const horizontalInset = (rect.width - viewBox.width * scale) / 2;
+  const verticalInset = (rect.height - viewBox.height * scale) / 2;
+  return {
+    x: viewBox.x + (client.x - rect.left - horizontalInset) / scale,
+    y: viewBox.y + (client.y - rect.top - verticalInset) / scale,
+  };
+}
 
 function PreviewGrid() {
   return (
@@ -26,18 +66,105 @@ function PreviewGrid() {
   );
 }
 
-function RoundBasePreview({ params }: { params: BaseConverterParams }) {
+function RoundBasePreview({
+  params,
+  beginContinuousEdit,
+  previewParams,
+  commitContinuousEdit,
+  cancelContinuousEdit,
+  updateParams,
+}: BaseConverterPreviewProps) {
+  const dragRef = useRef<{
+    pointerId: number;
+    hole: BaseConverterParams["pushFitHexHole"];
+  } | null>(null);
   const profile = params.roundBaseSnapshot;
   const radius = profile.nominalDiameter / 2;
   const topRadius = getRoundBaseTopDiameter(profile) / 2;
   const margin = profile.nominalDiameter * 0.12 + 4;
-  const viewBox = `${-radius - margin} ${-radius - margin} ${profile.nominalDiameter + margin * 2} ${profile.nominalDiameter + margin * 2}`;
+  const viewBoxValues = {
+    x: -radius - margin,
+    y: -radius - margin,
+    width: profile.nominalDiameter + margin * 2,
+    height: profile.nominalDiameter + margin * 2,
+  };
+  const viewBox = `${viewBoxValues.x} ${viewBoxValues.y} ${viewBoxValues.width} ${viewBoxValues.height}`;
   const isPushFit = params.generationKind === "push-fit";
-  const holePoints = isPushFit
+  const holeVertices = isPushFit
     ? createPushFitHexHoleVertices(params.pushFitHexHole)
-        .map(({ x, y }) => `${Number(x.toFixed(3))},${Number(y.toFixed(3))}`)
+    : [];
+  const holePoints = isPushFit
+    ? holeVertices
+        .map(({ x, y }) => `${Number(x.toFixed(3))},${Number((-y).toFixed(3))}`)
         .join(" ")
     : null;
+  const nearestWall = isPushFit
+    ? topRadius - Math.max(...holeVertices.map(({ x, y }) => Math.hypot(x, y)))
+    : null;
+  const previewHole = (hole: BaseConverterParams["pushFitHexHole"]) => {
+    previewParams?.((previous) => ({ ...previous, pushFitHexHole: hole }));
+  };
+  const handlePointerDown = (event: PointerEvent<SVGPolygonElement>) => {
+    if (!isPushFit || !beginContinuousEdit?.()) return;
+    event.preventDefault();
+    event.currentTarget.focus();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragRef.current = { pointerId: event.pointerId, hole: params.pushFitHexHole };
+  };
+  const handlePointerMove = (event: PointerEvent<SVGPolygonElement>) => {
+    const drag = dragRef.current;
+    const svg = event.currentTarget.ownerSVGElement;
+    if (!drag || drag.pointerId !== event.pointerId || !svg) return;
+    const point = clientPointToSvgPoint(
+      { x: event.clientX, y: event.clientY },
+      svg.getBoundingClientRect(),
+      viewBoxValues,
+    );
+    const next = clampPushFitHexHoleOffset(profile, drag.hole, {
+      x: point.x,
+      y: -point.y,
+    });
+    drag.hole = { ...drag.hole, offsetX: next.x, offsetY: next.y };
+    previewHole(drag.hole);
+  };
+  const finishDrag = (event: PointerEvent<SVGPolygonElement>) => {
+    if (dragRef.current?.pointerId !== event.pointerId) return;
+    dragRef.current = null;
+    commitContinuousEdit?.();
+  };
+  const cancelDrag = () => {
+    if (!dragRef.current) return;
+    dragRef.current = null;
+    cancelContinuousEdit?.();
+  };
+  const handleKeyDown = (event: KeyboardEvent<SVGPolygonElement>) => {
+    if (event.key === "Escape" && dragRef.current) {
+      event.preventDefault();
+      cancelDrag();
+      return;
+    }
+    const directions: Record<string, { x: number; y: number }> = {
+      ArrowLeft: { x: -1, y: 0 },
+      ArrowRight: { x: 1, y: 0 },
+      ArrowUp: { x: 0, y: 1 },
+      ArrowDown: { x: 0, y: -1 },
+    };
+    const direction = directions[event.key];
+    if (!direction || !updateParams) return;
+    event.preventDefault();
+    const step = event.shiftKey ? 1 : 0.1;
+    updateParams((previous) => {
+      const hole = previous.pushFitHexHole;
+      const next = clampPushFitHexHoleOffset(previous.roundBaseSnapshot, hole, {
+        x: hole.offsetX + direction.x * step,
+        y: hole.offsetY + direction.y * step,
+      });
+      return {
+        ...previous,
+        pushFitHexHole: { ...hole, offsetX: next.x, offsetY: next.y },
+      };
+    });
+  };
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#0d0b09]">
@@ -70,6 +197,15 @@ function RoundBasePreview({ params }: { params: BaseConverterParams }) {
             fill="rgba(14, 13, 11, 0.9)"
             stroke="#f0d8b8"
             strokeWidth={0.5}
+            role="button"
+            aria-label="拖动简版六边孔"
+            tabIndex={0}
+            className="cursor-grab outline-none focus-visible:stroke-primary active:cursor-grabbing"
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={finishDrag}
+            onPointerCancel={cancelDrag}
+            onKeyDown={handleKeyDown}
           />
         )}
         <line x1={-radius} y1={0} x2={radius} y2={0} stroke="#8b7355" strokeWidth={0.2} strokeDasharray="1 1" />
@@ -78,16 +214,19 @@ function RoundBasePreview({ params }: { params: BaseConverterParams }) {
       <div className="absolute bottom-3 left-3 z-20 rounded-sm border border-[#2e2a24] bg-[#100d0a]/90 px-3 py-1.5 font-mono text-xs text-[#d8d1c5]">
         {isPushFit ? "简版底盘" : "普通底盘"} · {profile.name}
         {isPushFit && ` · 六边孔 ${params.pushFitHexHole.acrossFlats.toFixed(1)}mm`}
+        {isPushFit && ` · 中心 (${params.pushFitHexHole.offsetX.toFixed(1)}, ${params.pushFitHexHole.offsetY.toFixed(1)})mm`}
+        {nearestWall !== null && ` · 最近壁厚 ${nearestWall.toFixed(1)}mm`}
       </div>
     </div>
   );
 }
 
-export function BaseConverterPreview({ params }: { params: BaseConverterParams }) {
+export function BaseConverterPreview(props: BaseConverterPreviewProps) {
+  const { params } = props;
   const clipId = useId().replace(/:/g, "");
   const normalizedParams = normalizeBaseConverterParams(params);
   if (normalizedParams.generationKind !== "conversion") {
-    return <RoundBasePreview params={normalizedParams} />;
+    return <RoundBasePreview {...props} params={normalizedParams} />;
   }
   const { params: normalized, source, target, recess } =
     resolveBaseConverterGeometry(normalizedParams);

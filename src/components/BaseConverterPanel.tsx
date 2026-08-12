@@ -395,6 +395,12 @@ export default function BaseConverterPanel({
           ))}
         </div>
 
+        {validationError && (
+          <div role="alert" className="rounded-sm border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+            {validationError}；仍可编辑、保存草稿和查看 2D。
+          </div>
+        )}
+
         {params.generationKind !== "conversion" && (
           <RoundBaseConfig params={params} updateParams={updateParams} />
         )}
@@ -480,11 +486,6 @@ export default function BaseConverterPanel({
                   </div>
                 </div>
               </div>
-              {validationError && (
-                <div role="alert" className="rounded-sm border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
-                  {validationError}；仍可编辑、保存草稿和查看 2D。
-                </div>
-              )}
             </div>
           </SectionHeader>
         </div>

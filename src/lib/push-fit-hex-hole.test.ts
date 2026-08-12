@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  clampPushFitHexHoleOffset,
   createPushFitHexHoleVertices,
   validatePushFitHexHolePlacement,
 } from "@/lib/push-fit-hex-hole";
@@ -40,5 +41,22 @@ describe("push-fit hex hole", () => {
       offsetX: legalOffset + 0.01,
       offsetY: 0,
     })).toContain("至少 0.6mm 顶面壁厚");
+  });
+
+  it("limits a drag to the last legal point along its movement direction", () => {
+    const profile = BASE_CONVERTER_DEFAULTS.roundBaseSnapshot;
+    const hole = BASE_CONVERTER_DEFAULTS.pushFitHexHole;
+    const clamped = clampPushFitHexHoleOffset(profile, hole, {
+      x: 30,
+      y: 8,
+    });
+
+    expect(validatePushFitHexHolePlacement(profile, {
+      ...hole,
+      offsetX: clamped.x,
+      offsetY: clamped.y,
+    })).toBeNull();
+    expect(clamped.x).toBeLessThan(30);
+    expect(clamped.y / clamped.x).toBeCloseTo(8 / 30, 5);
   });
 });

@@ -130,6 +130,9 @@ export function RoundBaseConfig({ params, updateParams }: RoundBaseConfigProps) 
               <div className="text-xs font-semibold tracking-wide text-[#e6ded0]">
                 拼插六边孔
               </div>
+              <div className="text-[11px] text-muted-foreground">
+                以底盘中心为原点：右为 +X，上为 +Y
+              </div>
               <RoundBaseNumberField
                 label="六边孔对边距 mm"
                 value={params.pushFitHexHole.acrossFlats}
