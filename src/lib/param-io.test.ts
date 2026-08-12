@@ -163,6 +163,15 @@ describe("param-io", () => {
     expect(preparation.status).toBe("ready");
     if (preparation.status !== "ready") return;
     expect(preparation.candidate.snapshot.params).toMatchObject({
+      generationKind: "conversion",
+      roundBaseStandardId: "round-32",
+      roundBaseSnapshot: {
+        standardId: "round-32",
+        nominalDiameter: 32,
+        height: 4,
+        topInset: 1.5,
+      },
+      pushFitHexHole: { acrossFlats: 3, offsetX: 0, offsetY: 0 },
       conversionClearance: 0.2,
       sideBevelWidth: 0,
       geometrySnapshot: {
@@ -176,6 +185,15 @@ describe("param-io", () => {
           category: "migration",
           path: "geometrySnapshot",
           label: "转换几何快照",
+        }),
+        expect.objectContaining({
+          category: "default",
+          path: "generationKind",
+          normalizedValue: "conversion",
+        }),
+        expect.objectContaining({
+          category: "default",
+          path: "roundBaseSnapshot",
         }),
       ]),
     );

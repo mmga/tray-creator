@@ -1,10 +1,14 @@
 import { DEFAULT_ELLIPSE_PROFILE_EXPONENT } from "@/lib/slot-definitions";
 import type {
+  BaseGenerationKind,
   BaseConverterParams,
   ConversionGeometrySnapshot,
   ConversionSourceGeometrySnapshot,
   ConversionTargetGeometrySnapshot,
+  RoundBaseProfileSnapshot,
 } from "@/types/custom-tray";
+
+export type RoundBaseStandard = RoundBaseProfileSnapshot;
 
 export interface SourceBaseStandard {
   id: string;
@@ -23,6 +27,14 @@ export interface TargetBaseStandard {
   depth: number;
   profileExponent: number;
 }
+
+export const ROUND_BASE_STANDARDS: RoundBaseStandard[] = [
+  { standardId: "round-25", name: "Ø25mm", nominalDiameter: 25, height: 4, topInset: 1.5 },
+  { standardId: "round-28.5", name: "Ø28.5mm", nominalDiameter: 28.5, height: 4, topInset: 1.5 },
+  { standardId: "round-32", name: "Ø32mm", nominalDiameter: 32, height: 4, topInset: 1.5 },
+  { standardId: "round-40", name: "Ø40mm", nominalDiameter: 40, height: 4, topInset: 1.5 },
+  { standardId: "round-50", name: "Ø50mm", nominalDiameter: 50, height: 4, topInset: 1.5 },
+];
 
 export const CONVERSION_CLEARANCE_PER_SIDE = 0.2;
 
@@ -106,8 +118,17 @@ export function createConversionGeometrySnapshot(
 
 const DEFAULT_SOURCE = SOURCE_BASE_STANDARDS[0];
 const DEFAULT_TARGET = TARGET_BASE_STANDARDS[0];
+const DEFAULT_ROUND_BASE = ROUND_BASE_STANDARDS[2];
 
 export const BASE_CONVERTER_DEFAULTS: BaseConverterParams = {
+  generationKind: "conversion",
+  roundBaseStandardId: DEFAULT_ROUND_BASE.standardId,
+  roundBaseSnapshot: { ...DEFAULT_ROUND_BASE },
+  pushFitHexHole: {
+    acrossFlats: 3,
+    offsetX: 0,
+    offsetY: 0,
+  },
   sourceStandardId: DEFAULT_SOURCE.id,
   targetStandardId: DEFAULT_TARGET.id,
   geometrySnapshot: createConversionGeometrySnapshot(DEFAULT_SOURCE, DEFAULT_TARGET),
@@ -187,6 +208,40 @@ function targetSnapshotMatchesId(
   return target?.standardId === id || target?.customId === id;
 }
 
+function normalizeGenerationKind(value: unknown): BaseGenerationKind {
+  return value === "plain" || value === "push-fit" || value === "conversion"
+    ? value
+    : "conversion";
+}
+
+export function findRoundBaseStandard(id: unknown) {
+  return typeof id === "string"
+    ? ROUND_BASE_STANDARDS.find((standard) => standard.standardId === id)
+    : undefined;
+}
+
+function normalizeRoundBaseSnapshot(
+  value: Partial<RoundBaseProfileSnapshot> | undefined,
+  selected: RoundBaseStandard,
+): RoundBaseProfileSnapshot {
+  if (value?.standardId !== selected.standardId) {
+    return { ...selected };
+  }
+  return {
+    standardId: selected.standardId,
+    name: typeof value.name === "string" && value.name.trim()
+      ? value.name
+      : selected.name,
+    nominalDiameter: normalizeFinite(
+      value.nominalDiameter,
+      () => true,
+      selected.nominalDiameter,
+    ),
+    height: normalizeFinite(value.height, () => true, selected.height),
+    topInset: normalizeFinite(value.topInset, () => true, selected.topInset),
+  };
+}
+
 export function normalizeBaseConverterParams(
   params: Partial<BaseConverterParams>,
 ): BaseConverterParams {
@@ -204,8 +259,34 @@ export function normalizeBaseConverterParams(
   )
     ? params.geometrySnapshot!.target
     : snapshotTargetStandard(targetStandard ?? DEFAULT_TARGET);
+  const roundBaseStandard = findRoundBaseStandard(params.roundBaseStandardId)
+    ?? findRoundBaseStandard(params.roundBaseSnapshot?.standardId)
+    ?? DEFAULT_ROUND_BASE;
 
   return {
+    generationKind: normalizeGenerationKind(params.generationKind),
+    roundBaseStandardId: roundBaseStandard.standardId,
+    roundBaseSnapshot: normalizeRoundBaseSnapshot(
+      params.roundBaseSnapshot,
+      roundBaseStandard,
+    ),
+    pushFitHexHole: {
+      acrossFlats: normalizeFinite(
+        params.pushFitHexHole?.acrossFlats,
+        () => true,
+        BASE_CONVERTER_DEFAULTS.pushFitHexHole.acrossFlats,
+      ),
+      offsetX: normalizeFinite(
+        params.pushFitHexHole?.offsetX,
+        () => true,
+        BASE_CONVERTER_DEFAULTS.pushFitHexHole.offsetX,
+      ),
+      offsetY: normalizeFinite(
+        params.pushFitHexHole?.offsetY,
+        () => true,
+        BASE_CONVERTER_DEFAULTS.pushFitHexHole.offsetY,
+      ),
+    },
     sourceStandardId: sourceStandard?.id
       ?? sourceSnapshot.customId
       ?? DEFAULT_SOURCE.id,
@@ -260,8 +341,34 @@ export function resolveBaseConverterGeometry(params: BaseConverterParams) {
 export function validateBaseConverterParams(
   params: BaseConverterParams,
 ): string | null {
+  const normalizedParams = normalizeBaseConverterParams(params);
+  if (normalizedParams.generationKind !== "conversion") {
+    const profile = normalizedParams.roundBaseSnapshot;
+    if (!Number.isFinite(profile.nominalDiameter) || profile.nominalDiameter <= 0) {
+      return "圆形底盘直径无效";
+    }
+    if (!Number.isFinite(profile.height) || profile.height <= 0) {
+      return "圆形底盘高度无效";
+    }
+    if (!Number.isFinite(profile.topInset) || profile.topInset < 0) {
+      return "圆形底盘顶部内缩无效";
+    }
+    if (profile.topInset * 2 >= profile.nominalDiameter) {
+      return "圆形底盘顶部内缩过大，顶部轮廓已消失";
+    }
+    if (normalizedParams.generationKind === "push-fit") {
+      const hole = normalizedParams.pushFitHexHole;
+      if (!Number.isFinite(hole.acrossFlats) || hole.acrossFlats <= 0) {
+        return "简版六边形孔尺寸无效";
+      }
+      if (!Number.isFinite(hole.offsetX) || !Number.isFinite(hole.offsetY)) {
+        return "简版六边形孔位置无效";
+      }
+    }
+    return null;
+  }
   const { params: normalized, source, target, recess, compatible } =
-    resolveBaseConverterGeometry(params);
+    resolveBaseConverterGeometry(normalizedParams);
 
   if (
     (source.shape !== "rectangle" && source.shape !== "circle")

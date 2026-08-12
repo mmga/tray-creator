@@ -52,6 +52,31 @@ function canonicalizeFingerprintValue(value: unknown): unknown {
   return value;
 }
 
+function projectBaseConverterGeometryParams(params: BaseConverterParams) {
+  switch (params.generationKind) {
+    case "plain":
+      return {
+        generationKind: params.generationKind,
+        roundBaseSnapshot: params.roundBaseSnapshot,
+      };
+    case "push-fit":
+      return {
+        generationKind: params.generationKind,
+        roundBaseSnapshot: params.roundBaseSnapshot,
+        pushFitHexHole: params.pushFitHexHole,
+      };
+    case "conversion":
+      return {
+        generationKind: params.generationKind,
+        geometrySnapshot: params.geometrySnapshot,
+        conversionClearance: params.conversionClearance,
+        floorThickness: params.floorThickness,
+        recessDepth: params.recessDepth,
+        sideBevelWidth: params.sideBevelWidth,
+      };
+  }
+}
+
 /**
  * 标识缓存几何由哪一个 Mode Param Snapshot 生成。
  * 指纹仅存在于运行时，不进入持久化参数产物。
@@ -59,5 +84,13 @@ function canonicalizeFingerprintValue(value: unknown): unknown {
 export function createModelGeometryFingerprint<M extends AppMode>(
   snapshot: ModeParamSnapshot<M>,
 ): string {
-  return JSON.stringify(canonicalizeFingerprintValue(snapshot));
+  const geometrySnapshot = snapshot.mode === "base-converter"
+    ? {
+        mode: snapshot.mode,
+        params: projectBaseConverterGeometryParams(
+          snapshot.params as BaseConverterParams,
+        ),
+      }
+    : snapshot;
+  return JSON.stringify(canonicalizeFingerprintValue(geometrySnapshot));
 }

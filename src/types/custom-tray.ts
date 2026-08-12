@@ -44,7 +44,30 @@ export interface ConversionGeometrySnapshot {
   target: ConversionTargetGeometrySnapshot;
 }
 
+export type BaseGenerationKind = "plain" | "push-fit" | "conversion";
+
+export interface RoundBaseProfileSnapshot {
+  standardId: string;
+  name: string;
+  nominalDiameter: number;
+  height: number;
+  topInset: number;
+}
+
+export interface PushFitHexHoleParams {
+  /** 正六边形最终生成尺寸，以两条相对平边之间的距离表示 (mm) */
+  acrossFlats: number;
+  /** 孔中心相对底盘中心的水平偏移，向右为正 (mm) */
+  offsetX: number;
+  /** 孔中心相对底盘中心的垂直偏移，向上为正 (mm) */
+  offsetY: number;
+}
+
 export interface BaseConverterParams {
+  generationKind: BaseGenerationKind;
+  roundBaseStandardId: string;
+  roundBaseSnapshot: RoundBaseProfileSnapshot;
+  pushFitHexHole: PushFitHexHoleParams;
   sourceStandardId: string;
   targetStandardId: string;
   geometrySnapshot: ConversionGeometrySnapshot;

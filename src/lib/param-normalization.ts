@@ -208,6 +208,10 @@ function normalizeBaseConverterParamsForMode(
   requireNumber(raw as unknown as Record<string, unknown>, "recessDepth");
   const normalized = normalizeBaseConverterParams(raw);
   const labels: Record<keyof BaseConverterParams, string> = {
+    generationKind: "底盘生成类型",
+    roundBaseStandardId: "圆形底盘标准",
+    roundBaseSnapshot: "圆形底盘几何快照",
+    pushFitHexHole: "简版六边形插孔",
     sourceStandardId: "原底盘标准",
     targetStandardId: "目标底盘标准",
     geometrySnapshot: "转换几何快照",
@@ -229,6 +233,10 @@ function normalizeBaseConverterParamsForMode(
     return false;
   };
   for (const key of [
+    "generationKind",
+    "roundBaseStandardId",
+    "roundBaseSnapshot",
+    "pushFitHexHole",
     "sourceStandardId",
     "targetStandardId",
     "geometrySnapshot",
@@ -249,6 +257,11 @@ function normalizeBaseConverterParamsForMode(
       };
       if (key === "geometrySnapshot") {
         recordMigration(recorder, adjustment);
+      } else if (raw[key] === undefined) {
+        recordDefault(recorder, {
+          ...adjustment,
+          reason: "已补齐当前底盘生成参数的默认值",
+        });
       } else {
         recordValueAdjustment(recorder, adjustment);
       }

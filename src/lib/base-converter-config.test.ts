@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   BASE_CONVERTER_DEFAULTS,
+  ROUND_BASE_STANDARDS,
   SOURCE_BASE_STANDARDS,
   TARGET_BASE_STANDARDS,
   createConversionGeometrySnapshot,
@@ -12,6 +13,16 @@ import {
 } from "@/lib/base-converter-config";
 
 describe("base converter config", () => {
+  it("defines the five first-release round base standards", () => {
+    expect(ROUND_BASE_STANDARDS).toEqual([
+      { standardId: "round-25", name: "Ø25mm", nominalDiameter: 25, height: 4, topInset: 1.5 },
+      { standardId: "round-28.5", name: "Ø28.5mm", nominalDiameter: 28.5, height: 4, topInset: 1.5 },
+      { standardId: "round-32", name: "Ø32mm", nominalDiameter: 32, height: 4, topInset: 1.5 },
+      { standardId: "round-40", name: "Ø40mm", nominalDiameter: 40, height: 4, topInset: 1.5 },
+      { standardId: "round-50", name: "Ø50mm", nominalDiameter: 50, height: 4, topInset: 1.5 },
+    ]);
+  });
+
   it("defines independent source and target standard catalogs", () => {
     expect(SOURCE_BASE_STANDARDS.map((item) => item.name)).toEqual([
       "20 × 20mm", "25 × 25mm", "40 × 40mm",
@@ -108,6 +119,10 @@ describe("base converter config", () => {
     });
 
     expect(normalized).toEqual({
+      generationKind: "conversion",
+      roundBaseStandardId: "round-32",
+      roundBaseSnapshot: BASE_CONVERTER_DEFAULTS.roundBaseSnapshot,
+      pushFitHexHole: BASE_CONVERTER_DEFAULTS.pushFitHexHole,
       sourceStandardId: "source-50x100",
       targetStandardId: "target-circle-25",
       geometrySnapshot: createConversionGeometrySnapshot(source, target),
@@ -138,6 +153,94 @@ describe("base converter config", () => {
       standardId: "target-ellipse-35x60",
       profileExponent: 2.05,
     });
+  });
+
+  it("migrates historical conversion params and fills dormant base generator defaults", () => {
+    const normalized = normalizeBaseConverterParams({
+      sourceStandardId: "source-25x50",
+      targetStandardId: "target-ellipse-35x60",
+      floorThickness: 2,
+      recessDepth: 3,
+    });
+
+    expect(normalized).toMatchObject({
+      generationKind: "conversion",
+      roundBaseStandardId: "round-32",
+      roundBaseSnapshot: {
+        standardId: "round-32",
+        name: "Ø32mm",
+        nominalDiameter: 32,
+        height: 4,
+        topInset: 1.5,
+      },
+      pushFitHexHole: {
+        acrossFlats: 3,
+        offsetX: 0,
+        offsetY: 0,
+      },
+    });
+  });
+
+  it("preserves an embedded round base profile snapshot", () => {
+    const normalized = normalizeBaseConverterParams({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+      roundBaseStandardId: "round-40",
+      roundBaseSnapshot: {
+        standardId: "round-40",
+        name: "实测 Ø40mm",
+        nominalDiameter: 39.8,
+        height: 3.7,
+        topInset: 1.2,
+      },
+    });
+
+    expect(normalized.roundBaseSnapshot).toEqual({
+      standardId: "round-40",
+      name: "实测 Ø40mm",
+      nominalDiameter: 39.8,
+      height: 3.7,
+      topInset: 1.2,
+    });
+  });
+
+  it("rejects invalid plain base profile dimensions", () => {
+    expect(validateBaseConverterParams({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+      roundBaseSnapshot: {
+        ...BASE_CONVERTER_DEFAULTS.roundBaseSnapshot,
+        height: 0,
+      },
+    })).toContain("圆形底盘高度无效");
+
+    expect(validateBaseConverterParams({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+      roundBaseSnapshot: {
+        ...BASE_CONVERTER_DEFAULTS.roundBaseSnapshot,
+        topInset: 16,
+      },
+    })).toContain("顶部轮廓已消失");
+  });
+
+  it("validates the active push-fit hole while ignoring it for a plain base", () => {
+    const invalidHole = {
+      ...BASE_CONVERTER_DEFAULTS,
+      pushFitHexHole: {
+        ...BASE_CONVERTER_DEFAULTS.pushFitHexHole,
+        acrossFlats: -1,
+      },
+    };
+
+    expect(validateBaseConverterParams({
+      ...invalidHole,
+      generationKind: "plain",
+    })).toBeNull();
+    expect(validateBaseConverterParams({
+      ...invalidHole,
+      generationKind: "push-fit",
+    })).toContain("简版六边形孔尺寸无效");
   });
 
   it("allows values beyond common slider ranges when geometry stays valid", () => {
