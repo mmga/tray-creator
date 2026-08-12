@@ -7,6 +7,7 @@ import {
   createConversionGeometrySnapshot,
 } from "@/lib/base-converter-config";
 import { createBaseConverterModel } from "@/lib/base-converter-model";
+import { getBaseConverterSTLFilename } from "@/lib/base-converter-model-service";
 
 describe("base converter model", () => {
   it("builds the selected target footprint and preserves the recess floor", () => {
@@ -16,7 +17,7 @@ describe("base converter model", () => {
     expect(max[0] - min[0]).toBeCloseTo(25, 1);
     expect(max[1] - min[1]).toBeCloseTo(25, 1);
     expect(max[2] - min[2]).toBeCloseTo(3.2, 2);
-    expect(measurements.measureVolume(geometry)).toBeGreaterThan(0);
+    expect(measurements.measureVolume(geometry)).toBeCloseTo(767.696165, 5);
   });
 
   it("creates the reference 50x100 to 70x105 oval conversion", () => {
@@ -33,7 +34,8 @@ describe("base converter model", () => {
 
     expect(max[0] - min[0]).toBeCloseTo(70, 1);
     expect(max[1] - min[1]).toBeCloseTo(105, 1);
-    expect(measurements.measureVolume(geometry)).toBeGreaterThan(0);
+    expect(max[2] - min[2]).toBeCloseTo(3.2, 2);
+    expect(measurements.measureVolume(geometry)).toBeCloseTo(10205.239049, 5);
   });
 
   it("creates a circular recess for round-to-round conversion", () => {
@@ -139,5 +141,10 @@ describe("base converter model", () => {
         geometrySnapshot: createConversionGeometrySnapshot(source, target),
       }),
     ).toThrow("源底座凹槽不小于目标底座");
+  });
+
+  it("keeps the historical conversion STL filename", () => {
+    expect(getBaseConverterSTLFilename(BASE_CONVERTER_DEFAULTS))
+      .toBe("base-converter-20x20-to-circle-25.stl");
   });
 });
