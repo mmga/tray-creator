@@ -243,6 +243,17 @@ describe("base converter config", () => {
     })).toContain("简版六边形孔尺寸无效");
   });
 
+  it("rejects a push-fit hole that cuts through the inset top profile", () => {
+    expect(validateBaseConverterParams({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "push-fit",
+      pushFitHexHole: {
+        ...BASE_CONVERTER_DEFAULTS.pushFitHexHole,
+        offsetX: 20,
+      },
+    })).toContain("至少 0.6mm 顶面壁厚");
+  });
+
   it("allows values beyond common slider ranges when geometry stays valid", () => {
     const params = {
       ...BASE_CONVERTER_DEFAULTS,

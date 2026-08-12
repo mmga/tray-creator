@@ -1,4 +1,5 @@
 import { DEFAULT_ELLIPSE_PROFILE_EXPONENT } from "@/lib/slot-definitions";
+import { validatePushFitHexHolePlacement } from "@/lib/push-fit-hex-hole";
 import type {
   BaseGenerationKind,
   BaseConverterParams,
@@ -364,6 +365,8 @@ export function validateBaseConverterParams(
       if (!Number.isFinite(hole.offsetX) || !Number.isFinite(hole.offsetY)) {
         return "简版六边形孔位置无效";
       }
+      const placementError = validatePushFitHexHolePlacement(profile, hole);
+      if (placementError) return placementError;
     }
     return null;
   }

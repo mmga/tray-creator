@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { measurements } from "@jscad/modeling";
 import {
   BASE_CONVERTER_DEFAULTS,
+  ROUND_BASE_STANDARDS,
   SOURCE_BASE_STANDARDS,
   TARGET_BASE_STANDARDS,
   createConversionGeometrySnapshot,
@@ -10,6 +11,71 @@ import { createBaseConverterModel } from "@/lib/base-converter-model";
 import { getBaseConverterSTLFilename } from "@/lib/base-converter-model-service";
 
 describe("base converter model", () => {
+  it.each(ROUND_BASE_STANDARDS)(
+    "builds plain $name with its snapshotted diameter and height",
+    (standard) => {
+      const geometry = createBaseConverterModel({
+        ...BASE_CONVERTER_DEFAULTS,
+        generationKind: "plain",
+        roundBaseStandardId: standard.standardId,
+        roundBaseSnapshot: standard,
+      });
+      const [min, max] = measurements.measureBoundingBox(geometry);
+
+      expect(max[0] - min[0]).toBeCloseTo(standard.nominalDiameter, 5);
+      expect(max[1] - min[1]).toBeCloseTo(standard.nominalDiameter, 5);
+      expect(max[2] - min[2]).toBeCloseTo(standard.height, 5);
+    },
+  );
+
+  it("cuts a centered through hex hole from a push-fit base", () => {
+    const plain = createBaseConverterModel({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+    });
+    const pushFit = createBaseConverterModel({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "push-fit",
+    });
+    const [plainMin, plainMax] = measurements.measureBoundingBox(plain);
+    const [pushFitMin, pushFitMax] = measurements.measureBoundingBox(pushFit);
+
+    pushFitMin.forEach((value, index) => {
+      expect(value).toBeCloseTo(plainMin[index], 8);
+    });
+    pushFitMax.forEach((value, index) => {
+      expect(value).toBeCloseTo(plainMax[index], 8);
+    });
+    expect(measurements.measureVolume(pushFit)).toBeLessThan(
+      measurements.measureVolume(plain),
+    );
+    expect(
+      measurements.measureVolume(plain) - measurements.measureVolume(pushFit),
+    ).toBeCloseTo(18 * Math.sqrt(3), 3);
+  });
+
+  it("uses the editable top inset to taper a plain base", () => {
+    const cylinder = createBaseConverterModel({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+      roundBaseSnapshot: {
+        ...BASE_CONVERTER_DEFAULTS.roundBaseSnapshot,
+        topInset: 0,
+      },
+    });
+    const tapered = createBaseConverterModel({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+    });
+
+    expect(measurements.measureVolume(tapered)).toBeLessThan(
+      measurements.measureVolume(cylinder),
+    );
+    expect(measurements.measureBoundingBox(tapered)).toEqual(
+      measurements.measureBoundingBox(cylinder),
+    );
+  });
+
   it("builds the selected target footprint and preserves the recess floor", () => {
     const geometry = createBaseConverterModel(BASE_CONVERTER_DEFAULTS);
     const [min, max] = measurements.measureBoundingBox(geometry);

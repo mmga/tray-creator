@@ -9,10 +9,13 @@ import {
 import type { Geom2, Geom3 } from "@jscad/modeling/src/geometries/types";
 import { RENDER_CONFIG } from "@/lib/config";
 import {
+  normalizeBaseConverterParams,
   resolveBaseConverterGeometry,
   validateBaseConverterParams,
 } from "@/lib/base-converter-config";
 import { sampleConversionTargetProfile } from "@/lib/base-converter-profile";
+import { createRoundBaseBody } from "@/lib/round-base-profile";
+import { createPushFitHexHoleVertices } from "@/lib/push-fit-hex-hole";
 import type { BaseConverterParams } from "@/types/custom-tray";
 
 const { subtract } = booleans;
@@ -66,12 +69,35 @@ export function createBaseConverterModel(params: BaseConverterParams): Geom3 {
   if (validationError) {
     throw new Error(validationError);
   }
-  const { params: normalized, source, target, recess, totalHeight } =
-    resolveBaseConverterGeometry(params);
+  const normalized = normalizeBaseConverterParams(params);
+  if (normalized.generationKind !== "conversion") {
+    const body = createRoundBaseBody(normalized.roundBaseSnapshot);
+    if (normalized.generationKind === "plain") return body;
+    const holeProfile = geom2.fromPoints(
+      createPushFitHexHoleVertices(normalized.pushFitHexHole).map(
+        (point): [number, number] => [point.x, point.y],
+      ),
+    );
+    const holeCut = translate(
+      [0, 0, -CUT_EPSILON],
+      extrudeLinear(
+        { height: normalized.roundBaseSnapshot.height + CUT_EPSILON * 2 },
+        holeProfile,
+      ),
+    );
+    return subtract(body, holeCut);
+  }
+  const {
+    params: conversionParams,
+    source,
+    target,
+    recess,
+    totalHeight,
+  } = resolveBaseConverterGeometry(normalized);
   const body = createConverterBody(
     target,
     totalHeight,
-    normalized.sideBevelWidth,
+    conversionParams.sideBevelWidth,
   );
   const recessProfile = source.shape === "circle"
     ? ellipse({
@@ -84,9 +110,9 @@ export function createBaseConverterModel(params: BaseConverterParams): Geom3 {
         segments: RENDER_CONFIG.cornerSegments,
       });
   const recessCut = translate(
-    [0, 0, normalized.floorThickness],
+    [0, 0, conversionParams.floorThickness],
     extrudeLinear(
-      { height: normalized.recessDepth + CUT_EPSILON },
+      { height: conversionParams.recessDepth + CUT_EPSILON },
       recessProfile,
     ),
   );
