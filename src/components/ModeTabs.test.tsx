@@ -64,7 +64,7 @@ describe("ModeTabs", { timeout: 15000 }, () => {
 
     const gridButton = screen.getByRole("button", { name: /网格模式/ });
     const customButton = screen.getByRole("button", { name: /自定义模式/ });
-    const baseConverterButton = screen.getByRole("button", { name: /转换底盘/ });
+    const baseConverterButton = screen.getByRole("button", { name: /底盘生成/ });
     const steppedButton = screen.getByRole("button", {
       name: /自定义阶梯底座/,
     });

@@ -2,16 +2,95 @@
 
 import { useId } from "react";
 import type { BaseConverterParams } from "@/types/custom-tray";
-import { resolveBaseConverterGeometry } from "@/lib/base-converter-config";
+import {
+  normalizeBaseConverterParams,
+  resolveBaseConverterGeometry,
+} from "@/lib/base-converter-config";
 import {
   conversionProfileToSvgPath,
   sampleConversionTargetProfile,
 } from "@/lib/base-converter-profile";
+import { getRoundBaseTopDiameter } from "@/lib/round-base-profile";
+import { createPushFitHexHoleVertices } from "@/lib/push-fit-hex-hole";
+
+function PreviewGrid() {
+  return (
+    <div
+      className="absolute inset-0 opacity-20"
+      style={{
+        backgroundImage: "linear-gradient(#444 1px, transparent 1px), linear-gradient(90deg, #444 1px, transparent 1px)",
+        backgroundSize: "20px 20px",
+        backgroundPosition: "center",
+      }}
+    />
+  );
+}
+
+function RoundBasePreview({ params }: { params: BaseConverterParams }) {
+  const profile = params.roundBaseSnapshot;
+  const radius = profile.nominalDiameter / 2;
+  const topRadius = getRoundBaseTopDiameter(profile) / 2;
+  const margin = profile.nominalDiameter * 0.12 + 4;
+  const viewBox = `${-radius - margin} ${-radius - margin} ${profile.nominalDiameter + margin * 2} ${profile.nominalDiameter + margin * 2}`;
+  const isPushFit = params.generationKind === "push-fit";
+  const holePoints = isPushFit
+    ? createPushFitHexHoleVertices(params.pushFitHexHole)
+        .map(({ x, y }) => `${Number(x.toFixed(3))},${Number(y.toFixed(3))}`)
+        .join(" ")
+    : null;
+
+  return (
+    <div className="relative h-full w-full overflow-hidden bg-[#0d0b09]">
+      <PreviewGrid />
+      <svg
+        viewBox={viewBox}
+        className="relative z-10 h-full w-full"
+        preserveAspectRatio="xMidYMid meet"
+        aria-label="底盘生成 2D 图"
+      >
+        <circle
+          data-shape="round-base-bottom"
+          r={radius}
+          fill="rgba(214, 168, 79, 0.28)"
+          stroke="#d6a84f"
+          strokeWidth={0.8}
+        />
+        <circle
+          data-shape="round-base-top"
+          r={topRadius}
+          fill="none"
+          stroke="#a8844d"
+          strokeWidth={0.35}
+          strokeDasharray="1 0.8"
+        />
+        {holePoints && (
+          <polygon
+            data-shape="push-fit-hole"
+            points={holePoints}
+            fill="rgba(14, 13, 11, 0.9)"
+            stroke="#f0d8b8"
+            strokeWidth={0.5}
+          />
+        )}
+        <line x1={-radius} y1={0} x2={radius} y2={0} stroke="#8b7355" strokeWidth={0.2} strokeDasharray="1 1" />
+        <line x1={0} y1={-radius} x2={0} y2={radius} stroke="#8b7355" strokeWidth={0.2} strokeDasharray="1 1" />
+      </svg>
+      <div className="absolute bottom-3 left-3 z-20 rounded-sm border border-[#2e2a24] bg-[#100d0a]/90 px-3 py-1.5 font-mono text-xs text-[#d8d1c5]">
+        {isPushFit ? "简版底盘" : "普通底盘"} · {profile.name}
+        {isPushFit && ` · 六边孔 ${params.pushFitHexHole.acrossFlats.toFixed(1)}mm`}
+      </div>
+    </div>
+  );
+}
 
 export function BaseConverterPreview({ params }: { params: BaseConverterParams }) {
   const clipId = useId().replace(/:/g, "");
+  const normalizedParams = normalizeBaseConverterParams(params);
+  if (normalizedParams.generationKind !== "conversion") {
+    return <RoundBasePreview params={normalizedParams} />;
+  }
   const { params: normalized, source, target, recess } =
-    resolveBaseConverterGeometry(params);
+    resolveBaseConverterGeometry(normalizedParams);
   const targetPath = conversionProfileToSvgPath(
     sampleConversionTargetProfile(target),
   );
@@ -25,14 +104,7 @@ export function BaseConverterPreview({ params }: { params: BaseConverterParams }
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#0d0b09]">
-      <div
-        className="absolute inset-0 opacity-20"
-        style={{
-          backgroundImage: "linear-gradient(#444 1px, transparent 1px), linear-gradient(90deg, #444 1px, transparent 1px)",
-          backgroundSize: "20px 20px",
-          backgroundPosition: "center",
-        }}
-      />
+      <PreviewGrid />
       <svg
         viewBox={viewBox}
         className="relative z-10 h-full w-full"

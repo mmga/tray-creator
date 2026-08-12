@@ -9,6 +9,42 @@ import {
 } from "@/lib/base-converter-config";
 
 describe("BaseConverterPreview", () => {
+  it("renders the ordinary round base with its inset top outline", () => {
+    const { container } = render(
+      <BaseConverterPreview
+        params={{ ...BASE_CONVERTER_DEFAULTS, generationKind: "plain" }}
+      />,
+    );
+
+    expect(screen.getByLabelText("底盘生成 2D 图")).toBeInTheDocument();
+    expect(screen.getByText(/普通底盘 · Ø32mm/)).toBeInTheDocument();
+    expect(container.querySelector('[data-shape="round-base-bottom"]'))
+      .toHaveAttribute("r", "16");
+    expect(container.querySelector('[data-shape="round-base-top"]'))
+      .toHaveAttribute("r", "14.5");
+    expect(container.querySelector('[data-shape="push-fit-hole"]'))
+      .not.toBeInTheDocument();
+  });
+
+  it("renders an offset hex hole for a push-fit base", () => {
+    const { container } = render(
+      <BaseConverterPreview
+        params={{
+          ...BASE_CONVERTER_DEFAULTS,
+          generationKind: "push-fit",
+          pushFitHexHole: { acrossFlats: 3, offsetX: 2, offsetY: -1 },
+        }}
+      />,
+    );
+
+    expect(screen.getByText(/简版底盘 · Ø32mm · 六边孔 3.0mm/)).toBeInTheDocument();
+    expect(container.querySelector('[data-shape="push-fit-hole"]'))
+      .toHaveAttribute(
+        "points",
+        "3.732,-1 2.866,0.5 1.134,0.5 0.268,-1 1.134,-2.5 2.866,-2.5",
+      );
+  });
+
   it("renders the selected standard conversion and fixed-clearance recess", () => {
     const { container } = render(
       <BaseConverterPreview params={{

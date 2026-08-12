@@ -1,7 +1,7 @@
 "use client";
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowRightLeft, Grid3X3, MousePointer2, Layers } from "lucide-react";
+import { CircleDot, Grid3X3, MousePointer2, Layers } from "lucide-react";
 import type { AppMode } from "@/types/custom-tray";
 
 interface ModeTabsProps {
@@ -36,11 +36,11 @@ export function ModeTabs({ mode, onModeChange }: ModeTabsProps) {
           </TabsTrigger>
           <TabsTrigger
             value="base-converter"
-            aria-label="转换底盘"
+            aria-label="底盘生成"
             className="px-1 data-[state=active]:bg-[#2e2a24] data-[state=active]:text-primary text-muted-foreground transition-colors duration-200 sm:px-2"
           >
-            <ArrowRightLeft aria-hidden="true" className="hidden w-4 h-4 sm:block" />
-            <span aria-hidden="true" className="tracking-wider text-[11px] font-bold uppercase sm:text-xs"><span className="sm:hidden">转换</span><span className="hidden sm:inline">转换底盘</span></span>
+            <CircleDot aria-hidden="true" className="hidden w-4 h-4 sm:block" />
+            <span aria-hidden="true" className="tracking-wider text-[11px] font-bold uppercase sm:text-xs"><span className="sm:hidden">底盘</span><span className="hidden sm:inline">底盘生成</span></span>
           </TabsTrigger>
           <TabsTrigger
             value="stepped"

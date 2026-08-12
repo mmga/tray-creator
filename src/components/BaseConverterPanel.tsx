@@ -20,6 +20,7 @@ import {
   TARGET_BASE_STANDARDS,
   getConversionRecessDimensions,
   getMaxBaseConverterSideBevelWidth,
+  normalizeBaseConverterParams,
   snapshotSourceStandard,
   snapshotTargetStandard,
   validateBaseConverterParams,
@@ -49,6 +50,7 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { PanelShell } from "@/components/PanelShell";
 import { TrayResultSummary } from "@/components/TrayResultSummary";
 import { projectBaseConverterResult } from "@/lib/tray-result-projection";
+import { RoundBaseConfig } from "@/components/RoundBaseConfig";
 
 interface BaseConverterPanelProps {
   params: BaseConverterParams;
@@ -168,7 +170,7 @@ function customTargetSnapshot(
 }
 
 export default function BaseConverterPanel({
-  params,
+  params: inputParams,
   updateParam,
   updateParams,
   beginContinuousEdit,
@@ -182,6 +184,7 @@ export default function BaseConverterPanel({
   isPreviewStale,
   volume,
 }: BaseConverterPanelProps) {
+  const params = normalizeBaseConverterParams(inputParams);
   const { toast } = useToast();
   const [personalSpecifications, setPersonalSpecifications] = useState<
     PersonalBaseSpecification[]
@@ -368,6 +371,35 @@ export default function BaseConverterPanel({
             撤销
           </Button>
         </div>
+
+        <div
+          className="grid grid-cols-3 gap-1 rounded-sm border border-[#2e2a24] bg-[#16140f] p-1"
+          aria-label="底盘生成类型"
+        >
+          {([
+            ["plain", "普通底盘"],
+            ["push-fit", "简版底盘"],
+            ["conversion", "转换底盘"],
+          ] as const).map(([kind, label]) => (
+            <Button
+              key={kind}
+              type="button"
+              size="sm"
+              variant={params.generationKind === kind ? "default" : "ghost"}
+              aria-pressed={params.generationKind === kind}
+              onClick={() => updateParam("generationKind", kind)}
+              className="px-2 text-xs"
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
+
+        {params.generationKind !== "conversion" && (
+          <RoundBaseConfig params={params} updateParams={updateParams} />
+        )}
+
+        {params.generationKind === "conversion" && (<>
 
         <div className="iron-panel rounded-sm p-4">
           <SectionHeader
@@ -592,6 +624,7 @@ export default function BaseConverterPanel({
             </div>
           </SectionHeader>
         </div>
+        </>)}
       </div>
     </PanelShell>
   );

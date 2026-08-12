@@ -102,6 +102,55 @@ describe("BaseConverterPanel", () => {
     expect(undo).toHaveBeenCalledTimes(1);
   });
 
+  it("switches among plain, push-fit, and conversion bases as one parameter edit", () => {
+    const updateParam = vi.fn();
+    renderPanel(BASE_CONVERTER_DEFAULTS, { updateParam });
+
+    expect(screen.getByRole("button", { name: "转换底盘" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "普通底盘" }));
+    fireEvent.click(screen.getByRole("button", { name: "简版底盘" }));
+
+    expect(updateParam).toHaveBeenNthCalledWith(1, "generationKind", "plain");
+    expect(updateParam).toHaveBeenNthCalledWith(2, "generationKind", "push-fit");
+  });
+
+  it("edits one of the five round base profiles without exposing conversion controls", () => {
+    const updateParams = vi.fn();
+    renderPanel(
+      { ...BASE_CONVERTER_DEFAULTS, generationKind: "plain" },
+      { updateParams },
+    );
+
+    expect(screen.getByText("首版参考值")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "战锤圆形底盘规格" })).toBeInTheDocument();
+    expect(screen.getByLabelText("底盘总高 mm")).toHaveValue(4);
+    expect(screen.getByLabelText("顶部单边内缩 mm")).toHaveValue(1.5);
+    expect(screen.queryByLabelText("原底盘")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("combobox", { name: "战锤圆形底盘规格" }));
+    expect(screen.getAllByRole("option")).toHaveLength(5);
+    expect(screen.getByRole("option", { name: "Ø28.5mm" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("option", { name: "Ø40mm" }));
+    const mutate = updateParams.mock.calls[0][0] as (
+      params: typeof BASE_CONVERTER_DEFAULTS,
+    ) => typeof BASE_CONVERTER_DEFAULTS;
+    expect(mutate(BASE_CONVERTER_DEFAULTS)).toMatchObject({
+      roundBaseStandardId: "round-40",
+      roundBaseSnapshot: { nominalDiameter: 40, height: 4, topInset: 1.5 },
+    });
+  });
+
+  it("shows editable hex-hole dimensions and offsets only for push-fit bases", () => {
+    renderPanel({ ...BASE_CONVERTER_DEFAULTS, generationKind: "push-fit" });
+
+    expect(screen.getByLabelText("六边孔对边距 mm")).toHaveValue(3);
+    expect(screen.getByLabelText("孔位 X mm")).toHaveValue(0);
+    expect(screen.getByLabelText("孔位 Y mm")).toHaveValue(0);
+  });
+
   it("offers circular source standards", () => {
     const source = SOURCE_BASE_STANDARDS.find((item) =>
       item.id === "source-circle-20")!;
