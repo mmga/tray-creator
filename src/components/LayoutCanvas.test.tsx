@@ -540,6 +540,29 @@ describe("LayoutCanvas", { timeout: 15000 }, () => {
     );
   });
 
+  it("moves keyboard focus back to the 2D canvas when selecting a slot", () => {
+    const { container } = render(
+      <TestLayoutCanvas
+        params={createCustomParams()}
+        onUpdateSlot={vi.fn()}
+        onRemoveSlot={vi.fn()}
+      />,
+    );
+
+    const toolbarButton = screen.getByRole("button", { name: "打开镜像面板" });
+    toolbarButton.focus();
+    expect(toolbarButton).toHaveFocus();
+
+    fireEvent.pointerDown(screen.getByTestId("canvas-slot-slot-1"), {
+      pointerId: 1,
+      pointerType: "mouse",
+      clientX: 32,
+      clientY: 44,
+    });
+
+    expect(container.querySelector("svg")).toHaveFocus();
+  });
+
   it("tracks hovered slots and supports boundary spacing overrides", async () => {
     render(
       <TestLayoutCanvas

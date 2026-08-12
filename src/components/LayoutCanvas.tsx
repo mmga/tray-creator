@@ -698,6 +698,8 @@ export default function LayoutCanvas({
     event.preventDefault();
     event.stopPropagation();
 
+    svgRef.current?.focus({ preventScroll: true });
+
     if (event.pointerType === "touch") {
       if (
         primaryPointerIdRef.current !== null &&
@@ -859,6 +861,7 @@ export default function LayoutCanvas({
 
         <svg
           ref={svgRef}
+          tabIndex={-1}
           viewBox={viewBox}
           className={`w-full h-full max-w-full max-h-full ${isSpacePressed ? "" : "cursor-crosshair"}`}
           style={{ touchAction: "none" }}
