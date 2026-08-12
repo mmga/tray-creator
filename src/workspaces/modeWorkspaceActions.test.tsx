@@ -261,6 +261,55 @@ describe("Mode Workspace Draft Action Area", () => {
     );
   });
 
+  it("简版孔位非法时阻断 3D 与 STL，但保留自动预览编辑上下文", () => {
+    const params = {
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "push-fit" as const,
+      pushFitHexHole: { acrossFlats: 3, offsetX: 30, offsetY: 0 },
+    };
+    const model = {
+      params,
+      viewParams: params,
+      replaceParams: vi.fn(),
+      resetParams: vi.fn(),
+      updateParam: vi.fn(),
+      updateParams: vi.fn(),
+      beginContinuousEdit: vi.fn(),
+      previewParam: vi.fn(),
+      previewParams: vi.fn(),
+      commitContinuousEdit: vi.fn(),
+      cancelContinuousEdit: vi.fn(),
+      undo: vi.fn(),
+      canUndo: false,
+      handleGenerate: vi.fn(),
+      handleExportSTL: vi.fn(),
+      isGenerating: false,
+      isPreviewStale: true,
+      volume: 0,
+    };
+    const { result } = renderHook(() => useBaseConverterWorkspace({
+      model: model as never,
+      onRequestParamImport: vi.fn(async () => ({ status: "success" as const })),
+      onRequestReset: requestResetMock,
+      onRequestDraftLoad: requestDraftLoadMock,
+    }));
+
+    renderWorkspacePanel(result.current.panel);
+
+    expect(useAutoPreviewMock).toHaveBeenCalledWith(
+      params,
+      expect.objectContaining({ isBlocked: true }),
+    );
+    expect(screen.getByTestId("actions-automatic")).toHaveAttribute(
+      "data-generate-state",
+      "blocked",
+    );
+    expect(screen.getByTestId("actions-automatic")).toHaveAttribute(
+      "data-export-state",
+      "blocked",
+    );
+  });
+
   it("custom 的自动预览状态随 Draft Action Area 挂载，并路由外部参数提交", async () => {
     const onRequestParamImport = vi.fn(async () => ({ status: "success" as const }));
     const persistedParams = {

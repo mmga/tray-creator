@@ -104,12 +104,36 @@ describe("Tray Result Projection", () => {
     });
     expect(result).toMatchObject({
       mode: "base-converter",
+      generationKind: "conversion",
       sourceLabel: "20 × 20mm",
       targetLabel: "Ø25mm",
       recess: { width: 20.4, depth: 20.4 },
       dimensions: { width: 25, depth: 25, height: 3.2 },
     });
     expect(result.weight.status).toBe("available");
+  });
+
+  it("分别投影普通与简版底盘的真实尺寸和孔位摘要", () => {
+    const plain = projectBaseConverterResult({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+    }, idleState);
+    const pushFit = projectBaseConverterResult({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "push-fit",
+      pushFitHexHole: { acrossFlats: 3, offsetX: 1.2, offsetY: -0.8 },
+    }, idleState);
+
+    expect(plain).toMatchObject({
+      generationKind: "plain",
+      itemLabel: "普通底盘 · Ø32mm",
+      dimensions: { width: 32, depth: 32, height: 4 },
+    });
+    expect(pushFit).toMatchObject({
+      generationKind: "push-fit",
+      itemLabel: "简版底盘 · Ø32mm · 六边孔 3mm",
+      hole: { acrossFlats: 3, offsetX: 1.2, offsetY: -0.8 },
+    });
   });
 
   it("投影统一后的阶梯模式", () => {

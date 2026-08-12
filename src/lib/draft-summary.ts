@@ -4,7 +4,10 @@ import type {
   CustomLayoutParams,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
-import { resolveBaseConverterGeometry } from "@/lib/base-converter-config";
+import {
+  normalizeBaseConverterParams,
+  resolveBaseConverterGeometry,
+} from "@/lib/base-converter-config";
 import type { TrayParams } from "@/types/tray";
 import type { ModeParamSnapshot } from "@/lib/mode-param-snapshot";
 
@@ -99,7 +102,21 @@ function buildCustomDraftSummary(
 function buildBaseConverterDraftSummary(
   params: BaseConverterParams,
 ): DraftSummaryByMode["base-converter"] {
-  const { source, target } = resolveBaseConverterGeometry(params);
+  const normalized = normalizeBaseConverterParams(params);
+  if (normalized.generationKind !== "conversion") {
+    const profile = normalized.roundBaseSnapshot;
+    const sourceLabel = normalized.generationKind === "plain"
+      ? "普通底盘"
+      : `简版底盘 · 六边孔 ${Number(normalized.pushFitHexHole.acrossFlats.toFixed(3))}mm · X${Number(normalized.pushFitHexHole.offsetX.toFixed(3))} Y${Number(normalized.pushFitHexHole.offsetY.toFixed(3))}`;
+    return {
+      mode: "base-converter",
+      sourceLabel,
+      targetLabel: profile.name,
+      trayWidth: profile.nominalDiameter,
+      trayDepth: profile.nominalDiameter,
+    };
+  }
+  const { source, target } = resolveBaseConverterGeometry(normalized);
   return {
     mode: "base-converter",
     sourceLabel: source.name,

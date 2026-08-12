@@ -319,6 +319,34 @@ describe("local drafts", () => {
     expect(listDrafts("base-converter")).toEqual([record.item]);
   });
 
+  it("distinguishes ordinary and push-fit base drafts", () => {
+    vi.spyOn(crypto, "randomUUID")
+      .mockReturnValueOnce("plain-base")
+      .mockReturnValueOnce("push-fit-base");
+    const plain = createDraft("普通底盘", "base-converter", {
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+    });
+    const pushFit = createDraft("简版底盘", "base-converter", {
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "push-fit",
+      pushFitHexHole: { acrossFlats: 3, offsetX: 1.2, offsetY: -0.8 },
+    });
+
+    expect(plain.item.summary).toMatchObject({
+      sourceLabel: "普通底盘",
+      targetLabel: "Ø32mm",
+      trayWidth: 32,
+      trayDepth: 32,
+    });
+    expect(pushFit.item.summary).toMatchObject({
+      sourceLabel: "简版底盘 · 六边孔 3mm · X1.2 Y-0.8",
+      targetLabel: "Ø32mm",
+      trayWidth: 32,
+      trayDepth: 32,
+    });
+  });
+
   it("migrates legacy base converter drafts to reproducible geometry snapshots when read", () => {
     vi.spyOn(crypto, "randomUUID").mockReturnValue("converter-legacy");
     const record = createDraft(

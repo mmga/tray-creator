@@ -31,6 +31,7 @@ import {
 } from "@/lib/current-param-artifact-encoder";
 import {
   captureModeParamSnapshot,
+  createModelGeometryFingerprint,
   type ParamsByMode,
 } from "@/lib/mode-param-snapshot";
 
@@ -956,6 +957,22 @@ describe("param-io", () => {
       writable: true,
       value: previousFileReader,
     });
+  });
+
+  it("round-trips push-fit parameters without changing the model fingerprint", () => {
+    const params = {
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "push-fit" as const,
+      pushFitHexHole: { acrossFlats: 3.15, offsetX: 1.2, offsetY: -0.8 },
+    };
+    const parsed = parseParamFileObject(
+      buildParamFile("base-converter", params),
+      "base-converter",
+    );
+
+    expect(parsed).toEqual(params);
+    expect(createModelGeometryFingerprint(captureModeParamSnapshot("base-converter", parsed)))
+      .toBe(createModelGeometryFingerprint(captureModeParamSnapshot("base-converter", params)));
   });
 
   it("rejects oversized parameter files before starting FileReader", async () => {

@@ -4,8 +4,12 @@ import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contou
 import type { ConstructedContouredFootprint } from "@/lib/contoured-footprint";
 import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
 import { calculateTrayDimensions } from "@/lib/tray-model";
-import { resolveBaseConverterGeometry } from "@/lib/base-converter-config";
+import {
+  normalizeBaseConverterParams,
+  resolveBaseConverterGeometry,
+} from "@/lib/base-converter-config";
 import type {
+  BaseGenerationKind,
   BaseConverterParams,
   BaseplateFootprintStyle,
   CustomLayoutParams,
@@ -60,9 +64,11 @@ export interface CustomTrayResultProjection extends TrayResultProjectionBase {
 
 export interface BaseConverterResultProjection extends TrayResultProjectionBase {
   mode: "base-converter";
+  generationKind: BaseGenerationKind;
   sourceLabel: string;
   targetLabel: string;
   recess: { width: number; depth: number };
+  hole: BaseConverterParams["pushFitHexHole"] | null;
 }
 
 export interface SteppedTrayResultProjection extends TrayResultProjectionBase {
@@ -87,10 +93,35 @@ export function projectBaseConverterResult(
   params: BaseConverterParams,
   state: ResultState,
 ): BaseConverterResultProjection {
+  const normalized = normalizeBaseConverterParams(params);
+  if (normalized.generationKind !== "conversion") {
+    const profile = normalized.roundBaseSnapshot;
+    const isPushFit = normalized.generationKind === "push-fit";
+    const hole = isPushFit ? normalized.pushFitHexHole : null;
+    const itemLabel = isPushFit
+      ? `简版底盘 · ${profile.name} · 六边孔 ${Number(hole!.acrossFlats.toFixed(3))}mm`
+      : `普通底盘 · ${profile.name}`;
+    return {
+      mode: "base-converter",
+      generationKind: normalized.generationKind,
+      slotCount: 1,
+      itemLabel,
+      ...projectCommon({
+        width: profile.nominalDiameter,
+        depth: profile.nominalDiameter,
+        height: profile.height,
+      }, state),
+      sourceLabel: isPushFit ? "简版底盘" : "普通底盘",
+      targetLabel: profile.name,
+      recess: { width: 0, depth: 0 },
+      hole,
+    };
+  }
   const { source, target, recess, totalHeight } =
-    resolveBaseConverterGeometry(params);
+    resolveBaseConverterGeometry(normalized);
   return {
     mode: "base-converter",
+    generationKind: "conversion",
     slotCount: 1,
     itemLabel: `${source.name} → ${target.name}`,
     ...projectCommon(
@@ -100,6 +131,7 @@ export function projectBaseConverterResult(
     sourceLabel: source.name,
     targetLabel: target.name,
     recess,
+    hole: null,
   };
 }
 

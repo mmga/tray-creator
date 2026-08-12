@@ -32,7 +32,7 @@ const HISTORICAL_MODES: readonly HistoricalMode[] = [
 export const APP_MODE_LABELS: Record<AppMode, string> = {
   grid: "网格",
   custom: "自定义",
-  "base-converter": "转换底盘",
+  "base-converter": "底盘生成",
   stepped: "自定义阶梯",
 };
 

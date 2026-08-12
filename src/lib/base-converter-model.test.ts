@@ -213,4 +213,16 @@ describe("base converter model", () => {
     expect(getBaseConverterSTLFilename(BASE_CONVERTER_DEFAULTS))
       .toBe("base-converter-20x20-to-circle-25.stl");
   });
+
+  it("uses stable filenames for ordinary and offset push-fit bases", () => {
+    expect(getBaseConverterSTLFilename({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+    })).toBe("base-plain-32mm.stl");
+    expect(getBaseConverterSTLFilename({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "push-fit",
+      pushFitHexHole: { acrossFlats: 3, offsetX: 1.2, offsetY: -0.8 },
+    })).toBe("base-push-fit-32mm-hex-3mm-x1.2-y-0.8.stl");
+  });
 });

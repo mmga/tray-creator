@@ -26,7 +26,7 @@ import { formatDraftTime, MAX_DRAFTS_PER_MODE } from "@/lib/local-drafts";
 const MODE_DIALOG_TITLE: Record<AppMode, string> = {
   grid: "网格模式草稿",
   custom: "自定义模式草稿",
-  "base-converter": "转换底盘草稿",
+  "base-converter": "底盘生成草稿",
   stepped: "阶梯模式草稿",
 };
 

@@ -42,6 +42,24 @@ function modeSpecificMetrics(result: TrayResultProjection) {
         </>
       );
     case "base-converter":
+      if (result.generationKind === "plain") {
+        return (
+          <>
+            <ResultMetric label="类型" value="普通底盘" />
+            <ResultMetric label="规格" value={result.targetLabel} />
+          </>
+        );
+      }
+      if (result.generationKind === "push-fit" && result.hole) {
+        return (
+          <>
+            <ResultMetric label="类型" value="简版底盘" />
+            <ResultMetric label="规格" value={result.targetLabel} />
+            <ResultMetric label="六边孔对边" value={`${result.hole.acrossFlats.toFixed(2)} mm`} />
+            <ResultMetric label="孔中心 X/Y" value={`${result.hole.offsetX.toFixed(1)} / ${result.hole.offsetY.toFixed(1)} mm`} />
+          </>
+        );
+      }
       return (
         <>
           <ResultMetric label="原底盘" value={result.sourceLabel} />
@@ -98,7 +116,7 @@ export function TrayResultSummary({ result }: TrayResultSummaryProps) {
       </div>
       <div className="grid grid-cols-2 gap-1.5">
         <ResultMetric
-          label={result.mode === "base-converter" ? "转换件" : "槽位数"}
+          label={result.mode === "base-converter" ? "底盘数" : "槽位数"}
           value={`${result.slotCount}`}
         />
         <ResultMetric label="耗材参考" value={weight} />

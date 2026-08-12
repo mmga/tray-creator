@@ -5,6 +5,8 @@ import type {
   GridTrayResultProjection,
   SteppedTrayResultProjection,
 } from "@/lib/tray-result-projection";
+import { projectBaseConverterResult } from "@/lib/tray-result-projection";
+import { BASE_CONVERTER_DEFAULTS } from "@/lib/base-converter-config";
 
 const gridResult: GridTrayResultProjection = {
   mode: "grid",
@@ -26,6 +28,30 @@ const gridResult: GridTrayResultProjection = {
 };
 
 describe("TrayResultSummary", () => {
+  it("普通与简版底盘摘要展示对应规格和孔位，不再标成转换件", () => {
+    const { rerender } = render(<TrayResultSummary result={
+      projectBaseConverterResult({
+        ...BASE_CONVERTER_DEFAULTS,
+        generationKind: "plain",
+      }, { volume: 0, isGenerating: false, isPreviewStale: false })
+    } />);
+    fireEvent.click(screen.getByRole("button", { expanded: false }));
+    expect(screen.getByText("普通底盘")).toBeInTheDocument();
+    expect(screen.getByText("Ø32mm")).toBeInTheDocument();
+    expect(screen.getByText("底盘数")).toBeInTheDocument();
+    expect(screen.queryByText("原底盘")).not.toBeInTheDocument();
+
+    rerender(<TrayResultSummary result={
+      projectBaseConverterResult({
+        ...BASE_CONVERTER_DEFAULTS,
+        generationKind: "push-fit",
+        pushFitHexHole: { acrossFlats: 3, offsetX: 1.2, offsetY: -0.8 },
+      }, { volume: 0, isGenerating: false, isPreviewStale: false })
+    } />);
+    expect(screen.getByText("六边孔对边")).toBeInTheDocument();
+    expect(screen.getByText("1.2 / -0.8 mm")).toBeInTheDocument();
+  });
+
   it("紧凑区展示核心结果，并仅在展开后挂载详情", () => {
     render(<TrayResultSummary result={gridResult} />);
 

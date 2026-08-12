@@ -465,7 +465,7 @@ export function defaultDraftTitle(mode: DraftMode = "stepped"): string {
   const label = {
     grid: "网格草稿",
     custom: "自定义草稿",
-    "base-converter": "转换底盘草稿",
+    "base-converter": "底盘生成草稿",
     stepped: "阶梯草稿",
   }[mode];
 
