@@ -10,10 +10,16 @@ import {
   conversionProfileToSvgPath,
   sampleConversionTargetProfile,
 } from "@/lib/base-converter-profile";
-import { getRoundBaseTopDiameter } from "@/lib/round-base-profile";
+import {
+  getRoundBaseOuterDiameterAtHeight,
+  getRoundBaseTopDiameter,
+  ROUND_BASE_SHELL_THICKNESS,
+} from "@/lib/round-base-profile";
 import {
   clampPushFitHexHoleOffset,
   createPushFitHexHoleVertices,
+  createPushFitHexWallOuterVertices,
+  PUSH_FIT_WALL_BOTTOM_CLEARANCE,
 } from "@/lib/push-fit-hex-hole";
 
 interface BaseConverterPreviewProps {
@@ -74,6 +80,7 @@ function RoundBasePreview({
   cancelContinuousEdit,
   updateParams,
 }: BaseConverterPreviewProps) {
+  const wallClipId = useId().replace(/:/g, "");
   const dragRef = useRef<{
     pointerId: number;
     hole: BaseConverterParams["pushFitHexHole"];
@@ -98,6 +105,17 @@ function RoundBasePreview({
         .map(({ x, y }) => `${Number(x.toFixed(3))},${Number((-y).toFixed(3))}`)
         .join(" ")
     : null;
+  const wallOuterPoints = isPushFit
+    ? createPushFitHexWallOuterVertices(
+        params.pushFitHexHole,
+        ROUND_BASE_SHELL_THICKNESS,
+      ).map(({ x, y }) => `${Number(x.toFixed(3))},${Number((-y).toFixed(3))}`)
+        .join(" ")
+    : null;
+  const wallClipRadius = getRoundBaseOuterDiameterAtHeight(
+    profile,
+    PUSH_FIT_WALL_BOTTOM_CLEARANCE,
+  ) / 2;
   const nearestWall = isPushFit
     ? topRadius - Math.max(...holeVertices.map(({ x, y }) => Math.hypot(x, y)))
     : null;
@@ -175,6 +193,11 @@ function RoundBasePreview({
         preserveAspectRatio="xMidYMid meet"
         aria-label="底盘生成 2D 图"
       >
+        <defs>
+          <clipPath id={wallClipId}>
+            <circle r={wallClipRadius} />
+          </clipPath>
+        </defs>
         <circle
           data-shape="round-base-bottom"
           r={radius}
@@ -190,6 +213,17 @@ function RoundBasePreview({
           strokeWidth={0.35}
           strokeDasharray="1 0.8"
         />
+        {wallOuterPoints && (
+          <polygon
+            data-shape="push-fit-hole-wall"
+            points={wallOuterPoints}
+            clipPath={`url(#${wallClipId})`}
+            fill="rgba(214, 168, 79, 0.16)"
+            stroke="#b99055"
+            strokeWidth={0.35}
+            strokeDasharray="0.8 0.6"
+          />
+        )}
         {holePoints && (
           <polygon
             data-shape="push-fit-hole"

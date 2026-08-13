@@ -35,6 +35,8 @@ describe("BaseConverterPreview", () => {
       .toHaveAttribute("r", "14.5");
     expect(container.querySelector('[data-shape="push-fit-hole"]'))
       .not.toBeInTheDocument();
+    expect(container.querySelector('[data-shape="push-fit-hole-wall"]'))
+      .not.toBeInTheDocument();
   });
 
   it("renders an offset hex hole for a push-fit base", () => {
@@ -54,6 +56,16 @@ describe("BaseConverterPreview", () => {
         "points",
         "3.732,1 2.866,-0.5 1.134,-0.5 0.268,1 1.134,2.5 2.866,2.5",
       );
+    const wall = container.querySelector('[data-shape="push-fit-hole-wall"]');
+    expect(wall).toHaveAttribute(
+      "points",
+      "6.041,1 4.021,-2.5 -0.021,-2.5 -2.041,1 -0.021,4.5 4.021,4.5",
+    );
+    const clipPath = wall?.getAttribute("clip-path");
+    expect(clipPath).toMatch(/^url\(#.+\)$/);
+    const clipId = clipPath!.slice(5, -1);
+    expect(container.querySelector(`clipPath#${clipId} circle`))
+      .toHaveAttribute("r", "15.625");
   });
 
   it("captures pointer dragging, previews offsets, and commits or cancels once", () => {

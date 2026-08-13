@@ -25,6 +25,15 @@ export function getRoundBaseTopDiameter(
   return profile.nominalDiameter - profile.topInset * 2;
 }
 
+export function getRoundBaseOuterDiameterAtHeight(
+  profile: RoundBaseProfileSnapshot,
+  height: number,
+): number {
+  const clampedHeight = Math.min(Math.max(height, 0), profile.height);
+  return profile.nominalDiameter
+    - profile.topInset * 2 * (clampedHeight / profile.height);
+}
+
 export function getRoundBaseCavityDimensions(
   profile: RoundBaseProfileSnapshot,
 ) {
