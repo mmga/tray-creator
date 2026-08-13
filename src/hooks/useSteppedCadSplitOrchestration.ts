@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -26,8 +27,8 @@ import type {
 } from "@/lib/stepped-edit-intent";
 import {
   getBaseHoleFitBlockingReason,
-  validateBaseHoleFit,
 } from "@/lib/base-hole-rules";
+import { createSteppedBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
 import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
 import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
 import { calculateSteppedEffectiveDimensions } from "@/lib/stepped-layout-math";
@@ -104,6 +105,15 @@ export function useSteppedCadSplitOrchestration(
   >(null);
   const [isGeneratingSplitPreview, setIsGeneratingSplitPreview] =
     useState(false);
+  const baseHolePlan = useMemo(
+    () => createSteppedBaseHoleConstructionPlan(params, {
+      contouredState: contouredFootprintState,
+    }),
+    [contouredFootprintState, params],
+  );
+  const baseHoleFitBlockingReason = getBaseHoleFitBlockingReason(
+    baseHolePlan.violations,
+  );
   const updateSplitParam = useCallback(<K extends SteppedSplitParamKey>(
     key: K,
     value: SteppedLayoutParams[K],
@@ -179,14 +189,10 @@ export function useSteppedCadSplitOrchestration(
     const generationRevision = transactionRevision;
     const requestId = splitPreviewRequestRef.current + 1;
     splitPreviewRequestRef.current = requestId;
-    const currentState = contouredFootprintState;
     const blockingReason =
-      (currentState.status === "failed" ? currentState.error.message : null) ??
-      getBaseHoleFitBlockingReason(
-        validateBaseHoleFit("stepped", currentParams, {
-          steppedContouredState: currentState,
-        }),
-      );
+      (contouredFootprintState.status === "failed"
+        ? contouredFootprintState.error.message
+        : null) ?? baseHoleFitBlockingReason;
     if (blockingReason) {
       toast("error", blockingReason);
       return;
@@ -224,6 +230,7 @@ export function useSteppedCadSplitOrchestration(
     }
   }, [
     contouredFootprintState,
+    baseHoleFitBlockingReason,
     generateSplitPreview,
     params,
     replaceSplitPreviewParts,
@@ -243,14 +250,10 @@ export function useSteppedCadSplitOrchestration(
     }
 
     const currentParams = params;
-    const currentState = contouredFootprintState;
     const blockingReason =
-      (currentState.status === "failed" ? currentState.error.message : null) ??
-      getBaseHoleFitBlockingReason(
-        validateBaseHoleFit("stepped", currentParams, {
-          steppedContouredState: currentState,
-        }),
-      );
+      (contouredFootprintState.status === "failed"
+        ? contouredFootprintState.error.message
+        : null) ?? baseHoleFitBlockingReason;
     if (blockingReason) {
       toast("error", blockingReason);
       return;
@@ -265,7 +268,7 @@ export function useSteppedCadSplitOrchestration(
         captureModeParamSnapshot("stepped", currentParams),
         workerPort,
         browserDownloadPort,
-        calculateSteppedEffectiveDimensions(currentParams, currentState),
+        calculateSteppedEffectiveDimensions(currentParams, contouredFootprintState),
       );
       toast("success", "阶梯分件文件已导出");
     } catch (err) {
@@ -275,7 +278,13 @@ export function useSteppedCadSplitOrchestration(
         `分件导出失败：${err instanceof Error ? err.message : "未知错误"}`,
       );
     }
-  }, [contouredFootprintState, exportSplitParts, params, toast]);
+  }, [
+    baseHoleFitBlockingReason,
+    contouredFootprintState,
+    exportSplitParts,
+    params,
+    toast,
+  ]);
 
   return {
     splitPreviewParts,

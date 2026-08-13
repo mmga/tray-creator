@@ -15,7 +15,6 @@ import {
     getSteppedGroupMinBottomHeight,
     getSteppedGroupResolvedBaseHoleSize,
 } from "@/lib/stepped-base-hole";
-import { resolveMagneticBaseHolePreset } from "@/lib/base-hole-rules";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -67,9 +66,9 @@ import {
 } from "@/lib/tray-result-projection";
 import { BaseHoleConfig } from "@/components/BaseHoleConfig";
 import {
-    getResolvedMagneticBaseHolePresets,
     type BaseHoleFitViolation,
 } from "@/lib/base-hole-rules";
+import { createSteppedBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
 import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
 import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
 
@@ -425,10 +424,13 @@ function SteppedPanelBody({
         handleResetPerfSamples,
         formatAreaDelta,
     } = state;
-    const resolvedBaseHoleSizes = useMemo(
-        () => getResolvedMagneticBaseHolePresets("stepped", params),
-        [params],
+    const baseHolePlan = useMemo(
+        () => createSteppedBaseHoleConstructionPlan(params, {
+            contouredState: contouredFootprintState,
+        }),
+        [contouredFootprintState, params],
     );
+    const resolvedBaseHoleSizes = baseHolePlan.resolvedMagneticPresets;
     const selectedSlotId = selectedSlotIds[0];
     const selectedSlotMatch = useMemo(() => {
         const selectedSlotIndex = params.slots.findIndex(
@@ -437,15 +439,16 @@ function SteppedPanelBody({
         if (selectedSlotIndex < 0) return null;
 
         const selectedSlot = params.slots[selectedSlotIndex];
+        const instruction = baseHolePlan.instructions.find(
+            (candidate) => candidate.slotId === selectedSlot.id &&
+                candidate.kind === "magnetic-base-hole",
+        );
+        if (instruction?.kind !== "magnetic-base-hole") return null;
         return {
             label: `槽位 ${selectedSlotIndex + 1}`,
-            presetKey: resolveMagneticBaseHolePreset(
-                selectedSlot.shape,
-                selectedSlot.width,
-                selectedSlot.height,
-            ),
+            presetKey: instruction.preset,
         };
-    }, [params.slots, selectedSlotId]);
+    }, [baseHolePlan.instructions, params.slots, selectedSlotId]);
     const continuousParam = <K extends keyof SteppedLayoutParams>(
         key: K,
     ) => continuousSliderProps(

@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   Plus,
   Wrench,
@@ -32,10 +32,9 @@ import { PanelShell } from "@/components/PanelShell";
 import { TrayResultSummary } from "@/components/TrayResultSummary";
 import { projectCustomTrayResult } from "@/lib/tray-result-projection";
 import {
-  getResolvedMagneticBaseHolePresets,
-  resolveMagneticBaseHolePreset,
   type BaseHoleFitViolation,
 } from "@/lib/base-hole-rules";
+import { createCustomBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
 import type {
   ConstructedContouredFootprint,
 } from "@/lib/contoured-footprint";
@@ -92,19 +91,27 @@ export default function CustomPanel({
   // contoured 休眠 fixed sizing；rectangular 下按 traySizingMode 决定（CONTEXT:607-608,619）
   const isFixedTraySize = !isContouredFootprint && params.traySizingMode === "fixed";
   const [customCircleDiameter, setCustomCircleDiameter] = useState(10);
-  const resolvedBaseHoleSizes = getResolvedMagneticBaseHolePresets(
-    "custom",
-    params,
+  const baseHolePlan = useMemo(
+    () => createCustomBaseHoleConstructionPlan(params, {
+      contouredState: contouredFootprintState,
+    }),
+    [contouredFootprintState, params],
   );
+  const resolvedBaseHoleSizes = baseHolePlan.resolvedMagneticPresets;
   const selectedSlot = params.slots.find((slot) => slot.id === selectedSlotIds[0]);
-  const selectedSlotMatch = selectedSlot ? {
-    label: `槽位 ${params.slots.indexOf(selectedSlot) + 1}`,
-    presetKey: resolveMagneticBaseHolePreset(
-      selectedSlot.shape,
-      selectedSlot.width,
-      selectedSlot.height,
-    ),
-  } : null;
+  const selectedInstruction = selectedSlot
+    ? baseHolePlan.instructions.find((instruction) =>
+        instruction.slotId === selectedSlot.id &&
+        instruction.kind === "magnetic-base-hole"
+      )
+    : undefined;
+  const selectedSlotMatch = selectedSlot &&
+      selectedInstruction?.kind === "magnetic-base-hole"
+    ? {
+        label: `槽位 ${params.slots.indexOf(selectedSlot) + 1}`,
+        presetKey: selectedInstruction.preset,
+      }
+    : null;
 
   const handleAddCustomCircleSlot = () => {
     if (!Number.isFinite(customCircleDiameter) || customCircleDiameter <= 0) {

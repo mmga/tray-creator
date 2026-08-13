@@ -41,9 +41,9 @@ import {
 import {
   applyFlatTrayBaseHoleSupportingThickness,
   getBaseHoleFitBlockingReason,
-  validateBaseHoleFit,
   type BaseHoleFitViolation,
 } from "@/lib/base-hole-rules";
+import { createCustomBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
 import type {
   ConstructedContouredFootprint,
 } from "@/lib/contoured-footprint";
@@ -192,12 +192,13 @@ export function useCustomLayout(): UseCustomLayoutReturn {
   }, [contouredFootprintState]);
   const workingContouredFootprintState = contouredFootprints.working;
 
-  const baseHoleFitViolations = useMemo(
-    () => validateBaseHoleFit("custom", persistedParams, {
-      customContouredState: contouredFootprintState,
+  const baseHolePlan = useMemo(
+    () => createCustomBaseHoleConstructionPlan(persistedParams, {
+      contouredState: contouredFootprintState,
     }),
     [contouredFootprintState, persistedParams],
   );
+  const baseHoleFitViolations = baseHolePlan.violations.slice();
   const baseHoleFitBlockingReason =
     (contouredFootprintState.status === "failed"
       ? contouredFootprintState.error.message

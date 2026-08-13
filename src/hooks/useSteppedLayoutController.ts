@@ -48,9 +48,9 @@ import {
 } from "@/lib/mode-param-snapshot";
 import {
   getBaseHoleFitBlockingReason,
-  validateBaseHoleFit,
   type BaseHoleFitViolation,
 } from "@/lib/base-hole-rules";
+import { createSteppedBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
 import { useSteppedContouredFootprint } from "@/hooks/useSteppedContouredFootprint";
 import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
 import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
@@ -282,12 +282,13 @@ export function useSteppedLayoutController<
   }, [contouredFootprintState]);
   const workingContouredFootprintState = contouredFootprints.working;
 
-  const baseHoleFitViolations = useMemo(
-    () => validateBaseHoleFit(mode, persistedParams, {
-      steppedContouredState: contouredFootprintState,
+  const baseHolePlan = useMemo(
+    () => createSteppedBaseHoleConstructionPlan(persistedParams, {
+      contouredState: contouredFootprintState,
     }),
-    [contouredFootprintState, mode, persistedParams],
+    [contouredFootprintState, persistedParams],
   );
+  const baseHoleFitViolations = baseHolePlan.violations.slice();
   const baseHoleFitBlockingReason =
     (contouredFootprintState.status === "failed"
       ? contouredFootprintState.error.message

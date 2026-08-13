@@ -22,9 +22,9 @@ import {
 } from "@/lib/mode-param-snapshot";
 import {
   getBaseHoleFitBlockingReason,
-  validateBaseHoleFit,
   type BaseHoleFitViolation,
 } from "@/lib/base-hole-rules";
+import { createGridBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
 
 interface UseTrayModelReturn {
   params: TrayParams;
@@ -74,14 +74,15 @@ export function useTrayModel(): UseTrayModelReturn {
     },
     validateSnapshot: (snapshot) =>
       getBaseHoleFitBlockingReason(
-        validateBaseHoleFit("grid", snapshot.params),
+        createGridBaseHoleConstructionPlan(snapshot.params).violations,
       ),
   });
 
-  const baseHoleFitViolations = useMemo(
-    () => validateBaseHoleFit("grid", params),
+  const baseHolePlan = useMemo(
+    () => createGridBaseHoleConstructionPlan(params),
     [params],
   );
+  const baseHoleFitViolations = baseHolePlan.violations.slice();
   const baseHoleFitBlockingReason = getBaseHoleFitBlockingReason(
     baseHoleFitViolations,
   );

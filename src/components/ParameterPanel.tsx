@@ -5,7 +5,6 @@ import {
   OLD_WORLD_RECTANGULAR_PRESETS,
   getGridSlotGeometry,
   isRectangularGridSlot,
-  resolveGridBaseHolePresetKey,
 } from "@/lib/grid-config";
 import { selectGridSlotDefinition } from "@/lib/grid-model-state";
 import { PARAM_CONFIG } from "@/lib/grid-config";
@@ -15,7 +14,7 @@ import {
 } from "@/lib/tray-model";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import {
   Select,
   SelectContent,
@@ -34,6 +33,7 @@ import { PanelShell } from "@/components/PanelShell";
 import { TrayResultSummary } from "@/components/TrayResultSummary";
 import { projectGridTrayResult } from "@/lib/tray-result-projection";
 import type { BaseHoleFitViolation } from "@/lib/base-hole-rules";
+import { createGridBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
 
 interface ParameterPanelProps {
   params: TrayParams;
@@ -101,7 +101,10 @@ export default function ParameterPanel({
     : BASE_PRESETS.some((preset) => preset.diameter === params.holeDiameter)
       ? `circle-${params.holeDiameter}`
       : undefined;
-  const resolvedBaseHoleSize = resolveGridBaseHolePresetKey(params);
+  const baseHolePlan = useMemo(
+    () => createGridBaseHoleConstructionPlan(params),
+    [params],
+  );
 
   const handlePresetChange = (value: string) => {
     replaceParams(selectGridSlotDefinition(params, value));
@@ -339,7 +342,7 @@ export default function ParameterPanel({
         magnetPostHoleDiameter={params.magnetPostHoleDiameter}
         magnetPostHoleDepth={params.magnetPostHoleDepth}
         supportingThickness={params.baseThickness}
-        resolvedBaseHoleSizes={[resolvedBaseHoleSize]}
+        resolvedBaseHoleSizes={baseHolePlan.resolvedMagneticPresets}
         fitViolations={baseHoleFitViolations}
         updateParam={updateParam}
         collapsible
