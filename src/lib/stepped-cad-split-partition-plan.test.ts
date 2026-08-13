@@ -69,7 +69,7 @@ describe("Split Assembly Partition Plan", () => {
       ["slot-low"],
       ["slot-high"],
     ]);
-    expect(plan.units.map((unit) => unit.baseHoles.length)).toEqual([1, 1]);
+    expect(plan.units.map((unit) => unit.baseHoles.length)).toEqual([0, 0]);
     expect(plan.units.map((unit) => unit.magnetPostHoles.length)).toEqual([1, 1]);
   });
 

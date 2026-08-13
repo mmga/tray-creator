@@ -8,6 +8,10 @@ import {
 import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
 import type { BaseHolePresetKey } from "@/types/tray";
 import type { FreeSlot } from "@/types/custom-tray";
+import {
+    getBaseHoleFitBlockingReason,
+    type BaseHoleConstructionPlan,
+} from "@/lib/base-hole-construction-plan";
 
 const { subtract } = booleans;
 const { roundedRectangle, cylinder, ellipse } = primitives;
@@ -69,6 +73,35 @@ export function subtractMagnetPostHoles(
             createMagnetPostHoleSolid(center, diameter, depth)
         ),
     );
+}
+
+/**
+ * 执行权威 Base-hole Construction Plan 中的声明式切割指令。
+ * 坐标转换只负责把 Adapter 坐标投影到当前 CAD 装配坐标系，不重新解析孔型。
+ */
+export function subtractBaseHoleConstructionPlan(
+    tray: Geom3,
+    plan: BaseHoleConstructionPlan,
+    projectPoint: (x: number, y: number) => [number, number] = (x, y) => [x, y],
+): Geom3 {
+    if (plan.blocked) {
+        throw new Error(getBaseHoleFitBlockingReason(plan.violations) ?? "底板孔位不适配");
+    }
+    if (plan.instructions.length === 0) return tray;
+
+    const solids = plan.instructions.map((instruction) => {
+        const [x, y] = projectPoint(instruction.x, instruction.y);
+        const height = instruction.top - instruction.bottom;
+        return translate(
+            [x, y, instruction.bottom + height / 2],
+            cylinder({
+                radius: instruction.diameter / 2,
+                height,
+                segments: RENDER_CONFIG.cylinderSegments,
+            }),
+        );
+    });
+    return subtract(tray, ...solids);
 }
 
 /**

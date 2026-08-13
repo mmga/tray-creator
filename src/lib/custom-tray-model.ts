@@ -7,7 +7,6 @@ import {
 } from "@jscad/modeling";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { CustomLayoutParams } from "@/types/custom-tray";
-import { resolveMagneticBaseHolePreset } from "@/lib/base-hole-config";
 import {
   calculateCustomEffectiveDimensions,
   calculateCustomTrayFootprint,
@@ -19,10 +18,9 @@ import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import {
   createBaseBody,
   createOffsetSlotShape,
-  subtractBaseHoles,
-  subtractMagnetPostHoles,
-  type SlotCenter,
+  subtractBaseHoleConstructionPlan,
 } from "@/lib/model-utils";
+import { createCustomBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
 
 const { subtract, union } = booleans;
 const { geom3 } = geometries;
@@ -131,7 +129,6 @@ export function createCustomTrayModel(
 
   // 2. 生成凹槽
   const holes: Geom3[] = [];
-  const centers: SlotCenter[] = [];
 
   for (const slot of slots) {
     const normalizedX = slot.x - sourceCenterX + trayWidth / 2;
@@ -145,16 +142,6 @@ export function createCustomTrayModel(
     const width = profile.width;
     const height = profile.height;
     const rotation = slot.rotation || 0;
-    centers.push({
-      cx,
-      cy,
-      baseHoleSize: resolveMagneticBaseHolePreset(
-        slot.shape,
-        slot.width,
-        slot.height,
-      ),
-    });
-
     // 2D 椭圆 → 等距外扩 → 拉伸 → 旋转 → 平移
     const holeShape2D = createOffsetSlotShape(
       width,
@@ -174,17 +161,12 @@ export function createCustomTrayModel(
   // 3. 布尔运算
   let tray = holes.length > 0 ? subtract(body, ...holes) : body;
 
-  // 4. 底板磁吸孔
-  if (params.baseHoleStructure === "magnetic-base-hole") {
-    tray = subtractBaseHoles(tray, centers, baseThickness);
-  } else if (params.baseHoleStructure === "magnet-post-hole") {
-    tray = subtractMagnetPostHoles(
-      tray,
-      centers.map(({ cx, cy }) => ({ cx, cy, floorHeight: baseThickness })),
-      params.magnetPostHoleDiameter,
-      params.magnetPostHoleDepth,
-    );
-  }
+  // 4. 执行权威底板孔位计划；Adapter 使用用户坐标，CAD 使用底盘中心坐标。
+  tray = subtractBaseHoleConstructionPlan(
+    tray,
+    createCustomBaseHoleConstructionPlan(params, { contouredState }),
+    (x, y) => [x - sourceCenterX, y - sourceCenterY],
+  );
 
   return tray;
 }

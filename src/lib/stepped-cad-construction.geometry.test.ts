@@ -221,7 +221,10 @@ describe("CAD Stepped Construction geometry", () => {
         height: slot.id === "slot-high" ? 60 : 40,
       })),
     };
-    const graph = buildSteppedCadFeatureGraph(params);
+    const graph = buildSteppedCadFeatureGraph({
+      ...params,
+      baseHoleStructure: "magnetic-base-hole",
+    });
     const lowBaseHole = graph.baseHoles.find((hole) => hole.groupId === "group-low");
     const highBaseHole = graph.baseHoles.find((hole) => hole.groupId === "group-high");
     const plainParts = createSteppedCadSplitParts({

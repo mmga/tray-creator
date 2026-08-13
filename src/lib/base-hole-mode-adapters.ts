@@ -9,10 +9,11 @@ import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
 import { getGridSlotGeometry } from "@/lib/grid-config";
 import {
   getGridBoundarySpacingAxes,
-  getGridSpacingAxes,
-} from "@/lib/tray-model";
+  getGridSlotPitchAxes,
+} from "@/lib/grid-layout-math";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import { buildSteppedOutlinePreview } from "@/lib/stepped-outline-preview";
+import { getSteppedGroupMinBottomHeight } from "@/lib/stepped-base-hole";
 import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
 import type { BaseHoleProjectedSlot } from "@/lib/base-hole-construction-plan";
 import type { CustomLayoutParams, SteppedLayoutParams } from "@/types/custom-tray";
@@ -130,12 +131,12 @@ function polygonBounds(
 export const gridBaseHoleAdapter = {
   project(params: TrayParams): BaseHoleProjectedSlot[] {
     const slot = getGridSlotGeometry(params);
-    const { spacingX, spacingY } = getGridSpacingAxes(params);
+    const { pitchX, pitchY } = getGridSlotPitchAxes(params);
     const { boundarySpacingX, boundarySpacingY } = getGridBoundarySpacingAxes(params);
     const topWidth = 2 * boundarySpacingX +
-      (params.columns - 1) * spacingX + params.columns * slot.slotWidth;
+      slot.slotWidth + (params.columns - 1) * pitchX;
     const topDepth = 2 * boundarySpacingY +
-      (params.rows - 1) * spacingY + params.rows * slot.slotHeight;
+      slot.slotHeight + (params.rows - 1) * pitchY;
     const bevel = Math.max(0, params.sideBevelWidth);
     const crossSection = getBeveledRoundedRectCrossSection({
       bottomBounds: {
@@ -155,9 +156,9 @@ export const gridBaseHoleAdapter = {
     for (let row = 0; row < params.rows; row += 1) {
       for (let column = 0; column < params.columns; column += 1) {
         const x = bevel + boundarySpacingX + slot.slotWidth / 2 +
-          column * (slot.slotWidth + spacingX);
+          column * pitchX;
         const y = bevel + boundarySpacingY + slot.slotHeight / 2 +
-          row * (slot.slotHeight + spacingY);
+          row * pitchY;
         slots.push({
           id: `grid-${row}-${column}`,
           shape: slot.shape,
@@ -282,8 +283,16 @@ export const steppedBaseHoleAdapter = {
     return params.slots.map((slot) => {
       const profile = getFreeSlotProfileGeometry(slot);
       const groupOutlines = outlines.filter((outline) => outline.groupId === slot.groupId);
-      const groupHeight = groupById.get(slot.groupId)?.bottomHeight ?? params.holeDepth;
-      const floorHeight = groupHeight - params.holeDepth;
+      const group = groupById.get(slot.groupId);
+      const groupHeight = Math.max(
+        group?.bottomHeight ?? 3,
+        group ? getSteppedGroupMinBottomHeight(params, group.id) : 3,
+        3,
+      );
+      const floorHeight = Math.max(
+        groupHeight - Math.min(params.holeDepth, groupHeight),
+        0,
+      );
       const layerRadius = isRectangular && groupHeight <= lowestHeight + 1e-6
         ? (params.cornerRadius ?? 0)
         : 0;

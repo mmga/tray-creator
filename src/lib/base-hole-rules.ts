@@ -1,18 +1,19 @@
 import { BASE_HOLE_CONFIG } from "@/lib/config";
 import {
-  createBaseHoleConstructionPlan,
   getBaseHoleFitBlockingReason,
   getRequiredBaseHoleSupportingThickness,
   MAGNETIC_BASE_HOLE_MIN_SIDE_WALL,
   type BaseHoleFitViolation,
 } from "@/lib/base-hole-construction-plan";
-import {
-  customBaseHoleAdapter,
-  gridBaseHoleAdapter,
-  steppedBaseHoleAdapter,
-  type CustomBaseHoleAdapterOptions,
-  type SteppedBaseHoleAdapterOptions,
+import type {
+  CustomBaseHoleAdapterOptions,
+  SteppedBaseHoleAdapterOptions,
 } from "@/lib/base-hole-mode-adapters";
+import {
+  createCustomBaseHoleConstructionPlan,
+  createGridBaseHoleConstructionPlan,
+  createSteppedBaseHoleConstructionPlan,
+} from "@/lib/base-hole-planning";
 import { resolveMagneticBaseHolePreset } from "@/lib/base-hole-config";
 import type {
   AppMode,
@@ -59,10 +60,8 @@ export function getResolvedMagneticBaseHolePresets(
   params: TrayParams | CustomLayoutParams | SteppedLayoutParams,
 ): BaseHolePresetKey[] {
   if (mode === "grid") {
-    return createBaseHoleConstructionPlan(
-      params as TrayParams,
-      gridBaseHoleAdapter.project(params as TrayParams),
-    ).resolvedMagneticPresets.slice();
+    return createGridBaseHoleConstructionPlan(params as TrayParams)
+      .resolvedMagneticPresets.slice();
   }
   const slots = (params as CustomLayoutParams | SteppedLayoutParams).slots;
   const presets = new Set(slots.map((slot) => resolveMagneticBaseHolePreset(
@@ -80,25 +79,16 @@ export function validateBaseHoleFit(
 ): BaseHoleFitViolation[] {
   if (params.baseHoleStructure === "none") return [];
   if (mode === "grid") {
-    return createBaseHoleConstructionPlan(
-      params as TrayParams,
-      gridBaseHoleAdapter.project(params as TrayParams),
-    ).violations.slice();
+    return createGridBaseHoleConstructionPlan(params as TrayParams).violations.slice();
   }
   if (mode === "custom") {
     const customParams = params as CustomLayoutParams;
-    return createBaseHoleConstructionPlan(
-      customParams,
-      customBaseHoleAdapter.project(customParams, {
-        contouredState: options?.customContouredState,
-      }),
-    ).violations.slice();
+    return createCustomBaseHoleConstructionPlan(customParams, {
+      contouredState: options?.customContouredState,
+    }).violations.slice();
   }
   const steppedParams = params as SteppedLayoutParams;
-  return createBaseHoleConstructionPlan(
-    steppedParams,
-    steppedBaseHoleAdapter.project(steppedParams, {
-      contouredState: options?.steppedContouredState,
-    }),
-  ).violations.slice();
+  return createSteppedBaseHoleConstructionPlan(steppedParams, {
+    contouredState: options?.steppedContouredState,
+  }).violations.slice();
 }

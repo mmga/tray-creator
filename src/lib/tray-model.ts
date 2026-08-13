@@ -5,14 +5,23 @@ import { RENDER_CONFIG } from "@/lib/config";
 import {
   getGridSlotGeometry,
   isRectangularGridSlot,
-  resolveGridBaseHolePresetKey,
 } from "@/lib/grid-config";
 import {
   createBaseBody,
-  subtractBaseHoles,
-  subtractMagnetPostHoles,
+  subtractBaseHoleConstructionPlan,
   type SlotCenter,
 } from "@/lib/model-utils";
+import { createGridBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
+import {
+  getGridBoundarySpacingAxes,
+  getGridSlotPitchAxes,
+} from "@/lib/grid-layout-math";
+
+export {
+  getGridBoundarySpacingAxes,
+  getGridSlotPitchAxes,
+  getGridSpacingAxes,
+} from "@/lib/grid-layout-math";
 
 const { intersect, subtract, union } = booleans;
 const { cuboid, cylinder } = primitives;
@@ -29,40 +38,6 @@ const { translate } = transforms;
  * - 间距支持统一 / X-Y 独立：边-凹槽与凹槽-凹槽分别按轴计算
  * - 凹槽实际直径 = slotDiameter 快照；旧参数缺失时按兼容规则补齐
  */
-export function getGridSpacingAxes(params: TrayParams) {
-  return {
-    spacingX: params.spacingIndependent ? params.spacingX : params.spacing,
-    spacingY: params.spacingIndependent ? params.spacingY : params.spacing,
-  };
-}
-
-export function getGridBoundarySpacingAxes(params: TrayParams) {
-  const { spacingX, spacingY } = getGridSpacingAxes(params);
-  return {
-    boundarySpacingX: params.boundarySpacingIndependent
-      ? params.boundarySpacing
-      : spacingX,
-    boundarySpacingY: params.boundarySpacingIndependent
-      ? params.boundarySpacing
-      : spacingY,
-  };
-}
-
-/**
- * 网格槽中心距。旧世界矩形底盘按名义底盘尺寸排列，避免单槽容差
- * 在紧密阵列中逐格累积；圆形网格保留既有的成品槽边缘间距语义。
- */
-export function getGridSlotPitchAxes(params: TrayParams) {
-  const slot = getGridSlotGeometry(params);
-  const { spacingX, spacingY } = getGridSpacingAxes(params);
-  return {
-    pitchX:
-      (slot.shape === "rectangle" ? slot.baseWidth : slot.slotWidth) + spacingX,
-    pitchY:
-      (slot.shape === "rectangle" ? slot.baseHeight : slot.slotHeight) + spacingY,
-  };
-}
-
 function createHalfCircleTrayBody(
   width: number,
   depth: number,
@@ -132,7 +107,6 @@ export function createTrayModel(params: TrayParams): Geom3 {
   const { pitchX, pitchY } = getGridSlotPitchAxes(params);
   const { boundarySpacingX, boundarySpacingY } =
     getGridBoundarySpacingAxes(params);
-  const baseHoleSize = resolveGridBaseHolePresetKey(params);
 
   // 总尺寸由首尾槽位外沿与槽位中心距决定；矩形槽的中心距按底盘标称尺寸计算。
   const safeSideBevelWidth = Math.max(0, sideBevelWidth);
@@ -196,7 +170,6 @@ export function createTrayModel(params: TrayParams): Geom3 {
           boundarySpacingY +
           slot.slotHeight / 2 +
           row * pitchY,
-        baseHoleSize,
       });
     }
   }
@@ -224,17 +197,12 @@ export function createTrayModel(params: TrayParams): Geom3 {
   // 4. 布尔减法：实体 - 凹槽
   let tray = params.basePlateOnly ? body : subtract(body, ...holes);
 
-  // 5. 底板磁吸孔
-  if (params.baseHoleStructure === "magnetic-base-hole" || params.basePlateOnly) {
-    tray = subtractBaseHoles(tray, centers, baseThickness);
-  } else if (params.baseHoleStructure === "magnet-post-hole") {
-    tray = subtractMagnetPostHoles(
-      tray,
-      centers.map(({ cx, cy }) => ({ cx, cy, floorHeight: baseThickness })),
-      params.magnetPostHoleDiameter,
-      params.magnetPostHoleDepth,
-    );
-  }
+  // 5. 执行权威底板孔位计划；Adapter 坐标原点位于底板左下角。
+  tray = subtractBaseHoleConstructionPlan(
+    tray,
+    createGridBaseHoleConstructionPlan(params),
+    (x, y) => [x - totalWidth / 2, y - totalDepth / 2],
+  );
 
   return tray;
 }

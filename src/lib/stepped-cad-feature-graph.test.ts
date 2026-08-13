@@ -113,8 +113,8 @@ describe("stepped cad feature graph", () => {
       "slot-low",
       "slot-high",
     ]);
-    expect(graph.baseHoles).toHaveLength(2);
-    expect(graph.magnetPostHoles).toHaveLength(2);
+    expect(graph.baseHoles).toHaveLength(0);
+    expect(graph.magnetPostHoles).toHaveLength(0);
     expect(graph.maxHeight).toBe(20);
   });
 

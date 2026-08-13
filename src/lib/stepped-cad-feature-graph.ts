@@ -7,7 +7,7 @@ import {
 import type { Geom2 } from "@jscad/modeling/src/geometries/types";
 import type { SteppedLayoutParams, SteppedSlot } from "@/types/custom-tray";
 import { RENDER_CONFIG } from "@/lib/config";
-import { resolveMagneticBaseHolePreset } from "@/lib/base-hole-config";
+import { createSteppedBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
 import { roundLayoutDimensionToTenth } from "@/lib/custom-layout-math";
 import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
@@ -17,9 +17,8 @@ import { getConnectivityRadius } from "@/lib/stepped-connectivity";
 import type { ContouredFootprintBounds } from "@/lib/contoured-footprint";
 import {
   getSteppedGroupMinBottomHeight,
-  resolveMagnetPostHoleDepth,
-  resolveMagnetPostHoleDiameter,
 } from "@/lib/stepped-base-hole";
+import type { BaseHolePresetKey } from "@/types/tray";
 
 const { union } = booleans;
 const { geom2 } = geometries;
@@ -165,7 +164,7 @@ export interface SteppedCadBaseHoleFeature {
   groupId: string;
   cx: number;
   cy: number;
-  baseHoleSize: ReturnType<typeof resolveMagneticBaseHolePreset>;
+  baseHoleSize: BaseHolePresetKey;
   baseThickness: number;
 }
 
@@ -608,34 +607,42 @@ export function buildSteppedCadFeatureGraph(
     };
   });
 
-  const baseHoles: SteppedCadBaseHoleFeature[] = slots.map((slot) => {
-    const clampedDepth = Math.min(params.holeDepth, slot.columnHeight);
-    return {
-      groupId: slot.groupId,
-      cx: slot.cx,
-      cy: slot.cy,
-      baseHoleSize: resolveMagneticBaseHolePreset(
-        slot.slot.shape,
-        slot.slot.width,
-        slot.slot.height,
-      ),
-      baseThickness: Math.max(slot.columnHeight - clampedDepth, 0),
-    };
+  const baseHolePlan = createSteppedBaseHoleConstructionPlan(params, {
+    contouredState,
   });
-
-  const magnetPostHoleDiameter = resolveMagnetPostHoleDiameter(params);
-  const magnetPostHoleDepth = resolveMagnetPostHoleDepth(params);
-  const magnetPostHoles: SteppedCadMagnetPostHoleFeature[] = slots.map((slot) => {
-    const clampedSlotDepth = Math.min(params.holeDepth, slot.columnHeight);
-    return {
-      id: slot.slot.id,
-      groupId: slot.groupId,
-      cx: slot.cx,
-      cy: slot.cy,
-      topHeight: slot.columnHeight - clampedSlotDepth,
-      diameter: magnetPostHoleDiameter,
-      depth: magnetPostHoleDepth,
-    };
+  if (baseHolePlan.blocked) {
+    throw new Error(
+      baseHolePlan.violations[0]?.message ?? "底板孔位不适配",
+    );
+  }
+  const instructionBySlotId = new Map(
+    baseHolePlan.instructions.map((instruction) => [instruction.slotId, instruction]),
+  );
+  const baseHoles: SteppedCadBaseHoleFeature[] = slots.flatMap((slot) => {
+    const instruction = instructionBySlotId.get(slot.slot.id);
+    return instruction?.kind === "magnetic-base-hole"
+      ? [{
+          groupId: slot.groupId,
+          cx: slot.cx,
+          cy: slot.cy,
+          baseHoleSize: instruction.preset,
+          baseThickness: instruction.floorHeight,
+        }]
+      : [];
+  });
+  const magnetPostHoles: SteppedCadMagnetPostHoleFeature[] = slots.flatMap((slot) => {
+    const instruction = instructionBySlotId.get(slot.slot.id);
+    return instruction?.kind === "magnet-post-hole"
+      ? [{
+          id: slot.slot.id,
+          groupId: slot.groupId,
+          cx: slot.cx,
+          cy: slot.cy,
+          topHeight: instruction.top,
+          diameter: instruction.diameter,
+          depth: instruction.depth,
+        }]
+      : [];
   });
 
   return {
