@@ -33,6 +33,7 @@ export type SteppedWorkspaceModel = Pick<
   | "volume"
   | "isGenerating"
   | "isPreviewStale"
+  | "baseHolePlan"
   | "baseHoleFitViolations"
   | "baseHoleFitBlockingReason"
   | "contouredFootprintState"

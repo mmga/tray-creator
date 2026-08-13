@@ -14,6 +14,10 @@ type WorkspaceDoesNotOwnViewportEditing = Assert<
   "updateSlotPosition" extends keyof SteppedWorkspaceModel ? false : true
 >;
 
+type WorkspaceOwnsAuthoritativeBaseHolePlan = Assert<
+  "baseHolePlan" extends keyof SteppedWorkspaceModel ? true : false
+>;
+
 type ViewportDoesNotOwnOptimization = Assert<
   "generateOptimizationProposals" extends keyof SteppedViewportModel ? false : true
 >;
@@ -29,13 +33,14 @@ type ViewportOwnsCanvasGeometry = Assert<
 const interfaceAssertions: [
   WorkspaceDoesNotOwnViewportGeometry,
   WorkspaceDoesNotOwnViewportEditing,
+  WorkspaceOwnsAuthoritativeBaseHolePlan,
   ViewportDoesNotOwnOptimization,
   ViewportDoesNotOwnSplitExport,
   ViewportOwnsCanvasGeometry,
-] = [true, true, true, true, true];
+] = [true, true, true, true, true, true];
 
 describe("Stepped Layout Core 调用 Interface", () => {
   it("按 Workspace 与 Viewport 的真实消费范围收窄", () => {
-    expect(interfaceAssertions).toEqual([true, true, true, true, true]);
+    expect(interfaceAssertions).toEqual([true, true, true, true, true, true]);
   });
 });
