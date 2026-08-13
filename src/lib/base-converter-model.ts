@@ -14,11 +14,19 @@ import {
   validateBaseConverterParams,
 } from "@/lib/base-converter-config";
 import { sampleConversionTargetProfile } from "@/lib/base-converter-profile";
-import { createRoundBaseBody } from "@/lib/round-base-profile";
-import { createPushFitHexHoleVertices } from "@/lib/push-fit-hex-hole";
+import {
+  createRoundBaseBody,
+  createRoundBaseOuterBody,
+  ROUND_BASE_SHELL_THICKNESS,
+} from "@/lib/round-base-profile";
+import {
+  createPushFitHexHoleVertices,
+  createPushFitHexWallOuterVertices,
+  PUSH_FIT_WALL_BOTTOM_CLEARANCE,
+} from "@/lib/push-fit-hex-hole";
 import type { BaseConverterParams } from "@/types/custom-tray";
 
-const { subtract } = booleans;
+const { intersect, subtract, union } = booleans;
 const { extrudeFromSlices, extrudeLinear, slice } = extrusions;
 const { ellipse, roundedRectangle } = primitives;
 const { geom2 } = geometries;
@@ -85,7 +93,28 @@ export function createBaseConverterModel(params: BaseConverterParams): Geom3 {
         holeProfile,
       ),
     );
-    return subtract(body, holeCut);
+    const wallOuterProfile = geom2.fromPoints(
+      createPushFitHexWallOuterVertices(
+        normalized.pushFitHexHole,
+        ROUND_BASE_SHELL_THICKNESS,
+      ).map((point): [number, number] => [point.x, point.y]),
+    );
+    const wallOuter = translate(
+      [0, 0, PUSH_FIT_WALL_BOTTOM_CLEARANCE],
+      extrudeLinear(
+        {
+          height:
+            normalized.roundBaseSnapshot.height
+            - PUSH_FIT_WALL_BOTTOM_CLEARANCE,
+        },
+        wallOuterProfile,
+      ),
+    );
+    const clippedWall = intersect(
+      createRoundBaseOuterBody(normalized.roundBaseSnapshot),
+      wallOuter,
+    );
+    return subtract(union(body, clippedWall), holeCut);
   }
   const {
     params: conversionParams,

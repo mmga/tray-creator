@@ -2,11 +2,24 @@ import { describe, expect, it } from "vitest";
 import {
   clampPushFitHexHoleOffset,
   createPushFitHexHoleVertices,
+  createPushFitHexWallOuterVertices,
   validatePushFitHexHolePlacement,
 } from "@/lib/push-fit-hex-hole";
 import { BASE_CONVERTER_DEFAULTS } from "@/lib/base-converter-config";
 
 describe("push-fit hex hole", () => {
+  it("expands the wall outer profile by 2mm on every flat", () => {
+    const outer = createPushFitHexWallOuterVertices(
+      { acrossFlats: 3, offsetX: 2, offsetY: -1 },
+      2,
+    );
+
+    expect(Math.max(...outer.map((point) => point.y)))
+      .toBeCloseTo(-1 + 3.5, 8);
+    expect(Math.min(...outer.map((point) => point.y)))
+      .toBeCloseTo(-1 - 3.5, 8);
+  });
+
   it("creates a regular hexagon from its final across-flats size", () => {
     const vertices = createPushFitHexHoleVertices({
       acrossFlats: 3,

@@ -53,7 +53,7 @@ describe("base converter model", () => {
     },
   );
 
-  it("cuts a centered through hex hole from a push-fit base", () => {
+  it("builds a through hex hole with a 2mm wall ending 1mm above the base", () => {
     const plain = createBaseConverterModel({
       ...BASE_CONVERTER_DEFAULTS,
       generationKind: "plain",
@@ -71,12 +71,49 @@ describe("base converter model", () => {
     pushFitMax.forEach((value, index) => {
       expect(value).toBeCloseTo(plainMax[index], 8);
     });
-    expect(measurements.measureVolume(pushFit)).toBeLessThan(
+    const throughHoleProbe = transforms.translate(
+      [0, 0, 2],
+      primitives.cylinder({ radius: 1, height: 4, segments: 32 }),
+    );
+    const extendedWallProbe = transforms.translate(
+      [2.5, 0, 1.5],
+      primitives.cylinder({ radius: 0.15, height: 0.5, segments: 16 }),
+    );
+    const belowWallProbe = transforms.translate(
+      [2.5, 0, 0.5],
+      primitives.cylinder({ radius: 0.15, height: 0.5, segments: 16 }),
+    );
+
+    expect(measurements.measureVolume(
+      booleans.intersect(pushFit, throughHoleProbe),
+    )).toBeCloseTo(0, 6);
+    expect(measurements.measureVolume(
+      booleans.intersect(pushFit, extendedWallProbe),
+    )).toBeGreaterThan(0);
+    expect(measurements.measureVolume(
+      booleans.intersect(pushFit, belowWallProbe),
+    )).toBeCloseTo(0, 6);
+    expect(measurements.measureVolume(pushFit)).toBeGreaterThan(
       measurements.measureVolume(plain),
     );
-    expect(
-      measurements.measureVolume(plain) - measurements.measureVolume(pushFit),
-    ).toBeCloseTo(9 * Math.sqrt(3), 3);
+  });
+
+  it("clips an offset push-fit wall to the unchanged round-base footprint", () => {
+    const plain = createBaseConverterModel({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+    });
+    const pushFit = createBaseConverterModel({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "push-fit",
+      pushFitHexHole: { acrossFlats: 3, offsetX: 10, offsetY: 0 },
+    });
+
+    const plainBounds = measurements.measureBoundingBox(plain).flat();
+    const pushFitBounds = measurements.measureBoundingBox(pushFit).flat();
+    pushFitBounds.forEach((value, index) => {
+      expect(value).toBeCloseTo(plainBounds[index], 8);
+    });
   });
 
   it("uses the editable top inset to taper a plain base", () => {

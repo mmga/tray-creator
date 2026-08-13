@@ -79,11 +79,7 @@ function createTaperedRoundBody(
 export function createRoundBaseBody(
   profile: RoundBaseProfileSnapshot,
 ): Geom3 {
-  const outerBody = createTaperedRoundBody(
-    profile.nominalDiameter,
-    getRoundBaseTopDiameter(profile),
-    profile.height,
-  );
+  const outerBody = createRoundBaseOuterBody(profile);
   const cavityDimensions = getRoundBaseCavityDimensions(profile);
   if (cavityDimensions.depth <= 0) return outerBody;
   const cavity = createTaperedRoundBody(
@@ -93,4 +89,14 @@ export function createRoundBaseBody(
     -CAVITY_CUT_EPSILON,
   );
   return subtract(outerBody, cavity);
+}
+
+export function createRoundBaseOuterBody(
+  profile: RoundBaseProfileSnapshot,
+): Geom3 {
+  return createTaperedRoundBody(
+    profile.nominalDiameter,
+    getRoundBaseTopDiameter(profile),
+    profile.height,
+  );
 }

@@ -10,6 +10,7 @@ export interface Point2D {
 }
 
 export const PUSH_FIT_MIN_TOP_WALL = 0.6;
+export const PUSH_FIT_WALL_BOTTOM_CLEARANCE = 1;
 
 export function createPushFitHexHoleVertices(
   hole: PushFitHexHoleParams,
@@ -21,6 +22,16 @@ export function createPushFitHexHoleVertices(
       x: hole.offsetX + Math.cos(angle) * radius,
       y: hole.offsetY + Math.sin(angle) * radius,
     };
+  });
+}
+
+export function createPushFitHexWallOuterVertices(
+  hole: PushFitHexHoleParams,
+  wallThickness: number,
+): Point2D[] {
+  return createPushFitHexHoleVertices({
+    ...hole,
+    acrossFlats: hole.acrossFlats + wallThickness * 2,
   });
 }
 
