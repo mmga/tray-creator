@@ -65,6 +65,14 @@ describe("useCustomLayout", () => {
     vi.useRealTimers();
   });
 
+  it("复用权威 Base-hole Construction Plan 的违规集合", () => {
+    const { result } = renderHook(() => useCustomLayout());
+
+    expect(result.current.baseHoleFitViolations).toBe(
+      result.current.baseHolePlan.violations,
+    );
+  });
+
   it("updates params, keeps spacing-linked fields in sync, and computes extents", () => {
     const { result } = renderHook(() => useCustomLayout());
 

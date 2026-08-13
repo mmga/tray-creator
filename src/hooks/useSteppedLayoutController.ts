@@ -54,6 +54,7 @@ import { createSteppedBaseHoleConstructionPlan } from "@/lib/base-hole-planning"
 import { useSteppedContouredFootprint } from "@/hooks/useSteppedContouredFootprint";
 import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
 import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
+import type { BaseHoleConstructionPlan } from "@/lib/base-hole-construction-plan";
 
 export interface UseSteppedLayoutControllerReturn {
   params: SteppedLayoutParams;
@@ -111,7 +112,8 @@ export interface UseSteppedLayoutControllerReturn {
   volume: number;
   isGenerating: boolean;
   isPreviewStale: boolean;
-  baseHoleFitViolations: BaseHoleFitViolation[];
+  baseHoleFitViolations: readonly BaseHoleFitViolation[];
+  baseHolePlan: BaseHoleConstructionPlan;
   baseHoleFitBlockingReason: string | null;
   bridgeWarning: BridgeWarning | null;
   optimizationProposals: SteppedOptimizationProposal[];
@@ -288,7 +290,7 @@ export function useSteppedLayoutController<
     }),
     [contouredFootprintState, persistedParams],
   );
-  const baseHoleFitViolations = baseHolePlan.violations.slice();
+  const baseHoleFitViolations = baseHolePlan.violations;
   const baseHoleFitBlockingReason =
     (contouredFootprintState.status === "failed"
       ? contouredFootprintState.error.message
@@ -614,6 +616,7 @@ export function useSteppedLayoutController<
     isGenerating,
     isPreviewStale,
     baseHoleFitViolations,
+    baseHolePlan,
     baseHoleFitBlockingReason,
     bridgeWarning,
     optimizationProposals,

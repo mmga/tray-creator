@@ -28,6 +28,7 @@ import type {
 import {
   getBaseHoleFitBlockingReason,
 } from "@/lib/base-hole-construction-plan";
+import type { BaseHoleConstructionPlan } from "@/lib/base-hole-construction-plan";
 import { createSteppedBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
 import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
 import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
@@ -37,6 +38,8 @@ interface UseSteppedCadSplitOrchestrationOptions {
   params: SteppedLayoutParams;
   contouredFootprintState?: ContouredFootprintState<ConstructedSteppedContouredFootprints>;
   transactionRevision?: number;
+  /** 生产调用方传入 Mode Hook 的权威 Plan；缺失仅用于隔离测试兼容。 */
+  baseHolePlan?: BaseHoleConstructionPlan;
   edit: (intent: SteppedEditIntent) => unknown;
   previewEdit: (intent: SteppedContinuousEditIntent) => unknown;
   generateSplitPreview: (
@@ -89,6 +92,7 @@ export function useSteppedCadSplitOrchestration(
     params,
     contouredFootprintState = { status: "inactive" },
     transactionRevision = 0,
+    baseHolePlan: authoritativeBaseHolePlan,
     edit,
     previewEdit,
     generateSplitPreview,
@@ -106,10 +110,10 @@ export function useSteppedCadSplitOrchestration(
   const [isGeneratingSplitPreview, setIsGeneratingSplitPreview] =
     useState(false);
   const baseHolePlan = useMemo(
-    () => createSteppedBaseHoleConstructionPlan(params, {
+    () => authoritativeBaseHolePlan ?? createSteppedBaseHoleConstructionPlan(params, {
       contouredState: contouredFootprintState,
     }),
-    [contouredFootprintState, params],
+    [authoritativeBaseHolePlan, contouredFootprintState, params],
   );
   const baseHoleFitBlockingReason = getBaseHoleFitBlockingReason(
     baseHolePlan.violations,

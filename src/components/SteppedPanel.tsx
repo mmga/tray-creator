@@ -69,6 +69,7 @@ import {
     type BaseHoleFitViolation,
 } from "@/lib/base-hole-construction-plan";
 import { createSteppedBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
+import type { BaseHoleConstructionPlan } from "@/lib/base-hole-construction-plan";
 import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
 import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";
 
@@ -114,7 +115,8 @@ interface SteppedPanelSharedProps {
     isGenerating: boolean;
     volume: number;
     contouredFootprintState?: ContouredFootprintState<ConstructedSteppedContouredFootprints>;
-    baseHoleFitViolations?: BaseHoleFitViolation[];
+    baseHoleFitViolations?: readonly BaseHoleFitViolation[];
+    baseHolePlan?: BaseHoleConstructionPlan;
     selectedSlotIds: string[];
     activeGroupId?: string | null;
     // 分组管理
@@ -365,6 +367,7 @@ function SteppedPanelBody({
     isGenerating,
     volume,
     baseHoleFitViolations = [],
+    baseHolePlan: authoritativeBaseHolePlan,
     selectedSlotIds,
     activeGroupId,
     onAddGroup,
@@ -425,10 +428,10 @@ function SteppedPanelBody({
         formatAreaDelta,
     } = state;
     const baseHolePlan = useMemo(
-        () => createSteppedBaseHoleConstructionPlan(params, {
+        () => authoritativeBaseHolePlan ?? createSteppedBaseHoleConstructionPlan(params, {
             contouredState: contouredFootprintState,
         }),
-        [contouredFootprintState, params],
+        [authoritativeBaseHolePlan, contouredFootprintState, params],
     );
     const resolvedBaseHoleSizes = baseHolePlan.resolvedMagneticPresets;
     const selectedSlotId = selectedSlotIds[0];

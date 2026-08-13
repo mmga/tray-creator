@@ -50,6 +50,7 @@ import type {
   ConstructedContouredFootprint,
 } from "@/lib/contoured-footprint";
 import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
+import type { BaseHoleConstructionPlan } from "@/lib/base-hole-construction-plan";
 
 interface UseCustomLayoutReturn {
   params: CustomLayoutParams;
@@ -107,7 +108,8 @@ interface UseCustomLayoutReturn {
   isGenerating: boolean;
   isPreviewStale: boolean;
   transactionRevision: number;
-  baseHoleFitViolations: BaseHoleFitViolation[];
+  baseHolePlan: BaseHoleConstructionPlan;
+  baseHoleFitViolations: readonly BaseHoleFitViolation[];
   baseHoleFitBlockingReason: string | null;
   handleGenerate: () => Promise<void>;
   handleExportSTL: () => Promise<void>;
@@ -200,7 +202,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     }),
     [contouredFootprintState, persistedParams],
   );
-  const baseHoleFitViolations = baseHolePlan.violations.slice();
+  const baseHoleFitViolations = baseHolePlan.violations;
   const baseHoleFitBlockingReason =
     (contouredFootprintState.status === "failed"
       ? contouredFootprintState.error.message
@@ -367,6 +369,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     isGenerating,
     isPreviewStale,
     transactionRevision,
+    baseHolePlan,
     baseHoleFitViolations,
     baseHoleFitBlockingReason,
     handleGenerate,

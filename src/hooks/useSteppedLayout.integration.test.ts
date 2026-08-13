@@ -139,6 +139,14 @@ describe("useSteppedLayout", () => {
     expect(result.current.handleExportSplitParts).toEqual(expect.any(Function));
   });
 
+  it("主模型与拆件流程复用同一权威 Base-hole Construction Plan", () => {
+    const { result } = renderHook(() => useSteppedLayout());
+
+    expect(result.current.baseHoleFitViolations).toBe(
+      result.current.baseHolePlan.violations,
+    );
+  });
+
   it("wires outline preview state and manages groups", () => {
     randomIdFactoryMock.createId.mockReturnValue("group-2");
     const { result } = renderHook(() => useSteppedLayout());

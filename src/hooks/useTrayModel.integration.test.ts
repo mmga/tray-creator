@@ -52,6 +52,14 @@ describe("useTrayModel", () => {
     trayWorkerServiceMock.exportSTL.mockReset();
   });
 
+  it("复用权威 Base-hole Construction Plan 的违规集合", () => {
+    const { result } = renderHook(() => useTrayModel());
+
+    expect(result.current.baseHoleFitViolations).toBe(
+      result.current.baseHolePlan.violations,
+    );
+  });
+
   it("updates params, replaces params, and resets defaults while marking previews stale", () => {
     const { result } = renderHook(() => useTrayModel());
 

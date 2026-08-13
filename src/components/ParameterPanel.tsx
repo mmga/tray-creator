@@ -34,6 +34,7 @@ import { TrayResultSummary } from "@/components/TrayResultSummary";
 import { projectGridTrayResult } from "@/lib/tray-result-projection";
 import type { BaseHoleFitViolation } from "@/lib/base-hole-construction-plan";
 import { createGridBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
+import type { BaseHoleConstructionPlan } from "@/lib/base-hole-construction-plan";
 
 interface ParameterPanelProps {
   params: TrayParams;
@@ -43,7 +44,8 @@ interface ParameterPanelProps {
   isGenerating: boolean;
   isPreviewStale: boolean;
   volume: number;
-  baseHoleFitViolations?: BaseHoleFitViolation[];
+  baseHoleFitViolations?: readonly BaseHoleFitViolation[];
+  baseHolePlan?: BaseHoleConstructionPlan;
 }
 
 export default function ParameterPanel({
@@ -55,6 +57,7 @@ export default function ParameterPanel({
   isPreviewStale,
   volume,
   baseHoleFitViolations = [],
+  baseHolePlan: authoritativeBaseHolePlan,
 }: ParameterPanelProps) {
   const slotGeometry = getGridSlotGeometry(params);
   const isRectangularSlot = isRectangularGridSlot(params);
@@ -102,8 +105,8 @@ export default function ParameterPanel({
       ? `circle-${params.holeDiameter}`
       : undefined;
   const baseHolePlan = useMemo(
-    () => createGridBaseHoleConstructionPlan(params),
-    [params],
+    () => authoritativeBaseHolePlan ?? createGridBaseHoleConstructionPlan(params),
+    [authoritativeBaseHolePlan, params],
   );
 
   const handlePresetChange = (value: string) => {

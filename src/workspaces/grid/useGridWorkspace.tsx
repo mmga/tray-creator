@@ -156,6 +156,7 @@ export function useGridWorkspace({
         isPreviewStale={model.isPreviewStale}
         volume={model.volume}
         baseHoleFitViolations={model.baseHoleFitViolations}
+        baseHolePlan={model.baseHolePlan}
       />
     ),
     [
@@ -167,6 +168,7 @@ export function useGridWorkspace({
       model.updateParam,
       model.volume,
       model.baseHoleFitViolations,
+      model.baseHolePlan,
     ],
   );
 

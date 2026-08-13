@@ -35,6 +35,7 @@ import {
   type BaseHoleFitViolation,
 } from "@/lib/base-hole-construction-plan";
 import { createCustomBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
+import type { BaseHoleConstructionPlan } from "@/lib/base-hole-construction-plan";
 import type {
   ConstructedContouredFootprint,
 } from "@/lib/contoured-footprint";
@@ -57,7 +58,8 @@ interface CustomPanelProps {
   isPreviewStale: boolean;
   volume: number;
   contouredFootprintState?: ContouredFootprintState<ConstructedContouredFootprint>;
-  baseHoleFitViolations?: BaseHoleFitViolation[];
+  baseHoleFitViolations?: readonly BaseHoleFitViolation[];
+  baseHolePlan?: BaseHoleConstructionPlan;
   selectedSlotIds?: string[];
 }
 
@@ -80,6 +82,7 @@ export default function CustomPanel({
   volume,
   contouredFootprintState = { status: "inactive" },
   baseHoleFitViolations = [],
+  baseHolePlan: authoritativeBaseHolePlan,
   selectedSlotIds = [],
 }: CustomPanelProps) {
   const result = projectCustomTrayResult(params, effectiveDimensions, {
@@ -92,10 +95,10 @@ export default function CustomPanel({
   const isFixedTraySize = !isContouredFootprint && params.traySizingMode === "fixed";
   const [customCircleDiameter, setCustomCircleDiameter] = useState(10);
   const baseHolePlan = useMemo(
-    () => createCustomBaseHoleConstructionPlan(params, {
+    () => authoritativeBaseHolePlan ?? createCustomBaseHoleConstructionPlan(params, {
       contouredState: contouredFootprintState,
     }),
-    [contouredFootprintState, params],
+    [authoritativeBaseHolePlan, contouredFootprintState, params],
   );
   const resolvedBaseHoleSizes = baseHolePlan.resolvedMagneticPresets;
   const selectedSlot = params.slots.find((slot) => slot.id === selectedSlotIds[0]);

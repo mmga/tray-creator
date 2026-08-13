@@ -25,6 +25,7 @@ import {
   type BaseHoleFitViolation,
 } from "@/lib/base-hole-construction-plan";
 import { createGridBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
+import type { BaseHoleConstructionPlan } from "@/lib/base-hole-construction-plan";
 
 interface UseTrayModelReturn {
   params: TrayParams;
@@ -39,7 +40,8 @@ interface UseTrayModelReturn {
   isGenerating: boolean;
   isPreviewStale: boolean;
   transactionRevision: number;
-  baseHoleFitViolations: BaseHoleFitViolation[];
+  baseHolePlan: BaseHoleConstructionPlan;
+  baseHoleFitViolations: readonly BaseHoleFitViolation[];
   baseHoleFitBlockingReason: string | null;
   handleGenerate: () => void;
   handleExportSTL: () => void;
@@ -82,7 +84,7 @@ export function useTrayModel(): UseTrayModelReturn {
     () => createGridBaseHoleConstructionPlan(params),
     [params],
   );
-  const baseHoleFitViolations = baseHolePlan.violations.slice();
+  const baseHoleFitViolations = baseHolePlan.violations;
   const baseHoleFitBlockingReason = getBaseHoleFitBlockingReason(
     baseHoleFitViolations,
   );
@@ -116,6 +118,7 @@ export function useTrayModel(): UseTrayModelReturn {
     isGenerating,
     isPreviewStale,
     transactionRevision,
+    baseHolePlan,
     baseHoleFitViolations,
     baseHoleFitBlockingReason,
     handleGenerate,

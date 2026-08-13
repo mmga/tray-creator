@@ -108,6 +108,7 @@ export function useSteppedLayout(): UseSteppedLayoutReturn {
     params: steppedModel.persistedParams,
     contouredFootprintState: steppedModel.contouredFootprintState,
     transactionRevision: steppedModel.transactionRevision,
+    baseHolePlan: steppedModel.baseHolePlan,
     edit: steppedModel.edit,
     previewEdit: steppedModel.previewEdit,
     generateSplitPreview: generateSteppedSplitPreview,

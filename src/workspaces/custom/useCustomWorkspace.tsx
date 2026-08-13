@@ -163,6 +163,7 @@ export function useCustomWorkspace({
         volume={model.volume}
         contouredFootprintState={model.contouredFootprintState}
         baseHoleFitViolations={model.baseHoleFitViolations}
+        baseHolePlan={model.baseHolePlan}
         selectedSlotIds={interactionState.selectedSlotIds}
       />
     ),
@@ -176,6 +177,7 @@ export function useCustomWorkspace({
       model.updateParam,
       model.volume,
       model.baseHoleFitViolations,
+      model.baseHolePlan,
       model.contouredFootprintState,
       interactionState.selectedSlotIds,
     ],

@@ -141,6 +141,7 @@ export function useSteppedWorkspace({
         volume={model.volume}
         contouredFootprintState={model.contouredFootprintState}
         baseHoleFitViolations={model.baseHoleFitViolations}
+        baseHolePlan={model.baseHolePlan}
         selectedSlotIds={selectedSlotIds}
         activeGroupId={activeSteppedGroupId}
         previewParam={model.previewParam}
