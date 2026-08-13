@@ -12,7 +12,7 @@ import { MAX_BUILD_SIZE } from "@/lib/config";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import { normalizeSimpleSteppedSlotInstanceSnapshot } from "@/lib/slot-instance-factory";
 import { normalizeBaseHoleParams } from "@/lib/base-hole-config";
-import { applySimpleSteppedBaseHoleSupportingThickness } from "@/lib/base-hole-rules";
+import { applySimpleSteppedBaseHoleSupportingThickness } from "@/lib/base-hole-planning";
 
 export {
   buildSimpleSteppedRowBands,

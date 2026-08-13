@@ -165,7 +165,6 @@ export function createCustomTrayModel(
   tray = subtractBaseHoleConstructionPlan(
     tray,
     createCustomBaseHoleConstructionPlan(params, { contouredState }),
-    (x, y) => [x - sourceCenterX, y - sourceCenterY],
   );
 
   return tray;

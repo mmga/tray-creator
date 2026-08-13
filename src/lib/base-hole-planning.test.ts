@@ -2,11 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   applyFlatTrayBaseHoleSupportingThickness,
   applySimpleSteppedBaseHoleSupportingThickness,
-  getRequiredBaseHoleSupportingThickness,
-  getResolvedMagneticBaseHolePresets,
-  resolveMagneticBaseHolePreset,
-  validateBaseHoleFit,
-} from "@/lib/base-hole-rules";
+  createCustomBaseHoleConstructionPlan,
+  createGridBaseHoleConstructionPlan,
+  createSteppedBaseHoleConstructionPlan,
+} from "@/lib/base-hole-planning";
+import { getRequiredBaseHoleSupportingThickness } from "@/lib/base-hole-construction-plan";
+import { resolveMagneticBaseHolePreset } from "@/lib/base-hole-config";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
@@ -14,7 +15,7 @@ import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import { customContouredStateForTest } from "@/test/contoured-state";
 import type { CustomLayoutParams, SteppedLayoutParams } from "@/types/custom-tray";
 
-describe("base hole rules", () => {
+describe("Base-hole Construction Plan Interface", () => {
   it("按圆形直径或非圆形短边匹配磁吸孔", () => {
     expect(resolveMagneticBaseHolePreset("circle", 25, 25)).toBe("20");
     expect(resolveMagneticBaseHolePreset("rectangle", 25, 50)).toBe("20");
@@ -28,13 +29,14 @@ describe("base hole rules", () => {
   });
 
   it("返回同一托盘逐槽位匹配后的混合磁吸孔规格", () => {
-    expect(getResolvedMagneticBaseHolePresets("custom", {
+    expect(createCustomBaseHoleConstructionPlan({
       ...CUSTOM_LAYOUT_DEFAULTS,
+      baseHoleStructure: "magnetic-base-hole",
       slots: [
         { id: "small", x: 30, y: 30, shape: "circle", width: 25, height: 25, rotation: 0 },
         { id: "large", x: 90, y: 30, shape: "ellipse", width: 75, height: 42, rotation: 0 },
       ],
-    })).toEqual(["20", "40"]);
+    }).resolvedMagneticPresets).toEqual(["20", "40"]);
   });
 
   it("计算两种孔位结构的最小承载厚度", () => {
@@ -66,7 +68,7 @@ describe("base hole rules", () => {
       },
     ) as SteppedLayoutParams;
 
-    expect(validateBaseHoleFit("stepped", params)).toEqual([]);
+    expect(createSteppedBaseHoleConstructionPlan(params).violations).toEqual([]);
     expect(slotsReadCount).toBe(0);
   });
 
@@ -102,24 +104,26 @@ describe("base hole rules", () => {
         rotation: 0,
       }],
     };
-    const violations = validateBaseHoleFit("custom", smallParams as CustomLayoutParams);
+    const violations = createCustomBaseHoleConstructionPlan(
+      smallParams as CustomLayoutParams,
+    ).violations;
     expect(violations).toMatchObject([
       { kind: "magnet-post-hole-fit", slotIds: ["small-slot"] },
     ]);
   });
 
   it("报告贴近外壁和间距不足的磁吸孔", () => {
-    const edge = validateBaseHoleFit("custom", {
+    const edge = createCustomBaseHoleConstructionPlan({
       ...CUSTOM_LAYOUT_DEFAULTS,
       traySizingMode: "fixed",
       trayWidth: 40,
       trayDepth: 40,
       baseHoleStructure: "magnetic-base-hole",
       slots: [{ id: "edge", x: 10, y: 20, shape: "circle", width: 25, height: 25, rotation: 0 }],
-    });
+    }).violations;
     expect(edge.some((item) => item.slotIds.includes("edge"))).toBe(true);
 
-    const adjacent = validateBaseHoleFit("grid", {
+    const adjacent = createGridBaseHoleConstructionPlan({
       ...DEFAULT_TRAY_PARAMS,
       rows: 1,
       columns: 2,
@@ -131,7 +135,7 @@ describe("base hole rules", () => {
       boundarySpacing: 13,
       boundarySpacingIndependent: true,
       baseHoleStructure: "magnetic-base-hole",
-    });
+    }).violations;
     expect(adjacent.some((item) => item.slotIds.length === 2)).toBe(true);
   });
 
@@ -146,9 +150,10 @@ describe("base hole rules", () => {
         { id: "small", x: 0, y: 0, shape: "circle", width: 10, height: 10, rotation: 0 },
       ],
     } satisfies CustomLayoutParams;
-    const violations = validateBaseHoleFit("custom", contouredSmallParams, {
-      customContouredState: customContouredStateForTest(contouredSmallParams),
-    });
+    const violations = createCustomBaseHoleConstructionPlan(
+      contouredSmallParams,
+      { contouredState: customContouredStateForTest(contouredSmallParams) },
+    ).violations;
     expect(violations.some((item) => item.slotIds.includes("small"))).toBe(true);
 
     // 较大槽位在 contoured 下应能容纳对应磁吸孔
@@ -160,9 +165,10 @@ describe("base hole rules", () => {
         { id: "large", x: 0, y: 0, shape: "circle", width: 40, height: 40, rotation: 0 },
       ],
     } satisfies CustomLayoutParams;
-    const ok = validateBaseHoleFit("custom", largeParams, {
-      customContouredState: customContouredStateForTest(largeParams),
-    });
+    const ok = createCustomBaseHoleConstructionPlan(
+      largeParams,
+      { contouredState: customContouredStateForTest(largeParams) },
+    ).violations;
     expect(ok.some((item) => item.slotIds.includes("large"))).toBe(false);
   });
 });

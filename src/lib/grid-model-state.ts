@@ -8,7 +8,7 @@ import { findCircleSlotDefinitionById } from "@/lib/slot-definitions";
 import { createGridSlotSnapshotFromDefinition } from "@/lib/slot-instance-factory";
 import type { TrayParams } from "@/types/tray";
 import { normalizeBaseHoleParams } from "@/lib/base-hole-config";
-import { applyFlatTrayBaseHoleSupportingThickness } from "@/lib/base-hole-rules";
+import { applyFlatTrayBaseHoleSupportingThickness } from "@/lib/base-hole-planning";
 
 function getFiniteOr(value: unknown, fallback: number) {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;

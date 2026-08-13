@@ -201,7 +201,6 @@ export function createTrayModel(params: TrayParams): Geom3 {
   tray = subtractBaseHoleConstructionPlan(
     tray,
     createGridBaseHoleConstructionPlan(params),
-    (x, y) => [x - totalWidth / 2, y - totalDepth / 2],
   );
 
   return tray;

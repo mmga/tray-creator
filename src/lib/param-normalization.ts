@@ -43,7 +43,7 @@ import {
 import type { BaseHoleStructure } from "@/types/tray";
 import {
   applyFlatTrayBaseHoleSupportingThickness,
-} from "@/lib/base-hole-rules";
+} from "@/lib/base-hole-planning";
 import type { ParamsByMode } from "@/lib/mode-param-snapshot";
 
 type NormalizableParams = ParamsByMode[AppMode];

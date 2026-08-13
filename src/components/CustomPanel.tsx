@@ -33,7 +33,7 @@ import { TrayResultSummary } from "@/components/TrayResultSummary";
 import { projectCustomTrayResult } from "@/lib/tray-result-projection";
 import {
   type BaseHoleFitViolation,
-} from "@/lib/base-hole-rules";
+} from "@/lib/base-hole-construction-plan";
 import { createCustomBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
 import type {
   ConstructedContouredFootprint,

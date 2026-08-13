@@ -39,11 +39,13 @@ import {
   type ModeParamSnapshot,
 } from "@/lib/mode-param-snapshot";
 import {
-  applyFlatTrayBaseHoleSupportingThickness,
   getBaseHoleFitBlockingReason,
   type BaseHoleFitViolation,
-} from "@/lib/base-hole-rules";
-import { createCustomBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
+} from "@/lib/base-hole-construction-plan";
+import {
+  applyFlatTrayBaseHoleSupportingThickness,
+  createCustomBaseHoleConstructionPlan,
+} from "@/lib/base-hole-planning";
 import type {
   ConstructedContouredFootprint,
 } from "@/lib/contoured-footprint";

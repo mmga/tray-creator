@@ -49,7 +49,7 @@ import {
 import {
   getBaseHoleFitBlockingReason,
   type BaseHoleFitViolation,
-} from "@/lib/base-hole-rules";
+} from "@/lib/base-hole-construction-plan";
 import { createSteppedBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
 import { useSteppedContouredFootprint } from "@/hooks/useSteppedContouredFootprint";
 import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";

@@ -67,7 +67,7 @@ import {
 import { BaseHoleConfig } from "@/components/BaseHoleConfig";
 import {
     type BaseHoleFitViolation,
-} from "@/lib/base-hole-rules";
+} from "@/lib/base-hole-construction-plan";
 import { createSteppedBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
 import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
 import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contoured-footprint";

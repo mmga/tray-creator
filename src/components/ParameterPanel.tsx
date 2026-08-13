@@ -32,7 +32,7 @@ import { ParamSlider } from "@/components/ui/ParamSlider";
 import { PanelShell } from "@/components/PanelShell";
 import { TrayResultSummary } from "@/components/TrayResultSummary";
 import { projectGridTrayResult } from "@/lib/tray-result-projection";
-import type { BaseHoleFitViolation } from "@/lib/base-hole-rules";
+import type { BaseHoleFitViolation } from "@/lib/base-hole-construction-plan";
 import { createGridBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
 
 interface ParameterPanelProps {

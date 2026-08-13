@@ -18,6 +18,7 @@ import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contou
 import type { BaseHoleProjectedSlot } from "@/lib/base-hole-construction-plan";
 import type { CustomLayoutParams, SteppedLayoutParams } from "@/types/custom-tray";
 import type { TrayParams } from "@/types/tray";
+import { calculateSteppedEffectiveDimensions } from "@/lib/stepped-layout-math";
 
 export interface CustomBaseHoleAdapterOptions {
   readonly contouredState?: ContouredFootprintState<ConstructedContouredFootprint>;
@@ -166,8 +167,8 @@ export const gridBaseHoleAdapter = {
           nominalHeight: slot.baseHeight,
           finalWidth: slot.slotWidth,
           finalHeight: slot.slotHeight,
-          x,
-          y,
+          x: x - (topWidth + bevel * 2) / 2,
+          y: y - (topDepth + bevel * 2) / 2,
           floorHeight: params.baseThickness,
           containsExpandedHole: (radius) => circleFits(
             x,
@@ -206,8 +207,8 @@ export const customBaseHoleAdapter = {
           nominalHeight: slot.height,
           finalWidth: profile.width,
           finalHeight: profile.height,
-          x: slot.x,
-          y: slot.y,
+          x: slot.x - ((contoured.bounds?.minX ?? 0) + (contoured.bounds?.maxX ?? 0)) / 2,
+          y: slot.y - ((contoured.bounds?.minY ?? 0) + (contoured.bounds?.maxY ?? 0)) / 2,
           floorHeight: params.baseThickness,
           containsExpandedHole: (radius: number) =>
             contoured.containsExpandedCircle(slot.x, slot.y, radius),
@@ -242,8 +243,8 @@ export const customBaseHoleAdapter = {
         nominalHeight: slot.height,
         finalWidth: profile.width,
         finalHeight: profile.height,
-        x: slot.x,
-        y: slot.y,
+        x: slot.x - (fixed ? params.trayWidth / 2 : (footprint.minX + footprint.maxX) / 2),
+        y: slot.y - (fixed ? params.trayDepth / 2 : (footprint.minY + footprint.maxY) / 2),
         floorHeight: params.baseThickness,
         containsExpandedHole: (radius: number) => circleFits(
           slot.x,
@@ -279,6 +280,13 @@ export const steppedBaseHoleAdapter = {
     );
     const allHeights = params.groups.map((group) => Math.max(group.bottomHeight, 3));
     const lowestHeight = allHeights.length > 0 ? Math.min(...allHeights) : 0;
+    const effective = calculateSteppedEffectiveDimensions(params, contouredState);
+    const sourceCenterX = isRectangular && params.traySizingMode === "fixed"
+      ? params.trayWidth / 2
+      : (effective.minX + effective.maxX) / 2;
+    const sourceCenterY = isRectangular && params.traySizingMode === "fixed"
+      ? params.trayDepth / 2
+      : (effective.minY + effective.maxY) / 2;
 
     return params.slots.map((slot) => {
       const profile = getFreeSlotProfileGeometry(slot);
@@ -303,13 +311,13 @@ export const steppedBaseHoleAdapter = {
         nominalHeight: slot.height,
         finalWidth: profile.width,
         finalHeight: profile.height,
-        x: slot.x,
-        y: slot.y,
+        x: slot.x - sourceCenterX,
+        y: slot.y - sourceCenterY,
         floorHeight,
         containsExpandedHole: isRectangular
           ? (radius: number) => circleFits(
-              slot.x,
-              slot.y,
+              slot.x - sourceCenterX,
+              slot.y - sourceCenterY,
               radius,
               (pointX, pointY) => groupOutlines.some((outline) => {
                 const bounds = polygonBounds(outline.points);
