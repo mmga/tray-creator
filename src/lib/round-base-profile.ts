@@ -15,8 +15,8 @@ const { geom2 } = geometries;
 const { mat4 } = maths;
 const { ellipse } = primitives;
 
-/** 官方未公开底部剖面；实物测量前统一采用 2mm 顶板与径向侧壁。 */
-export const ROUND_BASE_SHELL_THICKNESS = 2;
+/** 官方未公开底部剖面；实物测量前统一采用 1.2mm 顶板与径向侧壁。 */
+export const ROUND_BASE_SHELL_THICKNESS = 1.2;
 const CAVITY_CUT_EPSILON = 0.02;
 
 export function getRoundBaseTopDiameter(

@@ -7,14 +7,14 @@ import {
 } from "@/lib/round-base-profile";
 
 describe("round base profile", () => {
-  it("derives an open underside with a uniform 2mm shell", () => {
-    expect(ROUND_BASE_SHELL_THICKNESS).toBe(2);
+  it("derives an open underside with a uniform 1.2mm shell", () => {
+    expect(ROUND_BASE_SHELL_THICKNESS).toBe(1.2);
     expect(getRoundBaseCavityDimensions(
       BASE_CONVERTER_DEFAULTS.roundBaseSnapshot,
     )).toEqual({
-      depth: 2,
-      bottomDiameter: 28,
-      ceilingDiameter: 26.5,
+      depth: 2.8,
+      bottomDiameter: 29.6,
+      ceilingDiameter: 27.5,
     });
   });
 

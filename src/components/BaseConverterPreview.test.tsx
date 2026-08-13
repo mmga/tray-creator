@@ -59,7 +59,7 @@ describe("BaseConverterPreview", () => {
     const wall = container.querySelector('[data-shape="push-fit-hole-wall"]');
     expect(wall).toHaveAttribute(
       "points",
-      "6.041,1 4.021,-2.5 -0.021,-2.5 -2.041,1 -0.021,4.5 4.021,4.5",
+      "5.118,1 3.559,-1.7 0.441,-1.7 -1.118,1 0.441,3.7 3.559,3.7",
     );
     const clipPath = wall?.getAttribute("clip-path");
     expect(clipPath).toMatch(/^url\(#.+\)$/);
