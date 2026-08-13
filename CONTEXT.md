@@ -112,6 +112,10 @@ _Avoid_: Magnet post when referring to a solid protrusion, or Magnetic Base Hole
 The material thickness between a Slot Instance floor and the tray underside that contains the selected Base-hole Structure.
 _Avoid_: Using the tray's total height or slot depth as the available supporting thickness.
 
+**Base-hole Construction Plan**:
+The transient authoritative projection of one normalized tray snapshot into its resolved per-slot base holes, required supporting thickness, manufacturing violations, and 3D cut instructions.
+_Avoid_: Persisted base-hole geometry, consumer-specific hole reconstruction, or a complete tray CAD feature graph.
+
 **Magnetic Base Plate Only**:
 The grid-only structure that omits upper slot recesses and produces a base plate containing enclosed Magnetic Base Holes.
 _Avoid_: Treating it as a generic plate for Magnet Post Holes or exposing it in another Mode.
@@ -896,6 +900,18 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - A **Magnet Post Hole** applies to every supported Slot Instance shape, including Old World rectangular slots, and starts at each slot floor rather than using the automatically matched **Magnetic Base Hole** geometry.
 - Every Mode that supports a **Magnetic Base Hole** uses the same **Magnetic Base Hole Matching Rule**.
 - Each Slot Instance independently applies the **Magnetic Base Hole Matching Rule**, so one tray or stepped group may contain 20mm, standard, and large Magnetic Base Hole presets.
+- Grid, custom, and Custom Stepped Tray each use one Mode-specific Adapter to project normalized layout and authoritative footprint data into the shared **Base-hole Construction Plan** Module; the shared Module does not interpret Mode parameters.
+- A Base-hole Construction Plan Adapter owns Mode coordinate projection, Slot Instance floor heights, and exterior-footprint containment, but does not own hole matching, supporting-thickness formulas, inter-hole separation, or cut semantics.
+- The **Base-hole Construction Plan** Module owns the supporting-thickness formulas consumed by the **Param Normalization Pipeline** before it constructs a plan from the adjusted normalized parameters.
+- Within one execution context, one normalized committed parameter snapshot has at most one authoritative **Base-hole Construction Plan** result, and validation, preset summaries, generation availability, and 3D construction consume that result rather than resolving holes independently.
+- A **Base-hole Construction Plan** contains either no cut instructions for no Base-hole Structure, one resolved Magnetic Base Hole instruction per Slot Instance, or one explicitly sized Magnet Post Hole instruction per Slot Instance.
+- A **Base-hole Construction Plan** records every **Magnetic Base Hole Fit Violation** and **Magnet Post Hole Fit Violation** for its input snapshot without silently dropping, resizing, or relocating a cut instruction.
+- A **Base-hole Construction Plan** exposes immutable declarative cut instructions rather than executable closures, allowing whole-model and split-part 3D Implementations to apply the same instructions according to their own assembly ownership.
+- A blocking Base-hole Construction Plan retains its complete declarative cut instructions for diagnosis but no 3D model generation or export may execute them until the violation is repaired.
+- A main-context **Base-hole Construction Plan** belongs to one Mode Editing Session and is replaced when committed inputs change; it is never stored in a Draft or Persisted Param Artifact.
+- A Worker model-generation or export job constructs one request-scoped authoritative **Base-hole Construction Plan**, supplies it to that job's 3D Implementation, and releases it when the job ends without retaining a cross-job cache.
+- Custom and Custom Stepped Tray Base-hole Construction Plan Adapters consume the authoritative **Contoured Footprint Construction** result when Contoured Footprint is active and never reconstruct that footprint.
+- Equivalent normalized inputs and authoritative footprint inputs in separate execution contexts must produce semantically equivalent Base-hole Construction Plans, including presets, cut positions, supporting thickness, and violations.
 - A Base-hole Structure editor shows the selected Slot Instance's matched Magnetic Base Hole preset and summarizes every preset currently used by the tray; it never describes a stepped group's largest slot as the shared preset.
 - One tray uses one shared **Magnet Post Hole** diameter and depth for all of its Slot Instances, without per-group or per-slot overrides.
 - A **Magnet Post Hole** diameter is explicitly configurable from 1mm through 15mm in every supporting Mode.
@@ -1019,6 +1035,9 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 >
 > **Dev:** "Should adding another slot automatically rearrange the layout?"
 > **Domain expert:** "No. The user explicitly requests a Layout Arrangement Proposal, previews it, and chooses whether to apply it before continuing manual edits."
+>
+> **Dev:** "Can the validator resolve one Magnetic Base Hole while the 3D model resolves the hole again from the Slot Instance?"
+> **Domain expert:** "No. Both consume the same authoritative Base-hole Construction Plan for their execution context."
 
 ## Flagged Ambiguities
 
@@ -1072,3 +1091,4 @@ _Avoid_: Using nominal hole diameter alone when the meaning is the printed footp
 - "内缩凹槽" could mean an extra toggle layered on top of "轮廓浅槽". Resolved: use **Inset Recess** as a mutually exclusive **Split Assembly Groove Type**.
 - "Mode conversion" was used for both switching to a file's Mode and changing one Mode's parameter semantics into another. Resolved: external import switches to the file's Mode without converting its parameters; parameter conversion is a separate explicit operation.
 - "磁铁桩位" could mean either a solid locating post or a recess for a magnet. Resolved: use **Magnet Post Hole（磁铁桩孔）** for the cylindrical recess cut downward from a slot floor; it is never a solid protruding post.
+- "底板孔位结果" could mean either a validation-only projection or actual 3D cut geometry. Resolved: a **Base-hole Construction Plan** is the shared authoritative result for both manufacturing validation and 3D cut instructions within one execution context.
