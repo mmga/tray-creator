@@ -127,9 +127,9 @@ export const BASE_CONVERTER_DEFAULTS: BaseConverterParams = {
   roundBaseStandardId: DEFAULT_ROUND_BASE.standardId,
   roundBaseSnapshot: { ...DEFAULT_ROUND_BASE },
   pushFitHexHole: {
-    acrossFlats: 3,
-    offsetX: 0,
-    offsetY: 0,
+    acrossFlats: 3.6,
+    offsetX: 7,
+    offsetY: 5,
   },
   sourceStandardId: DEFAULT_SOURCE.id,
   targetStandardId: DEFAULT_TARGET.id,

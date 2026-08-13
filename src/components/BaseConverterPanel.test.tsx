@@ -147,9 +147,9 @@ describe("BaseConverterPanel", () => {
   it("shows editable hex-hole dimensions and offsets only for push-fit bases", () => {
     renderPanel({ ...BASE_CONVERTER_DEFAULTS, generationKind: "push-fit" });
 
-    expect(screen.getByLabelText("六边孔对边距 mm")).toHaveValue(3);
-    expect(screen.getByLabelText("孔位 X mm")).toHaveValue(0);
-    expect(screen.getByLabelText("孔位 Y mm")).toHaveValue(0);
+    expect(screen.getByLabelText("六边孔对边距 mm")).toHaveValue(3.6);
+    expect(screen.getByLabelText("孔位 X mm")).toHaveValue(7);
+    expect(screen.getByLabelText("孔位 Y mm")).toHaveValue(5);
     expect(screen.getByText(/右为 \+X，上为 \+Y/)).toBeInTheDocument();
   });
 

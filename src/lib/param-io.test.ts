@@ -172,7 +172,7 @@ describe("param-io", () => {
         height: 4,
         topInset: 1.5,
       },
-      pushFitHexHole: { acrossFlats: 3, offsetX: 0, offsetY: 0 },
+      pushFitHexHole: { acrossFlats: 3.6, offsetX: 7, offsetY: 5 },
       conversionClearance: 0.2,
       sideBevelWidth: 0,
       geometrySnapshot: {

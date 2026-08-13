@@ -56,11 +56,11 @@ describe("useBaseConverter", () => {
       }));
     });
 
-    expect(result.current.params.pushFitHexHole).toMatchObject({ offsetX: 0, offsetY: 0 });
+    expect(result.current.params.pushFitHexHole).toMatchObject({ offsetX: 7, offsetY: 5 });
     expect(result.current.viewParams.pushFitHexHole).toMatchObject({ offsetX: 3, offsetY: -2 });
     act(() => result.current.commitContinuousEdit());
     act(() => result.current.undo());
-    expect(result.current.params.pushFitHexHole).toMatchObject({ offsetX: 0, offsetY: 0 });
+    expect(result.current.params.pushFitHexHole).toMatchObject({ offsetX: 7, offsetY: 5 });
   });
 
   it("clears undo history when a replacement session is loaded", () => {

@@ -61,6 +61,7 @@ describe("base converter model", () => {
     const pushFit = createBaseConverterModel({
       ...BASE_CONVERTER_DEFAULTS,
       generationKind: "push-fit",
+      pushFitHexHole: { acrossFlats: 3.6, offsetX: 0, offsetY: 0 },
     });
     const [plainMin, plainMax] = measurements.measureBoundingBox(plain);
     const [pushFitMin, pushFitMax] = measurements.measureBoundingBox(pushFit);

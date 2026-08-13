@@ -23,6 +23,14 @@ describe("base converter config", () => {
     ]);
   });
 
+  it("uses the measured 32mm push-fit hole as the default preset", () => {
+    expect(BASE_CONVERTER_DEFAULTS.pushFitHexHole).toEqual({
+      acrossFlats: 3.6,
+      offsetX: 7,
+      offsetY: 5,
+    });
+  });
+
   it("defines independent source and target standard catalogs", () => {
     expect(SOURCE_BASE_STANDARDS.map((item) => item.name)).toEqual([
       "20 × 20mm", "25 × 25mm", "40 × 40mm",
@@ -174,9 +182,9 @@ describe("base converter config", () => {
         topInset: 1.5,
       },
       pushFitHexHole: {
-        acrossFlats: 3,
-        offsetX: 0,
-        offsetY: 0,
+        acrossFlats: 3.6,
+        offsetX: 7,
+        offsetY: 5,
       },
     });
   });

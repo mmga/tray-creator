@@ -119,9 +119,14 @@ describe("BaseConverterPreview", () => {
 
   it("moves a focused hole by 0.1mm or 1mm with arrow keys", () => {
     const updateParams = vi.fn();
+    const startingParams = {
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "push-fit" as const,
+      pushFitHexHole: { acrossFlats: 3.6, offsetX: 0, offsetY: 0 },
+    };
     render(
       <BaseConverterPreview
-        params={{ ...BASE_CONVERTER_DEFAULTS, generationKind: "push-fit" }}
+        params={startingParams}
         updateParams={updateParams}
       />,
     );
@@ -131,9 +136,9 @@ describe("BaseConverterPreview", () => {
     fireEvent.keyDown(hole, { key: "ArrowUp", shiftKey: true });
 
     expect(updateParams).toHaveBeenCalledTimes(2);
-    expect(updateParams.mock.calls[0][0](BASE_CONVERTER_DEFAULTS).pushFitHexHole)
+    expect(updateParams.mock.calls[0][0](startingParams).pushFitHexHole)
       .toMatchObject({ offsetX: 0.1, offsetY: 0 });
-    expect(updateParams.mock.calls[1][0](BASE_CONVERTER_DEFAULTS).pushFitHexHole)
+    expect(updateParams.mock.calls[1][0](startingParams).pushFitHexHole)
       .toMatchObject({ offsetX: 0, offsetY: 1 });
   });
 

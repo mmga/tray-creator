@@ -58,7 +58,7 @@ describe("push-fit hex hole", () => {
 
   it("limits a drag to the last legal point along its movement direction", () => {
     const profile = BASE_CONVERTER_DEFAULTS.roundBaseSnapshot;
-    const hole = BASE_CONVERTER_DEFAULTS.pushFitHexHole;
+    const hole = { acrossFlats: 3.6, offsetX: 0, offsetY: 0 };
     const clamped = clampPushFitHexHoleOffset(profile, hole, {
       x: 30,
       y: 8,
