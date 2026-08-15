@@ -132,6 +132,7 @@ function normalizeReportedBaseHoleParams(
   const previousLegacyEnabled = obj.enableBaseHole;
   const previousDiameter = obj.magnetPostHoleDiameter;
   const previousDepth = obj.magnetPostHoleDepth;
+  const previousSmallBaseHoleSize = obj.smallBaseHoleSize;
   const normalized = normalizeBaseHoleParams(obj, defaultStructure);
 
   if (!isBaseHoleStructure(previousStructure)) {
@@ -174,6 +175,25 @@ function normalizeReportedBaseHoleParams(
         previousValue,
         normalizedValue,
         reason: `当前允许范围为 ${limits.min}–${limits.max}`,
+      });
+    }
+  }
+
+  if (previousSmallBaseHoleSize !== normalized.smallBaseHoleSize) {
+    if (previousSmallBaseHoleSize === undefined) {
+      recordDefault(recorder, {
+        path: "smallBaseHoleSize",
+        label: "25mm 小尺寸铁片",
+        normalizedValue: normalized.smallBaseHoleSize,
+        reason: "旧文件未记录小尺寸铁片规格",
+      });
+    } else {
+      recordValueAdjustment(recorder, {
+        path: "smallBaseHoleSize",
+        label: "25mm 小尺寸铁片",
+        previousValue: previousSmallBaseHoleSize,
+        normalizedValue: normalized.smallBaseHoleSize,
+        reason: "小尺寸铁片规格无效，已恢复为 20mm 小铁片",
       });
     }
   }
@@ -654,11 +674,14 @@ function clampAndFillCustomDerivedFields(
     }
   }
   normalizeReportedBaseHoleParams(obj, "none", recorder);
-  obj.baseHoleSize = resolveLargestMagneticBaseHolePreset(slots.map((slot) => ({
-    shape: slot.shape === "ellipse" ? "ellipse" as const : "circle" as const,
-    width: slot.width as number,
-    height: slot.height as number,
-  })));
+  obj.baseHoleSize = resolveLargestMagneticBaseHolePreset(
+    slots.map((slot) => ({
+      shape: slot.shape === "ellipse" ? "ellipse" as const : "circle" as const,
+      width: slot.width as number,
+      height: slot.height as number,
+    })),
+    params.smallBaseHoleSize,
+  );
   const previousBaseThickness = obj.baseThickness;
   Object.assign(params, applyFlatTrayBaseHoleSupportingThickness(params));
   if (params.baseThickness !== previousBaseThickness) {

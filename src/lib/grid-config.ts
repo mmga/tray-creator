@@ -132,6 +132,7 @@ export function resolveGridBaseHolePresetKey(
     slot.shape,
     slot.baseWidth,
     slot.baseHeight,
+    params.smallBaseHoleSize,
   );
 }
 

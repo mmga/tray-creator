@@ -100,6 +100,7 @@ function intervalsOverlap(
 }
 
 function buildMagneticInstructions(
+  params: BaseHoleParams,
   slots: readonly BaseHoleProjectedSlot[],
 ): MagneticBaseHoleCutInstruction[] {
   return slots.map((slot) => {
@@ -107,6 +108,7 @@ function buildMagneticInstructions(
       slot.shape,
       slot.nominalWidth,
       slot.nominalHeight,
+      params.smallBaseHoleSize,
     );
     const { diameter, depth } = getBaseHolePreset(preset);
     const top = slot.floorHeight - BASE_HOLE_CONFIG.topWall;
@@ -230,7 +232,7 @@ export function createBaseHoleConstructionPlan(
     };
   }
 
-  const instructions = buildMagneticInstructions(slots);
+  const instructions = buildMagneticInstructions(params, slots);
   const violations = validateMagneticInstructions(slots, instructions);
   const resolvedMagneticPresets = [...new Set(
     instructions.map((instruction) => instruction.preset),

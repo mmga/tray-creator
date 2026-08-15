@@ -391,6 +391,7 @@ export default function CustomPanel({
         baseHoleStructure={params.baseHoleStructure}
         magnetPostHoleDiameter={params.magnetPostHoleDiameter}
         magnetPostHoleDepth={params.magnetPostHoleDepth}
+        smallBaseHoleSize={params.smallBaseHoleSize}
         supportingThickness={params.baseThickness}
         resolvedBaseHoleSizes={resolvedBaseHoleSizes}
         selectedSlotMatch={selectedSlotMatch}

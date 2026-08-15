@@ -1,12 +1,14 @@
 import type {
   BaseHoleParams,
   BaseHoleStructure,
+  SmallBaseHolePresetKey,
 } from "@/types/tray";
 
 export const BASE_HOLE_PARAM_DEFAULTS = {
   magnetPostHoleDiameter: 5,
   magnetPostHoleDepth: 2,
   baseHoleSize: "25",
+  smallBaseHoleSize: "20" as SmallBaseHolePresetKey,
 } as const satisfies Omit<BaseHoleParams, "baseHoleStructure">;
 
 export const MAGNET_POST_HOLE_BOTTOM_WALL = 1;
@@ -32,10 +34,11 @@ export function resolveMagneticBaseHolePreset(
   shape: "circle" | "ellipse" | "rectangle",
   nominalWidth: number,
   nominalHeight: number,
+  smallBaseHoleSize: SmallBaseHolePresetKey = "20",
 ): "20" | "25" | "40" {
   const shortestNominalSide = Math.min(nominalWidth, nominalHeight);
   if (Math.abs(shortestNominalSide - 25) < 0.001) {
-    return "20";
+    return smallBaseHoleSize;
   }
   if (shape === "circle") {
     return nominalWidth >= 60 ? "40" : "25";
@@ -49,6 +52,7 @@ export function resolveLargestMagneticBaseHolePreset(
     width: number;
     height: number;
   }[],
+  smallBaseHoleSize: SmallBaseHolePresetKey = "20",
 ): "20" | "25" | "40" {
   let resolved: "20" | "25" | "40" = "20";
   for (const slot of slots) {
@@ -56,6 +60,7 @@ export function resolveLargestMagneticBaseHolePreset(
       slot.shape,
       slot.width,
       slot.height,
+      smallBaseHoleSize,
     );
     if (preset === "40") return "40";
     if (preset === "25") resolved = "25";
@@ -93,5 +98,6 @@ export function normalizeBaseHoleParams(
       value.baseHoleSize === "20" || value.baseHoleSize === "40"
         ? value.baseHoleSize
         : "25",
+    smallBaseHoleSize: value.smallBaseHoleSize === "25" ? "25" : "20",
   };
 }

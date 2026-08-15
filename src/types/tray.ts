@@ -1,4 +1,5 @@
 export type BaseHolePresetKey = "20" | "25" | "40";
+export type SmallBaseHolePresetKey = "20" | "25";
 export type GridSlotShape = "circle" | "rectangle";
 export type BaseHoleStructure =
   | "none"
@@ -11,6 +12,8 @@ export interface BaseHoleParams {
   magnetPostHoleDepth: number;
   /** 兼容导入/导出保留字段；实际规格按每个 Slot Instance 自动匹配。 */
   baseHoleSize: BaseHolePresetKey;
+  /** 25mm 小底盘使用的磁片规格；缺失时默认使用 20mm 小铁片。 */
+  smallBaseHoleSize?: SmallBaseHolePresetKey;
   /** @deprecated 仅作为历史参数输入，由规范化流程迁移后删除。 */
   enableBaseHole?: boolean;
 }

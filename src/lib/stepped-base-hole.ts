@@ -18,8 +18,9 @@ import type { BaseHolePresetKey } from "@/types/tray";
 
 function resolveLargestPresetForSlots(
   slots: SteppedLayoutParams["slots"],
+  smallBaseHoleSize?: SteppedLayoutParams["smallBaseHoleSize"],
 ): BaseHolePresetKey {
-  return resolveLargestMagneticBaseHolePreset(slots);
+  return resolveLargestMagneticBaseHolePreset(slots, smallBaseHoleSize);
 }
 
 function getSlotsForGroup(
@@ -32,14 +33,17 @@ function getSlotsForGroup(
 export function getSteppedResolvedBaseHoleSize(
   params: SteppedLayoutParams,
 ): BaseHolePresetKey {
-  return resolveLargestPresetForSlots(params.slots);
+  return resolveLargestPresetForSlots(params.slots, params.smallBaseHoleSize);
 }
 
 export function getSteppedGroupResolvedBaseHoleSize(
   params: SteppedLayoutParams,
   groupId: string,
 ): BaseHolePresetKey {
-  return resolveLargestPresetForSlots(getSlotsForGroup(params, groupId));
+  return resolveLargestPresetForSlots(
+    getSlotsForGroup(params, groupId),
+    params.smallBaseHoleSize,
+  );
 }
 
 export function getSteppedGroupMinBottomHeight(

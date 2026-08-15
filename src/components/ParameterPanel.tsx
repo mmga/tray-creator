@@ -344,6 +344,7 @@ export default function ParameterPanel({
         baseHoleStructure={params.baseHoleStructure}
         magnetPostHoleDiameter={params.magnetPostHoleDiameter}
         magnetPostHoleDepth={params.magnetPostHoleDepth}
+        smallBaseHoleSize={params.smallBaseHoleSize}
         supportingThickness={params.baseThickness}
         resolvedBaseHoleSizes={baseHolePlan.resolvedMagneticPresets}
         fitViolations={baseHoleFitViolations}

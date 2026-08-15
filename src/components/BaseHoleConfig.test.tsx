@@ -53,4 +53,27 @@ describe("BaseHoleConfig", () => {
     expect(screen.getByText("槽位 2")).toBeInTheDocument();
     expect(screen.getAllByText(/40/).length).toBeGreaterThan(0);
   });
+
+  it("允许切换 25mm 小底盘的铁片规格", () => {
+    const updateParam = vi.fn();
+    render(
+      <BaseHoleConfig<TrayParams>
+        baseHoleStructure="magnetic-base-hole"
+        magnetPostHoleDiameter={5}
+        magnetPostHoleDepth={2}
+        smallBaseHoleSize="20"
+        resolvedBaseHoleSizes={["20"]}
+        supportingThickness={3}
+        updateParam={updateParam}
+      />,
+    );
+
+    expect(screen.getByLabelText("25mm 小尺寸铁片")).toHaveValue("20");
+    expect(screen.getByRole("option", { name: "标准25铁片" })).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("25mm 小尺寸铁片"), {
+      target: { value: "25" },
+    });
+    expect(updateParam).toHaveBeenCalledWith("smallBaseHoleSize", "25");
+  });
 });

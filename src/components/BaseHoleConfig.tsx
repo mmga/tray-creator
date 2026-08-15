@@ -25,6 +25,7 @@ interface BaseHoleConfigProps<TParams extends BaseHoleParams> {
   baseHoleStructure: BaseHoleStructure;
   magnetPostHoleDiameter: number;
   magnetPostHoleDepth: number;
+  smallBaseHoleSize?: BaseHoleParams["smallBaseHoleSize"];
   resolvedBaseHoleSizes: readonly BaseHolePresetKey[];
   selectedSlotMatch?: {
     label: string;
@@ -55,6 +56,7 @@ export function BaseHoleConfig<TParams extends BaseHoleParams>({
   baseHoleStructure,
   magnetPostHoleDiameter,
   magnetPostHoleDepth,
+  smallBaseHoleSize = "20",
   resolvedBaseHoleSizes,
   selectedSlotMatch = null,
   supportingThickness,
@@ -122,6 +124,29 @@ export function BaseHoleConfig<TParams extends BaseHoleParams>({
             <div className="space-y-3">
               <div className="dashed-hint rounded-sm px-3 py-2 text-[11px] text-muted-foreground/70">
                 每个 Slot Instance 按自身形状和名义尺寸自动匹配规格；同一托盘可混用规格。
+              </div>
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="base-hole-small-size"
+                  className="text-xs font-semibold text-muted-foreground"
+                >
+                  25mm 小尺寸铁片
+                </label>
+                <select
+                  id="base-hole-small-size"
+                  value={smallBaseHoleSize}
+                  onChange={(event) => updateParam(
+                    "smallBaseHoleSize",
+                    event.target.value as TParams["smallBaseHoleSize"],
+                  )}
+                  className="w-full rounded-sm border border-[#2e2a24] bg-[#1c1a16] px-3 py-2 text-xs text-foreground outline-none transition-colors focus:border-primary/60"
+                >
+                  <option value="20">小铁片（20）</option>
+                  <option value="25">标准25铁片</option>
+                </select>
+                <p className="text-[11px] text-muted-foreground/70">
+                  仅影响名义 25mm 的圆形或矩形小底盘。
+                </p>
               </div>
               {selectedSlotMatch ? (
                 <div className="border border-primary/30 bg-primary/5 px-3 py-2 font-mono text-[11px]">

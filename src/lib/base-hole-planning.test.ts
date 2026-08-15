@@ -18,7 +18,9 @@ import type { CustomLayoutParams, SteppedLayoutParams } from "@/types/custom-tra
 describe("Base-hole Construction Plan Interface", () => {
   it("按圆形直径或非圆形短边匹配磁吸孔", () => {
     expect(resolveMagneticBaseHolePreset("circle", 25, 25)).toBe("20");
+    expect(resolveMagneticBaseHolePreset("circle", 25, 25, "25")).toBe("25");
     expect(resolveMagneticBaseHolePreset("rectangle", 25, 50)).toBe("20");
+    expect(resolveMagneticBaseHolePreset("rectangle", 25, 50, "25")).toBe("25");
     expect(resolveMagneticBaseHolePreset("circle", 32, 32)).toBe("25");
     expect(resolveMagneticBaseHolePreset("circle", 59, 59)).toBe("25");
     expect(resolveMagneticBaseHolePreset("circle", 60, 60)).toBe("40");
@@ -37,6 +39,15 @@ describe("Base-hole Construction Plan Interface", () => {
         { id: "large", x: 90, y: 30, shape: "ellipse", width: 75, height: 42, rotation: 0 },
       ],
     }).resolvedMagneticPresets).toEqual(["20", "40"]);
+
+    expect(createCustomBaseHoleConstructionPlan({
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      baseHoleStructure: "magnetic-base-hole",
+      smallBaseHoleSize: "25",
+      slots: [
+        { id: "small", x: 30, y: 30, shape: "circle", width: 25, height: 25, rotation: 0 },
+      ],
+    }).instructions).toMatchObject([{ preset: "25", diameter: 25.2 }]);
   });
 
   it("计算两种孔位结构的最小承载厚度", () => {

@@ -59,6 +59,7 @@ export function createSteppedBaseHoleConstructionPlan(
     magnetPostHoleDiameter: resolveMagnetPostHoleDiameter(params),
     magnetPostHoleDepth: resolveMagnetPostHoleDepth(params),
     baseHoleSize: params.baseHoleSize,
+    smallBaseHoleSize: params.smallBaseHoleSize,
   };
   if (resolvedBaseHoleParams.baseHoleStructure === "none") {
     return createBaseHoleConstructionPlan(resolvedBaseHoleParams, []);

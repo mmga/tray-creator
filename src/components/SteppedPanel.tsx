@@ -943,6 +943,7 @@ function SteppedPanelBody({
                 baseHoleStructure={params.baseHoleStructure}
                 magnetPostHoleDiameter={params.magnetPostHoleDiameter}
                 magnetPostHoleDepth={params.magnetPostHoleDepth}
+                smallBaseHoleSize={params.smallBaseHoleSize}
                 resolvedBaseHoleSizes={resolvedBaseHoleSizes}
                 selectedSlotMatch={selectedSlotMatch}
                 supportingThickness={activeGroupSupportThickness}
