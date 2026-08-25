@@ -30,3 +30,14 @@ export function getGridSlotPitchAxes(params: TrayParams) {
       (slot.shape === "rectangle" ? slot.baseHeight : slot.slotHeight) + spacingY,
   };
 }
+
+export function shouldRemoveGridIslands(params: TrayParams) {
+  const { spacingX, spacingY } = getGridSpacingAxes(params);
+  return (
+    !params.basePlateOnly &&
+    params.rows > 1 &&
+    params.columns > 1 &&
+    spacingX === 0 &&
+    spacingY === 0
+  );
+}

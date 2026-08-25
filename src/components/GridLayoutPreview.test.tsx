@@ -8,6 +8,36 @@ import {
 } from "@/lib/grid-config";
 
 describe("GridLayoutPreview", () => {
+  it("shows the removed island only when both effective spacings are zero", () => {
+    const { container, rerender } = render(
+      <GridLayoutPreview
+        params={{
+          ...DEFAULT_TRAY_PARAMS,
+          rows: 2,
+          columns: 2,
+          spacing: 0,
+        }}
+      />,
+    );
+
+    expect(container.querySelector("[data-grid-island-cut]")).toBeInTheDocument();
+
+    rerender(
+      <GridLayoutPreview
+        params={{
+          ...DEFAULT_TRAY_PARAMS,
+          rows: 2,
+          columns: 2,
+          spacingIndependent: true,
+          spacingX: 0,
+          spacingY: 0.1,
+        }}
+      />,
+    );
+
+    expect(container.querySelector("[data-grid-island-cut]")).not.toBeInTheDocument();
+  });
+
   it("uses nominal Old World base pitch for zero-spacing ranked arrays", () => {
     const { container, getByText } = render(
       <GridLayoutPreview
