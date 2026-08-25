@@ -5,6 +5,7 @@ import {
   calculateTrayDimensions,
   getGridBoundarySpacingAxes,
   getGridSlotPitchAxes,
+  shouldRemoveGridIslands,
 } from "@/lib/tray-model";
 import {
   getGridSlotGeometry,
@@ -32,6 +33,7 @@ export function GridLayoutPreview({ params }: GridLayoutPreviewProps) {
     ),
   );
   const showSideBevel = safeBevelWidth > 0;
+  const removeGridIslands = shouldRemoveGridIslands(params);
   const viewBox = `${-padding} ${-padding} ${dimensions.width + padding * 2} ${
     dimensions.depth + padding * 2
   }`;
@@ -111,33 +113,46 @@ export function GridLayoutPreview({ params }: GridLayoutPreviewProps) {
               />
             </g>
           )}
-          {!params.basePlateOnly &&
-            slots.map((slot) => (
-              slotGeometry.shape === "circle" ? (
-                <circle
-                  key={slot.id}
-                  cx={slot.x}
-                  cy={slot.y}
-                  r={slotGeometry.slotWidth / 2}
-                  fill="#eab308"
-                  fillOpacity={0.65}
-                  stroke="#fff"
-                  strokeWidth={0.3}
-                />
-              ) : (
+          {!params.basePlateOnly && (
+            <g opacity={removeGridIslands ? 0.65 : undefined}>
+              {slots.map((slot) => (
+                slotGeometry.shape === "circle" ? (
+                  <circle
+                    key={slot.id}
+                    cx={slot.x}
+                    cy={slot.y}
+                    r={slotGeometry.slotWidth / 2}
+                    fill="#eab308"
+                    fillOpacity={removeGridIslands ? 1 : 0.65}
+                    stroke="#fff"
+                    strokeWidth={0.3}
+                  />
+                ) : (
+                  <rect
+                    key={slot.id}
+                    x={slot.x - slotGeometry.slotWidth / 2}
+                    y={slot.y - slotGeometry.slotHeight / 2}
+                    width={slotGeometry.slotWidth}
+                    height={slotGeometry.slotHeight}
+                    fill="#eab308"
+                    fillOpacity={removeGridIslands ? 1 : 0.65}
+                    stroke="#fff"
+                    strokeWidth={0.3}
+                  />
+                )
+              ))}
+              {removeGridIslands && (
                 <rect
-                  key={slot.id}
-                  x={slot.x - slotGeometry.slotWidth / 2}
-                  y={slot.y - slotGeometry.slotHeight / 2}
-                  width={slotGeometry.slotWidth}
-                  height={slotGeometry.slotHeight}
+                  data-grid-island-cut
+                  x={safeBevelWidth + boundarySpacingX + slotGeometry.slotWidth / 2}
+                  y={safeBevelWidth + boundarySpacingY + slotGeometry.slotHeight / 2}
+                  width={(params.columns - 1) * pitchX}
+                  height={(params.rows - 1) * pitchY}
                   fill="#eab308"
-                  fillOpacity={0.65}
-                  stroke="#fff"
-                  strokeWidth={0.3}
                 />
-              )
-            ))}
+              )}
+            </g>
+          )}
         </svg>
         <div className="absolute bottom-3 left-3 z-20 rounded-sm border border-[#2e2a24] bg-[#100d0a]/90 px-3 py-1.5 font-mono text-xs text-[#d8d1c5]">
           {dimensions.width.toFixed(1)} × {dimensions.depth.toFixed(1)} mm

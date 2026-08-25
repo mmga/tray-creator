@@ -15,12 +15,14 @@ import { createGridBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
 import {
   getGridBoundarySpacingAxes,
   getGridSlotPitchAxes,
+  shouldRemoveGridIslands,
 } from "@/lib/grid-layout-math";
 
 export {
   getGridBoundarySpacingAxes,
   getGridSlotPitchAxes,
   getGridSpacingAxes,
+  shouldRemoveGridIslands,
 } from "@/lib/grid-layout-math";
 
 const { intersect, subtract, union } = booleans;
@@ -175,7 +177,15 @@ export function createTrayModel(params: TrayParams): Geom3 {
   }
 
   // 3. 凹槽阵列（从顶部向下挖）
-  const holes: Geom3[] = centers.map(({ cx, cy }) =>
+  const removeGridIslands = shouldRemoveGridIslands(params);
+  const holeCenters = removeGridIslands
+    ? centers.filter((_, index) => {
+        const row = Math.floor(index / columns);
+        const col = index % columns;
+        return row === 0 || row === rows - 1 || col === 0 || col === columns - 1;
+      })
+    : centers;
+  const holes: Geom3[] = holeCenters.map(({ cx, cy }) =>
     translate(
       [
         cx,
@@ -193,6 +203,21 @@ export function createTrayModel(params: TrayParams): Geom3 {
           }),
     ),
   );
+
+  if (removeGridIslands) {
+    holes.unshift(
+      translate(
+        [0, 0, baseThickness + holeDepth / 2],
+        cuboid({
+          size: [
+            (columns - 1) * pitchX,
+            (rows - 1) * pitchY,
+            holeDepth + 0.02,
+          ],
+        }),
+      ),
+    );
+  }
 
   // 4. 布尔减法：实体 - 凹槽
   let tray = params.basePlateOnly ? body : subtract(body, ...holes);

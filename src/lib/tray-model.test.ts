@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { geometries, measurements } from "@jscad/modeling";
+import { booleans, geometries, measurements, primitives } from "@jscad/modeling";
 import stlSerializer from "@jscad/stl-serializer";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { createOldWorldGridSlotSnapshot } from "@/lib/grid-config";
@@ -12,6 +12,8 @@ import {
 
 const { measureBoundingBox, measureVolume } = measurements;
 const { geom3 } = geometries;
+const { intersect } = booleans;
+const { cuboid } = primitives;
 
 function measureBoundsAtZ(model: ReturnType<typeof createTrayModel>, z: number) {
   const points = geom3
@@ -44,6 +46,53 @@ function getSerializedStlByteLength(model: ReturnType<typeof createTrayModel>) {
 }
 
 describe("tray model", () => {
+  it("removes every zero-spacing grid island above an intact base", () => {
+    const params = {
+      ...DEFAULT_TRAY_PARAMS,
+      rows: 3,
+      columns: 3,
+      spacing: 0,
+      baseHoleStructure: "none" as const,
+    };
+    const model = createTrayModel(params);
+    const pitch = params.slotDiameter!;
+
+    for (const x of [-pitch / 2, pitch / 2]) {
+      for (const y of [-pitch / 2, pitch / 2]) {
+        const upperProbe = cuboid({
+          center: [x, y, params.baseThickness + params.holeDepth / 2],
+          size: [1, 1, params.holeDepth / 2],
+        });
+        expect(measureVolume(intersect(model, upperProbe))).toBeCloseTo(0, 5);
+      }
+    }
+
+    const baseProbe = cuboid({
+      center: [0, 0, params.baseThickness / 2],
+      size: [1, 1, params.baseThickness / 2],
+    });
+    expect(measureVolume(intersect(model, baseProbe))).toBeGreaterThan(0);
+  });
+
+  it("keeps the wall when only one independent grid spacing is zero", () => {
+    const params = {
+      ...DEFAULT_TRAY_PARAMS,
+      rows: 2,
+      columns: 2,
+      spacingIndependent: true,
+      spacingX: 0,
+      spacingY: 0.1,
+      baseHoleStructure: "none" as const,
+    };
+    const model = createTrayModel(params);
+    const upperProbe = cuboid({
+      center: [0, 0, params.baseThickness + params.holeDepth / 2],
+      size: [0.05, 0.05, params.holeDepth / 2],
+    });
+
+    expect(measureVolume(intersect(model, upperProbe))).toBeGreaterThan(0);
+  });
+
   it("applies rectangular slot clearance once around a zero-spacing ranked array", () => {
     const params = {
       ...DEFAULT_TRAY_PARAMS,
