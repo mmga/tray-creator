@@ -60,21 +60,6 @@ export function createMagnetPostHoleSolid(
     );
 }
 
-export function subtractMagnetPostHoles(
-    tray: Geom3,
-    centers: MagnetPostHoleCenter[],
-    diameter: number,
-    depth: number,
-): Geom3 {
-    if (centers.length === 0) return tray;
-    return subtract(
-        tray,
-        ...centers.map((center) =>
-            createMagnetPostHoleSolid(center, diameter, depth)
-        ),
-    );
-}
-
 /**
  * 执行权威 Base-hole Construction Plan 中的声明式切割指令。
  * 坐标转换只负责把 Adapter 坐标投影到当前 CAD 装配坐标系，不重新解析孔型。
