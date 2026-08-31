@@ -8,9 +8,7 @@ import {
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { CustomLayoutParams } from "@/types/custom-tray";
 import {
-  calculateCustomEffectiveDimensions,
   calculateCustomTrayFootprint,
-  roundLayoutDimensionToTenth,
 } from "@/lib/custom-layout-math";
 import type { ConstructedContouredFootprint } from "@/lib/contoured-footprint";
 import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
@@ -36,37 +34,6 @@ const DEG_TO_RAD = Math.PI / 180;
  */
 function orientPositiveVolume(geometry: Geom3): Geom3 {
   return measureVolume(geometry) < 0 ? geom3.invert(geometry) : geometry;
-}
-
-export function calculateCustomEffectiveBaseplate(params: CustomLayoutParams) {
-  const effective = calculateCustomEffectiveDimensions(params);
-  const sideBevelWidth = Math.max(0, params.sideBevelWidth);
-
-  if (!effective.width || !effective.depth) {
-    return {
-      hasSlots: false,
-      width: 0,
-      depth: 0,
-      minX: 0,
-      maxX: 0,
-      minY: 0,
-      maxY: 0,
-    };
-  }
-
-  return {
-    hasSlots: true,
-    width: roundLayoutDimensionToTenth(
-      effective.width + sideBevelWidth * 2,
-    ),
-    depth: roundLayoutDimensionToTenth(
-      effective.depth + sideBevelWidth * 2,
-    ),
-    minX: effective.minX,
-    maxX: effective.maxX,
-    minY: effective.minY,
-    maxY: effective.maxY,
-  };
 }
 
 /**
@@ -202,9 +169,7 @@ function createContouredBaseBody(
   return orientPositiveVolume(combined);
 }
 
-/**
- * 计算自定义托盘的边界尺寸
- */
+/** 计算自定义托盘的边界尺寸。 */
 export function calculateCustomTrayDimensions(
   params: CustomLayoutParams,
   contouredState: ContouredFootprintState<ConstructedContouredFootprint> = {

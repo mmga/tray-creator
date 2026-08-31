@@ -4,7 +4,6 @@ import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { createCircleSlotSnapshot } from "@/lib/slot-definitions";
 import {
   calculateCustomTrayDimensions,
-  calculateCustomEffectiveBaseplate,
   createCustomTrayModel,
 } from "@/lib/custom-tray-model";
 import {
@@ -147,7 +146,7 @@ describe("custom tray model", () => {
     expect(dimensions.height).toBe(6);
   });
 
-  it("exports the effective custom baseplate footprint for shared reuse", () => {
+  it("calculates the custom tray dimensions", () => {
     const params = {
       ...CUSTOM_LAYOUT_DEFAULTS,
       spacing: 5,
@@ -159,15 +158,6 @@ describe("custom tray model", () => {
       ],
     };
 
-    expect(calculateCustomEffectiveBaseplate(params)).toEqual({
-      hasSlots: true,
-      width: 70.4,
-      depth: 35.4,
-      minX: 7.300000000000001,
-      maxX: 67.7,
-      minY: 27.3,
-      maxY: 52.7,
-    });
     expect(calculateCustomTrayDimensions(params)).toEqual({
       width: 70.4,
       depth: 35.4,
