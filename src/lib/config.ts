@@ -125,18 +125,3 @@ export const RENDER_CONFIG = {
     fov: 45,
   },
 } as const;
-
-export const SLOT_COLORS: Record<number, string> = {
-  25: "#ef4444",
-  28.5: "#f97316",
-  32: "#eab308",
-  40: "#84cc16",
-  50: "#06b6d4",
-  60: "#8b5cf6",
-  75: "#ec4899",
-  90: "#d946ef",
-  105: "#a855f7",
-  120: "#6366f1",
-  150: "#3b82f6",
-  170: "#0ea5e9",
-};
