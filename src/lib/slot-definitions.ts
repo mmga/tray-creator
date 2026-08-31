@@ -1,9 +1,7 @@
 import type { FreeSlot } from "@/types/custom-tray";
 
-export type SlotDefinitionId = string;
-
 export interface CircleSlotDefinition {
-  id: SlotDefinitionId;
+  id: string;
   shape: "circle";
   name: string;
   baseDiameter: number;
@@ -12,7 +10,7 @@ export interface CircleSlotDefinition {
 }
 
 export interface EllipseSlotDefinition {
-  id: SlotDefinitionId;
+  id: string;
   shape: "ellipse";
   name: string;
   width: number;
@@ -20,8 +18,6 @@ export interface EllipseSlotDefinition {
   outerOffset: number;
   profileExponent: number;
 }
-
-export type SlotDefinition = CircleSlotDefinition | EllipseSlotDefinition;
 
 /** 未匹配到具体预设时使用；各预设仍可独立配置加工容差。 */
 export const DEFAULT_CIRCLE_SLOT_TOLERANCE = 0.4;
@@ -108,11 +104,6 @@ export const ELLIPSE_SLOT_DEFINITIONS: EllipseSlotDefinition[] = [
   },
 ];
 
-export const SLOT_DEFINITIONS: SlotDefinition[] = [
-  ...CIRCLE_SLOT_DEFINITIONS,
-  ...ELLIPSE_SLOT_DEFINITIONS,
-];
-
 function nearlyEqual(left: number, right: number) {
   return Math.abs(left - right) < 0.001;
 }
@@ -168,14 +159,6 @@ export function createGridSlotSnapshot(baseDiameter: number) {
   return {
     ...(definition ? { slotDefinitionId: definition.id } : {}),
     slotDiameter: definition?.slotDiameter ?? getLegacyCircleSlotDiameter(baseDiameter),
-  };
-}
-
-export function createEllipseSlotSnapshot(definition: EllipseSlotDefinition) {
-  return {
-    slotDefinitionId: definition.id,
-    outerOffset: definition.outerOffset,
-    profileExponent: definition.profileExponent,
   };
 }
 
