@@ -101,7 +101,6 @@ export type SteppedViewportModel = Pick<
 
 export function useSteppedLayout(): UseSteppedLayoutReturn {
   const steppedModel = useSteppedLayoutController({
-    mode: "stepped",
     generatePreview: generateSteppedPreview,
     exportModel: exportSteppedModelFiles,
   });

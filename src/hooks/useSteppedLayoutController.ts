@@ -32,8 +32,7 @@ import {
 } from "@/lib/stepped-layout-math";
 import type {
   DownloadPort,
-  STLExportWorkerPort,
-  SteppedOutlinePreviewPort,
+  SteppedWorkerPort,
 } from "@/lib/model-ports";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import {
@@ -136,32 +135,24 @@ export interface SteppedEditResult {
   createdIds: string[];
 }
 
-interface UseSteppedLayoutControllerOptions<
-  M extends "stepped",
-  TWorkerPort extends STLExportWorkerPort & SteppedOutlinePreviewPort,
-> {
-  mode: M;
+interface UseSteppedLayoutControllerOptions {
   generatePreview: (
     params: SteppedLayoutParams,
-    workerPort: TWorkerPort,
+    workerPort: SteppedWorkerPort,
   ) => Promise<SteppedPreviewResult>;
   exportModel: (
-    snapshot: ModeParamSnapshot<M>,
+    snapshot: ModeParamSnapshot<"stepped">,
     geometry: Geom3,
-    workerPort: TWorkerPort,
+    workerPort: SteppedWorkerPort,
     downloadPort: DownloadPort,
     effectiveDimensions: SteppedLayoutExtents,
   ) => Promise<void>;
 }
 
-export function useSteppedLayoutController<
-  M extends "stepped",
-  TWorkerPort extends STLExportWorkerPort & SteppedOutlinePreviewPort,
->({
-  mode,
+export function useSteppedLayoutController({
   generatePreview: generatePreviewForMode,
   exportModel,
-}: UseSteppedLayoutControllerOptions<M, TWorkerPort>): UseSteppedLayoutControllerReturn {
+}: UseSteppedLayoutControllerOptions): UseSteppedLayoutControllerReturn {
   const [optimizationProposals, setOptimizationProposals] = useState<
     SteppedOptimizationProposal[]
   >([]);
@@ -231,12 +222,12 @@ export function useSteppedLayoutController<
     handleExportSTL: exportSTL,
   } = useEditableParams<
     SteppedLayoutParams,
-    ModeParamSnapshot<M>,
+    ModeParamSnapshot<"stepped">,
     SteppedLayoutExtents
   >({
     initialState: () => normalizeParams(STEPPED_LAYOUT_DEFAULTS),
     captureSnapshot: (currentParams) =>
-      captureModeParamSnapshot(mode, currentParams),
+      captureModeParamSnapshot("stepped", currentParams),
     captureExportContext: (snapshot) =>
       calculateSteppedEffectiveDimensions(
         snapshot.params,
@@ -244,21 +235,19 @@ export function useSteppedLayoutController<
       ),
     fingerprintSnapshot: createModelGeometryFingerprint,
     generatePreview: async (snapshot) => {
-      const workerPort = trayWorkerService as unknown as TWorkerPort | null;
-      if (!workerPort) {
+      if (!trayWorkerService) {
         return null;
       }
-      return generatePreviewForMode(snapshot.params, workerPort);
+      return generatePreviewForMode(snapshot.params, trayWorkerService);
     },
     exportModel: async (snapshot, geometry, effectiveDimensions) => {
-      const workerPort = trayWorkerService as unknown as TWorkerPort | null;
-      if (!workerPort) {
+      if (!trayWorkerService) {
         return;
       }
       await exportModel(
         snapshot,
         geometry,
-        workerPort,
+        trayWorkerService,
         browserDownloadPort,
         effectiveDimensions,
       );
