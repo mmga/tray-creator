@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   applyFlatTrayBaseHoleSupportingThickness,
-  applySimpleSteppedBaseHoleSupportingThickness,
   createCustomBaseHoleConstructionPlan,
   createGridBaseHoleConstructionPlan,
   createSteppedBaseHoleConstructionPlan,
@@ -10,7 +9,6 @@ import { getRequiredBaseHoleSupportingThickness } from "@/lib/base-hole-construc
 import { resolveMagneticBaseHolePreset } from "@/lib/base-hole-config";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
-import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import { customContouredStateForTest } from "@/test/contoured-state";
 import type { CustomLayoutParams, SteppedLayoutParams } from "@/types/custom-tray";
@@ -90,12 +88,6 @@ describe("Base-hole Construction Plan Interface", () => {
       baseHoleStructure: "magnet-post-hole",
       magnetPostHoleDepth: 3,
     }).baseThickness).toBe(4);
-    expect(applySimpleSteppedBaseHoleSupportingThickness({
-      ...SIMPLE_STEPPED_LAYOUT_DEFAULTS,
-      firstRowHeight: 4,
-      holeDepth: 3,
-      baseHoleStructure: "magnetic-base-hole",
-    }).firstRowHeight).toBe(5.4);
   });
 
   it("报告磁铁桩孔大于槽位最短成品尺寸", () => {

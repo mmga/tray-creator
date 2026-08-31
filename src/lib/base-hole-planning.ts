@@ -11,7 +11,6 @@ import {
 } from "@/lib/base-hole-mode-adapters";
 import type {
   CustomLayoutParams,
-  SimpleSteppedLayoutParams,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import type { TrayParams } from "@/types/tray";
@@ -78,14 +77,4 @@ export function applyFlatTrayBaseHoleSupportingThickness<
   return params.baseThickness >= required
     ? params
     : { ...params, baseThickness: required };
-}
-
-export function applySimpleSteppedBaseHoleSupportingThickness(
-  params: SimpleSteppedLayoutParams,
-): SimpleSteppedLayoutParams {
-  const requiredFirstRowHeight =
-    params.holeDepth + getRequiredBaseHoleSupportingThickness(params);
-  return params.firstRowHeight >= requiredFirstRowHeight
-    ? params
-    : { ...params, firstRowHeight: requiredFirstRowHeight };
 }
