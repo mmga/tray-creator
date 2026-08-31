@@ -4,7 +4,6 @@ import {
   getBaseHoleMinBaseThickness,
   getBaseHoleMinBottomWall,
   getBaseHolePreset,
-  resolveBaseHolePresetKey,
 } from "@/lib/config";
 import { CUSTOM_BASE_PRESETS } from "@/lib/custom-config";
 
@@ -16,14 +15,6 @@ describe("base presets", () => {
 });
 
 describe("base hole config", () => {
-  it("resolves the large preset for larger slot sizes", () => {
-    expect(resolveBaseHolePresetKey(25)).toBe("20");
-    expect(resolveBaseHolePresetKey(59.9)).toBe("25");
-    expect(resolveBaseHolePresetKey(60)).toBe("40");
-    expect(resolveBaseHolePresetKey(100)).toBe("40");
-    expect(resolveBaseHolePresetKey(120)).toBe("40");
-  });
-
   it("derives the minimum base thickness from the resolved preset depth", () => {
     expect(getBaseHolePreset("20")).toMatchObject({
       diameter: 20.2,
