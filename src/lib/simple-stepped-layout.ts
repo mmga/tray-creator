@@ -155,22 +155,6 @@ export function getSimpleSteppedEffectiveDiameter(
     : getLegacyCircleSlotDiameter(slot.diameter);
 }
 
-export function calculateSimpleSteppedMinimumTraySize(
-  params: SimpleSteppedLayoutParams,
-) {
-  const activeRowSeeds = buildActiveRowSeeds(params);
-  if (activeRowSeeds.length === 0) {
-    return { width: 0, depth: 0 };
-  }
-
-  return {
-    width: Math.max(...activeRowSeeds.map((row) => row.length)),
-    depth:
-      activeRowSeeds.reduce((sum, row) => sum + row.depth, 0) +
-      Math.max(activeRowSeeds.length - 1, 0) * params.rowGap,
-  };
-}
-
 export function deriveSimpleSteppedLayout(
   params: SimpleSteppedLayoutParams,
 ): SimpleSteppedDerivedLayout {
@@ -253,16 +237,5 @@ export function deriveSimpleSteppedLayout(
     highestTopHeight: activeRows[activeRows.length - 1]?.topHeight ?? 0,
     slotCount: params.slots.length,
     activeRows,
-  };
-}
-
-export function calculateSimpleSteppedDimensions(
-  params: SimpleSteppedLayoutParams,
-) {
-  const derived = deriveSimpleSteppedLayout(params);
-  return {
-    width: derived.trayWidth,
-    depth: derived.trayDepth,
-    height: derived.trayHeight,
   };
 }

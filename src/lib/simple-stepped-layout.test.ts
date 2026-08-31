@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import {
-  calculateSimpleSteppedDimensions,
-  calculateSimpleSteppedMinimumTraySize,
   deriveSimpleSteppedLayout,
   getSimpleSteppedEffectiveDiameter,
 } from "@/lib/simple-stepped-layout";
@@ -58,15 +56,6 @@ describe("simple stepped layout", () => {
 
     expect(getSimpleSteppedEffectiveDiameter({ diameter: 25 })).toBe(25.4);
     expect(getSimpleSteppedEffectiveDiameter({ diameter: 32 })).toBe(32.4);
-
-    const minimumSize = calculateSimpleSteppedMinimumTraySize(params);
-    expect(minimumSize.width).toBeCloseTo(79.9, 5);
-    expect(minimumSize.depth).toBeCloseTo(110.8, 5);
-
-    const dimensions = calculateSimpleSteppedDimensions(params);
-    expect(dimensions.width).toBeCloseTo(79.9, 5);
-    expect(dimensions.depth).toBeCloseTo(110.8, 5);
-    expect(dimensions.height).toBe(10);
 
     const derived = deriveSimpleSteppedLayout(params);
     expect(derived.trayWidth).toBeCloseTo(79.9, 5);
