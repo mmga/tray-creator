@@ -92,11 +92,6 @@ function computeTangencyEpsilon(
 
 // ── 类型 ──────────────────────────────────
 
-export interface Vec2 {
-  x: number;
-  y: number;
-}
-
 export interface OutlineCircle {
   cx: number;
   cy: number;
@@ -105,22 +100,7 @@ export interface OutlineCircle {
 }
 
 /** 2D 轮廓路径上的一段弧 */
-export interface ArcSegment {
-  type: "convex" | "concave";
-  center: Vec2;
-  radius: number;
-  startAngle: number;
-  endAngle: number;
-}
-
 /** 最终输出：可直接绘制的轮廓数据 */
-export interface OutlineData {
-  /** 有序弧段列表（保留接口兼容，新算法下为空数组） */
-  segments: ArcSegment[];
-  /** 采样后的闭合多边形点列 */
-  points: Vec2[];
-}
-
 type OutlinePoint = [number, number];
 type OutlineSide = [OutlinePoint, OutlinePoint];
 
@@ -737,57 +717,4 @@ function snapToCircles(
   }
 
   return result;
-}
-
-// ── 公共接口 ──────────────────────────────
-
-/**
- * 计算多边形面积（Shoelace 公式，绝对值）
- */
-function polygonArea(pts: [number, number][]): number {
-  return Math.abs(signedPolygonArea(pts));
-}
-
-/**
- * 主入口：生成闭合轮廓数据
- *
- * @param circles 所有 slot 的外扩圆（cx, cy 为 JSCAD 坐标系）
- * @param smoothingRadius 平滑半径
- * @param arcSegments 弧线采样精度
- * @returns 轮廓数据（弧段为空，points 为闭合多边形）
- */
-export function generateOutline(
-  circles: OutlineCircle[],
-  smoothingRadius: number,
-  arcSegments: number = 64,
-): OutlineData | null {
-  const geom = generateOutlineGeom2(circles, smoothingRadius, arcSegments);
-  if (!geom) return null;
-
-  // 提取轮廓点列
-  const outlines = toClosedOutlines(geom);
-  if (outlines.length === 0) return null;
-
-  // 多轮廓时取面积最大的（忽略内孔和小碎片）
-  let largest = outlines[0];
-  let largestArea = polygonArea(largest);
-  for (let i = 1; i < outlines.length; i++) {
-    const area = polygonArea(outlines[i]);
-    if (area > largestArea) {
-      largest = outlines[i];
-      largestArea = area;
-    }
-  }
-
-  const points: Vec2[] = largest.map(([x, y]) => ({ x, y }));
-
-  return { segments: [], points };
-}
-
-/**
- * 将 OutlineData 的采样点转为 JSCAD geom2 多边形坐标
- * 保留接口兼容
- */
-export function outlinePointsToGeom2(points: Vec2[]): [number, number][] {
-  return points.map((p) => [p.x, p.y]);
 }
