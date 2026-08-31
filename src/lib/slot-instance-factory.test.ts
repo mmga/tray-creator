@@ -2,10 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   createFreeSlotInstance,
   createGridSlotSnapshotFromDefinition,
-  createSimpleSteppedSlotInstance,
   createSteppedSlotInstance,
   normalizeFreeSlotInstanceSnapshot,
-  normalizeSimpleSteppedSlotInstanceSnapshot,
 } from "@/lib/slot-instance-factory";
 
 describe("slot instance factory", () => {
@@ -79,7 +77,7 @@ describe("slot instance factory", () => {
     });
   });
 
-  it("creates stepped and simple stepped slot instances with mode metadata", () => {
+  it("creates stepped slot instances with mode metadata", () => {
     expect(
       createSteppedSlotInstance({
         id: "stepped-1",
@@ -99,23 +97,6 @@ describe("slot instance factory", () => {
       slotHeight: 25.4,
     });
 
-    expect(
-      createSimpleSteppedSlotInstance({
-        id: "simple-1",
-        rowId: "row-1",
-        diameter: 25,
-        x: 5,
-      }),
-    ).toEqual({
-      id: "simple-1",
-      rowId: "row-1",
-      shape: "circle",
-      diameter: 25,
-      slotDefinitionId: "circle-25",
-      effectiveDiameter: 25.4,
-      x: 5,
-      y: 0,
-    });
   });
 
   it("normalizes legacy slot snapshots conservatively", () => {
@@ -153,19 +134,5 @@ describe("slot instance factory", () => {
       slotHeight: 13.5,
     });
 
-    expect(
-      normalizeSimpleSteppedSlotInstanceSnapshot({
-        id: "legacy-simple",
-        rowId: "row-1",
-        shape: "circle",
-        diameter: 32,
-        x: 0,
-        y: Number.NaN,
-      }),
-    ).toMatchObject({
-      slotDefinitionId: "circle-32",
-      effectiveDiameter: 32.4,
-      y: 0,
-    });
   });
 });

@@ -1,6 +1,5 @@
 import type {
   FreeSlot,
-  SimpleSteppedSlot,
   SteppedSlot,
 } from "@/types/custom-tray";
 import type { TrayParams } from "@/types/tray";
@@ -10,7 +9,6 @@ import {
   createCircleSlotSnapshot,
   createGridSlotSnapshot,
   findEllipseSlotDefinitionByGeometry,
-  getLegacyCircleSlotDiameter,
 } from "@/lib/slot-definitions";
 
 export interface EllipseSlotInstanceConfig {
@@ -44,14 +42,6 @@ export interface CreateSteppedSlotInstanceOptions {
   rotation?: number;
   ellipseConfig?: EllipseSlotInstanceConfig;
   groupId: string;
-}
-
-export interface CreateSimpleSteppedSlotInstanceOptions {
-  id: string;
-  rowId: string;
-  diameter: number;
-  x: number;
-  y?: number;
 }
 
 function normalizeRotation(rotation: number) {
@@ -142,25 +132,6 @@ export function createSteppedSlotInstance({
   };
 }
 
-export function createSimpleSteppedSlotInstance({
-  id,
-  rowId,
-  diameter,
-  x,
-  y = 0,
-}: CreateSimpleSteppedSlotInstanceOptions): SimpleSteppedSlot {
-  return {
-    id,
-    rowId,
-    shape: "circle",
-    diameter,
-    slotDefinitionId: createCircleSlotSnapshot(diameter).slotDefinitionId,
-    effectiveDiameter: getLegacyCircleSlotDiameter(diameter),
-    x,
-    y: Number.isFinite(y) ? y : 0,
-  };
-}
-
 export function normalizeFreeSlotInstanceSnapshot(slot: FreeSlot): FreeSlot {
   const rotation = normalizeRotation(slot.rotation);
 
@@ -221,66 +192,5 @@ export function normalizeFreeSlotInstanceSnapshot(slot: FreeSlot): FreeSlot {
       typeof slot.slotHeight === "number" && Number.isFinite(slot.slotHeight)
         ? slot.slotHeight
         : snapshot.slotHeight,
-  };
-}
-
-export function normalizeSimpleSteppedSlotInstanceSnapshot(
-  slot: SimpleSteppedSlot,
-): SimpleSteppedSlot {
-  const snapshot = createCircleSlotSnapshot(slot.diameter);
-  return {
-    ...slot,
-    shape: "circle",
-    y: Number.isFinite(slot.y) ? slot.y : 0,
-    ...(snapshot.slotDefinitionId
-      ? { slotDefinitionId: snapshot.slotDefinitionId }
-      : typeof slot.slotDefinitionId === "string"
-        ? { slotDefinitionId: slot.slotDefinitionId }
-        : {}),
-    effectiveDiameter:
-      typeof slot.effectiveDiameter === "number" &&
-      Number.isFinite(slot.effectiveDiameter)
-        ? slot.effectiveDiameter
-        : getLegacyCircleSlotDiameter(slot.diameter),
-  };
-}
-
-/**
- * 把 simple-stepped 的派生槽位投影为 FreeSlot（供 custom LayoutCanvas 渲染）。
- *
- * 这是 Slot Instance Factory 的投影 seam：simple-stepped 模式把槽位投影成
- * FreeSlot 以复用 custom 的画布，snapshot 字段（slotWidth/slotHeight/
- * slotDefinitionId）由工厂统一写入，避免调用方手搓字面量。
- *
- * slotDefinitionId 优先取原始 SimpleSteppedSlot 上已有的（保持身份一致），
- * 否则按 diameter 从定义表匹配。
- */
-export function projectSimpleSteppedToFreeSlot(
-  derived: {
-    id: string;
-    globalX: number;
-    globalY: number;
-    diameter: number;
-    rotation: number;
-  },
-  source: SimpleSteppedSlot,
-): FreeSlot {
-  const snapshot = createCircleSlotSnapshot(derived.diameter);
-  const slotDefinitionId =
-    typeof source.slotDefinitionId === "string"
-      ? source.slotDefinitionId
-      : snapshot.slotDefinitionId;
-
-  return {
-    id: derived.id,
-    x: derived.globalX,
-    y: derived.globalY,
-    shape: "circle",
-    width: derived.diameter,
-    height: derived.diameter,
-    rotation: normalizeRotation(derived.rotation),
-    ...(slotDefinitionId ? { slotDefinitionId } : {}),
-    slotWidth: snapshot.slotWidth,
-    slotHeight: snapshot.slotHeight,
   };
 }

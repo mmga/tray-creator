@@ -1,10 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import {
-  buildSimpleSteppedRowBands,
   calculateSimpleSteppedDimensions,
   calculateSimpleSteppedMinimumTraySize,
-  clampSimpleSteppedSlotUpdates,
   deriveSimpleSteppedLayout,
   getSimpleSteppedEffectiveDiameter,
 } from "@/lib/simple-stepped-layout";
@@ -70,7 +68,7 @@ describe("simple stepped layout", () => {
     expect(dimensions.depth).toBeCloseTo(110.8, 5);
     expect(dimensions.height).toBe(10);
 
-    const derived = deriveSimpleSteppedLayout(params, "row-2");
+    const derived = deriveSimpleSteppedLayout(params);
     expect(derived.trayWidth).toBeCloseTo(79.9, 5);
     expect(derived.trayDepth).toBeCloseTo(110.8, 5);
     expect(derived.minimumTrayWidth).toBeCloseTo(79.9, 5);
@@ -99,26 +97,6 @@ describe("simple stepped layout", () => {
     expect(derived.activeRows[1].slots[0]?.globalX).toBeCloseTo(39.95, 5);
     expect(derived.activeRows[1].slots[0]?.globalY).toBeCloseTo(85.6, 5);
 
-    expect(buildSimpleSteppedRowBands(params, "row-2")).toEqual(
-      derived.rowBands,
-    );
-    expect(derived.rowBands[0]).toMatchObject({
-      id: "row-1",
-      x: 0,
-      y: 0,
-      depth: 48.4,
-      isActive: false,
-    });
-    expect(derived.rowBands[0]?.width).toBeCloseTo(79.9, 5);
-    expect(derived.rowBands[1]).toMatchObject({
-      id: "row-2",
-      x: 0,
-      y: 54.4,
-      depth: 56.4,
-      topHeight: 10,
-      isActive: true,
-    });
-    expect(derived.rowBands[1]?.width).toBeCloseTo(79.9, 5);
   });
 
   it("returns stored tray size and empty rows when no active rows exist", () => {
@@ -133,27 +111,6 @@ describe("simple stepped layout", () => {
       highestTopHeight: 0,
       slotCount: 0,
       activeRows: [],
-      rowBands: [],
     });
-  });
-
-  it("clamps canvas slot updates to the build envelope and row depth", () => {
-    const params = createSimpleSteppedParams();
-
-    expect(
-      clampSimpleSteppedSlotUpdates(
-        params,
-        [
-          { id: "slot-1", x: 100, y: 100 },
-          { id: "slot-3", x: -100, y: 5 },
-          { id: "missing", x: 1, y: 1 },
-          { id: "slot-2", x: Number.NaN, y: 0 },
-        ],
-        100,
-      ),
-    ).toEqual([
-      { id: "slot-1", x: 29.3, y: 3.5 },
-      { id: "slot-3", x: -21.8, y: 0 },
-    ]);
   });
 });

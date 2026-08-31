@@ -11,7 +11,6 @@
  */
 import type {
   CustomLayoutParams,
-  SimpleSteppedLayoutParams,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import type { TrayParams } from "@/types/tray";
@@ -23,7 +22,6 @@ import {
 import { createGroupStructureOverrides } from "@/lib/stepped-group-params";
 import type { ImportNormalizationRecorder } from "@/lib/param-import-report";
 import {
-  recordBehaviorChange,
   recordDefault,
   recordMigration,
 } from "@/lib/param-import-report";
@@ -188,93 +186,6 @@ export function migrateCustomLegacyShape(
       reason: "旧 Slot Instance 未记录稳定标识",
       technical: true,
       count: generatedIdCount,
-    });
-  }
-}
-
-export function migrateSimpleSteppedLegacyShape(
-  params: SimpleSteppedLayoutParams,
-  recorder?: ImportNormalizationRecorder,
-) {
-  const obj = params as unknown as Record<string, unknown>;
-
-  if (!Array.isArray(obj.rows)) {
-    obj.rows = [];
-    recordDefault(recorder, {
-      path: "rows",
-      label: "简易阶梯行",
-      normalizedValue: [],
-      reason: "旧文件未记录行结构",
-    });
-  }
-  if (!Array.isArray(obj.slots)) {
-    obj.slots = [];
-    recordDefault(recorder, {
-      path: "slots",
-      label: "Slot Instance",
-      normalizedValue: [],
-      reason: "旧文件未记录 Slot Instance 列表",
-    });
-  }
-
-  const rows = obj.rows as Record<string, unknown>[];
-  const slots = obj.slots as Record<string, unknown>[];
-  let generatedRowIdCount = 0;
-
-  for (let index = 0; index < rows.length; index += 1) {
-    const row = rows[index];
-    if (!row || typeof row !== "object") {
-      throw new Error(`rows[${index}]: 无效的行数据`);
-    }
-    if (typeof row.id !== "string" || !row.id) {
-      row.id = crypto.randomUUID();
-      generatedRowIdCount += 1;
-    }
-    if (typeof row.name !== "string" || !row.name.trim()) {
-      row.name = `行 ${index + 1}`;
-      recordDefault(recorder, {
-        path: `rows[${index}].name`,
-        label: `第 ${index + 1} 行名称`,
-        normalizedValue: row.name,
-        reason: "旧行未记录可用名称",
-        technical: true,
-      });
-    }
-    if (!Array.isArray(row.slotIds)) {
-      row.slotIds = [];
-      recordDefault(recorder, {
-        path: `rows[${index}].slotIds`,
-        label: `第 ${index + 1} 行 Slot Instance 关系`,
-        normalizedValue: [],
-        reason: "旧行未记录 Slot Instance 关系，稍后按 rowId 重建",
-        technical: true,
-      });
-    }
-  }
-
-  if (generatedRowIdCount > 0) {
-    recordDefault(recorder, {
-      path: "rows[].id",
-      label: "简易阶梯行标识",
-      normalizedValue: `已生成 ${generatedRowIdCount} 个标识`,
-      reason: "旧行未记录稳定标识",
-      technical: true,
-      count: generatedRowIdCount,
-    });
-  }
-
-  if (rows.length === 0 && slots.length > 0) {
-    rows.push({
-      id: crypto.randomUUID(),
-      name: "行 1",
-      slotIds: [],
-    });
-    recordBehaviorChange(recorder, {
-      path: "rows[0]",
-      label: "简易阶梯默认行",
-      previousValue: undefined,
-      normalizedValue: "行 1",
-      reason: "旧文件包含 Slot Instance 但没有行，已建立默认归属行",
     });
   }
 }

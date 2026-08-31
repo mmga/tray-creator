@@ -180,20 +180,6 @@ export interface SimpleSteppedRow {
   slotIds: string[];
 }
 
-/** 简易阶梯模式 2D 画布行带 */
-export interface SimpleSteppedRowBand {
-  id: string;
-  name: string;
-  /** 行带左下角 X（用户坐标系） */
-  x: number;
-  /** 行带左下角 Y（用户坐标系） */
-  y: number;
-  width: number;
-  depth: number;
-  topHeight: number;
-  isActive?: boolean;
-}
-
 /** 自定义布局参数（完全独立） */
 export interface CustomLayoutParams extends BaseHoleParams {
   /**

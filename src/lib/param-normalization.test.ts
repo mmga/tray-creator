@@ -1,10 +1,8 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { BASE_CONVERTER_DEFAULTS } from "@/lib/base-converter-config";
-import { getBaseHoleMinBaseThickness, MAX_BUILD_SIZE } from "@/lib/config";
+import { getBaseHoleMinBaseThickness } from "@/lib/config";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
-import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
-import { normalizeSimpleSteppedParams } from "@/lib/simple-stepped-projection";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import {
   migrateCustomParamsToStepped,
@@ -13,7 +11,6 @@ import {
 import type {
   BaseConverterParams,
   CustomLayoutParams,
-  SimpleSteppedLayoutParams,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import type { TrayParams } from "@/types/tray";
@@ -59,20 +56,6 @@ describe("param normalization", () => {
         },
       ],
     } as unknown as CustomLayoutParams) as CustomLayoutParams;
-    const simpleStepped = normalizeSimpleSteppedParams({
-      ...SIMPLE_STEPPED_LAYOUT_DEFAULTS,
-      rows: [{ id: "row-1", name: "前排", slotIds: ["simple-100"] }],
-      slots: [
-        {
-          id: "simple-100",
-          rowId: "row-1",
-          shape: "circle",
-          diameter: 100,
-          x: 0,
-          y: 0,
-        },
-      ],
-    } as SimpleSteppedLayoutParams) as SimpleSteppedLayoutParams;
     const stepped = normalizeParamsForMode("stepped", {
       ...STEPPED_LAYOUT_DEFAULTS,
       slots: [
@@ -97,10 +80,6 @@ describe("param normalization", () => {
       slotDefinitionId: "circle-100",
       slotWidth: 100.4,
       slotHeight: 100.4,
-    });
-    expect(simpleStepped.slots[0]).toMatchObject({
-      slotDefinitionId: "circle-100",
-      effectiveDiameter: 100.4,
     });
     expect(stepped.slots[0]).toMatchObject({
       slotDefinitionId: "circle-100",
@@ -225,89 +204,6 @@ describe("param normalization", () => {
     expect(normalized.enableBaseHole).toBeUndefined();
     expect(normalized.baseHoleSize).toBe("40");
     expect(normalized.baseThickness).toBe(2.4);
-  });
-
-  it("normalizes simple stepped legacy rows before slot snapshots and derived size", () => {
-    const normalized = normalizeSimpleSteppedParams({
-      stepHeight: 5,
-      rowGap: 0,
-      spacing: 4,
-      outerMargin: 4,
-      holeDepth: 3,
-      rows: [],
-      slots: [
-        {
-          id: "",
-          rowId: "missing-row",
-          shape: "ellipse",
-          diameter: 40,
-          x: 12,
-          y: Number.NaN,
-        },
-      ],
-    } as unknown as SimpleSteppedLayoutParams) as SimpleSteppedLayoutParams;
-
-    expect(normalized.rows).toHaveLength(1);
-    expect(normalized.rows[0].slotIds).toEqual([normalized.slots[0].id]);
-    expect(normalized.slots[0]).toMatchObject({
-      rowId: normalized.rows[0].id,
-      shape: "circle",
-      diameter: 40,
-      slotDefinitionId: "circle-40",
-      effectiveDiameter: 40.4,
-      y: 0,
-    });
-    expect(normalized.trayWidth).toBeGreaterThan(0);
-    expect(normalized.trayDepth).toBeGreaterThan(0);
-  });
-
-  it("uses the simple stepped layout core for imported tray size and snapshots", () => {
-    const normalized = normalizeSimpleSteppedParams({
-      ...SIMPLE_STEPPED_LAYOUT_DEFAULTS,
-      trayWidth: 100,
-      trayDepth: 100,
-      spacing: 6,
-      outerMarginIndependent: false,
-      outerMargin: 99,
-      rows: [
-        { id: "row-1", name: "超宽行", slotIds: ["stale"] },
-      ],
-      slots: [
-        {
-          id: "slot-1",
-          rowId: "row-1",
-          shape: "circle",
-          diameter: 100,
-          slotDefinitionId: undefined,
-          effectiveDiameter: undefined,
-          x: -MAX_BUILD_SIZE,
-          y: Number.NaN,
-        },
-        {
-          id: "slot-2",
-          rowId: "row-1",
-          shape: "circle",
-          diameter: 100,
-          slotDefinitionId: undefined,
-          effectiveDiameter: undefined,
-          x: MAX_BUILD_SIZE,
-          y: 0,
-        },
-      ],
-    } as unknown as SimpleSteppedLayoutParams) as SimpleSteppedLayoutParams;
-
-    expect(normalized.outerMargin).toBe(6);
-    expect(normalized.rows[0].slotIds).toEqual(["slot-1", "slot-2"]);
-    expect(normalized.trayWidth).toBeGreaterThan(MAX_BUILD_SIZE);
-    expect(normalized.slots[0]).toMatchObject({
-      y: 0,
-      slotDefinitionId: "circle-100",
-      effectiveDiameter: 100.4,
-    });
-    expect(normalized.slots[1]).toMatchObject({
-      slotDefinitionId: "circle-100",
-      effectiveDiameter: 100.4,
-    });
   });
 
   it("migrates stepped legacy groups before slot snapshots and derived clamps", () => {

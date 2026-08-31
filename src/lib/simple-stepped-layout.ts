@@ -1,17 +1,9 @@
-import { MAX_BUILD_SIZE } from "@/lib/config";
 import { getLegacyCircleSlotDiameter } from "@/lib/slot-definitions";
 import { SIMPLE_STEPPED_LAYOUT_DEFAULTS } from "@/lib/simple-stepped-config";
 import type {
   SimpleSteppedLayoutParams,
-  SimpleSteppedRowBand,
   SimpleSteppedSlot,
 } from "@/types/custom-tray";
-
-export interface SimpleSteppedSlotUpdate {
-  id: string;
-  x: number;
-  y: number;
-}
 
 export interface SimpleSteppedDerivedSlot {
   id: string;
@@ -56,7 +48,6 @@ export interface SimpleSteppedDerivedLayout {
   highestTopHeight: number;
   slotCount: number;
   activeRows: SimpleSteppedDerivedRow[];
-  rowBands: SimpleSteppedRowBand[];
 }
 
 interface SimpleSteppedRowSeed {
@@ -164,13 +155,6 @@ export function getSimpleSteppedEffectiveDiameter(
     : getLegacyCircleSlotDiameter(slot.diameter);
 }
 
-export function getSimpleSteppedMaxLocalYOffset(
-  rowMaxDiameter: number,
-  effectiveDiameter: number,
-) {
-  return Math.max(0, (rowMaxDiameter - effectiveDiameter) / 2);
-}
-
 export function calculateSimpleSteppedMinimumTraySize(
   params: SimpleSteppedLayoutParams,
 ) {
@@ -189,7 +173,6 @@ export function calculateSimpleSteppedMinimumTraySize(
 
 export function deriveSimpleSteppedLayout(
   params: SimpleSteppedLayoutParams,
-  activeRowId?: string | null,
 ): SimpleSteppedDerivedLayout {
   const activeRowSeeds = buildActiveRowSeeds(params);
   const storedTrayWidth = getStoredTrayWidth(params);
@@ -205,7 +188,6 @@ export function deriveSimpleSteppedLayout(
       highestTopHeight: 0,
       slotCount: 0,
       activeRows: [],
-      rowBands: [],
     };
   }
 
@@ -260,17 +242,6 @@ export function deriveSimpleSteppedLayout(
     };
   });
 
-  const rowBands: SimpleSteppedRowBand[] = activeRows.map((row) => ({
-    id: row.id,
-    name: row.name,
-    x: trayWidth / 2 - row.length / 2,
-    y: row.startY,
-    width: row.length,
-    depth: row.depth,
-    topHeight: row.topHeight,
-    isActive: activeRowId ? row.id === activeRowId : false,
-  }));
-
   return {
     trayWidth,
     trayDepth,
@@ -282,7 +253,6 @@ export function deriveSimpleSteppedLayout(
     highestTopHeight: activeRows[activeRows.length - 1]?.topHeight ?? 0,
     slotCount: params.slots.length,
     activeRows,
-    rowBands,
   };
 }
 
@@ -295,61 +265,4 @@ export function calculateSimpleSteppedDimensions(
     depth: derived.trayDepth,
     height: derived.trayHeight,
   };
-}
-
-export function buildSimpleSteppedRowBands(
-  params: SimpleSteppedLayoutParams,
-  activeRowId?: string | null,
-) {
-  return deriveSimpleSteppedLayout(params, activeRowId).rowBands;
-}
-
-export function clampSimpleSteppedSlotUpdates(
-  params: SimpleSteppedLayoutParams,
-  updates: SimpleSteppedSlotUpdate[],
-  maxBuildSize: number = MAX_BUILD_SIZE,
-) {
-  const outerMargin = getEffectiveOuterMargin(params);
-  const slotMap = new Map(params.slots.map((slot) => [slot.id, slot] as const));
-  const derived = deriveSimpleSteppedLayout(params);
-  const rowById = new Map(
-    derived.activeRows.map((row) => [row.id, row] as const),
-  );
-  const deduped = new Map<string, SimpleSteppedSlotUpdate>();
-
-  updates.forEach((update) => {
-    const slot = slotMap.get(update.id);
-    if (
-      !slot ||
-      !isFiniteNumber(update.x) ||
-      !isFiniteNumber(update.y)
-    ) {
-      return;
-    }
-
-    const row = rowById.get(slot.rowId);
-    if (!row) {
-      return;
-    }
-
-    const effectiveDiameter = getSimpleSteppedEffectiveDiameter(slot);
-    const maxAbsX = Math.max(
-      0,
-      maxBuildSize / 2 - outerMargin - effectiveDiameter / 2,
-    );
-    const maxLocalYOffset = getSimpleSteppedMaxLocalYOffset(
-      row.maxDiameter,
-      effectiveDiameter,
-    );
-
-    deduped.set(update.id, {
-      id: update.id,
-      x: Math.max(-maxAbsX, Math.min(maxAbsX, update.x)),
-      y: Math.max(-maxLocalYOffset, Math.min(maxLocalYOffset, update.y)),
-    });
-  });
-
-  return updates
-    .map((update) => deduped.get(update.id))
-    .filter((update): update is SimpleSteppedSlotUpdate => Boolean(update));
 }
