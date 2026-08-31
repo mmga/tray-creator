@@ -57,7 +57,7 @@ vi.mock("@/hooks/useAutoPreview", () => ({
 }));
 
 vi.mock("@/lib/param-download", () => ({
-  exportParams: vi.fn(),
+  downloadParamFile: vi.fn(),
 }));
 
 vi.mock("@/components/PanelActionSection", () => ({

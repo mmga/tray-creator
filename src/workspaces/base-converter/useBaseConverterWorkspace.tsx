@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { PanelActionSection } from "@/components/PanelActionSection";
 import { useAutoPreview } from "@/hooks/useAutoPreview";
 import type { useBaseConverter } from "@/hooks/useBaseConverter";
-import { exportParams } from "@/lib/param-download";
+import { downloadParamFile } from "@/lib/param-download";
 import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import type { BaseConverterParams } from "@/types/custom-tray";
 import { validateBaseConverterParams } from "@/lib/base-converter-config";
@@ -73,7 +73,7 @@ function BaseConverterActionArea({
           case "export-whole": onExportSTL(); break;
           case "save-draft": draftActions.onSaveDraft(); break;
           case "open-drafts": draftActions.onOpenDraftDialog(); break;
-          case "export-params": exportParams(captureModeParamSnapshot("base-converter", params)); break;
+          case "export-params": downloadParamFile(captureModeParamSnapshot("base-converter", params)); break;
           case "import-params": return onRequestParamImport(intent.file);
           case "reset": onReset(); break;
           case "set-auto-preview": setAutoPreview(intent.enabled); break;

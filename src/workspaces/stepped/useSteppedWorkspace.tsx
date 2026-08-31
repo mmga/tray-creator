@@ -9,7 +9,7 @@ import type { ModeWorkspace } from "@/workspaces/types";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
 import type { SteppedWorkspaceModel } from "@/hooks/useSteppedLayout";
-import { exportParams } from "@/lib/param-download";
+import { downloadParamFile } from "@/lib/param-download";
 import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import { available, modelExportAvailability, modelGenerationAvailability, type DraftActionResult, type SteppedDraftActionAreaAdapter } from "@/workspaces/draft-action-area";
 
@@ -105,7 +105,7 @@ export function useSteppedWorkspace({
               case "export-split": model.handleExportSplitParts(); break;
               case "save-draft": draftActions.onSaveDraft(); break;
               case "open-drafts": draftActions.onOpenDraftDialog(); break;
-              case "export-params": exportParams(captureModeParamSnapshot("stepped", persistedParams)); break;
+              case "export-params": downloadParamFile(captureModeParamSnapshot("stepped", persistedParams)); break;
               case "import-params": return onRequestParamImport(intent.file);
               case "reset": onRequestReset(); break;
             }

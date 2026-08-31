@@ -6,7 +6,7 @@ import { PanelActionSection } from "@/components/PanelActionSection";
 import { useAutoPreview } from "@/hooks/useAutoPreview";
 import { useWorkspaceDraftSupport, type WorkspaceDraftActions } from "@/workspaces/shared";
 import { modelExportAvailability, modelGenerationAvailability, type AutomaticDraftActionAreaAdapter, type DraftActionResult } from "@/workspaces/draft-action-area";
-import { exportParams } from "@/lib/param-download";
+import { downloadParamFile } from "@/lib/param-download";
 import { captureModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import type { ModeWorkspace } from "@/workspaces/types";
 import type { TrayParams } from "@/types/tray";
@@ -74,7 +74,7 @@ function GridDraftActionArea({
           case "export-whole": onExportSTL(); break;
           case "save-draft": draftActions.onSaveDraft(); break;
           case "open-drafts": draftActions.onOpenDraftDialog(); break;
-          case "export-params": exportParams(captureModeParamSnapshot("grid", params)); break;
+          case "export-params": downloadParamFile(captureModeParamSnapshot("grid", params)); break;
           case "import-params": return onRequestParamImport(intent.file);
           case "reset": onReset(); break;
           case "set-auto-preview": setAutoPreview(intent.enabled); break;

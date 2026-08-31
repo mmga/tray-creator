@@ -10,7 +10,3 @@ export function downloadParamFile<M extends AppMode>(
   const blob = createCurrentParamArtifactBlob(snapshot);
   browserDownloadPort.downloadBlob(blob, filename);
 }
-
-export function exportParams<M extends AppMode>(snapshot: ModeParamSnapshot<M>) {
-  downloadParamFile(snapshot);
-}
