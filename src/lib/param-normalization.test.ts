@@ -5,7 +5,6 @@ import { getBaseHoleMinBaseThickness } from "@/lib/config";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import {
-  migrateCustomParamsToStepped,
   normalizeParamsForMode,
 } from "@/lib/param-normalization";
 import type {
@@ -143,42 +142,6 @@ describe("param normalization", () => {
     expect(normalized.baseHoleStructure).toBe("magnetic-base-hole");
     expect(normalized.enableBaseHole).toBeUndefined();
     expect(normalized.baseThickness).toBe(2.4);
-  });
-
-  it("migrates custom params into normalized stepped params", () => {
-    const customParams: CustomLayoutParams = {
-      ...CUSTOM_LAYOUT_DEFAULTS,
-      slots: [
-        {
-          id: "custom-slot",
-          x: 20,
-          y: 30,
-          shape: "ellipse",
-          width: 40,
-          height: 25,
-          rotation: -90,
-        },
-      ],
-    };
-
-    const migrated = migrateCustomParamsToStepped(customParams) as SteppedLayoutParams;
-
-    expect(migrated.groups).toHaveLength(1);
-    expect(migrated).not.toHaveProperty("activeGroupId");
-    expect(migrated.slots[0]).toMatchObject({
-      id: "custom-slot",
-      shape: "circle",
-      width: 40,
-      height: 40,
-      rotation: 270,
-      groupId: migrated.groups[0].id,
-      slotDefinitionId: "circle-40",
-      slotWidth: 40.4,
-      slotHeight: 40.4,
-    });
-    expect(migrated.baseHoleStructure).toBe("none");
-    expect(migrated.enableBaseHole).toBeUndefined();
-    expect(migrated.baseHoleSize).toBe("25");
   });
 
   it("磁吸孔启用时自动提高自定义底板厚度", () => {

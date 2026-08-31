@@ -18,12 +18,10 @@ import {
   migrateSteppedLegacyShape,
 } from "@/lib/param-legacy-migration";
 import {
-  GROUP_COLORS,
   STEPPED_LAYOUT_DEFAULTS,
   STEPPED_LIMITS,
 } from "@/lib/stepped-config";
 import { applySteppedBaseHoleDerivedFields } from "@/lib/stepped-base-hole";
-import { createGroupStructureOverrides } from "@/lib/stepped-group-params";
 import {
   normalizeFreeSlotInstanceSnapshot,
 } from "@/lib/slot-instance-factory";
@@ -297,54 +295,6 @@ export function normalizeParamsForMode<M extends AppMode>(
 ): ParamsByMode[M] {
   const adapter: ParamNormalizationAdapter<M> = paramNormalizationCatalog[mode];
   return adapter.normalize(params, recorder);
-}
-
-export function migrateCustomParamsToStepped(
-  customParams: CustomLayoutParams,
-): SteppedLayoutParams {
-  runParamNormalizationPipeline(customParams, customParamNormalizationPipeline);
-  const defaultGroupId = crypto.randomUUID();
-  const steppedParams: SteppedLayoutParams = {
-    trayWidth: customParams.trayWidth,
-    trayDepth: customParams.trayDepth,
-    slots: customParams.slots.map((slot) => ({
-      ...slot,
-      shape: "circle" as const,
-      height: slot.width,
-      outerOffset: undefined,
-      profileExponent: undefined,
-      groupId: defaultGroupId,
-    })),
-    groups: [
-      {
-        id: defaultGroupId,
-        name: "组 1",
-        color: GROUP_COLORS[0],
-        bottomHeight: 10,
-        ...createGroupStructureOverrides({
-          smoothingRadius: STEPPED_LAYOUT_DEFAULTS.smoothingRadius,
-          disconnectDistance: STEPPED_LAYOUT_DEFAULTS.disconnectDistance,
-        }),
-      },
-    ],
-    spacing: customParams.spacing,
-    holeDepth: customParams.holeDepth || 3,
-    splitGrooveDepth: STEPPED_LAYOUT_DEFAULTS.splitGrooveDepth,
-    enableSplitAssembly: STEPPED_LAYOUT_DEFAULTS.enableSplitAssembly,
-    enableSplitRecess: STEPPED_LAYOUT_DEFAULTS.enableSplitRecess,
-    splitGrooveType: STEPPED_LAYOUT_DEFAULTS.splitGrooveType,
-    enableSplitLocators: STEPPED_LAYOUT_DEFAULTS.enableSplitLocators,
-    smoothingRadius: STEPPED_LAYOUT_DEFAULTS.smoothingRadius,
-    disconnectDistance: STEPPED_LAYOUT_DEFAULTS.disconnectDistance,
-    baseHoleStructure: customParams.baseHoleStructure,
-    magnetPostHoleDiameter: STEPPED_LAYOUT_DEFAULTS.magnetPostHoleDiameter,
-    magnetPostHoleDepth: STEPPED_LAYOUT_DEFAULTS.magnetPostHoleDepth,
-    baseHoleSize: customParams.baseHoleSize,
-  };
-  return runParamNormalizationPipeline(
-    steppedParams,
-    steppedParamNormalizationPipeline,
-  );
 }
 
 const gridParamNormalizationPipeline: ParamNormalizationPipeline<TrayParams> = {
