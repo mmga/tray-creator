@@ -1,15 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronRight } from "lucide-react";
+import { Check } from "lucide-react";
 import { DropdownMenu as Primitive } from "radix-ui";
 import { cn } from "@/lib/utils";
 
 const DropdownMenu = Primitive.Root;
 const DropdownMenuTrigger = Primitive.Trigger;
-const DropdownMenuPortal = Primitive.Portal;
-const DropdownMenuSub = Primitive.Sub;
-const DropdownMenuRadioGroup = Primitive.RadioGroup;
 
 function DropdownMenuContent({ className, sideOffset = 8, ...props }: React.ComponentProps<typeof Primitive.Content>) {
   return (
@@ -39,15 +36,4 @@ function DropdownMenuSeparator({ className, ...props }: React.ComponentProps<typ
   return <Primitive.Separator className={cn("-mx-1 my-1 h-px bg-[#2e2a24]", className)} {...props} />;
 }
 
-function DropdownMenuSubTrigger({ className, inset, children, ...props }: React.ComponentProps<typeof Primitive.SubTrigger> & { inset?: boolean }) {
-  return <Primitive.SubTrigger className={cn("flex cursor-default select-none items-center rounded-sm px-2.5 py-2 text-xs outline-none focus:bg-[#2a2518] focus:text-primary", inset && "pl-8", className)} {...props}>{children}<ChevronRight className="ml-auto size-3.5" /></Primitive.SubTrigger>;
-}
-
-function DropdownMenuSubContent({ className, ...props }: React.ComponentProps<typeof Primitive.SubContent>) {
-  return <Primitive.SubContent className={cn("z-[70] min-w-48 rounded-sm border border-[#4a4030] bg-[#15130f] p-1.5 shadow-xl shadow-black/50", className)} {...props} />;
-}
-
-const DropdownMenuGroup = Primitive.Group;
-const DropdownMenuRadioItem = Primitive.RadioItem;
-
-export { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuPortal, DropdownMenuGroup, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem };
+export { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator };
