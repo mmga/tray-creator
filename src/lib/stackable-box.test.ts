@@ -3,6 +3,7 @@ import {
   STACKABLE_BOX_DEFAULTS,
   STACKABLE_BOX_LIMITS,
   STACKABLE_BOX_SPECS,
+  calculateBottomSeatSlopeHeight,
   calculateBottomGuideInset,
   calculateBoxHeightProjection,
   calculateBoxRequiredOuterSize,
@@ -124,12 +125,13 @@ describe("stackable-box height projection", () => {
     const projection = calculateBoxHeightProjection(enabledBox(), 3, 3, true);
     expect(projection.trayTopZ).toBe(3);
     expect(projection.minimumOuterHeight).toBe(
-      3 +
-        Math.max(
-          STACKABLE_BOX_SPECS.minWallRise,
+      Math.max(
+        3 + STACKABLE_BOX_SPECS.minWallRise,
+        STACKABLE_BOX_SPECS.guideChamferHeight +
+          calculateBottomSeatSlopeHeight() +
           STACKABLE_BOX_SPECS.topTransitionHeight +
-            STACKABLE_BOX_SPECS.guideChamferHeight,
-        ),
+          STACKABLE_BOX_SPECS.guideChamferHeight,
+      ),
     );
   });
 });

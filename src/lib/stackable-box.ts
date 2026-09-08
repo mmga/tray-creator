@@ -22,6 +22,8 @@ export const STACKABLE_BOX_SPECS = {
   topTransitionHeight: 4.0,
   /** 顶部加宽开口下沿的打印过渡斜面角度 (deg) */
   topTransitionAngle: 45,
+  /** 盒底水平承重面外侧的打印过渡斜面角度 (deg) */
+  bottomSeatSlopeAngle: 45,
   /** 倒角角度 (deg)，当前固定为 45° */
   guideChamferAngle: 45,
   /** 最小水平承重边宽 (mm) */
@@ -40,6 +42,18 @@ export const STACKABLE_BOX_SPECS = {
 
 /** 任一轴超过该尺寸仅警告，不阻断 (mm) */
 export const STACKABLE_BOX_MAX_BUILD_SIZE = 260;
+
+/** 盒底水平承重面外侧斜面的垂直高度 (mm)。 */
+export function calculateBottomSeatSlopeHeight(): number {
+  const horizontalRun =
+    STACKABLE_BOX_SPECS.topRimWidth -
+    STACKABLE_BOX_SPECS.guideChamferHeight -
+    STACKABLE_BOX_SPECS.minLoadBearingWidth;
+  return (
+    horizontalRun /
+    Math.tan((STACKABLE_BOX_SPECS.bottomSeatSlopeAngle * Math.PI) / 180)
+  );
+}
 
 // ── 默认值与范围 ──────────
 
@@ -204,11 +218,15 @@ export function calculateBoxHeightProjection(
 ): BoxHeightProjection {
   const slotFloorZ = baseThickness;
   const trayTopZ = basePlateOnly ? baseThickness : baseThickness + holeDepth;
+  const bottomSeatTopZ =
+    STACKABLE_BOX_SPECS.guideChamferHeight +
+    calculateBottomSeatSlopeHeight();
+  const structuralWallStartZ = Math.max(trayTopZ, bottomSeatTopZ);
   const minimumOuterHeight =
-    trayTopZ +
     Math.max(
-      STACKABLE_BOX_SPECS.minWallRise,
-      STACKABLE_BOX_SPECS.topTransitionHeight +
+      trayTopZ + STACKABLE_BOX_SPECS.minWallRise,
+      structuralWallStartZ +
+        STACKABLE_BOX_SPECS.topTransitionHeight +
         STACKABLE_BOX_SPECS.guideChamferHeight,
     );
   const lidClearHeight = params.outerHeight - slotFloorZ;

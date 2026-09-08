@@ -9,7 +9,10 @@ import {
 } from "@jscad/modeling";
 import type { Geom2, Geom3 } from "@jscad/modeling/src/geometries/types";
 import { RENDER_CONFIG } from "@/lib/config";
-import { STACKABLE_BOX_SPECS } from "@/lib/stackable-box";
+import {
+  calculateBottomSeatSlopeHeight,
+  STACKABLE_BOX_SPECS,
+} from "@/lib/stackable-box";
 
 /**
  * 堆叠盒体与盖子的共享 CAD 原语。
@@ -128,6 +131,9 @@ export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
   const rim = STACKABLE_BOX_SPECS.topRimWidth;
   const guideH = STACKABLE_BOX_SPECS.guideChamferHeight;
   const transitionH = STACKABLE_BOX_SPECS.topTransitionHeight;
+  const bottomSeatSlopeH = calculateBottomSeatSlopeHeight();
+  const bottomSeatTopZ = guideH + bottomSeatSlopeH;
+  const wallStartZ = Math.max(trayTopZ, bottomSeatTopZ);
 
   if (!Number.isFinite(W) || !Number.isFinite(D) || !Number.isFinite(H)) {
     throw new Error("堆叠盒体外部尺寸必须是有限数值");
@@ -142,10 +148,10 @@ export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
   }
 
   const transitionStartZ = H - guideH - transitionH;
-  if (transitionStartZ < trayTopZ) {
+  if (transitionStartZ < wallStartZ) {
     throw new Error(
       `盒体外高 ${H} mm 不足以容纳顶部过渡斜面和导向倒角（至少需要 ${(
-        trayTopZ + transitionH + guideH
+        wallStartZ + transitionH + guideH
       ).toFixed(1)} mm）`,
     );
   }
@@ -178,22 +184,53 @@ export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
     guideH,
   );
 
-  // 1. 底部实体：中央导向段落地，导向肩以上恢复完整外轮廓。
-  const baseAboveGuide = translate(
-    [0, 0, guideH],
-    extrudeProfile(outerProfile, trayTopZ - guideH),
+  // 1. 底部中央导向段：落地后继续保留原有上下盒倒角配合截面。
+  // 2. 水平承重面保留最小有效宽度；外侧悬空段改为 45° 打印斜面。
+  //    斜面起点内缩 R-G-minLoadBearingWidth，终点接完整外轮廓。
+  const bottomSeatStartInset =
+    rim - guideH - STACKABLE_BOX_SPECS.minLoadBearingWidth;
+  const bottomSeatStartProfile = insetRoundedRectangleProfile(
+    W,
+    D,
+    R,
+    bottomSeatStartInset,
   );
-  const base = union(guide, baseAboveGuide);
+  const bottomSeatSlopeOuter = translate(
+    [0, 0, guideH],
+    loftProfiles(bottomSeatStartProfile, outerProfile, bottomSeatSlopeH),
+  );
+  const bottomSeatSlopeCavity =
+    trayTopZ < bottomSeatTopZ
+      ? translate(
+          [0, 0, trayTopZ],
+          extrudeProfile(innerWallProfile, bottomSeatTopZ - trayTopZ),
+        )
+      : null;
+  const bottomSeatSlopeSolid = bottomSeatSlopeCavity
+    ? subtract(bottomSeatSlopeOuter, bottomSeatSlopeCavity)
+    : bottomSeatSlopeOuter;
+  const baseAboveSeat =
+    trayTopZ > bottomSeatTopZ
+      ? translate(
+          [0, 0, bottomSeatTopZ],
+          extrudeProfile(outerProfile, trayTopZ - bottomSeatTopZ),
+        )
+      : null;
+  const base = union(
+    guide,
+    bottomSeatSlopeSolid,
+    ...(baseAboveSeat ? [baseAboveSeat] : []),
+  );
 
-  // 2. 主墙环（2mm，从 trayTopZ 到开口下沿过渡斜面的起点）
+  // 3. 主墙环（2mm，从底部结构最高点到开口下沿过渡斜面的起点）
   const wallRing = subtract(outerProfile, innerWallProfile);
-  const wallHeight = transitionStartZ - trayTopZ;
+  const wallHeight = transitionStartZ - wallStartZ;
   const wallSolid =
     wallHeight > 0
-      ? translate([0, 0, trayTopZ], extrudeProfile(wallRing, wallHeight))
+      ? translate([0, 0, wallStartZ], extrudeProfile(wallRing, wallHeight))
       : null;
 
-  // 3. 开口下沿打印过渡斜面：内轮廓从主墙内缩 wall 连续过渡到 rim，
+  // 4. 开口下沿打印过渡斜面：内轮廓从主墙内缩 wall 连续过渡到 rim，
   //    以 45° 斜面替代原本向下悬空的水平台阶。
   const rimRing = subtract(outerProfile, innerRimProfile);
   const transitionOuter = translate(
@@ -206,13 +243,13 @@ export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
   );
   const transitionSolid = subtract(transitionOuter, transitionCavity);
 
-  // 4. 顶部水平承重环（最后 guideH 高度）；内倒角从其下沿开始。
+  // 5. 顶部水平承重环（最后 guideH 高度）；内倒角从其下沿开始。
   const topRimSolid = translate(
     [0, 0, H - guideH],
     extrudeProfile(rimRing, guideH),
   );
 
-  // 5. 顶部内倒角：下端内缩 R，上端内缩 R-G，形成连续向上外扩的承重环。
+  // 6. 顶部内倒角：下端内缩 R，上端内缩 R-G，形成连续向上外扩的承重环。
   const openingBottomProfile = insetRoundedRectangleProfile(W, D, R, rim);
   const openingTopProfile = insetRoundedRectangleProfile(
     W,

@@ -96,7 +96,20 @@ describe("stackable box body", () => {
       .toBeCloseTo(0, 3);
     expect(probe(createBody(), W / 2 - shoulderInset - 0.05, guideH - 0.05))
       .toBeGreaterThan(0);
-    expect(maxAbsXAtZ(createBody(), guideH)).toBeCloseTo(W / 2, 1);
+    const bottomSeatTopZ =
+      guideH +
+      (STACKABLE_BOX_SPECS.topRimWidth -
+        guideH -
+        STACKABLE_BOX_SPECS.minLoadBearingWidth) /
+        Math.tan((STACKABLE_BOX_SPECS.bottomSeatSlopeAngle * Math.PI) / 180);
+    expect(maxAbsXAtZ(createBody(), guideH)).toBeCloseTo(
+      W / 2 -
+        (STACKABLE_BOX_SPECS.topRimWidth -
+          guideH -
+          STACKABLE_BOX_SPECS.minLoadBearingWidth),
+      1,
+    );
+    expect(maxAbsXAtZ(createBody(), bottomSeatTopZ)).toBeCloseTo(W / 2, 1);
   });
 
   it("has a continuous horizontal shoulder above the guide", () => {
@@ -107,6 +120,41 @@ describe("stackable box body", () => {
 
     expect(probe(createBody(), innerShoulderX, guideH + 0.05)).toBeGreaterThan(0);
     expect(probe(createBody(), W / 2 - 1, guideH - 0.05)).toBeCloseTo(0, 3);
+  });
+
+  it("keeps the inner load seat and replaces its outer overhang with a slope", () => {
+    const guideH = STACKABLE_BOX_SPECS.guideChamferHeight;
+    const shoulderInset =
+      STACKABLE_BOX_SPECS.topRimWidth - guideH + CLEARANCE;
+    const slopeStartInset =
+      STACKABLE_BOX_SPECS.topRimWidth -
+      guideH -
+      STACKABLE_BOX_SPECS.minLoadBearingWidth;
+    const horizontalSeatProbeInset =
+      (shoulderInset + slopeStartInset) / 2;
+    const slopeTopZ =
+      guideH +
+      (STACKABLE_BOX_SPECS.topRimWidth -
+        guideH -
+        STACKABLE_BOX_SPECS.minLoadBearingWidth) /
+        Math.tan((STACKABLE_BOX_SPECS.bottomSeatSlopeAngle * Math.PI) / 180);
+
+    expect(
+      probe(
+        createBody(),
+        W / 2 - horizontalSeatProbeInset,
+        guideH - 0.05,
+      ),
+    ).toBeCloseTo(0, 3);
+    expect(
+      probe(
+        createBody(),
+        W / 2 - horizontalSeatProbeInset,
+        guideH + 0.05,
+      ),
+    ).toBeGreaterThan(0);
+    expect(probe(createBody(), W / 2 - 1, guideH + 0.05)).toBeCloseTo(0, 3);
+    expect(probe(createBody(), W / 2 - 1, slopeTopZ - 0.05)).toBeGreaterThan(0);
   });
 
   it("forms a top inner chamfer from the rim inset to the opening inset", () => {
