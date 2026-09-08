@@ -185,7 +185,8 @@ describe("Tray Result Projection", () => {
       outerHeight: 50,
       closedOuterHeight: 52.4,
       lidClearHeight: 47,
-      stackClearHeight: 45.8,
+      stackClearHeight: 45,
+      xyFitClearance: 0.4,
     });
     expect(result.box?.bodyWeight).toEqual({
       status: "available",

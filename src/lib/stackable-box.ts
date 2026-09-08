@@ -14,20 +14,16 @@ export const STACKABLE_BOX_SPECS = {
   bodyWallThickness: 2.4,
   /** 外轮廓圆角 (mm) */
   outerCornerRadius: 6.0,
-  /** 顶部局部承重边宽 (mm)；与 1.7mm 凹槽共同形成约 2.15mm/侧水平承重肩 */
+  /** 顶部结构边总宽 (mm)；倒角后保留 topRimWidth - guideChamferHeight 的水平承重边 */
   topRimWidth: 6.0,
-  /** 底部定位凸缘宽 (mm) */
-  flangeWidth: 1.2,
-  /** 底部定位凸缘高度 (mm) */
-  flangeHeight: 1.2,
-  /** 顶部定位凹槽深度 (mm) */
-  grooveDepth: 1.4,
-  /** 凸缘与凹槽底部余量 (mm) */
-  flangeGrooveBottomClearance: 0.2,
-  /** 定位环中心线距外侧面 (mm)；与 6.0mm 顶部承重边保持内外肩对称 */
-  locatorRingCenterlineInset: 3.0,
-  /** 凸缘入口倒角 (mm × 45°) */
-  flangeEntryChamfer: 0.3,
+  /** 底部外倒角/顶部内倒角导向高度 (mm)，首版为 45° */
+  guideChamferHeight: 2.0,
+  /** 顶部局部加宽区高度 (mm)，必须不小于导向高度 */
+  topReinforcementHeight: 2.4,
+  /** 倒角角度 (deg)，当前固定为 45° */
+  guideChamferAngle: 45,
+  /** 最小水平承重边宽 (mm) */
+  minLoadBearingWidth: 2.0,
   /** 盒壁必须高出内部托盘顶面的最小值 (mm) */
   minWallRise: 2.4,
   /** 盒壁高出托盘顶面不足该值时提示浅盒 (mm) */
@@ -55,7 +51,7 @@ export const STACKABLE_BOX_DEFAULTS = {
   outerDepth: 100,
   outerHeight: 50,
   minimumWallClearance: 2,
-  xyFitClearance: 0.25,
+  xyFitClearance: 0.4,
   lidThickness: 2.4,
 } as const satisfies StackableBoxParams;
 
@@ -79,8 +75,8 @@ export const STACKABLE_BOX_LIMITS = {
   },
   xyFitClearance: {
     label: "XY 配合间隙",
-    min: 0.15,
-    max: 0.5,
+    min: 0.25,
+    max: 0.6,
     step: 0.01,
     unit: "mm",
   },
@@ -192,7 +188,7 @@ export interface BoxHeightProjection {
   minimumOuterHeight: number;
   /** 带盖净高 (mm) */
   lidClearHeight: number;
-  /** 堆叠安全净高 (mm)，扣除凸缘侵入量 */
+  /** 堆叠安全净高 (mm)，扣除倒角导向段侵入量 */
   stackClearHeight: number;
   /** 盖上盖子后的闭合外高 (mm) */
   closedOuterHeight: number;
@@ -208,7 +204,8 @@ export function calculateBoxHeightProjection(
   const trayTopZ = basePlateOnly ? baseThickness : baseThickness + holeDepth;
   const minimumOuterHeight = trayTopZ + STACKABLE_BOX_SPECS.minWallRise;
   const lidClearHeight = params.outerHeight - slotFloorZ;
-  const stackClearHeight = lidClearHeight - STACKABLE_BOX_SPECS.flangeHeight;
+  const stackClearHeight =
+    lidClearHeight - STACKABLE_BOX_SPECS.guideChamferHeight;
   const closedOuterHeight = params.outerHeight + params.lidThickness;
 
   return {
@@ -311,6 +308,8 @@ export type BoxBlockingCode =
   | "grid-half-circle-with-box"
   | "slot-in-safety-boundary"
   | "clearance-or-lid-out-of-range"
+  | "bottom-too-thin-for-guide"
+  | "top-reinforcement-too-shallow"
   | "base-hole-incompatible";
 
 export interface BoxBlockingReason {
@@ -373,6 +372,22 @@ export function validateBoxBaseGeometry(
     });
   }
 
+  if (height.trayTopZ < STACKABLE_BOX_SPECS.guideChamferHeight) {
+    reasons.push({
+      code: "bottom-too-thin-for-guide",
+      message: `盒底厚度 ${height.trayTopZ.toFixed(1)} mm 小于倒角导向高度 ${STACKABLE_BOX_SPECS.guideChamferHeight.toFixed(1)} mm`,
+    });
+  }
+  if (
+    STACKABLE_BOX_SPECS.topReinforcementHeight <
+    STACKABLE_BOX_SPECS.guideChamferHeight
+  ) {
+    reasons.push({
+      code: "top-reinforcement-too-shallow",
+      message: "顶部加宽区高度不足以容纳完整倒角导向段",
+    });
+  }
+
   if (params.xyFitClearance < STACKABLE_BOX_LIMITS.xyFitClearance.min ||
     params.xyFitClearance > STACKABLE_BOX_LIMITS.xyFitClearance.max) {
     reasons.push({
@@ -416,7 +431,18 @@ export function validateBoxBaseGeometry(
   };
 }
 
-/** 顶部定位凹槽横截面宽度 (mm)。 */
-export function calculateBoxGrooveWidth(params: StackableBoxParams): number {
-  return STACKABLE_BOX_SPECS.flangeWidth + 2 * params.xyFitClearance;
+/** 盒底导向段最低点的内缩量。 */
+export function calculateBottomGuideInset(params: StackableBoxParams): number {
+  return STACKABLE_BOX_SPECS.topRimWidth + params.xyFitClearance;
+}
+
+/** 盒底导向段在承重肩高度处的内缩量。 */
+export function calculateBottomShoulderInset(
+  params: StackableBoxParams,
+): number {
+  return (
+    STACKABLE_BOX_SPECS.topRimWidth -
+    STACKABLE_BOX_SPECS.guideChamferHeight +
+    params.xyFitClearance
+  );
 }

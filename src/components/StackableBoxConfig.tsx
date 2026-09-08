@@ -143,7 +143,9 @@ export function StackableBoxConfig({
                 <div>可用宽深：{usableWidth.toFixed(1)} × {usableDepth.toFixed(1)} mm</div>
                 <div>带盖净高：{lidClearHeight.toFixed(1)} mm · 堆叠净高：{stackClearHeight.toFixed(1)} mm</div>
                 <div>
-                  固定规格：墙厚 {STACKABLE_BOX_SPECS.bodyWallThickness}mm · 圆角 {STACKABLE_BOX_SPECS.outerCornerRadius}mm · 承重边 {STACKABLE_BOX_SPECS.topRimWidth}mm
+                  固定规格：墙厚 {STACKABLE_BOX_SPECS.bodyWallThickness}mm · 圆角 {STACKABLE_BOX_SPECS.outerCornerRadius}mm ·
+                  导向倒角 {STACKABLE_BOX_SPECS.guideChamferHeight}mm × {STACKABLE_BOX_SPECS.guideChamferAngle}° ·
+                  承重边 {STACKABLE_BOX_SPECS.topRimWidth - STACKABLE_BOX_SPECS.guideChamferHeight}mm
                 </div>
               </div>
 

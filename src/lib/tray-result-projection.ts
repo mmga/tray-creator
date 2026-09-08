@@ -46,6 +46,7 @@ export interface BoxResultProjection {
   closedOuterHeight: number;
   lidClearHeight: number;
   stackClearHeight: number;
+  xyFitClearance: number;
   bodyWeight: TrayResultWeight;
   lidWeight: TrayResultWeight;
 }
@@ -229,6 +230,7 @@ function projectBox(
     closedOuterHeight: height.closedOuterHeight,
     lidClearHeight: height.lidClearHeight,
     stackClearHeight: height.stackClearHeight,
+    xyFitClearance: box.xyFitClearance,
     bodyWeight: projectWeight(state.bodyVolume ?? 0),
     lidWeight: projectWeight(state.lidVolume ?? 0),
   };

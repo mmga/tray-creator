@@ -32,7 +32,7 @@ function BoxHarness({
       usableWidth={88}
       usableDepth={88}
       lidClearHeight={47}
-      stackClearHeight={45.8}
+      stackClearHeight={45}
       onExpandToFit={onExpandToFit}
     />
   );

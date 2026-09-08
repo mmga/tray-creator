@@ -508,24 +508,24 @@ _Avoid_: Confusing outer height with the inner wall height or with `holeDepth`.
 The slot-allowable area inside the box mouth, inset from the outer edge by the top load-bearing rim width plus the minimum wall clearance, and reduced by the outer corner radius.
 _Avoid_: Treating the nominal baseplate dimensions as the slot-allowable area.
 
-**Stacking Locating Flange**:
-The continuous raised ring near the outer edge on a box bottom, which enters the mating groove of the box below for self-locating stacking.
-_Avoid_: Calling it a snap, latch, or friction feature.
+**Stacking Bottom Outer Chamfer**:
+The continuous outer chamfer around a box bottom that tapers inward toward the lowest point and enters the receiving mouth of the box below for self-guided stacking.
+_Avoid_: Calling it a flange, snap, latch, or friction feature.
 
-**Stacking Locating Groove**:
-The continuous ring groove on the box mouth that receives the **Stacking Locating Flange** of the box above, with per-side fit clearance and a bottom clearance so the load rests on the shoulder instead of the groove floor.
+**Stacking Top Inner Chamfer**:
+The continuous inner chamfer around a box mouth that tapers outward toward the top edge and guides the bottom chamfer of the box above. It is a guide surface, not the primary load surface.
 _Avoid_: Confusing it with the slot recess or with the base-hole counterbore.
 
 **Stacking Fit Clearance**:
-The per-side XY clearance between the flange and groove, an advanced parameter that defaults to 0.25mm and ranges 0.15–0.50mm.
-_Avoid_: Treating it as the flange width or the groove depth.
+The per-side XY clearance between the bottom outer chamfer and top inner chamfer, an advanced parameter that defaults to 0.4mm and ranges 0.25–0.60mm.
+_Avoid_: Treating it as a chamfer height or as a slot clearance.
 
 **Lid Clear Height**:
 The clear inner height when the lid is placed on the box, measured from the slot floor to the underside of the lid.
 _Avoid_: Confusing it with the box outer height.
 
 **Stack Clear Height**:
-The safe inner height when boxes are stacked directly, reduced by the 1.2mm flange intrusion into the box below.
+The safe inner height when boxes are stacked directly, reduced by the 2.0mm bottom chamfer intrusion into the box below.
 _Avoid_: Using lid clear height when the meaning is the stacked clearance.
 
 **Box Wall Height**:

@@ -14,7 +14,7 @@ import { STACKABLE_BOX_SPECS } from "@/lib/stackable-box";
 /**
  * 堆叠盒体与盖子的共享 CAD 原语。
  *
- * 本模块只拥有盒壳、底部定位截面、顶部凹槽、盖子和旁置预览组合，
+ * 本模块只拥有盒壳、底部外倒角、顶部内倒角、盖子和旁置预览组合，
  * 不理解网格或自由槽位。坐标原点位于盒体外部轮廓中心（XY），Z=0 为底面。
  */
 
@@ -38,7 +38,7 @@ function roundedRectangleProfile(
   cornerRadius: number,
 ): Geom2 {
   const effectiveRadius = Math.max(
-    0,
+    0.01,
     Math.min(cornerRadius, width / 2 - 0.01, depth / 2 - 0.01),
   );
   return roundedRectangle({
@@ -51,6 +51,44 @@ function roundedRectangleProfile(
 /** 从 2D 轮廓线性拉伸为实体。 */
 function extrudeProfile(profile: Geom2, height: number): Geom3 {
   return extrudeLinear({ height }, profile);
+}
+
+/** 由外轮廓和内缩量派生同心圆角矩形，保证上下装配截面使用同一规则。 */
+function insetRoundedRectangleProfile(
+  width: number,
+  depth: number,
+  cornerRadius: number,
+  inset: number,
+): Geom2 {
+  return roundedRectangleProfile(
+    width - 2 * inset,
+    depth - 2 * inset,
+    Math.max(cornerRadius - inset, 0),
+  );
+}
+
+function loftProfiles(
+  bottom: Geom2,
+  top: Geom2,
+  height: number,
+): Geom3 {
+  if (height <= 0) {
+    return extrudeProfile(bottom, 0.001);
+  }
+  return extrudeFromSlices(
+    {
+      numberOfSlices: 2,
+      callback: (progress) => {
+        const profile = progress === 0 ? bottom : top;
+        const currentSlice = slice.fromSides(geom2.toSides(profile));
+        return slice.transform(
+          mat4.fromTranslation(mat4.create(), [0, 0, height * progress]),
+          currentSlice,
+        );
+      },
+    },
+    slice.fromSides(geom2.toSides(bottom)),
+  );
 }
 
 export interface StackableBoxBodyInput {
@@ -74,8 +112,8 @@ export interface StackableBoxLidInput {
 /**
  * 生成堆叠盒体空白主体（不含内部槽位切削）。
  *
- * 结构：完整底部实体 + 2.4mm 主墙环 + 顶部 6.0mm 承重环 + 顶部定位凹槽
- * + 底部承重肩浅凹区 + 带入口倒角的定位凸缘。
+ * 结构：底部外倒角导向段 + 2.4mm 主墙环 + 顶部局部加宽区 + 顶部内倒角。
+ * 倒角只负责导向，盒口顶面与盒底外围水平肩面负责承重。
  */
 export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
   const {
@@ -88,12 +126,20 @@ export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
   const R = STACKABLE_BOX_SPECS.outerCornerRadius;
   const wall = STACKABLE_BOX_SPECS.bodyWallThickness;
   const rim = STACKABLE_BOX_SPECS.topRimWidth;
-  const flangeW = STACKABLE_BOX_SPECS.flangeWidth;
-  const flangeH = STACKABLE_BOX_SPECS.flangeHeight;
-  const grooveD = STACKABLE_BOX_SPECS.grooveDepth;
-  const locator = STACKABLE_BOX_SPECS.locatorRingCenterlineInset;
-  const chamfer = STACKABLE_BOX_SPECS.flangeEntryChamfer;
-  const rimThickness = wall; // 盒口最后 2.4mm 高度范围内向内加宽
+  const guideH = STACKABLE_BOX_SPECS.guideChamferHeight;
+  const rimThickness = STACKABLE_BOX_SPECS.topReinforcementHeight;
+
+  if (!Number.isFinite(W) || !Number.isFinite(D) || !Number.isFinite(H)) {
+    throw new Error("堆叠盒体外部尺寸必须是有限数值");
+  }
+  if (trayTopZ < guideH) {
+    throw new Error(
+      `盒底厚度 ${trayTopZ} mm 小于倒角导向高度 ${guideH} mm`,
+    );
+  }
+  if (rimThickness < guideH) {
+    throw new Error("顶部加宽区高度不足以容纳完整倒角导向段");
+  }
 
   const outerProfile = roundedRectangleProfile(W, D, R);
   const innerWallProfile = roundedRectangleProfile(
@@ -101,20 +147,34 @@ export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
     D - 2 * wall,
     Math.max(R - wall, 0),
   );
-  const innerRimProfile = roundedRectangleProfile(
-    W - 2 * rim,
-    D - 2 * rim,
-    Math.max(R - rim, 0),
+  const innerRimProfile = insetRoundedRectangleProfile(W, D, R, rim);
+
+  const bottomGuideInset = rim + xyFitClearance;
+  const shoulderInset = rim - guideH + xyFitClearance;
+  const bottomGuideProfile = insetRoundedRectangleProfile(
+    W,
+    D,
+    R,
+    bottomGuideInset,
   );
-  // 上层盒底会进入下层盒口；中央进入区域需要与盒口保留同样的打印间隙。
-  const bottomCenterProfile = roundedRectangleProfile(
-    W - 2 * (rim + xyFitClearance),
-    D - 2 * (rim + xyFitClearance),
-    Math.max(R - rim - xyFitClearance, 0),
+  const shoulderGuideProfile = insetRoundedRectangleProfile(
+    W,
+    D,
+    R,
+    shoulderInset,
+  );
+  const guide = loftProfiles(
+    bottomGuideProfile,
+    shoulderGuideProfile,
+    guideH,
   );
 
-  // 1. 底部实体
-  const base = extrudeProfile(outerProfile, trayTopZ);
+  // 1. 底部实体：中央导向段落地，导向肩以上恢复完整外轮廓。
+  const baseAboveGuide = translate(
+    [0, 0, guideH],
+    extrudeProfile(outerProfile, trayTopZ - guideH),
+  );
+  const base = union(guide, baseAboveGuide);
 
   // 2. 主墙环（2.4mm，从 trayTopZ 到 H - rimThickness）
   const wallRing = subtract(outerProfile, innerWallProfile);
@@ -124,129 +184,29 @@ export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
     extrudeProfile(wallRing, wallHeight),
   );
 
-  // 3. 顶部承重环（6.0mm，从 H - rimThickness 到 H）
+  // 3. 顶部局部加宽区（最后 rimThickness 高度）；倒角前的短直段保留内缩 R 的开口。
   const rimRing = subtract(outerProfile, innerRimProfile);
   const topRimSolid = translate(
     [0, 0, H - rimThickness],
     extrudeProfile(rimRing, rimThickness),
   );
 
-  let body = union(base, wallSolid, topRimSolid);
-
-  // 4. 顶部定位凹槽（从顶部向下 1.4mm）
-  const grooveWidth = flangeW + 2 * xyFitClearance;
-  const grooveOuterInset = locator - grooveWidth / 2;
-  const grooveInnerInset = locator + grooveWidth / 2;
-  const grooveOuterProfile = roundedRectangleProfile(
-    W - 2 * grooveOuterInset,
-    D - 2 * grooveOuterInset,
-    Math.max(R - grooveOuterInset, 0),
+  // 4. 顶部内倒角：下端内缩 R，上端内缩 R-G，形成连续向上外扩的承重环。
+  const openingBottomProfile = insetRoundedRectangleProfile(W, D, R, rim);
+  const openingTopProfile = insetRoundedRectangleProfile(
+    W,
+    D,
+    R,
+    rim - guideH,
   );
-  const grooveInnerProfile = roundedRectangleProfile(
-    W - 2 * grooveInnerInset,
-    D - 2 * grooveInnerInset,
-    Math.max(R - grooveInnerInset, 0),
+  const topChamferCavity = translate(
+    [0, 0, H - guideH - 0.02],
+    loftProfiles(openingBottomProfile, openingTopProfile, guideH + 0.02),
   );
-  const grooveRing = subtract(grooveOuterProfile, grooveInnerProfile);
-  body = subtract(
-    body,
-    translate(
-      [0, 0, H - grooveD],
-      extrudeProfile(grooveRing, grooveD + 0.02),
-    ),
+  const topRimWithChamfer = subtract(topRimSolid, topChamferCavity);
+  const body = orientPositiveVolume(
+    union(base, wallSolid, topRimWithChamfer),
   );
-
-  // 4.1 斜坡接收避让：给上盒外侧斜坡留出完整的进入空间；内侧承重肩保留在凹槽内缘。
-  const slopeReceiverRing = subtract(outerProfile, grooveOuterProfile);
-  body = subtract(
-    body,
-    translate(
-      [0, 0, H - flangeH],
-      extrudeProfile(slopeReceiverRing, flangeH + 0.02),
-    ),
-  );
-
-  // 5. 底部承重肩浅凹区：顶部承重边宽环（0 到 6.0mm）减去凸缘环，抬高 1.2mm
-  const flangeOuterProfile = roundedRectangleProfile(
-    W - 2 * (locator - flangeW / 2),
-    D - 2 * (locator - flangeW / 2),
-    Math.max(R - (locator - flangeW / 2), 0),
-  );
-  const flangeInnerProfile = roundedRectangleProfile(
-    W - 2 * (locator + flangeW / 2),
-    D - 2 * (locator + flangeW / 2),
-    Math.max(R - (locator + flangeW / 2), 0),
-  );
-  const flangeRing = subtract(flangeOuterProfile, flangeInnerProfile);
-  // 承重肩 = 顶部承重边宽环（0 到 6.0mm）减去凸缘环；外侧环外扩 0.2mm 以干净切穿外轮廓。
-  const shoulderOuterRing = subtract(
-    roundedRectangleProfile(W + 0.2, D + 0.2, R),
-    flangeOuterProfile,
-  );
-  const shoulderInnerRing = subtract(
-    flangeInnerProfile,
-    bottomCenterProfile,
-  );
-  const shoulderRing = union(shoulderOuterRing, shoulderInnerRing);
-  body = subtract(
-    body,
-    translate(
-      [0, 0, -0.02],
-      extrudeProfile(shoulderRing, flangeH + 0.02),
-    ),
-  );
-
-  // 6. 定位凸缘（带入口倒角）：底部窄、往上 0.3mm 过渡到全宽，随后直壁到 1.2mm。
-  const chamferOuterProfile = roundedRectangleProfile(
-    W - 2 * (locator - flangeW / 2 + chamfer),
-    D - 2 * (locator - flangeW / 2 + chamfer),
-    Math.max(R - (locator - flangeW / 2 + chamfer), 0),
-  );
-  const chamferInnerProfile = roundedRectangleProfile(
-    W - 2 * (locator + flangeW / 2 - chamfer),
-    D - 2 * (locator + flangeW / 2 - chamfer),
-    Math.max(R - (locator + flangeW / 2 - chamfer), 0),
-  );
-  const chamferRing = subtract(chamferOuterProfile, chamferInnerProfile);
-
-  const flangeChamfer = extrudeFromSlices(
-    {
-      numberOfSlices: 2,
-      callback: (progress) => {
-        const profile = progress === 0 ? chamferRing : flangeRing;
-        const currentSlice = slice.fromSides(geom2.toSides(profile));
-        return slice.transform(
-          mat4.fromTranslation(mat4.create(), [0, 0, chamfer * progress]),
-          currentSlice,
-        );
-      },
-    },
-    slice.fromSides(geom2.toSides(chamferRing)),
-  );
-  const flangeStraight = translate(
-    [0, 0, chamfer],
-    extrudeProfile(flangeRing, flangeH - chamfer),
-  );
-
-  // 7. 连续斜坡承接面：外侧从底部定位环向上过渡到盒体外轮廓，内侧保持竖直定位面。
-  // 下盒的接收避让与顶部凹槽共同容纳斜坡；内侧水平承重肩承担载荷，斜坡只负责导入。
-  const seatingTopRing = subtract(outerProfile, flangeInnerProfile);
-  const seatingSlopeRing = extrudeFromSlices(
-    {
-      numberOfSlices: 2,
-      callback: (progress) => {
-        const profile = progress === 0 ? flangeRing : seatingTopRing;
-        const currentSlice = slice.fromSides(geom2.toSides(profile));
-        return slice.transform(
-          mat4.fromTranslation(mat4.create(), [0, 0, flangeH * progress]),
-          currentSlice,
-        );
-      },
-    },
-    slice.fromSides(geom2.toSides(flangeRing)),
-  );
-
-  body = union(body, flangeChamfer, flangeStraight, seatingSlopeRing);
 
   return orientPositiveVolume(body);
 }
@@ -254,72 +214,42 @@ export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
 /**
  * 生成盒体盖子（打印方向：大平面贴床、定位结构朝上）。
  *
- * 平板 + 与盒底相同的定位轮廓（凸缘）+ 两个短边指甲槽。
+ * 平板 + 反向打印的底部外倒角导向轮廓 + 两个短边指甲槽。
  */
 export function createStackableBoxLid(input: StackableBoxLidInput): Geom3 {
-  const { outerWidth: W, outerDepth: D, lidThickness } = input;
+  const {
+    outerWidth: W,
+    outerDepth: D,
+    lidThickness,
+    xyFitClearance,
+  } = input;
   const R = STACKABLE_BOX_SPECS.outerCornerRadius;
-  const flangeW = STACKABLE_BOX_SPECS.flangeWidth;
-  const flangeH = STACKABLE_BOX_SPECS.flangeHeight;
-  const locator = STACKABLE_BOX_SPECS.locatorRingCenterlineInset;
-  const chamfer = STACKABLE_BOX_SPECS.flangeEntryChamfer;
+  const guideH = STACKABLE_BOX_SPECS.guideChamferHeight;
 
   const outerProfile = roundedRectangleProfile(W, D, R);
 
   // 1. 平板（贴床，Z=0 到 lidThickness）
   const plate = extrudeProfile(outerProfile, lidThickness);
 
-  // 2. 定位凸缘（与盒底相同轮廓），装配面朝上
-  const flangeOuterProfile = roundedRectangleProfile(
-    W - 2 * (locator - flangeW / 2),
-    D - 2 * (locator - flangeW / 2),
-    Math.max(R - (locator - flangeW / 2), 0),
+  // 2. 打印坐标：靠板面处较宽，向上逐渐内收；翻转后与盒底装配方向一致。
+  const guideBaseProfile = insetRoundedRectangleProfile(
+    W,
+    D,
+    R,
+    R - guideH + xyFitClearance,
   );
-  const flangeInnerProfile = roundedRectangleProfile(
-    W - 2 * (locator + flangeW / 2),
-    D - 2 * (locator + flangeW / 2),
-    Math.max(R - (locator + flangeW / 2), 0),
+  const guideTopProfile = insetRoundedRectangleProfile(
+    W,
+    D,
+    R,
+    R + xyFitClearance,
   );
-  const flangeRing = subtract(flangeOuterProfile, flangeInnerProfile);
-
-  const chamferOuterProfile = roundedRectangleProfile(
-    W - 2 * (locator - flangeW / 2 + chamfer),
-    D - 2 * (locator - flangeW / 2 + chamfer),
-    Math.max(R - (locator - flangeW / 2 + chamfer), 0),
-  );
-  const chamferInnerProfile = roundedRectangleProfile(
-    W - 2 * (locator + flangeW / 2 - chamfer),
-    D - 2 * (locator + flangeW / 2 - chamfer),
-    Math.max(R - (locator + flangeW / 2 - chamfer), 0),
-  );
-  const chamferRing = subtract(chamferOuterProfile, chamferInnerProfile);
-
-  // 直段：从 lidThickness 到 lidThickness + flangeH - chamfer
-  const flangeStraight = translate(
+  const lidGuide = translate(
     [0, 0, lidThickness],
-    extrudeProfile(flangeRing, flangeH - chamfer),
-  );
-  // 倒角段：顶端从全宽过渡到窄环
-  const flangeChamfer = extrudeFromSlices(
-    {
-      numberOfSlices: 2,
-      callback: (progress) => {
-        const profile = progress === 0 ? flangeRing : chamferRing;
-        const currentSlice = slice.fromSides(geom2.toSides(profile));
-        return slice.transform(
-          mat4.fromTranslation(mat4.create(), [
-            0,
-            0,
-            lidThickness + flangeH - chamfer + chamfer * progress,
-          ]),
-          currentSlice,
-        );
-      },
-    },
-    slice.fromSides(geom2.toSides(flangeRing)),
+    loftProfiles(guideBaseProfile, guideTopProfile, guideH),
   );
 
-  let lid = union(plate, flangeStraight, flangeChamfer);
+  let lid = union(plate, lidGuide);
 
   // 3. 两个短边中部指甲槽（宽 18、高 1.0、向内深 1.2，避开定位轮廓）
   const nailW = STACKABLE_BOX_SPECS.nailNotchWidth;

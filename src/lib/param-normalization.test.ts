@@ -544,7 +544,7 @@ describe("param normalization", () => {
       outerDepth: 5000,
       outerHeight: 1,
       minimumWallClearance: 20,
-      xyFitClearance: 0.15,
+      xyFitClearance: 0.25,
       lidThickness: 4.0,
     });
   });

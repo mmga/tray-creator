@@ -3,7 +3,7 @@ import {
   STACKABLE_BOX_DEFAULTS,
   STACKABLE_BOX_LIMITS,
   STACKABLE_BOX_SPECS,
-  calculateBoxGrooveWidth,
+  calculateBottomGuideInset,
   calculateBoxHeightProjection,
   calculateBoxRequiredOuterSize,
   calculateBoxUsableArea,
@@ -32,7 +32,7 @@ describe("stackable-box resolver", () => {
       outerDepth: 100,
       outerHeight: 50,
       minimumWallClearance: 2,
-      xyFitClearance: 0.25,
+      xyFitClearance: 0.4,
       lidThickness: 2.4,
     });
   });
@@ -115,7 +115,7 @@ describe("stackable-box height projection", () => {
       trayTopZ: 6,
       minimumOuterHeight: 8.4,
       lidClearHeight: 47,
-      stackClearHeight: 45.8,
+      stackClearHeight: 45,
       closedOuterHeight: 52.4,
     });
   });
@@ -223,8 +223,10 @@ describe("stackable-box base geometry validation", () => {
   });
 });
 
-describe("stackable-box groove width", () => {
-  it("is flange width plus two fit clearances", () => {
-    expect(calculateBoxGrooveWidth(enabledBox())).toBe(1.2 + 2 * 0.25);
+describe("stackable-box guide inset", () => {
+  it("uses the top rim plus the per-side fit clearance", () => {
+    expect(calculateBottomGuideInset(enabledBox())).toBe(
+      STACKABLE_BOX_SPECS.topRimWidth + 0.4,
+    );
   });
 });

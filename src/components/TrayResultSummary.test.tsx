@@ -109,7 +109,8 @@ describe("TrayResultSummary", () => {
         outerHeight: 50,
         closedOuterHeight: 52.4,
         lidClearHeight: 47,
-        stackClearHeight: 45.8,
+        stackClearHeight: 45,
+        xyFitClearance: 0.4,
         bodyWeight: { status: "available", grams: 100 },
         lidWeight: { status: "available", grams: 20 },
       },
@@ -123,5 +124,6 @@ describe("TrayResultSummary", () => {
     expect(screen.getByText("堆叠净高")).toBeInTheDocument();
     expect(screen.getByText("盒体耗材")).toBeInTheDocument();
     expect(screen.getByText("盖子耗材")).toBeInTheDocument();
+    expect(screen.getByText("0.40 mm / 侧")).toBeInTheDocument();
   });
 });

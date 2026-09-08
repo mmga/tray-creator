@@ -156,7 +156,7 @@ export function TrayResultSummary({ result }: TrayResultSummaryProps) {
             />
             <ResultMetric
               label="定位间隙"
-              value="0.25 mm / 侧"
+              value={`${result.box.xyFitClearance.toFixed(2)} mm / 侧`}
             />
           </div>
         </div>
