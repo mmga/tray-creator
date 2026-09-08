@@ -20,7 +20,7 @@ import {
 
 const { intersect } = booleans;
 const { cuboid } = primitives;
-const { translate } = transforms;
+const { rotateX, translate } = transforms;
 const { measureBoundingBox, measureVolume } = measurements;
 const { geom3 } = geometries;
 
@@ -220,7 +220,7 @@ describe("stackable box body", () => {
 });
 
 describe("stackable box lid", () => {
-  it("matches the box footprint and keeps the guide above the print plate", () => {
+  it("matches the box footprint and keeps the complementary slope above the print plate", () => {
     const lid = createLid();
     const [[minX, minY, minZ], [maxX, maxY, maxZ]] = measureBoundingBox(lid);
 
@@ -228,24 +228,45 @@ describe("stackable box lid", () => {
     expect(maxY - minY).toBeCloseTo(D, 2);
     expect(minZ).toBeCloseTo(0, 5);
     expect(maxZ - minZ).toBeCloseTo(
-      2.4 + STACKABLE_BOX_SPECS.guideChamferHeight,
+      2.4 + calculateBottomSeatSlopeHeight({ xyFitClearance: CLEARANCE }),
       2,
     );
     expect(measureVolume(lid)).toBeGreaterThan(0);
   });
 
-  it("keeps nail notches on the two short edges", () => {
+  it("keeps both short edges continuous without nail notches", () => {
     const lid = createLid();
-    const notchProbe = (center: [number, number, number], size: [number, number, number]) =>
+    const edgeProbe = (center: [number, number, number], size: [number, number, number]) =>
       measureVolume(intersect(lid, cuboid({ center, size })));
 
-    expect(
-      notchProbe(
-        [-(W / 2 - STACKABLE_BOX_SPECS.nailNotchDepth / 2), 0, 0.5],
-        [0.4, 10, 0.8],
-      ),
-    ).toBeCloseTo(0, 3);
-    expect(notchProbe([0, -(D / 2 - 0.2), 0.5], [10, 0.4, 0.8])).toBeGreaterThan(0);
+    expect(edgeProbe([-(W / 2 - 0.2), 0, 0.5], [0.4, 10, 0.8]))
+      .toBeGreaterThan(0);
+    expect(edgeProbe([W / 2 - 0.2, 0, 0.5], [0.4, 10, 0.8]))
+      .toBeGreaterThan(0);
+  });
+
+  it("uses the same insertion path as a box bottom and seats without overlap", () => {
+    const body = createBody();
+    const printLid = createLid();
+    const slopeH = calculateBottomSeatSlopeHeight({ xyFitClearance: CLEARANCE });
+    const closedHeight = H + CLEARANCE + 2.4;
+    const assembledLid = translate(
+      [0, 0, closedHeight],
+      rotateX(Math.PI, printLid),
+    );
+
+    expect(measureVolume(intersect(body, assembledLid))).toBeLessThan(0.05);
+    expect(measureBoundingBox(assembledLid)[1][2]).toBeCloseTo(closedHeight, 2);
+
+    for (let lift = STACKABLE_BOX_SPECS.guideChamferHeight; lift >= 0; lift -= 1) {
+      const insertingLid = translate(
+        [0, 0, closedHeight + lift],
+        rotateX(Math.PI, printLid),
+      );
+      expect(measureVolume(intersect(body, insertingLid))).toBeLessThan(0.05);
+    }
+
+    expect(measureBoundingBox(printLid)[1][2]).toBeCloseTo(2.4 + slopeH, 2);
   });
 });
 

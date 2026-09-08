@@ -3,7 +3,10 @@ import stlSerializer from "@jscad/stl-serializer";
 import { measurements } from "@jscad/modeling";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { createDefaultStackableBoxParams } from "@/lib/stackable-box";
-import { createStackableBoxBody } from "@/lib/stackable-box-model";
+import {
+  createStackableBoxBody,
+  createStackableBoxLid,
+} from "@/lib/stackable-box-model";
 import { createTrayModel } from "@/lib/tray-model";
 
 const { measureBoundingBox } = measurements;
@@ -98,6 +101,22 @@ describe("stackable box body export bounds", () => {
     expect(stlBounds.unsupportedHorizontalZs).toEqual([]);
     expect(stlBounds.unsupportedHorizontalTriangleCount).toBe(0);
     expect(stlBounds.upwardHorizontalZs).not.toContain(outerHeight);
+  });
+
+  it("keeps the lid printable without downward horizontal faces above the bed", async () => {
+    const lid = createStackableBoxLid({
+      outerWidth: 100,
+      outerDepth: 80,
+      lidThickness: 2.4,
+      xyFitClearance: 0.4,
+    });
+    const stlBounds = await measureBinaryStlZBounds(lid);
+
+    expect(stlBounds.minZ).toBeCloseTo(0, 3);
+    expect(stlBounds.maxZ).toBeCloseTo(6.8, 3);
+    expect(stlBounds.degenerateTriangles).toEqual([]);
+    expect(stlBounds.unsupportedHorizontalZs).toEqual([]);
+    expect(stlBounds.unsupportedHorizontalTriangleCount).toBe(0);
   });
 
   it("keeps the complete grid box body STL within the configured height", async () => {

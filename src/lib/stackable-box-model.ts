@@ -248,7 +248,7 @@ export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
 /**
  * 生成盒体盖子（打印方向：大平面贴床、定位结构朝上）。
  *
- * 平板 + 反向打印的底部外倒角导向轮廓 + 两个短边指甲槽。
+ * 完整平板 + 反向打印的盒底同截面互补斜面，不设置边缘凹槽。
  */
 export function createStackableBoxLid(input: StackableBoxLidInput): Geom3 {
   const {
@@ -258,62 +258,28 @@ export function createStackableBoxLid(input: StackableBoxLidInput): Geom3 {
     xyFitClearance,
   } = input;
   const R = STACKABLE_BOX_SPECS.outerCornerRadius;
-  const guideH = STACKABLE_BOX_SPECS.guideChamferHeight;
+  const slopeH = calculateBottomSeatSlopeHeight(input);
 
   const outerProfile = roundedRectangleProfile(W, D, R);
 
   // 1. 平板（贴床，Z=0 到 lidThickness）
   const plate = extrudeProfile(outerProfile, lidThickness);
 
-  // 2. 打印坐标：靠板面处较宽，向上逐渐内收；翻转后与盒底装配方向一致。
-  const guideBaseProfile = insetRoundedRectangleProfile(
-    W,
-    D,
-    R,
-    R - guideH + xyFitClearance,
-  );
+  // 2. 打印坐标：从完整外轮廓向上收至盒底中央平面轮廓。
+  //    使用时翻转，得到与盒体底部完全一致的 45° 装配截面。
+  const guideBaseProfile = outerProfile;
   const guideTopProfile = insetRoundedRectangleProfile(
     W,
     D,
     R,
-    R + xyFitClearance,
+    STACKABLE_BOX_SPECS.guideChamferHeight + xyFitClearance,
   );
   const lidGuide = translate(
     [0, 0, lidThickness],
-    loftProfiles(guideBaseProfile, guideTopProfile, guideH),
+    loftProfiles(guideBaseProfile, guideTopProfile, slopeH),
   );
 
-  let lid = union(plate, lidGuide);
-
-  // 3. 两个短边中部指甲槽（宽 18、高 1.0、向内深 1.2，避开定位轮廓）
-  const nailW = STACKABLE_BOX_SPECS.nailNotchWidth;
-  const nailH = STACKABLE_BOX_SPECS.nailNotchHeight;
-  const nailD = STACKABLE_BOX_SPECS.nailNotchDepth;
-  // 指甲槽应位于两条短边的中部：长宽比变化时仍保持槽口宽度沿短边方向。
-  const shortEdgesAlongX = W > D;
-  const notchCenters: [number, number, number][] = shortEdgesAlongX
-    ? [
-        [-(W / 2 - nailD / 2), 0, nailH / 2],
-        [W / 2 - nailD / 2, 0, nailH / 2],
-      ]
-    : [
-        [0, -(D / 2 - nailD / 2), nailH / 2],
-        [0, D / 2 - nailD / 2, nailH / 2],
-      ];
-  for (const center of notchCenters) {
-    const notch = shortEdgesAlongX
-      ? primitives.cuboid({
-          center,
-          size: [nailD, nailW, nailH + 0.02],
-        })
-      : primitives.cuboid({
-          center,
-          size: [nailW, nailD, nailH + 0.02],
-        });
-    lid = subtract(lid, notch);
-  }
-
-  return orientPositiveVolume(lid);
+  return orientPositiveVolume(union(plate, lidGuide));
 }
 
 /** 旁置预览组合：直立盒体 + 打印方向盖子，按视觉间距摆开为两个不相连壳体。 */

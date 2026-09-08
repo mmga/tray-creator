@@ -118,7 +118,7 @@ describe("stackable-box height projection", () => {
       minimumOuterHeight: 14.4,
       lidClearHeight: 47,
       stackClearHeight: 43,
-      closedOuterHeight: 52.4,
+      closedOuterHeight: 52.8,
     });
   });
 

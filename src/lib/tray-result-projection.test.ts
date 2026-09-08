@@ -183,7 +183,7 @@ describe("Tray Result Projection", () => {
       outerWidth: 200,
       outerDepth: 150,
       outerHeight: 50,
-      closedOuterHeight: 52.4,
+      closedOuterHeight: 52.8,
       lidClearHeight: 47,
       stackClearHeight: 43,
       xyFitClearance: 0.4,

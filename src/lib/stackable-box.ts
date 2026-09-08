@@ -32,12 +32,6 @@ export const STACKABLE_BOX_SPECS = {
   minWallRise: 2.4,
   /** 盒壁高出托盘顶面不足该值时提示浅盒 (mm) */
   shallowBoxThreshold: 10,
-  /** 盖子短边指甲槽：宽度 (mm) */
-  nailNotchWidth: 18,
-  /** 盖子短边指甲槽：高度 (mm) */
-  nailNotchHeight: 1.0,
-  /** 盖子短边指甲槽：向内深度 (mm) */
-  nailNotchDepth: 1.2,
 } as const;
 
 /** 任一轴超过该尺寸仅警告，不阻断 (mm) */
@@ -245,7 +239,9 @@ export function calculateBoxHeightProjection(
   const lidClearHeight = params.outerHeight - slotFloorZ;
   const stackClearHeight =
     lidClearHeight - STACKABLE_BOX_SPECS.guideChamferHeight;
-  const closedOuterHeight = params.outerHeight + params.lidThickness;
+  // 盖子复用盒底截面：完整外轮廓比盒口最高边高出一个配合间隙。
+  const closedOuterHeight =
+    params.outerHeight + params.xyFitClearance + params.lidThickness;
 
   return {
     slotFloorZ,
