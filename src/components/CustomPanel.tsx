@@ -30,7 +30,16 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
 import { PanelShell } from "@/components/PanelShell";
 import { TrayResultSummary } from "@/components/TrayResultSummary";
+import { StackableBoxConfig } from "@/components/StackableBoxConfig";
 import { projectCustomTrayResult } from "@/lib/tray-result-projection";
+import {
+  validateCustomBox,
+} from "@/lib/custom-layout-math";
+import {
+  calculateBoxHeightProjection,
+  calculateBoxUsableOpening,
+  resolveStackableBoxParams,
+} from "@/lib/stackable-box";
 import {
   type BaseHoleFitViolation,
 } from "@/lib/base-hole-construction-plan";
@@ -63,6 +72,7 @@ interface CustomPanelProps {
   baseHoleFitViolations?: readonly BaseHoleFitViolation[];
   baseHolePlan?: BaseHoleConstructionPlan;
   selectedSlotIds?: string[];
+  onExpandBoxToFit?: () => void;
 }
 
 function getEllipseSlotConfig(preset: EllipsePreset): EllipseSlotConfig {
@@ -88,6 +98,7 @@ export default function CustomPanel({
   baseHoleFitViolations = [],
   baseHolePlan: authoritativeBaseHolePlan,
   selectedSlotIds = [],
+  onExpandBoxToFit,
 }: CustomPanelProps) {
   const result = projectCustomTrayResult(params, effectiveDimensions, {
     volume,
@@ -96,6 +107,15 @@ export default function CustomPanel({
     isGenerating,
     isPreviewStale,
   }, contouredFootprintState);
+  const box = resolveStackableBoxParams(params.stackableBox);
+  const boxValidation = validateCustomBox(params);
+  const boxOpening = calculateBoxUsableOpening(box);
+  const boxHeight = calculateBoxHeightProjection(
+    box,
+    params.baseThickness,
+    params.holeDepth,
+    false,
+  );
   const isContouredFootprint = result.footprintStyle === "contoured";
   // contoured 休眠 fixed sizing；rectangular 下按 traySizingMode 决定（CONTEXT:607-608,619）
   const isFixedTraySize = !isContouredFootprint && params.traySizingMode === "fixed";
@@ -136,6 +156,20 @@ export default function CustomPanel({
   return (
     <PanelShell summary={<TrayResultSummary result={result} />} actions={actions}>
     <div className="flex flex-col gap-4 animate-fade-in">
+      {/* 堆叠盒体结构（仅矩形外轮廓） */}
+      {!isContouredFootprint ? (
+        <StackableBoxConfig
+          box={box}
+          onChange={(nextBox) => updateParam("stackableBox", nextBox)}
+          validation={boxValidation}
+          usableWidth={boxOpening.usableWidth}
+          usableDepth={boxOpening.usableDepth}
+          lidClearHeight={boxHeight.lidClearHeight}
+          stackClearHeight={boxHeight.stackClearHeight}
+          onExpandToFit={onExpandBoxToFit}
+        />
+      ) : null}
+
       {/* 布局编辑 */}
       <div className="iron-panel rounded-sm p-3">
         <SectionHeader icon={BoxSelect} title="布局编辑" collapsible defaultOpen={true}

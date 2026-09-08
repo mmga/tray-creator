@@ -31,7 +31,17 @@ import { SectionHeader } from "@/components/ui/SectionHeader";
 import { ParamSlider } from "@/components/ui/ParamSlider";
 import { PanelShell } from "@/components/PanelShell";
 import { TrayResultSummary } from "@/components/TrayResultSummary";
+import { StackableBoxConfig } from "@/components/StackableBoxConfig";
 import { projectGridTrayResult } from "@/lib/tray-result-projection";
+import {
+  calculateGridBoxRequiredOuterSize,
+  validateGridBox,
+} from "@/lib/grid-layout-math";
+import {
+  calculateBoxHeightProjection,
+  calculateBoxUsableOpening,
+  resolveStackableBoxParams,
+} from "@/lib/stackable-box";
 import type { BaseHoleFitViolation } from "@/lib/base-hole-construction-plan";
 import { createGridBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
 import type { BaseHoleConstructionPlan } from "@/lib/base-hole-construction-plan";
@@ -72,6 +82,23 @@ export default function ParameterPanel({
     isGenerating,
     isPreviewStale,
   });
+  const box = resolveStackableBoxParams(params.stackableBox);
+  const boxValidation = validateGridBox(params);
+  const boxOpening = calculateBoxUsableOpening(box);
+  const boxHeight = calculateBoxHeightProjection(
+    box,
+    params.baseThickness,
+    params.holeDepth,
+    params.basePlateOnly,
+  );
+  const handleExpandBoxToFit = () => {
+    const required = calculateGridBoxRequiredOuterSize(params);
+    updateParam("stackableBox", {
+      ...box,
+      outerWidth: required.outerWidth,
+      outerDepth: required.outerDepth,
+    });
+  };
   const { spacingX, spacingY } = getGridSpacingAxes(params);
   const { boundarySpacingX, boundarySpacingY } =
     getGridBoundarySpacingAxes(params);
@@ -147,6 +174,18 @@ export default function ParameterPanel({
       actions={actions}
     >
     <div className="flex flex-col gap-4 animate-fade-in">
+      {/* 堆叠盒体结构 */}
+      <StackableBoxConfig
+        box={box}
+        onChange={(nextBox) => updateParam("stackableBox", nextBox)}
+        validation={boxValidation}
+        usableWidth={boxOpening.usableWidth}
+        usableDepth={boxOpening.usableDepth}
+        lidClearHeight={boxHeight.lidClearHeight}
+        stackClearHeight={boxHeight.stackClearHeight}
+        onExpandToFit={handleExpandBoxToFit}
+      />
+
       {/* 布局参数 — 移动端默认展开 */}
       <div className="iron-panel rounded-sm p-4">
         <SectionHeader icon={Layout} title="布局" collapsible defaultOpen={true}
@@ -247,26 +286,30 @@ export default function ParameterPanel({
                 unit={PARAM_CONFIG.spacing.unit}
               />
             )}
-            <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
-              <Label htmlFor="grid-boundary-spacing-independent" className="text-sm cursor-pointer text-[#f0d8b8]">
-                边界间距独立调整
-              </Label>
-              <Switch
-                id="grid-boundary-spacing-independent"
-                checked={params.boundarySpacingIndependent}
-                onCheckedChange={(checked) => updateParam("boundarySpacingIndependent", checked)}
-                className="data-[state=checked]:bg-[#8cb880]"
-              />
-            </div>
-            {params.boundarySpacingIndependent && (
-              <ParamSlider
-                label={PARAM_CONFIG.boundarySpacing.label}
-                value={params.boundarySpacing}
-                config={PARAM_CONFIG.boundarySpacing}
-                onChange={(v) => updateParam("boundarySpacing", v)}
-                unit={PARAM_CONFIG.boundarySpacing.unit}
-              />
-            )}
+            {!box.enabled ? (
+              <>
+                <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
+                  <Label htmlFor="grid-boundary-spacing-independent" className="text-sm cursor-pointer text-[#f0d8b8]">
+                    边界间距独立调整
+                  </Label>
+                  <Switch
+                    id="grid-boundary-spacing-independent"
+                    checked={params.boundarySpacingIndependent}
+                    onCheckedChange={(checked) => updateParam("boundarySpacingIndependent", checked)}
+                    className="data-[state=checked]:bg-[#8cb880]"
+                  />
+                </div>
+                {params.boundarySpacingIndependent && (
+                  <ParamSlider
+                    label={PARAM_CONFIG.boundarySpacing.label}
+                    value={params.boundarySpacing}
+                    config={PARAM_CONFIG.boundarySpacing}
+                    onChange={(v) => updateParam("boundarySpacing", v)}
+                    unit={PARAM_CONFIG.boundarySpacing.unit}
+                  />
+                )}
+              </>
+            ) : null}
           </div>
         </SectionHeader>
       </div>
@@ -327,20 +370,28 @@ export default function ParameterPanel({
               onChange={(v) => updateParam("holeDepth", v)}
               unit={PARAM_CONFIG.holeDepth.unit}
             />
-            <ParamSlider
-              label={PARAM_CONFIG.cornerRadius.label}
-              value={params.cornerRadius}
-              config={PARAM_CONFIG.cornerRadius}
-              onChange={(v) => updateParam("cornerRadius", v)}
-              unit={PARAM_CONFIG.cornerRadius.unit}
-            />
-            <ParamSlider
-              label={PARAM_CONFIG.sideBevelWidth.label}
-              value={params.sideBevelWidth}
-              config={PARAM_CONFIG.sideBevelWidth}
-              onChange={(v) => updateParam("sideBevelWidth", v)}
-              unit={PARAM_CONFIG.sideBevelWidth.unit}
-            />
+            {!box.enabled ? (
+              <>
+                <ParamSlider
+                  label={PARAM_CONFIG.cornerRadius.label}
+                  value={params.cornerRadius}
+                  config={PARAM_CONFIG.cornerRadius}
+                  onChange={(v) => updateParam("cornerRadius", v)}
+                  unit={PARAM_CONFIG.cornerRadius.unit}
+                />
+                <ParamSlider
+                  label={PARAM_CONFIG.sideBevelWidth.label}
+                  value={params.sideBevelWidth}
+                  config={PARAM_CONFIG.sideBevelWidth}
+                  onChange={(v) => updateParam("sideBevelWidth", v)}
+                  unit={PARAM_CONFIG.sideBevelWidth.unit}
+                />
+              </>
+            ) : (
+              <div className="text-[10px] text-muted-foreground">
+                盒体启用时，圆角与侧面斜面休眠，采用固定 6mm 外圆角与垂直墙。
+              </div>
+            )}
           </div>
         </SectionHeader>
       </div>

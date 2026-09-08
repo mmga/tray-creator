@@ -3,6 +3,7 @@ import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import {
   calculateGridBoxRequiredOuterSize,
   getGridBoxContentSize,
+  validateGridBox,
 } from "@/lib/grid-layout-math";
 
 function boxParams() {
@@ -50,5 +51,27 @@ describe("grid box layout math", () => {
     expect(params.columns).toBe(3);
     expect(required.outerWidth).toBeGreaterThan(0);
     expect(required.outerDepth).toBeGreaterThan(0);
+  });
+
+  it("blocks the box when a grid slot enters the safety boundary", () => {
+    const params = {
+      ...boxParams(),
+      stackableBox: {
+        ...DEFAULT_TRAY_PARAMS.stackableBox!,
+        enabled: true,
+        outerWidth: 60,
+        outerDepth: 60,
+        minimumWallClearance: 2,
+      },
+    };
+    const result = validateGridBox(params);
+    expect(result.valid).toBe(false);
+    expect(result.blockingReasons).toContainEqual(
+      expect.objectContaining({ code: "slot-in-safety-boundary" }),
+    );
+  });
+
+  it("passes the box when disabled", () => {
+    expect(validateGridBox(DEFAULT_TRAY_PARAMS).valid).toBe(true);
   });
 });

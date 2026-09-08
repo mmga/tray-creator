@@ -167,6 +167,7 @@ export function useCustomWorkspace({
         baseHoleFitViolations={model.baseHoleFitViolations}
         baseHolePlan={model.baseHolePlan}
         selectedSlotIds={interactionState.selectedSlotIds}
+        onExpandBoxToFit={model.expandBoxToFit}
       />
     ),
     [
@@ -183,6 +184,7 @@ export function useCustomWorkspace({
       model.baseHoleFitViolations,
       model.baseHolePlan,
       model.contouredFootprintState,
+      model.expandBoxToFit,
       interactionState.selectedSlotIds,
     ],
   );
