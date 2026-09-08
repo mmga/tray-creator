@@ -12,6 +12,9 @@ const createSteppedCadSplitParts = vi.fn();
 const buildSteppedOutlinePreview = vi.fn();
 const serialize = vi.fn();
 const measureVolume = vi.fn();
+const createStackableBoxLid = vi.fn();
+const composeBoxAndLidPreview = vi.fn();
+const createBoxSideBySidePreviewSpacing = vi.fn();
 
 vi.mock("../tray-model", () => ({
   createTrayModel,
@@ -32,6 +35,12 @@ vi.mock("../stepped-cad-construction", () => ({
 
 vi.mock("../stepped-outline-preview", () => ({
   buildSteppedOutlinePreview,
+}));
+
+vi.mock("../stackable-box-model", () => ({
+  createStackableBoxLid,
+  composeBoxAndLidPreview,
+  createBoxSideBySidePreviewSpacing,
 }));
 
 vi.mock("@jscad/stl-serializer", () => ({
@@ -85,6 +94,44 @@ describe("tray worker", () => {
       requestId: "req-grid",
       geometry,
       volumeInfo: 123.4,
+    });
+  });
+
+  it("returns a combined preview and split volumes for an enabled box", async () => {
+    const workerSelf = await loadWorkerModule();
+    const geometry = { id: "grid-geom" };
+    const lid = { id: "lid-geom" };
+    const preview = { id: "preview-geom" };
+    createTrayModel.mockReturnValue(geometry);
+    createStackableBoxLid.mockReturnValue(lid);
+    createBoxSideBySidePreviewSpacing.mockReturnValue(60);
+    composeBoxAndLidPreview.mockReturnValue(preview);
+    measureVolume.mockReturnValueOnce(100).mockReturnValueOnce(20);
+
+    const boxParams = {
+      ...DEFAULT_TRAY_PARAMS,
+      stackableBox: {
+        ...DEFAULT_TRAY_PARAMS.stackableBox!,
+        enabled: true,
+        outerWidth: 200,
+        outerDepth: 150,
+        outerHeight: 50,
+      },
+    };
+
+    await workerSelf.onmessage?.({
+      data: { type: "GENERATE_GRID", requestId: "req-box", params: boxParams },
+    } as MessageEvent);
+
+    expect(createStackableBoxLid).toHaveBeenCalled();
+    expect(composeBoxAndLidPreview).toHaveBeenCalledWith(geometry, lid, 60);
+    expect(workerSelf.postMessage).toHaveBeenCalledWith({
+      type: "GENERATION_SUCCESS",
+      requestId: "req-box",
+      geometry: preview,
+      volumeInfo: 120,
+      bodyVolume: 100,
+      lidVolume: 20,
     });
   });
 

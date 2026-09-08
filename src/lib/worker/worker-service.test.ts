@@ -198,6 +198,54 @@ describe("worker service", () => {
     });
   });
 
+  it("routes box parts requests to the body/lid response shape", async () => {
+    const { trayWorkerService } = await import("@/lib/worker/worker-service");
+    const service = trayWorkerService!;
+    const worker = FakeWorker.instances[0];
+
+    const gridPromise = service.generateGridBoxParts(DEFAULT_TRAY_PARAMS);
+    const gridRequest = worker.postMessage.mock.calls[0]?.[0] as {
+      requestId: string;
+      type: string;
+    };
+    expect(gridRequest.type).toBe("GENERATE_GRID_BOX_PARTS");
+    worker.emit({
+      type: "BOX_PARTS_SUCCESS",
+      requestId: gridRequest.requestId,
+      body: { id: "grid-body" } as never,
+      lid: { id: "grid-lid" } as never,
+      bodyVolume: 100,
+      lidVolume: 20,
+    });
+    await expect(gridPromise).resolves.toEqual({
+      body: { id: "grid-body" },
+      lid: { id: "grid-lid" },
+      bodyVolume: 100,
+      lidVolume: 20,
+    });
+
+    const customPromise = service.generateCustomBoxParts(CUSTOM_LAYOUT_DEFAULTS);
+    const customRequest = worker.postMessage.mock.calls[1]?.[0] as {
+      requestId: string;
+      type: string;
+    };
+    expect(customRequest.type).toBe("GENERATE_CUSTOM_BOX_PARTS");
+    worker.emit({
+      type: "BOX_PARTS_SUCCESS",
+      requestId: customRequest.requestId,
+      body: { id: "custom-body" } as never,
+      lid: { id: "custom-lid" } as never,
+      bodyVolume: 80,
+      lidVolume: 15,
+    });
+    await expect(customPromise).resolves.toEqual({
+      body: { id: "custom-body" },
+      lid: { id: "custom-lid" },
+      bodyVolume: 80,
+      lidVolume: 15,
+    });
+  });
+
   it("exports STL blobs and rejects worker errors", async () => {
     const { trayWorkerService } = await import("@/lib/worker/worker-service");
     const service = trayWorkerService!;

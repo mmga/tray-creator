@@ -97,4 +97,64 @@ describe("grid model service", () => {
       "tray_2x5_rectangle_30x60mm.stl",
     );
   });
+
+  it("exports two STLs and a JSON for an enabled box", async () => {
+    const boxParams = {
+      ...DEFAULT_TRAY_PARAMS,
+      stackableBox: {
+        ...DEFAULT_TRAY_PARAMS.stackableBox!,
+        enabled: true,
+        outerWidth: 200,
+        outerDepth: 150,
+        outerHeight: 50,
+      },
+    };
+    const body = { id: "body-geom" } as never;
+    const lid = { id: "lid-geom" } as never;
+    const bodyBlob = new Blob(["body"], { type: "application/sla" });
+    const lidBlob = new Blob(["lid"], { type: "application/sla" });
+    const workerPort = {
+      generateGrid: vi.fn(),
+      generateGridBoxParts: vi.fn().mockResolvedValue({
+        body,
+        lid,
+        bodyVolume: 100,
+        lidVolume: 20,
+      }),
+      exportSTL: vi
+        .fn()
+        .mockResolvedValueOnce({
+          blob: bodyBlob,
+          filename: "box_grid_200x150x50_2x5_body.stl",
+        })
+        .mockResolvedValueOnce({
+          blob: lidBlob,
+          filename: "box_grid_200x150x50_2x5_lid.stl",
+        }),
+    };
+    const downloadPort = { downloadBlob: vi.fn() };
+
+    await exportGridModelFiles(
+      captureModeParamSnapshot("grid", boxParams),
+      { id: "unused" } as never,
+      workerPort,
+      downloadPort,
+    );
+
+    expect(workerPort.generateGridBoxParts).toHaveBeenCalledWith(boxParams);
+    expect(downloadPort.downloadBlob).toHaveBeenCalledTimes(3);
+    expect(downloadPort.downloadBlob).toHaveBeenNthCalledWith(
+      1,
+      bodyBlob,
+      "box_grid_200x150x50_2x5_body.stl",
+    );
+    expect(downloadPort.downloadBlob).toHaveBeenNthCalledWith(
+      2,
+      lidBlob,
+      "box_grid_200x150x50_2x5_lid.stl",
+    );
+    expect(downloadPort.downloadBlob.mock.calls[2]?.[1]).toBe(
+      "box_grid_200x150x50_2x5_body.json",
+    );
+  });
 });

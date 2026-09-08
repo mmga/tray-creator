@@ -9,8 +9,12 @@ import type { CustomWorkerPort, DownloadPort } from "@/lib/model-ports";
 import { loadThreeGeometry } from "@/lib/three-geometry-loader";
 import type { ModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import { exportModelArtifactBundle } from "@/lib/model-artifact-bundle";
-import { generateCustomSTLFilename } from "@/lib/model-filenames";
+import {
+  generateCustomBoxSTLFilename,
+  generateCustomSTLFilename,
+} from "@/lib/model-filenames";
 import type { CustomLayoutParams } from "@/types/custom-tray";
+import { resolveStackableBoxParams } from "@/lib/stackable-box";
 
 export interface CustomPreviewResult {
   geometry: Geom3;
@@ -62,6 +66,40 @@ export async function exportCustomModelFiles(
   downloadPort: DownloadPort,
   effectiveDimensions: LayoutExtents,
 ): Promise<void> {
+  const box = resolveStackableBoxParams(snapshot.params.stackableBox);
+  if (box.enabled) {
+    const parts = await workerPort.generateCustomBoxParts!(snapshot.params);
+    const bodyFilename = generateCustomBoxSTLFilename(
+      box.outerWidth,
+      box.outerDepth,
+      box.outerHeight,
+      snapshot.params.slots.length,
+      "body",
+    );
+    const lidFilename = generateCustomBoxSTLFilename(
+      box.outerWidth,
+      box.outerDepth,
+      box.outerHeight,
+      snapshot.params.slots.length,
+      "lid",
+    );
+    await exportModelArtifactBundle(
+      snapshot,
+      async () => {
+        const [bodyStl, lidStl] = await Promise.all([
+          workerPort.exportSTL(parts.body, bodyFilename),
+          workerPort.exportSTL(parts.lid, lidFilename),
+        ]);
+        return {
+          files: [bodyStl, lidStl],
+          companionParamFilename: bodyFilename.replace(/\.stl$/i, ".json"),
+        };
+      },
+      downloadPort,
+    );
+    return;
+  }
+
   const stlFilename = getCustomSTLFilename(snapshot.params, effectiveDimensions);
   await exportModelArtifactBundle(
     snapshot,

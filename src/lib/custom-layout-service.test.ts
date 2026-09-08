@@ -183,4 +183,76 @@ describe("custom layout service", () => {
       getCustomSTLFilename(params, calculateCustomEffectiveDimensions(params)),
     ).toBe("tray_custom_46x28_4slots.stl");
   });
+
+  it("exports two STLs and a JSON for an enabled custom box", async () => {
+    const boxParams = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      stackableBox: {
+        ...CUSTOM_LAYOUT_DEFAULTS.stackableBox!,
+        enabled: true,
+        outerWidth: 200,
+        outerDepth: 150,
+        outerHeight: 50,
+      },
+      slots: [
+        {
+          id: "slot-1",
+          x: 60,
+          y: 50,
+          shape: "circle" as const,
+          width: 25,
+          height: 25,
+          rotation: 0,
+        },
+      ],
+    };
+    const body = { id: "body-geom" } as never;
+    const lid = { id: "lid-geom" } as never;
+    const bodyBlob = new Blob(["body"], { type: "application/sla" });
+    const lidBlob = new Blob(["lid"], { type: "application/sla" });
+    const workerPort = {
+      generateCustom: vi.fn(),
+      generateCustomBoxParts: vi.fn().mockResolvedValue({
+        body,
+        lid,
+        bodyVolume: 100,
+        lidVolume: 20,
+      }),
+      exportSTL: vi
+        .fn()
+        .mockResolvedValueOnce({
+          blob: bodyBlob,
+          filename: "box_custom_200x150x50_1slots_body.stl",
+        })
+        .mockResolvedValueOnce({
+          blob: lidBlob,
+          filename: "box_custom_200x150x50_1slots_lid.stl",
+        }),
+    };
+    const downloadPort = { downloadBlob: vi.fn() };
+
+    await exportCustomModelFiles(
+      captureModeParamSnapshot("custom", boxParams),
+      { id: "unused" } as never,
+      workerPort,
+      downloadPort,
+      { width: 0, depth: 0, minX: 0, maxX: 0, minY: 0, maxY: 0 },
+    );
+
+    expect(workerPort.generateCustomBoxParts).toHaveBeenCalledWith(boxParams);
+    expect(downloadPort.downloadBlob).toHaveBeenCalledTimes(3);
+    expect(downloadPort.downloadBlob).toHaveBeenNthCalledWith(
+      1,
+      bodyBlob,
+      "box_custom_200x150x50_1slots_body.stl",
+    );
+    expect(downloadPort.downloadBlob).toHaveBeenNthCalledWith(
+      2,
+      lidBlob,
+      "box_custom_200x150x50_1slots_lid.stl",
+    );
+    expect(downloadPort.downloadBlob.mock.calls[2]?.[1]).toBe(
+      "box_custom_200x150x50_1slots_body.json",
+    );
+  });
 });

@@ -146,28 +146,76 @@ class TrayWorkerService {
 
   public async generateGrid(
     params: TrayParams,
-  ): Promise<{ geometry: Geom3; volume: number }> {
+  ): Promise<{ geometry: Geom3; volume: number; bodyVolume?: number; lidVolume?: number }> {
     return this.request(
       (requestId) => ({ type: "GENERATE_GRID", requestId, params }),
       (data) => {
         if (data.type !== "GENERATION_SUCCESS") {
           throw new Error(`Unexpected worker response: ${data.type}`);
         }
-        return { geometry: data.geometry, volume: data.volumeInfo };
+        return {
+          geometry: data.geometry,
+          volume: data.volumeInfo,
+          bodyVolume: data.bodyVolume,
+          lidVolume: data.lidVolume,
+        };
       },
     );
   }
 
   public async generateCustom(
     params: CustomLayoutParams,
-  ): Promise<{ geometry: Geom3; volume: number }> {
+  ): Promise<{ geometry: Geom3; volume: number; bodyVolume?: number; lidVolume?: number }> {
     return this.request(
       (requestId) => ({ type: "GENERATE_CUSTOM", requestId, params }),
       (data) => {
         if (data.type !== "GENERATION_SUCCESS") {
           throw new Error(`Unexpected worker response: ${data.type}`);
         }
-        return { geometry: data.geometry, volume: data.volumeInfo };
+        return {
+          geometry: data.geometry,
+          volume: data.volumeInfo,
+          bodyVolume: data.bodyVolume,
+          lidVolume: data.lidVolume,
+        };
+      },
+    );
+  }
+
+  public async generateGridBoxParts(
+    params: TrayParams,
+  ): Promise<{ body: Geom3; lid: Geom3; bodyVolume: number; lidVolume: number }> {
+    return this.request(
+      (requestId) => ({ type: "GENERATE_GRID_BOX_PARTS", requestId, params }),
+      (data) => {
+        if (data.type !== "BOX_PARTS_SUCCESS") {
+          throw new Error(`Unexpected worker response: ${data.type}`);
+        }
+        return {
+          body: data.body,
+          lid: data.lid,
+          bodyVolume: data.bodyVolume,
+          lidVolume: data.lidVolume,
+        };
+      },
+    );
+  }
+
+  public async generateCustomBoxParts(
+    params: CustomLayoutParams,
+  ): Promise<{ body: Geom3; lid: Geom3; bodyVolume: number; lidVolume: number }> {
+    return this.request(
+      (requestId) => ({ type: "GENERATE_CUSTOM_BOX_PARTS", requestId, params }),
+      (data) => {
+        if (data.type !== "BOX_PARTS_SUCCESS") {
+          throw new Error(`Unexpected worker response: ${data.type}`);
+        }
+        return {
+          body: data.body,
+          lid: data.lid,
+          bodyVolume: data.bodyVolume,
+          lidVolume: data.lidVolume,
+        };
       },
     );
   }

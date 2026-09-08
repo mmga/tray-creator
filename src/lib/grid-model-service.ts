@@ -4,12 +4,16 @@ import { loadThreeGeometry } from "@/lib/three-geometry-loader";
 import type { ModeParamSnapshot } from "@/lib/mode-param-snapshot";
 import { exportModelArtifactBundle } from "@/lib/model-artifact-bundle";
 import type { DownloadPort, GridWorkerPort } from "@/lib/model-ports";
-import { generateSTLFilename } from "@/lib/model-filenames";
+import {
+  generateGridBoxSTLFilename,
+  generateSTLFilename,
+} from "@/lib/model-filenames";
 import type { TrayParams } from "@/types/tray";
 import {
   getGridSlotGeometry,
   isRectangularGridSlot,
 } from "@/lib/grid-config";
+import { resolveStackableBoxParams } from "@/lib/stackable-box";
 
 export interface GridPreviewResult {
   geometry: Geom3;
@@ -45,6 +49,42 @@ export async function exportGridModelFiles(
   workerPort: GridWorkerPort,
   downloadPort: DownloadPort,
 ): Promise<void> {
+  const box = resolveStackableBoxParams(snapshot.params.stackableBox);
+  if (box.enabled) {
+    const parts = await workerPort.generateGridBoxParts!(snapshot.params);
+    const bodyFilename = generateGridBoxSTLFilename(
+      box.outerWidth,
+      box.outerDepth,
+      box.outerHeight,
+      snapshot.params.columns,
+      snapshot.params.rows,
+      "body",
+    );
+    const lidFilename = generateGridBoxSTLFilename(
+      box.outerWidth,
+      box.outerDepth,
+      box.outerHeight,
+      snapshot.params.columns,
+      snapshot.params.rows,
+      "lid",
+    );
+    await exportModelArtifactBundle(
+      snapshot,
+      async () => {
+        const [bodyStl, lidStl] = await Promise.all([
+          workerPort.exportSTL(parts.body, bodyFilename),
+          workerPort.exportSTL(parts.lid, lidFilename),
+        ]);
+        return {
+          files: [bodyStl, lidStl],
+          companionParamFilename: bodyFilename.replace(/\.stl$/i, ".json"),
+        };
+      },
+      downloadPort,
+    );
+    return;
+  }
+
   const stlFilename = getGridSTLFilename(snapshot.params);
   await exportModelArtifactBundle(
     snapshot,
