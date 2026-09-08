@@ -7,6 +7,7 @@ import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import {
   normalizeParamsForMode,
 } from "@/lib/param-normalization";
+import { createImportNormalizationRecorder } from "@/lib/param-import-report";
 import type {
   BaseConverterParams,
   CustomLayoutParams,
@@ -494,5 +495,104 @@ describe("param normalization", () => {
       boundarySpacingIndependent: true,
     } as SteppedLayoutParams) as SteppedLayoutParams;
     expect(independent.boundarySpacing).toBe(3);
+  });
+
+  it("旧网格文件缺失堆叠盒体参数时补为关闭状态并记录导入说明", () => {
+    const { recorder, adjustments } = createImportNormalizationRecorder();
+    const legacy = normalizeParamsForMode("grid", {
+      ...DEFAULT_TRAY_PARAMS,
+      stackableBox: undefined,
+    } as unknown as TrayParams, recorder) as TrayParams;
+
+    expect(legacy.stackableBox).toBeDefined();
+    expect(legacy.stackableBox!.enabled).toBe(false);
+
+    const boxDefault = adjustments.find(
+      (item) => item.path === "stackableBox",
+    );
+    expect(boxDefault).toMatchObject({
+      category: "default",
+      reason: "旧文件未记录堆叠盒体参数，按普通托盘处理",
+    });
+  });
+
+  it("旧自定义文件缺失堆叠盒体参数时同样补为关闭状态", () => {
+    const legacy = normalizeParamsForMode("custom", {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      stackableBox: undefined,
+    } as unknown as CustomLayoutParams) as CustomLayoutParams;
+    expect(legacy.stackableBox?.enabled).toBe(false);
+  });
+
+  it("堆叠盒体字段超范围时钳制，禁用时也规范化休眠值", () => {
+    const normalized = normalizeParamsForMode("grid", {
+      ...DEFAULT_TRAY_PARAMS,
+      stackableBox: {
+        enabled: false,
+        outerWidth: 5,
+        outerDepth: 99999,
+        outerHeight: -3,
+        minimumWallClearance: 999,
+        xyFitClearance: 0,
+        lidThickness: 500,
+      },
+    } as unknown as TrayParams) as TrayParams;
+
+    expect(normalized.stackableBox).toMatchObject({
+      enabled: false,
+      outerWidth: 30,
+      outerDepth: 5000,
+      outerHeight: 1,
+      minimumWallClearance: 20,
+      xyFitClearance: 0.15,
+      lidThickness: 4.0,
+    });
+  });
+
+  it("网格半圆槽与盒体同时出现时关闭半圆槽", () => {
+    const { recorder, adjustments } = createImportNormalizationRecorder();
+    const normalized = normalizeParamsForMode("grid", {
+      ...DEFAULT_TRAY_PARAMS,
+      rows: 1,
+      columns: 3,
+      halfCircleSlots: true,
+      slotShape: "circle",
+      stackableBox: {
+        ...DEFAULT_TRAY_PARAMS.stackableBox,
+        enabled: true,
+      },
+    } as unknown as TrayParams, recorder) as TrayParams;
+
+    expect(normalized.halfCircleSlots).toBe(false);
+    expect(normalized.stackableBox?.enabled).toBe(true);
+    expect(adjustments).toContainEqual(
+      expect.objectContaining({
+        path: "halfCircleSlots",
+        category: "behavior",
+        reason: "堆叠盒体结构不支持半圆槽，已切换为完整槽",
+      }),
+    );
+  });
+
+  it("贴合轮廓自定义托盘启用盒体时关闭盒体并保留参数", () => {
+    const { recorder, adjustments } = createImportNormalizationRecorder();
+    const normalized = normalizeParamsForMode("custom", {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      footprintStyle: "contoured",
+      stackableBox: {
+        ...CUSTOM_LAYOUT_DEFAULTS.stackableBox,
+        enabled: true,
+      },
+    } as unknown as CustomLayoutParams, recorder) as CustomLayoutParams;
+
+    expect(normalized.footprintStyle).toBe("contoured");
+    expect(normalized.stackableBox?.enabled).toBe(false);
+    expect(adjustments).toContainEqual(
+      expect.objectContaining({
+        path: "stackableBox.enabled",
+        category: "behavior",
+        reason: "贴合轮廓自定义托盘不支持堆叠盒体，已关闭",
+      }),
+    );
   });
 });

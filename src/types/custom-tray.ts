@@ -1,4 +1,4 @@
-import type { BaseHoleParams } from "@/types/tray";
+import type { BaseHoleParams, StackableBoxCapableParams } from "@/types/tray";
 export type { BaseHoleStructure } from "@/types/tray";
 
 export type AppMode =
@@ -181,7 +181,7 @@ export interface SimpleSteppedRow {
 }
 
 /** 自定义布局参数（完全独立） */
-export interface CustomLayoutParams extends BaseHoleParams {
+export interface CustomLayoutParams extends BaseHoleParams, StackableBoxCapableParams {
   /**
    * 模型级底座轮廓样式；缺失时按 rectangular 兼容旧配置。
    * rectangular：矩形包络底座（cornerRadius / sideBevelWidth / traySizingMode 生效）

@@ -7,6 +7,7 @@ import {
   type EllipseSlotDefinition,
 } from "@/lib/slot-definitions";
 import { BASE_HOLE_PARAM_DEFAULTS } from "@/lib/base-hole-config";
+import { createDefaultStackableBoxParams } from "@/lib/stackable-box";
 
 export const CUSTOM_BASE_PRESETS: BasePreset[] = CIRCLE_SLOT_DEFINITIONS.map(
   (definition) => ({
@@ -36,6 +37,7 @@ export const CUSTOM_LAYOUT_DEFAULTS: CustomLayoutParams = {
   disconnectDistance: 0,
   ...BASE_HOLE_PARAM_DEFAULTS,
   baseHoleStructure: "none",
+  stackableBox: createDefaultStackableBoxParams(),
 };
 
 export const CUSTOM_LIMITS = {

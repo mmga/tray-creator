@@ -38,10 +38,15 @@ import {
   normalizeBaseHoleParams,
   resolveLargestMagneticBaseHolePreset,
 } from "@/lib/base-hole-config";
-import type { BaseHoleStructure } from "@/types/tray";
+import type { BaseHoleStructure, StackableBoxParams } from "@/types/tray";
 import {
   applyFlatTrayBaseHoleSupportingThickness,
 } from "@/lib/base-hole-planning";
+import {
+  createDefaultStackableBoxParams,
+  resolveStackableBoxParams,
+  STACKABLE_BOX_LIMITS,
+} from "@/lib/stackable-box";
 import type { ParamsByMode } from "@/lib/mode-param-snapshot";
 
 type NormalizableParams = ParamsByMode[AppMode];
@@ -119,6 +124,64 @@ function clampField(
       reason: `当前允许范围为 ${config.min}–${config.max}`,
     });
   }
+}
+
+function normalizeStackableBoxParams(
+  obj: Record<string, unknown>,
+  recorder?: ImportNormalizationRecorder,
+): void {
+  const rawBox = obj.stackableBox;
+  const hasBox = rawBox !== null && typeof rawBox === "object";
+
+  if (!hasBox) {
+    obj.stackableBox = createDefaultStackableBoxParams();
+    recordDefault(recorder, {
+      path: "stackableBox",
+      label: "堆叠盒体结构",
+      normalizedValue: { enabled: false },
+      reason: "旧文件未记录堆叠盒体参数，按普通托盘处理",
+    });
+    return;
+  }
+
+  const raw = rawBox as Record<string, unknown>;
+  const resolved = resolveStackableBoxParams(
+    raw as unknown as StackableBoxParams,
+  );
+
+  const numericFields = [
+    ["outerWidth", "盒体长度"],
+    ["outerDepth", "盒体宽度"],
+    ["outerHeight", "盒体高度"],
+    ["minimumWallClearance", "最小内壁间距"],
+    ["xyFitClearance", "XY 配合间隙"],
+    ["lidThickness", "盖板厚度"],
+  ] as const;
+
+  for (const [key, label] of numericFields) {
+    const previous = raw[key];
+    const normalized = resolved[key];
+    if (typeof previous === "number" && Number.isFinite(previous)) {
+      if (previous !== normalized) {
+        recordValueAdjustment(recorder, {
+          path: `stackableBox.${key}`,
+          label,
+          previousValue: previous,
+          normalizedValue: normalized,
+          reason: `当前允许范围为 ${STACKABLE_BOX_LIMITS[key].min}–${STACKABLE_BOX_LIMITS[key].max}`,
+        });
+      }
+    } else {
+      recordDefault(recorder, {
+        path: `stackableBox.${key}`,
+        label,
+        normalizedValue: normalized,
+        reason: "盒体参数缺失该字段，已补默认值",
+      });
+    }
+  }
+
+  obj.stackableBox = resolved;
 }
 
 function normalizeReportedBaseHoleParams(
@@ -463,6 +526,22 @@ function clampAndFillGridDerivedFields(
   if (obj.basePlateOnly) {
     obj.halfCircleSlots = false;
   }
+
+  normalizeStackableBoxParams(obj, recorder);
+  const gridBox = resolveStackableBoxParams(
+    obj.stackableBox as StackableBoxParams | undefined,
+  );
+  if (gridBox.enabled && obj.halfCircleSlots === true) {
+    obj.halfCircleSlots = false;
+    recordBehaviorChange(recorder, {
+      path: "halfCircleSlots",
+      label: "半圆槽",
+      previousValue: true,
+      normalizedValue: false,
+      reason: "堆叠盒体结构不支持半圆槽，已切换为完整槽",
+    });
+  }
+
   Object.assign(params, normalizeGridParams(params));
 }
 
@@ -596,6 +675,22 @@ function clampAndFillCustomDerivedFields(
       label: "底座轮廓样式",
       normalizedValue: "rectangular",
       reason: "旧自定义文件未记录底座轮廓样式，默认矩形包络",
+    });
+  }
+
+  normalizeStackableBoxParams(obj, recorder);
+  const customBox = resolveStackableBoxParams(
+    obj.stackableBox as StackableBoxParams | undefined,
+  );
+  if (customBox.enabled && obj.footprintStyle === "contoured") {
+    customBox.enabled = false;
+    obj.stackableBox = customBox;
+    recordBehaviorChange(recorder, {
+      path: "stackableBox.enabled",
+      label: "堆叠盒体结构",
+      previousValue: true,
+      normalizedValue: false,
+      reason: "贴合轮廓自定义托盘不支持堆叠盒体，已关闭",
     });
   }
 

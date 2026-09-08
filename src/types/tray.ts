@@ -19,9 +19,38 @@ export interface BaseHoleParams {
 }
 
 /**
+ * 堆叠盒体结构参数。
+ *
+ * 作为可选快照挂载在 TrayParams 与 CustomLayoutParams 上（StackableBoxCapableParams），
+ * 缺失或 enabled=false 时全部走普通托盘路径。运行时统一通过 resolver 补全，
+ * 业务代码不散落 `??` 默认值。
+ */
+export interface StackableBoxParams {
+  /** 是否启用堆叠盒体结构 */
+  enabled: boolean;
+  /** 盒体真实外部长度 (mm) */
+  outerWidth: number;
+  /** 盒体真实外部深度 (mm) */
+  outerDepth: number;
+  /** 盒体真实外部高度 (mm)，从底部最低点量到盒口最高点 */
+  outerHeight: number;
+  /** 最小内壁间距 (mm)，槽位到盒体安全边界的最小距离 */
+  minimumWallClearance: number;
+  /** XY 配合间隙 (mm)，每侧间隙，用于凸缘与凹槽的打印配合 */
+  xyFitClearance: number;
+  /** 盖板厚度 (mm) */
+  lidThickness: number;
+}
+
+/** 允许携带可选堆叠盒体参数快照的参数接口。 */
+export interface StackableBoxCapableParams {
+  stackableBox?: StackableBoxParams;
+}
+
+/**
  * 托盘参数接口
  */
-export interface TrayParams extends BaseHoleParams {
+export interface TrayParams extends BaseHoleParams, StackableBoxCapableParams {
   /** 行数（凹槽行数） */
   rows: number;
   /** 列数（每行凹槽数量） */

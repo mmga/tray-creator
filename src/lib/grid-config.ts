@@ -8,6 +8,7 @@ import {
   BASE_HOLE_PARAM_DEFAULTS,
   resolveMagneticBaseHolePreset,
 } from "@/lib/base-hole-config";
+import { createDefaultStackableBoxParams } from "@/lib/stackable-box";
 
 export const DEFAULT_PRESET_INDEX = 2;
 const DEFAULT_SLOT_SNAPSHOT = createGridSlotSnapshotFromDefinition(
@@ -34,6 +35,7 @@ export const DEFAULT_TRAY_PARAMS: TrayParams = {
   sideBevelWidth: 0,
   ...BASE_HOLE_PARAM_DEFAULTS,
   baseHoleStructure: "magnetic-base-hole",
+  stackableBox: createDefaultStackableBoxParams(),
 };
 
 export interface OldWorldRectangularPreset {
