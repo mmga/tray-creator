@@ -11,13 +11,14 @@ import type { Geom2, Geom3 } from "@jscad/modeling/src/geometries/types";
 import { RENDER_CONFIG } from "@/lib/config";
 import {
   calculateBottomSeatSlopeHeight,
+  calculateTopSeatSupportHeight,
   STACKABLE_BOX_SPECS,
 } from "@/lib/stackable-box";
 
 /**
  * 堆叠盒体与盖子的共享 CAD 原语。
  *
- * 本模块只拥有盒壳、底部外倒角、顶部内倒角、盖子和旁置预览组合，
+ * 本模块只拥有盒壳、底部导向斜面、顶部接收斜面、盖子和旁置预览组合，
  * 不理解网格或自由槽位。坐标原点位于盒体外部轮廓中心（XY），Z=0 为底面。
  */
 
@@ -94,6 +95,28 @@ function loftProfiles(
   );
 }
 
+/** 通过任意高度的轮廓序列生成连续实体，避免分段并集留下内部水平面。 */
+function loftProfileSequence(
+  profiles: readonly { profile: Geom2; z: number }[],
+): Geom3 {
+  if (profiles.length < 2) {
+    throw new Error("轮廓序列至少需要两个截面");
+  }
+  return extrudeFromSlices(
+    {
+      numberOfSlices: profiles.length,
+      callback: (_progress, index) => {
+        const { profile, z } = profiles[index];
+        return slice.transform(
+          mat4.fromTranslation(mat4.create(), [0, 0, z]),
+          slice.fromSides(geom2.toSides(profile)),
+        );
+      },
+    },
+    slice.fromSides(geom2.toSides(profiles[0].profile)),
+  );
+}
+
 export interface StackableBoxBodyInput {
   outerWidth: number;
   outerDepth: number;
@@ -115,8 +138,8 @@ export interface StackableBoxLidInput {
 /**
  * 生成堆叠盒体空白主体（不含内部槽位切削）。
  *
- * 结构：底部外倒角导向段 + 2mm 主墙环 + 开口下沿打印过渡斜面 + 盒口外侧斜面。
- * 倒角只负责导向，盒口内侧水平座与盒底水平座负责承重。
+ * 结构：贴床底面 + 底部外扩导向斜面 + 2mm 主墙 + 盒口内侧支撑斜面
+ * + 下沉水平承重座 + 升至顶边的接收斜面。最高处只有边线，没有水平顶面。
  */
 export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
   const {
@@ -130,28 +153,23 @@ export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
   const wall = STACKABLE_BOX_SPECS.bodyWallThickness;
   const rim = STACKABLE_BOX_SPECS.topRimWidth;
   const guideH = STACKABLE_BOX_SPECS.guideChamferHeight;
-  const transitionH = STACKABLE_BOX_SPECS.topTransitionHeight;
-  const bottomSeatSlopeH = calculateBottomSeatSlopeHeight();
-  const bottomSeatTopZ = guideH + bottomSeatSlopeH;
-  const wallStartZ = Math.max(trayTopZ, bottomSeatTopZ);
+  const bottomSlopeH = calculateBottomSeatSlopeHeight(input);
+  const topSeatSupportH = calculateTopSeatSupportHeight(input);
+  const wallStartZ = Math.max(trayTopZ, bottomSlopeH);
 
   if (!Number.isFinite(W) || !Number.isFinite(D) || !Number.isFinite(H)) {
     throw new Error("堆叠盒体外部尺寸必须是有限数值");
   }
-  if (trayTopZ < guideH) {
-    throw new Error(
-      `盒底厚度 ${trayTopZ} mm 小于倒角导向高度 ${guideH} mm`,
-    );
-  }
-  if (transitionH <= 0) {
-    throw new Error("顶部开口下沿过渡斜面高度必须大于 0");
+  if (!Number.isFinite(trayTopZ) || trayTopZ <= 0) {
+    throw new Error("盒底厚度必须是大于 0 的有限数值");
   }
 
-  const transitionStartZ = H - guideH - transitionH;
+  const topSeatZ = H - guideH;
+  const transitionStartZ = topSeatZ - topSeatSupportH;
   if (transitionStartZ < wallStartZ) {
     throw new Error(
-      `盒体外高 ${H} mm 不足以容纳顶部过渡斜面和导向倒角（至少需要 ${(
-        wallStartZ + transitionH + guideH
+      `盒体外高 ${H} mm 不足以容纳上下互补斜面和承重座（至少需要 ${(
+        wallStartZ + topSeatSupportH + guideH
       ).toFixed(1)} mm）`,
     );
   }
@@ -162,115 +180,67 @@ export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
     D - 2 * wall,
     Math.max(R - wall, 0),
   );
-  const innerRimProfile = insetRoundedRectangleProfile(W, D, R, rim);
+  const topSeatInnerInset = rim + xyFitClearance;
+  const topSeatInnerProfile = insetRoundedRectangleProfile(
+    W,
+    D,
+    R,
+    topSeatInnerInset,
+  );
 
-  const bottomGuideInset = rim + xyFitClearance;
-  const shoulderInset = rim - guideH + xyFitClearance;
-  const bottomGuideProfile = insetRoundedRectangleProfile(
+  // 1. 盒底中央承重面直接落在 Z=0 打印平面；外缘以 45° 连续外扩到完整外轮廓。
+  //    有效装配段高 guideH，全段相对下层盒口斜面保持 xyFitClearance。
+  const bottomFloorInset = guideH + xyFitClearance;
+  const bottomFloorProfile = insetRoundedRectangleProfile(
     W,
     D,
     R,
-    bottomGuideInset,
+    bottomFloorInset,
   );
-  const shoulderGuideProfile = insetRoundedRectangleProfile(
+  // 2. 外包络一次放样到底，避免底板、主墙和盒口分段并集产生内部水平面。
+  const outerEnvelope = loftProfileSequence([
+    { profile: bottomFloorProfile, z: 0 },
+    { profile: outerProfile, z: bottomSlopeH },
+    { profile: outerProfile, z: H },
+  ]);
+
+  // 3. 内腔从托盘顶面连续延伸到凹下的承重座内缘；所有新增材料均由 45° 斜面承托。
+  const lowerCavityProfiles: Array<{ profile: Geom2; z: number }> = [];
+  if (trayTopZ < bottomSlopeH) {
+    lowerCavityProfiles.push({
+      profile: insetRoundedRectangleProfile(
+        W,
+        D,
+        R,
+        bottomFloorInset * (1 - trayTopZ / bottomSlopeH) + wall,
+      ),
+      z: trayTopZ,
+    });
+    lowerCavityProfiles.push({ profile: innerWallProfile, z: bottomSlopeH });
+  } else {
+    lowerCavityProfiles.push({ profile: innerWallProfile, z: trayTopZ });
+  }
+  if (transitionStartZ > lowerCavityProfiles.at(-1)!.z) {
+    lowerCavityProfiles.push({
+      profile: innerWallProfile,
+      z: transitionStartZ,
+    });
+  }
+  lowerCavityProfiles.push({ profile: topSeatInnerProfile, z: topSeatZ });
+  const lowerCavity = loftProfileSequence(lowerCavityProfiles);
+
+  // 4. 盒口外侧接收斜面：从凹下的水平座外缘升到最高外轮廓边线。
+  const topSlopeOpeningBottom = insetRoundedRectangleProfile(
     W,
     D,
     R,
-    shoulderInset,
-  );
-  const guide = loftProfiles(
-    bottomGuideProfile,
-    shoulderGuideProfile,
     guideH,
   );
-
-  // 1. 底部中央导向段：落地后继续保留原有上下盒倒角配合截面。
-  // 2. 水平承重面保留最小有效宽度；外侧悬空段改为 45° 打印斜面。
-  //    斜面起点内缩 R-G-minLoadBearingWidth，终点接完整外轮廓。
-  const bottomSeatStartInset =
-    rim - guideH - STACKABLE_BOX_SPECS.minLoadBearingWidth;
-  const bottomSeatStartProfile = insetRoundedRectangleProfile(
-    W,
-    D,
-    R,
-    bottomSeatStartInset,
+  const topSlopeOpening = translate(
+    [0, 0, topSeatZ],
+    loftProfiles(topSlopeOpeningBottom, outerProfile, guideH),
   );
-  const bottomSeatSlopeOuter = translate(
-    [0, 0, guideH],
-    loftProfiles(bottomSeatStartProfile, outerProfile, bottomSeatSlopeH),
-  );
-  const bottomSeatSlopeCavity =
-    trayTopZ < bottomSeatTopZ
-      ? translate(
-          [0, 0, trayTopZ],
-          extrudeProfile(innerWallProfile, bottomSeatTopZ - trayTopZ),
-        )
-      : null;
-  const bottomSeatSlopeSolid = bottomSeatSlopeCavity
-    ? subtract(bottomSeatSlopeOuter, bottomSeatSlopeCavity)
-    : bottomSeatSlopeOuter;
-  const baseAboveSeat =
-    trayTopZ > bottomSeatTopZ
-      ? translate(
-          [0, 0, bottomSeatTopZ],
-          extrudeProfile(outerProfile, trayTopZ - bottomSeatTopZ),
-        )
-      : null;
-  const base = union(
-    guide,
-    bottomSeatSlopeSolid,
-    ...(baseAboveSeat ? [baseAboveSeat] : []),
-  );
-
-  // 3. 主墙环（2mm，从底部结构最高点到开口下沿过渡斜面的起点）
-  const wallRing = subtract(outerProfile, innerWallProfile);
-  const wallHeight = transitionStartZ - wallStartZ;
-  const wallSolid =
-    wallHeight > 0
-      ? translate([0, 0, wallStartZ], extrudeProfile(wallRing, wallHeight))
-      : null;
-
-  // 4. 开口下沿打印过渡斜面：内轮廓从主墙内缩 wall 连续过渡到 rim，
-  //    以 45° 斜面替代原本向下悬空的水平台阶。
-  const transitionOuter = translate(
-    [0, 0, transitionStartZ - 0.02],
-    extrudeProfile(outerProfile, transitionH + 0.02),
-  );
-  const transitionCavity = translate(
-    [0, 0, transitionStartZ - 0.02],
-    loftProfiles(innerWallProfile, innerRimProfile, transitionH + 0.02),
-  );
-  const transitionSolid = subtract(transitionOuter, transitionCavity);
-
-  // 5. 盒口外侧打印斜面：去掉外轮廓到开口之间原本整圈悬空的水平顶面。
-  //    斜面从完整外轮廓收至主墙内轮廓，最后只在内侧留下水平承重座。
-  const topOuterSlope = translate(
-    [0, 0, H - guideH],
-    loftProfiles(outerProfile, innerWallProfile, guideH),
-  );
-
-  // 6. 顶部内倒角：下端内缩 R，上端内缩 R-G；与外侧斜面共同形成内侧水平座。
-  const openingBottomProfile = innerRimProfile;
-  const openingTopProfile = insetRoundedRectangleProfile(
-    W,
-    D,
-    R,
-    rim - guideH,
-  );
-  // 顶部内倒角使用精确共面端点；额外延伸会在 H-guideH 水平边界留下退化 STL 三角面。
-  const topChamferCavity = translate(
-    [0, 0, H - guideH],
-    loftProfiles(openingBottomProfile, openingTopProfile, guideH),
-  );
-  const topRimWithChamfer = subtract(topOuterSlope, topChamferCavity);
-  const body = orientPositiveVolume(
-    union(
-      base,
-      ...(wallSolid ? [wallSolid] : []),
-      transitionSolid,
-      topRimWithChamfer,
-    ),
-  );
+  const body = subtract(outerEnvelope, union(lowerCavity, topSlopeOpening));
 
   return orientPositiveVolume(body);
 }

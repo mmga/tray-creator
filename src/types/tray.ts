@@ -36,7 +36,7 @@ export interface StackableBoxParams {
   outerHeight: number;
   /** 最小内壁间距 (mm)，槽位到盒体安全边界的最小距离 */
   minimumWallClearance: number;
-  /** XY 配合间隙 (mm)，底部外倒角与顶部内倒角之间的每侧间隙 */
+  /** XY 配合间隙 (mm)，上下盒互补导向斜面之间的每侧间隙 */
   xyFitClearance: number;
   /** 盖板厚度 (mm) */
   lidThickness: number;

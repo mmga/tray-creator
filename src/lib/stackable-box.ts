@@ -14,11 +14,11 @@ export const STACKABLE_BOX_SPECS = {
   bodyWallThickness: 2.0,
   /** 外轮廓圆角 (mm) */
   outerCornerRadius: 6.0,
-  /** 顶部结构边总宽 (mm)；倒角后保留 topRimWidth - guideChamferHeight 的水平承重边 */
+  /** 盒口内侧结构总宽 (mm)，包含水平承重座与其内侧支撑斜面 */
   topRimWidth: 6.0,
-  /** 底部外倒角/顶部内倒角导向高度 (mm)，首版为 45° */
-  guideChamferHeight: 2.0,
-  /** 主墙到顶部加宽开口之间的打印过渡斜面高度 (mm)，首版为 45° */
+  /** 上下盒互补导向斜面的有效高度/水平行程 (mm)，固定为 45° */
+  guideChamferHeight: 4.0,
+  /** 不含配合间隙的盒口内侧支撑斜面基准高度 (mm) */
   topTransitionHeight: 4.0,
   /** 顶部加宽开口下沿的打印过渡斜面角度 (deg) */
   topTransitionAngle: 45,
@@ -43,16 +43,30 @@ export const STACKABLE_BOX_SPECS = {
 /** 任一轴超过该尺寸仅警告，不阻断 (mm) */
 export const STACKABLE_BOX_MAX_BUILD_SIZE = 260;
 
-/** 盒底水平承重面外侧斜面的垂直高度 (mm)。 */
-export function calculateBottomSeatSlopeHeight(): number {
+/** 盒底从最低承重平面连续外扩到完整外轮廓的斜面总高度 (mm)。 */
+export function calculateBottomSeatSlopeHeight(
+  params: Pick<StackableBoxParams, "xyFitClearance">,
+): number {
   const horizontalRun =
-    STACKABLE_BOX_SPECS.topRimWidth -
-    STACKABLE_BOX_SPECS.guideChamferHeight -
-    STACKABLE_BOX_SPECS.minLoadBearingWidth;
-  return (
+    STACKABLE_BOX_SPECS.guideChamferHeight + params.xyFitClearance;
+  const height =
     horizontalRun /
-    Math.tan((STACKABLE_BOX_SPECS.bottomSeatSlopeAngle * Math.PI) / 180)
-  );
+    Math.tan((STACKABLE_BOX_SPECS.bottomSeatSlopeAngle * Math.PI) / 180);
+  return Math.round(height * 1_000_000) / 1_000_000;
+}
+
+/** 主墙内侧连续收进到盒口承重座内缘所需的支撑斜面高度 (mm)。 */
+export function calculateTopSeatSupportHeight(
+  params: Pick<StackableBoxParams, "xyFitClearance">,
+): number {
+  const horizontalRun =
+    STACKABLE_BOX_SPECS.topRimWidth +
+    params.xyFitClearance -
+    STACKABLE_BOX_SPECS.bodyWallThickness;
+  const height =
+    horizontalRun /
+    Math.tan((STACKABLE_BOX_SPECS.topTransitionAngle * Math.PI) / 180);
+  return Math.round(height * 1_000_000) / 1_000_000;
 }
 
 // ── 默认值与范围 ──────────
@@ -218,15 +232,14 @@ export function calculateBoxHeightProjection(
 ): BoxHeightProjection {
   const slotFloorZ = baseThickness;
   const trayTopZ = basePlateOnly ? baseThickness : baseThickness + holeDepth;
-  const bottomSeatTopZ =
-    STACKABLE_BOX_SPECS.guideChamferHeight +
-    calculateBottomSeatSlopeHeight();
+  const bottomSeatTopZ = calculateBottomSeatSlopeHeight(params);
+  const topSeatSupportHeight = calculateTopSeatSupportHeight(params);
   const structuralWallStartZ = Math.max(trayTopZ, bottomSeatTopZ);
   const minimumOuterHeight =
     Math.max(
       trayTopZ + STACKABLE_BOX_SPECS.minWallRise,
       structuralWallStartZ +
-        STACKABLE_BOX_SPECS.topTransitionHeight +
+        topSeatSupportHeight +
         STACKABLE_BOX_SPECS.guideChamferHeight,
     );
   const lidClearHeight = params.outerHeight - slotFloorZ;
@@ -334,7 +347,6 @@ export type BoxBlockingCode =
   | "grid-half-circle-with-box"
   | "slot-in-safety-boundary"
   | "clearance-or-lid-out-of-range"
-  | "bottom-too-thin-for-guide"
   | "base-hole-incompatible";
 
 export interface BoxBlockingReason {
@@ -397,12 +409,6 @@ export function validateBoxBaseGeometry(
     });
   }
 
-  if (height.trayTopZ < STACKABLE_BOX_SPECS.guideChamferHeight) {
-    reasons.push({
-      code: "bottom-too-thin-for-guide",
-      message: `盒底厚度 ${height.trayTopZ.toFixed(1)} mm 小于倒角导向高度 ${STACKABLE_BOX_SPECS.guideChamferHeight.toFixed(1)} mm`,
-    });
-  }
   if (params.xyFitClearance < STACKABLE_BOX_LIMITS.xyFitClearance.min ||
     params.xyFitClearance > STACKABLE_BOX_LIMITS.xyFitClearance.max) {
     reasons.push({
@@ -448,16 +454,5 @@ export function validateBoxBaseGeometry(
 
 /** 盒底导向段最低点的内缩量。 */
 export function calculateBottomGuideInset(params: StackableBoxParams): number {
-  return STACKABLE_BOX_SPECS.topRimWidth + params.xyFitClearance;
-}
-
-/** 盒底导向段在承重肩高度处的内缩量。 */
-export function calculateBottomShoulderInset(
-  params: StackableBoxParams,
-): number {
-  return (
-    STACKABLE_BOX_SPECS.topRimWidth -
-    STACKABLE_BOX_SPECS.guideChamferHeight +
-    params.xyFitClearance
-  );
+  return STACKABLE_BOX_SPECS.guideChamferHeight + params.xyFitClearance;
 }

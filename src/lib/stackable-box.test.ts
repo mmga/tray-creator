@@ -9,6 +9,7 @@ import {
   calculateBoxRequiredOuterSize,
   calculateBoxUsableArea,
   calculateBoxUsableOpening,
+  calculateTopSeatSupportHeight,
   createDefaultStackableBoxParams,
   isPointWithinRoundedRectangle,
   isPolygonWithinRoundedRectangle,
@@ -114,9 +115,9 @@ describe("stackable-box height projection", () => {
     expect(projection).toEqual({
       slotFloorZ: 3,
       trayTopZ: 6,
-      minimumOuterHeight: 12,
+      minimumOuterHeight: 14.4,
       lidClearHeight: 47,
-      stackClearHeight: 45,
+      stackClearHeight: 43,
       closedOuterHeight: 52.4,
     });
   });
@@ -127,9 +128,8 @@ describe("stackable-box height projection", () => {
     expect(projection.minimumOuterHeight).toBe(
       Math.max(
         3 + STACKABLE_BOX_SPECS.minWallRise,
-        STACKABLE_BOX_SPECS.guideChamferHeight +
-          calculateBottomSeatSlopeHeight() +
-          STACKABLE_BOX_SPECS.topTransitionHeight +
+        calculateBottomSeatSlopeHeight(enabledBox()) +
+          calculateTopSeatSupportHeight(enabledBox()) +
           STACKABLE_BOX_SPECS.guideChamferHeight,
       ),
     );
@@ -231,9 +231,9 @@ describe("stackable-box base geometry validation", () => {
 });
 
 describe("stackable-box guide inset", () => {
-  it("uses the top rim plus the per-side fit clearance", () => {
+  it("uses the stacking slope run plus the per-side fit clearance", () => {
     expect(calculateBottomGuideInset(enabledBox())).toBe(
-      STACKABLE_BOX_SPECS.topRimWidth + 0.4,
+      STACKABLE_BOX_SPECS.guideChamferHeight + 0.4,
     );
   });
 });

@@ -16,6 +16,9 @@ async function measureBinaryStlZBounds(model: Parameters<typeof stlSerializer.se
   let minZ = Number.POSITIVE_INFINITY;
   let maxZ = Number.NEGATIVE_INFINITY;
   let degenerateTriangleCount = 0;
+  let unsupportedHorizontalTriangleCount = 0;
+  const unsupportedHorizontalZs = new Set<number>();
+  const upwardHorizontalZs = new Set<number>();
   const degenerateTriangles: Array<{ triangle: number; vertices: readonly (readonly [number, number, number])[] }> = [];
 
   for (let triangle = 0; triangle < triangleCount; triangle += 1) {
@@ -26,6 +29,7 @@ async function measureBinaryStlZBounds(model: Parameters<typeof stlSerializer.se
       view.getFloat32(triangleOffset + vertexOffset + 8, true),
     ] as const);
     const [a, b, c] = vertices;
+    const normalZ = view.getFloat32(triangleOffset + 8, true);
     const ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
     const ac = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
     const cross = [
@@ -41,9 +45,34 @@ async function measureBinaryStlZBounds(model: Parameters<typeof stlSerializer.se
       minZ = Math.min(minZ, z);
       maxZ = Math.max(maxZ, z);
     }
+    const triangleMinZ = Math.min(a[2], b[2], c[2]);
+    const triangleMaxZ = Math.max(a[2], b[2], c[2]);
+    if (
+      normalZ < -0.999 &&
+      triangleMaxZ - triangleMinZ < 1e-5 &&
+      triangleMinZ > 0.01
+    ) {
+      unsupportedHorizontalTriangleCount += 1;
+      unsupportedHorizontalZs.add(Math.round(triangleMinZ * 1000) / 1000);
+    }
+    if (
+      normalZ > 0.999 &&
+      triangleMaxZ - triangleMinZ < 1e-5
+    ) {
+      upwardHorizontalZs.add(Math.round(triangleMinZ * 1000) / 1000);
+    }
   }
 
-  return { minZ, maxZ, triangleCount, degenerateTriangleCount, degenerateTriangles };
+  return {
+    minZ,
+    maxZ,
+    triangleCount,
+    degenerateTriangleCount,
+    degenerateTriangles,
+    unsupportedHorizontalTriangleCount,
+    unsupportedHorizontalZs: [...unsupportedHorizontalZs].sort((a, b) => a - b),
+    upwardHorizontalZs: [...upwardHorizontalZs].sort((a, b) => a - b),
+  };
 }
 
 describe("stackable box body export bounds", () => {
@@ -66,6 +95,9 @@ describe("stackable box body export bounds", () => {
     expect(stlBounds.maxZ).toBeCloseTo(outerHeight, 3);
     expect(stlBounds.triangleCount).toBeGreaterThan(0);
     expect(stlBounds.degenerateTriangles).toEqual([]);
+    expect(stlBounds.unsupportedHorizontalZs).toEqual([]);
+    expect(stlBounds.unsupportedHorizontalTriangleCount).toBe(0);
+    expect(stlBounds.upwardHorizontalZs).not.toContain(outerHeight);
   });
 
   it("keeps the complete grid box body STL within the configured height", async () => {

@@ -12,7 +12,11 @@ import {
   createStackableBoxBody,
   createStackableBoxLid,
 } from "@/lib/stackable-box-model";
-import { STACKABLE_BOX_SPECS } from "@/lib/stackable-box";
+import {
+  calculateBottomSeatSlopeHeight,
+  calculateTopSeatSupportHeight,
+  STACKABLE_BOX_SPECS,
+} from "@/lib/stackable-box";
 
 const { intersect } = booleans;
 const { cuboid } = primitives;
@@ -85,157 +89,117 @@ describe("stackable box body", () => {
     expect(measureVolume(createBody())).toBeGreaterThan(0);
   });
 
-  it("uses the configured guide height and keeps the bottom guide inset", () => {
-    const guideH = STACKABLE_BOX_SPECS.guideChamferHeight;
-    const bottomInset = STACKABLE_BOX_SPECS.topRimWidth + CLEARANCE;
-    const shoulderInset =
-      STACKABLE_BOX_SPECS.topRimWidth - guideH + CLEARANCE;
+  it("places the load-bearing bottom plane on the print bed", () => {
+    const stackingSlopeRun =
+      STACKABLE_BOX_SPECS.topRimWidth -
+      STACKABLE_BOX_SPECS.minLoadBearingWidth;
+    const expectedBottomInset = stackingSlopeRun + CLEARANCE;
 
-    expect(maxAbsXAtZ(createBody(), 0)).toBeCloseTo(W / 2 - bottomInset, 1);
-    expect(probe(createBody(), W / 2 - shoulderInset + 0.05, guideH - 0.05))
-      .toBeCloseTo(0, 3);
-    expect(probe(createBody(), W / 2 - shoulderInset - 0.05, guideH - 0.05))
-      .toBeGreaterThan(0);
-    const bottomSeatTopZ =
-      guideH +
-      (STACKABLE_BOX_SPECS.topRimWidth -
-        guideH -
-        STACKABLE_BOX_SPECS.minLoadBearingWidth) /
-        Math.tan((STACKABLE_BOX_SPECS.bottomSeatSlopeAngle * Math.PI) / 180);
-    expect(maxAbsXAtZ(createBody(), guideH)).toBeCloseTo(
-      W / 2 -
-        (STACKABLE_BOX_SPECS.topRimWidth -
-          guideH -
-          STACKABLE_BOX_SPECS.minLoadBearingWidth),
+    expect(maxAbsXAtZ(createBody(), 0)).toBeCloseTo(
+      W / 2 - expectedBottomInset,
       1,
     );
-    expect(maxAbsXAtZ(createBody(), bottomSeatTopZ)).toBeCloseTo(W / 2, 1);
   });
 
-  it("has a continuous horizontal shoulder above the guide", () => {
-    const guideH = STACKABLE_BOX_SPECS.guideChamferHeight;
-    const innerShoulderX =
-      W / 2 -
-      (STACKABLE_BOX_SPECS.topRimWidth - guideH + CLEARANCE / 2);
+  it("expands the bottom continuously from the print bed to the outer wall", () => {
+    const body = createBody();
+    const slopeH = calculateBottomSeatSlopeHeight({ xyFitClearance: CLEARANCE });
+    const bottomInset = STACKABLE_BOX_SPECS.guideChamferHeight + CLEARANCE;
+    const midInset = bottomInset / 2;
 
-    expect(probe(createBody(), innerShoulderX, guideH + 0.05)).toBeGreaterThan(0);
-    expect(probe(createBody(), W / 2 - 1, guideH - 0.05)).toBeCloseTo(0, 3);
+    expect(maxAbsXAtZ(body, 0)).toBeCloseTo(W / 2 - bottomInset, 1);
+    expect(probe(body, W / 2 - (midInset - 0.2), slopeH / 2)).toBeCloseTo(0, 3);
+    expect(probe(body, W / 2 - (midInset + 0.2), slopeH / 2)).toBeGreaterThan(0);
+    expect(maxAbsXAtZ(body, slopeH)).toBeCloseTo(W / 2, 1);
   });
 
-  it("keeps the inner load seat and replaces its outer overhang with a slope", () => {
-    const guideH = STACKABLE_BOX_SPECS.guideChamferHeight;
-    const shoulderInset =
-      STACKABLE_BOX_SPECS.topRimWidth - guideH + CLEARANCE;
-    const slopeStartInset =
-      STACKABLE_BOX_SPECS.topRimWidth -
-      guideH -
-      STACKABLE_BOX_SPECS.minLoadBearingWidth;
-    const horizontalSeatProbeInset =
-      (shoulderInset + slopeStartInset) / 2;
-    const slopeTopZ =
-      guideH +
-      (STACKABLE_BOX_SPECS.topRimWidth -
-        guideH -
-        STACKABLE_BOX_SPECS.minLoadBearingWidth) /
-        Math.tan((STACKABLE_BOX_SPECS.bottomSeatSlopeAngle * Math.PI) / 180);
-
-    expect(
-      probe(
-        createBody(),
-        W / 2 - horizontalSeatProbeInset,
-        guideH - 0.05,
-      ),
-    ).toBeCloseTo(0, 3);
-    expect(
-      probe(
-        createBody(),
-        W / 2 - horizontalSeatProbeInset,
-        guideH + 0.05,
-      ),
-    ).toBeGreaterThan(0);
-    expect(probe(createBody(), W / 2 - 1, guideH + 0.05)).toBeCloseTo(0, 3);
-    expect(probe(createBody(), W / 2 - 1, slopeTopZ - 0.05)).toBeGreaterThan(0);
-  });
-
-  it("forms a top inner chamfer from the rim inset to the opening inset", () => {
-    const probeX = (inset: number) => W / 2 - inset;
-    const topZ = H - 0.05;
-    const bottomZ = H - STACKABLE_BOX_SPECS.guideChamferHeight + 0.05;
-    expect(probe(createBody(), probeX(STACKABLE_BOX_SPECS.topRimWidth - STACKABLE_BOX_SPECS.guideChamferHeight - 0.3), topZ))
-      .toBeGreaterThan(0);
-    expect(probe(createBody(), probeX(STACKABLE_BOX_SPECS.topRimWidth - STACKABLE_BOX_SPECS.guideChamferHeight + 0.3), topZ))
-      .toBeCloseTo(0, 3);
-    expect(probe(createBody(), probeX(STACKABLE_BOX_SPECS.topRimWidth + 0.1), bottomZ))
-      .toBeCloseTo(0, 3);
-  });
-
-  it("removes the outer top plane but keeps the inner horizontal load seat", () => {
-    const topZ = H - 0.05;
-    expect(probe(createBody(), W / 2 - 1, topZ)).toBeCloseTo(0, 3);
-    expect(probe(createBody(), W / 2 - 3, topZ)).toBeGreaterThan(0);
-    expect(probe(createBody(), W / 2 - 1, H - STACKABLE_BOX_SPECS.guideChamferHeight + 0.05))
-      .toBeGreaterThan(0);
-  });
-
-  it("uses a 2mm wall and a printable sloped transition below the widened opening", () => {
-    const transitionH = STACKABLE_BOX_SPECS.topTransitionHeight;
-    const transitionStartZ =
-      H - STACKABLE_BOX_SPECS.guideChamferHeight - transitionH;
-    const midZ = transitionStartZ + transitionH / 2;
-    const midInset =
-      (STACKABLE_BOX_SPECS.bodyWallThickness +
-        STACKABLE_BOX_SPECS.topRimWidth) /
+  it("keeps a recessed horizontal load seat below the rim edge", () => {
+    const body = createBody();
+    const seatZ = H - STACKABLE_BOX_SPECS.guideChamferHeight;
+    const seatProbeInset =
+      (STACKABLE_BOX_SPECS.guideChamferHeight +
+        STACKABLE_BOX_SPECS.topRimWidth +
+        CLEARANCE) /
       2;
 
-    expect(
-      probe(createBody(), W / 2 - (midInset + 0.2), midZ),
-    ).toBeCloseTo(0, 3);
-    expect(
-      probe(createBody(), W / 2 - (midInset - 0.2), midZ),
-    ).toBeGreaterThan(0);
-
-    expect(
-      probe(
-        createBody(),
-        W / 2 - (STACKABLE_BOX_SPECS.bodyWallThickness + 0.2),
-        transitionStartZ + 0.05,
-      ),
-    ).toBeCloseTo(0, 3);
-    expect(
-      probe(
-        createBody(),
-        W / 2 - (STACKABLE_BOX_SPECS.bodyWallThickness - 0.2),
-        transitionStartZ + 0.05,
-      ),
-    ).toBeGreaterThan(0);
+    expect(probe(body, W / 2 - seatProbeInset, seatZ - 0.05)).toBeGreaterThan(0);
+    expect(probe(body, W / 2 - seatProbeInset, seatZ + 0.05)).toBeCloseTo(0, 3);
   });
 
-  it("rejects a bottom thinner than the guide height at the CAD boundary", () => {
-    expect(() =>
-      createBody({ trayTopZ: STACKABLE_BOX_SPECS.guideChamferHeight - 0.01 }),
-    ).toThrow(/盒底厚度/);
+  it("forms the receiving slope from the recessed seat to the top edge", () => {
+    const body = createBody();
+    const guideH = STACKABLE_BOX_SPECS.guideChamferHeight;
+    const seatZ = H - guideH;
+    const midZ = seatZ + guideH / 2;
+    const midInset = guideH / 2;
+
+    expect(probe(body, W / 2 - (midInset - 0.2), midZ)).toBeGreaterThan(0);
+    expect(probe(body, W / 2 - (midInset + 0.2), midZ)).toBeCloseTo(0, 3);
+    expect(probe(body, W / 2 - 1, H - 0.05)).toBeCloseTo(0, 3);
   });
 
-  it("rejects an outer height that cannot contain the printable transition", () => {
+  it("supports the recessed seat with a continuous 45-degree inner slope", () => {
+    const body = createBody();
+    const supportH = calculateTopSeatSupportHeight({ xyFitClearance: CLEARANCE });
+    const seatZ = H - STACKABLE_BOX_SPECS.guideChamferHeight;
+    const transitionStartZ = seatZ - supportH;
+    const seatInnerInset = STACKABLE_BOX_SPECS.topRimWidth + CLEARANCE;
+    const midInset =
+      (STACKABLE_BOX_SPECS.bodyWallThickness + seatInnerInset) / 2;
+
+    expect(probe(body, W / 2 - (midInset + 0.2), transitionStartZ + supportH / 2))
+      .toBeCloseTo(0, 3);
+    expect(probe(body, W / 2 - (midInset - 0.2), transitionStartZ + supportH / 2))
+      .toBeGreaterThan(0);
+  });
+
+  it("allows a base plate thinner than the stacking slope", () => {
+    expect(() => createBody({ trayTopZ: 2.4 })).not.toThrow();
+  });
+
+  it("rejects an outer height that cannot contain both stacking slopes", () => {
     const minimumHeight =
       TRAY_TOP_Z +
-      STACKABLE_BOX_SPECS.topTransitionHeight +
+      calculateTopSeatSupportHeight({ xyFitClearance: CLEARANCE }) +
       STACKABLE_BOX_SPECS.guideChamferHeight;
     expect(() => createBody({ outerHeight: minimumHeight - 0.01 })).toThrow(
-      /顶部过渡斜面和导向倒角/,
+      /上下互补斜面和承重座/,
     );
   });
 
-  it("keeps two aligned boxes clear when their load shoulders meet", () => {
+  it("seats two aligned boxes on the recessed horizontal load ring", () => {
     const lower = createBody();
     const upper = translate(
       [0, 0, H - STACKABLE_BOX_SPECS.guideChamferHeight],
       createBody(),
     );
+    const seatZ = H - STACKABLE_BOX_SPECS.guideChamferHeight;
+    const contactInset =
+      (STACKABLE_BOX_SPECS.guideChamferHeight +
+        STACKABLE_BOX_SPECS.topRimWidth) /
+        2 +
+      CLEARANCE;
 
     const overlap = measureVolume(intersect(lower, upper));
     expect(overlap).toBeLessThan(0.05);
     expect(overlap).toBeLessThan(measureVolume(upper) * 1e-7);
+    expect(probe(lower, W / 2 - contactInset, seatZ - 0.05)).toBeGreaterThan(0);
+    expect(probe(upper, W / 2 - contactInset, seatZ + 0.05)).toBeGreaterThan(0);
+  });
+
+  it("allows vertical insertion to the recessed horizontal load seat", () => {
+    const lower = createBody();
+    const stackingDepth =
+      STACKABLE_BOX_SPECS.topRimWidth -
+      STACKABLE_BOX_SPECS.minLoadBearingWidth;
+
+    for (let lift = stackingDepth; lift >= 0; lift -= 1) {
+      const upper = translate(
+        [0, 0, H - stackingDepth + lift],
+        createBody(),
+      );
+      expect(measureVolume(intersect(lower, upper))).toBeLessThan(0.05);
+    }
   });
 
   it("keeps the straight-side guide gap equal to the configured clearance", () => {
@@ -247,8 +211,7 @@ describe("stackable box body", () => {
     const z = H - STACKABLE_BOX_SPECS.guideChamferHeight / 2;
     const x =
       W / 2 -
-      (STACKABLE_BOX_SPECS.topRimWidth -
-        STACKABLE_BOX_SPECS.guideChamferHeight / 2 +
+      (STACKABLE_BOX_SPECS.guideChamferHeight / 2 +
         CLEARANCE / 2);
 
     expect(probe(lower, x, z)).toBeCloseTo(0, 3);
