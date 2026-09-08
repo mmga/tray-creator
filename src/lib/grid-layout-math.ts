@@ -61,6 +61,28 @@ export function getGridBoxContentSize(params: TrayParams) {
   };
 }
 
+/** 判断网格中的一个槽位是否完全位于盒体安全区域内。 */
+export function isGridSlotWithinBox(
+  params: TrayParams,
+  row: number,
+  column: number,
+): boolean {
+  const box = resolveStackableBoxParams(params.stackableBox);
+  if (!box.enabled) return true;
+
+  const area = calculateBoxUsableArea(box);
+  const slot = getGridSlotGeometry(params);
+  const { pitchX, pitchY } = getGridSlotPitchAxes(params);
+  const { contentWidth, contentDepth } = getGridBoxContentSize(params);
+  const centerX = box.outerWidth / 2;
+  const centerY = box.outerDepth / 2;
+  const cx = -contentWidth / 2 + slot.slotWidth / 2 + column * pitchX;
+  const cy = -contentDepth / 2 + slot.slotHeight / 2 + row * pitchY;
+  return sampleGridSlotPoints(slot, cx + centerX, cy + centerY).every((point) =>
+    isPointWithinRoundedRectangle(point.x, point.y, area),
+  );
+}
+
 /** 盒体开启时，"扩展盒体至刚好容纳"所需的最小外部长宽。 */
 export function calculateGridBoxRequiredOuterSize(params: TrayParams) {
   const box = resolveStackableBoxParams(params.stackableBox);
@@ -111,20 +133,17 @@ export function validateGridBox(params: TrayParams): BoxValidationResult {
     params.basePlateOnly,
   );
 
-  const area = calculateBoxUsableArea(box);
-  const slot = getGridSlotGeometry(params);
-  const { pitchX, pitchY } = getGridSlotPitchAxes(params);
-  const { contentWidth, contentDepth } = getGridBoxContentSize(params);
-  const centerX = box.outerWidth / 2;
-  const centerY = box.outerDepth / 2;
+  if (!params.basePlateOnly && params.halfCircleSlots) {
+    base.blockingReasons.push({
+      code: "grid-half-circle-with-box",
+      message: "堆叠盒体结构不支持半圆槽，请切换为完整槽",
+    });
+  }
 
   let blocked = false;
   for (let row = 0; row < params.rows && !blocked; row++) {
     for (let col = 0; col < params.columns && !blocked; col++) {
-      const cx = -contentWidth / 2 + slot.slotWidth / 2 + col * pitchX;
-      const cy = -contentDepth / 2 + slot.slotHeight / 2 + row * pitchY;
-      const points = sampleGridSlotPoints(slot, cx + centerX, cy + centerY);
-      if (!points.every((p) => isPointWithinRoundedRectangle(p.x, p.y, area))) {
+      if (!isGridSlotWithinBox(params, row, col)) {
         blocked = true;
       }
     }

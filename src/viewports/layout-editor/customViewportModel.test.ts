@@ -45,6 +45,30 @@ describe("custom layout editor viewport model", () => {
     });
   });
 
+  it("projects an enabled box as the fixed outer frame and box usable area", () => {
+    const model = buildCustomLayoutEditorViewportModel({
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      traySizingMode: "auto",
+      stackableBox: {
+        ...CUSTOM_LAYOUT_DEFAULTS.stackableBox!,
+        enabled: true,
+        outerWidth: 200,
+        outerDepth: 150,
+      },
+    });
+
+    expect(model.trayFrame.width).toBe(200);
+    expect(model.trayFrame.depth).toBe(150);
+    expect(model.trayFrame.showEffectiveBaseplate).toBe(false);
+    expect(model.trayFrame.fixedUsableArea).toEqual({
+      x: 6,
+      y: 6,
+      width: 188,
+      depth: 138,
+      cornerRadius: 0,
+    });
+  });
+
   it("contoured footprint 用 groupOutlines 渲染贴合轮廓，关闭矩形 effective baseplate", () => {
     const params = {
       ...CUSTOM_LAYOUT_DEFAULTS,

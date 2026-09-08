@@ -18,6 +18,7 @@ import type { ConstructedSteppedContouredFootprints } from "@/lib/stepped-contou
 import type { BaseHoleProjectedSlot } from "@/lib/base-hole-construction-plan";
 import type { CustomLayoutParams, SteppedLayoutParams } from "@/types/custom-tray";
 import type { TrayParams } from "@/types/tray";
+import { resolveStackableBoxParams, STACKABLE_BOX_SPECS } from "@/lib/stackable-box";
 import { calculateSteppedEffectiveDimensions } from "@/lib/stepped-layout-math";
 
 export interface CustomBaseHoleAdapterOptions {
@@ -196,6 +197,7 @@ export const customBaseHoleAdapter = {
     const contouredState = options.contouredState ?? { status: "inactive" };
     const contoured = contouredState.status === "ready" ? contouredState.value : undefined;
     const footprint = calculateCustomTrayFootprint(params, contouredState);
+    const box = resolveStackableBoxParams(params.stackableBox);
     if (footprint.footprintStyle === "contoured") {
       if (!contoured) return [];
       return params.slots.map((slot) => {
@@ -212,6 +214,40 @@ export const customBaseHoleAdapter = {
           floorHeight: params.baseThickness,
           containsExpandedHole: (radius: number) =>
             contoured.containsExpandedCircle(slot.x, slot.y, radius),
+        };
+      });
+    }
+
+    if (box.enabled) {
+      const boxBounds = {
+        minX: 0,
+        maxX: box.outerWidth,
+        minY: 0,
+        maxY: box.outerDepth,
+      };
+      return params.slots.map((slot) => {
+        const profile = getFreeSlotProfileGeometry(slot);
+        return {
+          id: slot.id,
+          shape: slot.shape,
+          nominalWidth: slot.width,
+          nominalHeight: slot.height,
+          finalWidth: profile.width,
+          finalHeight: profile.height,
+          x: slot.x - box.outerWidth / 2,
+          y: slot.y - box.outerDepth / 2,
+          floorHeight: params.baseThickness,
+          containsExpandedHole: (radius: number) => circleFits(
+            slot.x,
+            slot.y,
+            radius,
+            (pointX, pointY) => isPointInRoundedRect(
+              pointX,
+              pointY,
+              boxBounds,
+              STACKABLE_BOX_SPECS.outerCornerRadius,
+            ),
+          ),
         };
       });
     }

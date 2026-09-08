@@ -95,6 +95,7 @@ export function useGridWorkspace({
   onRequestReset,
   onRequestDraftLoad,
 }: UseGridWorkspaceOptions): ModeWorkspace<"grid"> {
+  const blockingReason = model.blockingReason ?? model.baseHoleFitBlockingReason ?? null;
   const {
     draftActions,
     overlays,
@@ -124,7 +125,7 @@ export function useGridWorkspace({
         params={model.params}
         isGenerating={model.isGenerating}
         isPreviewStale={model.isPreviewStale}
-        blockingReason={model.baseHoleFitBlockingReason}
+        blockingReason={blockingReason}
         onGenerate={model.handleGenerate}
         onExportSTL={model.handleExportSTL}
         onReset={onRequestReset}
@@ -136,7 +137,7 @@ export function useGridWorkspace({
       draftActions,
       model.handleExportSTL,
       model.handleGenerate,
-      model.baseHoleFitBlockingReason,
+      blockingReason,
       model.isGenerating,
       model.isPreviewStale,
       model.params,

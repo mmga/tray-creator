@@ -22,6 +22,73 @@ function createIdFactory(...ids: string[]): IdFactory {
 }
 
 describe("custom layout actions", () => {
+  it("sizes a box on first enable from the existing custom slots", () => {
+    const params = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      stackableBox: {
+        ...CUSTOM_LAYOUT_DEFAULTS.stackableBox!,
+        enabled: false,
+        outerWidth: 20,
+        outerDepth: 20,
+      },
+      slots: [
+        {
+          id: "slot-1",
+          x: 55,
+          y: 42,
+          shape: "circle" as const,
+          width: 24,
+          height: 24,
+          rotation: 0,
+        },
+      ],
+    };
+    const requested = { ...params.stackableBox, enabled: true };
+    const next = updateCustomLayoutParam(params, "stackableBox", requested);
+    const expected = expandCustomBoxToFit({ ...params, stackableBox: requested });
+
+    expect(next.stackableBox).toMatchObject({
+      enabled: true,
+      outerWidth: expected.stackableBox?.outerWidth,
+      outerDepth: expected.stackableBox?.outerDepth,
+    });
+    expect(next.slots[0]).toMatchObject({
+      x: expected.slots[0].x,
+      y: expected.slots[0].y,
+    });
+  });
+
+  it("turns off the box when switching custom footprint to contoured", () => {
+    const params = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      stackableBox: {
+        ...CUSTOM_LAYOUT_DEFAULTS.stackableBox!,
+        enabled: true,
+      },
+    };
+
+    const next = updateCustomLayoutParam(params, "footprintStyle", "contoured");
+
+    expect(next.footprintStyle).toBe("contoured");
+    expect(next.stackableBox?.enabled).toBe(false);
+  });
+
+  it("places the first slot at the box center when the box is enabled", () => {
+    const params = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      stackableBox: {
+        ...CUSTOM_LAYOUT_DEFAULTS.stackableBox!,
+        enabled: true,
+        outerWidth: 180,
+        outerDepth: 120,
+      },
+    };
+
+    const next = addCustomSlot(params, createIdFactory("slot-1"), 20);
+
+    expect(next.slots[0]).toMatchObject({ x: 90, y: 60 });
+  });
+
   it("keeps spacing and boundary spacing in sync when required", () => {
     const base = {
       ...CUSTOM_LAYOUT_DEFAULTS,

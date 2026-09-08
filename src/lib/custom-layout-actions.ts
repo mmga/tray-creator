@@ -41,6 +41,35 @@ export function updateCustomLayoutParam<K extends keyof CustomLayoutParams>(
   key: K,
   value: CustomLayoutParams[K],
 ): CustomLayoutParams {
+  if (key === "stackableBox") {
+    const currentBox = resolveStackableBoxParams(params.stackableBox);
+    const nextBox = resolveStackableBoxParams(
+      value as CustomLayoutParams["stackableBox"],
+    );
+    if (nextBox.enabled && params.footprintStyle === "contoured") {
+      return {
+        ...params,
+        stackableBox: { ...nextBox, enabled: false },
+      };
+    }
+    if (!currentBox.enabled && nextBox.enabled && params.slots.length > 0) {
+      return expandCustomBoxToFit({
+        ...params,
+        stackableBox: nextBox,
+      });
+    }
+    return { ...params, stackableBox: nextBox };
+  }
+
+  if (key === "footprintStyle" && value === "contoured") {
+    const box = resolveStackableBoxParams(params.stackableBox);
+    return {
+      ...params,
+      footprintStyle: value,
+      stackableBox: box.enabled ? { ...box, enabled: false } : box,
+    };
+  }
+
   if (key === "spacing") {
     const nextSpacing = value as CustomLayoutParams["spacing"];
     if (!params.boundarySpacingIndependent) {
@@ -89,6 +118,9 @@ export function addCustomSlot(
   const isCircle = !height || width === height;
   const shape = isCircle ? "circle" : "ellipse";
   const slotHeight = height || width;
+  const box = resolveStackableBoxParams(params.stackableBox);
+  const placementWidth = box.enabled ? box.outerWidth : params.trayWidth;
+  const placementDepth = box.enabled ? box.outerDepth : params.trayDepth;
   const { halfW: newSlotHalfW } = getEllipseBoundingBox(
     width,
     slotHeight,
@@ -98,8 +130,8 @@ export function addCustomSlot(
     ellipseConfig?.outerOffset,
   );
 
-  let nextX = params.trayWidth / 2;
-  let nextY = params.trayDepth / 2;
+  let nextX = placementWidth / 2;
+  let nextY = placementDepth / 2;
 
   if (params.slots.length > 0) {
     const lastSlot = params.slots[params.slots.length - 1];

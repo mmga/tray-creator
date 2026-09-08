@@ -11,6 +11,7 @@ import {
   projectCustomContouredFootprintInput,
 } from "@/lib/custom-contoured-footprint";
 import type { CustomLayoutParams } from "@/types/custom-tray";
+import { createCustomBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
 
 const { measureBoundingBox, measureVolume } = measurements;
 const { geom3 } = geometries;
@@ -402,5 +403,29 @@ describe("custom tray model", () => {
     };
     const model = createCustomTrayModel(params);
     expect(measureVolume(model)).toBeGreaterThan(0);
+  });
+
+  it("projects box base holes from the box center even when tray sizing is auto", () => {
+    const params = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      baseHoleStructure: "magnet-post-hole" as const,
+      footprintStyle: "rectangular" as const,
+      stackableBox: {
+        ...CUSTOM_LAYOUT_DEFAULTS.stackableBox!,
+        enabled: true,
+        outerWidth: 200,
+        outerDepth: 150,
+        outerHeight: 50,
+      },
+      slots: [
+        createCustomCircleSlot("a", 40, 30, 25),
+        createCustomCircleSlot("b", 120, 100, 25),
+      ],
+    };
+    const plan = createCustomBaseHoleConstructionPlan(params);
+    expect(plan.instructions.map((instruction) => [instruction.x, instruction.y])).toEqual([
+      [-60, -45],
+      [20, 25],
+    ]);
   });
 });

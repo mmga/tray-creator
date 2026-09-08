@@ -184,6 +184,31 @@ describe("grid model state", () => {
     });
   });
 
+  it("sizes a box on first enable and disables incompatible half-circle slots", () => {
+    const params = {
+      ...DEFAULT_TRAY_PARAMS,
+      rows: 1,
+      columns: 2,
+      halfCircleSlots: true,
+      stackableBox: {
+        ...DEFAULT_TRAY_PARAMS.stackableBox!,
+        enabled: false,
+        outerWidth: 20,
+        outerDepth: 20,
+      },
+    };
+    const requested = { ...params.stackableBox, enabled: true };
+    const next = updateGridParam(params, "stackableBox", requested);
+    const expected = expandGridBoxToFit({ ...params, stackableBox: requested });
+
+    expect(next.stackableBox).toMatchObject({
+      enabled: true,
+      outerWidth: expected.stackableBox?.outerWidth,
+      outerDepth: expected.stackableBox?.outerDepth,
+    });
+    expect(next.halfCircleSlots).toBe(false);
+  });
+
   it("keeps structure modes mutually exclusive and forces base holes for base plates", () => {
     expect(
       normalizeGridParams({

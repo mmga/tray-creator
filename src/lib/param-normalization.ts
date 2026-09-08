@@ -437,6 +437,7 @@ function normalizeGridSlotInstances(
   const obj = params as unknown as Record<string, unknown>;
   const previousSlotDefinitionId = obj.slotDefinitionId;
   const previousSlotDiameter = obj.slotDiameter;
+  const previousHalfCircleSlots = obj.halfCircleSlots;
   const previousBaseThickness = obj.baseThickness;
   normalizeReportedBaseHoleParams(obj, "none", recorder);
   if (obj.basePlateOnly) {
@@ -444,6 +445,19 @@ function normalizeGridSlotInstances(
   }
   const normalized = normalizeGridParams(params);
   Object.assign(params, normalized);
+  if (
+    previousHalfCircleSlots === true &&
+    normalized.halfCircleSlots === false &&
+    normalized.stackableBox?.enabled
+  ) {
+    recordBehaviorChange(recorder, {
+      path: "halfCircleSlots",
+      label: "半圆槽",
+      previousValue: true,
+      normalizedValue: false,
+      reason: "堆叠盒体结构不支持半圆槽，已切换为完整槽",
+    });
+  }
   if (normalized.baseThickness !== previousBaseThickness) {
     recordBehaviorChange(recorder, {
       path: "baseThickness",

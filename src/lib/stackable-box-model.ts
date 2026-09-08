@@ -106,6 +106,12 @@ export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
     D - 2 * rim,
     Math.max(R - rim, 0),
   );
+  // 上层盒底会进入下层盒口；中央进入区域需要与盒口保留同样的打印间隙。
+  const bottomCenterProfile = roundedRectangleProfile(
+    W - 2 * (rim + xyFitClearance),
+    D - 2 * (rim + xyFitClearance),
+    Math.max(R - rim - xyFitClearance, 0),
+  );
 
   // 1. 底部实体
   const base = extrudeProfile(outerProfile, trayTopZ);
@@ -169,7 +175,7 @@ export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
   );
   const shoulderInnerRing = subtract(
     flangeInnerProfile,
-    innerRimProfile,
+    bottomCenterProfile,
   );
   const shoulderRing = union(shoulderOuterRing, shoulderInnerRing);
   body = subtract(
@@ -290,26 +296,26 @@ export function createStackableBoxLid(input: StackableBoxLidInput): Geom3 {
   const nailW = STACKABLE_BOX_SPECS.nailNotchWidth;
   const nailH = STACKABLE_BOX_SPECS.nailNotchHeight;
   const nailD = STACKABLE_BOX_SPECS.nailNotchDepth;
-  const useDepthShortSide = D <= W;
-  const notchExtent = useDepthShortSide ? D : W;
-  const notchCenters: [number, number, number][] = useDepthShortSide
+  // 指甲槽应位于两条短边的中部：长宽比变化时仍保持槽口宽度沿短边方向。
+  const shortEdgesAlongX = W > D;
+  const notchCenters: [number, number, number][] = shortEdgesAlongX
     ? [
-        [0, -(notchExtent / 2 - nailD / 2), nailH / 2],
-        [0, notchExtent / 2 - nailD / 2, nailH / 2],
+        [-(W / 2 - nailD / 2), 0, nailH / 2],
+        [W / 2 - nailD / 2, 0, nailH / 2],
       ]
     : [
-        [-(notchExtent / 2 - nailD / 2), 0, nailH / 2],
-        [notchExtent / 2 - nailD / 2, 0, nailH / 2],
+        [0, -(D / 2 - nailD / 2), nailH / 2],
+        [0, D / 2 - nailD / 2, nailH / 2],
       ];
   for (const center of notchCenters) {
-    const notch = useDepthShortSide
+    const notch = shortEdgesAlongX
       ? primitives.cuboid({
           center,
-          size: [nailW, nailD, nailH + 0.02],
+          size: [nailD, nailW, nailH + 0.02],
         })
       : primitives.cuboid({
           center,
-          size: [nailD, nailW, nailH + 0.02],
+          size: [nailW, nailD, nailH + 0.02],
         });
     lid = subtract(lid, notch);
   }
@@ -332,5 +338,7 @@ export function createBoxSideBySidePreviewSpacing(
   outerDepth: number,
 ): number {
   const shortSide = Math.min(outerWidth, outerDepth);
-  return Math.min(Math.max(shortSide * 0.5, 24), 160);
+  const visualGap = Math.min(Math.max(shortSide * 0.5, 24), 160);
+  // composeBoxAndLidPreview 使用该值作为盖子相对盒体的平移量，而非额外间隙。
+  return outerWidth + visualGap;
 }

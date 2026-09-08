@@ -26,6 +26,7 @@ import {
 } from "@/lib/base-hole-construction-plan";
 import { createGridBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
 import type { BaseHoleConstructionPlan } from "@/lib/base-hole-construction-plan";
+import { validateGridBox } from "@/lib/grid-layout-math";
 
 interface UseTrayModelReturn {
   params: TrayParams;
@@ -45,6 +46,7 @@ interface UseTrayModelReturn {
   baseHolePlan: BaseHoleConstructionPlan;
   baseHoleFitViolations: readonly BaseHoleFitViolation[];
   baseHoleFitBlockingReason: string | null;
+  blockingReason: string | null;
   handleGenerate: () => void;
   handleExportSTL: () => void;
 }
@@ -78,12 +80,17 @@ export function useTrayModel(): UseTrayModelReturn {
         browserDownloadPort,
       );
     },
-    validateSnapshot: (snapshot) =>
-      getBaseHoleFitBlockingReason(
-        createGridBaseHoleConstructionPlan(snapshot.params).violations,
-      ),
+    validateSnapshot: (snapshot) => {
+      const boxValidation = validateGridBox(snapshot.params);
+      return boxValidation.valid
+        ? getBaseHoleFitBlockingReason(
+            createGridBaseHoleConstructionPlan(snapshot.params).violations,
+          )
+        : (boxValidation.blockingReasons[0]?.message ?? "堆叠盒体参数无效");
+    },
   });
 
+  const boxValidation = useMemo(() => validateGridBox(params), [params]);
   const baseHolePlan = useMemo(
     () => createGridBaseHoleConstructionPlan(params),
     [params],
@@ -92,6 +99,9 @@ export function useTrayModel(): UseTrayModelReturn {
   const baseHoleFitBlockingReason = getBaseHoleFitBlockingReason(
     baseHoleFitViolations,
   );
+  const blockingReason = boxValidation.valid
+    ? baseHoleFitBlockingReason
+    : (boxValidation.blockingReasons[0]?.message ?? "堆叠盒体参数无效");
 
   // grid 模式无 undo，所有操作用 history: "skip"
   const updateParam = useCallback(
@@ -127,6 +137,7 @@ export function useTrayModel(): UseTrayModelReturn {
     baseHolePlan,
     baseHoleFitViolations,
     baseHoleFitBlockingReason,
+    blockingReason,
     handleGenerate,
     handleExportSTL,
   };

@@ -74,4 +74,21 @@ describe("grid box layout math", () => {
   it("passes the box when disabled", () => {
     expect(validateGridBox(DEFAULT_TRAY_PARAMS).valid).toBe(true);
   });
+
+  it("blocks legacy half-circle slots when a box is enabled", () => {
+    const result = validateGridBox({
+      ...DEFAULT_TRAY_PARAMS,
+      rows: 1,
+      halfCircleSlots: true,
+      stackableBox: {
+        ...DEFAULT_TRAY_PARAMS.stackableBox!,
+        enabled: true,
+      },
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.blockingReasons).toContainEqual(
+      expect.objectContaining({ code: "grid-half-circle-with-box" }),
+    );
+  });
 });

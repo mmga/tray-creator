@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { booleans, geometries, measurements, primitives } from "@jscad/modeling";
+import { booleans, geometries, measurements, primitives, transforms } from "@jscad/modeling";
 import {
   composeBoxAndLidPreview,
   createBoxSideBySidePreviewSpacing,
@@ -10,6 +10,7 @@ import { STACKABLE_BOX_SPECS } from "@/lib/stackable-box";
 
 const { intersect } = booleans;
 const { cuboid } = primitives;
+const { translate } = transforms;
 const { measureBoundingBox, measureVolume } = measurements;
 const { geom3 } = geometries;
 
@@ -89,6 +90,17 @@ describe("stackable box body", () => {
     expect(minAbsX).toBeLessThan(W / 2 - STACKABLE_BOX_SPECS.topRimWidth);
   });
 
+  it("leaves assembly clearance around the bottom center insert", () => {
+    const x = W / 2 - STACKABLE_BOX_SPECS.topRimWidth - 0.25 / 2;
+    const gapProbe = measureVolume(
+      intersect(
+        createBody(),
+        cuboid({ center: [x, 0, 0.2], size: [0.1, 10, 0.1] }),
+      ),
+    );
+    expect(gapProbe).toBeCloseTo(0, 3);
+  });
+
   it("uses a 2.4mm wall and widens to a 4.0mm top rim", () => {
     expect(STACKABLE_BOX_SPECS.bodyWallThickness).toBe(2.4);
     expect(STACKABLE_BOX_SPECS.topRimWidth).toBe(4.0);
@@ -146,6 +158,38 @@ describe("stackable box lid", () => {
   it("has a strictly positive volume", () => {
     expect(measureVolume(createLid())).toBeGreaterThan(0);
   });
+
+  it("puts nail notches on the two short edges", () => {
+    const lid = createLid();
+    const notchProbe = (center: [number, number, number], size: [number, number, number]) =>
+      measureVolume(intersect(lid, cuboid({ center, size })));
+
+    // W>D：短边位于 X=±W/2，槽口沿 Y 展开；长边中部仍应保持完整。
+    expect(
+      notchProbe([-(W / 2 - STACKABLE_BOX_SPECS.nailNotchDepth / 2), 0, 0.5], [0.4, 10, 0.8]),
+    ).toBeCloseTo(0, 3);
+    expect(notchProbe([0, -(D / 2 - 0.2), 0.5], [10, 0.4, 0.8])).toBeGreaterThan(0);
+
+    const squareDepth = 220;
+    const squareLid = createStackableBoxLid({
+      outerWidth: 180,
+      outerDepth: squareDepth,
+      lidThickness: 2.4,
+      xyFitClearance: 0.25,
+    });
+    // W<D：短边改为 Y=±D/2，避免槽口随尺寸方向错误旋转。
+    expect(
+      measureVolume(
+        intersect(
+          squareLid,
+          cuboid({
+            center: [0, -(squareDepth / 2 - STACKABLE_BOX_SPECS.nailNotchDepth / 2), 0.5],
+            size: [10, 0.4, 0.8],
+          }),
+        ),
+      ),
+    ).toBeCloseTo(0, 3);
+  });
 });
 
 describe("stackable box pairing", () => {
@@ -186,5 +230,6 @@ describe("side-by-side preview", () => {
     const [, [combinedMaxX]] = measureBoundingBox(combined);
     const [, [bodyMaxX]] = measureBoundingBox(body);
     expect(combinedMaxX).toBeGreaterThan(bodyMaxX);
+    expect(measureVolume(intersect(body, translate([spacing, 0, 0], lid)))).toBeCloseTo(0, 3);
   });
 });

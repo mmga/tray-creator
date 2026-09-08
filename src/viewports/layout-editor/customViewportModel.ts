@@ -4,6 +4,11 @@ import {
   resolveCustomFootprintStyle,
   resolveCustomTraySizingMode,
 } from "@/lib/custom-layout-math";
+import {
+  calculateBoxUsableArea,
+  resolveStackableBoxParams,
+  STACKABLE_BOX_SPECS,
+} from "@/lib/stackable-box";
 import type {
   ConstructedContouredFootprint,
 } from "@/lib/contoured-footprint";
@@ -43,26 +48,30 @@ export function buildCustomLayoutEditorViewportModel(
 ): LayoutEditorViewportModel {
   const isFixed = resolveCustomTraySizingMode(params) === "fixed";
   const isContoured = resolveCustomFootprintStyle(params) === "contoured";
+  const box = resolveStackableBoxParams(params.stackableBox);
+  const isBox = box.enabled && !isContoured;
   const contoured =
     contouredState.status === "ready" ? contouredState.value : null;
 
   return {
     trayFrame: {
-      width: params.trayWidth,
-      depth: params.trayDepth,
+      width: isBox ? box.outerWidth : params.trayWidth,
+      depth: isBox ? box.outerDepth : params.trayDepth,
       spacing: params.spacing,
       boundarySpacing: params.boundarySpacingIndependent
         ? params.boundarySpacing
         : params.spacing,
-      cornerRadius: params.cornerRadius,
-      sideBevelWidth: params.sideBevelWidth,
+      cornerRadius: isBox ? STACKABLE_BOX_SPECS.outerCornerRadius : params.cornerRadius,
+      sideBevelWidth: isBox ? 0 : params.sideBevelWidth,
       // contoured 下不显示矩形 effective baseplate（改用 groupOutlines 渲染贴合轮廓）
       // rectangular 下保持原语义：auto 显示 effective，fixed 不显示（CONTEXT:619-620）
-      showEffectiveBaseplate: !isContoured && !isFixed,
+      showEffectiveBaseplate: !isContoured && !isFixed && !isBox,
       showMaxBuildBoundary: false,
-      fixedUsableArea: !isContoured && isFixed
-        ? calculateFixedCustomTrayUsableArea(params)
-        : undefined,
+      fixedUsableArea: isBox
+        ? calculateBoxUsableArea(box)
+        : !isContoured && isFixed
+          ? calculateFixedCustomTrayUsableArea(params)
+          : undefined,
     },
     slots: params.slots,
     overlays: isContoured

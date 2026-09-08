@@ -116,6 +116,7 @@ interface UseCustomLayoutReturn {
   baseHolePlan: BaseHoleConstructionPlan;
   baseHoleFitViolations: readonly BaseHoleFitViolation[];
   baseHoleFitBlockingReason: string | null;
+  blockingReason: string | null;
   handleGenerate: () => Promise<void>;
   handleExportSTL: () => Promise<void>;
 }
@@ -221,15 +222,20 @@ export function useCustomLayout(): UseCustomLayoutReturn {
       : null) ??
     getBaseHoleFitBlockingReason(baseHoleFitViolations);
 
+  const boxValidation = useMemo(() => validateCustomBox(params), [params]);
+  const blockingReason = boxValidation.valid
+    ? baseHoleFitBlockingReason
+    : (boxValidation.blockingReasons[0]?.message ?? "堆叠盒体参数无效");
+
   const handleGenerate = useCallback(() => {
-    if (baseHoleFitBlockingReason) return Promise.resolve();
+    if (blockingReason) return Promise.resolve();
     return generatePreview();
-  }, [baseHoleFitBlockingReason, generatePreview]);
+  }, [blockingReason, generatePreview]);
 
   const handleExportSTL = useCallback(() => {
-    if (baseHoleFitBlockingReason) return Promise.resolve();
+    if (blockingReason) return Promise.resolve();
     return exportSTL();
-  }, [baseHoleFitBlockingReason, exportSTL]);
+  }, [blockingReason, exportSTL]);
 
   const calculateEffectiveDimensions = useCallback(
     () => calculateCustomEffectiveDimensions(paramsRef.current),
@@ -391,6 +397,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     baseHolePlan,
     baseHoleFitViolations,
     baseHoleFitBlockingReason,
+    blockingReason,
     handleGenerate,
     handleExportSTL,
   };

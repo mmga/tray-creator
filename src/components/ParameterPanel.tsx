@@ -45,6 +45,7 @@ import {
 import type { BaseHoleFitViolation } from "@/lib/base-hole-construction-plan";
 import { createGridBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
 import type { BaseHoleConstructionPlan } from "@/lib/base-hole-construction-plan";
+import { useToast } from "@/hooks/useToast";
 
 interface ParameterPanelProps {
   params: TrayParams;
@@ -73,6 +74,7 @@ export default function ParameterPanel({
   baseHoleFitViolations = [],
   baseHolePlan: authoritativeBaseHolePlan,
 }: ParameterPanelProps) {
+  const { toast } = useToast();
   const slotGeometry = getGridSlotGeometry(params);
   const isRectangularSlot = isRectangularGridSlot(params);
   const result = projectGridTrayResult(params, {
@@ -99,6 +101,12 @@ export default function ParameterPanel({
       outerDepth: required.outerDepth,
     });
   };
+  const handleBoxChange = (nextBox: typeof box) => {
+    if (!box.enabled && nextBox.enabled && params.halfCircleSlots) {
+      toast("info", "堆叠盒体不支持半圆槽，已自动切换为完整槽");
+    }
+    updateParam("stackableBox", nextBox);
+  };
   const { spacingX, spacingY } = getGridSpacingAxes(params);
   const { boundarySpacingX, boundarySpacingY } =
     getGridBoundarySpacingAxes(params);
@@ -118,10 +126,10 @@ export default function ParameterPanel({
       ? `边距 X${boundarySpacingX}mm / Y${boundarySpacingY}mm`
       : `边距${boundarySpacingX}mm`;
   const canUseHalfCircleSlots =
-    !isRectangularSlot && (params.rows === 1 || params.columns === 1);
+    !box.enabled && !isRectangularSlot && (params.rows === 1 || params.columns === 1);
   const structureMode = params.basePlateOnly
     ? "base-plate-only"
-    : params.halfCircleSlots
+    : params.halfCircleSlots && !box.enabled
       ? "half-circle"
       : "full";
   const structureModeLabel =
@@ -177,7 +185,7 @@ export default function ParameterPanel({
       {/* 堆叠盒体结构 */}
       <StackableBoxConfig
         box={box}
-        onChange={(nextBox) => updateParam("stackableBox", nextBox)}
+        onChange={handleBoxChange}
         validation={boxValidation}
         usableWidth={boxOpening.usableWidth}
         usableDepth={boxOpening.usableDepth}

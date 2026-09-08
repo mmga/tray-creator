@@ -99,6 +99,7 @@ export function useCustomWorkspace({
   onRequestReset,
   onRequestDraftLoad,
 }: UseCustomWorkspaceOptions): ModeWorkspace<"custom"> {
+  const blockingReason = model.blockingReason ?? model.baseHoleFitBlockingReason ?? null;
   const persistedParams = model.persistedParams ?? model.params;
   const {
     draftActions,
@@ -129,7 +130,7 @@ export function useCustomWorkspace({
         params={persistedParams}
         isGenerating={model.isGenerating}
         isPreviewStale={model.isPreviewStale}
-        blockingReason={model.baseHoleFitBlockingReason}
+        blockingReason={blockingReason}
         onGenerate={model.handleGenerate}
         onExportSTL={model.handleExportSTL}
         onReset={onRequestReset}
@@ -141,7 +142,7 @@ export function useCustomWorkspace({
       draftActions,
       model.handleExportSTL,
       model.handleGenerate,
-      model.baseHoleFitBlockingReason,
+      blockingReason,
       model.isGenerating,
       model.isPreviewStale,
       persistedParams,

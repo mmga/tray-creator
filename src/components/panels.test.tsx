@@ -528,6 +528,28 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
     expect(screen.getByText("底盘间距")).toBeInTheDocument();
   });
 
+  it("disables half-circle structure when the stackable box is enabled", () => {
+    render(
+      <ParameterPanel
+        params={{
+          ...DEFAULT_TRAY_PARAMS,
+          rows: 1,
+          halfCircleSlots: false,
+          stackableBox: {
+            ...DEFAULT_TRAY_PARAMS.stackableBox!,
+            enabled: true,
+          },
+        }}
+        updateParam={vi.fn()}
+        replaceParams={vi.fn()}
+        isGenerating={false}
+        volume={0}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "半圆槽" })).toBeDisabled();
+  });
+
   it("routes structure controls when base holes are enabled and shows generating text without volume", () => {
     const updateParam = vi.fn();
     const { rerender } = render(

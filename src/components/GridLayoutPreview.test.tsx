@@ -1,6 +1,5 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-
 import { GridLayoutPreview } from "@/components/GridLayoutPreview";
 import {
   createOldWorldGridSlotSnapshot,
@@ -83,5 +82,30 @@ describe("GridLayoutPreview", () => {
 
     expect(container.querySelectorAll('circle[fill="#eab308"]')).toHaveLength(0);
     expect(container.querySelectorAll('rect[fill="#eab308"]')).toHaveLength(2);
+  });
+
+  it("uses box outer dimensions and renders its usable opening", () => {
+    const { container } = render(
+      <GridLayoutPreview
+        params={{
+          ...DEFAULT_TRAY_PARAMS,
+          rows: 1,
+          columns: 1,
+          stackableBox: {
+            ...DEFAULT_TRAY_PARAMS.stackableBox!,
+            enabled: true,
+            outerWidth: 120,
+            outerDepth: 100,
+            outerHeight: 50,
+          },
+        }}
+      />,
+    );
+
+    expect(container.querySelector('[data-box-frame="true"]')).toBeTruthy();
+    const usableArea = container.querySelector('[data-box-usable-area="true"]');
+    expect(usableArea?.getAttribute("x")).toBe("6");
+    expect(usableArea?.getAttribute("width")).toBe("108");
+    expect(container.textContent).toContain("120.0 × 100.0 mm");
   });
 });

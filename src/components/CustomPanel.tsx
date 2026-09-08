@@ -49,6 +49,7 @@ import type {
   ConstructedContouredFootprint,
 } from "@/lib/contoured-footprint";
 import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
+import { useToast } from "@/hooks/useToast";
 
 // ── Props ──────────────────────────────
 
@@ -100,6 +101,7 @@ export default function CustomPanel({
   selectedSlotIds = [],
   onExpandBoxToFit,
 }: CustomPanelProps) {
+  const { toast } = useToast();
   const result = projectCustomTrayResult(params, effectiveDimensions, {
     volume,
     bodyVolume,
@@ -332,9 +334,12 @@ export default function CustomPanel({
                 id="custom-footprint-style"
                 aria-label="custom-footprint-style"
                 checked={isContouredFootprint}
-                onCheckedChange={(checked) =>
-                  updateParam("footprintStyle", checked ? "contoured" : "rectangular")
-                }
+                onCheckedChange={(checked) => {
+                  if (checked && box.enabled) {
+                    toast("info", "贴合轮廓不支持堆叠盒体，已自动关闭盒体结构");
+                  }
+                  updateParam("footprintStyle", checked ? "contoured" : "rectangular");
+                }}
                 className="data-[state=checked]:bg-[#8cb880]"
               />
             </div>

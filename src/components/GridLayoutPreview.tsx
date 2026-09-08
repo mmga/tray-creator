@@ -3,7 +3,6 @@
 import type { TrayParams } from "@/types/tray";
 import {
   calculateTrayDimensions,
-  getGridBoundarySpacingAxes,
   getGridSlotPitchAxes,
   shouldRemoveGridIslands,
 } from "@/lib/tray-model";
@@ -11,6 +10,16 @@ import {
   getGridSlotGeometry,
 } from "@/lib/grid-config";
 import { getCanvasDashAttributes } from "@/lib/canvas-dash-styles";
+import {
+  calculateBoxUsableArea,
+  resolveStackableBoxParams,
+  STACKABLE_BOX_SPECS,
+} from "@/lib/stackable-box";
+import {
+  getGridBoundarySpacingAxes,
+  getGridBoxContentSize,
+  isGridSlotWithinBox,
+} from "@/lib/grid-layout-math";
 
 interface GridLayoutPreviewProps {
   params: TrayParams;
@@ -18,13 +27,16 @@ interface GridLayoutPreviewProps {
 
 export function GridLayoutPreview({ params }: GridLayoutPreviewProps) {
   const boundaryDash = getCanvasDashAttributes("boundary", 1);
-  const dimensions = calculateTrayDimensions(params);
+  const box = resolveStackableBoxParams(params.stackableBox);
+  const dimensions = box.enabled
+    ? { width: box.outerWidth, depth: box.outerDepth }
+    : calculateTrayDimensions(params);
   const slotGeometry = getGridSlotGeometry(params);
   const { pitchX, pitchY } = getGridSlotPitchAxes(params);
   const { boundarySpacingX, boundarySpacingY } =
     getGridBoundarySpacingAxes(params);
   const padding = 24;
-  const safeBevelWidth = Math.max(
+  const safeBevelWidth = box.enabled ? 0 : Math.max(
     0,
     Math.min(
       params.sideBevelWidth,
@@ -34,25 +46,26 @@ export function GridLayoutPreview({ params }: GridLayoutPreviewProps) {
   );
   const showSideBevel = safeBevelWidth > 0;
   const removeGridIslands = shouldRemoveGridIslands(params);
+  const boxContent = box.enabled ? getGridBoxContentSize(params) : undefined;
+  const usableArea = box.enabled ? calculateBoxUsableArea(box) : undefined;
   const viewBox = `${-padding} ${-padding} ${dimensions.width + padding * 2} ${
     dimensions.depth + padding * 2
   }`;
   const slots = Array.from({ length: params.rows * params.columns }, (_, index) => {
     const row = Math.floor(index / params.columns);
     const col = index % params.columns;
+    const contentOffsetX = box.enabled
+      ? (dimensions.width - boxContent!.contentWidth) / 2
+      : safeBevelWidth + boundarySpacingX;
+    const contentOffsetY = box.enabled
+      ? (dimensions.depth - boxContent!.contentDepth) / 2
+      : safeBevelWidth + boundarySpacingY;
     return {
       id: `${row}-${col}`,
       x:
-        safeBevelWidth +
-        boundarySpacingX +
-        slotGeometry.slotWidth / 2 +
-        col * pitchX,
-      y: dimensions.depth - (
-        safeBevelWidth +
-        boundarySpacingY +
-        slotGeometry.slotHeight / 2 +
-        row * pitchY
-      ),
+        contentOffsetX + slotGeometry.slotWidth / 2 + col * pitchX,
+      y: dimensions.depth - (contentOffsetY + slotGeometry.slotHeight / 2 + row * pitchY),
+      outsideBox: box.enabled && !isGridSlotWithinBox(params, row, col),
     };
   });
 
@@ -75,11 +88,12 @@ export function GridLayoutPreview({ params }: GridLayoutPreviewProps) {
           aria-label="网格模式 2D 图"
         >
           <rect
+            data-box-frame={box.enabled ? "true" : undefined}
             x={0}
             y={0}
             width={dimensions.width}
             height={dimensions.depth}
-            rx={Math.max(
+            rx={box.enabled ? STACKABLE_BOX_SPECS.outerCornerRadius : Math.max(
               0,
               Math.min(
                 params.cornerRadius,
@@ -91,6 +105,19 @@ export function GridLayoutPreview({ params }: GridLayoutPreviewProps) {
             stroke="#8b7355"
             strokeWidth={0.8}
           />
+          {usableArea ? (
+            <rect
+              data-box-usable-area="true"
+              x={usableArea.x}
+              y={dimensions.depth - usableArea.y - usableArea.depth}
+              width={usableArea.width}
+              height={usableArea.depth}
+              rx={usableArea.cornerRadius}
+              fill="none"
+              stroke="#d6a84f"
+              {...boundaryDash}
+            />
+          ) : null}
           {showSideBevel && (
             <g pointerEvents="none">
               <rect
@@ -122,7 +149,7 @@ export function GridLayoutPreview({ params }: GridLayoutPreviewProps) {
                     cx={slot.x}
                     cy={slot.y}
                     r={slotGeometry.slotWidth / 2}
-                    fill="#eab308"
+                    fill={slot.outsideBox ? "#ef4444" : "#eab308"}
                     fillOpacity={removeGridIslands ? 1 : 0.65}
                     stroke="#fff"
                     strokeWidth={0.3}
@@ -134,7 +161,7 @@ export function GridLayoutPreview({ params }: GridLayoutPreviewProps) {
                     y={slot.y - slotGeometry.slotHeight / 2}
                     width={slotGeometry.slotWidth}
                     height={slotGeometry.slotHeight}
-                    fill="#eab308"
+                    fill={slot.outsideBox ? "#ef4444" : "#eab308"}
                     fillOpacity={removeGridIslands ? 1 : 0.65}
                     stroke="#fff"
                     strokeWidth={0.3}

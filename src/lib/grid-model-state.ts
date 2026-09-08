@@ -77,7 +77,8 @@ export function normalizeGridParams(next: TrayParams): TrayParams {
     !basePlateOnly &&
     next.slotShape !== "rectangle" &&
     (next.rows === 1 || next.columns === 1) &&
-    Boolean(next.halfCircleSlots);
+    Boolean(next.halfCircleSlots) &&
+    !resolveStackableBoxParams(next.stackableBox).enabled;
   const normalizedSlotParams = { ...next, ...slotSnapshot } as TrayParams;
   const baseHoleSize = resolveGridBaseHolePresetKey(normalizedSlotParams);
   const sideBevelWidth = getFiniteOr(
@@ -231,6 +232,22 @@ export function updateGridParam<K extends keyof TrayParams>(
         ? "magnetic-base-hole"
         : params.baseHoleStructure,
     });
+  }
+
+  if (key === "stackableBox") {
+    const currentBox = resolveStackableBoxParams(params.stackableBox);
+    const nextBox = resolveStackableBoxParams(
+      value as TrayParams["stackableBox"],
+    );
+    if (!currentBox.enabled && nextBox.enabled) {
+      const required = calculateGridBoxRequiredOuterSize({
+        ...params,
+        stackableBox: nextBox,
+      });
+      nextBox.outerWidth = required.outerWidth;
+      nextBox.outerDepth = required.outerDepth;
+    }
+    return normalizeGridParams({ ...params, stackableBox: nextBox });
   }
 
   if (key === "halfCircleSlots") {
