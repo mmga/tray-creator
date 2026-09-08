@@ -220,9 +220,10 @@ export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
     R,
     rim - guideH,
   );
+  // 顶部内倒角使用精确共面端点；额外延伸会在 H-guideH 水平边界留下退化 STL 三角面。
   const topChamferCavity = translate(
-    [0, 0, H - guideH - 0.02],
-    loftProfiles(openingBottomProfile, openingTopProfile, guideH + 0.02),
+    [0, 0, H - guideH],
+    loftProfiles(openingBottomProfile, openingTopProfile, guideH),
   );
   const topRimWithChamfer = subtract(topRimSolid, topChamferCavity);
   const body = orientPositiveVolume(
