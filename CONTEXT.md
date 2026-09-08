@@ -496,6 +496,42 @@ _Avoid_: Mixing slot count with magnet-hole count or with distinct slot-size typ
 The grid-mode tray footprint area calculated from the displayed theoretical outer width and depth, including actual slot size, spacing, and boundary spacing.
 _Avoid_: Using nominal hole diameter alone when the meaning is the printed footprint shown to the user.
 
+**Stackable Box Structure**:
+An optional enclosure structure shared by the `grid` and rectangular `custom` Modes that keeps the existing slots inside a continuous tall wall and adds a plain lid, so equal-footprint boxes self-locate when stacked. It is not a fifth Mode.
+_Avoid_: Treating it as a separate AppMode or as a container that holds multiple complete trays.
+
+**Box Outer Dimensions**:
+The real external length, depth, and height of a Stackable Box, entered by the user and measured from the lowest bottom point to the highest rim point, excluding the lid thickness above the rim.
+_Avoid_: Confusing outer height with the inner wall height or with `holeDepth`.
+
+**Box Usable Opening**:
+The slot-allowable area inside the box mouth, inset from the outer edge by the top load-bearing rim width plus the minimum wall clearance, and reduced by the outer corner radius.
+_Avoid_: Treating the nominal baseplate dimensions as the slot-allowable area.
+
+**Stacking Locating Flange**:
+The continuous raised ring near the outer edge on a box bottom, which enters the mating groove of the box below for self-locating stacking.
+_Avoid_: Calling it a snap, latch, or friction feature.
+
+**Stacking Locating Groove**:
+The continuous ring groove on the box mouth that receives the **Stacking Locating Flange** of the box above, with per-side fit clearance and a bottom clearance so the load rests on the shoulder instead of the groove floor.
+_Avoid_: Confusing it with the slot recess or with the base-hole counterbore.
+
+**Stacking Fit Clearance**:
+The per-side XY clearance between the flange and groove, an advanced parameter that defaults to 0.25mm and ranges 0.15–0.50mm.
+_Avoid_: Treating it as the flange width or the groove depth.
+
+**Lid Clear Height**:
+The clear inner height when the lid is placed on the box, measured from the slot floor to the underside of the lid.
+_Avoid_: Confusing it with the box outer height.
+
+**Stack Clear Height**:
+The safe inner height when boxes are stacked directly, reduced by the 1.2mm flange intrusion into the box below.
+_Avoid_: Using lid clear height when the meaning is the stacked clearance.
+
+**Box Wall Height**:
+The vertical rise of the box wall above the internal tray top surface, a derived value that must be at least 2.4mm.
+_Avoid_: Calling `holeDepth` the box wall height.
+
 ## Relationships
 
 - A **Slot Definition** includes its **Tolerance**.

@@ -975,6 +975,38 @@ describe("param-io", () => {
       .toBe(createModelGeometryFingerprint(captureModeParamSnapshot("base-converter", params)));
   });
 
+  it("round-trips box parameters without changing the model fingerprint", () => {
+    const params = {
+      ...DEFAULT_TRAY_PARAMS,
+      stackableBox: {
+        ...DEFAULT_TRAY_PARAMS.stackableBox!,
+        enabled: true,
+        outerWidth: 200,
+        outerDepth: 150,
+        outerHeight: 50,
+        minimumWallClearance: 2,
+        xyFitClearance: 0.25,
+        lidThickness: 2.4,
+      },
+    };
+    const parsed = parseParamFileObject(
+      buildParamFile("grid", params),
+      "grid",
+    ) as TrayParams;
+
+    expect(parsed.stackableBox).toMatchObject({
+      enabled: true,
+      outerWidth: 200,
+      outerDepth: 150,
+      outerHeight: 50,
+    });
+    expect(
+      createModelGeometryFingerprint(captureModeParamSnapshot("grid", parsed)),
+    ).toBe(
+      createModelGeometryFingerprint(captureModeParamSnapshot("grid", params)),
+    );
+  });
+
   it("rejects oversized parameter files before starting FileReader", async () => {
     const serialized = serializeParamFile("grid", DEFAULT_TRAY_PARAMS);
     let constructorCalls = 0;

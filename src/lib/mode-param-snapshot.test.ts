@@ -91,4 +91,35 @@ describe("Model Geometry Fingerprint", () => {
       createModelGeometryFingerprint(pushFit),
     );
   });
+
+  it("把堆叠盒体参数纳入几何指纹", () => {
+    const disabled = captureModeParamSnapshot("grid", DEFAULT_TRAY_PARAMS);
+    const enabled = captureModeParamSnapshot("grid", {
+      ...DEFAULT_TRAY_PARAMS,
+      stackableBox: {
+        ...DEFAULT_TRAY_PARAMS.stackableBox!,
+        enabled: true,
+        outerWidth: 200,
+        outerDepth: 150,
+        outerHeight: 50,
+      },
+    });
+    const resized = captureModeParamSnapshot("grid", {
+      ...DEFAULT_TRAY_PARAMS,
+      stackableBox: {
+        ...DEFAULT_TRAY_PARAMS.stackableBox!,
+        enabled: true,
+        outerWidth: 240,
+        outerDepth: 150,
+        outerHeight: 50,
+      },
+    });
+
+    expect(createModelGeometryFingerprint(enabled)).not.toBe(
+      createModelGeometryFingerprint(disabled),
+    );
+    expect(createModelGeometryFingerprint(resized)).not.toBe(
+      createModelGeometryFingerprint(enabled),
+    );
+  });
 });

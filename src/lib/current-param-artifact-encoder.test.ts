@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
+import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import {
   buildCurrentParamArtifact,
   createCurrentParamArtifactBlob,
@@ -62,5 +63,36 @@ describe("Current Param Artifact Encoder", () => {
 
     expect(artifact.params).not.toHaveProperty("enableBaseHole");
     expect(artifact.params.baseHoleStructure).toBe("none");
+  });
+
+  it("序列化堆叠盒体参数并保持往返一致", () => {
+    const params = {
+      ...DEFAULT_TRAY_PARAMS,
+      stackableBox: {
+        ...DEFAULT_TRAY_PARAMS.stackableBox!,
+        enabled: true,
+        outerWidth: 200,
+        outerDepth: 150,
+        outerHeight: 50,
+        minimumWallClearance: 2,
+        xyFitClearance: 0.25,
+        lidThickness: 2.4,
+      },
+    };
+    const snapshot = captureModeParamSnapshot("grid", params);
+    const serialized = serializeCurrentParamArtifact(snapshot);
+
+    expect(JSON.parse(serialized)).toMatchObject({
+      version: 1,
+      mode: "grid",
+      params: {
+        stackableBox: {
+          enabled: true,
+          outerWidth: 200,
+          outerDepth: 150,
+          outerHeight: 50,
+        },
+      },
+    });
   });
 });
