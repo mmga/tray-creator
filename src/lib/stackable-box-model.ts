@@ -74,7 +74,7 @@ export interface StackableBoxLidInput {
 /**
  * 生成堆叠盒体空白主体（不含内部槽位切削）。
  *
- * 结构：完整底部实体 + 2.4mm 主墙环 + 顶部 4.0mm 承重环 + 顶部定位凹槽
+ * 结构：完整底部实体 + 2.4mm 主墙环 + 顶部 6.0mm 承重环 + 顶部定位凹槽
  * + 底部承重肩浅凹区 + 带入口倒角的定位凸缘。
  */
 export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
@@ -124,7 +124,7 @@ export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
     extrudeProfile(wallRing, wallHeight),
   );
 
-  // 3. 顶部承重环（4.0mm，从 H - rimThickness 到 H）
+  // 3. 顶部承重环（6.0mm，从 H - rimThickness 到 H）
   const rimRing = subtract(outerProfile, innerRimProfile);
   const topRimSolid = translate(
     [0, 0, H - rimThickness],
@@ -156,7 +156,17 @@ export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
     ),
   );
 
-  // 5. 底部承重肩浅凹区：顶部承重边宽环（0 到 4.0mm）减去凸缘环，抬高 1.2mm
+  // 4.1 斜坡接收避让：给上盒外侧斜坡留出完整的进入空间；内侧承重肩保留在凹槽内缘。
+  const slopeReceiverRing = subtract(outerProfile, grooveOuterProfile);
+  body = subtract(
+    body,
+    translate(
+      [0, 0, H - flangeH],
+      extrudeProfile(slopeReceiverRing, flangeH + 0.02),
+    ),
+  );
+
+  // 5. 底部承重肩浅凹区：顶部承重边宽环（0 到 6.0mm）减去凸缘环，抬高 1.2mm
   const flangeOuterProfile = roundedRectangleProfile(
     W - 2 * (locator - flangeW / 2),
     D - 2 * (locator - flangeW / 2),
@@ -168,7 +178,7 @@ export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
     Math.max(R - (locator + flangeW / 2), 0),
   );
   const flangeRing = subtract(flangeOuterProfile, flangeInnerProfile);
-  // 承重肩 = 顶部承重边宽环（0 到 4.0mm）减去凸缘环；外侧环外扩 0.2mm 以干净切穿外轮廓。
+  // 承重肩 = 顶部承重边宽环（0 到 6.0mm）减去凸缘环；外侧环外扩 0.2mm 以干净切穿外轮廓。
   const shoulderOuterRing = subtract(
     roundedRectangleProfile(W + 0.2, D + 0.2, R),
     flangeOuterProfile,
@@ -186,7 +196,7 @@ export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
     ),
   );
 
-  // 6. 定位凸缘（带入口倒角）：底部窄、往上 0.3mm 过渡到全宽，随后直壁到 1.2mm
+  // 6. 定位凸缘（带入口倒角）：底部窄、往上 0.3mm 过渡到全宽，随后直壁到 1.2mm。
   const chamferOuterProfile = roundedRectangleProfile(
     W - 2 * (locator - flangeW / 2 + chamfer),
     D - 2 * (locator - flangeW / 2 + chamfer),
@@ -217,7 +227,26 @@ export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
     [0, 0, chamfer],
     extrudeProfile(flangeRing, flangeH - chamfer),
   );
-  body = union(body, flangeChamfer, flangeStraight);
+
+  // 7. 连续斜坡承接面：外侧从底部定位环向上过渡到盒体外轮廓，内侧保持竖直定位面。
+  // 下盒的接收避让与顶部凹槽共同容纳斜坡；内侧水平承重肩承担载荷，斜坡只负责导入。
+  const seatingTopRing = subtract(outerProfile, flangeInnerProfile);
+  const seatingSlopeRing = extrudeFromSlices(
+    {
+      numberOfSlices: 2,
+      callback: (progress) => {
+        const profile = progress === 0 ? flangeRing : seatingTopRing;
+        const currentSlice = slice.fromSides(geom2.toSides(profile));
+        return slice.transform(
+          mat4.fromTranslation(mat4.create(), [0, 0, flangeH * progress]),
+          currentSlice,
+        );
+      },
+    },
+    slice.fromSides(geom2.toSides(flangeRing)),
+  );
+
+  body = union(body, flangeChamfer, flangeStraight, seatingSlopeRing);
 
   return orientPositiveVolume(body);
 }

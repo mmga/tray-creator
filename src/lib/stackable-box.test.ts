@@ -87,8 +87,8 @@ describe("stackable-box usable opening", () => {
     expect(opening.usableInset).toBe(
       STACKABLE_BOX_SPECS.topRimWidth + STACKABLE_BOX_DEFAULTS.minimumWallClearance,
     );
-    expect(opening.usableWidth).toBe(100 - 2 * 6);
-    expect(opening.usableDepth).toBe(100 - 2 * 6);
+    expect(opening.usableWidth).toBe(100 - 2 * 8);
+    expect(opening.usableDepth).toBe(100 - 2 * 8);
     expect(opening.usableCornerRadius).toBe(0);
   });
 
@@ -103,7 +103,7 @@ describe("stackable-box usable opening", () => {
 
   it("returns the usable area in box coordinates", () => {
     const area = calculateBoxUsableArea(enabledBox());
-    expect(area).toEqual({ x: 6, y: 6, width: 88, depth: 88, cornerRadius: 0 });
+    expect(area).toEqual({ x: 8, y: 8, width: 84, depth: 84, cornerRadius: 0 });
   });
 });
 
@@ -135,7 +135,7 @@ describe("stackable-box required outer size", () => {
     expect(roundBoxDimensionUp(12.3)).toBe(12.3);
 
     const required = calculateBoxRequiredOuterSize(50, 50, enabledBox());
-    expect(required).toEqual({ outerWidth: 62, outerDepth: 62 });
+    expect(required).toEqual({ outerWidth: 66, outerDepth: 66 });
   });
 });
 

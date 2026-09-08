@@ -274,11 +274,11 @@ describe("grid model state", () => {
     });
 
     expect(expanded.stackableBox?.enabled).toBe(true);
-    // 内容尺寸 + 2×6mm 可用内缩，向上取 0.1mm。
+    // 内容尺寸 + 2×8mm 可用内缩，向上取 0.1mm。
     const slotWidth = DEFAULT_TRAY_PARAMS.slotDiameter!;
     const pitch = slotWidth + 5;
     const content = slotWidth + pitch;
-    const expected = Math.ceil((content + 12) * 10) / 10;
+    const expected = Math.ceil((content + 16) * 10) / 10;
     expect(expanded.stackableBox?.outerWidth).toBeCloseTo(expected, 5);
     expect(expanded.stackableBox?.outerDepth).toBeCloseTo(expected, 5);
     // 行列不被改变。

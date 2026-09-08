@@ -61,10 +61,10 @@ describe("custom layout editor viewport model", () => {
     expect(model.trayFrame.depth).toBe(150);
     expect(model.trayFrame.showEffectiveBaseplate).toBe(false);
     expect(model.trayFrame.fixedUsableArea).toEqual({
-      x: 6,
-      y: 6,
-      width: 188,
-      depth: 138,
+      x: 8,
+      y: 8,
+      width: 184,
+      depth: 134,
       cornerRadius: 0,
     });
   });

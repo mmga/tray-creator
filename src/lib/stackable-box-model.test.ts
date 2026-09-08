@@ -84,7 +84,7 @@ describe("stackable box body", () => {
       W / 2,
       1,
     );
-    // 中央贴床面存在：Z=0 层中央平面（距外 4.0mm 以内）有实体点。
+    // 中央贴床面存在：Z=0 层中央平面（距外 6.0mm 以内）有实体点。
     const bedPoints = pointsAtZ(model, 0);
     const minAbsX = Math.min(...bedPoints.map((point) => Math.abs(point[0])));
     expect(minAbsX).toBeLessThan(W / 2 - STACKABLE_BOX_SPECS.topRimWidth);
@@ -101,9 +101,28 @@ describe("stackable box body", () => {
     expect(gapProbe).toBeCloseTo(0, 3);
   });
 
-  it("uses a 2.4mm wall and widens to a 4.0mm top rim", () => {
+  it("forms a sloped seating surface from the lower flange into the box wall", () => {
+    const model = createBody();
+    const probe = (x: number, z: number) =>
+      measureVolume(
+        intersect(
+          model,
+          cuboid({ center: [x, 0, z], size: [0.1, 10, 0.1] }),
+        ),
+      );
+
+    // 斜坡底部仍应收在凸缘内，中段应明显向外展开到盒体外轮廓，形成连续过渡。
+    const slopeProbeX = W / 2 - 2.0;
+    expect(probe(slopeProbeX, 0.05)).toBeCloseTo(0, 3);
+    expect(
+      probe(slopeProbeX, STACKABLE_BOX_SPECS.flangeHeight / 2),
+    ).toBeGreaterThan(0);
+    expect(probe(slopeProbeX, STACKABLE_BOX_SPECS.flangeHeight)).toBeGreaterThan(0);
+  });
+
+  it("uses a 2.4mm wall and widens to a 6.0mm top rim", () => {
     expect(STACKABLE_BOX_SPECS.bodyWallThickness).toBe(2.4);
-    expect(STACKABLE_BOX_SPECS.topRimWidth).toBe(4.0);
+    expect(STACKABLE_BOX_SPECS.topRimWidth).toBe(6.0);
 
     const model = createBody();
 
@@ -115,8 +134,29 @@ describe("stackable box body", () => {
           cuboid({ center: [cx, 0, cz], size: [0.4, 20, 0.4] }),
         ),
       );
-    expect(probeAt(W / 2 - 3, H - 1)).toBeGreaterThan(0);
-    expect(probeAt(W / 2 - 6, H - 1)).toBeCloseTo(0, 3);
+    expect(probeAt(W / 2 - 5, H - 1)).toBeGreaterThan(0);
+    expect(probeAt(W / 2 - 6.5, H - 1)).toBeCloseTo(0, 3);
+  });
+
+  it("provides at least 2mm horizontal shoulder inside the receiving groove", () => {
+    const grooveWidth =
+      STACKABLE_BOX_SPECS.flangeWidth + 2 * 0.25;
+    const grooveInnerInset =
+      STACKABLE_BOX_SPECS.locatorRingCenterlineInset + grooveWidth / 2;
+    const shoulderWidth = STACKABLE_BOX_SPECS.topRimWidth - grooveInnerInset;
+
+    expect(shoulderWidth).toBeGreaterThanOrEqual(2);
+  });
+
+  it("keeps the sloped underside clear when two boxes are stacked", () => {
+    const lower = createBody();
+    const upper = translate(
+      [0, 0, H - STACKABLE_BOX_SPECS.flangeHeight],
+      createBody(),
+    );
+
+    // 布尔运算在共面接触处允许极小数值残差，但不应出现可感知的实体相撞。
+    expect(measureVolume(intersect(lower, upper))).toBeLessThan(1);
   });
 
   it("cuts a 1.4mm locating groove into the top rim", () => {

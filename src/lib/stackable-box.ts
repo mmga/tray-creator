@@ -14,8 +14,8 @@ export const STACKABLE_BOX_SPECS = {
   bodyWallThickness: 2.4,
   /** 外轮廓圆角 (mm) */
   outerCornerRadius: 6.0,
-  /** 顶部局部承重边宽 (mm) */
-  topRimWidth: 4.0,
+  /** 顶部局部承重边宽 (mm)；与 1.7mm 凹槽共同形成约 2.15mm/侧水平承重肩 */
+  topRimWidth: 6.0,
   /** 底部定位凸缘宽 (mm) */
   flangeWidth: 1.2,
   /** 底部定位凸缘高度 (mm) */
@@ -24,8 +24,8 @@ export const STACKABLE_BOX_SPECS = {
   grooveDepth: 1.4,
   /** 凸缘与凹槽底部余量 (mm) */
   flangeGrooveBottomClearance: 0.2,
-  /** 定位环中心线距外侧面 (mm) */
-  locatorRingCenterlineInset: 2.0,
+  /** 定位环中心线距外侧面 (mm)；与 6.0mm 顶部承重边保持内外肩对称 */
+  locatorRingCenterlineInset: 3.0,
   /** 凸缘入口倒角 (mm × 45°) */
   flangeEntryChamfer: 0.3,
   /** 盒壁必须高出内部托盘顶面的最小值 (mm) */

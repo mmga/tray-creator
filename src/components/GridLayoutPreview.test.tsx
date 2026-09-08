@@ -104,8 +104,8 @@ describe("GridLayoutPreview", () => {
 
     expect(container.querySelector('[data-box-frame="true"]')).toBeTruthy();
     const usableArea = container.querySelector('[data-box-usable-area="true"]');
-    expect(usableArea?.getAttribute("x")).toBe("6");
-    expect(usableArea?.getAttribute("width")).toBe("108");
+    expect(usableArea?.getAttribute("x")).toBe("8");
+    expect(usableArea?.getAttribute("width")).toBe("104");
     expect(container.textContent).toContain("120.0 × 100.0 mm");
   });
 });

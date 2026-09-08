@@ -35,8 +35,8 @@ describe("grid box layout math", () => {
     const params = boxParams();
     const { contentWidth, contentDepth } = getGridBoxContentSize(params);
     const required = calculateGridBoxRequiredOuterSize(params);
-    // usableInset = 4.0（承重边）+ 2.0（内壁间距）
-    const usableInset = 6;
+    // usableInset = 6.0（承重边）+ 2.0（内壁间距）
+    const usableInset = 8;
     const expectedWidth = Math.ceil((contentWidth + 2 * usableInset) * 10) / 10;
     const expectedDepth = Math.ceil((contentDepth + 2 * usableInset) * 10) / 10;
 

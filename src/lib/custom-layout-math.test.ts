@@ -405,9 +405,9 @@ describe("custom layout math", () => {
       ],
     };
     const required = calculateCustomBoxRequiredOuterSize(params);
-    // 槽位最终直径 20.4（含公差），加两侧 6mm 可用内缩，向上取 0.1mm。
-    expect(required.outerWidth).toBeCloseTo(32.4, 5);
-    expect(required.outerDepth).toBeCloseTo(32.4, 5);
+    // 槽位最终直径 20.4（含公差），加两侧 8mm 可用内缩，向上取 0.1mm。
+    expect(required.outerWidth).toBeCloseTo(36.4, 5);
+    expect(required.outerDepth).toBeCloseTo(36.4, 5);
 
     const empty = calculateCustomBoxRequiredOuterSize({
       ...params,
