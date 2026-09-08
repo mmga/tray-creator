@@ -169,6 +169,14 @@ describe("stackable box body", () => {
       .toBeCloseTo(0, 3);
   });
 
+  it("removes the outer top plane but keeps the inner horizontal load seat", () => {
+    const topZ = H - 0.05;
+    expect(probe(createBody(), W / 2 - 1, topZ)).toBeCloseTo(0, 3);
+    expect(probe(createBody(), W / 2 - 3, topZ)).toBeGreaterThan(0);
+    expect(probe(createBody(), W / 2 - 1, H - STACKABLE_BOX_SPECS.guideChamferHeight + 0.05))
+      .toBeGreaterThan(0);
+  });
+
   it("uses a 2mm wall and a printable sloped transition below the widened opening", () => {
     const transitionH = STACKABLE_BOX_SPECS.topTransitionHeight;
     const transitionStartZ =

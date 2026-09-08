@@ -146,7 +146,7 @@ export function StackableBoxConfig({
                   固定规格：墙厚 {STACKABLE_BOX_SPECS.bodyWallThickness}mm · 圆角 {STACKABLE_BOX_SPECS.outerCornerRadius}mm ·
                   开口下沿斜面 {STACKABLE_BOX_SPECS.topTransitionHeight}mm × {STACKABLE_BOX_SPECS.topTransitionAngle}° ·
                   导向倒角 {STACKABLE_BOX_SPECS.guideChamferHeight}mm × {STACKABLE_BOX_SPECS.guideChamferAngle}° ·
-                  顶部承重边 {STACKABLE_BOX_SPECS.topRimWidth - STACKABLE_BOX_SPECS.guideChamferHeight}mm ·
+                  顶部内侧承重座 {STACKABLE_BOX_SPECS.topRimWidth - STACKABLE_BOX_SPECS.guideChamferHeight - STACKABLE_BOX_SPECS.bodyWallThickness}mm ·
                   底部有效承重 {STACKABLE_BOX_SPECS.minLoadBearingWidth}mm · 外侧斜面 {STACKABLE_BOX_SPECS.bottomSeatSlopeAngle}°
                 </div>
               </div>

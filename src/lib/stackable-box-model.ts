@@ -115,8 +115,8 @@ export interface StackableBoxLidInput {
 /**
  * 生成堆叠盒体空白主体（不含内部槽位切削）。
  *
- * 结构：底部外倒角导向段 + 2mm 主墙环 + 开口下沿打印过渡斜面 + 顶部内倒角。
- * 倒角只负责导向，盒口顶面与盒底外围水平肩面负责承重。
+ * 结构：底部外倒角导向段 + 2mm 主墙环 + 开口下沿打印过渡斜面 + 盒口外侧斜面。
+ * 倒角只负责导向，盒口内侧水平座与盒底水平座负责承重。
  */
 export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
   const {
@@ -232,7 +232,6 @@ export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
 
   // 4. 开口下沿打印过渡斜面：内轮廓从主墙内缩 wall 连续过渡到 rim，
   //    以 45° 斜面替代原本向下悬空的水平台阶。
-  const rimRing = subtract(outerProfile, innerRimProfile);
   const transitionOuter = translate(
     [0, 0, transitionStartZ - 0.02],
     extrudeProfile(outerProfile, transitionH + 0.02),
@@ -243,14 +242,15 @@ export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
   );
   const transitionSolid = subtract(transitionOuter, transitionCavity);
 
-  // 5. 顶部水平承重环（最后 guideH 高度）；内倒角从其下沿开始。
-  const topRimSolid = translate(
+  // 5. 盒口外侧打印斜面：去掉外轮廓到开口之间原本整圈悬空的水平顶面。
+  //    斜面从完整外轮廓收至主墙内轮廓，最后只在内侧留下水平承重座。
+  const topOuterSlope = translate(
     [0, 0, H - guideH],
-    extrudeProfile(rimRing, guideH),
+    loftProfiles(outerProfile, innerWallProfile, guideH),
   );
 
-  // 6. 顶部内倒角：下端内缩 R，上端内缩 R-G，形成连续向上外扩的承重环。
-  const openingBottomProfile = insetRoundedRectangleProfile(W, D, R, rim);
+  // 6. 顶部内倒角：下端内缩 R，上端内缩 R-G；与外侧斜面共同形成内侧水平座。
+  const openingBottomProfile = innerRimProfile;
   const openingTopProfile = insetRoundedRectangleProfile(
     W,
     D,
@@ -262,7 +262,7 @@ export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
     [0, 0, H - guideH],
     loftProfiles(openingBottomProfile, openingTopProfile, guideH),
   );
-  const topRimWithChamfer = subtract(topRimSolid, topChamferCavity);
+  const topRimWithChamfer = subtract(topOuterSlope, topChamferCavity);
   const body = orientPositiveVolume(
     union(
       base,
