@@ -240,7 +240,7 @@ describe("grid model state", () => {
       columns: 2,
       spacing: 5,
       stackableBox: {
-        ...DEFAULT_TRAY_PARAMS.stackableBox,
+        ...DEFAULT_TRAY_PARAMS.stackableBox!,
         enabled: true,
         outerWidth: 60,
         outerDepth: 60,

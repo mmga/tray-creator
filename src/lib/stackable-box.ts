@@ -221,9 +221,10 @@ export function calculateBoxHeightProjection(
   };
 }
 
-/** 向上取整到 0.1 mm 精度。 */
+/** 向上取整到 0.1 mm 精度；先规整到 0.01 以消除浮点误差。 */
 export function roundBoxDimensionUp(value: number): number {
-  return Math.ceil(value * 10) / 10;
+  const toHundredth = Math.round(value * 100) / 100;
+  return Math.ceil(toHundredth * 10) / 10;
 }
 
 /** 由内容外接范围 + 两侧可用内缩计算所需外部尺寸（向上取 0.1 mm）。 */

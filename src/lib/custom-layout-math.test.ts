@@ -1,13 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import {
+  calculateCustomBoxRequiredOuterSize,
   calculateCustomEffectiveDimensions,
   calculateCustomTrayFootprint,
   calculateFixedCustomTrayUsableArea,
+  isCustomSlotWithinBoxUsableArea,
   isCustomSlotWithinFixedTrayUsableArea,
   resolveCustomBoundarySpacing,
   resolveCustomFootprintStyle,
   resolveCustomTraySizingMode,
+  validateCustomBox,
 } from "@/lib/custom-layout-math";
 import {
   constructCustomContouredFootprintOutcome,
@@ -351,5 +354,103 @@ describe("custom layout math", () => {
 
     expect(separated.bodyCount).toBe(2);
     expect(bridged.bodyCount).toBe(1);
+  });
+
+  it("validates custom box slots inside the usable area", () => {
+    const box = {
+      ...CUSTOM_LAYOUT_DEFAULTS.stackableBox!,
+      enabled: true,
+      outerWidth: 100,
+      outerDepth: 80,
+      outerHeight: 50,
+      minimumWallClearance: 2,
+    };
+    const slot = {
+      id: "slot-1",
+      x: 50,
+      y: 40,
+      shape: "circle" as const,
+      width: 20,
+      height: 20,
+      rotation: 0,
+    };
+
+    expect(isCustomSlotWithinBoxUsableArea(slot, box)).toBe(true);
+    expect(
+      isCustomSlotWithinBoxUsableArea({ ...slot, x: 2, y: 2 }, box),
+    ).toBe(false);
+  });
+
+  it("computes the required outer size for custom box slots and keeps empty boxes unchanged", () => {
+    const params = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      footprintStyle: "rectangular" as const,
+      stackableBox: {
+        ...CUSTOM_LAYOUT_DEFAULTS.stackableBox!,
+        enabled: true,
+        outerWidth: 100,
+        outerDepth: 80,
+        minimumWallClearance: 2,
+      },
+      slots: [
+        {
+          id: "slot-1",
+          x: 30,
+          y: 30,
+          shape: "circle" as const,
+          width: 20,
+          height: 20,
+          rotation: 0,
+        },
+      ],
+    };
+    const required = calculateCustomBoxRequiredOuterSize(params);
+    // 槽位最终直径 20.4（含公差），加两侧 6mm 可用内缩，向上取 0.1mm。
+    expect(required.outerWidth).toBeCloseTo(32.4, 5);
+    expect(required.outerDepth).toBeCloseTo(32.4, 5);
+
+    const empty = calculateCustomBoxRequiredOuterSize({
+      ...params,
+      slots: [],
+    });
+    expect(empty).toEqual({ outerWidth: 100, outerDepth: 80 });
+  });
+
+  it("blocks custom box generation when a slot enters the safety boundary", () => {
+    const params = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      footprintStyle: "rectangular" as const,
+      stackableBox: {
+        ...CUSTOM_LAYOUT_DEFAULTS.stackableBox!,
+        enabled: true,
+        outerWidth: 100,
+        outerDepth: 80,
+        outerHeight: 50,
+        minimumWallClearance: 2,
+      },
+      slots: [
+        {
+          id: "slot-1",
+          x: 3,
+          y: 3,
+          shape: "circle" as const,
+          width: 20,
+          height: 20,
+          rotation: 0,
+        },
+      ],
+    };
+    const result = validateCustomBox(params);
+    expect(result.valid).toBe(false);
+    expect(result.blockingReasons).toContainEqual(
+      expect.objectContaining({ code: "slot-in-safety-boundary" }),
+    );
+    expect(result.overflow).toBeDefined();
+  });
+
+  it("passes custom box validation when disabled", () => {
+    const result = validateCustomBox(CUSTOM_LAYOUT_DEFAULTS);
+    expect(result.valid).toBe(true);
+    expect(result.blockingReasons).toEqual([]);
   });
 });

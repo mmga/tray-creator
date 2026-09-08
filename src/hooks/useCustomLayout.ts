@@ -9,6 +9,7 @@ import {
   addCustomSlot,
   applyCustomSlotUpdates,
   duplicateCustomSlots,
+  expandCustomBoxToFit,
   type CircleSlotConfig,
   type EllipseSlotConfig,
   insertCustomSlots,
@@ -22,6 +23,7 @@ import {
 import {
   calculateCustomEffectiveDimensions,
   calculateCustomTrayFootprint,
+  validateCustomBox,
   type LayoutExtents,
 } from "@/lib/custom-layout-math";
 import {
@@ -84,6 +86,7 @@ interface UseCustomLayoutReturn {
   insertSlots: (slots: SymmetryInsertSlot[]) => void;
   duplicateSlots: (ids: string[]) => string[];
   trimBaseplate: () => void;
+  expandBoxToFit: () => void;
   calculateEffectiveDimensions: () => {
     width: number;
     depth: number;
@@ -181,7 +184,12 @@ export function useCustomLayout(): UseCustomLayoutReturn {
       );
     },
     // 主线程校验由下方的权威构造结果统一提供，避免生成前再次从快照重构轮廓。
-    validateSnapshot: () => null,
+    validateSnapshot: (snapshot) => {
+      const result = validateCustomBox(snapshot.params);
+      return result.valid
+        ? null
+        : (result.blockingReasons[0]?.message ?? "堆叠盒体参数无效");
+    },
   });
 
   const contouredFootprints = useCustomContouredFootprint({
@@ -328,6 +336,10 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     });
   }, [applyChange]);
 
+  const expandBoxToFit = useCallback(() => {
+    applyChange((prev) => expandCustomBoxToFit(prev));
+  }, [applyChange]);
+
   const beginContinuousEdit = useCallback(() => {
     return beginContinuousEditTransaction().status === "previewing";
   }, [beginContinuousEditTransaction]);
@@ -360,6 +372,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     insertSlots,
     duplicateSlots,
     trimBaseplate,
+    expandBoxToFit,
     calculateEffectiveDimensions,
     effectiveDimensions,
     undo,

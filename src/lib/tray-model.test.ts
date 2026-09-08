@@ -450,7 +450,7 @@ describe("tray model", () => {
       rows: 2,
       columns: 2,
       stackableBox: {
-        ...DEFAULT_TRAY_PARAMS.stackableBox,
+        ...DEFAULT_TRAY_PARAMS.stackableBox!,
         enabled: true,
         outerWidth: 100,
         outerDepth: 80,
@@ -474,7 +474,7 @@ describe("tray model", () => {
       columns: 1,
       spacing: 5,
       stackableBox: {
-        ...DEFAULT_TRAY_PARAMS.stackableBox,
+        ...DEFAULT_TRAY_PARAMS.stackableBox!,
         enabled: true,
         outerWidth: 80,
         outerDepth: 60,
@@ -491,7 +491,7 @@ describe("tray model", () => {
     const normal = createTrayModel(DEFAULT_TRAY_PARAMS);
     const disabled = createTrayModel({
       ...DEFAULT_TRAY_PARAMS,
-      stackableBox: { ...DEFAULT_TRAY_PARAMS.stackableBox, enabled: false },
+      stackableBox: { ...DEFAULT_TRAY_PARAMS.stackableBox!, enabled: false },
     });
     expect(measureVolume(disabled)).toBeCloseTo(measureVolume(normal), 5);
   });

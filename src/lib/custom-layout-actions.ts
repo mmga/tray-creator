@@ -17,6 +17,11 @@ import {
   getFreeSlotProfileGeometry,
 } from "@/lib/slot-definitions";
 import type { LayoutExtents } from "@/lib/custom-layout-math";
+import {
+  calculateCustomBoxRequiredOuterSize,
+  calculateCustomEffectiveDimensions,
+} from "@/lib/custom-layout-math";
+import { resolveStackableBoxParams } from "@/lib/stackable-box";
 import type { IdFactory } from "@/lib/model-ports";
 import type { SymmetryInsertSlot } from "@/lib/layout-symmetry";
 import type { CustomLayoutParams, FreeSlot } from "@/types/custom-tray";
@@ -201,4 +206,38 @@ export function trimCustomBaseplate(
   effectiveDimensions: LayoutExtents,
 ): CustomLayoutParams {
   return trimFreeSlotBaseplate(params, effectiveDimensions);
+}
+
+/**
+ * 盒体开启时，"扩展盒体至刚好容纳"：按最终槽位轮廓外接范围设置新外尺寸，
+ * 并把整组槽位居中（离散事务，只产生一个 Undo 步骤）。空盒不执行。
+ */
+export function expandCustomBoxToFit(
+  params: CustomLayoutParams,
+): CustomLayoutParams {
+  const box = resolveStackableBoxParams(params.stackableBox);
+  if (!box.enabled || params.slots.length === 0) return params;
+
+  const required = calculateCustomBoxRequiredOuterSize(params);
+  const extents = calculateCustomEffectiveDimensions(params);
+  const newOuterWidth = required.outerWidth;
+  const newOuterDepth = required.outerDepth;
+  const oldCx = (extents.minX + extents.maxX) / 2;
+  const oldCy = (extents.minY + extents.maxY) / 2;
+  const dx = newOuterWidth / 2 - oldCx;
+  const dy = newOuterDepth / 2 - oldCy;
+
+  return {
+    ...params,
+    stackableBox: {
+      ...box,
+      outerWidth: newOuterWidth,
+      outerDepth: newOuterDepth,
+    },
+    slots: params.slots.map((slot) => ({
+      ...slot,
+      x: slot.x + dx,
+      y: slot.y + dy,
+    })),
+  };
 }

@@ -5,6 +5,14 @@ import { RENDER_CONFIG } from "@/lib/config";
 import type { ConstructedContouredFootprint } from "@/lib/contoured-footprint";
 import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
 import type { BaseplateFootprintStyle, CustomLayoutParams, FreeSlot } from "@/types/custom-tray";
+import {
+  calculateBoxRequiredOuterSize,
+  calculateBoxUsableArea,
+  isPointWithinRoundedRectangle,
+  resolveStackableBoxParams,
+  validateBoxBaseGeometry,
+  type BoxValidationResult,
+} from "@/lib/stackable-box";
 
 export type CustomTraySizingMode = "auto" | "fixed";
 
@@ -285,4 +293,99 @@ export function isCustomSlotWithinFixedTrayUsableArea(
       area,
     ),
   );
+}
+
+/** 盒体开启时，自由槽位是否完全位于盒体可用区域内。 */
+export function isCustomSlotWithinBoxUsableArea(
+  slot: FreeSlot,
+  box: ReturnType<typeof resolveStackableBoxParams>,
+): boolean {
+  const area = calculateBoxUsableArea(box);
+  const profile = getFreeSlotProfileGeometry(slot);
+  const radians = (slot.rotation * Math.PI) / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  const points = sampleSlotProfilePoints(
+    profile.width,
+    profile.height,
+    slot.shape,
+    profile.outerOffset,
+    RENDER_CONFIG.cylinderSegments,
+    profile.profileExponent,
+  );
+
+  return points.every((point) =>
+    isPointWithinRoundedRectangle(
+      slot.x + point.x * cos - point.y * sin,
+      slot.y + point.x * sin + point.y * cos,
+      area,
+    ),
+  );
+}
+
+/** 盒体开启时，"扩展盒体至刚好容纳"所需的最小外部长宽（空盒不改变当前尺寸）。 */
+export function calculateCustomBoxRequiredOuterSize(params: CustomLayoutParams) {
+  const box = resolveStackableBoxParams(params.stackableBox);
+  if (params.slots.length === 0) {
+    return { outerWidth: box.outerWidth, outerDepth: box.outerDepth };
+  }
+  const extents = calculateCustomEffectiveDimensions(params);
+  const contentWidth = extents.maxX - extents.minX;
+  const contentDepth = extents.maxY - extents.minY;
+  return calculateBoxRequiredOuterSize(contentWidth, contentDepth, box);
+}
+
+/** 盒体开启时的权威校验：基础几何 + 槽位安全边界。盒体关闭时始终通过。 */
+export function validateCustomBox(params: CustomLayoutParams): BoxValidationResult {
+  const box = resolveStackableBoxParams(params.stackableBox);
+  if (!box.enabled) {
+    return { valid: true, blockingReasons: [], warnings: [] };
+  }
+
+  if (resolveCustomFootprintStyle(params) === "contoured") {
+    return {
+      valid: false,
+      blockingReasons: [
+        {
+          code: "custom-contoured-with-box",
+          message: "贴合轮廓自定义托盘不支持堆叠盒体",
+        },
+      ],
+      warnings: [],
+    };
+  }
+
+  const base = validateBoxBaseGeometry(
+    box,
+    params.baseThickness,
+    params.holeDepth,
+    false,
+  );
+
+  let overflow;
+  for (const slot of params.slots) {
+    if (!isCustomSlotWithinBoxUsableArea(slot, box)) {
+      const required = calculateCustomBoxRequiredOuterSize(params);
+      overflow = {
+        currentWidth: box.outerWidth,
+        currentDepth: box.outerDepth,
+        requiredWidth: required.outerWidth,
+        requiredDepth: required.outerDepth,
+        deltaX: Math.max(0, required.outerWidth - box.outerWidth),
+        deltaY: Math.max(0, required.outerDepth - box.outerDepth),
+      };
+      base.blockingReasons.push({
+        code: "slot-in-safety-boundary",
+        message: "一个或多个槽位进入盒体安全边界",
+      });
+      break;
+    }
+  }
+
+  return {
+    valid: base.valid && base.blockingReasons.length === 0,
+    blockingReasons: base.blockingReasons,
+    warnings: base.warnings,
+    overflow,
+  };
 }

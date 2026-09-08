@@ -558,7 +558,7 @@ describe("param normalization", () => {
       halfCircleSlots: true,
       slotShape: "circle",
       stackableBox: {
-        ...DEFAULT_TRAY_PARAMS.stackableBox,
+        ...DEFAULT_TRAY_PARAMS.stackableBox!,
         enabled: true,
       },
     } as unknown as TrayParams, recorder) as TrayParams;

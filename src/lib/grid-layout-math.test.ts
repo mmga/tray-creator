@@ -12,7 +12,7 @@ function boxParams() {
     columns: 3,
     spacing: 5,
     stackableBox: {
-      ...DEFAULT_TRAY_PARAMS.stackableBox,
+      ...DEFAULT_TRAY_PARAMS.stackableBox!,
       enabled: true,
       minimumWallClearance: 2,
     },

@@ -5,6 +5,7 @@ import {
   addCustomSlot,
   applyCustomSlotUpdates,
   duplicateCustomSlots,
+  expandCustomBoxToFit,
   insertCustomSlots,
   removeCustomSlot,
   trimCustomBaseplate,
@@ -239,5 +240,52 @@ describe("custom layout actions", () => {
       trayDepth: 90,
       slots: [{ id: "slot-1", x: 40, y: 50 }],
     });
+  });
+
+  it("expands the box to fit slots and recenters the group", () => {
+    const params = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      footprintStyle: "rectangular" as const,
+      stackableBox: {
+        ...CUSTOM_LAYOUT_DEFAULTS.stackableBox!,
+        enabled: true,
+        outerWidth: 100,
+        outerDepth: 80,
+        minimumWallClearance: 2,
+      },
+      slots: [
+        {
+          id: "slot-1",
+          x: 40,
+          y: 30,
+          shape: "circle" as const,
+          width: 20,
+          height: 20,
+          rotation: 0,
+        },
+      ],
+    };
+    const expanded = expandCustomBoxToFit(params);
+
+    expect(expanded.stackableBox?.enabled).toBe(true);
+    // 槽位最终直径 20.4（含公差）+ 2×6mm 内缩 = 32.4mm，向上取 0.1mm。
+    expect(expanded.stackableBox?.outerWidth).toBeCloseTo(32.4, 5);
+    expect(expanded.stackableBox?.outerDepth).toBeCloseTo(32.4, 5);
+    // 整组居中：原槽位中心 (40, 30) 平移到新盒中心 (16.2, 16.2)。
+    expect(expanded.slots[0]).toMatchObject({ x: 16.2, y: 16.2 });
+  });
+
+  it("leaves an empty custom box unchanged", () => {
+    const params = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      stackableBox: {
+        ...CUSTOM_LAYOUT_DEFAULTS.stackableBox!,
+        enabled: true,
+        outerWidth: 100,
+        outerDepth: 80,
+      },
+      slots: [],
+    };
+    expect(expandCustomBoxToFit(params)).toEqual(params);
   });
 });

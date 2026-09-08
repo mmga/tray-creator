@@ -9,6 +9,7 @@ import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { CustomLayoutParams } from "@/types/custom-tray";
 import {
   calculateCustomTrayFootprint,
+  resolveCustomFootprintStyle,
 } from "@/lib/custom-layout-math";
 import type { ConstructedContouredFootprint } from "@/lib/contoured-footprint";
 import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
@@ -19,6 +20,8 @@ import {
   subtractBaseHoleConstructionPlan,
 } from "@/lib/model-utils";
 import { createCustomBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
+import { resolveStackableBoxParams } from "@/lib/stackable-box";
+import { createStackableBoxBody } from "@/lib/stackable-box-model";
 
 const { subtract, union } = booleans;
 const { geom3 } = geometries;
@@ -55,6 +58,11 @@ export function createCustomTrayModel(
     status: "inactive",
   },
 ): Geom3 {
+  const box = resolveStackableBoxParams(params.stackableBox);
+  if (box.enabled && resolveCustomFootprintStyle(params) === "rectangular") {
+    return createStackableBoxCustomModel(params, box, contouredState);
+  }
+
   const { slots, baseThickness, holeDepth, cornerRadius, sideBevelWidth } = params;
   if (params.footprintStyle === "contoured" && contouredState.status !== "ready") {
     throw new Error(
@@ -129,6 +137,66 @@ export function createCustomTrayModel(
   let tray = holes.length > 0 ? subtract(body, ...holes) : body;
 
   // 4. 执行权威底板孔位计划；Adapter 使用用户坐标，CAD 使用底盘中心坐标。
+  tray = subtractBaseHoleConstructionPlan(
+    tray,
+    createCustomBaseHoleConstructionPlan(params, { contouredState }),
+  );
+
+  return tray;
+}
+
+/**
+ * 矩形外轮廓 + 盒体开启时的自由布局托盘：固定外尺寸与垂直墙，槽位保持左下角自由排布。
+ * 槽位坐标、旋转、椭圆外扩和底板孔位复用现有实现。
+ */
+function createStackableBoxCustomModel(
+  params: CustomLayoutParams,
+  box: ReturnType<typeof resolveStackableBoxParams>,
+  contouredState: ContouredFootprintState<ConstructedContouredFootprint>,
+): Geom3 {
+  const { slots, baseThickness, holeDepth } = params;
+  const trayTopZ = baseThickness + holeDepth;
+  const centerX = box.outerWidth / 2;
+  const centerY = box.outerDepth / 2;
+
+  // 1. 盒体空白主体
+  let tray = createStackableBoxBody({
+    outerWidth: box.outerWidth,
+    outerDepth: box.outerDepth,
+    outerHeight: box.outerHeight,
+    trayTopZ,
+    xyFitClearance: box.xyFitClearance,
+  });
+
+  // 2. 槽位（用户左下角坐标 → JSCAD 中心坐标）
+  const holes: Geom3[] = [];
+  for (const slot of slots) {
+    const cx = slot.x - centerX;
+    const cy = slot.y - centerY;
+
+    const profile = getFreeSlotProfileGeometry(slot);
+    const width = profile.width;
+    const height = profile.height;
+    const rotation = slot.rotation || 0;
+    const holeShape2D = createOffsetSlotShape(
+      width,
+      height,
+      slot.shape,
+      profile.outerOffset,
+      profile.profileExponent,
+    );
+
+    const hole3D = extrudeLinear({ height: holeDepth + 0.02 }, holeShape2D);
+    const rotatedHole = rotateZ(rotation * DEG_TO_RAD, hole3D);
+    const placedHole = translate([cx, cy, baseThickness], rotatedHole);
+
+    holes.push(placedHole);
+  }
+
+  // 3. 布尔运算
+  tray = holes.length > 0 ? subtract(tray, ...holes) : tray;
+
+  // 4. 底板孔位
   tray = subtractBaseHoleConstructionPlan(
     tray,
     createCustomBaseHoleConstructionPlan(params, { contouredState }),

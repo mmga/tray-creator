@@ -363,4 +363,44 @@ describe("custom tray model", () => {
     const model = createCustomTrayModel(params, readyState(params));
     expect(measureVolume(model)).toBeGreaterThan(0);
   });
+
+  it("builds a stackable box body for rectangular footprint with user outer dimensions", () => {
+    const params = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      footprintStyle: "rectangular" as const,
+      stackableBox: {
+        ...CUSTOM_LAYOUT_DEFAULTS.stackableBox!,
+        enabled: true,
+        outerWidth: 120,
+        outerDepth: 100,
+        outerHeight: 50,
+        minimumWallClearance: 2,
+      },
+      slots: [createCustomCircleSlot("slot-1", 60, 50, 25)],
+    };
+    const model = createCustomTrayModel(params);
+    const [[minX, minY, minZ], [maxX, maxY, maxZ]] = measureBoundingBox(model);
+
+    expect(maxX - minX).toBeCloseTo(120, 2);
+    expect(maxY - minY).toBeCloseTo(100, 2);
+    expect(maxZ - minZ).toBeCloseTo(50, 2);
+    expect(measureVolume(model)).toBeGreaterThan(0);
+  });
+
+  it("builds an empty stackable box without slots", () => {
+    const params = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      footprintStyle: "rectangular" as const,
+      stackableBox: {
+        ...CUSTOM_LAYOUT_DEFAULTS.stackableBox!,
+        enabled: true,
+        outerWidth: 80,
+        outerDepth: 60,
+        outerHeight: 40,
+      },
+      slots: [],
+    };
+    const model = createCustomTrayModel(params);
+    expect(measureVolume(model)).toBeGreaterThan(0);
+  });
 });
