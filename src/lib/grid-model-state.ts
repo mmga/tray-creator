@@ -9,6 +9,8 @@ import { createGridSlotSnapshotFromDefinition } from "@/lib/slot-instance-factor
 import type { TrayParams } from "@/types/tray";
 import { normalizeBaseHoleParams } from "@/lib/base-hole-config";
 import { applyFlatTrayBaseHoleSupportingThickness } from "@/lib/base-hole-planning";
+import { calculateGridBoxRequiredOuterSize } from "@/lib/grid-layout-math";
+import { resolveStackableBoxParams } from "@/lib/stackable-box";
 
 function getFiniteOr(value: unknown, fallback: number) {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
@@ -243,5 +245,18 @@ export function updateGridParam<K extends keyof TrayParams>(
   return normalizeGridParams({
     ...params,
     [key]: value,
+  });
+}
+
+/** 盒体开启时，"扩展盒体至刚好容纳"：把外尺寸设为当前布局的最小所需值。 */
+export function expandGridBoxToFit(params: TrayParams): TrayParams {
+  const required = calculateGridBoxRequiredOuterSize(params);
+  return normalizeGridParams({
+    ...params,
+    stackableBox: {
+      ...resolveStackableBoxParams(params.stackableBox),
+      outerWidth: required.outerWidth,
+      outerDepth: required.outerDepth,
+    },
   });
 }

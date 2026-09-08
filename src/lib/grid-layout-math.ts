@@ -1,5 +1,9 @@
 import { getGridSlotGeometry } from "@/lib/grid-config";
 import type { TrayParams } from "@/types/tray";
+import {
+  calculateBoxRequiredOuterSize,
+  resolveStackableBoxParams,
+} from "@/lib/stackable-box";
 
 export function getGridSpacingAxes(params: TrayParams) {
   return {
@@ -40,4 +44,21 @@ export function shouldRemoveGridIslands(params: TrayParams) {
     spacingX === 0 &&
     spacingY === 0
   );
+}
+
+/** 网格槽位阵列内容外接尺寸（最终槽位轮廓 + 行列间距）。 */
+export function getGridBoxContentSize(params: TrayParams) {
+  const slot = getGridSlotGeometry(params);
+  const { pitchX, pitchY } = getGridSlotPitchAxes(params);
+  return {
+    contentWidth: slot.slotWidth + (params.columns - 1) * pitchX,
+    contentDepth: slot.slotHeight + (params.rows - 1) * pitchY,
+  };
+}
+
+/** 盒体开启时，"扩展盒体至刚好容纳"所需的最小外部长宽。 */
+export function calculateGridBoxRequiredOuterSize(params: TrayParams) {
+  const box = resolveStackableBoxParams(params.stackableBox);
+  const { contentWidth, contentDepth } = getGridBoxContentSize(params);
+  return calculateBoxRequiredOuterSize(contentWidth, contentDepth, box);
 }

@@ -10,6 +10,7 @@ import {
   resetGridParams,
   selectGridSlotDefinition,
   updateGridParam,
+  expandGridBoxToFit,
 } from "@/lib/grid-model-state";
 
 describe("grid model state", () => {
@@ -230,5 +231,33 @@ describe("grid model state", () => {
       halfCircleSlots: false,
       baseHoleStructure: "magnetic-base-hole",
     });
+  });
+
+  it("expands the box to the minimum size that fits the current grid layout", () => {
+    const expanded = expandGridBoxToFit({
+      ...DEFAULT_TRAY_PARAMS,
+      rows: 2,
+      columns: 2,
+      spacing: 5,
+      stackableBox: {
+        ...DEFAULT_TRAY_PARAMS.stackableBox,
+        enabled: true,
+        outerWidth: 60,
+        outerDepth: 60,
+        minimumWallClearance: 2,
+      },
+    });
+
+    expect(expanded.stackableBox?.enabled).toBe(true);
+    // 内容尺寸 + 2×6mm 可用内缩，向上取 0.1mm。
+    const slotWidth = DEFAULT_TRAY_PARAMS.slotDiameter!;
+    const pitch = slotWidth + 5;
+    const content = slotWidth + pitch;
+    const expected = Math.ceil((content + 12) * 10) / 10;
+    expect(expanded.stackableBox?.outerWidth).toBeCloseTo(expected, 5);
+    expect(expanded.stackableBox?.outerDepth).toBeCloseTo(expected, 5);
+    // 行列不被改变。
+    expect(expanded.rows).toBe(2);
+    expect(expanded.columns).toBe(2);
   });
 });

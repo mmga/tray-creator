@@ -1,6 +1,6 @@
 import { booleans, primitives, transforms } from "@jscad/modeling";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
-import type { TrayParams } from "@/types/tray";
+import type { StackableBoxParams, TrayParams } from "@/types/tray";
 import { RENDER_CONFIG } from "@/lib/config";
 import {
   getGridSlotGeometry,
@@ -14,9 +14,12 @@ import {
 import { createGridBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
 import {
   getGridBoundarySpacingAxes,
+  getGridBoxContentSize,
   getGridSlotPitchAxes,
   shouldRemoveGridIslands,
 } from "@/lib/grid-layout-math";
+import { resolveStackableBoxParams } from "@/lib/stackable-box";
+import { createStackableBoxBody } from "@/lib/stackable-box-model";
 
 export {
   getGridBoundarySpacingAxes,
@@ -95,7 +98,98 @@ function createHalfCircleTrayBody(
   return union(base, farSideUpper);
 }
 
+/**
+ * 盒体开启时的网格托盘：固定外尺寸、固定圆角与垂直墙，网格阵列在盒内居中。
+ * 保留圆槽、矩形槽、零间距去岛、底板孔位与 basePlateOnly。
+ */
+function createStackableBoxGridModel(
+  params: TrayParams,
+  box: StackableBoxParams,
+): Geom3 {
+  const { rows, columns, baseThickness, holeDepth } = params;
+  const slot = getGridSlotGeometry(params);
+  const { pitchX, pitchY } = getGridSlotPitchAxes(params);
+  const { contentWidth, contentDepth } = getGridBoxContentSize(params);
+  const trayTopZ = params.basePlateOnly
+    ? baseThickness
+    : baseThickness + holeDepth;
+
+  // 1. 盒体空白主体
+  let tray = createStackableBoxBody({
+    outerWidth: box.outerWidth,
+    outerDepth: box.outerDepth,
+    outerHeight: box.outerHeight,
+    trayTopZ,
+    xyFitClearance: box.xyFitClearance,
+  });
+
+  // 2. 槽位中心围绕盒体中心对称排布
+  const centers: SlotCenter[] = [];
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < columns; col++) {
+      centers.push({
+        cx: -contentWidth / 2 + slot.slotWidth / 2 + col * pitchX,
+        cy: -contentDepth / 2 + slot.slotHeight / 2 + row * pitchY,
+      });
+    }
+  }
+
+  // 3. 槽位阵列（从 trayTopZ 向下挖到槽底）
+  const removeGridIslands = shouldRemoveGridIslands(params);
+  const holeCenters = removeGridIslands
+    ? centers.filter((_, index) => {
+        const row = Math.floor(index / columns);
+        const col = index % columns;
+        return row === 0 || row === rows - 1 || col === 0 || col === columns - 1;
+      })
+    : centers;
+  const holes: Geom3[] = holeCenters.map(({ cx, cy }) =>
+    translate(
+      [cx, cy, baseThickness + holeDepth / 2],
+      slot.shape === "circle"
+        ? cylinder({
+            radius: slot.slotWidth / 2,
+            height: holeDepth + 0.02,
+            segments: RENDER_CONFIG.cylinderSegments,
+          })
+        : cuboid({
+            size: [slot.slotWidth, slot.slotHeight, holeDepth + 0.02],
+          }),
+    ),
+  );
+
+  if (removeGridIslands) {
+    holes.unshift(
+      translate(
+        [0, 0, baseThickness + holeDepth / 2],
+        cuboid({
+          size: [
+            (columns - 1) * pitchX,
+            (rows - 1) * pitchY,
+            holeDepth + 0.02,
+          ],
+        }),
+      ),
+    );
+  }
+
+  // 4. 布尔减法：盒体主体 - 凹槽
+  tray = params.basePlateOnly ? tray : subtract(tray, ...holes);
+
+  // 5. 底板孔位
+  tray = subtractBaseHoleConstructionPlan(
+    tray,
+    createGridBaseHoleConstructionPlan(params),
+  );
+
+  return tray;
+}
+
 export function createTrayModel(params: TrayParams): Geom3 {
+  const box = resolveStackableBoxParams(params.stackableBox);
+  if (box.enabled) {
+    return createStackableBoxGridModel(params, box);
+  }
   const {
     rows,
     columns,

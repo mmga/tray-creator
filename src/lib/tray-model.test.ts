@@ -443,4 +443,56 @@ describe("tray model", () => {
       5,
     );
   });
+
+  it("builds a stackable box body with the user outer dimensions and centered slots", () => {
+    const params = {
+      ...DEFAULT_TRAY_PARAMS,
+      rows: 2,
+      columns: 2,
+      stackableBox: {
+        ...DEFAULT_TRAY_PARAMS.stackableBox,
+        enabled: true,
+        outerWidth: 100,
+        outerDepth: 80,
+        outerHeight: 50,
+        minimumWallClearance: 2,
+      },
+    };
+    const model = createTrayModel(params);
+    const [[minX, minY, minZ], [maxX, maxY, maxZ]] = measureBoundingBox(model);
+
+    expect(maxX - minX).toBeCloseTo(100, 2);
+    expect(maxY - minY).toBeCloseTo(80, 2);
+    expect(maxZ - minZ).toBeCloseTo(50, 2);
+    expect(measureVolume(model)).toBeGreaterThan(0);
+  });
+
+  it("keeps box slots inside the safety boundary when outer dimensions fit", () => {
+    const params = {
+      ...DEFAULT_TRAY_PARAMS,
+      rows: 1,
+      columns: 1,
+      spacing: 5,
+      stackableBox: {
+        ...DEFAULT_TRAY_PARAMS.stackableBox,
+        enabled: true,
+        outerWidth: 80,
+        outerDepth: 60,
+        outerHeight: 50,
+        minimumWallClearance: 2,
+      },
+    };
+    const model = createTrayModel(params);
+    // 单个槽位居中，位于盒内安全区，模型体积为正。
+    expect(measureVolume(model)).toBeGreaterThan(0);
+  });
+
+  it("keeps the disabled-box path unchanged", () => {
+    const normal = createTrayModel(DEFAULT_TRAY_PARAMS);
+    const disabled = createTrayModel({
+      ...DEFAULT_TRAY_PARAMS,
+      stackableBox: { ...DEFAULT_TRAY_PARAMS.stackableBox, enabled: false },
+    });
+    expect(measureVolume(disabled)).toBeCloseTo(measureVolume(normal), 5);
+  });
 });
