@@ -156,4 +156,46 @@ describe("Tray Result Projection", () => {
     expect(result.weight).toEqual({ status: "unavailable" });
     expect(Object.values(result.dimensions).every(Number.isFinite)).toBe(true);
   });
+
+  it("投影盒体外尺寸与两个净高", () => {
+    const boxParams = {
+      ...DEFAULT_TRAY_PARAMS,
+      stackableBox: {
+        ...DEFAULT_TRAY_PARAMS.stackableBox!,
+        enabled: true,
+        outerWidth: 200,
+        outerDepth: 150,
+        outerHeight: 50,
+        lidThickness: 2.4,
+      },
+    };
+    const result = projectGridTrayResult(boxParams, {
+      volume: 120,
+      bodyVolume: 100,
+      lidVolume: 20,
+      isGenerating: false,
+      isPreviewStale: false,
+    });
+
+    expect(result.itemLabel).toBe("堆叠盒体");
+    expect(result.dimensions).toEqual({ width: 200, depth: 150, height: 50 });
+    expect(result.box).toMatchObject({
+      outerWidth: 200,
+      outerDepth: 150,
+      outerHeight: 50,
+      closedOuterHeight: 52.4,
+      lidClearHeight: 47,
+      stackClearHeight: 45.8,
+    });
+    expect(result.box?.bodyWeight).toEqual({
+      status: "available",
+      grams: expect.any(Number),
+    });
+  });
+
+  it("盒体关闭时不投影 box 字段", () => {
+    const result = projectGridTrayResult(DEFAULT_TRAY_PARAMS, idleState);
+    expect(result.box).toBeUndefined();
+    expect(result.itemLabel).toBe(`${DEFAULT_TRAY_PARAMS.rows * DEFAULT_TRAY_PARAMS.columns} 个凹槽`);
+  });
 });

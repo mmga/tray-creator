@@ -15,7 +15,11 @@ import type {
   CustomLayoutParams,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
-import type { TrayParams } from "@/types/tray";
+import type { StackableBoxParams, TrayParams } from "@/types/tray";
+import {
+  calculateBoxHeightProjection,
+  resolveStackableBoxParams,
+} from "@/lib/stackable-box";
 
 export interface TrayResultDimensions {
   width: number;
@@ -34,6 +38,18 @@ export interface TrayResultBuildLimit {
   depthExceeded: boolean;
 }
 
+/** 盒体开启时的结构投影。 */
+export interface BoxResultProjection {
+  outerWidth: number;
+  outerDepth: number;
+  outerHeight: number;
+  closedOuterHeight: number;
+  lidClearHeight: number;
+  stackClearHeight: number;
+  bodyWeight: TrayResultWeight;
+  lidWeight: TrayResultWeight;
+}
+
 interface TrayResultProjectionBase {
   slotCount: number;
   itemLabel: string;
@@ -43,6 +59,7 @@ interface TrayResultProjectionBase {
   generating: boolean;
   stale: boolean;
   footprintWarnings?: readonly string[];
+  box?: BoxResultProjection;
 }
 
 export interface GridTrayResultProjection extends TrayResultProjectionBase {
@@ -139,6 +156,8 @@ interface ResultState {
   volume: number;
   isGenerating: boolean;
   isPreviewStale: boolean;
+  bodyVolume?: number;
+  lidVolume?: number;
 }
 
 function finiteOrZero(value: number): number {
@@ -190,21 +209,62 @@ function projectCommon(
   };
 }
 
+function projectBox(
+  box: StackableBoxParams,
+  baseThickness: number,
+  holeDepth: number,
+  basePlateOnly: boolean,
+  state: ResultState,
+): BoxResultProjection {
+  const height = calculateBoxHeightProjection(
+    box,
+    baseThickness,
+    holeDepth,
+    basePlateOnly,
+  );
+  return {
+    outerWidth: box.outerWidth,
+    outerDepth: box.outerDepth,
+    outerHeight: box.outerHeight,
+    closedOuterHeight: height.closedOuterHeight,
+    lidClearHeight: height.lidClearHeight,
+    stackClearHeight: height.stackClearHeight,
+    bodyWeight: projectWeight(state.bodyVolume ?? 0),
+    lidWeight: projectWeight(state.lidVolume ?? 0),
+  };
+}
+
 export function projectGridTrayResult(
   params: TrayParams,
   state: ResultState,
 ): GridTrayResultProjection {
-  const dimensions = calculateTrayDimensions(params);
+  const box = resolveStackableBoxParams(params.stackableBox);
+  const dimensions = box.enabled
+    ? {
+        width: box.outerWidth,
+        depth: box.outerDepth,
+        height: box.outerHeight,
+      }
+    : calculateTrayDimensions(params);
   const slotCount = params.rows * params.columns;
   const common = projectCommon(dimensions, state);
   return {
     mode: "grid",
     slotCount,
-    itemLabel: `${slotCount} 个凹槽`,
+    itemLabel: box.enabled ? "堆叠盒体" : `${slotCount} 个凹槽`,
     ...common,
     rows: params.rows,
     columns: params.columns,
     footprintArea: finiteOrZero(common.dimensions.width * common.dimensions.depth),
+    box: box.enabled
+      ? projectBox(
+          box,
+          params.baseThickness,
+          params.holeDepth,
+          params.basePlateOnly,
+          state,
+        )
+      : undefined,
   };
 }
 
@@ -217,25 +277,34 @@ export function projectCustomTrayResult(
   },
 ): CustomTrayResultProjection {
   const footprint = calculateCustomTrayFootprint(params, contouredState);
-  const modelDimensions = {
-    width: footprint.width,
-    depth: footprint.depth,
-    height: params.baseThickness + params.holeDepth,
-  };
+  const box = resolveStackableBoxParams(params.stackableBox);
+  const modelDimensions = box.enabled
+    ? {
+        width: box.outerWidth,
+        depth: box.outerDepth,
+        height: box.outerHeight,
+      }
+    : {
+        width: footprint.width,
+        depth: footprint.depth,
+        height: params.baseThickness + params.holeDepth,
+      };
   const footprintStyle = footprint.footprintStyle;
   const sizingMode = footprint.sizingMode;
 
   // contoured 时尺寸完全由派生轮廓外接框决定，忽略 effectiveDimensions 上游计算（避免双轨）
-  const width =
-    footprintStyle === "contoured"
+  const width = box.enabled
+    ? box.outerWidth
+    : footprintStyle === "contoured"
       ? (footprint.width > 0 ? footprint.width : params.trayWidth)
       : sizingMode === "fixed"
         ? modelDimensions.width
         : effectiveDimensions.width > 0
           ? effectiveDimensions.width
           : params.trayWidth;
-  const depth =
-    footprintStyle === "contoured"
+  const depth = box.enabled
+    ? box.outerDepth
+    : footprintStyle === "contoured"
       ? (footprint.depth > 0 ? footprint.depth : params.trayDepth)
       : sizingMode === "fixed"
         ? modelDimensions.depth
@@ -257,13 +326,16 @@ export function projectCustomTrayResult(
   return {
     mode: "custom",
     slotCount: params.slots.length,
-    itemLabel: `${params.slots.length} 个凹槽`,
+    itemLabel: box.enabled ? "堆叠盒体" : `${params.slots.length} 个凹槽`,
     ...common,
     footprintStyle,
     sizingMode,
     footprintKind,
     contourBodyCount: footprint.contourBodyCount,
     footprintArea: finiteOrZero(common.dimensions.width * common.dimensions.depth),
+    box: box.enabled
+      ? projectBox(box, params.baseThickness, params.holeDepth, false, state)
+      : undefined,
     footprintWarnings: contouredState.status === "failed"
       ? [contouredState.error.message]
       : contouredState.status === "ready"

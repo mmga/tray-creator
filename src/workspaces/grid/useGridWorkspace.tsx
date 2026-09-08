@@ -155,6 +155,8 @@ export function useGridWorkspace({
         isGenerating={model.isGenerating}
         isPreviewStale={model.isPreviewStale}
         volume={model.volume}
+        bodyVolume={model.bodyVolume}
+        lidVolume={model.lidVolume}
         baseHoleFitViolations={model.baseHoleFitViolations}
         baseHolePlan={model.baseHolePlan}
       />
@@ -167,6 +169,8 @@ export function useGridWorkspace({
       model.replaceParams,
       model.updateParam,
       model.volume,
+      model.bodyVolume,
+      model.lidVolume,
       model.baseHoleFitViolations,
       model.baseHolePlan,
     ],

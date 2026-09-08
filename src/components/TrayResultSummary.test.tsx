@@ -98,4 +98,30 @@ describe("TrayResultSummary", () => {
     expect(screen.getByText("2 个分组")).toBeInTheDocument();
     expect(screen.getByText(/平滑轮廓构造失败/)).toBeInTheDocument();
   });
+
+  it("展示盒体结构的外尺寸、净高与耗材分项", () => {
+    const boxResult: GridTrayResultProjection = {
+      ...gridResult,
+      itemLabel: "堆叠盒体",
+      box: {
+        outerWidth: 200,
+        outerDepth: 150,
+        outerHeight: 50,
+        closedOuterHeight: 52.4,
+        lidClearHeight: 47,
+        stackClearHeight: 45.8,
+        bodyWeight: { status: "available", grams: 100 },
+        lidWeight: { status: "available", grams: 20 },
+      },
+    };
+
+    render(<TrayResultSummary result={boxResult} />);
+    fireEvent.click(screen.getByRole("button", { expanded: false }));
+
+    expect(screen.getByText("闭合外高")).toBeInTheDocument();
+    expect(screen.getByText("带盖净高")).toBeInTheDocument();
+    expect(screen.getByText("堆叠净高")).toBeInTheDocument();
+    expect(screen.getByText("盒体耗材")).toBeInTheDocument();
+    expect(screen.getByText("盖子耗材")).toBeInTheDocument();
+  });
 });

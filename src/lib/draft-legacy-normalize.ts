@@ -22,17 +22,21 @@ type HistoricalDraftMode = DraftMode | "stepped-cad";
 
 export type DraftListItemCompatibilityByMode = {
   grid: {
+    kind: "tray" | "box";
     rows: number;
     columns: number;
     structureMode: GridDraftStructureMode;
     baseSizeLabel: string;
     trayWidth: number;
     trayDepth: number;
+    trayHeight?: number;
   };
   custom: {
+    kind: "tray" | "box";
     slotCount: number;
     trayWidth: number;
     trayDepth: number;
+    trayHeight?: number;
   };
   "base-converter": {
     sourceLabel: string;
@@ -93,18 +97,22 @@ export function extractCompatibilityFields(
   switch (summary.mode) {
     case "grid":
       return {
+        kind: summary.kind,
         rows: summary.rows,
         columns: summary.columns,
         structureMode: summary.structureMode,
         baseSizeLabel: summary.baseSizeLabel,
         trayWidth: summary.trayWidth,
         trayDepth: summary.trayDepth,
+        trayHeight: summary.trayHeight,
       };
     case "custom":
       return {
+        kind: summary.kind,
         slotCount: summary.slotCount,
         trayWidth: summary.trayWidth,
         trayDepth: summary.trayDepth,
+        trayHeight: summary.trayHeight,
       };
     case "base-converter":
       return {
@@ -158,6 +166,7 @@ function normalizeSummaryFromLegacyFields(
     ) {
       return {
         mode: "grid",
+        kind: "tray",
         rows: item.rows,
         columns: item.columns,
         structureMode: item.structureMode as GridDraftStructureMode,
@@ -177,6 +186,7 @@ function normalizeSummaryFromLegacyFields(
     ) {
       return {
         mode: "custom",
+        kind: "tray",
         slotCount: item.slotCount,
         trayWidth: item.trayWidth,
         trayDepth: item.trayDepth,

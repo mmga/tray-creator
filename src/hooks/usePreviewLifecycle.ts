@@ -10,6 +10,9 @@ export interface PreviewLifecycleResult {
   geometry: Geom3;
   threeGeometry: THREE.BufferGeometry;
   volume: number;
+  /** 盒体预览时的盒体/盖子分项体积（普通托盘不返回）。 */
+  bodyVolume?: number;
+  lidVolume?: number;
 }
 
 interface UsePreviewLifecycleOptions<P, S, E> {
@@ -27,6 +30,8 @@ interface UsePreviewLifecycleOptions<P, S, E> {
 interface UsePreviewLifecycleReturn {
   threeGeometry: THREE.BufferGeometry | null;
   volume: number;
+  bodyVolume?: number;
+  lidVolume?: number;
   isGenerating: boolean;
   isPreviewStale: boolean;
   invalidatePreview: () => void;
@@ -48,6 +53,8 @@ export function usePreviewLifecycle<P, S, E>({
   const [threeGeometry, setThreeGeometry] =
     useState<THREE.BufferGeometry | null>(null);
   const [volume, setVolume] = useState(0);
+  const [bodyVolume, setBodyVolume] = useState<number | undefined>(undefined);
+  const [lidVolume, setLidVolume] = useState<number | undefined>(undefined);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPreviewStale, setIsPreviewStale] = useState(false);
   const geometryRef = useRef<Geom3 | null>(null);
@@ -70,6 +77,8 @@ export function usePreviewLifecycle<P, S, E>({
     geometryRef.current = null;
     geometryFingerprintRef.current = null;
     setVolume(0);
+    setBodyVolume(undefined);
+    setLidVolume(undefined);
     setIsGenerating(false);
     setIsPreviewStale(true);
     onInvalidate?.();
@@ -101,6 +110,8 @@ export function usePreviewLifecycle<P, S, E>({
       geometryRef.current = result.geometry;
       geometryFingerprintRef.current = fingerprintSnapshot(snapshot);
       setVolume(result.volume);
+      setBodyVolume(result.bodyVolume);
+      setLidVolume(result.lidVolume);
       threeGeometryRef.current?.dispose();
       threeGeometryRef.current = result.threeGeometry;
       setThreeGeometry(result.threeGeometry);
@@ -173,6 +184,8 @@ export function usePreviewLifecycle<P, S, E>({
   return {
     threeGeometry,
     volume,
+    bodyVolume,
+    lidVolume,
     isGenerating,
     isPreviewStale,
     invalidatePreview,

@@ -19,6 +19,8 @@ export interface GridPreviewResult {
   geometry: Geom3;
   threeGeometry: THREE.BufferGeometry;
   volume: number;
+  bodyVolume?: number;
+  lidVolume?: number;
 }
 
 export async function generateGridPreview(
@@ -32,6 +34,8 @@ export async function generateGridPreview(
     geometry: result.geometry,
     threeGeometry,
     volume: result.volume,
+    bodyVolume: result.bodyVolume,
+    lidVolume: result.lidVolume,
   };
 }
 

@@ -44,6 +44,8 @@ interface ParameterPanelProps {
   isGenerating: boolean;
   isPreviewStale: boolean;
   volume: number;
+  bodyVolume?: number;
+  lidVolume?: number;
   baseHoleFitViolations?: readonly BaseHoleFitViolation[];
   baseHolePlan?: BaseHoleConstructionPlan;
 }
@@ -56,6 +58,8 @@ export default function ParameterPanel({
   isGenerating,
   isPreviewStale,
   volume,
+  bodyVolume,
+  lidVolume,
   baseHoleFitViolations = [],
   baseHolePlan: authoritativeBaseHolePlan,
 }: ParameterPanelProps) {
@@ -63,6 +67,8 @@ export default function ParameterPanel({
   const isRectangularSlot = isRectangularGridSlot(params);
   const result = projectGridTrayResult(params, {
     volume,
+    bodyVolume,
+    lidVolume,
     isGenerating,
     isPreviewStale,
   });

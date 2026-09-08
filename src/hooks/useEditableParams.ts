@@ -79,6 +79,8 @@ export interface UseEditableParamsReturn<P> {
   invalidatePreview: () => void;
   threeGeometry: THREE.BufferGeometry | null;
   volume: number;
+  bodyVolume?: number;
+  lidVolume?: number;
   isGenerating: boolean;
   isPreviewStale: boolean;
   handleGenerate: () => Promise<void>;
@@ -150,6 +152,8 @@ export function useEditableParams<P, S, E>({
   const {
     threeGeometry,
     volume,
+    bodyVolume,
+    lidVolume,
     isGenerating,
     isPreviewStale,
     invalidatePreview,
@@ -333,6 +337,8 @@ export function useEditableParams<P, S, E>({
     invalidatePreview,
     threeGeometry,
     volume,
+    bodyVolume,
+    lidVolume,
     isGenerating,
     isPreviewStale,
     handleGenerate,

@@ -161,6 +161,8 @@ export function useCustomWorkspace({
         isGenerating={model.isGenerating}
         isPreviewStale={model.isPreviewStale}
         volume={model.volume}
+        bodyVolume={model.bodyVolume}
+        lidVolume={model.lidVolume}
         contouredFootprintState={model.contouredFootprintState}
         baseHoleFitViolations={model.baseHoleFitViolations}
         baseHolePlan={model.baseHolePlan}
@@ -176,6 +178,8 @@ export function useCustomWorkspace({
       model.params,
       model.updateParam,
       model.volume,
+      model.bodyVolume,
+      model.lidVolume,
       model.baseHoleFitViolations,
       model.baseHolePlan,
       model.contouredFootprintState,

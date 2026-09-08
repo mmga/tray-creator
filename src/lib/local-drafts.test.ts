@@ -504,6 +504,7 @@ describe("local drafts", () => {
 
     expect(grid.item.summary).toEqual({
       mode: "grid",
+      kind: "tray",
       rows: 1,
       columns: 2,
       structureMode: "half-circle",
@@ -513,6 +514,7 @@ describe("local drafts", () => {
     });
     expect(custom.item.summary).toEqual({
       mode: "custom",
+      kind: "tray",
       slotCount: 1,
       trayWidth: 120,
       trayDepth: 80,
@@ -863,6 +865,34 @@ describe("local drafts", () => {
       mode: "grid",
       structureMode: "base-plate-only",
       baseSizeLabel: "40mm",
+    });
+  });
+
+  it("marks box drafts with external dimensions and height", () => {
+    const gridRecord = createDraft(
+      "盒体网格",
+      "grid",
+      createGridParams({
+        rows: 2,
+        columns: 2,
+        stackableBox: {
+          enabled: true,
+          outerWidth: 200,
+          outerDepth: 150,
+          outerHeight: 50,
+          minimumWallClearance: 2,
+          xyFitClearance: 0.25,
+          lidThickness: 2.4,
+        },
+      }),
+    );
+
+    expect(gridRecord.item.summary).toMatchObject({
+      mode: "grid",
+      kind: "box",
+      trayWidth: 200,
+      trayDepth: 150,
+      trayHeight: 50,
     });
   });
 });

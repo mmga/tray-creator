@@ -10,6 +10,7 @@ import {
 } from "@/lib/base-converter-config";
 import type { TrayParams } from "@/types/tray";
 import type { ModeParamSnapshot } from "@/lib/mode-param-snapshot";
+import { resolveStackableBoxParams } from "@/lib/stackable-box";
 
 export type GridDraftStructureMode =
   | "full"
@@ -19,18 +20,23 @@ export type GridDraftStructureMode =
 export type DraftSummary =
   | {
       mode: "grid";
+      /** 托盘或堆叠盒体结构。 */
+      kind: "tray" | "box";
       rows: number;
       columns: number;
       structureMode: GridDraftStructureMode;
       baseSizeLabel: string;
       trayWidth: number;
       trayDepth: number;
+      trayHeight?: number;
     }
   | {
       mode: "custom";
+      kind: "tray" | "box";
       slotCount: number;
       trayWidth: number;
       trayDepth: number;
+      trayHeight?: number;
     }
   | {
       mode: "base-converter";
@@ -76,9 +82,24 @@ function getGridStructureMode(params: TrayParams): GridDraftStructureMode {
 function buildGridDraftSummary(
   params: TrayParams,
 ): DraftSummaryByMode["grid"] {
+  const box = resolveStackableBoxParams(params.stackableBox);
+  if (box.enabled) {
+    return {
+      mode: "grid",
+      kind: "box",
+      rows: params.rows,
+      columns: params.columns,
+      structureMode: getGridStructureMode(params),
+      baseSizeLabel: formatBaseSizeLabel(params.holeDiameter),
+      trayWidth: box.outerWidth,
+      trayDepth: box.outerDepth,
+      trayHeight: box.outerHeight,
+    };
+  }
   const dimensions = calculateTrayDimensions(params);
   return {
     mode: "grid",
+    kind: "tray",
     rows: params.rows,
     columns: params.columns,
     structureMode: getGridStructureMode(params),
@@ -91,8 +112,20 @@ function buildGridDraftSummary(
 function buildCustomDraftSummary(
   params: CustomLayoutParams,
 ): DraftSummaryByMode["custom"] {
+  const box = resolveStackableBoxParams(params.stackableBox);
+  if (box.enabled) {
+    return {
+      mode: "custom",
+      kind: "box",
+      slotCount: params.slots.length,
+      trayWidth: box.outerWidth,
+      trayDepth: box.outerDepth,
+      trayHeight: box.outerHeight,
+    };
+  }
   return {
     mode: "custom",
+    kind: "tray",
     slotCount: params.slots.length,
     trayWidth: params.trayWidth,
     trayDepth: params.trayDepth,

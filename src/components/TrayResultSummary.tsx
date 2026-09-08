@@ -1,7 +1,10 @@
 "use client";
 
 import { ResultSummary } from "@/components/ResultSummary";
-import type { TrayResultProjection } from "@/lib/tray-result-projection";
+import type {
+  TrayResultProjection,
+  TrayResultWeight,
+} from "@/lib/tray-result-projection";
 
 interface TrayResultSummaryProps {
   result: TrayResultProjection;
@@ -16,6 +19,12 @@ function ResultMetric({ label, value }: { label: string; value: string }) {
       </div>
     </div>
   );
+}
+
+function weightText(weight: TrayResultWeight, fallback: string): string {
+  return weight.status === "available"
+    ? `${weight.grams.toFixed(1)} g`
+    : fallback;
 }
 
 function modeSpecificMetrics(result: TrayResultProjection) {
@@ -122,6 +131,36 @@ export function TrayResultSummary({ result }: TrayResultSummaryProps) {
         <ResultMetric label="耗材参考" value={weight} />
         {modeSpecificMetrics(result)}
       </div>
+      {result.box ? (
+        <div className="space-y-1.5 border border-[#2e2a24] bg-[#1c1a16] p-2">
+          <div className="grid grid-cols-2 gap-1.5">
+            <ResultMetric
+              label="闭合外高"
+              value={`${result.box.closedOuterHeight.toFixed(1)} mm`}
+            />
+            <ResultMetric
+              label="带盖净高"
+              value={`${result.box.lidClearHeight.toFixed(1)} mm`}
+            />
+            <ResultMetric
+              label="堆叠净高"
+              value={`${result.box.stackClearHeight.toFixed(1)} mm`}
+            />
+            <ResultMetric
+              label="盒体耗材"
+              value={weightText(result.box.bodyWeight, weight)}
+            />
+            <ResultMetric
+              label="盖子耗材"
+              value={weightText(result.box.lidWeight, "待锻造")}
+            />
+            <ResultMetric
+              label="定位间隙"
+              value="0.25 mm / 侧"
+            />
+          </div>
+        </div>
+      ) : null}
       {result.buildLimit.oversized ? (
         <div className="text-[10px] text-[#d75b5b]">
           超过常规打印尺寸 {result.buildLimit.maxSize} × {result.buildLimit.maxSize} mm，仍可继续建模。

@@ -37,6 +37,8 @@ interface UseTrayModelReturn {
   resetParams: () => void;
   threeGeometry: THREE.BufferGeometry | null;
   volume: number;
+  bodyVolume?: number;
+  lidVolume?: number;
   isGenerating: boolean;
   isPreviewStale: boolean;
   transactionRevision: number;
@@ -53,6 +55,8 @@ export function useTrayModel(): UseTrayModelReturn {
     setParams,
     threeGeometry,
     volume,
+    bodyVolume,
+    lidVolume,
     isGenerating,
     isPreviewStale,
     transactionRevision,
@@ -115,6 +119,8 @@ export function useTrayModel(): UseTrayModelReturn {
     resetParams,
     threeGeometry,
     volume,
+    bodyVolume,
+    lidVolume,
     isGenerating,
     isPreviewStale,
     transactionRevision,

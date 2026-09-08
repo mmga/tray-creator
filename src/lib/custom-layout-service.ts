@@ -20,6 +20,8 @@ export interface CustomPreviewResult {
   geometry: Geom3;
   threeGeometry: THREE.BufferGeometry;
   volume: number;
+  bodyVolume?: number;
+  lidVolume?: number;
 }
 
 export async function generateCustomPreview(
@@ -33,6 +35,8 @@ export async function generateCustomPreview(
     geometry: result.geometry,
     threeGeometry,
     volume: result.volume,
+    bodyVolume: result.bodyVolume,
+    lidVolume: result.lidVolume,
   };
 }
 

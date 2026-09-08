@@ -24,16 +24,24 @@ function renderDraftSummary(item: AnyDraftListItem): ReactNode {
     case "grid":
       return (
         <>
+          <span>{item.kind === "box" ? "盒体" : "托盘"}</span>
           <span>{item.rows}×{item.columns}</span>
           <span>{item.baseSizeLabel}</span>
-          <span>{item.trayWidth.toFixed(0)}×{item.trayDepth.toFixed(0)}mm</span>
+          <span>
+            {item.trayWidth.toFixed(0)}×{item.trayDepth.toFixed(0)}
+            {item.trayHeight !== undefined ? `×${item.trayHeight.toFixed(0)}` : ""}mm
+          </span>
         </>
       );
     case "custom":
       return (
         <>
+          <span>{item.kind === "box" ? "盒体" : "托盘"}</span>
           <span>{item.slotCount} 槽</span>
-          <span>{item.trayWidth.toFixed(0)}×{item.trayDepth.toFixed(0)}mm</span>
+          <span>
+            {item.trayWidth.toFixed(0)}×{item.trayDepth.toFixed(0)}
+            {item.trayHeight !== undefined ? `×${item.trayHeight.toFixed(0)}` : ""}mm
+          </span>
         </>
       );
     case "base-converter":

@@ -57,6 +57,8 @@ interface CustomPanelProps {
   isGenerating: boolean;
   isPreviewStale: boolean;
   volume: number;
+  bodyVolume?: number;
+  lidVolume?: number;
   contouredFootprintState?: ContouredFootprintState<ConstructedContouredFootprint>;
   baseHoleFitViolations?: readonly BaseHoleFitViolation[];
   baseHolePlan?: BaseHoleConstructionPlan;
@@ -80,6 +82,8 @@ export default function CustomPanel({
   isGenerating,
   isPreviewStale,
   volume,
+  bodyVolume,
+  lidVolume,
   contouredFootprintState = { status: "inactive" },
   baseHoleFitViolations = [],
   baseHolePlan: authoritativeBaseHolePlan,
@@ -87,6 +91,8 @@ export default function CustomPanel({
 }: CustomPanelProps) {
   const result = projectCustomTrayResult(params, effectiveDimensions, {
     volume,
+    bodyVolume,
+    lidVolume,
     isGenerating,
     isPreviewStale,
   }, contouredFootprintState);

@@ -108,6 +108,8 @@ interface UseCustomLayoutReturn {
   // 3D 相关
   threeGeometry: THREE.BufferGeometry | null;
   volume: number; // in mm^3
+  bodyVolume?: number;
+  lidVolume?: number;
   isGenerating: boolean;
   isPreviewStale: boolean;
   transactionRevision: number;
@@ -143,6 +145,8 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     canUndo,
     threeGeometry,
     volume,
+    bodyVolume,
+    lidVolume,
     isGenerating,
     isPreviewStale,
     transactionRevision,
@@ -379,6 +383,8 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     canUndo,
     threeGeometry,
     volume,
+    bodyVolume,
+    lidVolume,
     isGenerating,
     isPreviewStale,
     transactionRevision,

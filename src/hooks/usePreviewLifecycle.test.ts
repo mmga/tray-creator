@@ -237,4 +237,43 @@ describe("usePreviewLifecycle", () => {
 
     expect(threeGeometry.dispose).toHaveBeenCalledTimes(1);
   });
+
+  it("keeps box volume breakdowns and clears them on invalidate", async () => {
+    const geometry = { id: "box" } as never;
+    const threeGeometry = { dispose: vi.fn() };
+    const generatePreview = vi.fn().mockResolvedValue({
+      geometry,
+      threeGeometry,
+      volume: 120,
+      bodyVolume: 100,
+      lidVolume: 20,
+    });
+    const { result } = renderHook(() =>
+      usePreviewLifecycle({
+        getParams: () => ({ rows: 1 }),
+        captureSnapshot: (current: { rows: number }) =>
+          structuredClone(current),
+        captureExportContext: () => undefined,
+        fingerprintSnapshot: JSON.stringify,
+        generatePreview,
+        exportModel: vi.fn(),
+      }),
+    );
+
+    await act(async () => {
+      await result.current.handleGenerate();
+    });
+
+    expect(result.current.volume).toBe(120);
+    expect(result.current.bodyVolume).toBe(100);
+    expect(result.current.lidVolume).toBe(20);
+
+    act(() => {
+      result.current.invalidatePreview();
+    });
+
+    expect(result.current.volume).toBe(0);
+    expect(result.current.bodyVolume).toBeUndefined();
+    expect(result.current.lidVolume).toBeUndefined();
+  });
 });
