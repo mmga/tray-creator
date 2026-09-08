@@ -112,7 +112,7 @@ export interface StackableBoxLidInput {
 /**
  * 生成堆叠盒体空白主体（不含内部槽位切削）。
  *
- * 结构：底部外倒角导向段 + 2.4mm 主墙环 + 顶部局部加宽区 + 顶部内倒角。
+ * 结构：底部外倒角导向段 + 2mm 主墙环 + 开口下沿打印过渡斜面 + 顶部内倒角。
  * 倒角只负责导向，盒口顶面与盒底外围水平肩面负责承重。
  */
 export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
@@ -127,7 +127,7 @@ export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
   const wall = STACKABLE_BOX_SPECS.bodyWallThickness;
   const rim = STACKABLE_BOX_SPECS.topRimWidth;
   const guideH = STACKABLE_BOX_SPECS.guideChamferHeight;
-  const rimThickness = STACKABLE_BOX_SPECS.topReinforcementHeight;
+  const transitionH = STACKABLE_BOX_SPECS.topTransitionHeight;
 
   if (!Number.isFinite(W) || !Number.isFinite(D) || !Number.isFinite(H)) {
     throw new Error("堆叠盒体外部尺寸必须是有限数值");
@@ -137,8 +137,17 @@ export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
       `盒底厚度 ${trayTopZ} mm 小于倒角导向高度 ${guideH} mm`,
     );
   }
-  if (rimThickness < guideH) {
-    throw new Error("顶部加宽区高度不足以容纳完整倒角导向段");
+  if (transitionH <= 0) {
+    throw new Error("顶部开口下沿过渡斜面高度必须大于 0");
+  }
+
+  const transitionStartZ = H - guideH - transitionH;
+  if (transitionStartZ < trayTopZ) {
+    throw new Error(
+      `盒体外高 ${H} mm 不足以容纳顶部过渡斜面和导向倒角（至少需要 ${(
+        trayTopZ + transitionH + guideH
+      ).toFixed(1)} mm）`,
+    );
   }
 
   const outerProfile = roundedRectangleProfile(W, D, R);
@@ -176,22 +185,34 @@ export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
   );
   const base = union(guide, baseAboveGuide);
 
-  // 2. 主墙环（2.4mm，从 trayTopZ 到 H - rimThickness）
+  // 2. 主墙环（2mm，从 trayTopZ 到开口下沿过渡斜面的起点）
   const wallRing = subtract(outerProfile, innerWallProfile);
-  const wallHeight = Math.max(0, H - trayTopZ - rimThickness);
-  const wallSolid = translate(
-    [0, 0, trayTopZ],
-    extrudeProfile(wallRing, wallHeight),
-  );
+  const wallHeight = transitionStartZ - trayTopZ;
+  const wallSolid =
+    wallHeight > 0
+      ? translate([0, 0, trayTopZ], extrudeProfile(wallRing, wallHeight))
+      : null;
 
-  // 3. 顶部局部加宽区（最后 rimThickness 高度）；倒角前的短直段保留内缩 R 的开口。
+  // 3. 开口下沿打印过渡斜面：内轮廓从主墙内缩 wall 连续过渡到 rim，
+  //    以 45° 斜面替代原本向下悬空的水平台阶。
   const rimRing = subtract(outerProfile, innerRimProfile);
+  const transitionOuter = translate(
+    [0, 0, transitionStartZ - 0.02],
+    extrudeProfile(outerProfile, transitionH + 0.02),
+  );
+  const transitionCavity = translate(
+    [0, 0, transitionStartZ - 0.02],
+    loftProfiles(innerWallProfile, innerRimProfile, transitionH + 0.02),
+  );
+  const transitionSolid = subtract(transitionOuter, transitionCavity);
+
+  // 4. 顶部水平承重环（最后 guideH 高度）；内倒角从其下沿开始。
   const topRimSolid = translate(
-    [0, 0, H - rimThickness],
-    extrudeProfile(rimRing, rimThickness),
+    [0, 0, H - guideH],
+    extrudeProfile(rimRing, guideH),
   );
 
-  // 4. 顶部内倒角：下端内缩 R，上端内缩 R-G，形成连续向上外扩的承重环。
+  // 5. 顶部内倒角：下端内缩 R，上端内缩 R-G，形成连续向上外扩的承重环。
   const openingBottomProfile = insetRoundedRectangleProfile(W, D, R, rim);
   const openingTopProfile = insetRoundedRectangleProfile(
     W,
@@ -205,7 +226,12 @@ export function createStackableBoxBody(input: StackableBoxBodyInput): Geom3 {
   );
   const topRimWithChamfer = subtract(topRimSolid, topChamferCavity);
   const body = orientPositiveVolume(
-    union(base, wallSolid, topRimWithChamfer),
+    union(
+      base,
+      ...(wallSolid ? [wallSolid] : []),
+      transitionSolid,
+      topRimWithChamfer,
+    ),
   );
 
   return orientPositiveVolume(body);

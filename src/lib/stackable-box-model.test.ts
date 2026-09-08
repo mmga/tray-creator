@@ -121,10 +121,53 @@ describe("stackable box body", () => {
       .toBeCloseTo(0, 3);
   });
 
+  it("uses a 2mm wall and a printable sloped transition below the widened opening", () => {
+    const transitionH = STACKABLE_BOX_SPECS.topTransitionHeight;
+    const transitionStartZ =
+      H - STACKABLE_BOX_SPECS.guideChamferHeight - transitionH;
+    const midZ = transitionStartZ + transitionH / 2;
+    const midInset =
+      (STACKABLE_BOX_SPECS.bodyWallThickness +
+        STACKABLE_BOX_SPECS.topRimWidth) /
+      2;
+
+    expect(
+      probe(createBody(), W / 2 - (midInset + 0.2), midZ),
+    ).toBeCloseTo(0, 3);
+    expect(
+      probe(createBody(), W / 2 - (midInset - 0.2), midZ),
+    ).toBeGreaterThan(0);
+
+    expect(
+      probe(
+        createBody(),
+        W / 2 - (STACKABLE_BOX_SPECS.bodyWallThickness + 0.2),
+        transitionStartZ + 0.05,
+      ),
+    ).toBeCloseTo(0, 3);
+    expect(
+      probe(
+        createBody(),
+        W / 2 - (STACKABLE_BOX_SPECS.bodyWallThickness - 0.2),
+        transitionStartZ + 0.05,
+      ),
+    ).toBeGreaterThan(0);
+  });
+
   it("rejects a bottom thinner than the guide height at the CAD boundary", () => {
     expect(() =>
       createBody({ trayTopZ: STACKABLE_BOX_SPECS.guideChamferHeight - 0.01 }),
     ).toThrow(/盒底厚度/);
+  });
+
+  it("rejects an outer height that cannot contain the printable transition", () => {
+    const minimumHeight =
+      TRAY_TOP_Z +
+      STACKABLE_BOX_SPECS.topTransitionHeight +
+      STACKABLE_BOX_SPECS.guideChamferHeight;
+    expect(() => createBody({ outerHeight: minimumHeight - 0.01 })).toThrow(
+      /顶部过渡斜面和导向倒角/,
+    );
   });
 
   it("keeps two aligned boxes clear when their load shoulders meet", () => {

@@ -11,15 +11,17 @@ import type { StackableBoxParams } from "@/types/tray";
 
 export const STACKABLE_BOX_SPECS = {
   /** 主体墙厚 (mm) */
-  bodyWallThickness: 2.4,
+  bodyWallThickness: 2.0,
   /** 外轮廓圆角 (mm) */
   outerCornerRadius: 6.0,
   /** 顶部结构边总宽 (mm)；倒角后保留 topRimWidth - guideChamferHeight 的水平承重边 */
   topRimWidth: 6.0,
   /** 底部外倒角/顶部内倒角导向高度 (mm)，首版为 45° */
   guideChamferHeight: 2.0,
-  /** 顶部局部加宽区高度 (mm)，必须不小于导向高度 */
-  topReinforcementHeight: 2.4,
+  /** 主墙到顶部加宽开口之间的打印过渡斜面高度 (mm)，首版为 45° */
+  topTransitionHeight: 4.0,
+  /** 顶部加宽开口下沿的打印过渡斜面角度 (deg) */
+  topTransitionAngle: 45,
   /** 倒角角度 (deg)，当前固定为 45° */
   guideChamferAngle: 45,
   /** 最小水平承重边宽 (mm) */
@@ -60,7 +62,7 @@ export const STACKABLE_BOX_LIMITS = {
   outerDepth: { label: "盒体宽度", min: 30, max: 5000, step: 0.1, unit: "mm" },
   outerHeight: {
     label: "盒体高度",
-    // 高度使用动态结构下限（trayTopZ + minWallRise），静态下限仅为兜底值。
+    // 高度使用动态结构下限（trayTopZ + 过渡斜面 + 顶部导向），静态下限仅为兜底值。
     min: 1,
     max: 5000,
     step: 0.1,
@@ -202,7 +204,13 @@ export function calculateBoxHeightProjection(
 ): BoxHeightProjection {
   const slotFloorZ = baseThickness;
   const trayTopZ = basePlateOnly ? baseThickness : baseThickness + holeDepth;
-  const minimumOuterHeight = trayTopZ + STACKABLE_BOX_SPECS.minWallRise;
+  const minimumOuterHeight =
+    trayTopZ +
+    Math.max(
+      STACKABLE_BOX_SPECS.minWallRise,
+      STACKABLE_BOX_SPECS.topTransitionHeight +
+        STACKABLE_BOX_SPECS.guideChamferHeight,
+    );
   const lidClearHeight = params.outerHeight - slotFloorZ;
   const stackClearHeight =
     lidClearHeight - STACKABLE_BOX_SPECS.guideChamferHeight;
@@ -309,7 +317,6 @@ export type BoxBlockingCode =
   | "slot-in-safety-boundary"
   | "clearance-or-lid-out-of-range"
   | "bottom-too-thin-for-guide"
-  | "top-reinforcement-too-shallow"
   | "base-hole-incompatible";
 
 export interface BoxBlockingReason {
@@ -378,16 +385,6 @@ export function validateBoxBaseGeometry(
       message: `盒底厚度 ${height.trayTopZ.toFixed(1)} mm 小于倒角导向高度 ${STACKABLE_BOX_SPECS.guideChamferHeight.toFixed(1)} mm`,
     });
   }
-  if (
-    STACKABLE_BOX_SPECS.topReinforcementHeight <
-    STACKABLE_BOX_SPECS.guideChamferHeight
-  ) {
-    reasons.push({
-      code: "top-reinforcement-too-shallow",
-      message: "顶部加宽区高度不足以容纳完整倒角导向段",
-    });
-  }
-
   if (params.xyFitClearance < STACKABLE_BOX_LIMITS.xyFitClearance.min ||
     params.xyFitClearance > STACKABLE_BOX_LIMITS.xyFitClearance.max) {
     reasons.push({

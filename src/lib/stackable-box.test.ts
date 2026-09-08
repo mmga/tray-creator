@@ -113,7 +113,7 @@ describe("stackable-box height projection", () => {
     expect(projection).toEqual({
       slotFloorZ: 3,
       trayTopZ: 6,
-      minimumOuterHeight: 8.4,
+      minimumOuterHeight: 12,
       lidClearHeight: 47,
       stackClearHeight: 45,
       closedOuterHeight: 52.4,
@@ -124,7 +124,12 @@ describe("stackable-box height projection", () => {
     const projection = calculateBoxHeightProjection(enabledBox(), 3, 3, true);
     expect(projection.trayTopZ).toBe(3);
     expect(projection.minimumOuterHeight).toBe(
-      3 + STACKABLE_BOX_SPECS.minWallRise,
+      3 +
+        Math.max(
+          STACKABLE_BOX_SPECS.minWallRise,
+          STACKABLE_BOX_SPECS.topTransitionHeight +
+            STACKABLE_BOX_SPECS.guideChamferHeight,
+        ),
     );
   });
 });
