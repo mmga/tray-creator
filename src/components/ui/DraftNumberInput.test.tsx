@@ -48,4 +48,28 @@ describe("DraftNumberInput", () => {
     );
     expect(input).toHaveValue(30);
   });
+
+  it("keeps the in-progress text when the external value changes while focused", () => {
+    const onValueChange = vi.fn();
+    const { rerender } = render(
+      <DraftNumberInput
+        aria-label="尺寸"
+        value={25}
+        onValueChange={onValueChange}
+      />,
+    );
+    const input = screen.getByRole("spinbutton", { name: "尺寸" });
+
+    fireEvent.focus(input);
+    fireEvent.change(input, { target: { value: "30" } });
+    rerender(
+      <DraftNumberInput
+        aria-label="尺寸"
+        value={40}
+        onValueChange={onValueChange}
+      />,
+    );
+
+    expect(input).toHaveValue(30);
+  });
 });
