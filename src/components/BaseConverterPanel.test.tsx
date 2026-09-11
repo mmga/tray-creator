@@ -5,6 +5,7 @@ import { ToastProvider, Toaster } from "@/hooks/useToast";
 import {
   BASE_CONVERTER_DEFAULTS,
   SOURCE_BASE_STANDARDS,
+  SQUARE_BASE_STANDARDS,
   TARGET_BASE_STANDARDS,
   createConversionGeometrySnapshot,
 } from "@/lib/base-converter-config";
@@ -142,6 +143,55 @@ describe("BaseConverterPanel", () => {
       roundBaseStandardId: "round-40",
       roundBaseSnapshot: { nominalDiameter: 40, height: 4, topInset: 1.5 },
     });
+  });
+
+  it("switches a plain base to the square shape from the grid presets", () => {
+    const updateParam = vi.fn();
+    const updateParams = vi.fn();
+    const circlePanel = renderPanel(
+      { ...BASE_CONVERTER_DEFAULTS, generationKind: "plain" },
+      { updateParam, updateParams },
+    );
+
+    expect(screen.getByLabelText("普通底盘底面形状")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "圆形" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "方形 / 矩形" }));
+    expect(updateParam).toHaveBeenCalledWith("plainBaseShape", "square");
+    circlePanel.unmount();
+
+    renderPanel({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+      plainBaseShape: "square",
+    }, { updateParams });
+
+    expect(screen.queryByRole("combobox", { name: "战锤圆形底盘规格" }))
+      .not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("combobox", { name: "战锤方形 / 矩形底盘规格" }),
+    );
+    expect(screen.getAllByRole("option")).toHaveLength(
+      SQUARE_BASE_STANDARDS.length,
+    );
+    fireEvent.click(screen.getByRole("option", { name: "50 × 100mm" }));
+    const mutate = updateParams.mock.calls[0][0] as (
+      params: typeof BASE_CONVERTER_DEFAULTS,
+    ) => typeof BASE_CONVERTER_DEFAULTS;
+    expect(mutate(BASE_CONVERTER_DEFAULTS)).toMatchObject({
+      squareBaseStandardId: "old-world-50x100",
+      squareBaseSnapshot: { width: 50, depth: 100 },
+    });
+  });
+
+  it("offers the shape switch only for the plain base", () => {
+    renderPanel({ ...BASE_CONVERTER_DEFAULTS, generationKind: "push-fit" });
+
+    expect(screen.queryByLabelText("普通底盘底面形状")).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "战锤圆形底盘规格" }))
+      .toBeInTheDocument();
   });
 
   it("shows editable hex-hole dimensions and offsets only for push-fit bases", () => {

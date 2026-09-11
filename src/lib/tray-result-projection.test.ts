@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
-import { BASE_CONVERTER_DEFAULTS } from "@/lib/base-converter-config";
+import {
+  BASE_CONVERTER_DEFAULTS,
+  SQUARE_BASE_STANDARDS,
+} from "@/lib/base-converter-config";
 import {
   constructCustomContouredFootprintOutcome,
   projectCustomContouredFootprintInput,
@@ -133,6 +136,33 @@ describe("Tray Result Projection", () => {
       generationKind: "push-fit",
       itemLabel: "简版底盘 · Ø32mm · 六边孔 3mm",
       hole: { acrossFlats: 3, offsetX: 1.2, offsetY: -0.8 },
+    });
+  });
+
+  it("投影方形普通底盘的真实宽深与形状标识", () => {
+    const square = projectBaseConverterResult({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+      plainBaseShape: "square",
+      squareBaseStandardId: "old-world-25x50",
+      squareBaseSnapshot: SQUARE_BASE_STANDARDS.find(
+        (standard) => standard.standardId === "old-world-25x50",
+      )!,
+    }, idleState);
+    const round = projectBaseConverterResult({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+    }, idleState);
+
+    expect(square).toMatchObject({
+      generationKind: "plain",
+      baseShape: "square",
+      itemLabel: "普通底盘 · 方形 · 25 × 50mm",
+      dimensions: { width: 25, depth: 50, height: 4 },
+    });
+    expect(round).toMatchObject({
+      baseShape: "circle",
+      dimensions: { width: 32, depth: 32 },
     });
   });
 

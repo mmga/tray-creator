@@ -7,6 +7,7 @@ import {
 import {
   BASE_CONVERTER_DEFAULTS,
   SOURCE_BASE_STANDARDS,
+  SQUARE_BASE_STANDARDS,
   TARGET_BASE_STANDARDS,
   createConversionGeometrySnapshot,
 } from "@/lib/base-converter-config";
@@ -37,6 +38,32 @@ describe("BaseConverterPreview", () => {
       .not.toBeInTheDocument();
     expect(container.querySelector('[data-shape="push-fit-hole-wall"]'))
       .not.toBeInTheDocument();
+  });
+
+  it("renders the square plain base with the locked preset footprint and inset top", () => {
+    const { container } = render(
+      <BaseConverterPreview
+        params={{
+          ...BASE_CONVERTER_DEFAULTS,
+          generationKind: "plain",
+          plainBaseShape: "square",
+          squareBaseStandardId: "old-world-25x50",
+          squareBaseSnapshot: SQUARE_BASE_STANDARDS.find(
+            (standard) => standard.standardId === "old-world-25x50",
+          )!,
+        }}
+      />,
+    );
+
+    expect(screen.getByText(/普通底盘 · 方形 · 25 × 50mm/)).toBeInTheDocument();
+    const bottom = container.querySelector('[data-shape="square-base-bottom"]');
+    expect(bottom).toHaveAttribute("x", "-12.5");
+    expect(bottom).toHaveAttribute("y", "-25");
+    expect(bottom).toHaveAttribute("width", "25");
+    expect(bottom).toHaveAttribute("height", "50");
+    const top = container.querySelector('[data-shape="square-base-top"]');
+    expect(top).toHaveAttribute("width", "22");
+    expect(top).toHaveAttribute("height", "47");
   });
 
   it("renders an offset hex hole for a push-fit base", () => {

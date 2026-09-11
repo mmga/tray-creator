@@ -290,8 +290,11 @@ function normalizeBaseConverterParamsForMode(
   const normalized = normalizeBaseConverterParams(raw);
   const labels: Record<keyof BaseConverterParams, string> = {
     generationKind: "底盘生成类型",
+    plainBaseShape: "普通底盘底面形状",
     roundBaseStandardId: "圆形底盘标准",
     roundBaseSnapshot: "圆形底盘几何快照",
+    squareBaseStandardId: "方形底盘标准",
+    squareBaseSnapshot: "方形底盘几何快照",
     pushFitHexHole: "简版六边形插孔",
     sourceStandardId: "原底盘标准",
     targetStandardId: "目标底盘标准",
@@ -315,8 +318,11 @@ function normalizeBaseConverterParamsForMode(
   };
   for (const key of [
     "generationKind",
+    "plainBaseShape",
     "roundBaseStandardId",
     "roundBaseSnapshot",
+    "squareBaseStandardId",
+    "squareBaseSnapshot",
     "pushFitHexHole",
     "sourceStandardId",
     "targetStandardId",

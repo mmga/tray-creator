@@ -3,6 +3,7 @@ import {
   BASE_CONVERTER_DEFAULTS,
   ROUND_BASE_STANDARDS,
   SOURCE_BASE_STANDARDS,
+  SQUARE_BASE_STANDARDS,
   TARGET_BASE_STANDARDS,
   createConversionGeometrySnapshot,
   getConversionRecessDimensions,
@@ -11,6 +12,8 @@ import {
   normalizeBaseConverterParams,
   validateBaseConverterParams,
 } from "@/lib/base-converter-config";
+import { OLD_WORLD_RECTANGULAR_PRESETS } from "@/lib/grid-config";
+import type { SquareBaseProfileSnapshot } from "@/types/custom-tray";
 
 describe("base converter config", () => {
   it("defines the five first-release round base standards", () => {
@@ -128,8 +131,11 @@ describe("base converter config", () => {
 
     expect(normalized).toEqual({
       generationKind: "conversion",
+      plainBaseShape: "circle",
       roundBaseStandardId: "round-32",
       roundBaseSnapshot: BASE_CONVERTER_DEFAULTS.roundBaseSnapshot,
+      squareBaseStandardId: "old-world-25x25",
+      squareBaseSnapshot: BASE_CONVERTER_DEFAULTS.squareBaseSnapshot,
       pushFitHexHole: BASE_CONVERTER_DEFAULTS.pushFitHexHole,
       sourceStandardId: "source-50x100",
       targetStandardId: "target-circle-25",
@@ -344,5 +350,101 @@ describe("base converter config", () => {
         },
       }),
     ).toContain("源底座尺寸或圆角无效");
+  });
+
+  it("derives the square base standards from the grid square / rectangle presets", () => {
+    expect(SQUARE_BASE_STANDARDS).toHaveLength(
+      OLD_WORLD_RECTANGULAR_PRESETS.length,
+    );
+    SQUARE_BASE_STANDARDS.forEach((standard, index) => {
+      const preset = OLD_WORLD_RECTANGULAR_PRESETS[index];
+      expect(standard.standardId).toBe(preset.id);
+      expect(standard.name).toBe(`${preset.width} × ${preset.height}mm`);
+      expect(standard.width).toBe(preset.width);
+      expect(standard.depth).toBe(preset.height);
+      expect(standard.height).toBe(4);
+      expect(standard.topInset).toBe(1.5);
+      expect(standard.cornerRadius).toBe(0);
+    });
+    expect(SQUARE_BASE_STANDARDS[0]).toEqual({
+      standardId: "old-world-25x25",
+      name: "25 × 25mm",
+      width: 25,
+      depth: 25,
+      height: 4,
+      topInset: 1.5,
+      cornerRadius: 0,
+    });
+    expect(SQUARE_BASE_STANDARDS.at(-1)).toMatchObject({
+      standardId: "old-world-100x150",
+      width: 100,
+      depth: 150,
+    });
+  });
+
+  it("defaults a plain base to round and locks square width and depth to the preset", () => {
+    const normalized = normalizeBaseConverterParams({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+      plainBaseShape: "square",
+      squareBaseStandardId: "old-world-25x50",
+      squareBaseSnapshot: {
+        standardId: "old-world-25x50",
+        name: "实测 25 × 50mm",
+        width: 40,
+        depth: 90,
+        height: 3.4,
+        topInset: 1.1,
+        cornerRadius: 2,
+      },
+    });
+
+    expect(normalized.plainBaseShape).toBe("square");
+    expect(normalized.squareBaseStandardId).toBe("old-world-25x50");
+    expect(normalized.squareBaseSnapshot).toEqual({
+      standardId: "old-world-25x50",
+      name: "实测 25 × 50mm",
+      width: 25,
+      depth: 50,
+      height: 3.4,
+      topInset: 1.1,
+      cornerRadius: 2,
+    });
+    expect(normalizeBaseConverterParams({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+      plainBaseShape: "octagon" as never,
+    }).plainBaseShape).toBe("circle");
+  });
+
+  it("validates square base geometry while ignoring it for round bases", () => {
+    const squareParams = (overrides: Partial<SquareBaseProfileSnapshot>) => ({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain" as const,
+      plainBaseShape: "square" as const,
+      squareBaseSnapshot: {
+        ...BASE_CONVERTER_DEFAULTS.squareBaseSnapshot,
+        ...overrides,
+      },
+    });
+
+    expect(validateBaseConverterParams(squareParams({}))).toBeNull();
+    expect(validateBaseConverterParams(squareParams({ height: 1.2 })))
+      .toContain("必须大于 1.2mm 壳厚");
+    expect(validateBaseConverterParams(squareParams({ topInset: 13 })))
+      .toContain("顶部轮廓已消失");
+    expect(validateBaseConverterParams(squareParams({ topInset: -1 })))
+      .toContain("方形底盘顶部内缩无效");
+    expect(validateBaseConverterParams(squareParams({ cornerRadius: 20 })))
+      .toContain("方形底盘圆角无效");
+    expect(validateBaseConverterParams({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+      plainBaseShape: "circle",
+      squareBaseSnapshot: {
+        ...BASE_CONVERTER_DEFAULTS.squareBaseSnapshot,
+        height: 0,
+      },
+    })).toBeNull();
   });
 });

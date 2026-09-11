@@ -9,6 +9,7 @@ import {
   BASE_CONVERTER_DEFAULTS,
   ROUND_BASE_STANDARDS,
   SOURCE_BASE_STANDARDS,
+  SQUARE_BASE_STANDARDS,
   TARGET_BASE_STANDARDS,
   createConversionGeometrySnapshot,
 } from "@/lib/base-converter-config";
@@ -272,6 +273,112 @@ describe("base converter model", () => {
         geometrySnapshot: createConversionGeometrySnapshot(source, target),
       }),
     ).toThrow("源底座凹槽不小于目标底座");
+  });
+
+  it.each(SQUARE_BASE_STANDARDS)(
+    "builds square $name with the preset footprint and an open underside",
+    (standard) => {
+      const geometry = createBaseConverterModel({
+        ...BASE_CONVERTER_DEFAULTS,
+        generationKind: "plain",
+        plainBaseShape: "square",
+        squareBaseStandardId: standard.standardId,
+        squareBaseSnapshot: standard,
+      });
+      const [min, max] = measurements.measureBoundingBox(geometry);
+
+      expect(max[0] - min[0]).toBeCloseTo(standard.width, 5);
+      expect(max[1] - min[1]).toBeCloseTo(standard.depth, 5);
+      expect(max[2] - min[2]).toBeCloseTo(standard.height, 5);
+
+      const undersideProbe = transforms.translate(
+        [0, 0, 0.85],
+        primitives.cylinder({
+          radius: Math.min(standard.width, standard.depth) / 4,
+          height: 1.3,
+          segments: 32,
+        }),
+      );
+      expect(measurements.measureVolume(
+        booleans.intersect(geometry, undersideProbe),
+      )).toBeCloseTo(0, 6);
+    },
+  );
+
+  it("tapers and rounds the square base from its editable profile", () => {
+    const sharp = createBaseConverterModel({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+      plainBaseShape: "square",
+      squareBaseSnapshot: {
+        ...BASE_CONVERTER_DEFAULTS.squareBaseSnapshot,
+        topInset: 0,
+      },
+    });
+    const tapered = createBaseConverterModel({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+      plainBaseShape: "square",
+    });
+    const rounded = createBaseConverterModel({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+      plainBaseShape: "square",
+      squareBaseSnapshot: {
+        ...BASE_CONVERTER_DEFAULTS.squareBaseSnapshot,
+        topInset: 0,
+        cornerRadius: 4,
+      },
+    });
+
+    expect(measurements.measureVolume(tapered)).toBeLessThan(
+      measurements.measureVolume(sharp),
+    );
+    expect(measurements.measureVolume(rounded)).toBeLessThan(
+      measurements.measureVolume(sharp),
+    );
+    const taperedBounds = measurements.measureBoundingBox(tapered).flat();
+    const sharpBounds = measurements.measureBoundingBox(sharp).flat();
+    taperedBounds.forEach((value, index) => {
+      expect(value).toBeCloseTo(sharpBounds[index], 8);
+    });
+  });
+
+  it("keeps the taper manifold when the top corner radius collapses to zero", () => {
+    const geometry = createBaseConverterModel({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+      plainBaseShape: "square",
+      squareBaseSnapshot: {
+        ...BASE_CONVERTER_DEFAULTS.squareBaseSnapshot,
+        cornerRadius: 1,
+        topInset: 1.5,
+      },
+    });
+    const [min, max] = measurements.measureBoundingBox(geometry);
+
+    expect(max[0] - min[0]).toBeCloseTo(25, 5);
+    expect(max[1] - min[1]).toBeCloseTo(25, 5);
+    expect(max[2] - min[2]).toBeCloseTo(4, 5);
+    // 顶面圆角归零时必须与底面保持同一剖面顶点数，否则实体体积会明显偏小
+    expect(measurements.measureVolume(geometry)).toBeCloseTo(910.373832, 4);
+  });
+
+  it("uses a width-by-depth filename for square plain bases", () => {
+    expect(getBaseConverterSTLFilename({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+      plainBaseShape: "square",
+    })).toBe("base-square-25x25mm.stl");
+    expect(getBaseConverterSTLFilename({
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+      plainBaseShape: "square",
+      squareBaseStandardId: "old-world-50x100",
+      squareBaseSnapshot: SQUARE_BASE_STANDARDS.find(
+        (standard) => standard.standardId === "old-world-50x100",
+      )!,
+    })).toBe("base-square-50x100mm.stl");
   });
 
   it("keeps the historical conversion STL filename", () => {

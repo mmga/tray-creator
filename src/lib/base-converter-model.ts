@@ -19,6 +19,7 @@ import {
   createRoundBaseOuterBody,
   ROUND_BASE_SHELL_THICKNESS,
 } from "@/lib/round-base-profile";
+import { createSquareBaseBody } from "@/lib/square-base-profile";
 import {
   createPushFitHexHoleVertices,
   createPushFitHexWallOuterVertices,
@@ -79,6 +80,12 @@ export function createBaseConverterModel(params: BaseConverterParams): Geom3 {
   }
   const normalized = normalizeBaseConverterParams(params);
   if (normalized.generationKind !== "conversion") {
+    if (
+      normalized.generationKind === "plain"
+      && normalized.plainBaseShape === "square"
+    ) {
+      return createSquareBaseBody(normalized.squareBaseSnapshot);
+    }
     const body = createRoundBaseBody(normalized.roundBaseSnapshot);
     if (normalized.generationKind === "plain") return body;
     const holeProfile = geom2.fromPoints(

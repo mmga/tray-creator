@@ -40,6 +40,10 @@ export function getBaseConverterSTLFilename(params: BaseConverterParams) {
   };
   const diameter = formatNumber(normalized.roundBaseSnapshot.nominalDiameter);
   if (normalized.generationKind === "plain") {
+    if (normalized.plainBaseShape === "square") {
+      const profile = normalized.squareBaseSnapshot;
+      return `base-square-${formatNumber(profile.width)}x${formatNumber(profile.depth)}mm.stl`;
+    }
     return `base-plain-${diameter}mm.stl`;
   }
   const hole = normalized.pushFitHexHole;

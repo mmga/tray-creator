@@ -137,6 +137,19 @@ function buildBaseConverterDraftSummary(
 ): DraftSummaryByMode["base-converter"] {
   const normalized = normalizeBaseConverterParams(params);
   if (normalized.generationKind !== "conversion") {
+    if (
+      normalized.generationKind === "plain"
+      && normalized.plainBaseShape === "square"
+    ) {
+      const profile = normalized.squareBaseSnapshot;
+      return {
+        mode: "base-converter",
+        sourceLabel: "普通底盘 · 方形",
+        targetLabel: profile.name,
+        trayWidth: profile.width,
+        trayDepth: profile.depth,
+      };
+    }
     const profile = normalized.roundBaseSnapshot;
     const sourceLabel = normalized.generationKind === "plain"
       ? "普通底盘"
