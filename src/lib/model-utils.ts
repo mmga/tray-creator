@@ -21,6 +21,8 @@ const { geom2 } = geometries;
 const { mat4 } = maths;
 const BASE_HOLE_WALL_EPSILON = 1e-6;
 const MIN_BEVEL_TOP_SIZE = 0.1;
+/** JSCAD 在 roundRadius 为 0 时返回 4 顶点矩形、否则返回多边形，收分两端必须统一。 */
+const MIN_CORNER_RADIUS = 0.01;
 
 // ── 共享建模工具 ──────────────────────────
 
@@ -116,44 +118,54 @@ export function createBaseBody(
         ),
     );
 
-    const profile = roundedRectangle({
-        size: [width, depth],
-        roundRadius: Math.max(effectiveRadius, 0),
-        segments: RENDER_CONFIG.cornerSegments,
-    });
-
-    if (safeBevelWidth > 0) {
-        const topWidth = width - safeBevelWidth * 2;
-        const topDepth = depth - safeBevelWidth * 2;
-        const topRadius = Math.max(effectiveRadius - safeBevelWidth, 0);
-
-        return extrudeFromSlices(
-            {
-                numberOfSlices: 2,
-                callback: (progress) => {
-                    const currentProfile = progress === 0
-                        ? profile
-                        : roundedRectangle({
-                            size: [topWidth, topDepth],
-                            roundRadius: Math.min(
-                                topRadius,
-                                topWidth / 2 - 0.01,
-                                topDepth / 2 - 0.01,
-                            ),
-                            segments: RENDER_CONFIG.cornerSegments,
-                        });
-                    const currentSlice = slice.fromSides(geom2.toSides(currentProfile));
-                    return slice.transform(
-                        mat4.fromTranslation(mat4.create(), [0, 0, height * progress]),
-                        currentSlice,
-                    );
-                },
-            },
-            slice.fromSides(geom2.toSides(profile)),
+    if (safeBevelWidth <= 0) {
+        return extrudeLinear(
+            { height },
+            roundedRectangle({
+                size: [width, depth],
+                roundRadius: Math.max(effectiveRadius, 0),
+                segments: RENDER_CONFIG.cornerSegments,
+            }),
         );
     }
 
-    return extrudeLinear({ height }, profile);
+    const topWidth = width - safeBevelWidth * 2;
+    const topDepth = depth - safeBevelWidth * 2;
+    const bottomRadius = Math.max(effectiveRadius, 0);
+    const topRadius = Math.min(
+        Math.max(effectiveRadius - safeBevelWidth, 0),
+        topWidth / 2 - 0.01,
+        topDepth / 2 - 0.01,
+    );
+    // 两端必须同为圆角或同为直角，否则顶点数不一致会让 extrudeFromSlices 静默生成错误实体。
+    const forceRounded = bottomRadius > 0 || topRadius > 0;
+    const normalizeRadius = (radius: number) =>
+        forceRounded ? Math.max(radius, MIN_CORNER_RADIUS) : 0;
+    const bottomProfile = roundedRectangle({
+        size: [width, depth],
+        roundRadius: normalizeRadius(bottomRadius),
+        segments: RENDER_CONFIG.cornerSegments,
+    });
+    const topProfile = roundedRectangle({
+        size: [topWidth, topDepth],
+        roundRadius: normalizeRadius(topRadius),
+        segments: RENDER_CONFIG.cornerSegments,
+    });
+
+    return extrudeFromSlices(
+        {
+            numberOfSlices: 2,
+            callback: (progress) => {
+                const currentProfile = progress === 0 ? bottomProfile : topProfile;
+                const currentSlice = slice.fromSides(geom2.toSides(currentProfile));
+                return slice.transform(
+                    mat4.fromTranslation(mat4.create(), [0, 0, height * progress]),
+                    currentSlice,
+                );
+            },
+        },
+        slice.fromSides(geom2.toSides(bottomProfile)),
+    );
 }
 
 /**
