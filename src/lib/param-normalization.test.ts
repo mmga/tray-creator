@@ -35,6 +35,30 @@ describe("Param Normalization Catalog types", () => {
 });
 
 describe("param normalization", () => {
+  it("自定义模式默认启用磁吸孔并使用 25mm 磁片", () => {
+    expect(CUSTOM_LAYOUT_DEFAULTS).toMatchObject({
+      baseHoleStructure: "magnetic-base-hole",
+      smallBaseHoleSize: "25",
+    });
+
+    const normalized = normalizeParamsForMode("custom", {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      slots: [{
+        id: "custom-25",
+        x: 130,
+        y: 130,
+        shape: "circle",
+        width: 25,
+        height: 25,
+        rotation: 0,
+      }],
+    }) as CustomLayoutParams;
+
+    expect(normalized.baseHoleStructure).toBe("magnetic-base-hole");
+    expect(normalized.smallBaseHoleSize).toBe("25");
+    expect(normalized.baseHoleSize).toBe("25");
+  });
+
   it("recognizes legacy 100mm slots across all modes", () => {
     const grid = normalizeParamsForMode("grid", {
       ...DEFAULT_TRAY_PARAMS,
