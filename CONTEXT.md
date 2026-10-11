@@ -329,8 +329,12 @@ The tray-coordinate-aligned rectangle that contains the rotated final Slot Geome
 _Avoid_: A minimum-area rotated rectangle, nominal unrotated base dimensions, or a rectangle whose orientation changes with Slot Instance rotation.
 
 **Baseplate Footprint Style**:
-The model-wide choice between a slot-following Contoured Footprint and a Rectangular Footprint for a custom or stepped tray.
+模型级底座构造选择。自定义支持矩形包络、弧形贴合和直边包络；阶梯保持矩形包络与弧形贴合。
 _Avoid_: Per-group footprint styles, mixing rectangular and contoured groups in one tray, or calling the choice merely an edge shape.
+
+**Polygonal Footprint（直边包络）**:
+仅用于自定义模式的凸多边形底板。中心凸包决定边方向，所有最终槽形的解析支撑值及边距决定边位置；单槽、双槽、重合或近共线退化为安全矩形，尖角保护阈值为 20°。非空始终生成一个实体，填平凹口及槽群之间的空白，不保证最小面积。
+固定尺寸、侧面斜角、平滑与断连参数休眠并保留；不支持堆叠盒体。圆角半径可调，0 保留尖角，实际值不超过边距；安全内核向外增加圆弧，以外切离散线段保证槽形边距。边数取圆角前有效直边数，包含尖角保护新增边，空轮廓为 0，不计圆弧面片。二维、尺寸、底孔、Worker 建模共用现有轮廓构造结果契约，圆形底孔以实际离散凸边界的解析半平面校验。零外扩椭圆同时包住记录的超椭圆与现有三维挖槽使用的标准椭圆。
 
 **Contoured Footprint**:
 A baseplate footprint derived from and following the placed Slot Instances rather than enclosing them in one rectangular boundary.
@@ -341,11 +345,11 @@ The number of disconnected printable bodies produced by a Contoured Footprint af
 _Avoid_: Silently forcing distant slot clusters together or treating every multi-body result as invalid.
 
 **Contoured Footprint Construction**:
-The shared deterministic derivation of authoritative tray-coordinate 2D contoured bodies and construction diagnostics from final Slot Geometry Snapshots, Boundary Spacing, smoothing radius, and disconnection distance.
+共享的确定性二维轮廓构造入口，由最终槽形、边距与运行时构造策略生成权威轮廓及诊断。缺省策略保持弧形平滑和断连；直边策略跳过连通分组与平滑，输出一个凸多边形。
 _Avoid_: Mode-specific contour algorithms, silently omitting a failed body, or independently re-deriving contours for preview, modeling, dimensions, body count, and validation.
 
 **Dormant Fixed Tray Configuration**:
-The preserved custom-tray fixed sizing choice and dimensions that have no effect while Contoured Footprint is selected and become active again when Rectangular Footprint is restored.
+自定义选中弧形贴合或直边包络时保留且不生效的固定尺寸配置，恢复矩形包络后重新生效。
 _Avoid_: Discarding fixed dimensions when switching footprint style or applying hidden fixed bounds to a contoured tray.
 
 **Slot Spacing**:
@@ -810,7 +814,7 @@ _Avoid_: Calling `holeDepth` the box wall height.
 - Rectangular stepped 2D preview consumes the **Stepped Footprint Plan** without constructing CAD hole features.
 - Each height group's Axis-aligned Rectangular Envelope contains all of that group's Slot Instances as one rectangle, including the empty planar space between them.
 - One tray has exactly one **Baseplate Footprint Style**; height groups cannot override it.
-- A custom tray with **Contoured Footprint** always derives its active footprint from Slot Instances and cannot simultaneously have an active **Fixed Tray Outer Footprint**.
+- 自定义弧形贴合与直边包络均从槽位派生有效轮廓，不能同时启用固定外尺寸或堆叠盒体；直边额外休眠平滑及断连参数。
 - Selecting **Contoured Footprint** preserves any fixed sizing choice and dimensions as **Dormant Fixed Tray Configuration**.
 - The stepped workflow also preserves fixed sizing as dormant configuration while Contoured Footprint is selected.
 - Historical simple-stepped tray dimensions can be represented by a fixed Rectangular Stepped Footprint without expanding its higher group envelopes.
@@ -818,12 +822,12 @@ _Avoid_: Calling `holeDepth` the box wall height.
 - When independent **Boundary Spacing** is disabled, it follows **Slot Spacing**.
 - Historical stepped parameters without an independent **Boundary Spacing** choice load with Boundary Spacing following Slot Spacing.
 - Stepped smoothing and disconnection settings remain stored but have no effect while Rectangular Stepped Footprint is active.
-- A custom tray's outer corner radius remains stored but has no effect while Contoured Footprint is active.
-- A custom tray's Side Bevel remains stored but has no effect while Contoured Footprint is active.
+- 自定义弧形贴合休眠圆角；直边包络启用圆角半径。两种非矩形样式均保留且休眠侧面斜角。
 - Contoured Footprint does not support Side Bevel until arbitrary-outline bevel construction has its own narrow-bridge, concavity, and body-connectivity validity rules.
 - Custom and stepped editors always expose Baseplate Footprint Style, Slot Spacing, and Boundary Spacing.
 - Editors show only controls that affect the active Baseplate Footprint Style while preserving inactive-style values as dormant configuration.
 - Custom Rectangular Footprint exposes sizing, dimensions, outer corner radius, and Side Bevel; Custom Contoured Footprint exposes smoothing, disconnection, and Contour Body Count.
+- 自定义直边包络展示边距、圆角半径、厚度、槽深、底孔控件及忽略圆角的边数；三种样式之间切换保留槽位和休眠参数。直边导出文件名和草稿摘要使用实际轮廓 bounds；非空构造失败草稿显示“尺寸待修复”，仍可保存参数。
 - Stepped Contoured Footprint exposes global and group smoothing and disconnection; Rectangular Stepped Footprint exposes sizing, dimensions, and the lowest-layer outer corner radius.
 - Split Assembly Capability remains visible for both stepped footprint styles.
 - Changing Baseplate Footprint Style updates the 2D footprint immediately and marks existing whole-model and split previews stale.

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { cpus } from "node:os";
 import { booleans, primitives, transforms } from "@jscad/modeling";
 import type { Geom2 } from "@jscad/modeling/src/geometries/types";
 import {
@@ -93,6 +94,28 @@ function median(values: number[]) {
 }
 
 describe("contoured footprint performance gate", () => {
+  it("记录直边包络 10、30、50 槽的预热后三次构造耗时", () => {
+    console.info(`直边性能环境：${process.platform} / ${cpus()[0]?.model} / Node ${process.version}`);
+    for (const count of [10, 30, 50]) {
+      const request: ContouredFootprintRequest = {
+        ...createRequest(), constructionStyle: "polygonal", cornerRadius: 4,
+        slots: Array.from({ length: count }, (_, i) => ({
+          id: `polygon-${i}`, cx: 200 * Math.cos(i * 2 * Math.PI / count),
+          cy: 200 * Math.sin(i * 2 * Math.PI / count), rotation: i * 7,
+          shape: "ellipse", profile: { width: 18, height: 12, outerOffset: 1, profileExponent: 3 },
+        })),
+      };
+      const run = () => {
+        const outcome = constructContouredFootprints({ requests: [request] });
+        expect(outcome.ok).toBe(true);
+        if (outcome.ok) expect(outcome.value.footprints[0].bodyCount).toBe(1);
+      };
+      for (let i = 0; i < 3; i++) run();
+      const times = Array.from({ length: 3 }, () => measure(run, 1));
+      console.info(`${count} 槽：中位数 ${median(times).toFixed(3)}ms，最大 ${Math.max(...times).toFixed(3)}ms`);
+    }
+  });
+
   it("批量 Interface 相对迁移前基线满足约定回归上限", () => {
     const request = createRequest();
     for (let index = 0; index < 2; index += 1) {

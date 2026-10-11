@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { geometries, measurements } from "@jscad/modeling";
+import stlSerializer from "@jscad/stl-serializer";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { createCircleSlotSnapshot } from "@/lib/slot-definitions";
 import {
@@ -60,7 +61,7 @@ function createCustomCircleSlot(
 }
 
 describe("custom tray model", () => {
-  it("直边底板由带圆角的真实轮廓拉伸，固定长宽和斜角休眠", () => {
+  it("直边底板由带圆角的真实轮廓拉伸并导出有效 STL，固定长宽和斜角休眠", async () => {
     const params: CustomLayoutParams = { ...CUSTOM_LAYOUT_DEFAULTS,
       footprintStyle: "polygonal", traySizingMode: "fixed", trayWidth: 300, trayDepth: 250,
       cornerRadius: 10, sideBevelWidth: 8,
@@ -73,6 +74,24 @@ describe("custom tray model", () => {
     expect(max[0] - min[0]).toBeCloseTo(state.value.bounds!.maxX - state.value.bounds!.minX, 5);
     expect(max[1] - min[1]).toBeCloseTo(state.value.bounds!.maxY - state.value.bounds!.minY, 5);
     expect(max[2] - min[2]).toBeCloseTo(params.baseThickness + params.holeDepth, 5);
+    const buffer = await new Blob(stlSerializer.serialize({ binary: true }, model) as BlobPart[]).arrayBuffer();
+    const view = new DataView(buffer);
+    const triangles = view.getUint32(80, true);
+    expect(triangles).toBeGreaterThan(0);
+    expect(buffer.byteLength).toBe(84 + triangles * 50);
+    const low = [Infinity, Infinity, Infinity], high = [-Infinity, -Infinity, -Infinity];
+    for (let i = 0; i < triangles; i++) {
+      for (let vertex = 0; vertex < 3; vertex++) {
+        for (let axis = 0; axis < 3; axis++) {
+          const value = view.getFloat32(84 + i * 50 + 12 + vertex * 12 + axis * 4, true);
+          expect(Number.isFinite(value)).toBe(true);
+          low[axis] = Math.min(low[axis], value);
+          high[axis] = Math.max(high[axis], value);
+        }
+      }
+    }
+    // STL 序列化会吸附顶点，检查误差仍远小于界面 0.1mm 的显示精度。
+    for (let axis = 0; axis < 3; axis++) expect(Math.abs(high[axis] - low[axis] - (max[axis] - min[axis]))).toBeLessThan(0.01);
     expect(() => createCustomTrayModel(params)).toThrow();
   });
 
