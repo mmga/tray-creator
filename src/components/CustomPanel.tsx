@@ -290,7 +290,9 @@ export default function CustomPanel({
             {!isRectangularFootprint && (
               <div className="p-3 rounded bg-[#1c1a16] border border-[#2e2a24] text-[11px] text-muted-foreground">
                 {footprintLabel}模式下，托盘外缘由凹槽位置与边界间距自动派生；
-                固定尺寸、圆角、侧面斜角设置已保留，切回矩形包络后恢复。
+                {isPolygonalFootprint
+                  ? "固定尺寸与侧面斜角设置已保留，切回矩形包络后恢复。"
+                  : "固定尺寸、圆角、侧面斜角设置已保留，切回矩形包络后恢复。"}
               </div>
             )}
             {isFixedTraySize && (
@@ -327,7 +329,7 @@ export default function CustomPanel({
                 </Label>
                 <p className="text-[11px] text-muted-foreground">
                   {isPolygonalFootprint
-                    ? "自动直边外包，凹口填平，生成一整块"
+                    ? "自动直边外包，凹口填平，生成一整块；顶点可设圆弧过渡"
                     : isContouredFootprint
                       ? "贴合凹槽外缘；远距凹槽可形成多个独立实体"
                       : "矩形包络底座；可配置圆角与侧面斜角"}
@@ -399,7 +401,7 @@ export default function CustomPanel({
               onChange={(v) => updateParam("holeDepth", v)}
               unit={SHARED_LAYOUT_LIMITS.holeDepth.unit}
             />
-            {isRectangularFootprint && (
+            {!isContouredFootprint && (
               <ParamSlider
                 label={SHARED_LAYOUT_LIMITS.cornerRadius.label}
                 value={params.cornerRadius}
@@ -407,6 +409,11 @@ export default function CustomPanel({
                 onChange={(v) => updateParam("cornerRadius", v)}
                 unit={SHARED_LAYOUT_LIMITS.cornerRadius.unit}
               />
+            )}
+            {isPolygonalFootprint && (
+              <p className="text-[11px] text-muted-foreground">
+                圆角半径为 0 时保留尖角；实际半径不超过边界间距，以保证凹槽边距。
+              </p>
             )}
             {isRectangularFootprint && (
               <ParamSlider

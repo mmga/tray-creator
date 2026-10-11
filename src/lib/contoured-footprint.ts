@@ -53,6 +53,7 @@ export interface ContouredFootprintSlot {
 export interface ContouredFootprintRequest {
   key: string;
   constructionStyle?: "contoured" | "polygonal";
+  cornerRadius?: number;
   slots: readonly ContouredFootprintSlot[];
   slotSpacing: number;
   boundarySpacing: number;
@@ -390,6 +391,7 @@ function validatePlan(
       ["boundarySpacing", request.boundarySpacing],
       ["smoothingRadius", request.smoothingRadius],
       ["disconnectDistance", request.disconnectDistance],
+      ...(request.constructionStyle === "polygonal" ? [["cornerRadius", request.cornerRadius ?? 0] as const] : []),
     ] as const) {
       if (invalidNumber(value) || value < 0) {
         return {
@@ -474,7 +476,7 @@ function constructRequest(
     const slotIds = cluster.map((item) => item.id);
     let construction: ClusterConstruction | null;
     try {
-      if (isPolygonal) polygonal = createPolygonalFootprint(slots, request.boundarySpacing);
+      if (isPolygonal) polygonal = createPolygonalFootprint(slots, request.boundarySpacing, request.cornerRadius);
       construction = polygonal ? { geometry: polygonal.geometry, usedSmoothingFallback: false } : constructCluster(
         cluster,
         slotsById,

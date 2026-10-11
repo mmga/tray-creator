@@ -1005,12 +1005,14 @@ describe("CustomPanel", { timeout: 15000 }, () => {
     expect(updateParam).toHaveBeenLastCalledWith("footprintStyle", "polygonal");
 
     rerender(<CustomPanel {...common} params={{ ...params, footprintStyle: "polygonal" }} />);
-    expect(screen.getByText("自动直边外包，凹口填平，生成一整块")).toBeInTheDocument();
+    expect(screen.getByText("自动直边外包，凹口填平，生成一整块；顶点可设圆弧过渡")).toBeInTheDocument();
     expect(screen.queryByRole("switch", { name: "custom-fixed-tray-size" })).not.toBeInTheDocument();
-    for (const label of ["长度", "宽度", "圆角半径", "侧面斜面宽度", "平滑半径", "槽群断连距离"]) {
+    for (const label of ["长度", "宽度", "侧面斜面宽度", "平滑半径", "槽群断连距离"]) {
       expect(screen.queryByRole("button", { name: new RegExp(`^设置${label}:`) })).not.toBeInTheDocument();
     }
     expect(screen.getByRole("button", { name: /^设置底板厚度:/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: `设置圆角半径:${params.cornerRadius}` }));
+    expect(updateParam).toHaveBeenLastCalledWith("cornerRadius", params.cornerRadius + 1);
     fireEvent.click(screen.getByRole("button", { name: "弧形贴合" }));
     expect(updateParam).toHaveBeenLastCalledWith("footprintStyle", "contoured");
     fireEvent.click(screen.getByRole("button", { name: "矩形包络" }));

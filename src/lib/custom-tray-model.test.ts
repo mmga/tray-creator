@@ -60,7 +60,7 @@ function createCustomCircleSlot(
 }
 
 describe("custom tray model", () => {
-  it("直边底板由真实轮廓拉伸，固定长宽、圆角和斜角休眠", () => {
+  it("直边底板由带圆角的真实轮廓拉伸，固定长宽和斜角休眠", () => {
     const params: CustomLayoutParams = { ...CUSTOM_LAYOUT_DEFAULTS,
       footprintStyle: "polygonal", traySizingMode: "fixed", trayWidth: 300, trayDepth: 250,
       cornerRadius: 10, sideBevelWidth: 8,

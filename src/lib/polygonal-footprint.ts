@@ -1,5 +1,5 @@
 import { geometries } from "@jscad/modeling";
-import { ELLIPSE_PROFILE_EXPONENT } from "@/lib/config";
+import { ELLIPSE_PROFILE_EXPONENT, RENDER_CONFIG } from "@/lib/config";
 import type { ContouredFootprintPoint as Point, ContouredFootprintSlot } from "@/lib/contoured-footprint";
 
 const MIN_ANGLE = 20 * Math.PI / 180;
@@ -39,7 +39,8 @@ function slotSupport(slot: ContouredFootprintSlot, nx: number, ny: number) {
 }
 
 /** 输入校验由共享轮廓构造入口负责，几何只在局部坐标计算以减少平移误差。 */
-export function createPolygonalFootprint(slots: readonly ContouredFootprintSlot[], margin: number) {
+export function createPolygonalFootprint(slots: readonly ContouredFootprintSlot[], margin: number, cornerRadius = 0) {
+  const radius = Math.min(cornerRadius, margin);
   const minX = Math.min(...slots.map(slot => slot.cx));
   const maxX = Math.max(...slots.map(slot => slot.cx));
   const minY = Math.min(...slots.map(slot => slot.cy));
@@ -64,7 +65,7 @@ export function createPolygonalFootprint(slots: readonly ContouredFootprintSlot[
   const planes = protectedAngles.map(angle => {
     const nx = Math.cos(angle), ny = Math.sin(angle);
     const d = Math.max(...slots.map(slot => nx * (slot.cx - origin.x) + ny * (slot.cy - origin.y)
-      + slotSupport(slot, nx, ny))) + margin + epsilon;
+      + slotSupport(slot, nx, ny))) + margin - radius + epsilon;
     return { nx, ny, d };
   });
   // 法线间隔最多 160°，此包围框足以包含所有半平面交点。
@@ -101,10 +102,32 @@ export function createPolygonalFootprint(slots: readonly ContouredFootprintSlot[
     return cosine > Math.cos(MIN_ANGLE - 1e-7);
   })) throw new Error("直边包络生成了退化轮廓或无效尖角");
 
+  if (radius > 0) {
+    // 安全内核向外加圆，切线交点使离散圆弧只向外偏差，不侵蚀凹槽边距。
+    points = points.flatMap((point, i, ring) => {
+      const previous = ring[(i + ring.length - 1) % ring.length], next = ring[(i + 1) % ring.length];
+      const start = Math.atan2(-(point.x - previous.x), point.y - previous.y);
+      const end = Math.atan2(-(next.x - point.x), next.y - point.y);
+      const sweep = (end - start + Math.PI * 2) % (Math.PI * 2);
+      const segments = Math.max(1, Math.ceil(sweep * RENDER_CONFIG.cylinderSegments / (Math.PI * 2)));
+      const step = sweep / segments;
+      const distance = radius / Math.cos(step / 2);
+      return Array.from({ length: segments }, (_, j) => {
+        const angle = start + (j + 0.5) * step;
+        return { x: point.x + distance * Math.cos(angle), y: point.y + distance * Math.sin(angle) };
+      });
+    });
+  }
+  const boundaryPlanes = points.map((point, i) => {
+    const next = points[(i + 1) % points.length];
+    const length = Math.hypot(next.x - point.x, next.y - point.y);
+    const nx = (next.y - point.y) / length, ny = -(next.x - point.x) / length;
+    return { nx, ny, d: nx * point.x + ny * point.y };
+  });
   return {
     geometry: geometries.geom2.fromPoints(points.map(point => [point.x + origin.x, point.y + origin.y])),
     containsExpandedCircle: (x: number, y: number, radius: number) =>
       Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(radius) && radius >= 0
-      && planes.every(({ nx, ny, d }) => nx * (x - origin.x) + ny * (y - origin.y) + radius <= d),
+      && boundaryPlanes.every(({ nx, ny, d }) => nx * (x - origin.x) + ny * (y - origin.y) + radius <= d + epsilon * 0.01),
   };
 }
