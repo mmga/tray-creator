@@ -13,6 +13,7 @@ import {
 } from "@jscad/modeling";
 import type { Geom2 } from "@jscad/modeling/src/geometries/types";
 import { RENDER_CONFIG } from "@/lib/config";
+import { createPolygonalFootprint } from "@/lib/polygonal-footprint";
 import {
   generateOutlineGeom2,
   insetGeom2,
@@ -51,6 +52,7 @@ export interface ContouredFootprintSlot {
 
 export interface ContouredFootprintRequest {
   key: string;
+  constructionStyle?: "contoured" | "polygonal";
   slots: readonly ContouredFootprintSlot[];
   slotSpacing: number;
   boundarySpacing: number;
@@ -379,6 +381,10 @@ function validatePlan(
       };
     }
     requestKeys.add(request.key);
+    if (request.constructionStyle !== undefined && request.constructionStyle !== "contoured"
+      && request.constructionStyle !== "polygonal") {
+      return { code: "invalid-plan", requestKey: request.key, message: "未知轮廓构造策略" };
+    }
     for (const [field, value] of [
       ["slotSpacing", request.slotSpacing],
       ["boundarySpacing", request.boundarySpacing],
@@ -455,10 +461,12 @@ function constructRequest(
       slot.profile.outerOffset * 2,
     ),
   }));
-  const clusters = clusterConnectivityCircles(
+  const isPolygonal = request.constructionStyle === "polygonal";
+  let polygonal: ReturnType<typeof createPolygonalFootprint> | undefined;
+  const clusters = (isPolygonal ? [connectivityCircles] : clusterConnectivityCircles(
     connectivityCircles,
     getEffectiveBridgeGap(request.smoothingRadius, request.disconnectDistance),
-  ).map((cluster) => [...cluster].sort((left, right) => left.id.localeCompare(right.id)));
+  )).map((cluster) => [...cluster].sort((left, right) => left.id.localeCompare(right.id)));
 
   const diagnostics: ContouredFootprintDiagnostic[] = [];
   const bodies: ContouredFootprintBody[] = [];
@@ -466,7 +474,8 @@ function constructRequest(
     const slotIds = cluster.map((item) => item.id);
     let construction: ClusterConstruction | null;
     try {
-      construction = constructCluster(
+      if (isPolygonal) polygonal = createPolygonalFootprint(slots, request.boundarySpacing);
+      construction = polygonal ? { geometry: polygonal.geometry, usedSmoothingFallback: false } : constructCluster(
         cluster,
         slotsById,
         request.boundarySpacing,
@@ -529,8 +538,8 @@ function constructRequest(
     bounds,
     area: bodies.reduce((sum, body) => sum + body.area, 0),
     diagnostics,
-    containsExpandedCircle: (x, y, radius) =>
-      circleFitsFootprint(bodies, x, y, radius),
+    containsExpandedCircle: polygonal?.containsExpandedCircle ?? ((x, y, radius) =>
+      circleFitsFootprint(bodies, x, y, radius)),
   };
 }
 

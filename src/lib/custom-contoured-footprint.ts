@@ -32,17 +32,19 @@ export function projectCustomSlotToContoured(
 export function projectCustomContouredFootprintInput(
   params: CustomLayoutParams,
 ): CustomContouredFootprintInput {
+  const isPolygonal = params.footprintStyle === "polygonal";
   return {
     plan: {
       requests: [{
         key: "custom-baseplate",
+        ...(isPolygonal ? { constructionStyle: "polygonal" as const } : {}),
         slots: params.slots.map(projectCustomSlotToContoured),
         slotSpacing: params.spacing,
         boundarySpacing: params.boundarySpacingIndependent
           ? params.boundarySpacing
           : params.spacing,
-        smoothingRadius: params.smoothingRadius ?? 60,
-        disconnectDistance: params.disconnectDistance ?? 0,
+        smoothingRadius: isPolygonal ? 0 : params.smoothingRadius ?? 60,
+        disconnectDistance: isPolygonal ? 0 : params.disconnectDistance ?? 0,
       }],
     },
   };

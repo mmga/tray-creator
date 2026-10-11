@@ -6,6 +6,13 @@ import {
 } from "@/lib/custom-contoured-footprint";
 
 describe("Custom Contoured Footprint outcome", () => {
+  it("直边请求忽略休眠的平滑和断连参数", () => {
+    const params = { ...CUSTOM_LAYOUT_DEFAULTS, footprintStyle: "polygonal" as const };
+    expect(projectCustomContouredFootprintInput(params)).toEqual(
+      projectCustomContouredFootprintInput({ ...params, smoothingRadius: Infinity, disconnectDistance: 200 }),
+    );
+  });
+
   it("为无效轮廓参数返回结构化失败而不是抛错", () => {
     const outcome = constructCustomContouredFootprintOutcome(
       projectCustomContouredFootprintInput({

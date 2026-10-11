@@ -79,6 +79,14 @@ function unwrap(
 }
 
 describe("Contoured Footprint Construction", () => {
+  it("拒绝未知构造策略，不能静默改为弧形", () => {
+    const invalid = { ...request("invalid", []), constructionStyle: "unknown" };
+    const outcome = constructContouredFootprints(plan([
+      invalid as unknown as ContouredFootprintPlan["requests"][number],
+    ]));
+    expect(outcome).toMatchObject({ ok: false, error: { code: "invalid-plan" } });
+  });
+
   it("一次按请求顺序派生 custom 与多个 stepped 高度带", () => {
     const result = unwrap(constructContouredFootprints(plan([
       request("custom-baseplate", [makeCircleSlot("a", 0, 0, 25)]),
