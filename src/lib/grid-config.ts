@@ -25,6 +25,7 @@ export const DEFAULT_TRAY_PARAMS: TrayParams = {
   spacingIndependent: false,
   spacingX: 5,
   spacingY: 5,
+  zeroSpacingTolerance: 1,
   boundarySpacing: 5,
   boundarySpacingIndependent: false,
   halfCircleSlots: false,
@@ -60,6 +61,7 @@ export const OLD_WORLD_RECTANGULAR_PRESETS = [
 ] as const satisfies readonly OldWorldRectangularPreset[];
 
 const OLD_WORLD_SLOT_TOLERANCE = 0.4;
+export const DEFAULT_ZERO_SPACING_TOLERANCE = 1;
 
 export function findOldWorldRectangularPreset(id: string | undefined) {
   return OLD_WORLD_RECTANGULAR_PRESETS.find((preset) => preset.id === id);
@@ -71,6 +73,16 @@ function getFiniteOr(value: unknown, fallback: number) {
 
 export function isRectangularGridSlot(params: TrayParams) {
   return params.slotShape === "rectangle";
+}
+
+export function getZeroSpacingTolerance(params: TrayParams) {
+  return Math.max(
+    0,
+    getFiniteOr(
+      params.zeroSpacingTolerance,
+      DEFAULT_ZERO_SPACING_TOLERANCE,
+    ),
+  );
 }
 
 export function getGridSlotGeometry(params: TrayParams) {
@@ -144,6 +156,7 @@ export const PARAM_CONFIG = {
   spacing: { label: "凹槽间距", min: 0, max: 10, step: 1, unit: "mm" },
   spacingX: { label: "X 轴凹槽间距", min: 0, max: 10, step: 0.1, unit: "mm" },
   spacingY: { label: "Y 轴凹槽间距", min: 0, max: 10, step: 0.1, unit: "mm" },
+  zeroSpacingTolerance: { label: "零间距整体容差", min: 0, max: 3, step: 0.1, unit: "mm" },
   boundarySpacing: { label: "边界间距", min: 0, max: 20, step: 1, unit: "mm" },
   baseThickness: SHARED_LAYOUT_LIMITS.baseThickness,
   holeDepth: SHARED_LAYOUT_LIMITS.holeDepth,

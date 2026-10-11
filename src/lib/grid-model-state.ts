@@ -67,6 +67,10 @@ export function normalizeGridParams(next: TrayParams): TrayParams {
   const spacingY = spacingIndependent
     ? getFiniteOr(next.spacingY, spacing)
     : spacing;
+  const zeroSpacingTolerance = getFiniteOr(
+    next.zeroSpacingTolerance,
+    DEFAULT_TRAY_PARAMS.zeroSpacingTolerance ?? 1,
+  );
   const boundarySpacingIndependent = Boolean(next.boundarySpacingIndependent);
   const boundarySpacing = boundarySpacingIndependent
     ? getFiniteOr(next.boundarySpacing, spacing)
@@ -92,6 +96,7 @@ export function normalizeGridParams(next: TrayParams): TrayParams {
     spacingIndependent,
     spacingX,
     spacingY,
+    zeroSpacingTolerance,
     boundarySpacingIndependent,
     boundarySpacing,
     ...slotSnapshot,

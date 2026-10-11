@@ -6,9 +6,6 @@ import {
   getGridSlotPitchAxes,
   shouldRemoveGridIslands,
 } from "@/lib/tray-model";
-import {
-  getGridSlotGeometry,
-} from "@/lib/grid-config";
 import { getCanvasDashAttributes } from "@/lib/canvas-dash-styles";
 import {
   calculateBoxUsableArea,
@@ -18,6 +15,7 @@ import {
 import {
   getGridBoundarySpacingAxes,
   getGridBoxContentSize,
+  getGridCutGeometry,
   isGridSlotWithinBox,
 } from "@/lib/grid-layout-math";
 
@@ -31,7 +29,7 @@ export function GridLayoutPreview({ params }: GridLayoutPreviewProps) {
   const dimensions = box.enabled
     ? { width: box.outerWidth, depth: box.outerDepth }
     : calculateTrayDimensions(params);
-  const slotGeometry = getGridSlotGeometry(params);
+  const slotGeometry = getGridCutGeometry(params);
   const { pitchX, pitchY } = getGridSlotPitchAxes(params);
   const { boundarySpacingX, boundarySpacingY } =
     getGridBoundarySpacingAxes(params);

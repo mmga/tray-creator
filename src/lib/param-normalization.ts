@@ -503,6 +503,14 @@ function clampAndFillGridDerivedFields(
 
   clampField(obj, "spacingX", PARAM_CONFIG.spacingX, recorder, "spacingX", "横向间距");
   clampField(obj, "spacingY", PARAM_CONFIG.spacingY, recorder, "spacingY", "纵向间距");
+  clampField(
+    obj,
+    "zeroSpacingTolerance",
+    PARAM_CONFIG.zeroSpacingTolerance,
+    recorder,
+    "zeroSpacingTolerance",
+    "零间距整体容差",
+  );
   if (!obj.spacingIndependent) {
     const previousX = obj.spacingX;
     const previousY = obj.spacingY;

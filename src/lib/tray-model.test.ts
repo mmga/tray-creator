@@ -93,7 +93,7 @@ describe("tray model", () => {
     expect(measureVolume(intersect(model, upperProbe))).toBeGreaterThan(0);
   });
 
-  it("applies rectangular slot clearance once around a zero-spacing ranked array", () => {
+  it("applies the default overall tolerance once around a zero-spacing rectangular array", () => {
     const params = {
       ...DEFAULT_TRAY_PARAMS,
       ...createOldWorldGridSlotSnapshot({
@@ -111,9 +111,31 @@ describe("tray model", () => {
     const dimensions = calculateTrayDimensions(params);
     const bounds = measureBoundingBox(createTrayModel(params));
 
-    expect(dimensions.width).toBeCloseTo(250.4, 5);
-    expect(dimensions.depth).toBeCloseTo(25.4, 5);
-    expect(bounds[1][0] - bounds[0][0]).toBeCloseTo(250.4, 5);
+    expect(dimensions.width).toBeCloseTo(251, 5);
+    expect(dimensions.depth).toBeCloseTo(26, 5);
+    expect(bounds[1][0] - bounds[0][0]).toBeCloseTo(251, 5);
+  });
+
+  it("supports a configurable overall tolerance for zero-spacing rectangular arrays", () => {
+    const params = {
+      ...DEFAULT_TRAY_PARAMS,
+      ...createOldWorldGridSlotSnapshot({
+        id: "old-world-25x25",
+        name: "旧世界 25×25mm",
+        width: 25,
+        height: 25,
+      }),
+      rows: 2,
+      columns: 3,
+      spacing: 0,
+      zeroSpacingTolerance: 0.6,
+      sideBevelWidth: 0,
+    };
+
+    const dimensions = calculateTrayDimensions(params);
+
+    expect(dimensions.width).toBeCloseTo(75.6, 5);
+    expect(dimensions.depth).toBeCloseTo(50.6, 5);
   });
 
   it("creates a rectangular Old World tray with independent slot axes", () => {

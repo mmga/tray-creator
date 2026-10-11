@@ -60,7 +60,7 @@ describe("GridLayoutPreview", () => {
     const secondX = Number(slots[1]?.getAttribute("x"));
 
     expect(secondX - firstX).toBeCloseTo(25, 5);
-    expect(getByText("50.4 × 25.4 mm")).toBeInTheDocument();
+    expect(getByText("51.0 × 26.0 mm")).toBeInTheDocument();
   });
 
   it("renders Old World slots as rectangles instead of circles", () => {

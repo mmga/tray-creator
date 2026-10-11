@@ -108,6 +108,8 @@ export default function ParameterPanel({
     updateParam("stackableBox", nextBox);
   };
   const { spacingX, spacingY } = getGridSpacingAxes(params);
+  const usesZeroSpacingTolerance =
+    isRectangularSlot && (spacingX === 0 || spacingY === 0);
   const { boundarySpacingX, boundarySpacingY } =
     getGridBoundarySpacingAxes(params);
   const spacingSummary = params.spacingIndependent
@@ -293,6 +295,20 @@ export default function ParameterPanel({
                 onChange={(v) => updateParam("spacing", v)}
                 unit={PARAM_CONFIG.spacing.unit}
               />
+            )}
+            {usesZeroSpacingTolerance && (
+              <div className="space-y-1.5">
+                <ParamSlider
+                  label={PARAM_CONFIG.zeroSpacingTolerance.label}
+                  value={params.zeroSpacingTolerance ?? 1}
+                  config={PARAM_CONFIG.zeroSpacingTolerance}
+                  onChange={(v) => updateParam("zeroSpacingTolerance", v)}
+                  unit={PARAM_CONFIG.zeroSpacingTolerance.unit}
+                />
+                <p className="text-[10px] leading-relaxed text-muted-foreground/70">
+                  仅增加在零间距连续槽阵列的整体外轮廓，不会按行列数累计。
+                </p>
+              </div>
             )}
             {!box.enabled ? (
               <>

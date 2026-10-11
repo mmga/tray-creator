@@ -1,4 +1,7 @@
-import { getGridSlotGeometry } from "@/lib/grid-config";
+import {
+  getGridSlotGeometry,
+  getZeroSpacingTolerance,
+} from "@/lib/grid-config";
 import type { TrayParams } from "@/types/tray";
 import { RENDER_CONFIG } from "@/lib/config";
 import {
@@ -40,6 +43,24 @@ export function getGridSlotPitchAxes(params: TrayParams) {
   };
 }
 
+/**
+ * 返回实际用于切削与外接尺寸计算的槽位轮廓。
+ * 方形/矩形槽在某轴零间距时不使用单槽 0.4mm 容差，而让相邻切削体按
+ * 标称节距重叠，使整体阵列只在该轴外轮廓增加一次整体容差。
+ */
+export function getGridCutGeometry(params: TrayParams) {
+  const slot = getGridSlotGeometry(params);
+  if (slot.shape !== "rectangle") return slot;
+
+  const { spacingX, spacingY } = getGridSpacingAxes(params);
+  const overallTolerance = getZeroSpacingTolerance(params);
+  return {
+    ...slot,
+    slotWidth: spacingX === 0 ? slot.baseWidth + overallTolerance : slot.slotWidth,
+    slotHeight: spacingY === 0 ? slot.baseHeight + overallTolerance : slot.slotHeight,
+  };
+}
+
 export function shouldRemoveGridIslands(params: TrayParams) {
   const { spacingX, spacingY } = getGridSpacingAxes(params);
   return (
@@ -53,7 +74,7 @@ export function shouldRemoveGridIslands(params: TrayParams) {
 
 /** 网格槽位阵列内容外接尺寸（最终槽位轮廓 + 行列间距）。 */
 export function getGridBoxContentSize(params: TrayParams) {
-  const slot = getGridSlotGeometry(params);
+  const slot = getGridCutGeometry(params);
   const { pitchX, pitchY } = getGridSlotPitchAxes(params);
   return {
     contentWidth: slot.slotWidth + (params.columns - 1) * pitchX,
@@ -71,7 +92,7 @@ export function isGridSlotWithinBox(
   if (!box.enabled) return true;
 
   const area = calculateBoxUsableArea(box);
-  const slot = getGridSlotGeometry(params);
+  const slot = getGridCutGeometry(params);
   const { pitchX, pitchY } = getGridSlotPitchAxes(params);
   const { contentWidth, contentDepth } = getGridBoxContentSize(params);
   const centerX = box.outerWidth / 2;

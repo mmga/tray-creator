@@ -2,10 +2,7 @@ import { booleans, primitives, transforms } from "@jscad/modeling";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { StackableBoxParams, TrayParams } from "@/types/tray";
 import { RENDER_CONFIG } from "@/lib/config";
-import {
-  getGridSlotGeometry,
-  isRectangularGridSlot,
-} from "@/lib/grid-config";
+import { isRectangularGridSlot } from "@/lib/grid-config";
 import {
   createBaseBody,
   subtractBaseHoleConstructionPlan,
@@ -15,6 +12,7 @@ import { createGridBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
 import {
   getGridBoundarySpacingAxes,
   getGridBoxContentSize,
+  getGridCutGeometry,
   getGridSlotPitchAxes,
   shouldRemoveGridIslands,
 } from "@/lib/grid-layout-math";
@@ -107,7 +105,7 @@ function createStackableBoxGridModel(
   box: StackableBoxParams,
 ): Geom3 {
   const { rows, columns, baseThickness, holeDepth } = params;
-  const slot = getGridSlotGeometry(params);
+  const slot = getGridCutGeometry(params);
   const { pitchX, pitchY } = getGridSlotPitchAxes(params);
   const { contentWidth, contentDepth } = getGridBoxContentSize(params);
   const trayTopZ = params.basePlateOnly
@@ -199,7 +197,7 @@ export function createTrayModel(params: TrayParams): Geom3 {
     sideBevelWidth,
   } = params;
 
-  const slot = getGridSlotGeometry(params);
+  const slot = getGridCutGeometry(params);
   const { pitchX, pitchY } = getGridSlotPitchAxes(params);
   const { boundarySpacingX, boundarySpacingY } =
     getGridBoundarySpacingAxes(params);
@@ -335,7 +333,7 @@ export function calculateTrayDimensions(params: TrayParams) {
     baseThickness,
     holeDepth,
   } = params;
-  const slot = getGridSlotGeometry(params);
+  const slot = getGridCutGeometry(params);
   const { pitchX, pitchY } = getGridSlotPitchAxes(params);
   const { boundarySpacingX, boundarySpacingY } =
     getGridBoundarySpacingAxes(params);

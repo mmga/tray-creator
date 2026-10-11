@@ -79,6 +79,8 @@ export interface TrayParams extends BaseHoleParams, StackableBoxCapableParams {
   spacingX: number;
   /** Y 轴凹槽间距 (mm)，仅在 spacingIndependent=true 时生效 */
   spacingY: number;
+  /** 方形/矩形槽零间距排列时，施加在整个连续槽阵列外轮廓上的总容差 (mm) */
+  zeroSpacingTolerance?: number;
   /** 底板厚度 (mm) */
   baseThickness: number;
   /** 凹槽深度 (mm)，即边框/墙壁高度 */

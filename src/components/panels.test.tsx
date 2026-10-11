@@ -529,6 +529,48 @@ describe("ParameterPanel", { timeout: 15000 }, () => {
     expect(screen.getByText("底盘间距")).toBeInTheDocument();
   });
 
+  it("shows the overall tolerance control only for zero-spacing rectangular slots", () => {
+    const updateParam = vi.fn();
+    const rectangularParams = {
+      ...DEFAULT_TRAY_PARAMS,
+      ...createOldWorldGridSlotSnapshot({
+        id: "old-world-25x25",
+        name: "旧世界 25×25mm",
+        width: 25,
+        height: 25,
+      }),
+      spacing: 0,
+      spacingX: 0,
+      spacingY: 0,
+    };
+    const { rerender } = render(
+      <ParameterPanel
+        params={rectangularParams}
+        updateParam={updateParam}
+        replaceParams={vi.fn()}
+        isGenerating={false}
+        volume={0}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "设置零间距整体容差:1" }),
+    );
+    expect(updateParam).toHaveBeenCalledWith("zeroSpacingTolerance", 1.1);
+    expect(screen.getByText(/不会按行列数累计/)).toBeInTheDocument();
+
+    rerender(
+      <ParameterPanel
+        params={{ ...rectangularParams, spacing: 1, spacingX: 1, spacingY: 1 }}
+        updateParam={updateParam}
+        replaceParams={vi.fn()}
+        isGenerating={false}
+        volume={0}
+      />,
+    );
+    expect(screen.queryByText("零间距整体容差")).not.toBeInTheDocument();
+  });
+
   it("disables half-circle structure when the stackable box is enabled", () => {
     render(
       <ParameterPanel

@@ -55,6 +55,15 @@ describe("grid model state", () => {
     });
   });
 
+  it("fills the default overall tolerance for legacy grid params", () => {
+    expect(
+      normalizeGridParams({
+        ...DEFAULT_TRAY_PARAMS,
+        zeroSpacingTolerance: undefined,
+      }).zeroSpacingTolerance,
+    ).toBe(1);
+  });
+
   it("preserves independent boundary spacing", () => {
     expect(
       replaceGridParams({
