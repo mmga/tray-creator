@@ -51,6 +51,7 @@ import { PanelShell } from "@/components/PanelShell";
 import { TrayResultSummary } from "@/components/TrayResultSummary";
 import { projectBaseConverterResult } from "@/lib/tray-result-projection";
 import { RoundBaseConfig } from "@/components/RoundBaseConfig";
+import { SquareBaseConfig } from "@/components/SquareBaseConfig";
 
 interface BaseConverterPanelProps {
   params: BaseConverterParams;
@@ -401,9 +402,37 @@ export default function BaseConverterPanel({
           </div>
         )}
 
-        {params.generationKind !== "conversion" && (
-          <RoundBaseConfig params={params} updateParams={updateParams} />
-        )}
+        {params.generationKind !== "conversion" && (<>
+          {params.generationKind === "plain" && (
+            <div
+              className="grid grid-cols-2 gap-1 rounded-sm border border-[#2e2a24] bg-[#16140f] p-1"
+              aria-label="普通底盘底面形状"
+            >
+              {([
+                ["circle", "圆形"],
+                ["square", "方形 / 矩形"],
+              ] as const).map(([shape, label]) => (
+                <Button
+                  key={shape}
+                  type="button"
+                  size="sm"
+                  variant={params.plainBaseShape === shape ? "default" : "ghost"}
+                  aria-pressed={params.plainBaseShape === shape}
+                  onClick={() => updateParam("plainBaseShape", shape)}
+                  className="px-2 text-xs"
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+          )}
+
+          {params.generationKind === "plain" && params.plainBaseShape === "square" ? (
+            <SquareBaseConfig params={params} updateParams={updateParams} />
+          ) : (
+            <RoundBaseConfig params={params} updateParams={updateParams} />
+          )}
+        </>)}
 
         {params.generationKind === "conversion" && (<>
 

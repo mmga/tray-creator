@@ -49,6 +49,10 @@ describe("Model Geometry Fingerprint", () => {
         ...BASE_CONVERTER_DEFAULTS.roundBaseSnapshot,
         height: 9,
       },
+      squareBaseSnapshot: {
+        ...BASE_CONVERTER_DEFAULTS.squareBaseSnapshot,
+        height: 8,
+      },
       pushFitHexHole: {
         ...BASE_CONVERTER_DEFAULTS.pushFitHexHole,
         offsetX: 4,
@@ -89,6 +93,32 @@ describe("Model Geometry Fingerprint", () => {
     );
     expect(createModelGeometryFingerprint(movedHole)).not.toBe(
       createModelGeometryFingerprint(pushFit),
+    );
+  });
+
+  it("方形普通底盘指纹包含形状与方形几何参数", () => {
+    const square = captureModeParamSnapshot("base-converter", {
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+      plainBaseShape: "square",
+    });
+    const roundPlain = captureModeParamSnapshot("base-converter", {
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+    });
+    const taller = captureModeParamSnapshot("base-converter", {
+      ...square.params,
+      squareBaseSnapshot: {
+        ...square.params.squareBaseSnapshot,
+        height: 6,
+      },
+    });
+
+    expect(createModelGeometryFingerprint(square)).not.toBe(
+      createModelGeometryFingerprint(roundPlain),
+    );
+    expect(createModelGeometryFingerprint(taller)).not.toBe(
+      createModelGeometryFingerprint(square),
     );
   });
 

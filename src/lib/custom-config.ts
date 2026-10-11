@@ -37,7 +37,8 @@ export const CUSTOM_LAYOUT_DEFAULTS: CustomLayoutParams = {
   smoothingRadius: 60,
   disconnectDistance: 0,
   ...BASE_HOLE_PARAM_DEFAULTS,
-  baseHoleStructure: "none",
+  baseHoleStructure: "magnetic-base-hole",
+  smallBaseHoleSize: "25",
   stackableBox: createDefaultStackableBoxParams(),
 };
 

@@ -55,10 +55,17 @@ function canonicalizeFingerprintValue(value: unknown): unknown {
 function projectBaseConverterGeometryParams(params: BaseConverterParams) {
   switch (params.generationKind) {
     case "plain":
-      return {
-        generationKind: params.generationKind,
-        roundBaseSnapshot: params.roundBaseSnapshot,
-      };
+      return params.plainBaseShape === "square"
+        ? {
+            generationKind: params.generationKind,
+            plainBaseShape: "square" as const,
+            squareBaseSnapshot: params.squareBaseSnapshot,
+          }
+        : {
+            generationKind: params.generationKind,
+            plainBaseShape: "circle" as const,
+            roundBaseSnapshot: params.roundBaseSnapshot,
+          };
     case "push-fit":
       return {
         generationKind: params.generationKind,

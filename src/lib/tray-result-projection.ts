@@ -10,6 +10,7 @@ import {
 } from "@/lib/base-converter-config";
 import type {
   BaseGenerationKind,
+  BasePlateShape,
   BaseConverterParams,
   CustomBaseplateFootprintStyle,
   CustomLayoutParams,
@@ -84,6 +85,8 @@ export interface CustomTrayResultProjection extends TrayResultProjectionBase {
 export interface BaseConverterResultProjection extends TrayResultProjectionBase {
   mode: "base-converter";
   generationKind: BaseGenerationKind;
+  /** 普通底盘的底面形状；简版与转换底盘不适用时为 null。 */
+  baseShape: BasePlateShape | null;
   sourceLabel: string;
   targetLabel: string;
   recess: { width: number; depth: number };
@@ -114,8 +117,27 @@ export function projectBaseConverterResult(
 ): BaseConverterResultProjection {
   const normalized = normalizeBaseConverterParams(params);
   if (normalized.generationKind !== "conversion") {
-    const profile = normalized.roundBaseSnapshot;
     const isPushFit = normalized.generationKind === "push-fit";
+    if (!isPushFit && normalized.plainBaseShape === "square") {
+      const profile = normalized.squareBaseSnapshot;
+      return {
+        mode: "base-converter",
+        generationKind: "plain",
+        baseShape: "square",
+        slotCount: 1,
+        itemLabel: `普通底盘 · 方形 · ${profile.name}`,
+        ...projectCommon({
+          width: profile.width,
+          depth: profile.depth,
+          height: profile.height,
+        }, state),
+        sourceLabel: "普通底盘",
+        targetLabel: profile.name,
+        recess: { width: 0, depth: 0 },
+        hole: null,
+      };
+    }
+    const profile = normalized.roundBaseSnapshot;
     const hole = isPushFit ? normalized.pushFitHexHole : null;
     const itemLabel = isPushFit
       ? `简版底盘 · ${profile.name} · 六边孔 ${Number(hole!.acrossFlats.toFixed(3))}mm`
@@ -123,6 +145,7 @@ export function projectBaseConverterResult(
     return {
       mode: "base-converter",
       generationKind: normalized.generationKind,
+      baseShape: isPushFit ? null : normalized.plainBaseShape,
       slotCount: 1,
       itemLabel,
       ...projectCommon({
@@ -141,6 +164,7 @@ export function projectBaseConverterResult(
   return {
     mode: "base-converter",
     generationKind: "conversion",
+    baseShape: null,
     slotCount: 1,
     itemLabel: `${source.name} → ${target.name}`,
     ...projectCommon(

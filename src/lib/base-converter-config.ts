@@ -1,16 +1,20 @@
 import { DEFAULT_ELLIPSE_PROFILE_EXPONENT } from "@/lib/slot-definitions";
+import { OLD_WORLD_RECTANGULAR_PRESETS } from "@/lib/grid-config";
 import { validatePushFitHexHolePlacement } from "@/lib/push-fit-hex-hole";
 import { ROUND_BASE_SHELL_THICKNESS } from "@/lib/round-base-profile";
 import type {
   BaseGenerationKind,
+  BasePlateShape,
   BaseConverterParams,
   ConversionGeometrySnapshot,
   ConversionSourceGeometrySnapshot,
   ConversionTargetGeometrySnapshot,
   RoundBaseProfileSnapshot,
+  SquareBaseProfileSnapshot,
 } from "@/types/custom-tray";
 
 export type RoundBaseStandard = RoundBaseProfileSnapshot;
+export type SquareBaseStandard = SquareBaseProfileSnapshot;
 
 export interface SourceBaseStandard {
   id: string;
@@ -37,6 +41,26 @@ export const ROUND_BASE_STANDARDS: RoundBaseStandard[] = [
   { standardId: "round-40", name: "Ø40mm", nominalDiameter: 40, height: 4, topInset: 1.5 },
   { standardId: "round-50", name: "Ø50mm", nominalDiameter: 50, height: 4, topInset: 1.5 },
 ];
+
+const SQUARE_BASE_DEFAULTS = {
+  height: 4,
+  topInset: 1.5,
+  cornerRadius: 0,
+} as const;
+
+/**
+ * 方形/矩形普通底盘规格，直接派生自网格模式的方形/矩形预设，保证两处尺寸同源。
+ * 预设只给出标称宽×深（严格使用，不叠加网格凹槽的 0.4mm 加工容差），
+ * 总高 / 单边内缩 / 圆角沿用圆形底盘的“首版参考值”。
+ */
+export const SQUARE_BASE_STANDARDS: SquareBaseStandard[] =
+  OLD_WORLD_RECTANGULAR_PRESETS.map((preset) => ({
+    standardId: preset.id,
+    name: `${preset.width} × ${preset.height}mm`,
+    width: preset.width,
+    depth: preset.height,
+    ...SQUARE_BASE_DEFAULTS,
+  }));
 
 export const CONVERSION_CLEARANCE_PER_SIDE = 0.2;
 
@@ -80,6 +104,12 @@ export function findTargetBaseStandard(id: string | undefined) {
   return TARGET_BASE_STANDARDS.find((standard) => standard.id === id);
 }
 
+export function findSquareBaseStandard(id: unknown) {
+  return typeof id === "string"
+    ? SQUARE_BASE_STANDARDS.find((standard) => standard.standardId === id)
+    : undefined;
+}
+
 export function snapshotSourceStandard(
   source: SourceBaseStandard,
 ): ConversionSourceGeometrySnapshot {
@@ -121,11 +151,15 @@ export function createConversionGeometrySnapshot(
 const DEFAULT_SOURCE = SOURCE_BASE_STANDARDS[0];
 const DEFAULT_TARGET = TARGET_BASE_STANDARDS[0];
 const DEFAULT_ROUND_BASE = ROUND_BASE_STANDARDS[2];
+const DEFAULT_SQUARE_BASE = SQUARE_BASE_STANDARDS[0];
 
 export const BASE_CONVERTER_DEFAULTS: BaseConverterParams = {
   generationKind: "conversion",
+  plainBaseShape: "circle",
   roundBaseStandardId: DEFAULT_ROUND_BASE.standardId,
   roundBaseSnapshot: { ...DEFAULT_ROUND_BASE },
+  squareBaseStandardId: DEFAULT_SQUARE_BASE.standardId,
+  squareBaseSnapshot: { ...DEFAULT_SQUARE_BASE },
   pushFitHexHole: {
     acrossFlats: 3.6,
     offsetX: 7,
@@ -244,6 +278,38 @@ function normalizeRoundBaseSnapshot(
   };
 }
 
+function normalizePlainBaseShape(value: unknown): BasePlateShape {
+  return value === "square" ? "square" : "circle";
+}
+
+/**
+ * 方形底盘的宽度/深度锁定在预设，始终回写选中标准的标称尺寸；
+ * 名称、总高、单边内缩与圆角允许保留实测修改。
+ */
+function normalizeSquareBaseSnapshot(
+  value: Partial<SquareBaseProfileSnapshot> | undefined,
+  selected: SquareBaseStandard,
+): SquareBaseProfileSnapshot {
+  if (value?.standardId !== selected.standardId) {
+    return { ...selected };
+  }
+  return {
+    standardId: selected.standardId,
+    name: typeof value.name === "string" && value.name.trim()
+      ? value.name
+      : selected.name,
+    width: selected.width,
+    depth: selected.depth,
+    height: normalizeFinite(value.height, () => true, selected.height),
+    topInset: normalizeFinite(value.topInset, () => true, selected.topInset),
+    cornerRadius: normalizeFinite(
+      value.cornerRadius,
+      () => true,
+      selected.cornerRadius,
+    ),
+  };
+}
+
 export function normalizeBaseConverterParams(
   params: Partial<BaseConverterParams>,
 ): BaseConverterParams {
@@ -264,13 +330,22 @@ export function normalizeBaseConverterParams(
   const roundBaseStandard = findRoundBaseStandard(params.roundBaseStandardId)
     ?? findRoundBaseStandard(params.roundBaseSnapshot?.standardId)
     ?? DEFAULT_ROUND_BASE;
+  const squareBaseStandard = findSquareBaseStandard(params.squareBaseStandardId)
+    ?? findSquareBaseStandard(params.squareBaseSnapshot?.standardId)
+    ?? DEFAULT_SQUARE_BASE;
 
   return {
     generationKind: normalizeGenerationKind(params.generationKind),
+    plainBaseShape: normalizePlainBaseShape(params.plainBaseShape),
     roundBaseStandardId: roundBaseStandard.standardId,
     roundBaseSnapshot: normalizeRoundBaseSnapshot(
       params.roundBaseSnapshot,
       roundBaseStandard,
+    ),
+    squareBaseStandardId: squareBaseStandard.standardId,
+    squareBaseSnapshot: normalizeSquareBaseSnapshot(
+      params.squareBaseSnapshot,
+      squareBaseStandard,
     ),
     pushFitHexHole: {
       acrossFlats: normalizeFinite(
@@ -340,11 +415,50 @@ export function resolveBaseConverterGeometry(params: BaseConverterParams) {
   };
 }
 
+function validateSquareBaseProfile(
+  profile: SquareBaseProfileSnapshot,
+): string | null {
+  if (
+    !Number.isFinite(profile.width)
+    || !Number.isFinite(profile.depth)
+    || profile.width <= ROUND_BASE_SHELL_THICKNESS * 2
+    || profile.depth <= ROUND_BASE_SHELL_THICKNESS * 2
+  ) {
+    return "方形底盘宽深无效";
+  }
+  if (!Number.isFinite(profile.height) || profile.height <= 0) {
+    return "方形底盘高度无效";
+  }
+  if (profile.height <= ROUND_BASE_SHELL_THICKNESS) {
+    return `方形底盘高度必须大于 ${ROUND_BASE_SHELL_THICKNESS}mm 壳厚`;
+  }
+  if (!Number.isFinite(profile.topInset) || profile.topInset < 0) {
+    return "方形底盘顶部内缩无效";
+  }
+  if (profile.topInset * 2 >= Math.min(profile.width, profile.depth)) {
+    return "方形底盘顶部内缩过大，顶部轮廓已消失";
+  }
+  if (
+    !Number.isFinite(profile.cornerRadius)
+    || profile.cornerRadius < 0
+    || profile.cornerRadius > Math.min(profile.width, profile.depth) / 2
+  ) {
+    return "方形底盘圆角无效";
+  }
+  return null;
+}
+
 export function validateBaseConverterParams(
   params: BaseConverterParams,
 ): string | null {
   const normalizedParams = normalizeBaseConverterParams(params);
   if (normalizedParams.generationKind !== "conversion") {
+    if (
+      normalizedParams.generationKind === "plain"
+      && normalizedParams.plainBaseShape === "square"
+    ) {
+      return validateSquareBaseProfile(normalizedParams.squareBaseSnapshot);
+    }
     const profile = normalizedParams.roundBaseSnapshot;
     if (!Number.isFinite(profile.nominalDiameter) || profile.nominalDiameter <= 0) {
       return "圆形底盘直径无效";

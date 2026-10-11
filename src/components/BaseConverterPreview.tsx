@@ -15,6 +15,7 @@ import {
   getRoundBaseTopDiameter,
   ROUND_BASE_SHELL_THICKNESS,
 } from "@/lib/round-base-profile";
+import { getSquareBaseTopDimensions } from "@/lib/square-base-profile";
 import {
   clampPushFitHexHoleOffset,
   createPushFitHexHoleVertices,
@@ -255,11 +256,67 @@ function RoundBasePreview({
   );
 }
 
+function SquareBasePreview({ params }: BaseConverterPreviewProps) {
+  const profile = params.squareBaseSnapshot;
+  const margin = Math.max(profile.width, profile.depth) * 0.12 + 4;
+  const viewBox = `${-profile.width / 2 - margin} ${-profile.depth / 2 - margin} ${profile.width + margin * 2} ${profile.depth + margin * 2}`;
+  const top = getSquareBaseTopDimensions(profile);
+
+  return (
+    <div className="relative h-full w-full overflow-hidden bg-[#0d0b09]">
+      <PreviewGrid />
+      <svg
+        viewBox={viewBox}
+        className="relative z-10 h-full w-full"
+        preserveAspectRatio="xMidYMid meet"
+        aria-label="底盘生成 2D 图"
+      >
+        <rect
+          data-shape="square-base-bottom"
+          x={-profile.width / 2}
+          y={-profile.depth / 2}
+          width={profile.width}
+          height={profile.depth}
+          rx={profile.cornerRadius}
+          ry={profile.cornerRadius}
+          fill="rgba(214, 168, 79, 0.28)"
+          stroke="#d6a84f"
+          strokeWidth={0.8}
+        />
+        <rect
+          data-shape="square-base-top"
+          x={-top.width / 2}
+          y={-top.depth / 2}
+          width={top.width}
+          height={top.depth}
+          rx={top.cornerRadius}
+          ry={top.cornerRadius}
+          fill="none"
+          stroke="#a8844d"
+          strokeWidth={0.35}
+          strokeDasharray="1 0.8"
+        />
+        <line x1={-profile.width / 2} y1={0} x2={profile.width / 2} y2={0} stroke="#8b7355" strokeWidth={0.2} strokeDasharray="1 1" />
+        <line x1={0} y1={-profile.depth / 2} x2={0} y2={profile.depth / 2} stroke="#8b7355" strokeWidth={0.2} strokeDasharray="1 1" />
+      </svg>
+      <div className="absolute bottom-3 left-3 z-20 rounded-sm border border-[#2e2a24] bg-[#100d0a]/90 px-3 py-1.5 font-mono text-xs text-[#d8d1c5]">
+        普通底盘 · 方形 · {profile.name}
+      </div>
+    </div>
+  );
+}
+
 export function BaseConverterPreview(props: BaseConverterPreviewProps) {
   const { params } = props;
   const clipId = useId().replace(/:/g, "");
   const normalizedParams = normalizeBaseConverterParams(params);
   if (normalizedParams.generationKind !== "conversion") {
+    if (
+      normalizedParams.generationKind === "plain"
+      && normalizedParams.plainBaseShape === "square"
+    ) {
+      return <SquareBasePreview {...props} params={normalizedParams} />;
+    }
     return <RoundBasePreview {...props} params={normalizedParams} />;
   }
   const { params: normalized, source, target, recess } =

@@ -32,6 +32,7 @@ describe("Base-hole Construction Plan Interface", () => {
     expect(createCustomBaseHoleConstructionPlan({
       ...CUSTOM_LAYOUT_DEFAULTS,
       baseHoleStructure: "magnetic-base-hole",
+      smallBaseHoleSize: "20",
       slots: [
         { id: "small", x: 30, y: 30, shape: "circle", width: 25, height: 25, rotation: 0 },
         { id: "large", x: 90, y: 30, shape: "ellipse", width: 75, height: 42, rotation: 0 },

@@ -334,6 +334,59 @@ describe("local drafts", () => {
     expect(listDrafts("base-converter")).toEqual([record.item]);
   });
 
+  it("records a square plain draft with its preset footprint", () => {
+    vi.spyOn(crypto, "randomUUID").mockReturnValue("square-base");
+    const record = createDraft("方形底盘", "base-converter", {
+      ...BASE_CONVERTER_DEFAULTS,
+      generationKind: "plain",
+      plainBaseShape: "square",
+      squareBaseStandardId: "old-world-25x50",
+      squareBaseSnapshot: {
+        ...BASE_CONVERTER_DEFAULTS.squareBaseSnapshot,
+        standardId: "old-world-25x50",
+        name: "25 × 50mm",
+        width: 25,
+        depth: 50,
+      },
+    });
+
+    expect(record.item.summary).toMatchObject({
+      mode: "base-converter",
+      sourceLabel: "普通底盘 · 方形",
+      targetLabel: "25 × 50mm",
+      trayWidth: 25,
+      trayDepth: 50,
+    });
+  });
+
+  it("fills the square shape defaults when reading legacy base converter drafts", () => {
+    vi.spyOn(crypto, "randomUUID").mockReturnValue("converter-legacy-shape");
+    const record = createDraft(
+      "旧普通底盘",
+      "base-converter",
+      BASE_CONVERTER_DEFAULTS,
+    );
+    const key = `tray-creator:drafts:base-converter:${record.item.id}:v1`;
+    const stored = JSON.parse(localStorage.getItem(key)!);
+    delete stored.paramFile.params.plainBaseShape;
+    delete stored.paramFile.params.squareBaseStandardId;
+    delete stored.paramFile.params.squareBaseSnapshot;
+    localStorage.setItem(key, JSON.stringify(stored));
+
+    expect(getDraft("base-converter", record.item.id)?.paramFile.params)
+      .toMatchObject({
+        plainBaseShape: "circle",
+        squareBaseStandardId: "old-world-25x25",
+        squareBaseSnapshot: {
+          width: 25,
+          depth: 25,
+          height: 4,
+          topInset: 1.5,
+          cornerRadius: 0,
+        },
+      });
+  });
+
   it("distinguishes ordinary and push-fit base drafts", () => {
     vi.spyOn(crypto, "randomUUID")
       .mockReturnValueOnce("plain-base")

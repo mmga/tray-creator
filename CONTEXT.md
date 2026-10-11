@@ -978,7 +978,7 @@ _Avoid_: Calling `holeDepth` the box wall height.
 - Selecting no base hole or **Magnet Post Hole** while **Magnetic Base Plate Only** is active restores the grid's complete slot structure.
 - Grid, custom, and Custom Stepped Tray Modes each persist exactly one **Base-hole Structure** plus the shared **Magnet Post Hole** diameter and depth values.
 - A legacy `enableBaseHole` value migrates to **Magnetic Base Hole** when true and no base hole when false; newly written Persisted Param Artifacts do not retain that legacy field.
-- A new grid tray defaults to **Magnetic Base Hole**, while new custom and Custom Stepped Tray trays default to no base hole.
+- A new grid and custom tray defaults to **Magnetic Base Hole**; custom trays use the standard 25mm magnet for the 25mm small-base case, while new Custom Stepped Tray trays default to no base hole.
 - A historical tray artifact with neither a Base-hole Structure nor a legacy `enableBaseHole` defaults to no base hole so import never adds a manufacturing hole implicitly.
 - A historical grid artifact marked as **Magnetic Base Plate Only** always migrates to **Magnetic Base Hole**, even when its legacy magnetic-hole switch is absent.
 - A tray selects exactly one **Base-hole Structure**.

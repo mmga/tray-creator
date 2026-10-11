@@ -62,6 +62,12 @@ function modeSpecificMetrics(result: TrayResultProjection) {
         return (
           <>
             <ResultMetric label="类型" value="普通底盘" />
+            {result.baseShape ? (
+              <ResultMetric
+                label="底面形状"
+                value={result.baseShape === "square" ? "方形 / 矩形" : "圆形"}
+              />
+            ) : null}
             <ResultMetric label="规格" value={result.targetLabel} />
           </>
         );

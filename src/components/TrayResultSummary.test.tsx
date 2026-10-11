@@ -6,8 +6,11 @@ import type {
   SteppedTrayResultProjection,
 } from "@/lib/tray-result-projection";
 import { projectBaseConverterResult, projectCustomTrayResult } from "@/lib/tray-result-projection";
-import { BASE_CONVERTER_DEFAULTS } from "@/lib/base-converter-config";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
+import {
+  BASE_CONVERTER_DEFAULTS,
+  SQUARE_BASE_STANDARDS,
+} from "@/lib/base-converter-config";
 
 const gridResult: GridTrayResultProjection = {
   mode: "grid",
@@ -63,6 +66,25 @@ describe("TrayResultSummary", () => {
     } />);
     expect(screen.getByText("六边孔对边")).toBeInTheDocument();
     expect(screen.getByText("1.2 / -0.8 mm")).toBeInTheDocument();
+  });
+
+  it("方形普通底盘摘要展示底面形状与矩形规格", () => {
+    render(<TrayResultSummary result={
+      projectBaseConverterResult({
+        ...BASE_CONVERTER_DEFAULTS,
+        generationKind: "plain",
+        plainBaseShape: "square",
+        squareBaseStandardId: "old-world-25x50",
+        squareBaseSnapshot: SQUARE_BASE_STANDARDS.find(
+          (standard) => standard.standardId === "old-world-25x50",
+        )!,
+      }, { volume: 0, isGenerating: false, isPreviewStale: false })
+    } />);
+    fireEvent.click(screen.getByRole("button", { expanded: false }));
+
+    expect(screen.getByText("底面形状")).toBeInTheDocument();
+    expect(screen.getByText("方形 / 矩形")).toBeInTheDocument();
+    expect(screen.getByText("25 × 50mm")).toBeInTheDocument();
   });
 
   it("紧凑区展示核心结果，并仅在展开后挂载详情", () => {

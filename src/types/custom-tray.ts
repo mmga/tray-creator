@@ -48,12 +48,29 @@ export interface ConversionGeometrySnapshot {
 
 export type BaseGenerationKind = "plain" | "push-fit" | "conversion";
 
+/** 普通底盘的底面形状；旧配置缺失该字段时按 circle 兼容。 */
+export type BasePlateShape = "circle" | "square";
+
 export interface RoundBaseProfileSnapshot {
   standardId: string;
   name: string;
   nominalDiameter: number;
   height: number;
   topInset: number;
+}
+
+/**
+ * 方形/矩形普通底盘几何快照。
+ * width/depth 来自网格模式的方形/矩形预设并锁定，height/topInset/cornerRadius 可按实测修改。
+ */
+export interface SquareBaseProfileSnapshot {
+  standardId: string;
+  name: string;
+  width: number;
+  depth: number;
+  height: number;
+  topInset: number;
+  cornerRadius: number;
 }
 
 export interface PushFitHexHoleParams {
@@ -67,8 +84,13 @@ export interface PushFitHexHoleParams {
 
 export interface BaseConverterParams {
   generationKind: BaseGenerationKind;
+  /** 普通底盘的底面形状；仅 generationKind === "plain" 时生效。 */
+  plainBaseShape: BasePlateShape;
   roundBaseStandardId: string;
   roundBaseSnapshot: RoundBaseProfileSnapshot;
+  /** 方形/矩形普通底盘规格；仅在 plain + square 时生效，切换形状时保留。 */
+  squareBaseStandardId: string;
+  squareBaseSnapshot: SquareBaseProfileSnapshot;
   pushFitHexHole: PushFitHexHoleParams;
   sourceStandardId: string;
   targetStandardId: string;
