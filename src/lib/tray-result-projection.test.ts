@@ -37,7 +37,7 @@ describe("Tray Result Projection", () => {
     const state = readyCustomState(params);
     const result = projectCustomTrayResult(params, { width: 999, depth: 999 }, idleState, state);
     expect(result).toMatchObject({ footprintStyle: "polygonal", footprintKind: "polygonal-footprint",
-      sizingMode: "auto", contourBodyCount: 1 });
+      sizingMode: "auto", contourBodyCount: 1, polygonSideCount: 4 });
     expect(result.dimensions.width).toBeCloseTo(state.value.bounds!.maxX - state.value.bounds!.minX, 1);
   });
 

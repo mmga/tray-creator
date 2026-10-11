@@ -26,6 +26,7 @@ describe("直边包络", () => {
     const rounded = build(triangle, 2, 1.5);
     const ring = rounded.bodies[0].outerOutline;
     expect(ring.length).toBeGreaterThan(30);
+    expect(rounded.polygonSideCount).toBe(3);
     expect(rounded.area).toBeLessThan(sharp.area);
     expect(ring.filter((point, i) => Math.hypot(point.x - ring[(i + 1) % ring.length].x,
       point.y - ring[(i + 1) % ring.length].y) > 40)).toHaveLength(3);
@@ -45,6 +46,7 @@ describe("直边包络", () => {
     const ring = result.bodies[0].outerOutline;
     expect(result.bodyCount).toBe(1);
     expect(ring.length).toBeGreaterThan(30);
+    expect(result.polygonSideCount).toBe(5);
     for (const slot of slots) {
       expect(result.containsExpandedCircle(slot.cx, slot.cy, slot.profile.width / 2 + 5)).toBe(true);
       for (let i = 0; i < ring.length; i++) {
@@ -67,6 +69,7 @@ describe("直边包络", () => {
     const result = build(triangle);
     expect(result.bodyCount).toBe(1);
     expect(result.bodies[0].outerOutline).toHaveLength(3);
+    expect(result.polygonSideCount).toBe(3);
     for (const slot of triangle) {
       expect(result.containsExpandedCircle(slot.cx, slot.cy, 7)).toBe(true);
       expect(result.containsExpandedCircle(slot.cx, slot.cy, 7.001)).toBe(false);
@@ -80,6 +83,7 @@ describe("直边包络", () => {
       circle("c", 40, 40), circle("d", 0, 40), circle("inside", 20, 20, 30)];
     const result = build(slots);
     expect(result.bodies[0].outerOutline).toHaveLength(4);
+    expect(result.polygonSideCount).toBe(4);
     expect(result.bounds?.minX).toBeCloseTo(-12, 5);
     expect(result.containsExpandedCircle(20, 20, 32)).toBe(true);
   });
@@ -90,6 +94,7 @@ describe("直边包络", () => {
     "空或退化布局返回空结果或安全矩形：%j", (...slots) => {
       const result = build(slots);
       expect(result.bodyCount).toBe(slots.length ? 1 : 0);
+      expect(result.polygonSideCount).toBe(slots.length ? 4 : 0);
       if (slots.length) {
         expect(result.bodies[0].outerOutline).toHaveLength(4);
         for (const slot of slots) expect(result.containsExpandedCircle(slot.cx, slot.cy, 7)).toBe(true);
@@ -100,6 +105,7 @@ describe("直边包络", () => {
   it("尖角增加截角边且不生成过长尖刺", () => {
     const result = build([circle("a", 0, 0), circle("b", 100, 0), circle("c", 2, 20)]);
     expect(result.bodies[0].outerOutline.length).toBeGreaterThanOrEqual(4);
+    expect(result.polygonSideCount).toBe(result.bodies[0].outerOutline.length);
     expect(result.bounds!.minX).toBeGreaterThan(-20);
     expect(result.bounds!.maxX).toBeLessThan(120);
     expect(result.bounds!.minY).toBeGreaterThan(-20);

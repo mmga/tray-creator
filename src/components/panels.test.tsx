@@ -12,6 +12,7 @@ import {
   PARAM_CONFIG,
 } from "@/lib/grid-config";
 import { calculateCustomEffectiveDimensions } from "@/lib/custom-layout-math";
+import { customContouredStateForTest } from "@/test/contoured-state";
 import { buildSteppedPerfFixture } from "@/lib/stepped-perf-fixtures";
 import { STEPPED_LAYOUT_DEFAULTS, STEPPED_LIMITS } from "@/lib/stepped-config";
 import type { SteppedLayoutParams } from "@/types/custom-tray";
@@ -988,6 +989,24 @@ describe("CustomPanel", { timeout: 15000 }, () => {
       CUSTOM_LAYOUT_DEFAULTS.boundarySpacing + 1,
     );
     expect(updateParam).toHaveBeenNthCalledWith(3, "sideBevelWidth", 0.5);
+  });
+
+  it("直边面板显示真实边数，圆角变化不计入边数，空布局不伪报边数", () => {
+    const params = { ...CUSTOM_LAYOUT_DEFAULTS, footprintStyle: "polygonal" as const,
+      slots: [[0,0],[60,0],[30,50]].map(([x,y], i) => ({
+        id: String(i), x, y, width: 25, height: 25, shape: "circle" as const, rotation: 0,
+      })) };
+    const common = { effectiveDimensions: { width: 120, depth: 140 }, updateParam: vi.fn(),
+      onAddSlot: vi.fn(), isGenerating: false, volume: 0 };
+    const { rerender } = render(<CustomPanel {...common} params={params}
+      contouredFootprintState={customContouredStateForTest(params)} />);
+    expect(screen.getByText("当前外形：3 边形（忽略圆角）")).toBeInTheDocument();
+    const sharp = { ...params, cornerRadius: 0 };
+    rerender(<CustomPanel {...common} params={sharp} contouredFootprintState={customContouredStateForTest(sharp)} />);
+    expect(screen.getByText("当前外形：3 边形（忽略圆角）")).toBeInTheDocument();
+    const empty = { ...params, slots: [] };
+    rerender(<CustomPanel {...common} params={empty} contouredFootprintState={customContouredStateForTest(empty)} />);
+    expect(screen.getByText("当前外形：暂无轮廓（忽略圆角）")).toBeInTheDocument();
   });
 
   it("三种轮廓可选择，直边模式隐藏休眠参数并保留切回入口", () => {

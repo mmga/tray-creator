@@ -102,6 +102,7 @@ export function createPolygonalFootprint(slots: readonly ContouredFootprintSlot[
     return cosine > Math.cos(MIN_ANGLE - 1e-7);
   })) throw new Error("直边包络生成了退化轮廓或无效尖角");
 
+  const sideCount = points.length;
   if (radius > 0) {
     // 安全内核向外加圆，切线交点使离散圆弧只向外偏差，不侵蚀凹槽边距。
     points = points.flatMap((point, i, ring) => {
@@ -125,6 +126,7 @@ export function createPolygonalFootprint(slots: readonly ContouredFootprintSlot[
     return { nx, ny, d: nx * point.x + ny * point.y };
   });
   return {
+    sideCount,
     geometry: geometries.geom2.fromPoints(points.map(point => [point.x + origin.x, point.y + origin.y])),
     containsExpandedCircle: (x: number, y: number, radius: number) =>
       Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(radius) && radius >= 0

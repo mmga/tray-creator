@@ -353,6 +353,13 @@ export default function CustomPanel({
                   <SelectItem value="polygonal">直边包络</SelectItem>
                 </SelectContent>
               </Select>
+              {isPolygonalFootprint && (
+                <p className="text-xs text-[#f0d8b8]" aria-live="polite">
+                  当前外形：{result.polygonSideCount === undefined
+                    ? "边数待计算"
+                    : result.polygonSideCount === 0 ? "暂无轮廓" : `${result.polygonSideCount} 边形`}（忽略圆角）
+                </p>
+              )}
             </div>
             {/* contoured 多实体提示（CONTEXT:628）：不阻止生成，但必须在 UI 可见 */}
             {isContouredFootprint && result.contourBodyCount > 1 && (

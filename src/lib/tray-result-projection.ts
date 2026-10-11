@@ -77,6 +77,7 @@ export interface CustomTrayResultProjection extends TrayResultProjectionBase {
   footprintKind: "effective-baseplate" | "fixed-outer-footprint" | "contoured-footprint" | "polygonal-footprint";
   /** contoured footprint 产生的独立可打印实体数；rectangular 时为 1（或 0 当无槽）。 */
   contourBodyCount: number;
+  polygonSideCount?: number;
   footprintArea: number;
 }
 
@@ -335,6 +336,8 @@ export function projectCustomTrayResult(
     sizingMode,
     footprintKind,
     contourBodyCount: footprint.contourBodyCount,
+    ...(footprintStyle === "polygonal" && contouredState.status === "ready"
+      ? { polygonSideCount: contouredState.value.polygonSideCount } : {}),
     footprintArea: finiteOrZero(common.dimensions.width * common.dimensions.depth),
     box: box.enabled
       ? projectBox(box, params.baseThickness, params.holeDepth, false, state)

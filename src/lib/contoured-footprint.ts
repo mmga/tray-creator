@@ -97,6 +97,8 @@ export interface ConstructedContouredFootprint {
   readonly key: string;
   readonly bodies: readonly ContouredFootprintBody[];
   readonly bodyCount: number;
+  /** 直边包络圆角处理前的有效边数，包含尖角保护新增的截角边。 */
+  readonly polygonSideCount?: number;
   readonly bounds: ContouredFootprintBounds | null;
   readonly area: number;
   readonly diagnostics: readonly ContouredFootprintDiagnostic[];
@@ -442,6 +444,7 @@ function constructRequest(
       key: request.key,
       bodies: [],
       bodyCount: 0,
+      ...(request.constructionStyle === "polygonal" ? { polygonSideCount: 0 } : {}),
       bounds: null,
       area: 0,
       diagnostics: [],
@@ -537,6 +540,7 @@ function constructRequest(
     key: request.key,
     bodies,
     bodyCount: bodies.length,
+    ...(polygonal ? { polygonSideCount: polygonal.sideCount } : {}),
     bounds,
     area: bodies.reduce((sum, body) => sum + body.area, 0),
     diagnostics,

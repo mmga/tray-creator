@@ -30,13 +30,14 @@ const gridResult: GridTrayResultProjection = {
 
 describe("TrayResultSummary", () => {
   it("直边摘要不显示休眠的固定尺寸语义", () => {
-    render(<TrayResultSummary result={projectCustomTrayResult(
+    render(<TrayResultSummary result={{ ...projectCustomTrayResult(
       { ...CUSTOM_LAYOUT_DEFAULTS, footprintStyle: "polygonal", traySizingMode: "fixed" },
       { width: 50, depth: 60 },
       { volume: 0, isGenerating: false, isPreviewStale: false },
-    )} />);
+    ), polygonSideCount: 3 }} />);
     fireEvent.click(screen.getByRole("button", { expanded: false }));
     expect(screen.getByText("直边包络")).toBeInTheDocument();
+    expect(screen.getByText("3 边形")).toBeInTheDocument();
     expect(screen.queryByText("固定外轮廓")).not.toBeInTheDocument();
   });
 
