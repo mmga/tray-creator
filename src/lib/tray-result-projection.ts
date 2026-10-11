@@ -11,7 +11,7 @@ import {
 import type {
   BaseGenerationKind,
   BaseConverterParams,
-  BaseplateFootprintStyle,
+  CustomBaseplateFootprintStyle,
   CustomLayoutParams,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
@@ -72,7 +72,7 @@ export interface GridTrayResultProjection extends TrayResultProjectionBase {
 
 export interface CustomTrayResultProjection extends TrayResultProjectionBase {
   mode: "custom";
-  footprintStyle: BaseplateFootprintStyle;
+  footprintStyle: CustomBaseplateFootprintStyle;
   sizingMode: "auto" | "fixed";
   footprintKind: "effective-baseplate" | "fixed-outer-footprint" | "contoured-footprint";
   /** contoured footprint 产生的独立可打印实体数；rectangular 时为 1（或 0 当无槽）。 */

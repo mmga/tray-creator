@@ -20,6 +20,7 @@ import type { LayoutExtents } from "@/lib/custom-layout-math";
 import {
   calculateCustomBoxRequiredOuterSize,
   calculateCustomEffectiveDimensions,
+  resolveCustomFootprintStyle,
 } from "@/lib/custom-layout-math";
 import { resolveStackableBoxParams } from "@/lib/stackable-box";
 import type { IdFactory } from "@/lib/model-ports";
@@ -46,7 +47,7 @@ export function updateCustomLayoutParam<K extends keyof CustomLayoutParams>(
     const nextBox = resolveStackableBoxParams(
       value as CustomLayoutParams["stackableBox"],
     );
-    if (nextBox.enabled && params.footprintStyle === "contoured") {
+    if (nextBox.enabled && resolveCustomFootprintStyle(params) !== "rectangular") {
       return {
         ...params,
         stackableBox: { ...nextBox, enabled: false },
@@ -61,7 +62,7 @@ export function updateCustomLayoutParam<K extends keyof CustomLayoutParams>(
     return { ...params, stackableBox: nextBox };
   }
 
-  if (key === "footprintStyle" && value === "contoured") {
+  if (key === "footprintStyle" && (value === "contoured" || value === "polygonal")) {
     const box = resolveStackableBoxParams(params.stackableBox);
     return {
       ...params,

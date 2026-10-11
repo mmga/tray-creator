@@ -4,7 +4,7 @@ import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
 import { RENDER_CONFIG } from "@/lib/config";
 import type { ConstructedContouredFootprint } from "@/lib/contoured-footprint";
 import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
-import type { BaseplateFootprintStyle, CustomLayoutParams, FreeSlot } from "@/types/custom-tray";
+import type { CustomBaseplateFootprintStyle, CustomLayoutParams, FreeSlot } from "@/types/custom-tray";
 import {
   calculateBoxRequiredOuterSize,
   calculateBoxUsableArea,
@@ -27,7 +27,7 @@ export interface LayoutExtents {
 
 export interface CustomTrayFootprint {
   sizingMode: CustomTraySizingMode;
-  footprintStyle: BaseplateFootprintStyle;
+  footprintStyle: CustomBaseplateFootprintStyle;
   hasSlots: boolean;
   width: number;
   depth: number;
@@ -72,8 +72,9 @@ export function resolveCustomTraySizingMode(
  */
 export function resolveCustomFootprintStyle(
   params: Pick<CustomLayoutParams, "footprintStyle">,
-): BaseplateFootprintStyle {
-  return params.footprintStyle === "contoured" ? "contoured" : "rectangular";
+): CustomBaseplateFootprintStyle {
+  return params.footprintStyle === "contoured" || params.footprintStyle === "polygonal"
+    ? params.footprintStyle : "rectangular";
 }
 
 export function calculateCustomEffectiveDimensions(
@@ -137,7 +138,7 @@ export function calculateCustomTrayFootprint(
 
   // contoured 分支：底座贴合槽位轮廓，不应用 side bevel / fixed sizing / corner radius。
   // 这些字段保留为 Dormant Fixed Tray Configuration，切换回 rectangular 时复活（CONTEXT:607-608）。
-  if (footprintStyle === "contoured") {
+  if (footprintStyle !== "rectangular") {
     if (contouredState.status !== "ready") {
       return {
         sizingMode: "auto",
@@ -342,13 +343,15 @@ export function validateCustomBox(params: CustomLayoutParams): BoxValidationResu
     return { valid: true, blockingReasons: [], warnings: [] };
   }
 
-  if (resolveCustomFootprintStyle(params) === "contoured") {
+  if (resolveCustomFootprintStyle(params) !== "rectangular") {
     return {
       valid: false,
       blockingReasons: [
         {
           code: "custom-contoured-with-box",
-          message: "贴合轮廓自定义托盘不支持堆叠盒体",
+          message: params.footprintStyle === "polygonal"
+            ? "直边包络自定义托盘不支持堆叠盒体"
+            : "贴合轮廓自定义托盘不支持堆叠盒体",
         },
       ],
       warnings: [],

@@ -27,6 +27,18 @@ function readyState(params: CustomLayoutParams) {
 }
 
 describe("custom layout math", () => {
+  it("解析直边样式且固定尺寸休眠，未构造时不冒用矩形", () => {
+    const params = { ...CUSTOM_LAYOUT_DEFAULTS, footprintStyle: "polygonal" as const,
+      traySizingMode: "fixed" as const };
+    expect(resolveCustomFootprintStyle(params)).toBe("polygonal");
+    expect(calculateCustomTrayFootprint(params)).toMatchObject({
+      footprintStyle: "polygonal", sizingMode: "auto", hasSlots: false,
+    });
+    expect(validateCustomBox({ ...params,
+      stackableBox: { ...params.stackableBox!, enabled: true },
+    }).valid).toBe(false);
+  });
+
   it("resolves boundary spacing from either the shared spacing or the override", () => {
     expect(
       resolveCustomBoundarySpacing({

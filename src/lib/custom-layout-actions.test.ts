@@ -22,6 +22,25 @@ function createIdFactory(...ids: string[]): IdFactory {
 }
 
 describe("custom layout actions", () => {
+  it("直边样式关闭盒体并保留槽位和休眠参数", () => {
+    const params = {
+      ...CUSTOM_LAYOUT_DEFAULTS,
+      traySizingMode: "fixed" as const,
+      cornerRadius: 8,
+      smoothingRadius: 22,
+      stackableBox: { ...CUSTOM_LAYOUT_DEFAULTS.stackableBox!, enabled: true },
+    };
+    const next = updateCustomLayoutParam(params, "footprintStyle", "polygonal");
+    expect(next).toMatchObject({
+      footprintStyle: "polygonal", traySizingMode: "fixed",
+      cornerRadius: 8, smoothingRadius: 22, stackableBox: { enabled: false },
+    });
+    expect(next.slots).toBe(params.slots);
+    expect(updateCustomLayoutParam(next, "stackableBox", {
+      ...next.stackableBox!, enabled: true,
+    }).stackableBox?.enabled).toBe(false);
+  });
+
   it("sizes a box on first enable from the existing custom slots", () => {
     const params = {
       ...CUSTOM_LAYOUT_DEFAULTS,

@@ -682,7 +682,7 @@ function clampAndFillCustomDerivedFields(
 
   // 补全 Baseplate Footprint Style；缺失时默认 rectangular 以兼容旧自定义文件（CONTEXT:591）
   const previousFootprintStyle = obj.footprintStyle;
-  if (previousFootprintStyle !== "rectangular" && previousFootprintStyle !== "contoured") {
+  if (previousFootprintStyle !== "rectangular" && previousFootprintStyle !== "contoured" && previousFootprintStyle !== "polygonal") {
     obj.footprintStyle = "rectangular";
     recordDefault(recorder, {
       path: "footprintStyle",
@@ -696,7 +696,7 @@ function clampAndFillCustomDerivedFields(
   const customBox = resolveStackableBoxParams(
     obj.stackableBox as StackableBoxParams | undefined,
   );
-  if (customBox.enabled && obj.footprintStyle === "contoured") {
+  if (customBox.enabled && (obj.footprintStyle === "contoured" || obj.footprintStyle === "polygonal")) {
     customBox.enabled = false;
     obj.stackableBox = customBox;
     recordBehaviorChange(recorder, {
@@ -704,7 +704,9 @@ function clampAndFillCustomDerivedFields(
       label: "堆叠盒体结构",
       previousValue: true,
       normalizedValue: false,
-      reason: "贴合轮廓自定义托盘不支持堆叠盒体，已关闭",
+      reason: obj.footprintStyle === "polygonal"
+        ? "直边包络自定义托盘不支持堆叠盒体，已关闭"
+        : "贴合轮廓自定义托盘不支持堆叠盒体，已关闭",
     });
   }
 

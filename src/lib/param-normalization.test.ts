@@ -35,6 +35,20 @@ describe("Param Normalization Catalog types", () => {
 });
 
 describe("param normalization", () => {
+  it("自定义导入保留直边样式并关闭盒体，阶梯不接受直边", () => {
+    const custom = normalizeParamsForMode("custom", {
+      ...CUSTOM_LAYOUT_DEFAULTS, footprintStyle: "polygonal",
+      traySizingMode: "fixed", smoothingRadius: 23,
+      stackableBox: { ...CUSTOM_LAYOUT_DEFAULTS.stackableBox!, enabled: true },
+    });
+    expect(custom).toMatchObject({ footprintStyle: "polygonal", traySizingMode: "fixed",
+      smoothingRadius: 23, stackableBox: { enabled: false } });
+    const stepped = normalizeParamsForMode("stepped", {
+      ...STEPPED_LAYOUT_DEFAULTS, footprintStyle: "polygonal",
+    } as unknown as SteppedLayoutParams);
+    expect(stepped.footprintStyle).toBe("contoured");
+  });
+
   it("recognizes legacy 100mm slots across all modes", () => {
     const grid = normalizeParamsForMode("grid", {
       ...DEFAULT_TRAY_PARAMS,
