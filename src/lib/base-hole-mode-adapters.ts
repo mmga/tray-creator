@@ -198,7 +198,7 @@ export const customBaseHoleAdapter = {
     const contoured = contouredState.status === "ready" ? contouredState.value : undefined;
     const footprint = calculateCustomTrayFootprint(params, contouredState);
     const box = resolveStackableBoxParams(params.stackableBox);
-    if (footprint.footprintStyle === "contoured") {
+    if (footprint.footprintStyle !== "rectangular") {
       if (!contoured) return [];
       return params.slots.map((slot) => {
         const profile = getFreeSlotProfileGeometry(slot);

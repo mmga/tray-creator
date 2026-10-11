@@ -74,7 +74,7 @@ export interface CustomTrayResultProjection extends TrayResultProjectionBase {
   mode: "custom";
   footprintStyle: CustomBaseplateFootprintStyle;
   sizingMode: "auto" | "fixed";
-  footprintKind: "effective-baseplate" | "fixed-outer-footprint" | "contoured-footprint";
+  footprintKind: "effective-baseplate" | "fixed-outer-footprint" | "contoured-footprint" | "polygonal-footprint";
   /** contoured footprint 产生的独立可打印实体数；rectangular 时为 1（或 0 当无槽）。 */
   contourBodyCount: number;
   footprintArea: number;
@@ -297,7 +297,7 @@ export function projectCustomTrayResult(
   // contoured 时尺寸完全由派生轮廓外接框决定，忽略 effectiveDimensions 上游计算（避免双轨）
   const width = box.enabled
     ? box.outerWidth
-    : footprintStyle === "contoured"
+    : footprintStyle !== "rectangular"
       ? (footprint.width > 0 ? footprint.width : params.trayWidth)
       : sizingMode === "fixed"
         ? modelDimensions.width
@@ -306,7 +306,7 @@ export function projectCustomTrayResult(
           : params.trayWidth;
   const depth = box.enabled
     ? box.outerDepth
-    : footprintStyle === "contoured"
+    : footprintStyle !== "rectangular"
       ? (footprint.depth > 0 ? footprint.depth : params.trayDepth)
       : sizingMode === "fixed"
         ? modelDimensions.depth
@@ -319,7 +319,8 @@ export function projectCustomTrayResult(
   );
 
   const footprintKind =
-    footprintStyle === "contoured"
+    footprintStyle === "polygonal" ? ("polygonal-footprint" as const)
+    : footprintStyle === "contoured"
       ? ("contoured-footprint" as const)
       : sizingMode === "fixed"
         ? ("fixed-outer-footprint" as const)

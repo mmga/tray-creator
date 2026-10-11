@@ -64,7 +64,7 @@ export function createCustomTrayModel(
   }
 
   const { slots, baseThickness, holeDepth, cornerRadius, sideBevelWidth } = params;
-  if (params.footprintStyle === "contoured" && contouredState.status !== "ready") {
+  if (resolveCustomFootprintStyle(params) !== "rectangular" && contouredState.status !== "ready") {
     throw new Error(
       contouredState.status === "failed"
         ? contouredState.error.message
@@ -86,7 +86,7 @@ export function createCustomTrayModel(
 
   // 1. 创建底板实体（按 footprint style 分流）
   let body: Geom3;
-  if (footprint.footprintStyle === "contoured") {
+  if (footprint.footprintStyle !== "rectangular") {
     body = createContouredBaseBody(
       params,
       constructedContoured!,

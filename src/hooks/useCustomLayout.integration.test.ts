@@ -235,13 +235,13 @@ describe("useCustomLayout", () => {
     );
   });
 
-  it("复用已提交的 Contoured Footprint，并把工作结果限制在连续编辑期间", async () => {
+  it.each(["contoured", "polygonal"] as const)("复用 %s 轮廓，并把工作结果限制在连续编辑期间", async (footprintStyle) => {
     randomIdFactoryMock.createId.mockReturnValue("slot-1");
     const { result } = renderHook(() => useCustomLayout());
 
     act(() => {
       result.current.setContouredWorkingPreviewEnabled(true);
-      result.current.updateParam("footprintStyle", "contoured");
+      result.current.updateParam("footprintStyle", footprintStyle);
       result.current.addSlot(25);
     });
 
@@ -265,7 +265,7 @@ describe("useCustomLayout", () => {
       result.current.cancelContinuousEdit();
       result.current.updateParam("footprintStyle", "rectangular");
       result.current.updateParam("trayWidth", 180);
-      result.current.updateParam("footprintStyle", "contoured");
+      result.current.updateParam("footprintStyle", footprintStyle);
     });
 
     expect(result.current.workingContouredFootprintState).toEqual({

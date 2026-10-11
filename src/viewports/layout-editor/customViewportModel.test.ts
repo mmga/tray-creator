@@ -16,6 +16,17 @@ function readyState(params: CustomLayoutParams) {
 }
 
 describe("custom layout editor viewport model", () => {
+  it("直边模式使用同一多边形且不显示休眠的固定矩形", () => {
+    const params: CustomLayoutParams = { ...CUSTOM_LAYOUT_DEFAULTS,
+      footprintStyle: "polygonal", traySizingMode: "fixed",
+      slots: [{ id: "a", x: 20, y: 20, shape: "circle", width: 25, height: 25, rotation: 0 }] };
+    const state = readyState(params);
+    const model = buildCustomLayoutEditorViewportModel(params, state);
+    expect(model.trayFrame.showEffectiveBaseplate).toBe(false);
+    expect(model.trayFrame.fixedUsableArea).toBeUndefined();
+    expect(model.overlays.groupOutlines?.[0].points).toEqual(state.value.bodies[0].outerOutline);
+  });
+
   it("keeps automatic mode on the dynamic effective-baseplate overlay", () => {
     const model = buildCustomLayoutEditorViewportModel(CUSTOM_LAYOUT_DEFAULTS);
 

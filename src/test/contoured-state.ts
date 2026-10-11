@@ -24,7 +24,7 @@ import { calculateSteppedEffectiveDimensions as calculateDimensions } from "@/li
 export function customContouredStateForTest(
   params: CustomLayoutParams,
 ): ContouredFootprintState<ConstructedContouredFootprint> {
-  if (params.footprintStyle !== "contoured") return { status: "inactive" };
+  if (params.footprintStyle !== "contoured" && params.footprintStyle !== "polygonal") return { status: "inactive" };
   const outcome = constructCustomContouredFootprintOutcome(
     projectCustomContouredFootprintInput(params),
   );

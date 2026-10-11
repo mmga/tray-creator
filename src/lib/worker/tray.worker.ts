@@ -1,5 +1,6 @@
 import { createTrayModel } from "../tray-model";
 import { createCustomTrayModel } from "../custom-tray-model";
+import { resolveCustomFootprintStyle } from "../custom-layout-math";
 import { createBaseConverterModel } from "../base-converter-model";
 import {
   createSteppedCadSplitParts,
@@ -37,7 +38,7 @@ import {
 function buildCustomContouredState(
   params: CustomLayoutParams,
 ): ContouredFootprintState<ConstructedContouredFootprint> {
-  if (params.footprintStyle !== "contoured") return { status: "inactive" };
+  if (resolveCustomFootprintStyle(params) === "rectangular") return { status: "inactive" };
   const outcome = constructCustomContouredFootprintOutcome(
     projectCustomContouredFootprintInput(params),
   );

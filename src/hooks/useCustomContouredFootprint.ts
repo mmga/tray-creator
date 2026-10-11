@@ -43,7 +43,7 @@ export function useCustomContouredFootprint({
 } {
   const isActive = useCallback(
     (params: CustomLayoutParams) =>
-      resolveCustomFootprintStyle(params) === "contoured",
+      resolveCustomFootprintStyle(params) !== "rectangular",
     [],
   );
 

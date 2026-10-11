@@ -47,7 +47,7 @@ export function buildCustomLayoutEditorViewportModel(
   },
 ): LayoutEditorViewportModel {
   const isFixed = resolveCustomTraySizingMode(params) === "fixed";
-  const isContoured = resolveCustomFootprintStyle(params) === "contoured";
+  const isContoured = resolveCustomFootprintStyle(params) !== "rectangular";
   const box = resolveStackableBoxParams(params.stackableBox);
   const isBox = box.enabled && !isContoured;
   const contoured =

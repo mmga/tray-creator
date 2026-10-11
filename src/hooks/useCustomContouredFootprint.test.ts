@@ -15,6 +15,16 @@ vi.mock("@/lib/custom-contoured-footprint", () => ({
 import { useCustomContouredFootprint } from "@/hooks/useCustomContouredFootprint";
 
 describe("useCustomContouredFootprint", () => {
+  it("直边模式激活权威构造，切回矩形后休眠", () => {
+    const params: CustomLayoutParams = { ...CUSTOM_LAYOUT_DEFAULTS, footprintStyle: "polygonal" };
+    const { result, rerender } = renderHook(({ persistedParams }) => useCustomContouredFootprint({
+      persistedParams, workingParams: null, sessionEpoch: 0, workingEnabled: true,
+    }), { initialProps: { persistedParams: params } });
+    expect(result.current.committed.status).toBe("ready");
+    rerender({ persistedParams: { ...params, footprintStyle: "rectangular" } });
+    expect(result.current.committed.status).toBe("inactive");
+  });
+
   beforeEach(() => {
     constructOutcomeMock.mockReset();
     constructOutcomeMock.mockReturnValue({

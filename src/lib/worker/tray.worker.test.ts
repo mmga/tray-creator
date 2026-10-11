@@ -69,6 +69,17 @@ async function loadWorkerModule() {
 }
 
 describe("tray worker", () => {
+  it("自定义直边请求在 Worker 内构造真实轮廓", async () => {
+    const workerSelf = await loadWorkerModule();
+    const params = { ...CUSTOM_LAYOUT_DEFAULTS, footprintStyle: "polygonal",
+      slots: [{ id: "a", x: 20, y: 20, shape: "circle", width: 25, height: 25, rotation: 0 }] };
+    createCustomTrayModel.mockReturnValue({ id: "polygon" });
+    await workerSelf.onmessage?.({ data: { type: "GENERATE_CUSTOM", requestId: "polygon", params } } as MessageEvent);
+    expect(createCustomTrayModel).toHaveBeenCalledWith(params, expect.objectContaining({
+      status: "ready", value: expect.objectContaining({ bodyCount: 1 }),
+    }));
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
   });

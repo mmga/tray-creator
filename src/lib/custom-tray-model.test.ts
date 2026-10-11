@@ -60,6 +60,22 @@ function createCustomCircleSlot(
 }
 
 describe("custom tray model", () => {
+  it("直边底板由真实轮廓拉伸，固定长宽、圆角和斜角休眠", () => {
+    const params: CustomLayoutParams = { ...CUSTOM_LAYOUT_DEFAULTS,
+      footprintStyle: "polygonal", traySizingMode: "fixed", trayWidth: 300, trayDepth: 250,
+      cornerRadius: 10, sideBevelWidth: 8,
+      slots: [createCustomCircleSlot("a", 0, 0, 25),
+        createCustomCircleSlot("b", 60, 0, 25), createCustomCircleSlot("c", 30, 50, 25)] };
+    const state = readyState(params);
+    const model = createCustomTrayModel(params, state);
+    const [min, max] = measureBoundingBox(model);
+    expect(measureVolume(model)).toBeGreaterThan(0);
+    expect(max[0] - min[0]).toBeCloseTo(state.value.bounds!.maxX - state.value.bounds!.minX, 5);
+    expect(max[1] - min[1]).toBeCloseTo(state.value.bounds!.maxY - state.value.bounds!.minY, 5);
+    expect(max[2] - min[2]).toBeCloseTo(params.baseThickness + params.holeDepth, 5);
+    expect(() => createCustomTrayModel(params)).toThrow();
+  });
+
   it("falls back to configured tray dimensions when there are no slots", () => {
     expect(calculateCustomTrayDimensions(CUSTOM_LAYOUT_DEFAULTS)).toEqual({
       width: 260,

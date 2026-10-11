@@ -30,6 +30,17 @@ function readyCustomState(params: CustomLayoutParams) {
 }
 
 describe("Tray Result Projection", () => {
+  it("直边摘要忽略矩形有效尺寸和固定尺寸，使用权威轮廓", () => {
+    const params: CustomLayoutParams = { ...CUSTOM_LAYOUT_DEFAULTS,
+      footprintStyle: "polygonal", traySizingMode: "fixed",
+      slots: [{ id: "a", x: 0, y: 0, shape: "circle", width: 25, height: 25, rotation: 0 }] };
+    const state = readyCustomState(params);
+    const result = projectCustomTrayResult(params, { width: 999, depth: 999 }, idleState, state);
+    expect(result).toMatchObject({ footprintStyle: "polygonal", footprintKind: "polygonal-footprint",
+      sizingMode: "auto", contourBodyCount: 1 });
+    expect(result.dimensions.width).toBeCloseTo(state.value.bounds!.maxX - state.value.bounds!.minX, 1);
+  });
+
   it("投影 grid 的 Slot Count、Grid Footprint Area 与独立状态", () => {
     const result = projectGridTrayResult(DEFAULT_TRAY_PARAMS, {
       ...idleState,
