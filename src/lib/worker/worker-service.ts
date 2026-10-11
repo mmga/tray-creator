@@ -109,6 +109,15 @@ class TrayWorkerService {
     createRequest: (requestId: string) => WorkerRequest,
     decodeResponse: (response: WorkerResponse) => TResult,
   ): Promise<TResult> {
+    // 开发热更新不会替换已启动的 Worker；空闲时重建以加载最新算法，正式版继续复用。
+    if (
+      process.env.NODE_ENV === "development" &&
+      this.worker &&
+      this.pendingRequests.size === 0
+    ) {
+      this.worker.terminate();
+      this.worker = null;
+    }
     if (!this.worker && !this.explicitlyTerminated) {
       this.initWorker();
     }

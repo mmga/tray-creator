@@ -22,6 +22,16 @@ export default defineConfig({
     projects: [
       {
         extends: true,
+        define: { "process.env.NODE_ENV": JSON.stringify("development") },
+        test: {
+          name: "development-worker",
+          environment: "node",
+          env: { NODE_ENV: "development" },
+          include: ["src/lib/worker/*.development.test.ts"],
+        },
+      },
+      {
+        extends: true,
         test: {
           name: "node",
           environment: "node",
@@ -37,6 +47,7 @@ export default defineConfig({
             "src/lib/personal-base-specifications.test.ts",
             "src/lib/stl-export.test.ts",
             "src/lib/worker/worker-service.test.ts",
+            "src/**/*.development.test.ts",
             "src/**/*.integration.test.ts",
             "src/**/*.performance.test.ts",
           ],
