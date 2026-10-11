@@ -273,15 +273,30 @@ export const CanvasOverlayLayer = memo(function CanvasOverlayLayer({
             .join(" ") + " Z";
 
         return (
-          <path
-            key={groupOutline.key}
-            d={pathData}
-            fill="none"
-            stroke={groupOutline.color}
-            strokeWidth={0.9 / zoom}
-            strokeOpacity={isDimmed ? 0.16 : 0.85}
-            pointerEvents="none"
-          />
+          <g key={groupOutline.key} pointerEvents="none">
+            <path
+              d={pathData}
+              fill="none"
+              stroke={groupOutline.color}
+              strokeWidth={0.9 / zoom}
+              strokeOpacity={isDimmed ? 0.16 : 0.85}
+            />
+            {groupOutline.cornerMarkers?.map((point, index) => (
+              <circle
+                key={index}
+                data-polygon-corner={index + 1}
+                cx={point.x}
+                cy={trayDepth - point.y}
+                r={3 / zoom}
+                fill="#f0c674"
+                stroke="#171512"
+                strokeWidth={1 / zoom}
+                opacity={isDimmed ? 0.16 : 1}
+              >
+                <title>折角 {index + 1}（忽略圆角）</title>
+              </circle>
+            ))}
+          </g>
         );
       })}
     </>

@@ -123,6 +123,8 @@ export interface GroupOutlinePreview {
   bottomHeight: number;
   /** 采样后的闭合多边形点列（用户坐标系） */
   points: { x: number; y: number }[];
+  /** 直边包络的有效折角标记（用户坐标系），只用于二维辅助显示。 */
+  cornerMarkers?: readonly { x: number; y: number }[];
   /** 是否为整体外轮廓（所有凹槽的包络，用于显示整体边界） */
   isOverall?: boolean;
 }

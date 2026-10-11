@@ -737,6 +737,32 @@ describe("CanvasStatusBar", () => {
 });
 
 describe("CanvasOverlayLayer", { timeout: 15000 }, () => {
+  it.each([1, 2])("折角标记正确翻转坐标、保持屏幕大小且不拦截编辑操作，缩放 %s", zoom => {
+    const points = [{ x: 10, y: 20 }, { x: 60, y: 20 }, { x: 30, y: 60 }];
+    const { container } = render(
+      <svg>
+        <CanvasOverlayLayer
+          trayWidth={100} trayDepth={80} zoom={zoom}
+          minX={0} minY={0} viewW={100} viewH={80}
+          showEffectiveBaseplate={false}
+          effectiveBaseplate={{ hasSlots: false, x: 0, y: 0, width: 0, height: 0 }}
+          symmetryAxes={null} collisionState={buildCanvasCollisionState([], 5)} guideLines={[]}
+          outlinePreview={[
+            { key: "polygon", groupId: "polygon", color: "#8b7355", bottomHeight: 0, points, cornerMarkers: points },
+            { key: "contoured", groupId: "contoured", color: "#22c55e", bottomHeight: 0, points },
+          ]}
+        />
+      </svg>,
+    );
+    expect(container.querySelectorAll("[data-polygon-corner]")).toHaveLength(3);
+    const marker = container.querySelector('[data-polygon-corner="1"]');
+    expect(marker).toHaveAttribute("cx", "10");
+    expect(marker).toHaveAttribute("cy", "60");
+    expect(marker).toHaveAttribute("r", String(3 / zoom));
+    expect(marker?.parentElement).toHaveAttribute("pointer-events", "none");
+    expect(marker).toHaveTextContent("折角 1（忽略圆角）");
+  });
+
   it("renders effective baseplate, symmetry guides, collision links, and focused outlines", () => {
     const slots: SteppedSlot[] = [
       createSteppedSlot({

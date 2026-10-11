@@ -103,6 +103,7 @@ export function createPolygonalFootprint(slots: readonly ContouredFootprintSlot[
   })) throw new Error("直边包络生成了退化轮廓或无效尖角");
 
   const sideCount = points.length;
+  const cornerMarkers = points.map(point => ({ x: point.x + origin.x, y: point.y + origin.y }));
   if (radius > 0) {
     // 安全内核向外加圆，切线交点使离散圆弧只向外偏差，不侵蚀凹槽边距。
     points = points.flatMap((point, i, ring) => {
@@ -110,6 +111,11 @@ export function createPolygonalFootprint(slots: readonly ContouredFootprintSlot[
       const start = Math.atan2(-(point.x - previous.x), point.y - previous.y);
       const end = Math.atan2(-(next.x - point.x), next.y - point.y);
       const sweep = (end - start + Math.PI * 2) % (Math.PI * 2);
+      const middle = start + sweep / 2;
+      cornerMarkers[i] = {
+        x: point.x + radius * Math.cos(middle) + origin.x,
+        y: point.y + radius * Math.sin(middle) + origin.y,
+      };
       const segments = Math.max(1, Math.ceil(sweep * RENDER_CONFIG.cylinderSegments / (Math.PI * 2)));
       const step = sweep / segments;
       const distance = radius / Math.cos(step / 2);
@@ -127,6 +133,7 @@ export function createPolygonalFootprint(slots: readonly ContouredFootprintSlot[
   });
   return {
     sideCount,
+    cornerMarkers,
     geometry: geometries.geom2.fromPoints(points.map(point => [point.x + origin.x, point.y + origin.y])),
     containsExpandedCircle: (x: number, y: number, radius: number) =>
       Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(radius) && radius >= 0

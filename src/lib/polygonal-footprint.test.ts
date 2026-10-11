@@ -47,6 +47,16 @@ describe("直边包络", () => {
     expect(result.bodyCount).toBe(1);
     expect(ring.length).toBeGreaterThan(30);
     expect(result.polygonSideCount).toBe(5);
+    expect(result.polygonCornerMarkers).toHaveLength(5);
+    for (const marker of result.polygonCornerMarkers!) {
+      const distance = Math.min(...ring.map((a, i) => {
+        const b = ring[(i + 1) % ring.length];
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const t = Math.max(0, Math.min(1, ((marker.x - a.x) * dx + (marker.y - a.y) * dy) / (dx * dx + dy * dy)));
+        return Math.hypot(marker.x - a.x - t * dx, marker.y - a.y - t * dy);
+      }));
+      expect(distance).toBeLessThan(0.01);
+    }
     for (const slot of slots) {
       expect(result.containsExpandedCircle(slot.cx, slot.cy, slot.profile.width / 2 + 5)).toBe(true);
       for (let i = 0; i < ring.length; i++) {
@@ -70,6 +80,7 @@ describe("直边包络", () => {
     expect(result.bodyCount).toBe(1);
     expect(result.bodies[0].outerOutline).toHaveLength(3);
     expect(result.polygonSideCount).toBe(3);
+    expect(result.polygonCornerMarkers).toEqual(result.bodies[0].outerOutline);
     for (const slot of triangle) {
       expect(result.containsExpandedCircle(slot.cx, slot.cy, 7)).toBe(true);
       expect(result.containsExpandedCircle(slot.cx, slot.cy, 7.001)).toBe(false);
@@ -95,6 +106,7 @@ describe("直边包络", () => {
       const result = build(slots);
       expect(result.bodyCount).toBe(slots.length ? 1 : 0);
       expect(result.polygonSideCount).toBe(slots.length ? 4 : 0);
+      expect(result.polygonCornerMarkers).toHaveLength(slots.length ? 4 : 0);
       if (slots.length) {
         expect(result.bodies[0].outerOutline).toHaveLength(4);
         for (const slot of slots) expect(result.containsExpandedCircle(slot.cx, slot.cy, 7)).toBe(true);

@@ -25,6 +25,8 @@ describe("custom layout editor viewport model", () => {
     expect(model.trayFrame.showEffectiveBaseplate).toBe(false);
     expect(model.trayFrame.fixedUsableArea).toBeUndefined();
     expect(model.overlays.groupOutlines?.[0].points).toEqual(state.value.bodies[0].outerOutline);
+    expect(model.overlays.groupOutlines?.[0].cornerMarkers).toEqual(state.value.polygonCornerMarkers);
+    expect(model.overlays.groupOutlines?.[0].cornerMarkers).toHaveLength(4);
   });
 
   it("keeps automatic mode on the dynamic effective-baseplate overlay", () => {
@@ -99,6 +101,7 @@ describe("custom layout editor viewport model", () => {
     expect(model.trayFrame.fixedUsableArea).toBeUndefined();
     expect(model.overlays.groupOutlines).not.toBeNull();
     expect(model.overlays.groupOutlines!.length).toBeGreaterThanOrEqual(1);
+    expect(model.overlays.groupOutlines![0].cornerMarkers).toBeUndefined();
   });
 
   it("contoured footprint 远距多槽渲染为多个独立 outline", () => {

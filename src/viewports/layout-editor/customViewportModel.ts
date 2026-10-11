@@ -34,6 +34,7 @@ function buildContouredGroupOutlines(
         color: "#8b7355",
         bottomHeight: 0,
         points,
+        cornerMarkers: contoured.polygonCornerMarkers,
       });
     }
   });
