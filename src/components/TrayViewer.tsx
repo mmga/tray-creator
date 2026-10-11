@@ -73,7 +73,7 @@ function TrayMesh({
         />
       </mesh>
       <lineSegments geometry={edgesGeometry}>
-        <lineBasicMaterial color="#6a6258" transparent opacity={0.55} />
+        <lineBasicMaterial color="#3a342b" transparent opacity={0.75} />
       </lineSegments>
     </group>
   );

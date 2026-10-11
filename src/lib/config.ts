@@ -116,7 +116,7 @@ export const VIEW_PALETTE = [
 export const RENDER_CONFIG = {
   cylinderSegments: 64,
   cornerSegments: 32,
-  modelColor: "#2a2a2e",
+  modelColor: "#b7b0a2",
   modelMetalness: 0.3,
   modelRoughness: 0.5,
   edgeThreshold: 45,

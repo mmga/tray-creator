@@ -1,4 +1,5 @@
 import { geom3 } from "@jscad/modeling/src/geometries";
+import generalizeModule from "@jscad/modeling/src/operations/modifiers/generalize";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import * as THREE from "three";
 
@@ -10,6 +11,9 @@ const _edge1 = new THREE.Vector3();
 const _edge2 = new THREE.Vector3();
 const _normal = new THREE.Vector3();
 const _triNormal = new THREE.Vector3();
+const generalize = generalizeModule as unknown as (
+  options: { triangulate: boolean }, geometry: Geom3,
+) => Geom3;
 
 function projectTo2D(
   vertices: number[][],
@@ -33,14 +37,16 @@ function projectTo2D(
  * 将 JSCAD geom3 几何体转换为 Three.js BufferGeometry
  *
  * 流程：
- * 1. 从 geom3 提取多边形面 (polygons)
- * 2. 对每个多边形进行三角化 (fan triangulation)
+ * 1. 补齐相邻面的 T 形接点并三角化
+ * 2. 从 geom3 提取多边形面 (polygons)
  * 3. 计算面法线 (flat shading) 以最大化结构清晰度
  * 4. 返回 Three.js BufferGeometry
  */
 export function jscadToThreeGeometry(jscadGeom: Geom3): THREE.BufferGeometry {
+  // 与 STL 一样补齐相邻面的 T 形接点，避免描边把顶面内部接缝当成轮廓。
+  const triangulated = generalize({ triangulate: true }, jscadGeom);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- jscad 类型定义不完整
-  const polygons = geom3.toPolygons(jscadGeom as any);
+  const polygons = geom3.toPolygons(triangulated as any);
 
   let triangleCount = 0;
   for (const poly of polygons) {
