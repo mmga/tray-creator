@@ -6,6 +6,15 @@ import {
 } from "@/lib/custom-contoured-footprint";
 
 describe("Custom Contoured Footprint outcome", () => {
+  it("相切模式不消费休眠的手调圆角，切回手调后恢复原值", () => {
+    const params = { ...CUSTOM_LAYOUT_DEFAULTS, footprintStyle: "polygonal" as const,
+      polygonCornerStyle: "tangent" as const, cornerRadius: 30 };
+    expect(projectCustomContouredFootprintInput(params)).toEqual(
+      projectCustomContouredFootprintInput({ ...params, cornerRadius: 0 }),
+    );
+    expect(projectCustomContouredFootprintInput({ ...params, polygonCornerStyle: "manual" }).plan.requests[0].cornerRadius).toBe(30);
+  });
+
   it("圆角只在直边策略进入轮廓输入，变化会改变构造身份", () => {
     const polygonal = { ...CUSTOM_LAYOUT_DEFAULTS, footprintStyle: "polygonal" as const };
     expect(projectCustomContouredFootprintInput(polygonal)).not.toEqual(

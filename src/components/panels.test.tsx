@@ -185,14 +185,14 @@ vi.mock("@/components/ui/ParamSlider", () => ({
     label: string;
     value: number;
     onChange: (value: number) => void;
-    config: { step: number };
+    config: { step: number; max: number };
   }) {
     const nextValue = Number((value + config.step).toFixed(2));
 
     return (
       <div>
         <span>{label}</span>
-        <button type="button" onClick={() => onChange(nextValue)}>
+        <button type="button" data-max={config.max} onClick={() => onChange(nextValue)}>
           {`设置${label}:${value}`}
         </button>
       </div>
@@ -1030,6 +1030,8 @@ describe("CustomPanel", { timeout: 15000 }, () => {
       expect(screen.queryByRole("button", { name: new RegExp(`^设置${label}:`) })).not.toBeInTheDocument();
     }
     expect(screen.getByRole("button", { name: /^设置底板厚度:/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^设置圆角半径:/ })).toHaveAttribute("data-max", "30");
+    expect(screen.getByText("圆角半径为 0 时保留尖角；超过边界间距时底板向外扩展，以保证凹槽边距。")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: `设置圆角半径:${params.cornerRadius}` }));
     expect(updateParam).toHaveBeenLastCalledWith("cornerRadius", params.cornerRadius + 1);
     fireEvent.click(screen.getByRole("button", { name: "弧形贴合" }));
@@ -1038,8 +1040,27 @@ describe("CustomPanel", { timeout: 15000 }, () => {
     expect(updateParam).toHaveBeenLastCalledWith("footprintStyle", "rectangular");
 
     rerender(<CustomPanel {...common} params={params} />);
+    expect(screen.getByRole("button", { name: /^设置圆角半径:/ })).toHaveAttribute("data-max", "10");
     expect(screen.getByRole("button", { name: `设置长度:${params.trayWidth}` })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: `设置侧面斜面宽度:${params.sideBevelWidth}` })).toBeInTheDocument();
+  });
+
+  it("直边下切换手调圆角与凹槽相切，保留手调半径，单圆不误报空轮廓", () => {
+    const updateParam = vi.fn();
+    const params = { ...CUSTOM_LAYOUT_DEFAULTS, footprintStyle: "polygonal" as const, cornerRadius: 20,
+      slots: [{ id: "circle", x: 0, y: 0, width: 25, height: 25, shape: "circle" as const, rotation: 0 }] };
+    const common = { effectiveDimensions: { width: 35, depth: 35 }, updateParam, onAddSlot: vi.fn(), isGenerating: false, volume: 0 };
+    const { rerender } = render(<CustomPanel {...common} params={params} />);
+    fireEvent.click(screen.getByRole("button", { name: "凹槽相切" }));
+    expect(updateParam).toHaveBeenLastCalledWith("polygonCornerStyle", "tangent");
+    const tangent = { ...params, polygonCornerStyle: "tangent" as const };
+    rerender(<CustomPanel {...common} params={tangent} contouredFootprintState={customContouredStateForTest(tangent)} />);
+    expect(screen.queryByRole("button", { name: /^设置圆角半径:/ })).not.toBeInTheDocument();
+    expect(screen.getByText(/当前外形：圆弧外形（无直边）/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "手调圆角" }));
+    expect(updateParam).toHaveBeenLastCalledWith("polygonCornerStyle", "manual");
+    rerender(<CustomPanel {...common} params={{ ...tangent, polygonCornerStyle: "manual" }} />);
+    expect(screen.getByRole("button", { name: "设置圆角半径:20" })).toBeInTheDocument();
   });
 
   it("从盒体切到直边包络时提示自动关闭盒体", () => {

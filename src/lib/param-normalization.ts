@@ -656,7 +656,15 @@ function clampAndFillCustomDerivedFields(
   clampField(obj, "boundarySpacing", CUSTOM_LIMITS.boundarySpacing, recorder, "boundarySpacing", "边界间距");
   clampField(obj, "baseThickness", CUSTOM_LIMITS.baseThickness, recorder, "baseThickness", "底板厚度");
   clampField(obj, "holeDepth", CUSTOM_LIMITS.holeDepth, recorder, "holeDepth", "凹槽深度");
-  clampField(obj, "cornerRadius", CUSTOM_LIMITS.cornerRadius, recorder, "cornerRadius", "圆角半径");
+  clampField(obj, "cornerRadius", obj.footprintStyle === "polygonal"
+    ? CUSTOM_LIMITS.polygonalCornerRadius : CUSTOM_LIMITS.cornerRadius, recorder, "cornerRadius", "圆角半径");
+  if (obj.polygonCornerStyle !== "manual" && obj.polygonCornerStyle !== "tangent") {
+    obj.polygonCornerStyle = "manual";
+    recordDefault(recorder, {
+      path: "polygonCornerStyle", label: "直边转角方式", normalizedValue: "manual",
+      reason: "未记录有效转角方式，保留手调圆角行为",
+    });
+  }
   clampField(obj, "sideBevelWidth", CUSTOM_LIMITS.sideBevelWidth, recorder, "sideBevelWidth", "侧面斜角宽度");
 
   if (typeof obj.smoothingRadius !== "number" || !Number.isFinite(obj.smoothingRadius)) {

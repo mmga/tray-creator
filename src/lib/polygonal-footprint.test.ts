@@ -33,8 +33,26 @@ describe("直边包络", () => {
     for (const slot of triangle) expect(rounded.containsExpandedCircle(slot.cx, slot.cy, 7)).toBe(true);
     const corner = sharp.bodies[0].outerOutline[0];
     expect(rounded.containsExpandedCircle(corner.x, corner.y, 0)).toBe(false);
-    expect(build(triangle, 2, 100).bodies[0].outerOutline).toEqual(build(triangle, 2, 2).bodies[0].outerOutline);
-    expect(build(triangle, 0, 4).bodies[0].outerOutline).toEqual(build(triangle, 0, 0).bodies[0].outerOutline);
+  });
+
+  it.each([0, 2, 5])("圆角可大于边距 %s，向外扩展且保留完整边距与折角数", margin => {
+    const limited = build(triangle, margin, margin);
+    const large = build(triangle, margin, 30);
+    expect(large.area).toBeGreaterThan(limited.area);
+    expect(large.polygonSideCount).toBe(limited.polygonSideCount);
+    expect(large.polygonCornerMarkers).toHaveLength(3);
+    const ring = large.bodies[0].outerOutline;
+    for (const slot of triangle) {
+      expect(large.containsExpandedCircle(slot.cx, slot.cy, 5 + margin)).toBe(true);
+      for (let i = 0; i < ring.length; i++) {
+        const a = ring[i], b = ring[(i + 1) % ring.length];
+        const distance = ((b.x-a.x)*(slot.cy-a.y)-(b.y-a.y)*(slot.cx-a.x))/Math.hypot(b.x-a.x,b.y-a.y);
+        expect(distance).toBeGreaterThanOrEqual(5 + margin - 1e-6);
+      }
+    }
+    const smallMarker = limited.polygonCornerMarkers![0];
+    const bigMarker = large.polygonCornerMarkers![0];
+    expect(Math.hypot(bigMarker.x - smallMarker.x, bigMarker.y - smallMarker.y)).toBeCloseTo(30 - margin, 5);
   });
 
   it("用户十槽配置的圆弧和直边均保住 5mm 边距，圆角区域按真实边界校验", () => {
@@ -125,11 +143,11 @@ describe("直边包络", () => {
   });
 
   it.each([0.5, 1, 1.5, 2, 3, 1.000001, 100])("旋转椭圆指数 %s 在零及正外扩下均安全包含二维与三维槽形", (p) => {
-    for (const offset of [0, 1.2]) {
+    for (const offset of [0, 1.2]) for (const radius of [1.5, 30]) {
       const slot: ContouredFootprintSlot = { id: "ellipse", cx: 20, cy: 20,
         rotation: 37, shape: "ellipse", profile: { width: 60, height: 24,
           outerOffset: offset, profileExponent: p } };
-      const result = build([...triangle, slot], 2, 1.5);
+      const result = build([...triangle, slot], 2, radius);
       const display = sampleSlotProfilePoints(60, 24, "ellipse", offset, 720, p);
       const model = geometries.geom2.toPoints(createOffsetSlotShape(60, 24, "ellipse", offset, p))
         .map(([x, y]) => ({ x, y }));

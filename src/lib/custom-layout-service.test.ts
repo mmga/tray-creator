@@ -23,7 +23,7 @@ describe("custom layout service", () => {
       traySizingMode: "fixed" as const, boundarySpacingIndependent: true, boundarySpacing: 2,
       slots: [{ id: "a", x: 20, y: 20, shape: "circle" as const, width: 20, height: 20,
         slotWidth: 20, slotHeight: 20, rotation: 0 }] };
-    expect(getCustomSTLFilename(params)).toBe("tray_custom_24x24_1slots.stl");
+    expect(getCustomSTLFilename(params)).toBe("tray_custom_28x28_1slots.stl");
     expect(getCustomSTLFilename(params, { width: 123, depth: 87, minX: 0, maxX: 123, minY: 0, maxY: 87 }))
       .toBe("tray_custom_123x87_1slots.stl");
   });

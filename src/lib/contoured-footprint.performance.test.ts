@@ -94,11 +94,11 @@ function median(values: number[]) {
 }
 
 describe("contoured footprint performance gate", () => {
-  it("记录直边包络 10、30、50 槽的预热后三次构造耗时", () => {
+  it.each(["manual", "tangent"] as const)("记录 %s 直边包络 10、30、50 槽的预热后三次构造耗时", polygonCornerStyle => {
     console.info(`直边性能环境：${process.platform} / ${cpus()[0]?.model} / Node ${process.version}`);
     for (const count of [10, 30, 50]) {
       const request: ContouredFootprintRequest = {
-        ...createRequest(), constructionStyle: "polygonal", cornerRadius: 4,
+        ...createRequest(), constructionStyle: "polygonal", cornerRadius: 4, polygonCornerStyle,
         slots: Array.from({ length: count }, (_, i) => ({
           id: `polygon-${i}`, cx: 200 * Math.cos(i * 2 * Math.PI / count),
           cy: 200 * Math.sin(i * 2 * Math.PI / count), rotation: i * 7,

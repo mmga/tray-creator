@@ -14,6 +14,7 @@ import {
 import type { Geom2 } from "@jscad/modeling/src/geometries/types";
 import { RENDER_CONFIG } from "@/lib/config";
 import { createPolygonalFootprint } from "@/lib/polygonal-footprint";
+import { createTangentFootprint } from "@/lib/tangent-footprint";
 import {
   generateOutlineGeom2,
   insetGeom2,
@@ -26,7 +27,7 @@ import {
   getEffectiveBridgeGap,
   type ConnectivityCircle,
 } from "@/lib/stepped-connectivity";
-import type { FreeSlot } from "@/types/custom-tray";
+import type { FreeSlot, PolygonalCornerStyle } from "@/types/custom-tray";
 
 const { union } = booleans;
 const { geom2 } = geometries;
@@ -54,6 +55,7 @@ export interface ContouredFootprintRequest {
   key: string;
   constructionStyle?: "contoured" | "polygonal";
   cornerRadius?: number;
+  polygonCornerStyle?: PolygonalCornerStyle;
   slots: readonly ContouredFootprintSlot[];
   slotSpacing: number;
   boundarySpacing: number;
@@ -97,7 +99,7 @@ export interface ConstructedContouredFootprint {
   readonly key: string;
   readonly bodies: readonly ContouredFootprintBody[];
   readonly bodyCount: number;
-  /** 直边包络圆角处理前的有效边数，包含尖角保护新增的截角边。 */
+  /** 手调方式取圆角前有效边数；相切方式计真实直边，不计曲线采样边。 */
   readonly polygonSideCount?: number;
   /** 每个有效折角的显示位置；圆角处取圆弧中点，不包含圆弧采样点。 */
   readonly polygonCornerMarkers?: readonly ContouredFootprintPoint[];
@@ -390,6 +392,10 @@ function validatePlan(
       && request.constructionStyle !== "polygonal") {
       return { code: "invalid-plan", requestKey: request.key, message: "未知轮廓构造策略" };
     }
+    if (request.polygonCornerStyle !== undefined && request.polygonCornerStyle !== "manual"
+      && request.polygonCornerStyle !== "tangent") {
+      return { code: "invalid-plan", requestKey: request.key, message: "未知直边转角方式" };
+    }
     for (const [field, value] of [
       ["slotSpacing", request.slotSpacing],
       ["boundarySpacing", request.boundarySpacing],
@@ -481,7 +487,9 @@ function constructRequest(
     const slotIds = cluster.map((item) => item.id);
     let construction: ClusterConstruction | null;
     try {
-      if (isPolygonal) polygonal = createPolygonalFootprint(slots, request.boundarySpacing, request.cornerRadius);
+      if (isPolygonal) polygonal = request.polygonCornerStyle === "tangent"
+        ? createTangentFootprint(slots, request.boundarySpacing)
+        : createPolygonalFootprint(slots, request.boundarySpacing, request.cornerRadius);
       construction = polygonal ? { geometry: polygonal.geometry, usedSmoothingFallback: false } : constructCluster(
         cluster,
         slotsById,

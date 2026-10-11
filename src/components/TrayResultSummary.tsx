@@ -51,7 +51,8 @@ function modeSpecificMetrics(result: TrayResultProjection) {
           />
           {result.footprintStyle === "polygonal" && (
             <ResultMetric label="外形（忽略圆角）" value={result.polygonSideCount === undefined
-              ? "边数待计算" : result.polygonSideCount === 0 ? "暂无轮廓" : `${result.polygonSideCount} 边形`} />
+              ? "边数待计算" : result.polygonSideCount === 0 ? (result.slotCount ? "圆弧外形（无直边）" : "暂无轮廓")
+                : result.polygonSideCount < 3 ? `${result.polygonSideCount} 条直边` : `${result.polygonSideCount} 边形`} />
           )}
           <ResultMetric label="占地面积" value={`${result.footprintArea.toFixed(0)} mm²`} />
         </>

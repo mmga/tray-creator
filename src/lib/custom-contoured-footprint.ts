@@ -37,7 +37,10 @@ export function projectCustomContouredFootprintInput(
     plan: {
       requests: [{
         key: "custom-baseplate",
-        ...(isPolygonal ? { constructionStyle: "polygonal" as const, cornerRadius: params.cornerRadius } : {}),
+        ...(isPolygonal ? {
+          constructionStyle: "polygonal" as const,
+          ...(params.polygonCornerStyle === "tangent" ? { polygonCornerStyle: "tangent" as const } : { cornerRadius: params.cornerRadius }),
+        } : {}),
         slots: params.slots.map(projectCustomSlotToContoured),
         slotSpacing: params.spacing,
         boundarySpacing: params.boundarySpacingIndependent

@@ -35,6 +35,25 @@ describe("Param Normalization Catalog types", () => {
 });
 
 describe("param normalization", () => {
+  it("相切方式经参数还原保留，旧配置和未知值仍使用手调方式", () => {
+    const params = { ...CUSTOM_LAYOUT_DEFAULTS, footprintStyle: "polygonal" as const, polygonCornerStyle: "tangent" as const };
+    expect(normalizeParamsForMode("custom", structuredClone(params)).polygonCornerStyle).toBe("tangent");
+    expect(normalizeParamsForMode("custom", { ...params, polygonCornerStyle: undefined }).polygonCornerStyle).toBe("manual");
+    expect(normalizeParamsForMode("custom", { ...params, polygonCornerStyle: "unknown" } as never).polygonCornerStyle).toBe("manual");
+  });
+
+  it("直边圆角支持 30mm 且经快照还原保留，其他样式维持原有上限", () => {
+    const polygonal = normalizeParamsForMode("custom", {
+      ...CUSTOM_LAYOUT_DEFAULTS, footprintStyle: "polygonal", cornerRadius: 30,
+    });
+    expect(polygonal.cornerRadius).toBe(30);
+    expect(normalizeParamsForMode("custom", structuredClone(polygonal)).cornerRadius).toBe(30);
+    expect(normalizeParamsForMode("custom", { ...polygonal, cornerRadius: 100 }).cornerRadius).toBe(30);
+    for (const footprintStyle of ["rectangular", "contoured"] as const) {
+      expect(normalizeParamsForMode("custom", { ...polygonal, footprintStyle }).cornerRadius).toBe(10);
+    }
+  });
+
   it("自定义导入保留直边样式并关闭盒体，阶梯不接受直边", () => {
     const custom = normalizeParamsForMode("custom", {
       ...CUSTOM_LAYOUT_DEFAULTS, footprintStyle: "polygonal",

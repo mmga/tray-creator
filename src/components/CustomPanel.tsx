@@ -357,7 +357,8 @@ export default function CustomPanel({
                 <p className="text-xs text-[#f0d8b8]" aria-live="polite">
                   当前外形：{result.polygonSideCount === undefined
                     ? "边数待计算"
-                    : result.polygonSideCount === 0 ? "暂无轮廓" : `${result.polygonSideCount} 边形`}（忽略圆角）
+                    : result.polygonSideCount === 0 ? (params.slots.length ? "圆弧外形（无直边）" : "暂无轮廓")
+                      : result.polygonSideCount < 3 ? `${result.polygonSideCount} 条直边` : `${result.polygonSideCount} 边形`}（忽略圆角）
                 </p>
               )}
             </div>
@@ -408,18 +409,35 @@ export default function CustomPanel({
               onChange={(v) => updateParam("holeDepth", v)}
               unit={SHARED_LAYOUT_LIMITS.holeDepth.unit}
             />
-            {!isContouredFootprint && (
+            {isPolygonalFootprint && (
+              <div className="space-y-2">
+                <Label htmlFor="custom-polygon-corner-style">转角方式</Label>
+                <Select value={params.polygonCornerStyle ?? "manual"}
+                  onValueChange={value => updateParam("polygonCornerStyle", value as "manual" | "tangent")}>
+                  <SelectTrigger id="custom-polygon-corner-style" aria-label="转角方式" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="manual">手调圆角</SelectItem>
+                    <SelectItem value="tangent">凹槽相切</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {!isContouredFootprint && !(isPolygonalFootprint && params.polygonCornerStyle === "tangent") && (
               <ParamSlider
                 label={SHARED_LAYOUT_LIMITS.cornerRadius.label}
                 value={params.cornerRadius}
-                config={CUSTOM_LIMITS.cornerRadius}
+                config={isPolygonalFootprint ? CUSTOM_LIMITS.polygonalCornerRadius : CUSTOM_LIMITS.cornerRadius}
                 onChange={(v) => updateParam("cornerRadius", v)}
                 unit={SHARED_LAYOUT_LIMITS.cornerRadius.unit}
               />
             )}
             {isPolygonalFootprint && (
               <p className="text-[11px] text-muted-foreground">
-                圆角半径为 0 时保留尖角；实际半径不超过边界间距，以保证凹槽边距。
+                {params.polygonCornerStyle === "tangent"
+                  ? "按凹槽外缘加边距自动生成相切直边与圆弧；手调圆角参数已保留，切回后恢复。"
+                  : "圆角半径为 0 时保留尖角；超过边界间距时底板向外扩展，以保证凹槽边距。"}
               </p>
             )}
             {isRectangularFootprint && (

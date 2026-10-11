@@ -11,7 +11,7 @@ describe("直边草稿摘要", () => {
 
   it("保存真实尺寸而非休眠长宽", () => {
     expect(buildDraftSummary(captureModeParamSnapshot("custom", params))).toMatchObject({
-      footprintStyle: "polygonal", trayWidth: 24, trayDepth: 24,
+      footprintStyle: "polygonal", trayWidth: 28, trayDepth: 28,
     });
   });
   it("非空构造失败仍能生成摘要，以零尺寸标识待修复", () => {

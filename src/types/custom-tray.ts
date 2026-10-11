@@ -17,6 +17,7 @@ export type AppMode =
  */
 export type BaseplateFootprintStyle = "rectangular" | "contoured";
 export type CustomBaseplateFootprintStyle = BaseplateFootprintStyle | "polygonal";
+export type PolygonalCornerStyle = "manual" | "tangent";
 
 export interface ConversionSourceGeometrySnapshot {
   standardId?: string;
@@ -191,6 +192,8 @@ export interface CustomLayoutParams extends BaseHoleParams, StackableBoxCapableP
    * contoured：贴合槽位轮廓（休眠 fixed sizing / cornerRadius / sideBevelWidth）
    */
   footprintStyle?: CustomBaseplateFootprintStyle;
+  /** 直边包络的转角方式；旧配置缺失时保留手调圆角。 */
+  polygonCornerStyle?: PolygonalCornerStyle;
   /** 托盘尺寸模式；缺失时按自动尺寸兼容旧配置。仅在 rectangular footprint 下生效。 */
   traySizingMode?: "auto" | "fixed";
   /** 托盘宽度 (mm) */

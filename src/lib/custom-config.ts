@@ -22,6 +22,7 @@ export const ELLIPSE_PRESETS: EllipsePreset[] = ELLIPSE_SLOT_DEFINITIONS;
 
 export const CUSTOM_LAYOUT_DEFAULTS: CustomLayoutParams = {
   footprintStyle: "rectangular",
+  polygonCornerStyle: "manual",
   traySizingMode: "auto",
   trayWidth: 260,
   trayDepth: 260,
@@ -48,6 +49,7 @@ export const CUSTOM_LIMITS = {
   baseThickness: SHARED_LAYOUT_LIMITS.baseThickness,
   holeDepth: SHARED_LAYOUT_LIMITS.holeDepth,
   cornerRadius: SHARED_LAYOUT_LIMITS.cornerRadius,
+  polygonalCornerRadius: { ...SHARED_LAYOUT_LIMITS.cornerRadius, max: 30 },
   sideBevelWidth: SHARED_LAYOUT_LIMITS.sideBevelWidth,
   smoothingRadius: { label: "平滑半径", min: 1, max: 150, step: 1, unit: "mm" },
   disconnectDistance: {

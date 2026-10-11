@@ -22,7 +22,7 @@ function centerHull(slots: readonly ContouredFootprintSlot[]) {
   return [...half(sorted), ...half([...sorted].reverse())];
 }
 
-function slotSupport(slot: ContouredFootprintSlot, nx: number, ny: number) {
+export function slotSupport(slot: ContouredFootprintSlot, nx: number, ny: number) {
   const angle = slot.rotation * Math.PI / 180;
   const u = nx * Math.cos(angle) + ny * Math.sin(angle);
   const v = -nx * Math.sin(angle) + ny * Math.cos(angle);
@@ -40,7 +40,7 @@ function slotSupport(slot: ContouredFootprintSlot, nx: number, ny: number) {
 
 /** 输入校验由共享轮廓构造入口负责，几何只在局部坐标计算以减少平移误差。 */
 export function createPolygonalFootprint(slots: readonly ContouredFootprintSlot[], margin: number, cornerRadius = 0) {
-  const radius = Math.min(cornerRadius, margin);
+  const radius = cornerRadius;
   const minX = Math.min(...slots.map(slot => slot.cx));
   const maxX = Math.max(...slots.map(slot => slot.cx));
   const minY = Math.min(...slots.map(slot => slot.cy));
@@ -65,7 +65,7 @@ export function createPolygonalFootprint(slots: readonly ContouredFootprintSlot[
   const planes = protectedAngles.map(angle => {
     const nx = Math.cos(angle), ny = Math.sin(angle);
     const d = Math.max(...slots.map(slot => nx * (slot.cx - origin.x) + ny * (slot.cy - origin.y)
-      + slotSupport(slot, nx, ny))) + margin - radius + epsilon;
+      + slotSupport(slot, nx, ny))) + margin - Math.min(radius, margin) + epsilon;
     return { nx, ny, d };
   });
   // 法线间隔最多 160°，此包围框足以包含所有半平面交点。
