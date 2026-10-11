@@ -1,4 +1,6 @@
 import { calculateTrayDimensions } from "@/lib/tray-model";
+import { calculateCustomTrayFootprint } from "@/lib/custom-layout-math";
+import { constructCustomContouredFootprintOutcome, projectCustomContouredFootprintInput } from "@/lib/custom-contoured-footprint";
 import type {
   BaseConverterParams,
   CustomLayoutParams,
@@ -32,6 +34,7 @@ export type DraftSummary =
     }
   | {
       mode: "custom";
+      footprintStyle?: "polygonal";
       kind: "tray" | "box";
       slotCount: number;
       trayWidth: number;
@@ -112,6 +115,15 @@ function buildGridDraftSummary(
 function buildCustomDraftSummary(
   params: CustomLayoutParams,
 ): DraftSummaryByMode["custom"] {
+  if (params.footprintStyle === "polygonal" && params.slots.length > 0) {
+    const outcome = constructCustomContouredFootprintOutcome(projectCustomContouredFootprintInput(params));
+    const footprint = outcome.ok
+      ? calculateCustomTrayFootprint(params, { status: "ready", value: outcome.value }) : null;
+    return {
+      mode: "custom", kind: "tray", footprintStyle: "polygonal", slotCount: params.slots.length,
+      trayWidth: footprint?.width ?? 0, trayDepth: footprint?.depth ?? 0,
+    };
+  }
   const box = resolveStackableBoxParams(params.stackableBox);
   if (box.enabled) {
     return {

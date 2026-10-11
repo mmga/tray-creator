@@ -62,6 +62,15 @@ function readBlobText(blob: Blob) {
 }
 
 describe("param-io", () => {
+  it("直边参数文件往返保留样式与休眠配置", () => {
+    const params = { ...CUSTOM_LAYOUT_DEFAULTS, footprintStyle: "polygonal" as const,
+      traySizingMode: "fixed" as const, smoothingRadius: 31, cornerRadius: 8 };
+    const file = JSON.parse(serializeParamFile("custom", params));
+    expect(parseParamFileObject(file, "custom")).toMatchObject({
+      footprintStyle: "polygonal", traySizingMode: "fixed", smoothingRadius: 31, cornerRadius: 8,
+    });
+  });
+
   it("builds and serializes grid param files with rounded numbers", () => {
     const params: TrayParams = {
       ...DEFAULT_TRAY_PARAMS,

@@ -53,6 +53,7 @@ import type {
 } from "@/lib/contoured-footprint";
 import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
 import type { BaseHoleConstructionPlan } from "@/lib/base-hole-construction-plan";
+import { constructCustomContouredFootprintOutcome, projectCustomContouredFootprintInput } from "@/lib/custom-contoured-footprint";
 
 interface UseCustomLayoutReturn {
   params: CustomLayoutParams;
@@ -129,6 +130,7 @@ export function useCustomLayout(): UseCustomLayoutReturn {
   const contouredFootprintStateRef = useRef<
     ContouredFootprintState<ConstructedContouredFootprint>
   >({ status: "inactive" });
+  const contouredFootprintFingerprintRef = useRef("");
   const {
     params: persistedParams,
     viewParams: params,
@@ -162,9 +164,16 @@ export function useCustomLayout(): UseCustomLayoutReturn {
     normalize: applyFlatTrayBaseHoleSupportingThickness,
     captureSnapshot: (params) => captureModeParamSnapshot("custom", params),
     captureExportContext: (snapshot) => {
+      let state = contouredFootprintStateRef.current;
+      if (snapshot.params.footprintStyle === "polygonal"
+        && createModelGeometryFingerprint(snapshot) !== contouredFootprintFingerprintRef.current) {
+        const outcome = constructCustomContouredFootprintOutcome(projectCustomContouredFootprintInput(snapshot.params));
+        state = outcome.ok ? { status: "ready", value: outcome.value }
+          : { status: "failed", error: outcome.error };
+      }
       const footprint = calculateCustomTrayFootprint(
         snapshot.params,
-        contouredFootprintStateRef.current,
+        state,
       );
       return {
         width: footprint.width,
@@ -206,7 +215,8 @@ export function useCustomLayout(): UseCustomLayoutReturn {
   const contouredFootprintState = contouredFootprints.committed;
   useEffect(() => {
     contouredFootprintStateRef.current = contouredFootprintState;
-  }, [contouredFootprintState]);
+    contouredFootprintFingerprintRef.current = createModelGeometryFingerprint(captureModeParamSnapshot("custom", persistedParams));
+  }, [contouredFootprintState, persistedParams]);
   const workingContouredFootprintState = contouredFootprints.working;
 
   const baseHolePlan = useMemo(

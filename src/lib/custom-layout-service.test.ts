@@ -18,6 +18,16 @@ import {
 } from "@/lib/custom-layout-service";
 
 describe("custom layout service", () => {
+  it("直边文件名忽略休眠固定尺寸，缺少尺寸上下文时从参数派生", () => {
+    const params = { ...CUSTOM_LAYOUT_DEFAULTS, footprintStyle: "polygonal" as const,
+      traySizingMode: "fixed" as const, boundarySpacingIndependent: true, boundarySpacing: 2,
+      slots: [{ id: "a", x: 20, y: 20, shape: "circle" as const, width: 20, height: 20,
+        slotWidth: 20, slotHeight: 20, rotation: 0 }] };
+    expect(getCustomSTLFilename(params)).toBe("tray_custom_24x24_1slots.stl");
+    expect(getCustomSTLFilename(params, { width: 123, depth: 87, minX: 0, maxX: 123, minY: 0, maxY: 87 }))
+      .toBe("tray_custom_123x87_1slots.stl");
+  });
+
   it("generates previews through the worker port", async () => {
     const geometry = { id: "custom-geom" } as never;
     const threeGeometry = { id: "three-custom" };

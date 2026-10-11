@@ -2,6 +2,8 @@ import type * as THREE from "three";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import {
   calculateCustomEffectiveDimensions,
+  calculateCustomTrayFootprint,
+  resolveCustomFootprintStyle,
   resolveCustomTraySizingMode,
   type LayoutExtents,
 } from "@/lib/custom-layout-math";
@@ -15,6 +17,7 @@ import {
 } from "@/lib/model-filenames";
 import type { CustomLayoutParams } from "@/types/custom-tray";
 import { resolveStackableBoxParams } from "@/lib/stackable-box";
+import { constructCustomContouredFootprintOutcome, projectCustomContouredFootprintInput } from "@/lib/custom-contoured-footprint";
 
 export interface CustomPreviewResult {
   geometry: Geom3;
@@ -42,9 +45,16 @@ export async function generateCustomPreview(
 
 export function getCustomSTLFilename(
   params: CustomLayoutParams,
-  effectiveDimensions: LayoutExtents = calculateCustomEffectiveDimensions(params),
+  effectiveDimensions?: LayoutExtents,
 ): string {
-  const isFixed = resolveCustomTraySizingMode(params) === "fixed";
+  if (!effectiveDimensions && params.footprintStyle === "polygonal") {
+    const outcome = constructCustomContouredFootprintOutcome(projectCustomContouredFootprintInput(params));
+    if (!outcome.ok) throw new Error(outcome.error.message);
+    effectiveDimensions = calculateCustomTrayFootprint(params, { status: "ready", value: outcome.value });
+  }
+  effectiveDimensions ??= calculateCustomEffectiveDimensions(params);
+  const isFixed = resolveCustomFootprintStyle(params) === "rectangular"
+    && resolveCustomTraySizingMode(params) === "fixed";
   const exportWidth = isFixed
     ? params.trayWidth
     : effectiveDimensions.width > 0

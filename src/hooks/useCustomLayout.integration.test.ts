@@ -353,7 +353,7 @@ describe("useCustomLayout", () => {
     expect(threeGeometry.dispose).toHaveBeenCalledTimes(1);
   });
 
-  it("导出刷新期间编辑参数时仍使用开始时的 Snapshot 与派生尺寸", async () => {
+  it.each(["rectangular", "polygonal"] as const)("%s 导出刷新期间编辑仍使用开始时的快照和尺寸", async (footprintStyle) => {
     randomIdFactoryMock.createId.mockReturnValue("slot-1");
     const deferred = createDeferred<{
       geometry: never;
@@ -367,10 +367,14 @@ describe("useCustomLayout", () => {
     const { result } = renderHook(() => useCustomLayout());
 
     act(() => {
+      result.current.updateParam("footprintStyle", footprintStyle);
       result.current.addSlot(25);
     });
     const paramsAtExportStart = structuredClone(result.current.params);
-    const dimensionsAtExportStart = { ...result.current.effectiveDimensions };
+    const state = result.current.contouredFootprintState;
+    const dimensionsAtExportStart = footprintStyle === "polygonal" && state.status === "ready"
+      ? { width: 35.4, depth: 35.4, ...state.value.bounds! }
+      : { ...result.current.effectiveDimensions };
     let exportPromise: Promise<void> | undefined;
 
     act(() => {

@@ -149,6 +149,20 @@ function createSimpleSteppedParams(
 }
 
 describe("local drafts", () => {
+  it("直边草稿往返保留样式、休眠参数及派生尺寸摘要", () => {
+    const params = createCustomParams({ footprintStyle: "polygonal", traySizingMode: "fixed",
+      smoothingRadius: 23, sideBevelWidth: 8, boundarySpacingIndependent: true, boundarySpacing: 2,
+      slots: [{ id: "a", x: 20, y: 20, shape: "circle", width: 20, height: 20,
+        slotWidth: 20, slotHeight: 20, rotation: 0 }] });
+    const saved = createDraft("直边", "custom", params);
+    expect(listDrafts("custom")[0].summary).toMatchObject({
+      footprintStyle: "polygonal", trayWidth: 24, trayDepth: 24,
+    });
+    expect(getDraft("custom", saved.item.id)?.paramFile.params).toMatchObject({
+      footprintStyle: "polygonal", traySizingMode: "fixed", smoothingRadius: 23, sideBevelWidth: 8,
+    });
+  });
+
   beforeEach(() => {
     localStorage.clear();
     downloadParamFileMock.mockReset();

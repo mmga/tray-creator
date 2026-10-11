@@ -39,8 +39,11 @@ function renderDraftSummary(item: AnyDraftListItem): ReactNode {
           <span>{item.kind === "box" ? "盒体" : "托盘"}</span>
           <span>{item.slotCount} 槽</span>
           <span>
-            {item.trayWidth.toFixed(0)}×{item.trayDepth.toFixed(0)}
-            {item.trayHeight !== undefined ? `×${item.trayHeight.toFixed(0)}` : ""}mm
+            {item.summary.footprintStyle === "polygonal" && item.slotCount > 0
+              && (item.trayWidth <= 0 || item.trayDepth <= 0) ? "尺寸待修复" : <>
+              {item.trayWidth.toFixed(0)}×{item.trayDepth.toFixed(0)}
+              {item.trayHeight !== undefined ? `×${item.trayHeight.toFixed(0)}` : ""}mm
+            </>}
           </span>
         </>
       );
