@@ -1,6 +1,6 @@
 "use client";
 
-import type { CustomLayoutParams } from "@/types/custom-tray";
+import type { CustomBaseplateFootprintStyle, CustomLayoutParams } from "@/types/custom-tray";
 import {
   SHARED_LAYOUT_LIMITS,
 } from "@/lib/config";
@@ -17,6 +17,7 @@ import type {
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
 import { useMemo, useState, type ReactNode } from "react";
 import {
@@ -119,8 +120,10 @@ export default function CustomPanel({
     false,
   );
   const isContouredFootprint = result.footprintStyle === "contoured";
-  // contoured 休眠 fixed sizing；rectangular 下按 traySizingMode 决定（CONTEXT:607-608,619）
-  const isFixedTraySize = !isContouredFootprint && params.traySizingMode === "fixed";
+  const isPolygonalFootprint = result.footprintStyle === "polygonal";
+  const isRectangularFootprint = result.footprintStyle === "rectangular";
+  const footprintLabel = isPolygonalFootprint ? "直边包络" : "贴合轮廓";
+  const isFixedTraySize = isRectangularFootprint && params.traySizingMode === "fixed";
   const [customCircleDiameter, setCustomCircleDiameter] = useState(10);
   const baseHolePlan = useMemo(
     () => authoritativeBaseHolePlan ?? createCustomBaseHoleConstructionPlan(params, {
@@ -159,7 +162,7 @@ export default function CustomPanel({
     <PanelShell summary={<TrayResultSummary result={result} />} actions={actions}>
     <div className="flex flex-col gap-4 animate-fade-in">
       {/* 堆叠盒体结构（仅矩形外轮廓） */}
-      {!isContouredFootprint ? (
+      {isRectangularFootprint ? (
         <StackableBoxConfig
           box={box}
           onChange={(nextBox) => updateParam("stackableBox", nextBox)}
@@ -253,16 +256,15 @@ export default function CustomPanel({
           collapsible
           defaultOpen={true}
           summary={
-            isContouredFootprint
-              ? "贴合轮廓，随凹槽外缘自动变化"
+            !isRectangularFootprint
+              ? `${footprintLabel}，随凹槽外缘自动变化`
               : isFixedTraySize
                 ? "固定外尺寸"
                 : "自动适配凹槽布局"
           }
         >
           <div className="space-y-4">
-            {/* contoured footprint 休眠 fixed sizing（CONTEXT:607-608），仅 rectangular 下显示该开关 */}
-            {!isContouredFootprint && (
+            {isRectangularFootprint && (
               <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
                 <div className="space-y-0.5">
                   <Label htmlFor="custom-fixed-tray-size" className="text-sm cursor-pointer text-[#f0d8b8]">
@@ -285,9 +287,9 @@ export default function CustomPanel({
                 />
               </div>
             )}
-            {isContouredFootprint && (
+            {!isRectangularFootprint && (
               <div className="p-3 rounded bg-[#1c1a16] border border-[#2e2a24] text-[11px] text-muted-foreground">
-                贴合轮廓模式下，托盘外缘由凹槽位置与边界间距自动派生；
+                {footprintLabel}模式下，托盘外缘由凹槽位置与边界间距自动派生；
                 固定尺寸、圆角、侧面斜角设置已保留，切回矩形包络后恢复。
               </div>
             )}
@@ -316,32 +318,39 @@ export default function CustomPanel({
       {/* 结构参数 — 移动端默认折叠 */}
       <div className="iron-panel rounded-sm p-4">
         <SectionHeader icon={Wrench} title="制造结构" collapsible defaultOpen={false}
-          summary={`槽距${params.spacing}mm / 边距${(params.boundarySpacingIndependent ? params.boundarySpacing : params.spacing)}mm / ${isContouredFootprint ? "贴合轮廓" : `斜面${params.sideBevelWidth}mm`}`}>
+          summary={`槽距${params.spacing}mm / 边距${(params.boundarySpacingIndependent ? params.boundarySpacing : params.spacing)}mm / ${isRectangularFootprint ? `斜面${params.sideBevelWidth}mm` : footprintLabel}`}>
           <div className="space-y-4">
-            {/* 底座轮廓样式：矩形包络 vs 贴合轮廓（CONTEXT:247-249,619-620） */}
-            <div className="flex items-center justify-between p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
+            <div className="space-y-2 p-3 rounded bg-[#1c1a16] border border-[#2e2a24]">
               <div className="space-y-0.5">
                 <Label htmlFor="custom-footprint-style" className="text-sm cursor-pointer text-[#f0d8b8]">
                   底座轮廓样式
                 </Label>
                 <p className="text-[11px] text-muted-foreground">
-                  {isContouredFootprint
-                    ? "贴合凹槽外缘；远距凹槽可形成多个独立实体"
-                    : "矩形包络底座；可配置圆角与侧面斜角"}
+                  {isPolygonalFootprint
+                    ? "自动直边外包，凹口填平，生成一整块"
+                    : isContouredFootprint
+                      ? "贴合凹槽外缘；远距凹槽可形成多个独立实体"
+                      : "矩形包络底座；可配置圆角与侧面斜角"}
                 </p>
               </div>
-              <Switch
-                id="custom-footprint-style"
-                aria-label="custom-footprint-style"
-                checked={isContouredFootprint}
-                onCheckedChange={(checked) => {
-                  if (checked && box.enabled) {
-                    toast("info", "贴合轮廓不支持堆叠盒体，已自动关闭盒体结构");
+              <Select
+                value={result.footprintStyle}
+                onValueChange={(value) => {
+                  if (value !== "rectangular" && box.enabled) {
+                    toast("info", `${value === "polygonal" ? "直边包络" : "贴合轮廓"}不支持堆叠盒体，已自动关闭盒体结构`);
                   }
-                  updateParam("footprintStyle", checked ? "contoured" : "rectangular");
+                  updateParam("footprintStyle", value as CustomBaseplateFootprintStyle);
                 }}
-                className="data-[state=checked]:bg-[#8cb880]"
-              />
+              >
+                <SelectTrigger id="custom-footprint-style" aria-label="底座轮廓样式" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="rectangular">矩形包络</SelectItem>
+                  <SelectItem value="contoured">弧形贴合</SelectItem>
+                  <SelectItem value="polygonal">直边包络</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             {/* contoured 多实体提示（CONTEXT:628）：不阻止生成，但必须在 UI 可见 */}
             {isContouredFootprint && result.contourBodyCount > 1 && (
@@ -390,8 +399,7 @@ export default function CustomPanel({
               onChange={(v) => updateParam("holeDepth", v)}
               unit={SHARED_LAYOUT_LIMITS.holeDepth.unit}
             />
-            {/* contoured footprint 休眠 cornerRadius 与 sideBevelWidth（CONTEXT:615,620），保留为 dormant 配置 */}
-            {!isContouredFootprint && (
+            {isRectangularFootprint && (
               <ParamSlider
                 label={SHARED_LAYOUT_LIMITS.cornerRadius.label}
                 value={params.cornerRadius}
@@ -400,7 +408,7 @@ export default function CustomPanel({
                 unit={SHARED_LAYOUT_LIMITS.cornerRadius.unit}
               />
             )}
-            {!isContouredFootprint && (
+            {isRectangularFootprint && (
               <ParamSlider
                 label={SHARED_LAYOUT_LIMITS.sideBevelWidth.label}
                 value={params.sideBevelWidth}

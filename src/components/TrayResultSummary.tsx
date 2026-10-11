@@ -44,7 +44,9 @@ function modeSpecificMetrics(result: TrayResultProjection) {
             value={
               result.footprintKind === "fixed-outer-footprint"
                 ? "固定外轮廓"
-                : "有效底板"
+                : result.footprintKind === "polygonal-footprint"
+                  ? "直边包络"
+                  : "有效底板"
             }
           />
           <ResultMetric label="占地面积" value={`${result.footprintArea.toFixed(0)} mm²`} />

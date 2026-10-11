@@ -990,6 +990,52 @@ describe("CustomPanel", { timeout: 15000 }, () => {
     expect(updateParam).toHaveBeenNthCalledWith(3, "sideBevelWidth", 0.5);
   });
 
+  it("三种轮廓可选择，直边模式隐藏休眠参数并保留切回入口", () => {
+    const updateParam = vi.fn();
+    const common = {
+      effectiveDimensions: { width: 120, depth: 140 },
+      updateParam,
+      onAddSlot: vi.fn(),
+      isGenerating: false,
+      volume: 0,
+    };
+    const params = { ...CUSTOM_LAYOUT_DEFAULTS, traySizingMode: "fixed" as const };
+    const { rerender } = render(<CustomPanel {...common} params={params} />);
+    fireEvent.click(screen.getByRole("button", { name: "直边包络" }));
+    expect(updateParam).toHaveBeenLastCalledWith("footprintStyle", "polygonal");
+
+    rerender(<CustomPanel {...common} params={{ ...params, footprintStyle: "polygonal" }} />);
+    expect(screen.getByText("自动直边外包，凹口填平，生成一整块")).toBeInTheDocument();
+    expect(screen.queryByRole("switch", { name: "custom-fixed-tray-size" })).not.toBeInTheDocument();
+    for (const label of ["长度", "宽度", "圆角半径", "侧面斜面宽度", "平滑半径", "槽群断连距离"]) {
+      expect(screen.queryByRole("button", { name: new RegExp(`^设置${label}:`) })).not.toBeInTheDocument();
+    }
+    expect(screen.getByRole("button", { name: /^设置底板厚度:/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "弧形贴合" }));
+    expect(updateParam).toHaveBeenLastCalledWith("footprintStyle", "contoured");
+    fireEvent.click(screen.getByRole("button", { name: "矩形包络" }));
+    expect(updateParam).toHaveBeenLastCalledWith("footprintStyle", "rectangular");
+
+    rerender(<CustomPanel {...common} params={params} />);
+    expect(screen.getByRole("button", { name: `设置长度:${params.trayWidth}` })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: `设置侧面斜面宽度:${params.sideBevelWidth}` })).toBeInTheDocument();
+  });
+
+  it("从盒体切到直边包络时提示自动关闭盒体", () => {
+    const updateParam = vi.fn();
+    render(<CustomPanel
+      params={{ ...CUSTOM_LAYOUT_DEFAULTS, stackableBox: { ...CUSTOM_LAYOUT_DEFAULTS.stackableBox!, enabled: true } }}
+      effectiveDimensions={{ width: 120, depth: 140 }}
+      updateParam={updateParam}
+      onAddSlot={vi.fn()}
+      isGenerating={false}
+      volume={0}
+    />);
+    fireEvent.click(screen.getByRole("button", { name: "直边包络" }));
+    expect(updateParam).toHaveBeenCalledWith("footprintStyle", "polygonal");
+    expect(toastMock).toHaveBeenCalledWith("info", "直边包络不支持堆叠盒体，已自动关闭盒体结构");
+  });
+
   it("贴合轮廓显示并路由平滑与断连参数", () => {
     const updateParam = vi.fn();
     render(

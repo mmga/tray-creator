@@ -5,8 +5,9 @@ import type {
   GridTrayResultProjection,
   SteppedTrayResultProjection,
 } from "@/lib/tray-result-projection";
-import { projectBaseConverterResult } from "@/lib/tray-result-projection";
+import { projectBaseConverterResult, projectCustomTrayResult } from "@/lib/tray-result-projection";
 import { BASE_CONVERTER_DEFAULTS } from "@/lib/base-converter-config";
+import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 
 const gridResult: GridTrayResultProjection = {
   mode: "grid",
@@ -28,6 +29,17 @@ const gridResult: GridTrayResultProjection = {
 };
 
 describe("TrayResultSummary", () => {
+  it("直边摘要不显示休眠的固定尺寸语义", () => {
+    render(<TrayResultSummary result={projectCustomTrayResult(
+      { ...CUSTOM_LAYOUT_DEFAULTS, footprintStyle: "polygonal", traySizingMode: "fixed" },
+      { width: 50, depth: 60 },
+      { volume: 0, isGenerating: false, isPreviewStale: false },
+    )} />);
+    fireEvent.click(screen.getByRole("button", { expanded: false }));
+    expect(screen.getByText("直边包络")).toBeInTheDocument();
+    expect(screen.queryByText("固定外轮廓")).not.toBeInTheDocument();
+  });
+
   it("普通与简版底盘摘要展示对应规格和孔位，不再标成转换件", () => {
     const { rerender } = render(<TrayResultSummary result={
       projectBaseConverterResult({
