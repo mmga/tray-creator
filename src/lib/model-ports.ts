@@ -33,6 +33,7 @@ export interface STLExportWorkerPort {
   exportSTL: (
     geometry: Geom3,
     filename: string,
+    verifyClosed?: boolean,
   ) => Promise<STLExportResult>;
 }
 

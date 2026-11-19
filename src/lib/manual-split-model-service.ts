@@ -25,7 +25,7 @@ export async function exportManualSplitFiles(
     const parts = await worker.generateManualSplitParts(snapshot, true);
     verifyCurrent();
     const files = await Promise.all(parts.map(({ id, geometry }) =>
-      worker.exportSTL(geometry, `${label}_part_${id.replaceAll(".", "-")}.stl`),
+      worker.exportSTL(geometry, `${label}_part_${id.replaceAll(".", "-")}.stl`, true),
     ));
     verifyCurrent();
     return { files, companionParamFilename: `${label}_parts.json` };

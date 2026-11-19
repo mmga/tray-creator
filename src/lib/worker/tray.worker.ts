@@ -30,6 +30,7 @@ import type { ContouredFootprintState } from "../contoured-footprint-state";
 import type { ConstructedContouredFootprint } from "../contoured-footprint";
 import { resolveStackableBoxParams } from "../stackable-box";
 import { createManualSplitScene, orientManualPrintPart, realizeManualSplitParts } from "../manual-split-cad";
+import { closeManualSplitStl } from "../manual-split-stl";
 import { validateManualSplitSettings, type ManualSplitScene } from "../manual-split-plan";
 import { planManualSplitRoutes, type ManualSplitRoute } from "../manual-split-routes";
 import type { SplitPoint, SplitRegion, SplitRing } from "../manual-split-geometry";
@@ -141,6 +142,7 @@ export type WorkerRequest =
       requestId: string;
       geometry: Geom3;
       filename: string;
+      verifyClosed?: boolean;
     };
 
 export type WorkerResponse =
@@ -346,7 +348,9 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
       });
     } else if (req.type === "EXPORT_STL") {
       const rawData = stlSerializer.serialize({ binary: true }, req.geometry);
-      const blob = new Blob(rawData as BlobPart[], { type: "application/sla" });
+      const raw = new Blob(rawData as BlobPart[], { type: "application/sla" });
+      const blob = req.verifyClosed ? await closeManualSplitStl(raw) : raw;
+      if (!blob) throw new Error(`零件 ${req.filename} 的 STL 网格未闭合，请在二维编辑中调整分割线后重试`);
       self.postMessage({
         type: "EXPORT_SUCCESS",
         requestId,

@@ -341,6 +341,7 @@ class TrayWorkerService {
   public async exportSTL(
     geometry: Geom3,
     filename: string,
+    verifyClosed = false,
   ): Promise<{ blob: Blob; filename: string }> {
     return this.request(
       (requestId) => ({
@@ -348,6 +349,7 @@ class TrayWorkerService {
         requestId,
         geometry,
         filename,
+        ...(verifyClosed ? { verifyClosed } : {}),
       }),
       (data) => {
         if (data.type !== "EXPORT_SUCCESS") {

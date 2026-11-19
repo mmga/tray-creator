@@ -22,6 +22,7 @@ it("依次下载编号 STL 和同一快照的拆件参数", async () => {
   const downloadBlob = vi.fn<(blob: Blob, filename: string) => void>();
   await exportManualSplitFiles(snapshot, worker, { downloadBlob }, () => true);
   expect(worker.generateManualSplitParts).toHaveBeenCalledWith(snapshot, true);
+  expect(worker.exportSTL).toHaveBeenCalledWith(geometry, "tray_2x1_part_1-1.stl", true);
   expect(downloadBlob.mock.calls.map(([, name]) => name)).toEqual([
     "tray_2x1_part_1-1.stl", "tray_2x1_part_1-2.stl", "tray_2x1_parts.json",
   ]);
