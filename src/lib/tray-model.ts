@@ -18,6 +18,7 @@ import {
 } from "@/lib/grid-layout-math";
 import { resolveStackableBoxParams } from "@/lib/stackable-box";
 import { createStackableBoxBody } from "@/lib/stackable-box-model";
+import type { FlatTrayCutSource } from "@/lib/manual-split-cad";
 
 export {
   getGridBoundarySpacingAxes,
@@ -183,7 +184,7 @@ function createStackableBoxGridModel(
   return tray;
 }
 
-export function createTrayModel(params: TrayParams): Geom3 {
+export function createTrayModel(params: TrayParams, captureSplitSource?: (source: FlatTrayCutSource) => void): Geom3 {
   const box = resolveStackableBoxParams(params.stackableBox);
   if (box.enabled) {
     return createStackableBoxGridModel(params, box);
@@ -313,11 +314,20 @@ export function createTrayModel(params: TrayParams): Geom3 {
 
   // 4. 布尔减法：实体 - 凹槽
   let tray = params.basePlateOnly ? body : subtract(body, ...holes);
+  const baseHoles = createGridBaseHoleConstructionPlan(params);
+  if (captureSplitSource) {
+    captureSplitSource({
+      body,
+      grooves: params.basePlateOnly ? [] : holes,
+      baseHoles,
+      clipGroovesToBody: usesHalfCircleSlots,
+    });
+  }
 
   // 5. 执行权威底板孔位计划；Adapter 坐标原点位于底板左下角。
   tray = subtractBaseHoleConstructionPlan(
     tray,
-    createGridBaseHoleConstructionPlan(params),
+    baseHoles,
   );
 
   return tray;

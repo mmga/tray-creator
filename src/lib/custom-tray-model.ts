@@ -22,6 +22,7 @@ import {
 import { createCustomBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
 import { resolveStackableBoxParams } from "@/lib/stackable-box";
 import { createStackableBoxBody } from "@/lib/stackable-box-model";
+import type { FlatTrayCutSource } from "@/lib/manual-split-cad";
 
 const { subtract, union } = booleans;
 const { geom3 } = geometries;
@@ -57,6 +58,7 @@ export function createCustomTrayModel(
   contouredState: ContouredFootprintState<ConstructedContouredFootprint> = {
     status: "inactive",
   },
+  captureSplitSource?: (source: FlatTrayCutSource) => void,
 ): Geom3 {
   const box = resolveStackableBoxParams(params.stackableBox);
   if (box.enabled && resolveCustomFootprintStyle(params) === "rectangular") {
@@ -137,10 +139,9 @@ export function createCustomTrayModel(
   let tray = holes.length > 0 ? subtract(body, ...holes) : body;
 
   // 4. 执行权威底板孔位计划；Adapter 使用用户坐标，CAD 使用底盘中心坐标。
-  tray = subtractBaseHoleConstructionPlan(
-    tray,
-    createCustomBaseHoleConstructionPlan(params, { contouredState }),
-  );
+  const baseHoles = createCustomBaseHoleConstructionPlan(params, { contouredState });
+  captureSplitSource?.({ body, grooves: holes, baseHoles });
+  tray = subtractBaseHoleConstructionPlan(tray, baseHoles);
 
   return tray;
 }
