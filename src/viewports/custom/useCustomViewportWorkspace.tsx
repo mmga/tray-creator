@@ -7,6 +7,7 @@ import type { ModeInteractionState } from "@/hooks/useModeInteractionState";
 import { buildCustomLayoutEditorViewportModel } from "@/viewports/layout-editor/customViewportModel";
 import { ViewportTabs } from "@/viewports/shared/ViewportTabs";
 import type { ModeViewportWorkspace } from "@/viewports/types";
+import { useManualSplitViewport } from "@/viewports/shared/useManualSplitViewport";
 
 const LayoutCanvas = dynamic(() => import("@/components/LayoutCanvas"), {
   ssr: false,
@@ -22,19 +23,33 @@ export function useCustomViewportWorkspace({
   interactionState,
 }: UseCustomViewportWorkspaceOptions): ModeViewportWorkspace<"custom"> {
   const [rightView, setRightView] = useState<"2d" | "3d">("2d");
+  const { close, action, canvas: splitCanvas, editing } = useManualSplitViewport({
+    snapshot: { mode: "custom", params: model.persistedParams ?? model.params },
+    onChange: (settings) => model.updateParam("manualSplit", settings),
+    onUndo: model.undo,
+    canUndo: model.canUndo,
+    blockingReason: model.blockingReason,
+    onOpen: () => {
+      model.cancelContinuousEdit();
+      interactionState.resetInteractionState();
+      setRightView("2d");
+    },
+  });
   const setContouredWorkingPreviewEnabled =
     model.setContouredWorkingPreviewEnabled;
   useEffect(() => {
-    setContouredWorkingPreviewEnabled?.(rightView === "2d");
-  }, [rightView, setContouredWorkingPreviewEnabled]);
+    setContouredWorkingPreviewEnabled?.(rightView === "2d" && !editing);
+  }, [rightView, editing, setContouredWorkingPreviewEnabled]);
   const deactivate = useCallback(() => {
     model.cancelContinuousEdit();
     interactionState.resetInteractionState();
-  }, [interactionState, model]);
+    close();
+  }, [interactionState, model, close]);
   const resetForSessionReplacement = useCallback(() => {
     interactionState.resetInteractionState();
+    close();
     setRightView("2d");
-  }, [interactionState]);
+  }, [interactionState, close]);
 
   const canvas = useMemo(
     () => (
@@ -88,7 +103,8 @@ export function useCustomViewportWorkspace({
       <ViewportTabs
         rightView={rightView}
         onRightViewChange={setRightView}
-        canvas={canvas}
+        canvas={splitCanvas ?? canvas}
+        canvasActions={action}
         threeGeometry={model.threeGeometry}
         isPreviewStale={model.isPreviewStale}
         isGenerating={model.isGenerating}
@@ -97,6 +113,8 @@ export function useCustomViewportWorkspace({
     ),
     [
       canvas,
+      action,
+      splitCanvas,
       model.handleGenerate,
       model.isGenerating,
       model.isPreviewStale,

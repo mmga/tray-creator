@@ -1,0 +1,457 @@
+"use client";
+
+import { useEffect, useEffectEvent, useMemo, useRef, useState, type PointerEvent } from "react";
+import { Button } from "@/components/ui/button";
+import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
+import { Input } from "@/components/ui/input";
+import { useCanvasZoom } from "@/hooks/useCanvasZoom";
+import { useRequestSequence } from "@/hooks/useRequestSequence";
+import { VIEW_PALETTE } from "@/lib/config";
+import { nearestSplitBoundary, pointInSplitRing, splitBounds, splitDistance, splitSegmentAvoidsRing, type SplitPoint, type SplitRing } from "@/lib/manual-split-geometry";
+import {
+  isManualSplitBedValid, MAX_MANUAL_SPLIT_CUTS, replayManualCuts, splitPartSize, splitPrintRotation,
+  type ManualSplitCut, type ManualSplitScene, type ManualSplitSettings,
+} from "@/lib/manual-split-plan";
+import type { ManualSplitRoute } from "@/lib/manual-split-routes";
+import {
+  buildEndpointSnaps, chooseSplitSnap, gridSplitGuides, nearestSlotGap, splitAxisIntersections,
+  splitRingCenter, type SplitSnap,
+} from "@/lib/manual-split-snap";
+import { createModelGeometryFingerprint, type ModeParamSnapshot } from "@/lib/mode-param-snapshot";
+import { trayWorkerService } from "@/lib/worker/worker-service";
+
+export type FlatTraySnapshot = ModeParamSnapshot<"grid"> | ModeParamSnapshot<"custom">;
+
+interface EditorProps {
+  snapshot: FlatTraySnapshot;
+  settings: ManualSplitSettings;
+  onChange: (settings: ManualSplitSettings) => void;
+  onExit: () => void;
+  onUndo: () => void;
+  canUndo: boolean;
+  onPreview?: () => void;
+  onExport?: () => void;
+  exporting?: boolean;
+  blockingReason?: string | null;
+}
+
+type SceneResult = { key: string; scene: ManualSplitScene } | { key: string; error: string };
+type Step = "idle" | "start" | "end" | "via";
+
+export default function ManualSplitEditor(props: EditorProps) {
+  const { snapshot, settings, onExit, blockingReason } = props;
+  const geometryKey = useMemo(() => createModelGeometryFingerprint(snapshot), [snapshot]);
+  const key = geometryKey + "|" + settings.clearance;
+  const [result, setResult] = useState<SceneResult>();
+  const [retry, setRetry] = useState(0);
+  const getScene = useEffectEvent(() => trayWorkerService!.prepareManualSplit(snapshot));
+  useEffect(() => {
+    if (blockingReason || !trayWorkerService) return;
+    let current = true;
+    void getScene().then(
+      (scene) => { if (current) setResult({ key, scene }); },
+      (error: Error) => { if (current) setResult({ key, error: error.message }); },
+    );
+    return () => { current = false; };
+  }, [key, retry, blockingReason]);
+
+  if (blockingReason || !trayWorkerService || result?.key !== key || "error" in result) {
+    const error = blockingReason ?? (!trayWorkerService ? "后台建模不可用" : result?.key === key && "error" in result ? result.error : null);
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-3 bg-[#161411] p-4">
+        <p role={error ? "alert" : "status"}>{error || "正在准备拆件轮廓…"}</p>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={onExit}>返回布局</Button>
+          {error && !blockingReason && <Button size="sm" onClick={() => setRetry((value) => value + 1)}>重试</Button>}
+        </div>
+      </div>
+    );
+  }
+  return <SplitEditorCanvas key={key} {...props} scene={result.scene} />;
+}
+
+function points(path: SplitRing) {
+  return path.map((point) => point.join(",")).join(" ");
+}
+
+function regionPath(part: Pick<ManualSplitScene["roots"][number], "outer" | "holes">) {
+  return [part.outer, ...part.holes].map((ring) => "M" + points(ring) + "Z").join(" ");
+}
+
+function printLabel(size: [number, number, number], settings: ManualSplitSettings) {
+  const rotation = splitPrintRotation(size, settings);
+  return size.map((number) => number.toFixed(1)).join(" × ") + " mm · " +
+    (rotation === null ? "超平台" : rotation === 90 ? "旋转 90° 可打印" : "可打印");
+}
+
+function SettingInput({ value, min, max, onCommit }: { value: number; min: number; max: number; onCommit: (value: number) => void }) {
+  return <Input key={value} type="number" min={min} max={max} step={0.1} defaultValue={value}
+    onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }}
+    onBlur={(event) => {
+      const number = event.currentTarget.valueAsNumber;
+      const next = Number.isFinite(number) ? Math.max(min, Math.min(max, number)) : value;
+      event.currentTarget.value = String(next);
+      if (next !== value) onCommit(next);
+    }} />;
+}
+
+function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo, canUndo, onPreview, onExport, exporting }: EditorProps & { scene: ManualSplitScene }) {
+  const { parts, invalid } = useMemo(() => replayManualCuts(scene, settings.cuts), [scene, settings.cuts]);
+  const [selected, setSelected] = useState<string>();
+  const region = parts.find((part) => part.id === selected) ?? parts[0];
+  const [step, setStep] = useState<Step>("idle");
+  const [start, setStart] = useState<SplitPoint>();
+  const [end, setEnd] = useState<SplitPoint>();
+  const [via, setVia] = useState<SplitPoint>();
+  const [routes, setRoutes] = useState<ManualSplitRoute[]>([]);
+  const [routeIndex, setRouteIndex] = useState(0);
+  const [pending, setPending] = useState(false);
+  const [status, setStatus] = useState("");
+  const [hover, setHover] = useState<SplitSnap>();
+  const [snapEnabled, setSnapEnabled] = useState(true);
+  const [showProtection, setShowProtection] = useState(false);
+  const [symmetry, setSymmetry] = useState<"off" | "root" | "part">("off");
+  const [pendingDelete, setPendingDelete] = useState<string>();
+  const [panMode, setPanMode] = useState(false);
+  const [numericPoint, setNumericPoint] = useState<SplitPoint>([0, 0]);
+  const panStart = useRef<{ x: number; y: number; scale: number; pan: { x: number; y: number } } | null>(null);
+  const { nextSeq, isStale } = useRequestSequence();
+
+  const allPoints = useMemo(() => scene.roots.flatMap((root) => root.outer), [scene]);
+  const bounds = useMemo(() => splitBounds(allPoints), [allPoints]);
+  const center = useMemo(() => splitRingCenter(symmetry === "part" ? region.outer : allPoints), [allPoints, region, symmetry]);
+  const width = bounds.max[0] - bounds.min[0];
+  const depth = bounds.max[1] - bounds.min[1];
+  const padding = Math.max(9, Math.max(width, depth) * 0.07);
+  const zoom = useCanvasZoom({ baseW: width + 2 * padding, baseH: depth + 2 * padding, trayWidth: 0, trayDepth: 0 });
+  const viewBox = `${zoom.minX + (bounds.min[0] + bounds.max[0]) / 2} ${zoom.minY - (bounds.min[1] + bounds.max[1]) / 2} ${zoom.viewW} ${zoom.viewH}`;
+  const endpoints = useMemo(() => buildEndpointSnaps(region.outer, center, step === "end" ? start : undefined, symmetry !== "off"),
+    [region, center, step, start, symmetry]);
+  const cut = routes[routeIndex];
+  const grooveLayers = useMemo(() => scene.grooves.map((groove, i) => {
+    const belongs = cut?.children.findIndex((child) => pointInSplitRing(groove[0], child.outer));
+    return <polygon key={i} points={points(groove)}
+      fill={belongs === 0 ? "#293d47" : belongs === 1 ? "#344733" : "#12100d"} fillOpacity={0.8}
+      stroke={belongs === 0 ? "#7fb0c8" : belongs === 1 ? "#8cb880" : "#8d7e6a"} vectorEffect="non-scaling-stroke" />;
+  }), [scene.grooves, cut]);
+  const protectionLayers = useMemo(() => showProtection && scene.obstacles.map((ring, i) => {
+    const blocked = start && end && !pending && !routes.length &&
+      (via ? !splitSegmentAvoidsRing(start, via, ring) || !splitSegmentAvoidsRing(via, end, ring) :
+        !splitSegmentAvoidsRing(start, end, ring));
+    return <polygon key={i} points={points(ring)} fill="#f27765" fillOpacity={blocked ? 0.28 : 0.11}
+      stroke="#f27765" strokeDasharray={blocked ? undefined : "3 3"} vectorEffect="non-scaling-stroke" />;
+  }), [showProtection, scene.obstacles, start, end, via, pending, routes.length]);
+  const size = (part: typeof region) => splitPartSize(part, scene.height);
+  const oversize = parts.some((part) => splitPrintRotation(size(part), settings) === null);
+  const ready = settings.cuts.length > 0 && invalid.size === 0;
+
+  function discard(next: Step = "idle") {
+    nextSeq();
+    setPending(false);
+    setStep(next);
+    setStart(undefined);
+    setEnd(undefined);
+    setVia(undefined);
+    setRoutes([]);
+    setHover(undefined);
+    setStatus("");
+  }
+
+  async function plan(a: SplitPoint, b: SplitPoint, guide?: SplitPoint) {
+    const seq = nextSeq();
+    const prior = cut && scene.grooves.map((ring) => pointInSplitRing(ring[0], cut.children[0].outer));
+    setStart(a);
+    setEnd(b);
+    setVia(guide);
+    setStep("idle");
+    setRoutes([]);
+    setHover(undefined);
+    setPending(true);
+    setStatus("");
+    try {
+      const options = await trayWorkerService!.planManualSplitRoute({
+        region, obstacles: scene.obstacles, start: a, end: b, via: guide,
+      });
+      if (isStale(seq)) return;
+      const preferred = prior ? options.findIndex((option) =>
+        scene.grooves.every((ring, index) => pointInSplitRing(ring[0], option.children[0].outer) === prior[index])) : 0;
+      setRoutes(options);
+      setRouteIndex(preferred);
+      if (!options.length) {
+        setStatus("未找到安全切线。请换端点，或在槽间空白处添加途经点。");
+        setShowProtection(true);
+      } else if (preferred < 0) {
+        setStatus("原绕行方向已不可用，请选择一条候选。");
+      }
+    } catch (error) {
+      if (!isStale(seq)) setStatus(error instanceof Error ? error.message : "分割线规划失败");
+    } finally {
+      if (!isStale(seq)) setPending(false);
+    }
+  }
+
+  function selectPoint(point: SplitPoint, boundaryRadius: number) {
+    if (step === "idle") {
+      if (!pending && !start) {
+        const part = parts.find(({ outer, holes }) =>
+          pointInSplitRing(point, outer) && !holes.some((hole) => pointInSplitRing(point, hole)));
+        if (part) setSelected(part.id);
+      }
+      return;
+    }
+    if (step === "via" && start && end) {
+      if (!pointInSplitRing(point, region.outer) ||
+          [...scene.obstacles, ...region.holes].some((ring) => pointInSplitRing(point, ring))) {
+        setStatus("途经点需要位于当前零件的安全空白内。");
+        return;
+      }
+      void plan(start, end, point);
+      return;
+    }
+    const location = nearestSplitBoundary(point, region.outer);
+    if (location.distance > boundaryRadius) {
+      setStatus("请选择当前零件外边界上的点。");
+      return;
+    }
+    if (step === "start" && !end) {
+      setStart(location.point);
+      setStep("end");
+      setStatus("");
+    } else {
+      const a = step === "start" ? location.point : start!;
+      const b = step === "start" ? end! : location.point;
+      if (splitDistance(a, b) < 0.01) {
+        setStatus("起点和终点不能重合。");
+        return;
+      }
+      void plan(a, b, via);
+    }
+    setHover(undefined);
+  }
+
+  function pointerInfo(event: PointerEvent<SVGSVGElement>) {
+    const ctm = event.currentTarget.getScreenCTM();
+    if (!ctm) return null;
+    const cursor = new DOMPoint(event.clientX, event.clientY).matrixTransform(ctm.inverse());
+    return { point: [cursor.x, -cursor.y] as SplitPoint, scale: 1 / Math.hypot(ctm.a, ctm.b) };
+  }
+
+  function snapAt(point: SplitPoint, scale: number, temporarilyDisabled: boolean) {
+    if (step === "idle") return undefined;
+    if (step === "via") {
+      const gap = snapEnabled && !temporarilyDisabled ? nearestSlotGap(point, scene.grooves, scene.obstacles) : null;
+      return gap ? chooseSplitSnap(point, [gap], scale, hover) : undefined;
+    }
+    const snap = snapEnabled && !temporarilyDisabled
+      ? chooseSplitSnap(point, endpoints.filter((item) => item.label !== "镜像参考"), scale, hover) : undefined;
+    if (snap) return snap;
+    const boundary = nearestSplitBoundary(point, region.outer);
+    return boundary.distance < scale * 15 ? { point: boundary.point, label: "边界" } : undefined;
+  }
+
+  const gridGuide = useMemo(() => {
+    if (snapshot.mode !== "grid") return [];
+    return ([0, 1] as const).flatMap((axis) => gridSplitGuides(scene.obstacles, axis).flatMap((value) => {
+      const intersections = splitAxisIntersections(region.outer, axis, value);
+      return intersections.length === 2 ? [{ axis, value, path: intersections }] : [];
+    }));
+  }, [snapshot.mode, scene.obstacles, region]);
+
+  function confirm() {
+    if (!cut || settings.cuts.length >= MAX_MANUAL_SPLIT_CUTS || invalid.has(region.id)) return;
+    const confirmed: ManualSplitCut = { target: region.id, path: cut.path, ...(via ? { via } : {}) };
+    onChange({ ...settings, cuts: [...settings.cuts, confirmed] });
+    const larger = cut.children.map((part) => splitPartSize(part, scene.height)).map(([w, d]) => w * d);
+    setSelected(confirmed.target + (larger[0] >= larger[1] ? ".1" : ".2"));
+    discard();
+  }
+
+  function removeBranch(target: string, redo = false) {
+    onChange({ ...settings, cuts: settings.cuts.filter((cut) => cut.target !== target && !cut.target.startsWith(target + ".")) });
+    setSelected(target);
+    setPendingDelete(undefined);
+    discard(redo ? "start" : "idle");
+  }
+
+  function changeSize(index: number, value: number) {
+    const bed = [...settings.bed] as ManualSplitSettings["bed"];
+    bed[index] = value;
+    onChange({ ...settings, bed, bedMargin: Math.min(settings.bedMargin, Math.min(bed[0], bed[1]) / 2 - 0.05) });
+  }
+
+  return (
+    <div className="flex h-full min-h-0 flex-col bg-[#161411] pt-14 text-sm" onKeyDown={(event) => {
+      if (event.key === "Escape") { event.stopPropagation(); discard(); }
+      if ((event.ctrlKey || event.metaKey) && event.key === "z" && !(event.target instanceof HTMLInputElement)) {
+        event.preventDefault(); event.stopPropagation(); discard(); onUndo();
+      }
+    }}>
+      <div className="flex flex-wrap items-center gap-2 border-y border-[#383127] px-3 py-2">
+        <Button size="sm" onClick={() => discard("start")} disabled={settings.cuts.length >= MAX_MANUAL_SPLIT_CUTS || invalid.has(region.id)}>添加分割线</Button>
+        <Button size="sm" variant="ghost" disabled={!canUndo} onClick={() => { discard(); onUndo(); }}>撤销</Button>
+        <Button size="sm" variant="ghost" aria-pressed={showProtection} onClick={() => setShowProtection(!showProtection)}>保护区</Button>
+        <Button size="sm" variant="ghost" onClick={onExit}>返回布局</Button>
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+        <div className="relative min-h-44 flex-1 overflow-hidden bg-[#1c1a16]">
+          <div className="pointer-events-none absolute inset-x-3 top-3 z-10 flex justify-between gap-2 text-xs">
+            <p className="rounded bg-[#12100d]/90 px-2 py-1" role="status">
+              {pending ? "正在计算候选…" : step === "start" ? "选择边界起点" : step === "end" ? "选择边界终点" : step === "via" ? "选择空白处的途经点" : cut ? "查看候选并确认" : "选择零件或添加分割线"}
+            </p>
+          </div>
+          <svg tabIndex={0} aria-label="托盘拆件画布" viewBox={viewBox}
+            className={`h-full min-h-44 w-full touch-none outline-offset-[-3px] ${panMode ? "cursor-grab" : "cursor-crosshair"}`}
+            onWheel={zoom.handleWheel} onTouchStart={zoom.handleTouchStart}
+            onTouchMove={zoom.handleTouchMove} onTouchEnd={zoom.handleTouchEnd}
+            onPointerLeave={() => setHover(undefined)}
+            onPointerDown={(event) => {
+              const info = pointerInfo(event);
+              if (!info || !event.isPrimary || (event.button !== 0 && event.button !== 1)) return;
+              if (panMode || event.button === 1) {
+                event.preventDefault();
+                event.currentTarget.setPointerCapture(event.pointerId);
+                panStart.current = { x: event.clientX, y: event.clientY, scale: info.scale, pan: zoom.pan };
+              }
+            }}
+            onPointerMove={(event) => {
+              const info = pointerInfo(event);
+              if (!info || !event.isPrimary) return;
+              const pan = panStart.current;
+              if (pan) {
+                zoom.setPan({ x: pan.pan.x + (event.clientX - pan.x) * pan.scale, y: pan.pan.y + (event.clientY - pan.y) * pan.scale });
+                return;
+              }
+              if (!panMode) setHover(snapAt(info.point, info.scale, event.altKey));
+            }}
+            onPointerCancel={() => { panStart.current = null; }}
+            onPointerUp={(event) => {
+              if (panStart.current) { panStart.current = null; return; }
+              if (event.button !== 0 || !event.isPrimary || panMode) return;
+              const info = pointerInfo(event);
+              if (info) selectPoint(snapAt(info.point, info.scale, event.altKey)?.point ?? info.point, info.scale * 15);
+            }}>
+            <g transform="scale(1,-1)">
+              {parts.map((part, i) => <path key={part.id} d={regionPath(part)} fillRule="evenodd"
+                fill={VIEW_PALETTE[i % VIEW_PALETTE.length]} fillOpacity={region.id === part.id ? 0.23 : 0.09}
+                stroke={region.id === part.id ? "#e1b85f" : "#746659"} strokeWidth={1.5} vectorEffect="non-scaling-stroke" />)}
+              {cut?.children.map((part, i) => <path key={i} d={regionPath(part)}
+                fill={i === 0 ? "#7fb0c8" : "#8cb880"} fillRule="evenodd" fillOpacity={0.32} />)}
+              {grooveLayers}
+              {protectionLayers}
+              {symmetry !== "off" && ([0, 1] as const).map((axis) => <polyline key={axis}
+                points={points(axis === 0 ? [[center[0], bounds.min[1]], [center[0], bounds.max[1]]] : [[bounds.min[0], center[1]], [bounds.max[0], center[1]]])}
+                fill="none" stroke="#8ab8c9" strokeDasharray="6 4" vectorEffect="non-scaling-stroke" />)}
+              {symmetry !== "off" && endpoints.filter(({ label }) => label.includes("对称") || label === "镜像参考")
+                .map(({ point, label }, i) => <circle key={i} cx={point[0]} cy={point[1]} r={zoom.viewW * 0.009}
+                  fill={label === "镜像参考" ? "none" : "#86cdd9"} stroke="#86cdd9" vectorEffect="non-scaling-stroke"><title>{label}</title></circle>)}
+              {settings.cuts.map(({ target, path }) => <polyline key={target} points={points(path)} fill="none"
+                stroke={invalid.has(target) ? "#f27765" : "#f1c56b"} strokeWidth={2} vectorEffect="non-scaling-stroke" />)}
+              {routes.map(({ path }, i) => <polyline key={i} points={points(path)} fill="none"
+                stroke={i === routeIndex ? "#a7e8eb" : "#77a2a8"} strokeWidth={i === routeIndex ? 3 : 1.5}
+                strokeDasharray={i === routeIndex ? undefined : "5 4"} vectorEffect="non-scaling-stroke" />)}
+              {[start, end, via, hover?.point].map((point, i) => point && <circle key={i} cx={point[0]} cy={point[1]}
+                r={zoom.viewW * 0.008} fill={i === 3 ? "#fcf2d5" : "#a7e8eb"} stroke="#18120a" vectorEffect="non-scaling-stroke" />)}
+            </g>
+          </svg>
+          <div className="absolute inset-x-3 bottom-2 flex items-end justify-between gap-2">
+            <div className="rounded bg-[#12100d]/90 px-2 py-1 text-xs text-[#e0d2bb]">
+              {hover ? `${hover.label} · X ${hover.point[0].toFixed(2)} / Y ${hover.point[1].toFixed(2)}` : "坐标原点位于托盘中心 · mm"}
+            </div>
+            <div className="flex rounded bg-[#12100d]/90">
+              <Button size="sm" variant="ghost" aria-pressed={panMode} onClick={() => setPanMode(!panMode)}>平移</Button>
+              <Button size="sm" variant="ghost" aria-label="放大" onClick={() => zoom.adjustZoom(0.25)}>＋</Button>
+              <Button size="sm" variant="ghost" aria-label="缩小" onClick={() => zoom.adjustZoom(-0.25)}>－</Button>
+              <Button size="sm" variant="ghost" onClick={zoom.resetZoom}>适配</Button>
+            </div>
+          </div>
+        </div>
+        <aside className="max-h-[46%] shrink-0 space-y-3 overflow-auto border-t border-[#383127] bg-[#211d17] p-3 md:max-h-none md:w-72 md:border-l md:border-t-0">
+          <div className="space-y-2">
+            <label className="flex items-center gap-2"><input type="checkbox" checked={snapEnabled} onChange={(event) => setSnapEnabled(event.target.checked)} />捕捉辅助点</label>
+            <label className="flex items-center justify-between gap-2">对称参考
+              <select className="rounded bg-[#171410] px-1.5 py-1" value={symmetry} onChange={(event) => setSymmetry(event.target.value as typeof symmetry)}>
+                <option value="off">关闭</option><option value="root">托盘中心轴</option><option value="part">零件中心轴</option>
+              </select>
+            </label>
+            {step !== "idle" && <details className="text-xs">
+              <summary className="cursor-pointer">按坐标选点</summary>
+              <div className="mt-2 flex items-end gap-1">
+                {(["X", "Y"] as const).map((axis, i) => <label key={axis} className="min-w-0 flex-1">{axis}<DraftNumberInput value={numericPoint[i]} step={0.01}
+                  onValueChange={(value) => setNumericPoint(i === 0 ? [value, numericPoint[1]] : [numericPoint[0], value])} /></label>)}
+                <Button size="sm" variant="outline" onClick={() => selectPoint(numericPoint, 0.03)}>取点</Button>
+              </div>
+            </details>}
+            {gridGuide.length > 0 && !start && !pending && <label className="flex items-center justify-between gap-2">网格分割
+              <select aria-label="选择网格安全通道" className="max-w-40 rounded bg-[#171410] py-1" value="" onChange={(event) => {
+                const guide = gridGuide[Number(event.target.value)];
+                if (guide) void plan(guide.path[0], guide.path[1]);
+              }}><option value="" disabled>选择行间或列间</option>
+                {gridGuide.map(({ axis, value }, index) => <option key={index} value={index}>{axis === 0 ? "列间 X" : "行间 Y"} {value.toFixed(2)}</option>)}
+              </select>
+            </label>}
+          </div>
+          {status && <p role="alert" className="text-xs text-[#ffc090]">{status}</p>}
+          {start && end && !pending && <div className="flex flex-wrap gap-1">
+            <Button size="sm" variant="outline" onClick={() => setStep("start")}>改起点</Button>
+            <Button size="sm" variant="outline" onClick={() => setStep("end")}>改终点</Button>
+            <Button size="sm" variant="outline" onClick={() => setStep("via")}>{via ? "改途经点" : "加途经点"}</Button>
+            {via && <Button size="sm" variant="ghost" onClick={() => void plan(start, end)}>清除途经点</Button>}
+            <Button size="sm" variant="ghost" onClick={() => discard()}>取消</Button>
+          </div>}
+          {routes.length > 0 && <div className="space-y-2">
+            {routes.map((route, i) => <button type="button" aria-pressed={i === routeIndex}
+              key={i} className="w-full rounded border border-[#504635] px-2 py-1.5 text-left text-xs aria-pressed:border-[#a7e8eb] aria-pressed:bg-[#293637]" onClick={() => setRouteIndex(i)}>
+              <span className="font-medium">候选 {i + 1} · 切线 {route.length.toFixed(1)} mm</span>
+              {route.children.map((part, index) => <span key={index} className="block">
+                {index === 0 ? "蓝区" : "绿区"}：{printLabel(splitPartSize(part, scene.height), settings)}
+              </span>)}
+            </button>)}
+            <Button size="sm" className="w-full" onClick={confirm} disabled={!cut || step !== "idle"}>确认分割</Button>
+          </div>}
+          <div className="space-y-1 border-t border-[#383127] pt-2">
+            <p className="text-xs text-muted-foreground">零件 {parts.length} 件</p>
+            {parts.map((part) => <button type="button" key={part.id} aria-pressed={part.id === region.id}
+              className="block w-full rounded px-2 py-1 text-left text-xs aria-pressed:bg-[#3b3223]"
+              onClick={() => { discard(); setSelected(part.id); }}>零件 {part.id} · {printLabel(size(part), settings)}</button>)}
+            {settings.cuts.map(({ target }) => <div key={target} className="flex items-center justify-between text-xs">
+              <span className={invalid.has(target) ? "text-[#ff9c87]" : "text-muted-foreground"}>
+                切线 {target}{invalid.has(target) ? invalid.get(target) === "dependency" ? " · 待复核" : " · 已失效" : ""}
+              </span>
+              <Button size="sm" variant="ghost" onClick={() => setPendingDelete(target)}
+                aria-label={`${invalid.get(target) === "boundary" ? "重做或移除" : "移除"}切线 ${target}`}>
+                {invalid.get(target) === "boundary" ? "重做／移除" : "移除"}
+              </Button>
+            </div>)}
+            {pendingDelete && <div className="rounded border border-[#9d7050] p-2 text-xs" role="alert">
+              <p>移除切线 {pendingDelete} 将同时移除 {settings.cuts.filter((item) => item.target.startsWith(pendingDelete + ".")).length} 条后续切线。</p>
+              <Button size="sm" variant="ghost" onClick={() => setPendingDelete(undefined)}>取消</Button>
+              {invalid.get(pendingDelete) === "boundary" && <Button size="sm" variant="outline" onClick={() => removeBranch(pendingDelete, true)}>移除并重做</Button>}
+              <Button size="sm" variant="destructive" onClick={() => removeBranch(pendingDelete)}>确认移除</Button>
+            </div>}
+          </div>
+          {(onPreview || onExport) && <div className="flex flex-wrap gap-2">
+            {onPreview && <Button size="sm" variant="outline" disabled={!ready} onClick={onPreview}>三维分件预览</Button>}
+            {onExport && <Button size="sm" disabled={!ready || oversize || exporting || !isManualSplitBedValid(settings)} onClick={onExport}>
+              {exporting ? "正在导出…" : "导出分件 STL"}
+            </Button>}
+          </div>}
+          <details className="border-t border-[#383127] pt-2 text-xs" open>
+            <summary className="cursor-pointer">打印设置（mm）</summary>
+            <div className="mt-2 grid grid-cols-3 gap-1">
+              {["平台宽", "平台深", "平台高"].map((label, index) => <label key={label}>{label}
+                <SettingInput value={settings.bed[index]} min={1} max={2000} onCommit={(value) => changeSize(index, value)} />
+              </label>)}
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <label>平台预留<SettingInput value={settings.bedMargin} min={0}
+                max={Math.min(settings.bed[0], settings.bed[1]) / 2 - 0.05} onCommit={(bedMargin) => onChange({ ...settings, bedMargin })} /></label>
+              <label>凹槽保留<SettingInput value={settings.clearance} min={0} max={50}
+                onCommit={(clearance) => onChange({ ...settings, clearance })} /></label>
+            </div>
+            <Button size="sm" variant="ghost" className="mt-1" onClick={() => { onChange({ ...settings, enabled: false }); onExit(); }}>停用拆件</Button>
+          </details>
+        </aside>
+      </div>
+    </div>
+  );
+}

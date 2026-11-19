@@ -43,6 +43,8 @@ interface UseTrayModelReturn {
   isGenerating: boolean;
   isPreviewStale: boolean;
   transactionRevision: number;
+  canUndo: boolean;
+  undo: () => void;
   baseHolePlan: BaseHoleConstructionPlan;
   baseHoleFitViolations: readonly BaseHoleFitViolation[];
   baseHoleFitBlockingReason: string | null;
@@ -55,6 +57,9 @@ export function useTrayModel(): UseTrayModelReturn {
   const {
     params,
     setParams,
+    applyChange,
+    canUndo,
+    undo,
     threeGeometry,
     volume,
     bodyVolume,
@@ -103,12 +108,11 @@ export function useTrayModel(): UseTrayModelReturn {
     ? baseHoleFitBlockingReason
     : (boxValidation.blockingReasons[0]?.message ?? "堆叠盒体参数无效");
 
-  // grid 模式无 undo，所有操作用 history: "skip"
   const updateParam = useCallback(
     <K extends keyof TrayParams>(key: K, value: TrayParams[K]) => {
-      setParams((prev) => updateGridParam(prev, key, value));
+      applyChange((prev) => updateGridParam(prev, key, value));
     },
-    [setParams],
+    [applyChange],
   );
 
   const replaceParams = useCallback(
@@ -134,6 +138,8 @@ export function useTrayModel(): UseTrayModelReturn {
     isGenerating,
     isPreviewStale,
     transactionRevision,
+    canUndo,
+    undo,
     baseHolePlan,
     baseHoleFitViolations,
     baseHoleFitBlockingReason,

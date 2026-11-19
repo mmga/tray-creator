@@ -23,6 +23,7 @@ interface ViewportTabsProps {
   rightView: "2d" | "3d";
   onRightViewChange: (next: "2d" | "3d") => void;
   canvas: React.ReactNode;
+  canvasActions?: React.ReactNode;
   threeGeometry: React.ComponentProps<typeof TrayViewer>["geometry"];
   splitParts?: React.ComponentProps<typeof TrayViewer>["splitParts"];
   isGeneratingSplitPreview?: boolean;
@@ -39,6 +40,7 @@ export function ViewportTabs({
   rightView,
   onRightViewChange,
   canvas,
+  canvasActions,
   threeGeometry,
   splitParts,
   isGeneratingSplitPreview,
@@ -61,7 +63,7 @@ export function ViewportTabs({
       }}
       className="flex-1 flex flex-col relative"
     >
-      <div className="absolute top-3 left-5 z-20">
+      <div className="absolute top-3 left-5 z-20 flex items-center gap-2">
         <TabsList className="bg-[#1c1a16] border border-[#2e2a24]">
           <TabsTrigger value="2d" className="text-xs">
             2D 编辑
@@ -70,6 +72,7 @@ export function ViewportTabs({
             3D 预览
           </TabsTrigger>
         </TabsList>
+        {canvasActions}
       </div>
 
       <div
