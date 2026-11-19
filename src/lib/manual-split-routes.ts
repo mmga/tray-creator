@@ -1,5 +1,5 @@
 import {
-  cutSplitRegion, pointInSplitRing, projectSplitPoint, splitBounds, splitDistance,
+  cutSplitRegion, nearestSplitBoundary, pointInSplitRing, projectSplitPoint, splitBounds, splitDistance,
   splitRingArea, splitSegmentAvoidsRing, splitSegmentClear,
   type SplitPoint, type SplitRegion, type SplitRing,
 } from "./manual-split-geometry";
@@ -44,6 +44,7 @@ function concaveBoundaryGuides(ring: SplitRing): SplitRing {
 
 export interface ManualSplitRoute extends NonNullable<ReturnType<typeof cutSplitRegion>> {
   length: number;
+  narrowWeb: boolean;
 }
 
 export function planManualSplitRoutes(
@@ -51,7 +52,7 @@ export function planManualSplitRoutes(
 ): ManualSplitRoute[] {
   const nodes: SplitRing = via ? [start, via, end] : [start, end];
   const direct = cutSplitRegion(region, nodes, obstacles);
-  if (direct) return [{ ...direct, length: pathLength(direct.path) }];
+  if (direct) return [describeRoute(direct, region)];
   if (splitDistance(start, end) < ROUTE_GAP) return [];
   if (via && (!pointInSplitRing(via, region.outer) ||
     [...obstacles, ...region.holes].some((ring) => pointInSplitRing(via, ring)))) return [];
@@ -148,12 +149,37 @@ export function planManualSplitRoutes(
     const key = ranked.length
       ? ranked.map(({ ring }) => Number(pointInSplitRing(ring[0], result.children[0].outer))).join("")
       : "free";
-    const length = pathLength(result.path);
-    if ((distinct.get(key)?.length ?? Infinity) > length) distinct.set(key, { ...result, length });
+    const candidate = describeRoute(result, region);
+    if ((distinct.get(key)?.length ?? Infinity) > candidate.length) distinct.set(key, candidate);
   }
   return [...distinct.values()].sort((a, b) => a.length - b.length);
 }
 
-function pathLength(path: SplitRing) {
-  return path.slice(1).reduce((length, point, i) => length + splitDistance(path[i], point), 0);
+function describeRoute(route: NonNullable<ReturnType<typeof cutSplitRegion>>, region: SplitRegion): ManualSplitRoute {
+  const segments = route.path.slice(1).map((b, i) => ({
+    a: route.path[i], b, length: splitDistance(route.path[i], b),
+  }));
+  const length = segments.reduce((total, segment) => total + segment.length, 0);
+  const minimumWeb = 1.2;
+  let traveled = 0;
+  let narrowWeb = route.children.some(({ outer }) => {
+    const { min, max } = splitBounds(outer);
+    return Math.min(max[0] - min[0], max[1] - min[1]) < minimumWeb;
+  });
+  for (const segment of segments) {
+    const samples = Math.max(1, Math.ceil(segment.length));
+    for (let i = 0; i < samples && !narrowWeb; i++) {
+      const t = (i + 0.5) / samples;
+      const along = traveled + segment.length * t;
+      if (along < 2 || along > length - 2) continue;
+      const point: SplitPoint = [
+        segment.a[0] + (segment.b[0] - segment.a[0]) * t,
+        segment.a[1] + (segment.b[1] - segment.a[1]) * t,
+      ];
+      narrowWeb = [region.outer, ...region.holes]
+        .some((ring) => nearestSplitBoundary(point, ring).distance < minimumWeb);
+    }
+    traveled += segment.length;
+  }
+  return { ...route, length, narrowWeb };
 }

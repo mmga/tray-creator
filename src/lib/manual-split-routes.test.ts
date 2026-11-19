@@ -32,3 +32,9 @@ it("保护区隔断托盘时没有可用路线", () => {
   const barrier: SplitRing = [[-2, 35], [82, 35], [82, 45], [-2, 45]];
   expect(planManualSplitRoutes(region, [barrier], start, end)).toEqual([]);
 });
+
+it("沿外壁切出过窄薄边时保留候选但给出提示", () => {
+  const [route] = planManualSplitRoutes(region, [], [0.8, 0], [0.8, 80]);
+  expect(route.narrowWeb).toBe(true);
+  expect(planManualSplitRoutes(region, [], start, end)[0].narrowWeb).toBe(false);
+});

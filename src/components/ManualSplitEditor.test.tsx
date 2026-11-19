@@ -63,8 +63,11 @@ it("自定义按两点绕槽、追加途经点，确认后可继续分割子件"
   takePoint(25, 80);
   expect(await screen.findByRole("button", { name: /候选 2/ })).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "加途经点" }));
-  takePoint(46, 40);
+  fireEvent.click(screen.getByRole("button", { name: "两槽中点" }));
+  fireEvent.change(screen.getByRole("combobox", { name: "第一个凹槽" }), { target: { value: "0" } });
+  fireEvent.change(screen.getByRole("combobox", { name: "第二个凹槽" }), { target: { value: "1" } });
   await waitFor(() => expect(worker.planManualSplitRoute).toHaveBeenCalledTimes(2));
+  expect(worker.planManualSplitRoute).toHaveBeenLastCalledWith(expect.objectContaining({ via: [50, 37.5] }));
   fireEvent.click(await screen.findByRole("button", { name: /候选 1/ }));
   expect(screen.getByRole("button", { name: "确认分割" })).toBeEnabled();
   fireEvent.click(screen.getByRole("button", { name: "确认分割" }));
