@@ -1,5 +1,5 @@
-import { createTrayModel } from "../tray-model";
-import { createCustomTrayModel } from "../custom-tray-model";
+import { createTrayModel, prepareGridTrayCutSource } from "../tray-model";
+import { createCustomTrayModel, prepareCustomTrayCutSource } from "../custom-tray-model";
 import { resolveCustomFootprintStyle } from "../custom-layout-math";
 import { createBaseConverterModel } from "../base-converter-model";
 import {
@@ -29,6 +29,11 @@ import {
 import type { ContouredFootprintState } from "../contoured-footprint-state";
 import type { ConstructedContouredFootprint } from "../contoured-footprint";
 import { resolveStackableBoxParams } from "../stackable-box";
+import { createManualSplitScene, orientManualPrintPart, realizeManualSplitParts } from "../manual-split-cad";
+import { validateManualSplitSettings, type ManualSplitScene } from "../manual-split-plan";
+import { planManualSplitRoutes, type ManualSplitRoute } from "../manual-split-routes";
+import type { SplitPoint, SplitRegion, SplitRing } from "../manual-split-geometry";
+import type { ModeParamSnapshot } from "../mode-param-snapshot";
 import {
   composeBoxAndLidPreview,
   createBoxSideBySidePreviewSpacing,
@@ -82,6 +87,21 @@ function buildBoxPreviewGeometry(box: StackableBoxParams, body: Geom3, lid: Geom
 export type WorkerRequest =
   | { type: "GENERATE_GRID"; requestId: string; params: TrayParams }
   | {
+      type: "PREPARE_MANUAL_SPLIT" | "GENERATE_MANUAL_SPLIT_PARTS";
+      requestId: string;
+      snapshot: ModeParamSnapshot<"grid"> | ModeParamSnapshot<"custom">;
+      forPrint?: boolean;
+    }
+  | {
+      type: "PLAN_MANUAL_SPLIT_ROUTE";
+      requestId: string;
+      region: SplitRegion;
+      obstacles: SplitRing[];
+      start: SplitPoint;
+      end: SplitPoint;
+      via?: SplitPoint;
+    }
+  | {
       type: "GENERATE_CUSTOM";
       requestId: string;
       params: CustomLayoutParams;
@@ -124,6 +144,13 @@ export type WorkerRequest =
     };
 
 export type WorkerResponse =
+  | { type: "MANUAL_SPLIT_SCENE_SUCCESS"; requestId: string; scene: ManualSplitScene }
+  | { type: "MANUAL_SPLIT_ROUTE_SUCCESS"; requestId: string; routes: ManualSplitRoute[] }
+  | {
+      type: "MANUAL_SPLIT_PARTS_SUCCESS";
+      requestId: string;
+      parts: ReturnType<typeof realizeManualSplitParts>;
+    }
   | {
       type: "GENERATION_SUCCESS";
       requestId: string;
@@ -167,7 +194,40 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
   const { requestId } = req;
 
   try {
-    if (req.type === "GENERATE_GRID") {
+    if (req.type === "PREPARE_MANUAL_SPLIT" || req.type === "GENERATE_MANUAL_SPLIT_PARTS") {
+      const { snapshot } = req;
+      const settings = snapshot.params.manualSplit;
+      validateManualSplitSettings(settings);
+      if (!settings.enabled || resolveStackableBoxParams(snapshot.params.stackableBox).enabled) {
+        throw new Error("请对普通托盘启用拆件打印");
+      }
+      if (req.type === "PREPARE_MANUAL_SPLIT") {
+        const source = snapshot.mode === "grid"
+          ? prepareGridTrayCutSource(snapshot.params)
+          : prepareCustomTrayCutSource(snapshot.params, buildCustomContouredState(snapshot.params));
+        const scene = createManualSplitScene(source, settings.clearance);
+        self.postMessage({ type: "MANUAL_SPLIT_SCENE_SUCCESS", requestId, scene } satisfies WorkerResponse);
+      } else {
+        let scene!: ManualSplitScene;
+        const capture = (source: Parameters<typeof createManualSplitScene>[0]) => {
+          scene = createManualSplitScene(source, settings.clearance);
+        };
+        const model = snapshot.mode === "grid"
+          ? createTrayModel(snapshot.params, capture)
+          : createCustomTrayModel(snapshot.params, buildCustomContouredState(snapshot.params), capture);
+        const parts = realizeManualSplitParts(model, scene, settings);
+        if (req.forPrint) {
+          for (const part of parts) {
+            if (part.rotation === null) throw new Error(`零件 ${part.id} 超出打印范围，请继续拆分或修改打印尺寸`);
+            part.geometry = orientManualPrintPart(part.geometry, part.rotation);
+          }
+        }
+        self.postMessage({ type: "MANUAL_SPLIT_PARTS_SUCCESS", requestId, parts } satisfies WorkerResponse);
+      }
+    } else if (req.type === "PLAN_MANUAL_SPLIT_ROUTE") {
+      const routes = planManualSplitRoutes(req.region, req.obstacles, req.start, req.end, req.via);
+      self.postMessage({ type: "MANUAL_SPLIT_ROUTE_SUCCESS", requestId, routes } satisfies WorkerResponse);
+    } else if (req.type === "GENERATE_GRID") {
       const geometry = createTrayModel(req.params);
       const box = resolveStackableBoxParams(req.params.stackableBox);
       if (box.enabled) {

@@ -64,7 +64,16 @@ export function createCustomTrayModel(
   if (box.enabled && resolveCustomFootprintStyle(params) === "rectangular") {
     return createStackableBoxCustomModel(params, box, contouredState);
   }
+  const source = prepareCustomTrayCutSource(params, contouredState);
+  captureSplitSource?.(source);
+  const tray = source.grooves.length ? subtract(source.body, ...source.grooves) : source.body;
+  return subtractBaseHoleConstructionPlan(tray, source.baseHoles);
+}
 
+export function prepareCustomTrayCutSource(
+  params: CustomLayoutParams,
+  contouredState: ContouredFootprintState<ConstructedContouredFootprint>,
+): FlatTrayCutSource {
   const { slots, baseThickness, holeDepth, cornerRadius, sideBevelWidth } = params;
   if (resolveCustomFootprintStyle(params) !== "rectangular" && contouredState.status !== "ready") {
     throw new Error(
@@ -135,15 +144,7 @@ export function createCustomTrayModel(
     holes.push(placedHole);
   }
 
-  // 3. 布尔运算
-  let tray = holes.length > 0 ? subtract(body, ...holes) : body;
-
-  // 4. 执行权威底板孔位计划；Adapter 使用用户坐标，CAD 使用底盘中心坐标。
-  const baseHoles = createCustomBaseHoleConstructionPlan(params, { contouredState });
-  captureSplitSource?.({ body, grooves: holes, baseHoles });
-  tray = subtractBaseHoleConstructionPlan(tray, baseHoles);
-
-  return tray;
+  return { body, grooves: holes, baseHoles: createCustomBaseHoleConstructionPlan(params, { contouredState }) };
 }
 
 /**

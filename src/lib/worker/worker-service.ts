@@ -7,6 +7,7 @@ import type {
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import type { WorkerRequest, WorkerResponse } from "./tray.worker";
+import type { ModeParamSnapshot } from "../mode-param-snapshot";
 
 let _nextId = 0;
 function generateRequestId(): string {
@@ -151,6 +152,36 @@ class TrayWorkerService {
         rejectWithError(error);
       }
     });
+  }
+
+  public prepareManualSplit(snapshot: ModeParamSnapshot<"grid"> | ModeParamSnapshot<"custom">) {
+    return this.request(
+      (requestId) => ({ type: "PREPARE_MANUAL_SPLIT", requestId, snapshot }),
+      (response) => {
+        if (response.type !== "MANUAL_SPLIT_SCENE_SUCCESS") throw new Error("无法读取拆件平面");
+        return response.scene;
+      },
+    );
+  }
+
+  public planManualSplitRoute(input: Omit<Extract<WorkerRequest, { type: "PLAN_MANUAL_SPLIT_ROUTE" }>, "type" | "requestId">) {
+    return this.request(
+      (requestId) => ({ type: "PLAN_MANUAL_SPLIT_ROUTE", requestId, ...input }),
+      (response) => {
+        if (response.type !== "MANUAL_SPLIT_ROUTE_SUCCESS") throw new Error("无法读取分割线候选");
+        return response.routes;
+      },
+    );
+  }
+
+  public generateManualSplitParts(snapshot: ModeParamSnapshot<"grid"> | ModeParamSnapshot<"custom">, forPrint = false) {
+    return this.request(
+      (requestId) => ({ type: "GENERATE_MANUAL_SPLIT_PARTS", requestId, snapshot, forPrint }),
+      (response) => {
+        if (response.type !== "MANUAL_SPLIT_PARTS_SUCCESS") throw new Error("无法读取拆件模型");
+        return response.parts;
+      },
+    );
   }
 
   public async generateGrid(

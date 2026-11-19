@@ -189,6 +189,13 @@ export function createTrayModel(params: TrayParams, captureSplitSource?: (source
   if (box.enabled) {
     return createStackableBoxGridModel(params, box);
   }
+  const source = prepareGridTrayCutSource(params);
+  captureSplitSource?.(source);
+  const tray = source.grooves.length ? subtract(source.body, ...source.grooves) : source.body;
+  return subtractBaseHoleConstructionPlan(tray, source.baseHoles);
+}
+
+export function prepareGridTrayCutSource(params: TrayParams): FlatTrayCutSource {
   const {
     rows,
     columns,
@@ -312,25 +319,12 @@ export function createTrayModel(params: TrayParams, captureSplitSource?: (source
     );
   }
 
-  // 4. 布尔减法：实体 - 凹槽
-  let tray = params.basePlateOnly ? body : subtract(body, ...holes);
-  const baseHoles = createGridBaseHoleConstructionPlan(params);
-  if (captureSplitSource) {
-    captureSplitSource({
-      body,
-      grooves: params.basePlateOnly ? [] : holes,
-      baseHoles,
-      clipGroovesToBody: usesHalfCircleSlots,
-    });
-  }
-
-  // 5. 执行权威底板孔位计划；Adapter 坐标原点位于底板左下角。
-  tray = subtractBaseHoleConstructionPlan(
-    tray,
-    baseHoles,
-  );
-
-  return tray;
+  return {
+    body,
+    grooves: params.basePlateOnly ? [] : holes,
+    baseHoles: createGridBaseHoleConstructionPlan(params),
+    clipGroovesToBody: usesHalfCircleSlots,
+  };
 }
 
 /**
