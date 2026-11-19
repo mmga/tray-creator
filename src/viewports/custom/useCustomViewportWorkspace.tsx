@@ -23,7 +23,7 @@ export function useCustomViewportWorkspace({
   interactionState,
 }: UseCustomViewportWorkspaceOptions): ModeViewportWorkspace<"custom"> {
   const [rightView, setRightView] = useState<"2d" | "3d">("2d");
-  const { close, action, canvas: splitCanvas, editing } = useManualSplitViewport({
+  const { reset, action, canvas: splitCanvas, editing, parts, preferSplit, isGeneratingPreview, generatePreview } = useManualSplitViewport({
     snapshot: { mode: "custom", params: model.persistedParams ?? model.params },
     onChange: (settings) => model.updateParam("manualSplit", settings),
     onUndo: model.undo,
@@ -34,6 +34,7 @@ export function useCustomViewportWorkspace({
       interactionState.resetInteractionState();
       setRightView("2d");
     },
+    onOpenPreview: () => setRightView("3d"),
   });
   const setContouredWorkingPreviewEnabled =
     model.setContouredWorkingPreviewEnabled;
@@ -43,13 +44,13 @@ export function useCustomViewportWorkspace({
   const deactivate = useCallback(() => {
     model.cancelContinuousEdit();
     interactionState.resetInteractionState();
-    close();
-  }, [interactionState, model, close]);
+    reset();
+  }, [interactionState, model, reset]);
   const resetForSessionReplacement = useCallback(() => {
     interactionState.resetInteractionState();
-    close();
+    reset();
     setRightView("2d");
-  }, [interactionState, close]);
+  }, [interactionState, reset]);
 
   const canvas = useMemo(
     () => (
@@ -105,6 +106,11 @@ export function useCustomViewportWorkspace({
         onRightViewChange={setRightView}
         canvas={splitCanvas ?? canvas}
         canvasActions={action}
+        splitParts={parts}
+        defaultToSplit={preferSplit}
+        manualSplitControls={Boolean(generatePreview)}
+        isGeneratingSplitPreview={isGeneratingPreview}
+        onGenerateSplitPreview={generatePreview}
         threeGeometry={model.threeGeometry}
         isPreviewStale={model.isPreviewStale}
         isGenerating={model.isGenerating}
@@ -115,6 +121,10 @@ export function useCustomViewportWorkspace({
       canvas,
       action,
       splitCanvas,
+      parts,
+      preferSplit,
+      isGeneratingPreview,
+      generatePreview,
       model.handleGenerate,
       model.isGenerating,
       model.isPreviewStale,

@@ -20,6 +20,8 @@ interface TrayViewerProps {
   isGenerating?: boolean;
   onRegenerate?: () => void;
   splitParts?: TrayViewerSplitPart[] | null;
+  defaultToSplit?: boolean;
+  manualSplitControls?: boolean;
   isGeneratingSplitPreview?: boolean;
   onGenerateSplitPreview?: () => void;
   /** 小尺寸模型自动适配时使用的最小观察距离。 */
@@ -233,24 +235,30 @@ export default function TrayViewer({
   isGenerating,
   onRegenerate,
   splitParts,
+  defaultToSplit,
+  manualSplitControls,
   isGeneratingSplitPreview,
   onGenerateSplitPreview,
   minimumCameraDistance,
 }: TrayViewerProps) {
-  const [viewerMode, setViewerMode] = useState<"solid" | "split">("solid");
-  const [explosionDistance, setExplosionDistance] = useState(42);
+  const [viewerMode, setViewerMode] = useState<"solid" | "split">(defaultToSplit ? "split" : "solid");
+  const [explosionDistance, setExplosionDistance] = useState(manualSplitControls ? 0 : 42);
+  const [focusedPart, setFocusedPart] = useState<string>();
   const isLoadingPreview = Boolean(isGenerating || isGeneratingSplitPreview);
   const canShowSplitPreview = Boolean(splitParts && splitParts.length > 0);
   const hasSplitMode = Boolean(onGenerateSplitPreview || canShowSplitPreview);
   const showSplitPreview = viewerMode === "split" && canShowSplitPreview;
-  const splitFitItems = useMemo(
-    () =>
-      splitParts?.map((part, index) => ({
-        geometry: part.threeGeometry,
-        offset: getSplitPartOffset(index, splitParts.length, explosionDistance),
-      })) ?? [],
-    [explosionDistance, splitParts],
-  );
+  const visibleParts = useMemo(() => {
+    if (!splitParts) return [];
+    const focused = manualSplitControls && splitParts.some((part) => part.label === focusedPart);
+    return splitParts.flatMap((part, index) => !focused || part.label === focusedPart ? [{
+      part, index,
+      offset: getSplitPartOffset(index, splitParts.length, focused ? 0 : explosionDistance),
+    }] : []);
+  }, [splitParts, manualSplitControls, focusedPart, explosionDistance]);
+  const splitFitItems = useMemo(() => visibleParts.map(({ part, offset }) => ({
+    geometry: part.threeGeometry, offset,
+  })), [visibleParts]);
 
   return (
     <div
@@ -276,7 +284,7 @@ export default function TrayViewer({
         <span className="text-[9px] font-mono text-primary/40 tracking-[0.4em] uppercase">FORGE VIEW</span>
       </div>
 
-      <div className="absolute top-3 right-5 z-20 flex items-center gap-2 rounded border border-[#2e2a24] bg-[#12110e]/95 px-2 py-1 shadow-lg shadow-black/30">
+      <div className={`absolute right-5 z-20 flex items-center gap-2 rounded border border-[#2e2a24] bg-[#12110e]/95 px-2 py-1 shadow-lg shadow-black/30 ${manualSplitControls ? "top-14 sm:top-3" : "top-3"}`}>
         <button
           type="button"
           aria-pressed={viewerMode === "solid"}
@@ -324,7 +332,7 @@ export default function TrayViewer({
             <input
               aria-label="爆炸视图间距"
               type="range"
-              min={-10}
+              min={manualSplitControls ? 0 : -10}
               max={96}
               step={1}
               value={explosionDistance}
@@ -342,7 +350,7 @@ export default function TrayViewer({
         ) : null}
       </div>
 
-      {isStale && onRegenerate && !isGenerating ? (
+      {isStale && onRegenerate && !isGenerating && !(manualSplitControls && viewerMode === "split") ? (
         <div className="pointer-events-none absolute inset-x-0 top-14 z-20 flex justify-center px-4">
           <button
             type="button"
@@ -355,11 +363,19 @@ export default function TrayViewer({
       ) : null}
 
       {showSplitPreview ? (
-        <div className="absolute bottom-5 left-5 z-20 max-w-[260px] rounded border border-[#2e2a24] bg-[#12110e]/95 p-2 shadow-lg shadow-black/30">
+        <div className="absolute bottom-5 left-5 z-20 max-h-[45%] max-w-[260px] overflow-auto rounded border border-[#2e2a24] bg-[#12110e]/95 p-2 shadow-lg shadow-black/30">
           <div className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold tracking-wide text-[#f3dfb6]">
             <Layers className="h-3 w-3 text-[#c8a84e]" />
             拆件预览
           </div>
+          {manualSplitControls && <label className="my-1 flex items-center gap-2 text-xs">
+            显示零件
+            <select className="rounded bg-[#211d17] px-1" value={splitParts!.some((part) => part.label === focusedPart) ? focusedPart : ""}
+              onChange={(event) => setFocusedPart(event.target.value || undefined)}>
+              <option value="">全部</option>
+              {splitParts!.map((part) => <option key={part.index} value={part.label}>{part.label}</option>)}
+            </select>
+          </label>}
           <div className="space-y-1">
             {splitParts!.map((part, index) => (
               <div
@@ -419,20 +435,16 @@ export default function TrayViewer({
         {/* 托盘模型 */}
         {showSplitPreview ? (
           <>
-            {splitParts!.map((part, index) => (
+            {visibleParts.map(({ part, index, offset }) => (
               <TrayMesh
                 key={`${part.index}-${part.label}`}
                 geometry={part.threeGeometry}
                 color={SPLIT_PART_COLORS[index % SPLIT_PART_COLORS.length]}
-                position={getSplitPartOffset(
-                  index,
-                  splitParts!.length,
-                  explosionDistance,
-                )}
+                position={offset}
               />
             ))}
             <CameraAutoFit
-              key={`split-${splitParts!.map((part) => part.threeGeometry.uuid).join("-")}`}
+              key={`split-${visibleParts.map(({ part }) => part.threeGeometry.uuid).join("-")}`}
               items={splitFitItems}
               minimumDistance={minimumCameraDistance}
             />

@@ -10,17 +10,15 @@ import { VIEW_PALETTE } from "@/lib/config";
 import { nearestSplitBoundary, pointInSplitRing, splitBounds, splitDistance, splitSegmentAvoidsRing, type SplitPoint, type SplitRing } from "@/lib/manual-split-geometry";
 import {
   isManualSplitBedValid, MAX_MANUAL_SPLIT_CUTS, replayManualCuts, splitPartSize, splitPrintRotation,
-  type ManualSplitCut, type ManualSplitScene, type ManualSplitSettings,
+  type FlatTraySnapshot, type ManualSplitCut, type ManualSplitScene, type ManualSplitSettings,
 } from "@/lib/manual-split-plan";
 import type { ManualSplitRoute } from "@/lib/manual-split-routes";
 import {
   buildEndpointSnaps, chooseSplitSnap, gridSplitGuides, nearestSlotGap, splitAxisIntersections,
   splitRingCenter, type SplitSnap,
 } from "@/lib/manual-split-snap";
-import { createModelGeometryFingerprint, type ModeParamSnapshot } from "@/lib/mode-param-snapshot";
+import { createModelGeometryFingerprint } from "@/lib/mode-param-snapshot";
 import { trayWorkerService } from "@/lib/worker/worker-service";
-
-export type FlatTraySnapshot = ModeParamSnapshot<"grid"> | ModeParamSnapshot<"custom">;
 
 interface EditorProps {
   snapshot: FlatTraySnapshot;

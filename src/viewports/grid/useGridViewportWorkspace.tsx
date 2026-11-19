@@ -13,15 +13,16 @@ export function useGridViewportWorkspace({
   model,
 }: UseGridViewportWorkspaceOptions): ModeViewportWorkspace<"grid"> {
   const [rightView, setRightView] = useState<"2d" | "3d">("2d");
-  const { close, action, canvas } = useManualSplitViewport({
+  const { reset, action, canvas, parts, preferSplit, isGeneratingPreview, generatePreview } = useManualSplitViewport({
     snapshot: { mode: "grid", params: model.params },
     onChange: (settings) => model.updateParam("manualSplit", settings),
     onUndo: model.undo,
     canUndo: model.canUndo,
     blockingReason: model.blockingReason,
     onOpen: () => setRightView("2d"),
+    onOpenPreview: () => setRightView("3d"),
   });
-  const resetForSessionReplacement = useCallback(() => { close(); setRightView("2d"); }, [close]);
+  const resetForSessionReplacement = useCallback(() => { reset(); setRightView("2d"); }, [reset]);
 
   const twoDView = useMemo(
     () => <GridLayoutPreview params={model.params} />,
@@ -34,6 +35,11 @@ export function useGridViewportWorkspace({
         onRightViewChange={setRightView}
         canvas={canvas ?? twoDView}
         canvasActions={action}
+        splitParts={parts}
+        defaultToSplit={preferSplit}
+        manualSplitControls={Boolean(generatePreview)}
+        isGeneratingSplitPreview={isGeneratingPreview}
+        onGenerateSplitPreview={generatePreview}
         threeGeometry={model.threeGeometry}
         isPreviewStale={model.isPreviewStale}
         isGenerating={model.isGenerating}
@@ -47,6 +53,10 @@ export function useGridViewportWorkspace({
       model.threeGeometry,
       action,
       canvas,
+      parts,
+      preferSplit,
+      isGeneratingPreview,
+      generatePreview,
       rightView,
       twoDView,
     ],
@@ -55,7 +65,7 @@ export function useGridViewportWorkspace({
   return {
     mode: "grid",
     viewport,
-    deactivate: close,
+    deactivate: reset,
     resetForSessionReplacement,
   };
 }

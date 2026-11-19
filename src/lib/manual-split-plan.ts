@@ -1,6 +1,9 @@
 import {
   cutSplitRegion, splitBounds, type SplitPoint, type SplitRegion, type SplitRing,
 } from "./manual-split-geometry";
+import type { ModeParamSnapshot } from "./mode-param-snapshot";
+
+export type FlatTraySnapshot = ModeParamSnapshot<"grid"> | ModeParamSnapshot<"custom">;
 
 export interface ManualSplitCut {
   target: string;

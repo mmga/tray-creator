@@ -26,6 +26,8 @@ interface ViewportTabsProps {
   canvasActions?: React.ReactNode;
   threeGeometry: React.ComponentProps<typeof TrayViewer>["geometry"];
   splitParts?: React.ComponentProps<typeof TrayViewer>["splitParts"];
+  defaultToSplit?: boolean;
+  manualSplitControls?: boolean;
   isGeneratingSplitPreview?: boolean;
   isPreviewStale: boolean;
   isGenerating?: boolean;
@@ -43,6 +45,8 @@ export function ViewportTabs({
   canvasActions,
   threeGeometry,
   splitParts,
+  defaultToSplit,
+  manualSplitControls,
   isGeneratingSplitPreview,
   isPreviewStale,
   isGenerating,
@@ -94,6 +98,8 @@ export function ViewportTabs({
           <TrayViewer
             geometry={threeGeometry}
             splitParts={splitParts}
+            defaultToSplit={defaultToSplit}
+            manualSplitControls={manualSplitControls}
             isStale={isPreviewStale}
             isGenerating={isGenerating}
             isGeneratingSplitPreview={isGeneratingSplitPreview}
