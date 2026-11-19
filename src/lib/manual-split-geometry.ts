@@ -67,6 +67,10 @@ export function splitBounds(ring: SplitRing) {
 }
 
 function pointOnSegment(point: SplitPoint, a: SplitPoint, b: SplitPoint) {
+  if (point[0] < Math.min(a[0], b[0]) - SPLIT_EPSILON ||
+      point[0] > Math.max(a[0], b[0]) + SPLIT_EPSILON ||
+      point[1] < Math.min(a[1], b[1]) - SPLIT_EPSILON ||
+      point[1] > Math.max(a[1], b[1]) + SPLIT_EPSILON) return false;
   return splitDistance(point, projectSplitPoint(point, a, b)) <= SPLIT_EPSILON;
 }
 
@@ -83,6 +87,13 @@ function intersects(a: SplitPoint, b: SplitPoint, c: SplitPoint, d: SplitPoint) 
     pointOnSegment(b, c, d) || pointOnSegment(c, a, b) || pointOnSegment(d, a, b);
 }
 
+export function splitSegmentAvoidsRing(a: SplitPoint, b: SplitPoint, ring: SplitRing) {
+  for (let i = 0; i < ring.length; i++) {
+    if (intersects(a, b, ring[i], ring[(i + 1) % ring.length])) return false;
+  }
+  return !pointInSplitRing(a, ring);
+}
+
 export function splitSegmentClear(a: SplitPoint, b: SplitPoint, region: SplitRegion, obstacles: SplitRing[]) {
   if (sharesPoint(a, b)) return false;
   const middle: SplitPoint = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
@@ -93,9 +104,8 @@ export function splitSegmentClear(a: SplitPoint, b: SplitPoint, region: SplitReg
         (pointOnSegment(d, a, b) && !sharesPoint(d, a) && !sharesPoint(d, b)) ||
         (pointOnSegment(a, c, d) && pointOnSegment(b, c, d))) return false;
   }
-  return [...region.holes, ...obstacles].every((ring) =>
-    !pointInSplitRing(middle, ring) && !ringEdges(ring).some(([c, d]) => intersects(a, b, c, d)),
-  );
+  return region.holes.every((ring) => splitSegmentAvoidsRing(a, b, ring)) &&
+    obstacles.every((ring) => splitSegmentAvoidsRing(a, b, ring));
 }
 
 function pointOnRing(point: SplitPoint, ring: SplitRing) {
