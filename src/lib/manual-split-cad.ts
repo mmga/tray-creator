@@ -2,7 +2,10 @@ import { booleans, expansions, extrusions, geometries, measurements, primitives,
 import type { Geom2, Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { BaseHoleConstructionPlan } from "./base-hole-construction-plan";
 import { RENDER_CONFIG } from "./config";
-import { pointInSplitRing, splitBounds, splitRingArea, type SplitRing } from "./manual-split-geometry";
+import {
+  pointInSplitRing, projectSplitPoint, ringEdges, splitBounds, splitDistance, splitRingArea,
+  type SplitPoint, type SplitRing,
+} from "./manual-split-geometry";
 import { isManualSplitBedValid, replayManualCuts, splitPrintRotation, type ManualSplitScene, type ManualSplitSettings } from "./manual-split-plan";
 
 export interface FlatTrayCutSource {
@@ -71,7 +74,9 @@ export function realizeManualSplitParts(model: Geom3, scene: ManualSplitScene, s
   if (parts.length < 2) throw new Error("请先确认分割线");
   const [[, , bottom], [, , top]] = measureBoundingBox(model);
   const realized = parts.map(({ id, outer }) => {
-    const mask = translate([0, 0, bottom - 1], extrudeLinear({ height: top - bottom + 2 }, geom2.fromPoints(outer)));
+    const root = scene.roots.find((item) => id === item.id || id.startsWith(item.id + "."))!;
+    const footprint = extendSplitMaskPastTrayEdge(outer, root.outer);
+    const mask = translate([0, 0, bottom - 1], extrudeLinear({ height: top - bottom + 2 }, geom2.fromPoints(footprint)));
     const geometry = intersect(model, mask);
     if (measureVolume(geometry) <= 0.001) throw new Error(`零件 ${id} 的裁切实体无效`);
     const [min, max] = measureBoundingBox(geometry);
@@ -84,6 +89,28 @@ export function realizeManualSplitParts(model: Geom3, scene: ManualSplitScene, s
     throw new Error("分割后体积与原模型不一致");
   }
   return realized;
+}
+
+/** 裁切体越过原托盘外壁，避免圆角处共面布尔裂缝。共享切线保持原位。 */
+function extendSplitMaskPastTrayEdge(ring: SplitRing, root: SplitRing): SplitRing {
+  const rootEdges = ringEdges(root);
+  const sides = ringEdges(ring).map(([a, b]) => {
+    const length = splitDistance(a, b);
+    const x = (b[1] - a[1]) / length;
+    const y = (a[0] - b[0]) / length;
+    const outside = rootEdges.some(([from, to]) =>
+      splitDistance(a, projectSplitPoint(a, from, to)) < 0.0001 &&
+      splitDistance(b, projectSplitPoint(b, from, to)) < 0.0001);
+    return { x, y, delta: outside ? 0.1 : 0 };
+  });
+  return ring.map((p, i): SplitPoint => {
+    const a = sides[(i + sides.length - 1) % sides.length];
+    const b = sides[i];
+    if (!a.delta && !b.delta) return p;
+    const det = a.x * b.y - a.y * b.x;
+    if (Math.abs(det) < 0.000001) return [p[0] + a.x * a.delta, p[1] + a.y * a.delta];
+    return [p[0] + (a.delta * b.y - a.y * b.delta) / det, p[1] + (a.x * b.delta - a.delta * b.x) / det];
+  });
 }
 
 export function orientManualPrintPart(geometry: Geom3, rotation: 0 | 90) {
