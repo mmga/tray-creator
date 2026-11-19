@@ -48,6 +48,7 @@ import {
   STACKABLE_BOX_LIMITS,
 } from "@/lib/stackable-box";
 import type { ParamsByMode } from "@/lib/mode-param-snapshot";
+import { validateManualSplitSettings } from "@/lib/manual-split-plan";
 
 type NormalizableParams = ParamsByMode[AppMode];
 
@@ -362,6 +363,10 @@ export function normalizeParamsForMode<M extends AppMode>(
   params: ParamsByMode[M],
   recorder?: ImportNormalizationRecorder,
 ): ParamsByMode[M] {
+  if ((mode === "grid" || mode === "custom") && "manualSplit" in params &&
+      params.manualSplit !== undefined) {
+    validateManualSplitSettings(params.manualSplit);
+  }
   const adapter: ParamNormalizationAdapter<M> = paramNormalizationCatalog[mode];
   return adapter.normalize(params, recorder);
 }

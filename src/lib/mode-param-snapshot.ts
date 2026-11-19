@@ -91,6 +91,11 @@ function projectBaseConverterGeometryParams(params: BaseConverterParams) {
 export function createModelGeometryFingerprint<M extends AppMode>(
   snapshot: ModeParamSnapshot<M>,
 ): string {
+  if ((snapshot.mode === "grid" || snapshot.mode === "custom") && "manualSplit" in snapshot.params) {
+    const params = { ...snapshot.params };
+    delete params.manualSplit;
+    return JSON.stringify(canonicalizeFingerprintValue({ mode: snapshot.mode, params }));
+  }
   const geometrySnapshot = snapshot.mode === "base-converter"
     ? {
         mode: snapshot.mode,

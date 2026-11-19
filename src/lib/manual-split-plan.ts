@@ -1,5 +1,5 @@
 import {
-  cutSplitRegion, splitBounds, type SplitRegion, type SplitRing,
+  cutSplitRegion, splitBounds, type SplitPoint, type SplitRegion, type SplitRing,
 } from "./manual-split-geometry";
 
 export interface ManualSplitCut {
@@ -34,6 +34,38 @@ export const MANUAL_SPLIT_DEFAULTS: ManualSplitSettings = {
   clearance: 2,
   cuts: [],
 };
+
+export const MAX_MANUAL_SPLIT_CUTS = 128;
+const MAX_PATH_POINTS = 1024;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isSplitPoint(value: unknown): value is SplitPoint {
+  return Array.isArray(value) && value.length === 2 &&
+    value.every((coordinate) => Number.isFinite(coordinate) && Math.abs(coordinate) <= 10000);
+}
+
+export function validateManualSplitSettings(value: unknown): asserts value is ManualSplitSettings {
+  if (!isRecord(value) || typeof value.enabled !== "boolean" ||
+      !Array.isArray(value.bed) || value.bed.length !== 3 ||
+      typeof value.bedMargin !== "number" || typeof value.clearance !== "number" ||
+      !isManualSplitBedValid(value as unknown as ManualSplitSettings) ||
+      !Array.isArray(value.cuts) || value.cuts.length > MAX_MANUAL_SPLIT_CUTS) {
+    throw new Error("拆件参数格式无效");
+  }
+  const targets = new Set<string>();
+  for (const cut of value.cuts) {
+    if (!isRecord(cut) || typeof cut.target !== "string" || !/^[1-9]\d{0,4}(?:\.[12]){0,128}$/.test(cut.target) ||
+        targets.has(cut.target) || !Array.isArray(cut.path) || cut.path.length < 2 ||
+        cut.path.length > MAX_PATH_POINTS || !cut.path.every(isSplitPoint) ||
+        (cut.via !== undefined && !isSplitPoint(cut.via))) {
+      throw new Error("已保存的拆件切线格式无效");
+    }
+    targets.add(cut.target);
+  }
+}
 
 export function replayManualCuts(scene: ManualSplitScene, cuts: ManualSplitCut[]) {
   const parts = new Map(scene.roots.map((part) => [part.id, part]));

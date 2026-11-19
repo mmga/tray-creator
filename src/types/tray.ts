@@ -1,3 +1,5 @@
+import type { ManualSplitSettings } from "@/lib/manual-split-plan";
+
 export type BaseHolePresetKey = "20" | "25" | "40";
 export type SmallBaseHolePresetKey = "20" | "25";
 export type GridSlotShape = "circle" | "rectangle";
@@ -47,10 +49,14 @@ export interface StackableBoxCapableParams {
   stackableBox?: StackableBoxParams;
 }
 
+export interface ManualSplitCapableParams {
+  manualSplit?: ManualSplitSettings;
+}
+
 /**
  * 托盘参数接口
  */
-export interface TrayParams extends BaseHoleParams, StackableBoxCapableParams {
+export interface TrayParams extends BaseHoleParams, StackableBoxCapableParams, ManualSplitCapableParams {
   /** 行数（凹槽行数） */
   rows: number;
   /** 列数（每行凹槽数量） */

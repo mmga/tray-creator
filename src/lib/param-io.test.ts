@@ -13,6 +13,7 @@ import type {
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import type { TrayParams } from "@/types/tray";
+import { MANUAL_SPLIT_DEFAULTS } from "@/lib/manual-split-plan";
 import {
   MAX_PARAM_FILE_BYTES,
   ParamFileSourceError,
@@ -62,6 +63,22 @@ function readBlobText(blob: Blob) {
 }
 
 describe("param-io", () => {
+  it("在两种模式中保留已确认路径及所依赖的布局精度", () => {
+    const manualSplit = {
+      ...MANUAL_SPLIT_DEFAULTS, enabled: true,
+      cuts: [{ target: "1", path: [[0.123456, -130], [2.123456, 130]], via: [1.123456, 0] }],
+    } satisfies NonNullable<TrayParams["manualSplit"]>;
+    const custom = { ...CUSTOM_LAYOUT_DEFAULTS, sideBevelWidth: 1.234567 };
+    const grid = { ...DEFAULT_TRAY_PARAMS, spacing: 6.543217 };
+    const customFile = JSON.parse(serializeParamFile("custom", { ...custom, manualSplit }));
+    const gridFile = JSON.parse(serializeParamFile("grid", { ...grid, manualSplit }));
+    expect(parseParamFileObject(customFile, "custom")).toMatchObject({ manualSplit, sideBevelWidth: custom.sideBevelWidth });
+    expect(parseParamFileObject(gridFile, "grid")).toMatchObject({ manualSplit, spacing: grid.spacing });
+    expect(createModelGeometryFingerprint(captureModeParamSnapshot("grid", { ...grid, manualSplit })))
+      .toBe(createModelGeometryFingerprint(captureModeParamSnapshot("grid", grid)));
+    gridFile.params.manualSplit.cuts[0].path = [[1], [2]];
+    expect(() => parseParamFileObject(gridFile, "grid")).toThrow(/切线/);
+  });
   it("直边参数文件往返保留样式与休眠配置", () => {
     const params = { ...CUSTOM_LAYOUT_DEFAULTS, footprintStyle: "polygonal" as const,
       traySizingMode: "fixed" as const, smoothingRadius: 31, cornerRadius: 8 };
