@@ -4,6 +4,18 @@ import {
 } from "./manual-split-geometry";
 
 export type SplitDirection = "auto" | "horizontal" | "vertical";
+export type SplitSymmetry = { kind: "left-right" | "top-bottom" | "rotate"; center: SplitPoint };
+
+export function mirrorSplitPoint([x, y]: SplitPoint, { kind, center: [cx, cy] }: SplitSymmetry): SplitPoint {
+  return [kind === "top-bottom" ? x : 2 * cx - x, kind === "left-right" ? y : 2 * cy - y];
+}
+
+export function isOrthogonalPath(path: SplitRing) {
+  return path.slice(1).every(([x, y], i) => {
+    const [a, b] = path[i];
+    return (Math.abs(x - a) <= SPLIT_EPSILON) !== (Math.abs(y - b) <= SPLIT_EPSILON);
+  });
+}
 
 export function orthogonalFixedAxis(from: SplitPoint, pointer: SplitPoint, direction: SplitDirection): 0 | 1 {
   return direction === "horizontal" || (direction === "auto" &&

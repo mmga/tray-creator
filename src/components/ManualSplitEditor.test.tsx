@@ -126,3 +126,45 @@ it("从槽间和任意两点建立参考线，可以用参考线与边界的交�
   fireEvent.click(screen.getByRole("button", { name: "确认分割" }));
   expect(screen.getByText("零件 2 件")).toBeInTheDocument();
 });
+
+it("镜像阶梯切线一次拆成三件、一次撤销或移除", async () => {
+  setupWorker();
+  render(<Editor mode="grid" />);
+  async function draw() {
+    fireEvent.click(await screen.findByRole("button", { name: "正交折线" }));
+    fireEvent.change(screen.getByRole("combobox", { name: "整线对称" }), { target: { value: "left-right" } });
+    takePoint(12, 80);
+    takePoint(12, 16);
+    takePoint(33, 16);
+    takePoint(33, 0);
+    const confirm = screen.getByRole("button", { name: "确认对称分割" });
+    expect(confirm).toBeEnabled();
+    expect(screen.getByText(/预览零件 3/)).toBeInTheDocument();
+    fireEvent.click(confirm);
+    expect(screen.getByText("零件 3 件")).toBeInTheDocument();
+  }
+  await draw();
+  fireEvent.click(screen.getByRole("button", { name: "撤销" }));
+  expect(screen.getByText("零件 1 件")).toBeInTheDocument();
+  await draw();
+  const secondary = screen.getByRole("button", { name: /移除切线 1\.[12]/ });
+  fireEvent.click(secondary);
+  fireEvent.click(screen.getByRole("button", { name: "确认移除" }));
+  expect(screen.getByText("零件 1 件")).toBeInTheDocument();
+});
+
+it("镜像侧遇到保护区时阻止整组确认，可解除联动继续绘制", async () => {
+  setupWorker();
+  render(<Editor mode="custom" />);
+  fireEvent.click(await screen.findByRole("button", { name: "正交折线" }));
+  const symmetry = screen.getByRole("combobox", { name: "整线对称" });
+  fireEvent.change(symmetry, { target: { value: "left-right" } });
+  takePoint(12, 80);
+  takePoint(12, 0);
+  fireEvent.change(screen.getByRole("spinbutton", { name: "基准 X" }), { target: { value: "43" } });
+  expect(screen.getByRole("alert")).toHaveTextContent("对称线经过保护区");
+  expect(screen.getByRole("button", { name: "确认对称分割" })).toBeDisabled();
+  fireEvent.change(symmetry, { target: { value: "off" } });
+  fireEvent.click(screen.getByRole("button", { name: "确认分割" }));
+  expect(screen.getByText("零件 2 件")).toBeInTheDocument();
+});
