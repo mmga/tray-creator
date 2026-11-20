@@ -83,3 +83,25 @@ it("自定义按两点绕槽、追加途经点，确认后可继续分割子件"
   fireEvent.click(screen.getByRole("button", { name: "确认移除" }));
   expect(screen.getByText("零件 1 件")).toBeInTheDocument();
 });
+
+it("正交折线锁定方向、拒绝碰槽，支持多个内部折点与撤回", async () => {
+  setupWorker();
+  render(<Editor mode="custom" />);
+  fireEvent.click(await screen.findByRole("button", { name: "正交折线" }));
+  takePoint(28, 80);
+  const direction = screen.getByRole("combobox", { name: "下一段" });
+  fireEvent.change(direction, { target: { value: "vertical" } });
+  takePoint(28, 30);
+  expect(screen.getByRole("alert")).toHaveTextContent("保护区");
+  expect(screen.queryByRole("button", { name: "确认分割" })).not.toBeInTheDocument();
+  takePoint(28, 60);
+  fireEvent.change(direction, { target: { value: "horizontal" } });
+  takePoint(50, 62);
+  fireEvent.click(screen.getByRole("button", { name: "撤回上一点" }));
+  takePoint(48, 59);
+  fireEvent.change(direction, { target: { value: "vertical" } });
+  takePoint(48, 0);
+  fireEvent.click(screen.getByRole("button", { name: "确认分割" }));
+  expect(screen.getByText("零件 2 件")).toBeInTheDocument();
+  expect(worker.planManualSplitRoute).not.toHaveBeenCalled();
+});

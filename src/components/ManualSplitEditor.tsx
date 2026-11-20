@@ -7,7 +7,11 @@ import { Input } from "@/components/ui/input";
 import { useCanvasZoom } from "@/hooks/useCanvasZoom";
 import { useRequestSequence } from "@/hooks/useRequestSequence";
 import { VIEW_PALETTE } from "@/lib/config";
-import { nearestSplitBoundary, pointInSplitRing, splitBounds, splitDistance, splitSegmentAvoidsRing, type SplitPoint, type SplitRing } from "@/lib/manual-split-geometry";
+import {
+  cutSplitRegion, nearestSplitBoundary, pointInSplitRing, SPLIT_EPSILON,
+  splitBounds, splitDistance, splitSegmentAvoidsRing, splitSegmentClear, type SplitPoint, type SplitRing,
+} from "@/lib/manual-split-geometry";
+import { appendOrthogonalPoint, projectOrthogonalPoint, type SplitDirection } from "@/lib/manual-split-orthogonal";
 import {
   isManualSplitBedValid, MAX_MANUAL_SPLIT_CUTS, replayManualCuts, splitPartSize, splitPrintRotation,
   type FlatTraySnapshot, type ManualSplitCut, type ManualSplitScene, type ManualSplitSettings,
@@ -36,7 +40,7 @@ interface EditorProps {
 }
 
 type SceneResult = { key: string; scene: ManualSplitScene } | { key: string; error: string };
-type Step = "idle" | "start" | "end" | "via";
+type Step = "idle" | "start" | "end" | "via" | "orthogonal";
 
 export default function ManualSplitEditor(props: EditorProps) {
   const { snapshot, settings, onExit, blockingReason } = props;
@@ -103,6 +107,8 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
   const [start, setStart] = useState<SplitPoint>();
   const [end, setEnd] = useState<SplitPoint>();
   const [via, setVia] = useState<SplitPoint>();
+  const [orthogonal, setOrthogonal] = useState<{ path: SplitRing; complete: boolean }>();
+  const [direction, setDirection] = useState<SplitDirection>("auto");
   const [routes, setRoutes] = useState<ManualSplitRoute[]>([]);
   const [routeIndex, setRouteIndex] = useState(0);
   const [pending, setPending] = useState(false);
@@ -129,13 +135,16 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
   const endpoints = useMemo(() => buildEndpointSnaps(region.outer, center, step === "end" ? start : undefined, symmetry !== "off"),
     [region, center, step, start, symmetry]);
   const cut = routes[routeIndex];
+  const orthogonalCut = useMemo(() => orthogonal?.complete
+    ? cutSplitRegion(region, orthogonal.path, scene.obstacles) : null, [orthogonal, region, scene.obstacles]);
+  const draftChildren = orthogonalCut?.children ?? cut?.children;
   const grooveLayers = useMemo(() => scene.grooves.map((groove, i) => {
-    const belongs = cut?.children.findIndex((child) => pointInSplitRing(groove[0], child.outer));
+    const belongs = draftChildren?.findIndex((child) => pointInSplitRing(groove[0], child.outer));
     return <polygon key={i} points={points(groove)}
       fill={belongs === 0 ? "#293d47" : belongs === 1 ? "#344733" : "#12100d"} fillOpacity={0.8}
       stroke={gapPick === i ? "#f1c56b" : belongs === 0 ? "#7fb0c8" : belongs === 1 ? "#8cb880" : "#8d7e6a"}
       strokeWidth={gapPick === i ? 3 : 1} vectorEffect="non-scaling-stroke" />;
-  }), [scene.grooves, cut, gapPick]);
+  }), [scene.grooves, draftChildren, gapPick]);
   const regionGrooves = useMemo(() => scene.grooves.map((ring, i) => ({ ring, i }))
     .filter(({ ring }) => pointInSplitRing(splitRingCenter(ring), region.outer)), [scene.grooves, region.outer]);
   const protectionLayers = useMemo(() => showProtection && scene.obstacles.map((ring, i) => {
@@ -156,6 +165,7 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
     setStart(undefined);
     setEnd(undefined);
     setVia(undefined);
+    setOrthogonal(next === "orthogonal" ? { path: [], complete: false } : undefined);
     setRoutes([]);
     setHover(undefined);
     setGapPick("off");
@@ -219,6 +229,41 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
   }
 
   function selectPoint(point: SplitPoint, boundaryRadius: number) {
+    if (orthogonal) {
+      if (orthogonal.complete) return;
+      const last = orthogonal.path.at(-1);
+      if (!last) {
+        const boundary = nearestSplitBoundary(point, region.outer);
+        if (boundary.distance > boundaryRadius) {
+          setStatus("请选择当前零件外边界上的起点。");
+          return;
+        }
+        setOrthogonal({ path: [boundary.point], complete: false });
+      } else {
+        const next = projectOrthogonalPoint(last, point, region.outer, direction, boundaryRadius);
+        const path = appendOrthogonalPoint(orthogonal.path, next.point);
+        if (splitDistance(last, next.point) <= SPLIT_EPSILON) {
+          setStatus("请将下一点移离当前折点。");
+          return;
+        }
+        if (path.length > 1024) {
+          setStatus("切线折点已达上限。");
+          return;
+        }
+        if (next.boundary && !cutSplitRegion(region, path, scene.obstacles)) {
+          setStatus("切线未能分开零件，请检查保护区、外边界或交叉线段。");
+          return;
+        }
+        if (!next.boundary && !splitSegmentClear(last, next.point, region, scene.obstacles)) {
+          setStatus("线段经过保护区或超出零件边界。");
+          return;
+        }
+        setOrthogonal({ path, complete: next.boundary });
+      }
+      setStatus("");
+      setHover(undefined);
+      return;
+    }
     if (step === "idle") {
       if (!pending && !start) {
         const part = parts.find(({ outer, holes }) =>
@@ -267,6 +312,11 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
   function snapAt(point: SplitPoint, scale: number, temporarilyDisabled: boolean) {
     if (step === "idle") return undefined;
     if (gapPick !== "off") return undefined;
+    const last = orthogonal?.path.at(-1);
+    if (last && !orthogonal?.complete) {
+      const next = projectOrthogonalPoint(last, point, region.outer, direction, scale * 15);
+      return { point: next.point, label: next.boundary ? "边界终点" : "正交折点" };
+    }
     if (step === "via") {
       const gap = snapEnabled && !temporarilyDisabled ? nearestSlotGap(point, scene.grooves, scene.obstacles) : null;
       return gap ? chooseSplitSnap(point, [gap], scale, hover) : undefined;
@@ -287,10 +337,11 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
   }, [snapshot.mode, scene.obstacles, region]);
 
   function confirm() {
-    if (!cut || settings.cuts.length >= MAX_MANUAL_SPLIT_CUTS || invalid.has(region.id)) return;
-    const confirmed: ManualSplitCut = { target: region.id, path: cut.path, ...(via ? { via } : {}) };
+    const result = orthogonal ? orthogonalCut : cut;
+    if (!result || settings.cuts.length >= MAX_MANUAL_SPLIT_CUTS || invalid.has(region.id)) return;
+    const confirmed: ManualSplitCut = { target: region.id, path: result.path, ...(via ? { via } : {}) };
     onChange({ ...settings, cuts: [...settings.cuts, confirmed] });
-    const larger = cut.children.map((part) => splitPartSize(part, scene.height)).map(([w, d]) => w * d);
+    const larger = result.children.map((part) => splitPartSize(part, scene.height)).map(([w, d]) => w * d);
     setSelected(confirmed.target + (larger[0] >= larger[1] ? ".1" : ".2"));
     discard();
   }
@@ -308,15 +359,29 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
     onChange({ ...settings, bed, bedMargin: Math.min(settings.bedMargin, Math.min(bed[0], bed[1]) / 2 - 0.05) });
   }
 
+  function removeLastPoint() {
+    if (!orthogonal?.path.length) return;
+    setOrthogonal({ path: orthogonal.path.slice(0, -1), complete: false });
+    setStatus("");
+    setHover(undefined);
+  }
+
+  const lastPoint = orthogonal?.path.at(-1);
+  const nextSegment = orthogonal && !orthogonal.complete && lastPoint && hover ? [lastPoint, hover.point] : undefined;
+  const nextSegmentClear = nextSegment && splitSegmentClear(nextSegment[0], nextSegment[1], region, scene.obstacles);
+
   return (
     <div className="flex h-full min-h-0 flex-col bg-[#161411] pt-14 text-sm" onKeyDown={(event) => {
       if (event.key === "Escape") { event.stopPropagation(); discard(); }
       if ((event.ctrlKey || event.metaKey) && event.key === "z" && !(event.target instanceof HTMLInputElement)) {
-        event.preventDefault(); event.stopPropagation(); discard(); onUndo();
+        event.preventDefault(); event.stopPropagation();
+        if (orthogonal) removeLastPoint();
+        else { discard(); onUndo(); }
       }
     }}>
       <div className="flex flex-wrap items-center gap-2 border-y border-[#383127] px-3 py-2">
         <Button size="sm" onClick={() => discard("start")} disabled={settings.cuts.length >= MAX_MANUAL_SPLIT_CUTS || invalid.has(region.id)}>添加分割线</Button>
+        <Button size="sm" variant="outline" onClick={() => discard("orthogonal")} disabled={settings.cuts.length >= MAX_MANUAL_SPLIT_CUTS || invalid.has(region.id)}>正交折线</Button>
         <Button size="sm" variant="ghost" disabled={!canUndo} onClick={() => { discard(); onUndo(); }}>撤销</Button>
         <Button size="sm" variant="ghost" aria-pressed={showProtection} onClick={() => setShowProtection(!showProtection)}>保护区</Button>
         <Button size="sm" variant="ghost" onClick={onExit}>返回布局</Button>
@@ -325,7 +390,7 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
         <div className="relative min-h-44 flex-1 overflow-hidden bg-[#1c1a16]">
           <div className="pointer-events-none absolute inset-x-3 top-3 z-10 flex justify-between gap-2 text-xs">
             <p className="rounded bg-[#12100d]/90 px-2 py-1" role="status">
-              {pending ? "正在计算候选…" : gapPick === "first" ? "选择第一个凹槽" : typeof gapPick === "number" ? "选择第二个凹槽" : step === "start" ? "选择边界起点" : step === "end" ? "选择边界终点" : step === "via" ? "选择空白处的途经点" : cut ? "查看候选并确认" : "选择零件或添加分割线"}
+              {pending ? "正在计算候选…" : gapPick === "first" ? "选择第一个凹槽" : typeof gapPick === "number" ? "选择第二个凹槽" : orthogonal ? (orthogonal.complete ? "检查折线并确认" : lastPoint ? "选择内部折点或边界终点" : "选择边界起点") : step === "start" ? "选择边界起点" : step === "end" ? "选择边界终点" : step === "via" ? "选择空白处的途经点" : cut ? "查看候选并确认" : "选择零件或添加分割线"}
             </p>
           </div>
           <svg tabIndex={0} aria-label="托盘拆件画布" viewBox={viewBox}
@@ -363,13 +428,14 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
                 if (groove) selectGapGroove(groove.i);
                 return;
               }
-              selectPoint(snapAt(info.point, info.scale, event.altKey)?.point ?? info.point, info.scale * 15);
+              const snap = snapAt(info.point, info.scale, event.altKey);
+              selectPoint(lastPoint && !orthogonal?.complete ? info.point : snap?.point ?? info.point, info.scale * 15);
             }}>
             <g transform="scale(1,-1)">
               {parts.map((part, i) => <path key={part.id} d={regionPath(part)} fillRule="evenodd"
                 fill={VIEW_PALETTE[i % VIEW_PALETTE.length]} fillOpacity={region.id === part.id ? 0.23 : 0.09}
                 stroke={region.id === part.id ? "#e1b85f" : "#746659"} strokeWidth={1.5} vectorEffect="non-scaling-stroke" />)}
-              {cut?.children.map((part, i) => <path key={i} d={regionPath(part)}
+              {draftChildren?.map((part, i) => <path key={i} d={regionPath(part)}
                 fill={i === 0 ? "#7fb0c8" : "#8cb880"} fillRule="evenodd" fillOpacity={0.32} />)}
               {grooveLayers}
               {protectionLayers}
@@ -384,6 +450,12 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
               {routes.map(({ path }, i) => <polyline key={i} points={points(path)} fill="none"
                 stroke={i === routeIndex ? "#a7e8eb" : "#77a2a8"} strokeWidth={i === routeIndex ? 3 : 1.5}
                 strokeDasharray={i === routeIndex ? undefined : "5 4"} vectorEffect="non-scaling-stroke" />)}
+              {orthogonal && <polyline points={points(orthogonal.path)} fill="none" stroke="#a7e8eb"
+                strokeWidth={3} vectorEffect="non-scaling-stroke" />}
+              {nextSegment && <polyline points={points(nextSegment)} fill="none"
+                stroke={nextSegmentClear ? "#a7e8eb" : "#f27765"} strokeWidth={2} strokeDasharray="5 4" vectorEffect="non-scaling-stroke" />}
+              {orthogonal?.path.map(([x, y], i) => <circle key={i} cx={x} cy={y}
+                r={zoom.viewW * 0.006} fill="#a7e8eb" vectorEffect="non-scaling-stroke" />)}
               {[start, end, via, hover?.point].map((point, i) => point && <circle key={i} cx={point[0]} cy={point[1]}
                 r={zoom.viewW * 0.008} fill={i === 3 ? "#fcf2d5" : "#a7e8eb"} stroke="#18120a" vectorEffect="non-scaling-stroke" />)}
             </g>
@@ -402,13 +474,20 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
         </div>
         <aside className="max-h-[46%] shrink-0 space-y-3 overflow-auto border-t border-[#383127] bg-[#211d17] p-3 md:max-h-none md:w-72 md:border-l md:border-t-0">
           <div className="space-y-2">
+            {orthogonal && <div className="flex flex-wrap items-center gap-1">
+              <label>下一段 <select value={direction} onChange={(event) => { setDirection(event.target.value as SplitDirection); setHover(undefined); }}>
+                <option value="auto">自动判断</option><option value="horizontal">水平</option><option value="vertical">垂直</option>
+              </select></label>
+              <Button size="sm" variant="ghost" disabled={!lastPoint} onClick={removeLastPoint}>撤回上一点</Button>
+              <Button size="sm" variant="ghost" onClick={() => discard()}>取消折线</Button>
+            </div>}
             <label className="flex items-center gap-2"><input type="checkbox" checked={snapEnabled} onChange={(event) => setSnapEnabled(event.target.checked)} />捕捉辅助点</label>
             <label className="flex items-center justify-between gap-2">对称参考
               <select className="rounded bg-[#171410] px-1.5 py-1" value={symmetry} onChange={(event) => setSymmetry(event.target.value as typeof symmetry)}>
                 <option value="off">关闭</option><option value="root">托盘中心轴</option><option value="part">零件中心轴</option>
               </select>
             </label>
-            {snapEnabled && (step === "start" || step === "end") && <label className="flex items-center justify-between gap-2 text-xs">
+            {snapEnabled && (step === "start" || step === "end" || (orthogonal && !lastPoint)) && <label className="flex items-center justify-between gap-2 text-xs">
               几何辅助点
               <select className="max-w-40 rounded bg-[#171410] py-1" value="" onChange={(event) => {
                 const index = Number(event.target.value);
@@ -431,7 +510,7 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
                 </option>)}
               </select>}
             </div>}
-            {step !== "idle" && <details className="text-xs">
+            {step !== "idle" && !orthogonal?.complete && <details className="text-xs">
               <summary className="cursor-pointer">按坐标选点</summary>
               <div className="mt-2 flex items-end gap-1">
                 {(["X", "Y"] as const).map((axis, i) => <label key={axis} className="min-w-0 flex-1">{axis}<DraftNumberInput value={numericPoint[i]} step={0.01}
@@ -439,7 +518,7 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
                 <Button size="sm" variant="outline" onClick={() => selectPoint(numericPoint, 0.03)}>取点</Button>
               </div>
             </details>}
-            {gridGuide.length > 0 && !start && !pending && <label className="flex items-center justify-between gap-2">网格分割
+            {gridGuide.length > 0 && !orthogonal && !start && !pending && <label className="flex items-center justify-between gap-2">网格分割
               <select aria-label="选择网格安全通道" className="max-w-40 rounded bg-[#171410] py-1" value="" onChange={(event) => {
                 const guide = gridGuide[Number(event.target.value)];
                 if (guide) void plan(guide.path[0], guide.path[1]);
@@ -449,6 +528,10 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
             </label>}
           </div>
           {status && <p role="alert" className="text-xs text-[#ffc090]">{status}</p>}
+          {orthogonal?.complete && <div className="space-y-1 text-xs">
+            {orthogonalCut?.children.map((part, i) => <p key={i}>预览零件 {i + 1} · {printLabel(splitPartSize(part, scene.height), settings)}</p>)}
+            <Button size="sm" className="w-full" disabled={!orthogonalCut} onClick={confirm}>确认分割</Button>
+          </div>}
           {start && end && !pending && <div className="flex flex-wrap gap-1">
             <Button size="sm" variant="outline" onClick={() => editPoint("start")}>改起点</Button>
             <Button size="sm" variant="outline" onClick={() => editPoint("end")}>改终点</Button>
