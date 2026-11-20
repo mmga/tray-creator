@@ -41,7 +41,7 @@ self.onmessage = async ({ data }: MessageEvent<StepRequest>) => {
         if (bytes.byteLength === 0) throw new Error("STEP 导出结果为空");
         files.push({ bytes, id });
       }
-      post({ requestId, type: "done", files }, files.map(({ bytes }) => bytes));
+      post({ requestId, type: "done", files, width: plan.width, depth: plan.depth }, files.map(({ bytes }) => bytes));
     } finally {
       shapes.forEach(({ shape }) => { if (shape !== whole) shape.delete(); });
       whole.delete();

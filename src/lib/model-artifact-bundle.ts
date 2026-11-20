@@ -11,6 +11,7 @@ export interface NamedModelArtifact {
 export interface PreparedModeModelArtifacts {
   readonly files: readonly NamedModelArtifact[];
   readonly companionParamFilename: string;
+  readonly preserveParamPrecision?: boolean;
 }
 
 export interface ModelArtifactDownloadFailure {
@@ -43,7 +44,7 @@ export async function exportModelArtifactBundle<M extends AppMode>(
   const files: readonly NamedModelArtifact[] = [
     ...prepared.files,
     {
-      blob: createCurrentParamArtifactBlob(snapshot),
+      blob: createCurrentParamArtifactBlob(snapshot, prepared.preserveParamPrecision),
       filename: prepared.companionParamFilename,
     },
   ];

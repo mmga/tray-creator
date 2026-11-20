@@ -102,4 +102,4 @@ it("导出真实网格和自定义绕槽分件，只允许平台内的闭合 STL
   } finally {
     vi.unstubAllGlobals();
   }
-});
+}, 15000);

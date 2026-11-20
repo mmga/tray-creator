@@ -73,4 +73,16 @@ describe("Model Artifact Bundle", () => {
     });
     expect(downloadBlob).toHaveBeenCalledTimes(3);
   });
+
+  it("STEP 伴随参数保留曲面构造所用的小数精度", async () => {
+    const width = 32.400012345;
+    const snapshot = captureModeParamSnapshot("grid", { ...DEFAULT_TRAY_PARAMS, slotDiameter: width });
+    const downloaded = vi.fn();
+    await exportModelArtifactBundle(snapshot, async () => ({
+      files: [{ blob: new Blob(["STEP"]), filename: "tray.step" }],
+      companionParamFilename: "tray.json",
+      preserveParamPrecision: true,
+    }), { downloadBlob: downloaded });
+    expect(JSON.parse(await downloaded.mock.calls[1][0].text()).params.slotDiameter).toBe(width);
+  });
 });

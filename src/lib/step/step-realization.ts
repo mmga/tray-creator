@@ -31,13 +31,9 @@ export function extrudeStepProfile(profile: Drawing, bottom: number, height: num
 }
 
 export function cutStepSolid(body: Shape3D, cutter: Shape3D) {
-  // 封闭磁吸腔在当前内核的默认合并面步骤中可能失效。
-  return combineStepSolids(body, cutter, "cut");
-}
-
-export function combineStepSolids(body: Shape3D, cutter: Shape3D, operation: "cut" | "fuse" | "intersect") {
   try {
-    return body[operation](cutter, { simplify: false });
+    // 封闭磁吸腔在当前内核的默认合并面步骤中可能失效。
+    return body.cut(cutter, { simplify: false });
   } finally {
     body.delete();
     cutter.delete();

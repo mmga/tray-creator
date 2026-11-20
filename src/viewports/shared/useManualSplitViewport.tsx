@@ -39,20 +39,21 @@ export function useManualSplitViewport({ snapshot, onChange, onUndo, canUndo, bl
   const editing = open && settings.enabled && !locked;
   const ready = settings.enabled && !locked && !blockingReason;
   const stepExport = useStepExport(editing ? snapshot : undefined, "parts", blockingReason);
+  const cancelStepExport = stepExport.cancel;
   const key = useMemo(() => createModelGeometryFingerprint(snapshot) + "|" + JSON.stringify(settings), [snapshot, settings]);
   const preferSplit = requestedSplitKey === key;
   const current = useRef<string | null>(null);
   const epoch = useRef(0);
   const close = useCallback(() => setOpen(false), []);
   const reset = useCallback(() => {
-    stepExport.cancel();
+    cancelStepExport();
     epoch.current += 1;
     previewId.current += 1;
     setPreviewRequest(undefined);
     setPreview(null);
     setRequestedSplitKey(undefined);
     close();
-  }, [close, stepExport.cancel]);
+  }, [close, cancelStepExport]);
   useLayoutEffect(() => {
     current.current = ready ? key : null;
     return () => { current.current = null; };

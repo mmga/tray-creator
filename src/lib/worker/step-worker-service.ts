@@ -1,4 +1,4 @@
-import type { StepFile, StepPhase, StepRequest, StepResponse } from "../step/step-protocol";
+import type { StepOutput, StepPhase, StepRequest, StepResponse } from "../step/step-protocol";
 
 let nextRequestId = 0;
 let busy = false;
@@ -8,7 +8,7 @@ export async function requestStepExport(
   request: Omit<StepRequest, "requestId">,
   signal: AbortSignal,
   onPhase: (phase: StepPhase) => void,
-): Promise<StepFile[]> {
+): Promise<StepOutput> {
   signal.throwIfAborted();
   if (busy) throw new Error("另一个 STEP 文件正在准备，请稍后重试");
   const worker = new Worker(new URL("./step.worker.ts", import.meta.url), { type: "module" });
@@ -17,14 +17,14 @@ export async function requestStepExport(
   let timeout: ReturnType<typeof setTimeout> | undefined;
   let abort: (() => void) | undefined;
   try {
-    return await new Promise<StepFile[]>((resolve, reject) => {
+    return await new Promise<StepOutput>((resolve, reject) => {
       abort = () => reject(signal.reason);
       signal.addEventListener("abort", abort, { once: true });
       timeout = setTimeout(() => reject(new Error("STEP 导出超时，请缩小布局后重试")), STEP_TIMEOUT_MS);
       worker.onmessage = ({ data }: MessageEvent<StepResponse>) => {
         if (data.requestId !== requestId) return;
         if (data.type === "phase") onPhase(data.phase);
-        else if (data.type === "done") resolve(data.files);
+        else if (data.type === "done") resolve(data);
         else reject(new Error(data.message));
       };
       worker.onerror = () => reject(new Error("STEP 导出组件运行失败，请重试"));

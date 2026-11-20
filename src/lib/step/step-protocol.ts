@@ -10,8 +10,9 @@ export type StepRequest = {
 export type StepPhase = "加载导出组件" | "构建实体" | "校验模型" | "准备文件";
 
 export type StepFile = { id?: string; bytes: ArrayBuffer };
+export type StepOutput = { files: StepFile[]; width: number; depth: number };
 
 export type StepResponse =
   | { requestId: number; type: "phase"; phase: StepPhase }
-  | { requestId: number; type: "done"; files: StepFile[] }
+  | ({ requestId: number; type: "done" } & StepOutput)
   | { requestId: number; type: "error"; message: string };

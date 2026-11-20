@@ -35,10 +35,11 @@ export function buildCurrentParamArtifact<M extends AppMode>(
 
 export function serializeCurrentParamArtifact<M extends AppMode>(
   snapshot: ModeParamSnapshot<M>,
+  preservePrecision = false,
 ): string {
   const artifact = buildCurrentParamArtifact(snapshot);
   // 分割线依赖原始几何精度，布局和切线必须在同一精度下往返。
-  const preserveGeometry = "manualSplit" in artifact.params && artifact.params.manualSplit !== undefined;
+  const preserveGeometry = preservePrecision || ("manualSplit" in artifact.params && artifact.params.manualSplit !== undefined);
   return JSON.stringify(
     artifact,
     preserveGeometry ? undefined : precisionReplacer,
@@ -48,8 +49,9 @@ export function serializeCurrentParamArtifact<M extends AppMode>(
 
 export function createCurrentParamArtifactBlob<M extends AppMode>(
   snapshot: ModeParamSnapshot<M>,
+  preservePrecision = false,
 ): Blob {
-  return new Blob([serializeCurrentParamArtifact(snapshot)], {
+  return new Blob([serializeCurrentParamArtifact(snapshot, preservePrecision)], {
     type: "application/json",
   });
 }
