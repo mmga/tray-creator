@@ -2,6 +2,8 @@
 
 日期：2026-11-20。分支：`codex/explore-step-export`。
 
+后续实施见[详细开发计划](D:/project/mmga/modelling-tools/tray-creator/docs/superpowers/plans/2026-11-20-grid-custom-step-export.md)，包含支持矩阵、分阶段任务、验收门槛与回滚边界。
+
 结论：可以在现有静态网站架构中增加 STEP 实体导出，但需要一条从参数构造 B-rep 的出口。现有 JSCAD 输出是多面体，仅更换序列化器不会恢复圆柱面。此次只添加独立实验，没有修改产品入口或应用依赖。
 
 ## 复现
