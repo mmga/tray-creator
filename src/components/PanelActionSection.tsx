@@ -13,16 +13,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/useToast";
+import { useStepExport } from "@/hooks/useStepExport";
+import type { FlatTraySnapshot } from "@/lib/manual-split-plan";
 import type { Availability, DraftActionAreaAdapter, DraftActionResult, StandardDraftActionIntent } from "@/workspaces/draft-action-area";
 
 function isDisabled(availability: Availability) {
   return availability.state !== "available";
 }
 
-export function PanelActionSection({ adapter }: { adapter: DraftActionAreaAdapter }) {
+export function PanelActionSection({ adapter, stepSnapshot }: { adapter: DraftActionAreaAdapter; stepSnapshot?: FlatTraySnapshot }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { state } = adapter;
+  const step = useStepExport(stepSnapshot, "whole", state.generate.state === "blocked" ? state.generate.reason : null);
   const blockedMessages = [
     state.generate.state === "blocked" ? `锻造：${state.generate.reason}` : null,
     state.exportWhole.state === "blocked" ? `完整导出：${state.exportWhole.reason}` : null,
@@ -42,6 +45,7 @@ export function PanelActionSection({ adapter }: { adapter: DraftActionAreaAdapte
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    step.cancel();
     await perform({ type: "import-params", file });
     event.target.value = "";
   };
@@ -49,6 +53,7 @@ export function PanelActionSection({ adapter }: { adapter: DraftActionAreaAdapte
   return (
     <div className="relative flex flex-col gap-2">
       {state.stale ? <div className="rounded-sm border border-[#5a4a2a] bg-[#2a2518]/95 px-3 py-1.5 text-[11px] text-[#d7b95d]">当前预览已过期，请重新锻造。</div> : null}
+      {step.phase ? <div className="flex items-center justify-between gap-2 text-xs"><span role="status">STEP · {step.phase}</span><Button size="sm" variant="ghost" onClick={step.cancel}>取消 STEP 导出</Button></div> : null}
       {blockedMessages.length > 0 ? (
         <div
           role="status"
@@ -67,13 +72,17 @@ export function PanelActionSection({ adapter }: { adapter: DraftActionAreaAdapte
           {state.generate.state === "busy" ? state.generate.label : "开始锻造"}
         </Button>
 
-        {adapter.kind === "stepped" ? (
+        {adapter.kind === "stepped" || stepSnapshot ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild><Button className="h-11 min-w-0 bg-[#2a3528] px-2 text-xs text-[#8cb880] border border-[#4a6741] hover:bg-[#354530]"><Download className="size-4" />导出</Button></DropdownMenuTrigger>
             <DropdownMenuContent align="end" side="top">
               <DropdownMenuLabel>导出模型</DropdownMenuLabel>
               <DropdownMenuItem disabled={isDisabled(state.exportWhole)} title={state.exportWhole.state === "blocked" ? state.exportWhole.reason : undefined} onSelect={() => void perform({ type: "export-whole" })}><Download className="size-4" />完整 STL</DropdownMenuItem>
-              <DropdownMenuItem disabled={isDisabled(adapter.state.exportSplit)} title={adapter.state.exportSplit.state === "blocked" ? adapter.state.exportSplit.reason : undefined} onSelect={() => void adapter.perform({ type: "export-split" }).then(reportResult)}><Download className="size-4" />分件 STL</DropdownMenuItem>
+              {adapter.kind === "stepped" ? <DropdownMenuItem disabled={isDisabled(adapter.state.exportSplit)} title={adapter.state.exportSplit.state === "blocked" ? adapter.state.exportSplit.reason : undefined} onSelect={() => void adapter.perform({ type: "export-split" }).then(reportResult)}><Download className="size-4" />分件 STL</DropdownMenuItem> : null}
+              {stepSnapshot ? <>
+                <DropdownMenuItem disabled={Boolean(step.reason || step.phase)} onSelect={() => void step.run()}><Download className="size-4" />完整 STEP</DropdownMenuItem>
+                {step.reason || step.sampled ? <DropdownMenuLabel className="max-w-56 whitespace-normal text-xs font-normal text-muted-foreground">{step.reason ?? "包含分段轮廓，部分侧壁由平面组成"}</DropdownMenuLabel> : null}
+              </> : null}
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
@@ -91,7 +100,7 @@ export function PanelActionSection({ adapter }: { adapter: DraftActionAreaAdapte
             <DropdownMenuItem onSelect={() => void perform({ type: "export-params" })}><Share2 className="size-4" />导出参数</DropdownMenuItem>
             <DropdownMenuItem onSelect={() => fileInputRef.current?.click()}><Upload className="size-4" />导入参数</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => void perform({ type: "reset" })} className="text-[#d06464] focus:bg-[#3a1919] focus:text-[#ef8585]"><RotateCcw className="size-4" />重置参数</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => { step.cancel(); void perform({ type: "reset" }); }} className="text-[#d06464] focus:bg-[#3a1919] focus:text-[#ef8585]"><RotateCcw className="size-4" />重置参数</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

@@ -89,7 +89,7 @@ function CustomDraftActionArea({
     },
   }), [autoPreview, blockingReason, draftActions, isGenerating, isPreviewStale, onExportSTL, onGenerate, onRequestParamImport, onReset, params]);
 
-  return <PanelActionSection adapter={adapter} />;
+  return <PanelActionSection adapter={adapter} stepSnapshot={{ mode: "custom", params }} />;
 }
 
 export function useCustomWorkspace({
