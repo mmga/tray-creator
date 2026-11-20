@@ -5,13 +5,16 @@ import {
 
 export type SplitDirection = "auto" | "horizontal" | "vertical";
 
+export function orthogonalFixedAxis(from: SplitPoint, pointer: SplitPoint, direction: SplitDirection): 0 | 1 {
+  return direction === "horizontal" || (direction === "auto" &&
+    Math.abs(pointer[0] - from[0]) >= Math.abs(pointer[1] - from[1])) ? 1 : 0;
+}
+
 /** 锁定一轴，沿着该方向与外边界相交，避免边界投影把线段拉斜。 */
 export function projectOrthogonalPoint(
   from: SplitPoint, pointer: SplitPoint, outer: SplitRing, direction: SplitDirection, radius: number,
 ) {
-  const dx = Math.abs(pointer[0] - from[0]);
-  const dy = Math.abs(pointer[1] - from[1]);
-  const axis = direction === "horizontal" || (direction === "auto" && dx >= dy) ? 1 : 0;
+  const axis = orthogonalFixedAxis(from, pointer, direction);
   const point: SplitPoint = [...pointer];
   point[axis] = from[axis];
   let distance = radius;

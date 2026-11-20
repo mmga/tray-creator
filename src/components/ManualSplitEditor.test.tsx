@@ -105,3 +105,24 @@ it("正交折线锁定方向、拒绝碰槽，支持多个内部折点与撤回"
   expect(screen.getByText("零件 2 件")).toBeInTheDocument();
   expect(worker.planManualSplitRoute).not.toHaveBeenCalled();
 });
+
+it("从槽间和任意两点建立参考线，可以用参考线与边界的交点起笔", async () => {
+  setupWorker();
+  render(<Editor mode="custom" />);
+  fireEvent.click(await screen.findByRole("button", { name: "正交折线" }));
+  fireEvent.click(screen.getByRole("button", { name: "两槽中点" }));
+  fireEvent.change(screen.getByRole("combobox", { name: "第一个凹槽" }), { target: { value: "0" } });
+  fireEvent.change(screen.getByRole("combobox", { name: "第二个凹槽" }), { target: { value: "1" } });
+  expect(screen.getByRole("button", { name: /清除参考点 50\.00, 37\.50/ })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "加横向参考线" }));
+  fireEvent.click(screen.getByRole("button", { name: "两点中点" }));
+  takePoint(35, 55);
+  takePoint(55, 55);
+  expect(screen.getByRole("button", { name: /清除参考点 45\.00, 55\.00/ })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "加竖向参考线" }));
+  const option = screen.getByRole("option", { name: "参考线与边界交点 · 45.00, 80.00" });
+  fireEvent.change(screen.getByRole("combobox", { name: "几何辅助点" }), { target: { value: (option as HTMLOptionElement).value } });
+  takePoint(45, 0);
+  fireEvent.click(screen.getByRole("button", { name: "确认分割" }));
+  expect(screen.getByText("零件 2 件")).toBeInTheDocument();
+});

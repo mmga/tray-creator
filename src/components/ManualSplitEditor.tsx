@@ -11,7 +11,7 @@ import {
   cutSplitRegion, nearestSplitBoundary, pointInSplitRing, SPLIT_EPSILON,
   splitBounds, splitDistance, splitSegmentAvoidsRing, splitSegmentClear, type SplitPoint, type SplitRing,
 } from "@/lib/manual-split-geometry";
-import { appendOrthogonalPoint, projectOrthogonalPoint, type SplitDirection } from "@/lib/manual-split-orthogonal";
+import { appendOrthogonalPoint, orthogonalFixedAxis, projectOrthogonalPoint, type SplitDirection } from "@/lib/manual-split-orthogonal";
 import {
   isManualSplitBedValid, MAX_MANUAL_SPLIT_CUTS, replayManualCuts, splitPartSize, splitPrintRotation,
   type FlatTraySnapshot, type ManualSplitCut, type ManualSplitScene, type ManualSplitSettings,
@@ -41,6 +41,8 @@ interface EditorProps {
 
 type SceneResult = { key: string; scene: ManualSplitScene } | { key: string; error: string };
 type Step = "idle" | "start" | "end" | "via" | "orthogonal";
+type GuideAnchor = { point: SplitPoint; span?: ReturnType<typeof splitBounds> };
+type SplitGuide = { axis: 0 | 1; value: number; from: number; to: number };
 
 export default function ManualSplitEditor(props: EditorProps) {
   const { snapshot, settings, onExit, blockingReason } = props;
@@ -109,6 +111,10 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
   const [via, setVia] = useState<SplitPoint>();
   const [orthogonal, setOrthogonal] = useState<{ path: SplitRing; complete: boolean }>();
   const [direction, setDirection] = useState<SplitDirection>("auto");
+  const [showCenter, setShowCenter] = useState(true);
+  const [guides, setGuides] = useState<SplitGuide[]>([]);
+  const [guideAnchor, setGuideAnchor] = useState<GuideAnchor>();
+  const [midpointPick, setMidpointPick] = useState<"first" | SplitPoint>();
   const [routes, setRoutes] = useState<ManualSplitRoute[]>([]);
   const [routeIndex, setRouteIndex] = useState(0);
   const [pending, setPending] = useState(false);
@@ -120,12 +126,16 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
   const [pendingDelete, setPendingDelete] = useState<string>();
   const [panMode, setPanMode] = useState(false);
   const [numericPoint, setNumericPoint] = useState<SplitPoint>([0, 0]);
+  const [relativeToCenter, setRelativeToCenter] = useState(false);
   const [gapPick, setGapPick] = useState<"off" | "first" | number>("off");
   const panStart = useRef<{ x: number; y: number; scale: number; pan: { x: number; y: number } } | null>(null);
   const { nextSeq, isStale } = useRequestSequence();
 
   const allPoints = useMemo(() => scene.roots.flatMap((root) => root.outer), [scene]);
   const bounds = useMemo(() => splitBounds(allPoints), [allPoints]);
+  const trayCenter = useMemo(() => splitRingCenter(allPoints), [allPoints]);
+  const numericTarget: SplitPoint = relativeToCenter && orthogonal
+    ? [numericPoint[0] + trayCenter[0], numericPoint[1] + trayCenter[1]] : numericPoint;
   const center = useMemo(() => splitRingCenter(symmetry === "part" ? region.outer : allPoints), [allPoints, region, symmetry]);
   const width = bounds.max[0] - bounds.min[0];
   const depth = bounds.max[1] - bounds.min[1];
@@ -134,6 +144,12 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
   const viewBox = `${zoom.minX + (bounds.min[0] + bounds.max[0]) / 2} ${zoom.minY - (bounds.min[1] + bounds.max[1]) / 2} ${zoom.viewW} ${zoom.viewH}`;
   const endpoints = useMemo(() => buildEndpointSnaps(region.outer, center, step === "end" ? start : undefined, symmetry !== "off"),
     [region, center, step, start, symmetry]);
+  const activeGuides = useMemo(() => [...guides, ...(showCenter ? ([0, 1] as const).map((axis) => ({
+    axis, value: trayCenter[axis], from: bounds.min[1 - axis], to: bounds.max[1 - axis],
+  })) : [])], [guides, showCenter, trayCenter, bounds]);
+  const guideEndpoints = useMemo(() => orthogonal && !orthogonal.path.length
+    ? activeGuides.flatMap(({ axis, value }) => splitAxisIntersections(region.outer, axis, value)
+      .map((point) => ({ point, label: "参考线与边界交点" }))) : [], [activeGuides, orthogonal, region.outer]);
   const cut = routes[routeIndex];
   const orthogonalCut = useMemo(() => orthogonal?.complete
     ? cutSplitRegion(region, orthogonal.path, scene.obstacles) : null, [orthogonal, region, scene.obstacles]);
@@ -169,6 +185,8 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
     setRoutes([]);
     setHover(undefined);
     setGapPick("off");
+    setMidpointPick(undefined);
+    setGuideAnchor(undefined);
     setStatus("");
   }
 
@@ -218,6 +236,12 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
       setStatus("这两个凹槽之间没有可用间隙，请另选第二个凹槽。");
       return;
     }
+    if (orthogonal) {
+      setGuideAnchor({ point: midpoint, span: splitBounds([...scene.grooves[gapPick], ...scene.grooves[index]]) });
+      setGapPick("off");
+      setStatus("");
+      return;
+    }
     selectPoint(midpoint, 0);
   }
 
@@ -229,6 +253,14 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
   }
 
   function selectPoint(point: SplitPoint, boundaryRadius: number) {
+    if (midpointPick) {
+      if (midpointPick === "first") setMidpointPick(point);
+      else {
+        setGuideAnchor({ point: [(midpointPick[0] + point[0]) / 2, (midpointPick[1] + point[1]) / 2] });
+        setMidpointPick(undefined);
+      }
+      return;
+    }
     if (orthogonal) {
       if (orthogonal.complete) return;
       const last = orthogonal.path.at(-1);
@@ -312,17 +344,50 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
   function snapAt(point: SplitPoint, scale: number, temporarilyDisabled: boolean) {
     if (step === "idle") return undefined;
     if (gapPick !== "off") return undefined;
+    if (midpointPick) {
+      if (!snapEnabled || temporarilyDisabled) return undefined;
+      const candidates = [...endpoints, ...guideEndpoints,
+        ...(orthogonal?.path ?? []).map((p) => ({ point: p, label: "折点" }))];
+      const vertical = activeGuides.filter(({ axis, value }) => axis === 0 && Math.abs(point[0] - value) <= scale * 13);
+      const horizontal = activeGuides.filter(({ axis, value }) => axis === 1 && Math.abs(point[1] - value) <= scale * 13);
+      for (const x of vertical) for (const y of horizontal) {
+        candidates.push({ point: [x.value, y.value], label: "参考线交点" });
+      }
+      return chooseSplitSnap(point, candidates, scale, hover);
+    }
+    if (orthogonal?.complete) return undefined;
     const last = orthogonal?.path.at(-1);
     if (last && !orthogonal?.complete) {
       const next = projectOrthogonalPoint(last, point, region.outer, direction, scale * 15);
-      return { point: next.point, label: next.boundary ? "边界终点" : "正交折点" };
+      if (next.boundary) return { point: next.point, label: "边界终点" };
+      if (snapEnabled && !temporarilyDisabled) {
+        const fixed = orthogonalFixedAxis(last, point, direction);
+        const free = fixed === 0 ? 1 : 0;
+        const align = (value: number, label: string): SplitSnap => {
+          const aligned: SplitPoint = [...next.point];
+          aligned[free] = value;
+          return { point: aligned, label };
+        };
+        const candidates = activeGuides.filter(({ axis }) => axis === free)
+          .map(({ value }) => align(value, "参考线对齐"));
+        candidates.push(...(orthogonal?.path ?? []).slice(0, -1).map((p) => align(p[free], "已有折点对齐")));
+        const gap = nearestSlotGap(next.point, scene.grooves, scene.obstacles);
+        if (gap) candidates.push(align(gap.point[free], "槽间中点对齐"));
+        if (guideAnchor) candidates.push(align(guideAnchor.point[free], "参考点对齐"));
+        const snap = chooseSplitSnap(next.point, candidates, scale, hover);
+        if (snap && (snap.point[free] - last[free]) * (next.point[free] - last[free]) > 0) {
+          const adjusted = projectOrthogonalPoint(last, snap.point, region.outer, direction, scale * 15);
+          return { point: adjusted.point, label: adjusted.boundary ? "边界终点" : snap.label };
+        }
+      }
+      return { point: next.point, label: "正交折点" };
     }
     if (step === "via") {
       const gap = snapEnabled && !temporarilyDisabled ? nearestSlotGap(point, scene.grooves, scene.obstacles) : null;
       return gap ? chooseSplitSnap(point, [gap], scale, hover) : undefined;
     }
     const snap = snapEnabled && !temporarilyDisabled
-      ? chooseSplitSnap(point, endpoints.filter((item) => item.label !== "镜像参考"), scale, hover) : undefined;
+      ? chooseSplitSnap(point, [...guideEndpoints, ...endpoints.filter((item) => item.label !== "镜像参考")], scale, hover) : undefined;
     if (snap) return snap;
     const boundary = nearestSplitBoundary(point, region.outer);
     return boundary.distance < scale * 15 ? { point: boundary.point, label: "边界" } : undefined;
@@ -366,8 +431,17 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
     setHover(undefined);
   }
 
+  function addGuide(axis: 0 | 1) {
+    const span = guideAnchor?.span ?? bounds;
+    const value = (guideAnchor?.point ?? numericTarget)[axis];
+    const guide = { axis, value, from: span.min[1 - axis], to: span.max[1 - axis] };
+    if (!guides.some((item) => item.axis === axis && item.value === value && item.from === guide.from && item.to === guide.to)) {
+      setGuides([...guides, guide]);
+    }
+  }
+
   const lastPoint = orthogonal?.path.at(-1);
-  const nextSegment = orthogonal && !orthogonal.complete && lastPoint && hover ? [lastPoint, hover.point] : undefined;
+  const nextSegment = orthogonal && !orthogonal.complete && !midpointPick && lastPoint && hover ? [lastPoint, hover.point] : undefined;
   const nextSegmentClear = nextSegment && splitSegmentClear(nextSegment[0], nextSegment[1], region, scene.obstacles);
 
   return (
@@ -390,7 +464,8 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
         <div className="relative min-h-44 flex-1 overflow-hidden bg-[#1c1a16]">
           <div className="pointer-events-none absolute inset-x-3 top-3 z-10 flex justify-between gap-2 text-xs">
             <p className="rounded bg-[#12100d]/90 px-2 py-1" role="status">
-              {pending ? "正在计算候选…" : gapPick === "first" ? "选择第一个凹槽" : typeof gapPick === "number" ? "选择第二个凹槽" : orthogonal ? (orthogonal.complete ? "检查折线并确认" : lastPoint ? "选择内部折点或边界终点" : "选择边界起点") : step === "start" ? "选择边界起点" : step === "end" ? "选择边界终点" : step === "via" ? "选择空白处的途经点" : cut ? "查看候选并确认" : "选择零件或添加分割线"}
+              {midpointPick ? (midpointPick === "first" ? "选择第一个参考点" : "选择第二个参考点")
+                : pending ? "正在计算候选…" : gapPick === "first" ? "选择第一个凹槽" : typeof gapPick === "number" ? "选择第二个凹槽" : orthogonal ? (orthogonal.complete ? "检查折线并确认" : lastPoint ? "选择内部折点或边界终点" : "选择边界起点") : step === "start" ? "选择边界起点" : step === "end" ? "选择边界终点" : step === "via" ? "选择空白处的途经点" : cut ? "查看候选并确认" : "选择零件或添加分割线"}
             </p>
           </div>
           <svg tabIndex={0} aria-label="托盘拆件画布" viewBox={viewBox}
@@ -429,7 +504,7 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
                 return;
               }
               const snap = snapAt(info.point, info.scale, event.altKey);
-              selectPoint(lastPoint && !orthogonal?.complete ? info.point : snap?.point ?? info.point, info.scale * 15);
+              selectPoint(snap?.point ?? info.point, info.scale * 15);
             }}>
             <g transform="scale(1,-1)">
               {parts.map((part, i) => <path key={part.id} d={regionPath(part)} fillRule="evenodd"
@@ -439,6 +514,11 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
                 fill={i === 0 ? "#7fb0c8" : "#8cb880"} fillRule="evenodd" fillOpacity={0.32} />)}
               {grooveLayers}
               {protectionLayers}
+              {orthogonal && activeGuides.map(({ axis, value, from, to }, i) => <polyline key={i}
+                points={points(axis === 0 ? [[value, from], [value, to]] : [[from, value], [to, value]])}
+                fill="none" stroke="#8ab8c9" strokeDasharray="4 5" opacity={0.7} vectorEffect="non-scaling-stroke" />)}
+              {orthogonal && guideAnchor && <circle cx={guideAnchor.point[0]} cy={guideAnchor.point[1]} r={zoom.viewW * 0.007}
+                fill="#f1c56b" vectorEffect="non-scaling-stroke"><title>参考中点</title></circle>}
               {symmetry !== "off" && ([0, 1] as const).map((axis) => <polyline key={axis}
                 points={points(axis === 0 ? [[center[0], bounds.min[1]], [center[0], bounds.max[1]]] : [[bounds.min[0], center[1]], [bounds.max[0], center[1]]])}
                 fill="none" stroke="#8ab8c9" strokeDasharray="6 4" vectorEffect="non-scaling-stroke" />)}
@@ -481,6 +561,22 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
               <Button size="sm" variant="ghost" disabled={!lastPoint} onClick={removeLastPoint}>撤回上一点</Button>
               <Button size="sm" variant="ghost" onClick={() => discard()}>取消折线</Button>
             </div>}
+            {orthogonal && <details open className="space-y-1 text-xs">
+              <summary className="cursor-pointer">折线辅助</summary>
+              <label className="flex items-center gap-2"><input type="checkbox" checked={showCenter}
+                onChange={(event) => setShowCenter(event.target.checked)} />托盘中心线</label>
+              <div className="flex flex-wrap items-center gap-1">
+                <Button size="sm" variant="ghost" aria-pressed={Boolean(midpointPick)}
+                  onClick={() => { setGapPick("off"); setMidpointPick(midpointPick ? undefined : "first"); }}>两点中点</Button>
+                {guideAnchor && <button type="button" className="underline" onClick={() => setGuideAnchor(undefined)}>
+                  清除参考点 {guideAnchor.point.map((value) => value.toFixed(2)).join(", ")}
+                </button>}
+                <Button size="sm" variant="ghost" onClick={() => addGuide(1)}>加横向参考线</Button>
+                <Button size="sm" variant="ghost" onClick={() => addGuide(0)}>加竖向参考线</Button>
+                {guides.length > 0 && <Button size="sm" variant="ghost" onClick={() => setGuides(guides.slice(0, -1))}>移除上一条参考线</Button>}
+              </div>
+              <p className="text-muted-foreground">参考线取中点或下方输入的坐标。实际间隙以保护区校验为准。</p>
+            </details>}
             <label className="flex items-center gap-2"><input type="checkbox" checked={snapEnabled} onChange={(event) => setSnapEnabled(event.target.checked)} />捕捉辅助点</label>
             <label className="flex items-center justify-between gap-2">对称参考
               <select className="rounded bg-[#171410] px-1.5 py-1" value={symmetry} onChange={(event) => setSymmetry(event.target.value as typeof symmetry)}>
@@ -490,18 +586,18 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
             {snapEnabled && (step === "start" || step === "end" || (orthogonal && !lastPoint)) && <label className="flex items-center justify-between gap-2 text-xs">
               几何辅助点
               <select className="max-w-40 rounded bg-[#171410] py-1" value="" onChange={(event) => {
-                const index = Number(event.target.value);
-                if (endpoints[index]) selectPoint(endpoints[index].point, 0.001);
+                const snap = [...endpoints, ...guideEndpoints][Number(event.target.value)];
+                if (snap) selectPoint(snap.point, 0.001);
               }}>
                 <option value="" disabled>中点、对齐或对称</option>
-                {endpoints.map(({ point, label }, i) => label !== "镜像参考" && <option value={i} key={i}>
+                {[...endpoints, ...guideEndpoints].map(({ point, label }, i) => label !== "镜像参考" && <option value={i} key={i}>
                   {label} · {point.map((coordinate) => coordinate.toFixed(2)).join(", ")}
                 </option>)}
               </select>
             </label>}
-            {step === "via" && regionGrooves.length >= 2 && <div className="flex items-center gap-2">
+            {(step === "via" || orthogonal) && regionGrooves.length >= 2 && <div className="flex items-center gap-2">
               <Button size="sm" variant="outline" aria-pressed={gapPick !== "off"}
-                onClick={() => setGapPick(gapPick === "off" ? "first" : "off")}>两槽中点</Button>
+                onClick={() => { setMidpointPick(undefined); setGapPick(gapPick === "off" ? "first" : "off"); }}>两槽中点</Button>
               {gapPick !== "off" && <select aria-label={gapPick === "first" ? "第一个凹槽" : "第二个凹槽"}
                 className="min-w-0 rounded bg-[#171410] py-1 text-xs" value="" onChange={(event) => selectGapGroove(Number(event.target.value))}>
                 <option value="" disabled>选择凹槽</option>
@@ -510,12 +606,15 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
                 </option>)}
               </select>}
             </div>}
-            {step !== "idle" && !orthogonal?.complete && <details className="text-xs">
+            {step !== "idle" && <details className="text-xs">
               <summary className="cursor-pointer">按坐标选点</summary>
+              {orthogonal && <label className="mt-2 flex items-center gap-2"><input type="checkbox" checked={relativeToCenter}
+                onChange={(event) => setRelativeToCenter(event.target.checked)} />相对托盘中心</label>}
               <div className="mt-2 flex items-end gap-1">
                 {(["X", "Y"] as const).map((axis, i) => <label key={axis} className="min-w-0 flex-1">{axis}<DraftNumberInput value={numericPoint[i]} step={0.01}
                   onValueChange={(value) => setNumericPoint(i === 0 ? [value, numericPoint[1]] : [numericPoint[0], value])} /></label>)}
-                <Button size="sm" variant="outline" onClick={() => selectPoint(numericPoint, 0.03)}>取点</Button>
+                <Button size="sm" variant="outline" disabled={orthogonal?.complete && !midpointPick}
+                  onClick={() => selectPoint(numericTarget, 0.03)}>取点</Button>
               </div>
             </details>}
             {gridGuide.length > 0 && !orthogonal && !start && !pending && <label className="flex items-center justify-between gap-2">网格分割
