@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useEffectEvent, useMemo, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useEffectEvent, useId, useMemo, useRef, useState, type PointerEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { DraftNumberInput } from "@/components/ui/DraftNumberInput";
 import { Input } from "@/components/ui/input";
@@ -209,8 +209,15 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
       stroke="#f27765" strokeDasharray={blocked ? undefined : "3 3"} vectorEffect="non-scaling-stroke" />;
   }), [showProtection, scene.obstacles, start, end, via, pending, routes.length]);
   const size = (part: typeof region) => splitPartSize(part, scene.height);
-  const oversize = parts.some((part) => splitPrintRotation(size(part), settings) === null);
+  const exportHelpId = useId();
+  const oversize = parts.filter((part) => splitPrintRotation(size(part), settings) === null);
+  const usableBed = settings.bed.map((value, i) => Number((value - (i < 2 ? 2 * settings.bedMargin : 0)).toFixed(3)));
   const ready = parts.length > 1 && invalid.size === 0;
+  const exportBlock = !isManualSplitBedValid(settings) ? "请检查打印设置里的平台尺寸、预留和凹槽保留距离。"
+    : invalid.size ? "请先修复或移除标记为「已失效」的切线。"
+    : !ready ? "请先确认分割，得到至少两件零件。"
+    : oversize.length ? `零件 ${oversize.map(({ id }) => id).join("、")} 超出打印平台。可用尺寸 ${usableBed.join(" × ")} mm（宽 × 深 × 高）。请继续拆分，或按打印机实际尺寸修改打印设置。`
+    : undefined;
 
   function discard(next: Step = "idle") {
     nextSeq();
@@ -926,13 +933,16 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
               <Button size="sm" variant="destructive" onClick={() => removeBranch(pendingDelete)}>确认移除</Button>
             </div>}
           </div>
-          {(onPreview || onExport) && <div className="flex flex-wrap gap-2">
+          {(onPreview || onExport || stepExport) && <div className="flex flex-wrap gap-2">
             {onPreview && <Button size="sm" variant="outline" disabled={!ready} onClick={onPreview}>三维分件预览</Button>}
-            {onExport && <Button size="sm" disabled={!ready || oversize || exporting || !isManualSplitBedValid(settings)} onClick={onExport}>
+            {onExport && <Button size="sm" disabled={Boolean(exportBlock || exporting)}
+              aria-describedby={exportBlock ? exportHelpId : undefined} onClick={onExport}>
               {exporting ? "正在导出…" : "导出分件 STL"}
             </Button>}
-            {stepExport && <Button size="sm" variant="outline" disabled={!ready || oversize || Boolean(stepExport.phase || stepExport.reason) || !isManualSplitBedValid(settings)}
-              onClick={() => void stepExport.run()}>导出分件 STEP</Button>}
+            {stepExport && <Button size="sm" variant="outline" disabled={Boolean(exportBlock || stepExport.phase || stepExport.reason)}
+              aria-describedby={exportBlock ? exportHelpId : undefined} onClick={() => void stepExport.run()}>导出分件 STEP</Button>}
+            {exportBlock && (onExport || stepExport) &&
+              <p id={exportHelpId} className="w-full text-xs text-[#ffc090]">{exportBlock}</p>}
           </div>}
           {stepExport?.reason || stepExport?.sampled ? <p className="text-xs text-muted-foreground">{stepExport.reason ?? "包含分段轮廓，部分侧壁由平面组成"}</p> : null}
           {stepExport?.phase ? <div className="flex items-center gap-2 text-xs">

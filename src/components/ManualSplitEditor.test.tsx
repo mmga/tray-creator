@@ -17,7 +17,7 @@ const scene: ManualSplitScene = {
   height: 6,
 };
 
-function Editor({ mode }: { mode: "grid" | "custom" }) {
+function Editor({ mode, onExport }: { mode: "grid" | "custom"; onExport?: () => void }) {
   const [history, setHistory] = useState<ManualSplitSettings[]>([{ ...MANUAL_SPLIT_DEFAULTS, enabled: true }]);
   const settings = history[history.length - 1];
   return <ManualSplitEditor
@@ -26,7 +26,7 @@ function Editor({ mode }: { mode: "grid" | "custom" }) {
       : { mode, params: { ...CUSTOM_LAYOUT_DEFAULTS, manualSplit: settings } }}
     settings={settings} onChange={(next) => setHistory([...history, next])}
     canUndo={history.length > 1} onUndo={() => setHistory(history.slice(0, -1))}
-    onExit={() => {}} />;
+    onExit={() => {}} onExport={onExport} />;
 }
 
 function setupWorker() {
@@ -174,6 +174,27 @@ function commitCoordinate(name: string, value: number) {
   fireEvent.change(input, { target: { value: String(value) } });
   fireEvent.blur(input);
 }
+
+it("在 STL 按钮旁说明未确认和超平台，调整平台后可以导出", async () => {
+  setupWorker();
+  const exportParts = vi.fn();
+  render(<Editor mode="grid" onExport={exportParts} />);
+  const stl = await screen.findByRole("button", { name: "导出分件 STL" });
+  expect(stl).toBeDisabled();
+  expect(stl).toHaveAccessibleDescription(/先确认分割/);
+  fireEvent.click(screen.getByRole("button", { name: "正交折线" }));
+  takePoint(50, 80);
+  takePoint(50, 0);
+  expect(stl).toBeDisabled();
+  fireEvent.click(screen.getByRole("button", { name: "确认分割" }));
+  expect(stl).toBeEnabled();
+  commitCoordinate("平台宽", 40);
+  expect(stl).toBeDisabled();
+  expect(stl).toHaveAccessibleDescription(/零件 1\.1、1\.2 超出打印平台。可用尺寸 34 × 214 × 250 mm/);
+  commitCoordinate("平台宽", 100);
+  fireEvent.click(stl);
+  expect(exportParts).toHaveBeenCalledOnce();
+});
 
 it("保存后可从镜像侧编辑，移动横段、增删台阶可保留对称关系", async () => {
   setupWorker();
