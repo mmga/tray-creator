@@ -1,12 +1,16 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { exportSTEP, importSTEP } from "replicad";
+import stlSerializer from "@jscad/stl-serializer";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { createFreeSlotInstance } from "@/lib/slot-instance-factory";
-import { createManualSplitScene } from "@/lib/manual-split-cad";
-import { prepareCustomTrayCutSource } from "@/lib/custom-tray-model";
-import { prepareGridTrayCutSource } from "@/lib/tray-model";
-import { MANUAL_SPLIT_DEFAULTS, replayManualCuts, type FlatTraySnapshot, type ManualSplitCut } from "@/lib/manual-split-plan";
+import { createManualSplitScene, orientManualPrintPart, realizeManualSplitParts } from "@/lib/manual-split-cad";
+import { createCustomTrayModel, prepareCustomTrayCutSource } from "@/lib/custom-tray-model";
+import { createTrayModel, prepareGridTrayCutSource } from "@/lib/tray-model";
+import { MANUAL_SPLIT_DEFAULTS, planOrthogonalSplit, replayManualCuts, type FlatTraySnapshot, type ManualSplitCut } from "@/lib/manual-split-plan";
+import { closeManualSplitStl } from "@/lib/manual-split-stl";
+import { serializeCurrentParamArtifact } from "@/lib/current-param-artifact-encoder";
+import { readDraftParamArtifact } from "@/lib/historical-param-artifact-reader";
 import { ringEdges, splitBounds, type SplitPoint } from "@/lib/manual-split-geometry";
 import { planManualSplitRoutes } from "@/lib/manual-split-routes";
 import { loadStepKernel } from "./step-kernel";
@@ -17,7 +21,7 @@ const settings = { ...MANUAL_SPLIT_DEFAULTS, enabled: true };
 const custom = { ...CUSTOM_LAYOUT_DEFAULTS, traySizingMode: "fixed" as const, trayWidth: 100,
   trayDepth: 100, baseHoleStructure: "none" as const };
 
-async function verifyParts(snapshot: FlatTraySnapshot, ids: string[]) {
+async function verifyParts(snapshot: FlatTraySnapshot, ids: string[], stlSizes?: Map<string, number[]>) {
   const plan = prepareStepConstruction(snapshot);
   const whole = realizeStepTray(plan);
   try {
@@ -27,6 +31,7 @@ async function verifyParts(snapshot: FlatTraySnapshot, ids: string[]) {
       let volume = 0;
       for (const { shape, id } of parts) {
         const checked = validateStepSolid(shape, id);
+        stlSizes?.get(id)?.forEach((value, axis) => expect(checked.size[axis]).toBeCloseTo(value, 2));
         const [min, max] = checked.bounds;
         expect(min[2]).toBeCloseTo(0, 5);
         expect(min[0] + max[0]).toBeCloseTo(0, 5);
@@ -47,6 +52,53 @@ async function verifyParts(snapshot: FlatTraySnapshot, ids: string[]) {
 
 describe("STEP 分件", () => {
   beforeAll(async () => { await loadStepKernel(); }, 15000);
+
+  const staggered = { ...custom, trayWidth: 140, cornerRadius: 4, slots: [
+    ...[50, 78].flatMap((y) => [22, 46, 70, 94, 118].map((x) => ({ x, y }))),
+    ...[38, 70, 102].map((x) => ({ x, y: 18 })),
+  ].map(({ x, y }) => createFreeSlotInstance({ id: `${x}-${y}`, x, y, width: 16 })) };
+
+  it.each([
+    { mode: "custom", params: staggered },
+    { mode: "grid", params: { ...DEFAULT_TRAY_PARAMS, columns: 4, rows: 2, spacing: 10, baseHoleStructure: "none" } },
+  ] satisfies FlatTraySnapshot[])("在 $mode 中还原镜像阶梯参数并导出同一组三件 STL 和 STEP", async (snapshot) => {
+    const source = snapshot.mode === "grid" ? prepareGridTrayCutSource(snapshot.params)
+      : prepareCustomTrayCutSource(snapshot.params, { status: "inactive" });
+    const scene = createManualSplitScene(source, settings.clearance);
+    const [region] = scene.roots;
+    const { min, max } = splitBounds(region.outer);
+    const center: SplitPoint = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2];
+    const x = snapshot.mode === "grid" ? min[0] / 2 : -36;
+    const lowerX = snapshot.mode === "grid" ? x + 1.23456 : -16.123456;
+    const turnY = snapshot.mode === "grid" ? 0 : -15.123456;
+    const path: SplitPoint[] = [[x, max[1]], [x, turnY], [lowerX, turnY], [lowerX, min[1]]];
+    const draft = planOrthogonalSplit(region, path, scene.obstacles, { kind: "left-right", center });
+    expect(draft.issue).toBeUndefined();
+    const manualSplit = { ...settings, cuts: draft.cuts };
+    const json = JSON.parse(snapshot.mode === "grid"
+      ? serializeCurrentParamArtifact({ mode: "grid", params: { ...snapshot.params, manualSplit } })
+      : serializeCurrentParamArtifact({ mode: "custom", params: { ...snapshot.params, manualSplit } }));
+    const restored: FlatTraySnapshot = snapshot.mode === "grid"
+      ? { mode: "grid", params: readDraftParamArtifact(json, "grid") }
+      : { mode: "custom", params: readDraftParamArtifact(json, "custom") };
+    expect(restored.params.manualSplit).toEqual(manualSplit);
+    const model = restored.mode === "grid" ? createTrayModel(restored.params)
+      : createCustomTrayModel(restored.params, { status: "inactive" });
+    const parts = realizeManualSplitParts(model, scene, restored.params.manualSplit!);
+    const ids = draft.parts.map(({ id }) => id).sort();
+    expect(ids).toHaveLength(3);
+    expect(parts.map(({ id }) => id).sort()).toEqual(ids);
+    const stlSizes = new Map<string, number[]>();
+    for (const { id, geometry, size, rotation } of parts) {
+      expect(rotation).not.toBeNull();
+      const binary = new Blob(stlSerializer.serialize({ binary: true }, orientManualPrintPart(geometry, rotation!)) as BlobPart[]);
+      expect(await closeManualSplitStl(binary), id).not.toBeNull();
+      stlSizes.set(id, rotation ? [size[1], size[0], size[2]] : size);
+    }
+    await verifyParts(restored, ids, stlSizes);
+    json.params.manualSplit.cuts[1].path[0][0] += 0.5;
+    expect(() => readDraftParamArtifact(json, snapshot.mode)).toThrow("切线");
+  }, 30000);
 
   it("保留圆角与斜面，分割端点位于预览圆弧的采样边中点", async () => {
     const params = { ...custom, sideBevelWidth: 2, cornerRadius: 8 };

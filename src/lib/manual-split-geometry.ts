@@ -87,6 +87,11 @@ function intersects(a: SplitPoint, b: SplitPoint, c: SplitPoint, d: SplitPoint) 
     pointOnSegment(b, c, d) || pointOnSegment(c, a, b) || pointOnSegment(d, a, b);
 }
 
+export function splitPathsIntersect(a: SplitRing, b: SplitRing) {
+  const tail = b.slice(1);
+  return a.slice(1).some((end, i) => tail.some((other, j) => intersects(a[i], end, b[j], other)));
+}
+
 export function splitSegmentAvoidsRing(a: SplitPoint, b: SplitPoint, ring: SplitRing) {
   for (let i = 0; i < ring.length; i++) {
     if (intersects(a, b, ring[i], ring[(i + 1) % ring.length])) return false;

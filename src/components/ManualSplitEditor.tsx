@@ -90,6 +90,10 @@ function regionPath(part: Pick<ManualSplitScene["roots"][number], "outer" | "hol
   return [part.outer, ...part.holes].map((ring) => "M" + points(ring) + "Z").join(" ");
 }
 
+function splitPreviewColor(index: number, orthogonal: boolean) {
+  return orthogonal ? VIEW_PALETTE[index % VIEW_PALETTE.length] : index === 0 ? "#7fb0c8" : "#8cb880";
+}
+
 function printLabel(size: [number, number, number], settings: ManualSplitSettings) {
   const rotation = splitPrintRotation(size, settings);
   return size.map((number) => number.toFixed(1)).join(" × ") + " mm · " +
@@ -187,13 +191,14 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
   const mirrorPath = orthogonal && linkedSymmetry && orthogonal.path.map((point) => mirrorSplitPoint(point, linkedSymmetry));
   const mirrorAnchor = guideAnchor && linkedSymmetry && mirrorSplitPoint(guideAnchor.point, linkedSymmetry);
   const draftChildren = orthogonalPlan?.parts ?? cut?.children;
+  const isOrthogonalDraft = Boolean(orthogonal);
   const grooveLayers = useMemo(() => scene.grooves.map((groove, i) => {
     const belongs = draftChildren?.findIndex((child) => pointInSplitRing(groove[0], child.outer));
-    const color = belongs !== undefined && belongs >= 0 ? VIEW_PALETTE[belongs % VIEW_PALETTE.length] : undefined;
+    const color = belongs !== undefined && belongs >= 0 ? splitPreviewColor(belongs, isOrthogonalDraft) : undefined;
     return <polygon key={i} points={points(groove)} fill={color ?? "#12100d"} fillOpacity={color ? 0.25 : 0.8}
       stroke={gapPick === i ? "#f1c56b" : color ?? "#8d7e6a"}
       strokeWidth={gapPick === i ? 3 : 1} vectorEffect="non-scaling-stroke" />;
-  }), [scene.grooves, draftChildren, gapPick]);
+  }), [scene.grooves, draftChildren, gapPick, isOrthogonalDraft]);
   const regionGrooves = useMemo(() => scene.grooves.map((ring, i) => ({ ring, i }))
     .filter(({ ring }) => pointInSplitRing(splitRingCenter(ring), region.outer)), [scene.grooves, region.outer]);
   const protectionLayers = useMemo(() => showProtection && scene.obstacles.map((ring, i) => {
@@ -654,7 +659,7 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
                 fill={VIEW_PALETTE[i % VIEW_PALETTE.length]} fillOpacity={region.id === part.id ? 0.23 : 0.09}
                 stroke={region.id === part.id ? "#e1b85f" : "#746659"} strokeWidth={1.5} vectorEffect="non-scaling-stroke" />)}
               {draftChildren?.map((part, i) => <path key={i} d={regionPath(part)}
-                fill={VIEW_PALETTE[i % VIEW_PALETTE.length]} fillRule="evenodd" fillOpacity={0.32} />)}
+                fill={splitPreviewColor(i, isOrthogonalDraft)} fillRule="evenodd" fillOpacity={0.32} />)}
               {grooveLayers}
               {protectionLayers}
               {orthogonal && activeGuides.map(({ axis, value, from, to }, i) => <polyline key={i}

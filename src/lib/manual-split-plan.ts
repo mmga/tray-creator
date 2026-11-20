@@ -1,5 +1,6 @@
 import {
-  cutSplitRegion, SPLIT_EPSILON, splitBounds, splitDistance, splitSegmentClear, type SplitPoint, type SplitRegion, type SplitRing,
+  cutSplitRegion, SPLIT_EPSILON, splitBounds, splitDistance, splitPathsIntersect, splitSegmentClear,
+  type SplitPoint, type SplitRegion, type SplitRing,
 } from "./manual-split-geometry";
 import { isOrthogonalPath, mirrorSplitPoint, type SplitSymmetry } from "./manual-split-orthogonal";
 import type { ModeParamSnapshot } from "./mode-param-snapshot";
@@ -80,7 +81,8 @@ export function validateManualSplitSettings(value: unknown): asserts value is Ma
         !["left-right", "top-bottom", "rotate"].includes(symmetry.kind) || !isSplitPoint(symmetry.center) ||
         !pair?.orthogonal || pair.symmetry !== undefined || !isSplitChild(target, pair.target) ||
         pair.path.length !== path.length ||
-        path.some((p, j) => splitDistance(mirrorSplitPoint(p, symmetry), pair.path[j]) > SPLIT_EPSILON)) {
+        path.some((p, j) => splitDistance(mirrorSplitPoint(p, symmetry), pair.path[j]) > SPLIT_EPSILON) ||
+        splitPathsIntersect(path, pair.path)) {
       throw new Error("已保存的对称切线不成对，请检查拆件参数");
     }
   }
@@ -102,6 +104,9 @@ export function planOrthogonalSplit(region: ManualSplitPart, path: SplitRing, ob
   const cuts: ManualSplitCut[] = [{ target: region.id, path, orthogonal: true, ...(symmetry ? { symmetry } : {}) }];
   if (!symmetry) return { cuts, parts };
   const mirror = path.map((p) => mirrorSplitPoint(p, symmetry));
+  if (splitPathsIntersect(path, mirror)) {
+    return { cuts: [], parts: [], issue: "对称线与原线相交、接触或重合，请调整切线或关闭联动。" };
+  }
   if (mirror.slice(1).some((p, i) => !splitSegmentClear(mirror[i], p, region, obstacles))) {
     return { cuts: [], parts: [], issue: "对称线经过保护区或超出零件边界，请调整切线或关闭联动。" };
   }
@@ -112,7 +117,7 @@ export function planOrthogonalSplit(region: ManualSplitPart, path: SplitRing, ob
       parts: [...parts.filter(({ id }) => id !== part.id), ...splitChildren(part.id, second)],
     };
   }
-  return { cuts: [], parts: [], issue: "对称线未能分开零件。请检查外边界，以及两条线是否交叉或重合。" };
+  return { cuts: [], parts: [], issue: "对称线未能分开零件，请检查对应端点是否落在零件外边界。" };
 }
 
 export function splitOperationStart(cuts: ManualSplitCut[], index: number) {
