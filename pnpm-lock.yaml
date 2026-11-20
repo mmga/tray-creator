@@ -41,6 +41,12 @@ importers:
       react-dom:
         specifier: 19.2.3
         version: 19.2.3(react@19.2.3)
+      replicad:
+        specifier: 1.2.1
+        version: 1.2.1
+      replicad-opencascadejs:
+        specifier: 1.2.1
+        version: 1.2.1
       tailwind-merge:
         specifier: ^3.4.0
         version: 3.6.0
@@ -4570,6 +4576,25 @@ packages:
         optional: true
       use-sync-external-store:
         optional: true
+
+  '@types/opentype.js@1.3.10':
+    resolution: {integrity: sha512-F67EFyk6j02okHz5JCgata3ZRAcZi9GLnzmkHw/rzJq3OCc8/ZVdoKrxMTYjcQP6IYHGBz2cav1cpzkOkPiPCQ==}
+
+  flatbush@4.7.0:
+    resolution: {integrity: sha512-oFBkbYI3Rx6snZEBQOiJSaxt1MfZtbH2p862dRmIOOYRVxQWDyAn4oyKjoJv7TgmOft2yIavvooOU5itliagOw==}
+
+  flatqueue@3.1.0:
+    resolution: {integrity: sha512-Ia4qIYrrsEqIRx3c3XhkT+QDLQuUV5ovsr6ah1rIgKT5wclhoGK3lAMS1bWRAWxlx7wtlTBpV7QXB5d9fOSRxA==}
+
+  opentype.js@2.0.0:
+    resolution: {integrity: sha512-kCyjv6xdDY1W/jLWZ/L3QhhTlKUqDZMQ5+Jdlw12b3dXkKNpYBqqlMMj0YDQPShWFTMwgZI1hG14kN3XUDSg/A==}
+    hasBin: true
+
+  replicad@1.2.1:
+    resolution: {integrity: sha512-M8Bk9skveCqkRG7+R8fcA5WFHTDcmK3EeGKzU0/NbuU3lAAjeqt6fqV2cx4gSCEkAy10zUKUJY68CtZ/ZMRMhw==}
+
+  replicad-opencascadejs@1.2.1:
+    resolution: {integrity: sha512-nFWkL5+24JiN1sv5fLGhdQr3FKCOLR3PIBkeZJcLm37p4eraEtD7Jueo8dP2BoqClJwb9hTSkf2QMli3GVqhpg==}
 
 snapshots:
 
@@ -9258,3 +9283,21 @@ snapshots:
       '@types/react': 19.2.17
       react: 19.2.3
       use-sync-external-store: 1.6.0(react@19.2.3)
+
+  '@types/opentype.js@1.3.10': {}
+
+  flatbush@4.7.0:
+    dependencies:
+      flatqueue: 3.1.0
+
+  flatqueue@3.1.0: {}
+
+  opentype.js@2.0.0: {}
+
+  replicad@1.2.1:
+    dependencies:
+      '@types/opentype.js': 1.3.10
+      flatbush: 4.7.0
+      opentype.js: 2.0.0
+
+  replicad-opencascadejs@1.2.1: {}

@@ -25,6 +25,10 @@ const initialChunks = pageManifest.clientModules[pageModuleKey].chunks.filter(
 );
 const forbiddenRuntimeSignatures = [
   {
+    label: "STEP 内核",
+    matches: (source) => /replicad_single[^"]*\.wasm|BRepCheck_Analyzer/.test(source),
+  },
+  {
     label: "Three.js",
     matches: (source) =>
       ["BufferGeometry", "WebGLRenderer"].some((value) =>

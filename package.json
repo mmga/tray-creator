@@ -28,6 +28,8 @@
     "radix-ui": "^1.4.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "replicad": "1.2.1",
+    "replicad-opencascadejs": "1.2.1",
     "tailwind-merge": "^3.4.0",
     "three": "^0.182.0"
   },
