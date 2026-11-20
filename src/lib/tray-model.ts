@@ -2,19 +2,15 @@ import { booleans, primitives, transforms } from "@jscad/modeling";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import type { StackableBoxParams, TrayParams } from "@/types/tray";
 import { RENDER_CONFIG } from "@/lib/config";
-import { isRectangularGridSlot } from "@/lib/grid-config";
 import {
   createBaseBody,
   subtractBaseHoleConstructionPlan,
-  type SlotCenter,
 } from "@/lib/model-utils";
-import { createGridBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
+import { planGridTrayConstruction, type FlatTrayGroove } from "@/lib/flat-tray-construction";
 import {
   getGridBoundarySpacingAxes,
-  getGridBoxContentSize,
   getGridCutGeometry,
   getGridSlotPitchAxes,
-  shouldRemoveGridIslands,
 } from "@/lib/grid-layout-math";
 import { resolveStackableBoxParams } from "@/lib/stackable-box";
 import { createStackableBoxBody } from "@/lib/stackable-box-model";
@@ -97,91 +93,22 @@ function createHalfCircleTrayBody(
   return union(base, farSideUpper);
 }
 
-/**
- * 盒体开启时的网格托盘：固定外尺寸、固定圆角与垂直墙，网格阵列在盒内居中。
- * 保留圆槽、矩形槽、零间距去岛、底板孔位与 basePlateOnly。
- */
-function createStackableBoxGridModel(
-  params: TrayParams,
-  box: StackableBoxParams,
-): Geom3 {
-  const { rows, columns, baseThickness, holeDepth } = params;
-  const slot = getGridCutGeometry(params);
-  const { pitchX, pitchY } = getGridSlotPitchAxes(params);
-  const { contentWidth, contentDepth } = getGridBoxContentSize(params);
-  const trayTopZ = params.basePlateOnly
-    ? baseThickness
-    : baseThickness + holeDepth;
+function realizeGridGroove({ shape, width, height, cx, cy, bottom, length }: FlatTrayGroove) {
+  return translate([cx, cy, bottom + length / 2], shape === "circle"
+    ? cylinder({ radius: width / 2, height: length, segments: RENDER_CONFIG.cylinderSegments })
+    : cuboid({ size: [width, height, length] }));
+}
 
-  // 1. 盒体空白主体
-  let tray = createStackableBoxBody({
+function createStackableBoxGridModel(params: TrayParams, box: StackableBoxParams): Geom3 {
+  const { height, grooves, baseHoles } = planGridTrayConstruction(params);
+  const body = createStackableBoxBody({
     outerWidth: box.outerWidth,
     outerDepth: box.outerDepth,
     outerHeight: box.outerHeight,
-    trayTopZ,
+    trayTopZ: height,
     xyFitClearance: box.xyFitClearance,
   });
-
-  // 2. 槽位中心围绕盒体中心对称排布
-  const centers: SlotCenter[] = [];
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < columns; col++) {
-      centers.push({
-        cx: -contentWidth / 2 + slot.slotWidth / 2 + col * pitchX,
-        cy: -contentDepth / 2 + slot.slotHeight / 2 + row * pitchY,
-      });
-    }
-  }
-
-  // 3. 槽位阵列（从 trayTopZ 向下挖到槽底）
-  const removeGridIslands = shouldRemoveGridIslands(params);
-  const holeCenters = removeGridIslands
-    ? centers.filter((_, index) => {
-        const row = Math.floor(index / columns);
-        const col = index % columns;
-        return row === 0 || row === rows - 1 || col === 0 || col === columns - 1;
-      })
-    : centers;
-  const holes: Geom3[] = holeCenters.map(({ cx, cy }) =>
-    translate(
-      [cx, cy, baseThickness + holeDepth / 2],
-      slot.shape === "circle"
-        ? cylinder({
-            radius: slot.slotWidth / 2,
-            height: holeDepth + 0.02,
-            segments: RENDER_CONFIG.cylinderSegments,
-          })
-        : cuboid({
-            size: [slot.slotWidth, slot.slotHeight, holeDepth + 0.02],
-          }),
-    ),
-  );
-
-  if (removeGridIslands) {
-    holes.unshift(
-      translate(
-        [0, 0, baseThickness + holeDepth / 2],
-        cuboid({
-          size: [
-            (columns - 1) * pitchX,
-            (rows - 1) * pitchY,
-            holeDepth + 0.02,
-          ],
-        }),
-      ),
-    );
-  }
-
-  // 4. 布尔减法：盒体主体 - 凹槽
-  tray = params.basePlateOnly ? tray : subtract(tray, ...holes);
-
-  // 5. 底板孔位
-  tray = subtractBaseHoleConstructionPlan(
-    tray,
-    createGridBaseHoleConstructionPlan(params),
-  );
-
-  return tray;
+  return subtractBaseHoleConstructionPlan(grooves.length ? subtract(body, ...grooves.map(realizeGridGroove)) : body, baseHoles);
 }
 
 export function createTrayModel(params: TrayParams, captureSplitSource?: (source: FlatTrayCutSource) => void): Geom3 {
@@ -196,135 +123,12 @@ export function createTrayModel(params: TrayParams, captureSplitSource?: (source
 }
 
 export function prepareGridTrayCutSource(params: TrayParams): FlatTrayCutSource {
-  const {
-    rows,
-    columns,
-    baseThickness,
-    holeDepth,
-    cornerRadius,
-    sideBevelWidth,
-  } = params;
-
-  const slot = getGridCutGeometry(params);
-  const { pitchX, pitchY } = getGridSlotPitchAxes(params);
-  const { boundarySpacingX, boundarySpacingY } =
-    getGridBoundarySpacingAxes(params);
-
-  // 总尺寸由首尾槽位外沿与槽位中心距决定；矩形槽的中心距按底盘标称尺寸计算。
-  const safeSideBevelWidth = Math.max(0, sideBevelWidth);
-  const topWidth =
-    2 * boundarySpacingX +
-    slot.slotWidth +
-    (columns - 1) * pitchX;
-  const topDepth =
-    2 * boundarySpacingY + slot.slotHeight + (rows - 1) * pitchY;
-  const totalWidth = topWidth + safeSideBevelWidth * 2;
-  const totalDepth = topDepth + safeSideBevelWidth * 2;
-  const totalHeight = params.basePlateOnly ? baseThickness : baseThickness + holeDepth;
-  const usesHalfCircleSlots =
-    !params.basePlateOnly &&
-    params.halfCircleSlots &&
-    !isRectangularGridSlot(params) &&
-    (rows === 1 || columns === 1);
-  const halfCircleSplitAxis = rows === 1 ? "y" : "x";
-
-  // 1. 创建底板实体
-  const body = params.basePlateOnly
-    ? createBaseBody(
-        totalWidth,
-        totalDepth,
-        baseThickness,
-        cornerRadius,
-        sideBevelWidth,
-      )
-    : usesHalfCircleSlots
-    ? createHalfCircleTrayBody(
-        totalWidth,
-        totalDepth,
-        baseThickness,
-        holeDepth,
-        cornerRadius,
-        sideBevelWidth,
-        halfCircleSplitAxis,
-      )
-    : createBaseBody(
-        totalWidth,
-        totalDepth,
-        totalHeight,
-        cornerRadius,
-        sideBevelWidth,
-      );
-
-  // 2. 计算凹槽中心坐标
-  const centers: SlotCenter[] = [];
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < columns; col++) {
-      centers.push({
-        cx:
-          -totalWidth / 2 +
-          safeSideBevelWidth +
-          boundarySpacingX +
-          slot.slotWidth / 2 +
-          col * pitchX,
-        cy:
-          -totalDepth / 2 +
-          safeSideBevelWidth +
-          boundarySpacingY +
-          slot.slotHeight / 2 +
-          row * pitchY,
-      });
-    }
-  }
-
-  // 3. 凹槽阵列（从顶部向下挖）
-  const removeGridIslands = shouldRemoveGridIslands(params);
-  const holeCenters = removeGridIslands
-    ? centers.filter((_, index) => {
-        const row = Math.floor(index / columns);
-        const col = index % columns;
-        return row === 0 || row === rows - 1 || col === 0 || col === columns - 1;
-      })
-    : centers;
-  const holes: Geom3[] = holeCenters.map(({ cx, cy }) =>
-    translate(
-      [
-        cx,
-        cy,
-        baseThickness + holeDepth / 2 + (usesHalfCircleSlots ? 0.01 : 0),
-      ],
-      slot.shape === "circle"
-        ? cylinder({
-            radius: slot.slotWidth / 2,
-            height: holeDepth + 0.02,
-            segments: RENDER_CONFIG.cylinderSegments,
-          })
-        : cuboid({
-            size: [slot.slotWidth, slot.slotHeight, holeDepth + 0.02],
-          }),
-    ),
-  );
-
-  if (removeGridIslands) {
-    holes.unshift(
-      translate(
-        [0, 0, baseThickness + holeDepth / 2],
-        cuboid({
-          size: [
-            (columns - 1) * pitchX,
-            (rows - 1) * pitchY,
-            holeDepth + 0.02,
-          ],
-        }),
-      ),
-    );
-  }
-
-  return {
-    body,
-    grooves: params.basePlateOnly ? [] : holes,
-    baseHoles: createGridBaseHoleConstructionPlan(params),
-    clipGroovesToBody: usesHalfCircleSlots,
-  };
+  const { width, depth, height, halfAxis, grooves, baseHoles } = planGridTrayConstruction(params);
+  const body = halfAxis
+    ? createHalfCircleTrayBody(width, depth, params.baseThickness, params.holeDepth,
+        params.cornerRadius, params.sideBevelWidth, halfAxis)
+    : createBaseBody(width, depth, height, params.cornerRadius, params.sideBevelWidth);
+  return { body, grooves: grooves.map(realizeGridGroove), baseHoles, clipGroovesToBody: halfAxis !== null };
 }
 
 /**

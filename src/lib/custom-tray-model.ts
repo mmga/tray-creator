@@ -13,13 +13,12 @@ import {
 } from "@/lib/custom-layout-math";
 import type { ConstructedContouredFootprint } from "@/lib/contoured-footprint";
 import type { ContouredFootprintState } from "@/lib/contoured-footprint-state";
-import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
+import { planCustomTrayConstruction, type FlatTrayGroove } from "@/lib/flat-tray-construction";
 import {
   createBaseBody,
   createOffsetSlotShape,
   subtractBaseHoleConstructionPlan,
 } from "@/lib/model-utils";
-import { createCustomBaseHoleConstructionPlan } from "@/lib/base-hole-planning";
 import { resolveStackableBoxParams } from "@/lib/stackable-box";
 import { createStackableBoxBody } from "@/lib/stackable-box-model";
 import type { FlatTrayCutSource } from "@/lib/manual-split-cad";
@@ -74,7 +73,6 @@ export function prepareCustomTrayCutSource(
   params: CustomLayoutParams,
   contouredState: ContouredFootprintState<ConstructedContouredFootprint>,
 ): FlatTrayCutSource {
-  const { slots, baseThickness, holeDepth, cornerRadius, sideBevelWidth } = params;
   if (resolveCustomFootprintStyle(params) !== "rectangular" && contouredState.status !== "ready") {
     throw new Error(
       contouredState.status === "failed"
@@ -82,129 +80,29 @@ export function prepareCustomTrayCutSource(
         : "Contoured Footprint Construction 结果未激活",
     );
   }
-  const constructedContoured =
-    contouredState.status === "ready" ? contouredState.value : null;
-  const footprint = calculateCustomTrayFootprint(params, contouredState);
-  const trayWidth = footprint.width;
-  const trayDepth = footprint.depth;
-  const totalHeight = baseThickness + holeDepth;
-  const sourceCenterX = footprint.sizingMode === "auto" && footprint.hasSlots
-    ? (footprint.minX + footprint.maxX) / 2
-    : trayWidth / 2;
-  const sourceCenterY = footprint.sizingMode === "auto" && footprint.hasSlots
-    ? (footprint.minY + footprint.maxY) / 2
-    : trayDepth / 2;
-
-  // 1. 创建底板实体（按 footprint style 分流）
-  let body: Geom3;
-  if (footprint.footprintStyle !== "rectangular") {
-    body = createContouredBaseBody(
-      params,
-      constructedContoured!,
-      baseThickness + holeDepth,
-    );
-  } else {
-    body = createBaseBody(
-      trayWidth,
-      trayDepth,
-      totalHeight,
-      cornerRadius,
-      sideBevelWidth,
-    );
-  }
-
-  // 2. 生成凹槽
-  const holes: Geom3[] = [];
-
-  for (const slot of slots) {
-    const normalizedX = slot.x - sourceCenterX + trayWidth / 2;
-    const normalizedY = slot.y - sourceCenterY + trayDepth / 2;
-
-    // 用户坐标 → JSCAD 中心坐标
-    const cx = normalizedX - trayWidth / 2;
-    const cy = normalizedY - trayDepth / 2;
-
-    const profile = getFreeSlotProfileGeometry(slot);
-    const width = profile.width;
-    const height = profile.height;
-    const rotation = slot.rotation || 0;
-    // 2D 椭圆 → 等距外扩 → 拉伸 → 旋转 → 平移
-    const holeShape2D = createOffsetSlotShape(
-      width,
-      height,
-      slot.shape,
-      profile.outerOffset,
-      profile.profileExponent,
-    );
-
-    const hole3D = extrudeLinear({ height: holeDepth + 0.02 }, holeShape2D);
-    const rotatedHole = rotateZ(rotation * DEG_TO_RAD, hole3D);
-    const placedHole = translate([cx, cy, baseThickness], rotatedHole);
-
-    holes.push(placedHole);
-  }
-
-  return { body, grooves: holes, baseHoles: createCustomBaseHoleConstructionPlan(params, { contouredState }) };
+  const plan = planCustomTrayConstruction(params, contouredState);
+  const body = plan.footprintStyle !== "rectangular" && contouredState.status === "ready"
+    ? createContouredBaseBody(params, contouredState.value, plan.height)
+    : createBaseBody(plan.width, plan.depth, plan.height, params.cornerRadius, params.sideBevelWidth);
+  return { body, grooves: plan.grooves.map(realizeCustomGroove), baseHoles: plan.baseHoles };
 }
 
-/**
- * 矩形外轮廓 + 盒体开启时的自由布局托盘：固定外尺寸与垂直墙，槽位保持左下角自由排布。
- * 槽位坐标、旋转、椭圆外扩和底板孔位复用现有实现。
- */
+function realizeCustomGroove(groove: FlatTrayGroove) {
+  const { cx, cy, bottom, rotation, width, height, shape, outerOffset, profileExponent, length } = groove;
+  const profile = createOffsetSlotShape(width, height, shape === "circle" ? "circle" : "ellipse", outerOffset, profileExponent);
+  const cutter = extrudeLinear({ height: length }, profile);
+  return translate([cx, cy, bottom], rotateZ(rotation * DEG_TO_RAD, cutter));
+}
+
 function createStackableBoxCustomModel(
   params: CustomLayoutParams,
   box: ReturnType<typeof resolveStackableBoxParams>,
   contouredState: ContouredFootprintState<ConstructedContouredFootprint>,
 ): Geom3 {
-  const { slots, baseThickness, holeDepth } = params;
-  const trayTopZ = baseThickness + holeDepth;
-  const centerX = box.outerWidth / 2;
-  const centerY = box.outerDepth / 2;
-
-  // 1. 盒体空白主体
-  let tray = createStackableBoxBody({
-    outerWidth: box.outerWidth,
-    outerDepth: box.outerDepth,
-    outerHeight: box.outerHeight,
-    trayTopZ,
-    xyFitClearance: box.xyFitClearance,
-  });
-
-  // 2. 槽位（用户左下角坐标 → JSCAD 中心坐标）
-  const holes: Geom3[] = [];
-  for (const slot of slots) {
-    const cx = slot.x - centerX;
-    const cy = slot.y - centerY;
-
-    const profile = getFreeSlotProfileGeometry(slot);
-    const width = profile.width;
-    const height = profile.height;
-    const rotation = slot.rotation || 0;
-    const holeShape2D = createOffsetSlotShape(
-      width,
-      height,
-      slot.shape,
-      profile.outerOffset,
-      profile.profileExponent,
-    );
-
-    const hole3D = extrudeLinear({ height: holeDepth + 0.02 }, holeShape2D);
-    const rotatedHole = rotateZ(rotation * DEG_TO_RAD, hole3D);
-    const placedHole = translate([cx, cy, baseThickness], rotatedHole);
-
-    holes.push(placedHole);
-  }
-
-  // 3. 布尔运算
-  tray = holes.length > 0 ? subtract(tray, ...holes) : tray;
-
-  // 4. 底板孔位
-  tray = subtractBaseHoleConstructionPlan(
-    tray,
-    createCustomBaseHoleConstructionPlan(params, { contouredState }),
-  );
-
-  return tray;
+  const { height, grooves, baseHoles } = planCustomTrayConstruction(params, contouredState);
+  const body = createStackableBoxBody({ outerWidth: box.outerWidth, outerDepth: box.outerDepth,
+    outerHeight: box.outerHeight, trayTopZ: height, xyFitClearance: box.xyFitClearance });
+  return subtractBaseHoleConstructionPlan(grooves.length ? subtract(body, ...grooves.map(realizeCustomGroove)) : body, baseHoles);
 }
 
 /**
