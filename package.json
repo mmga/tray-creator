@@ -13,6 +13,7 @@
     "test:coverage": "vitest run --coverage",
     "test:unit": "vitest run",
     "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:step": "vitest run src/lib/step",
     "test:performance": "vitest run --config vitest.performance.config.ts",
     "test:static-server": "node --test scripts/serve-static.test.mjs"
   },

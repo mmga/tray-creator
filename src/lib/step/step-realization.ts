@@ -1,0 +1,121 @@
+import {
+  draw, drawRoundedRectangle, getOC, isShape3D, makeBox, makeCylinder, measureVolume,
+  type AnyShape, type Drawing, type Shape3D,
+} from "replicad";
+import { RENDER_CONFIG } from "@/lib/config";
+import { planCustomTrayConstruction, planGridTrayConstruction, type FlatTrayGroove } from "@/lib/flat-tray-construction";
+import { getBaseHoleFitBlockingReason } from "@/lib/base-hole-construction-plan";
+import type { FlatTraySnapshot } from "@/lib/manual-split-plan";
+import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
+
+export function requireStepSolid(shape: AnyShape): Shape3D {
+  if (isShape3D(shape)) return shape as Shape3D;
+  shape.delete();
+  throw new Error("STEP 构造结果不是实体");
+}
+
+export function drawStepPolygon(points: readonly [number, number][]): Drawing {
+  const pen = draw(points[0]);
+  for (const point of points.slice(1)) pen.lineTo(point);
+  return pen.close();
+}
+
+export function extrudeStepProfile(profile: Drawing, bottom: number, height: number) {
+  return requireStepSolid(profile.sketchOnPlane("XY", bottom).extrude(height));
+}
+
+export function cutStepSolid(body: Shape3D, cutter: Shape3D) {
+  try {
+    // 封闭磁吸腔在当前内核的默认合并面步骤中可能失效。
+    return body.cut(cutter, { simplify: false });
+  } finally {
+    body.delete();
+    cutter.delete();
+  }
+}
+
+function stepGroove({ shape, width, height, cx, cy, bottom, length, rotation, outerOffset, profileExponent }: FlatTrayGroove) {
+  if (shape === "circle") return makeCylinder(width / 2, length, [cx, cy, bottom], [0, 0, 1]);
+  if (shape === "rectangle") {
+    return makeBox([cx - width / 2, cy - height / 2, bottom], [cx + width / 2, cy + height / 2, bottom + length]);
+  }
+  const points = sampleSlotProfilePoints(width, height, shape, Math.max(0, outerOffset),
+    RENDER_CONFIG.cylinderSegments, outerOffset > 0 ? profileExponent : 2);
+  const radians = rotation * Math.PI / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  const outline = points.map(({ x, y }): [number, number] => [cx + x * cos - y * sin, cy + x * sin + y * cos]);
+  return extrudeStepProfile(drawStepPolygon(outline), bottom, length);
+}
+
+export function prepareStepConstruction(snapshot: FlatTraySnapshot) {
+  const { params } = snapshot;
+  if (![params.baseThickness, params.holeDepth, params.cornerRadius, params.sideBevelWidth].every(Number.isFinite) ||
+      params.baseThickness <= 0 || params.holeDepth <= 0 || params.cornerRadius < 0 || params.sideBevelWidth < 0) {
+    throw new Error("托盘高度、槽深、圆角或斜面参数无效");
+  }
+  if (snapshot.mode === "grid") {
+    const { rows, columns } = snapshot.params;
+    if (![rows, columns].every((value) => Number.isInteger(value) && value > 0 && value <= 30)) {
+      throw new Error("网格行列必须是 1 至 30 的整数");
+    }
+  }
+  const plan = snapshot.mode === "grid"
+    ? planGridTrayConstruction(snapshot.params)
+    : planCustomTrayConstruction(snapshot.params, { status: "inactive" });
+  if (plan.baseHoles.blocked) {
+    throw new Error(getBaseHoleFitBlockingReason(plan.baseHoles.violations) ?? "底板孔位不适配");
+  }
+  if (![plan.width, plan.depth, plan.height].every((value) => Number.isFinite(value) && value > 0) ||
+      plan.grooves.some(({ width, height, cx, cy, bottom, length, rotation, outerOffset, profileExponent }) =>
+        ![width, height, cx, cy, bottom, length, rotation, outerOffset, profileExponent ?? 2].every(Number.isFinite) ||
+        width <= 0 || height <= 0 || length <= 0 || (profileExponent ?? 2) <= 0) ||
+      plan.baseHoles.instructions.some(({ x, y, bottom, top, diameter }) =>
+        ![x, y, bottom, top, diameter].every(Number.isFinite) || top <= bottom || diameter <= 0)) {
+    throw new Error("托盘轮廓或切削尺寸无效");
+  }
+  return { ...plan, cornerRadius: Math.min(params.cornerRadius, plan.width / 2 - 0.01, plan.depth / 2 - 0.01) };
+}
+
+export function realizeStepTray(plan: ReturnType<typeof prepareStepConstruction>) {
+  let body: Shape3D | undefined;
+  try {
+    body = extrudeStepProfile(drawRoundedRectangle(plan.width, plan.depth, Math.max(0, plan.cornerRadius)), 0, plan.height);
+    for (const groove of plan.grooves) {
+      const cutter = stepGroove(groove);
+      const old = body;
+      body = undefined;
+      body = cutStepSolid(old, cutter);
+    }
+    for (const { x, y, bottom, top, diameter } of plan.baseHoles.instructions) {
+      const cutter = makeCylinder(diameter / 2, top - bottom, [x, y, bottom], [0, 0, 1]);
+      const old = body;
+      body = undefined;
+      body = cutStepSolid(old, cutter);
+    }
+    const result = body;
+    body = undefined;
+    return result;
+  } finally {
+    body?.delete();
+  }
+}
+
+export function validateStepSolid(shape: Shape3D, label: string) {
+  const oc = getOC();
+  const check = new oc.BRepCheck_Analyzer(shape.wrapped, true);
+  const box = shape.boundingBox;
+  try {
+    const bounds = box.bounds;
+    const volume = measureVolume(shape);
+    const size = bounds[1].map((v, index) => v - bounds[0][index]) as [number, number, number];
+    if (!check.IsValid() || !Number.isFinite(volume) || volume <= 0 ||
+        size.some((v) => !Number.isFinite(v) || v <= 0)) {
+      throw new Error(`${label}的 STEP 实体拓扑、尺寸或体积无效`);
+    }
+    return { bounds, size, volume };
+  } finally {
+    box.delete();
+    check.delete();
+  }
+}
