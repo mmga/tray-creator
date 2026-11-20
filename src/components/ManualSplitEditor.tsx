@@ -145,7 +145,7 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
   }), [showProtection, scene.obstacles, start, end, via, pending, routes.length]);
   const size = (part: typeof region) => splitPartSize(part, scene.height);
   const oversize = parts.some((part) => splitPrintRotation(size(part), settings) === null);
-  const ready = settings.cuts.length > 0 && invalid.size === 0;
+  const ready = parts.length > 1 && invalid.size === 0;
 
   function discard(next: Step = "idle") {
     nextSeq();
@@ -467,6 +467,7 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
           </div>}
           <div className="space-y-1 border-t border-[#383127] pt-2">
             <p className="text-xs text-muted-foreground">零件 {parts.length} 件</p>
+            {scene.height > settings.bed[2] && <p className="text-xs text-[#ffc090]">托盘高度超过平台限制，平面拆分不会降低高度。</p>}
             {parts.map((part) => <button type="button" key={part.id} aria-pressed={part.id === region.id}
               className="block w-full rounded px-2 py-1 text-left text-xs aria-pressed:bg-[#3b3223]"
               onClick={() => { discard(); setSelected(part.id); }}>零件 {part.id} · {printLabel(size(part), settings)}</button>)}

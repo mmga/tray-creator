@@ -88,6 +88,17 @@ it("导出真实网格和自定义绕槽分件，只允许平台内的闭合 STL
       const stl = await send({ type: "EXPORT_STL", requestId: part.id, geometry: part.geometry, filename: part.id + ".stl", verifyClosed: true });
       expect(stl.type, stl.type === "ERROR" ? stl.message : undefined).toBe("EXPORT_SUCCESS");
     }
+    const disconnected = captureModeParamSnapshot("custom", {
+      ...CUSTOM_LAYOUT_DEFAULTS, footprintStyle: "contoured", baseHoleStructure: "none", manualSplit: settings,
+      slots: [0, 200].map((x) => ({ id: String(x), x, y: x, shape: "circle", width: 25, height: 25, rotation: 0 })),
+    });
+    const separate = await send({ type: "GENERATE_MANUAL_SPLIT_PARTS", requestId: "disconnected", snapshot: disconnected, forPrint: true });
+    if (separate.type !== "MANUAL_SPLIT_PARTS_SUCCESS") throw new Error(JSON.stringify(separate));
+    expect(separate.parts.map(({ id }) => id)).toEqual(["1", "2"]);
+    for (const part of separate.parts) {
+      const stl = await send({ type: "EXPORT_STL", requestId: part.id, geometry: part.geometry, filename: part.id + ".stl", verifyClosed: true });
+      expect(stl.type, stl.type === "ERROR" ? stl.message : undefined).toBe("EXPORT_SUCCESS");
+    }
   } finally {
     vi.unstubAllGlobals();
   }

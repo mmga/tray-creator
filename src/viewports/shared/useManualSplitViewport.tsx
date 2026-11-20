@@ -28,7 +28,7 @@ export function useManualSplitViewport({ snapshot, onChange, onUndo, canUndo, bl
   const [open, setOpen] = useState(false);
   const [preview, setPreview] = useState<{ key: string; parts: TrayViewerSplitPart[] } | null>(null);
   const [previewRequest, setPreviewRequest] = useState<{ key: string; id: number }>();
-  const [preferSplit, setPreferSplit] = useState(false);
+  const [requestedSplitKey, setRequestedSplitKey] = useState<string>();
   const [exporting, setExporting] = useState(false);
   const exportBusy = useRef(false);
   const previewId = useRef(0);
@@ -36,8 +36,9 @@ export function useManualSplitViewport({ snapshot, onChange, onUndo, canUndo, bl
   const settings = snapshot.params.manualSplit ?? MANUAL_SPLIT_DEFAULTS;
   const locked = Boolean(snapshot.params.stackableBox?.enabled);
   const editing = open && settings.enabled && !locked;
-  const ready = settings.enabled && !locked && !blockingReason && settings.cuts.length > 0;
+  const ready = settings.enabled && !locked && !blockingReason;
   const key = useMemo(() => createModelGeometryFingerprint(snapshot) + "|" + JSON.stringify(settings), [snapshot, settings]);
+  const preferSplit = requestedSplitKey === key;
   const current = useRef<string | null>(null);
   const epoch = useRef(0);
   const close = useCallback(() => setOpen(false), []);
@@ -46,7 +47,7 @@ export function useManualSplitViewport({ snapshot, onChange, onUndo, canUndo, bl
     previewId.current += 1;
     setPreviewRequest(undefined);
     setPreview(null);
-    setPreferSplit(false);
+    setRequestedSplitKey(undefined);
     close();
   }, [close]);
   useLayoutEffect(() => {
@@ -126,10 +127,10 @@ export function useManualSplitViewport({ snapshot, onChange, onUndo, canUndo, bl
     reset, action, editing, parts,
     preferSplit,
     isGeneratingPreview: previewRequest?.key === key,
-    generatePreview: ready ? generatePreview : undefined,
+    generatePreview: ready && (settings.cuts.length > 0 || preferSplit) ? generatePreview : undefined,
     canvas: editing ? <ManualSplitEditor snapshot={snapshot} settings={settings} onChange={onChange}
       onExit={close} onUndo={onUndo} canUndo={canUndo} blockingReason={blockingReason}
-      onPreview={() => { setPreferSplit(true); onOpenPreview(); void generatePreview(); }}
+      onPreview={() => { setRequestedSplitKey(key); onOpenPreview(); void generatePreview(); }}
       onExport={() => void exportParts()} exporting={exporting} /> : null,
   };
 }
