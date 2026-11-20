@@ -12,6 +12,7 @@ import {
   getGridCutGeometry,
   getGridSlotPitchAxes,
 } from "@/lib/grid-layout-math";
+import { planHalfTraySections } from "./tray-body-profiles";
 import { resolveStackableBoxParams } from "@/lib/stackable-box";
 import { createStackableBoxBody } from "@/lib/stackable-box-model";
 import type { FlatTrayCutSource } from "@/lib/manual-split-cad";
@@ -47,41 +48,10 @@ function createHalfCircleTrayBody(
   sideBevelWidth: number,
   splitAxis: "x" | "y",
 ) {
-  const totalHeight = baseThickness + holeDepth;
-  const safeSideBevelWidth = Math.max(
-    0,
-    Math.min(sideBevelWidth, width / 2 - 0.1, depth / 2 - 0.1),
-  );
-  const baseBevelWidth = safeSideBevelWidth * (baseThickness / totalHeight);
-  const upperBevelWidth = safeSideBevelWidth - baseBevelWidth;
-  const upperWidth = width - baseBevelWidth * 2;
-  const upperDepth = depth - baseBevelWidth * 2;
-  const upperCornerRadius = Math.max(cornerRadius - baseBevelWidth, 0);
-  const base = createBaseBody(
-    width,
-    depth,
-    baseThickness,
-    cornerRadius,
-    baseBevelWidth,
-  );
-  const upper = translate(
-    [0, 0, baseThickness],
-    createBaseBody(
-      upperWidth,
-      upperDepth,
-      holeDepth,
-      upperCornerRadius,
-      upperBevelWidth,
-    ),
-  );
-  const clipCenter: [number, number, number] =
-    splitAxis === "y"
-      ? [0, -depth / 4, baseThickness + holeDepth / 2]
-      : [-width / 4, 0, baseThickness + holeDepth / 2];
-  const clipSize: [number, number, number] =
-    splitAxis === "y"
-      ? [width + 1, depth / 2, holeDepth + 0.1]
-      : [width / 2, depth + 1, holeDepth + 0.1];
+  const { base: baseProfile, upper: upperProfile, clipCenter, clipSize } =
+    planHalfTraySections(width, depth, baseThickness, holeDepth, cornerRadius, sideBevelWidth, splitAxis);
+  const base = createBaseBody(...baseProfile);
+  const upper = translate([0, 0, baseThickness], createBaseBody(...upperProfile));
   const farSideUpper = intersect(
     upper,
     cuboid({

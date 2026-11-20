@@ -1,12 +1,13 @@
 import {
-  draw, drawRoundedRectangle, getOC, isShape3D, makeBox, makeCylinder, measureVolume,
-  type AnyShape, type Drawing, type Shape3D,
+  draw, drawRoundedRectangle, getOC, isShape3D, loft, makeBox, makeCylinder, measureVolume, roundedRectangleBlueprint,
+  type AnyShape, type Drawing, type Shape3D, type Sketch,
 } from "replicad";
 import { RENDER_CONFIG } from "@/lib/config";
 import { planCustomTrayConstruction, planGridTrayConstruction, type FlatTrayGroove } from "@/lib/flat-tray-construction";
 import { getBaseHoleFitBlockingReason } from "@/lib/base-hole-construction-plan";
 import type { FlatTraySnapshot } from "@/lib/manual-split-plan";
 import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
+import { planHalfTraySections, planTrayBodyProfiles, type TrayBodyProfile } from "@/lib/tray-body-profiles";
 
 export function requireStepSolid(shape: AnyShape): Shape3D {
   if (isShape3D(shape)) return shape as Shape3D;
@@ -25,12 +26,32 @@ export function extrudeStepProfile(profile: Drawing, bottom: number, height: num
 }
 
 export function cutStepSolid(body: Shape3D, cutter: Shape3D) {
+  // 封闭磁吸腔在当前内核的默认合并面步骤中可能失效。
+  return combineStepSolids(body, cutter, "cut");
+}
+
+export function combineStepSolids(body: Shape3D, cutter: Shape3D, operation: "cut" | "fuse" | "intersect") {
   try {
-    // 封闭磁吸腔在当前内核的默认合并面步骤中可能失效。
-    return body.cut(cutter, { simplify: false });
+    return body[operation](cutter, { simplify: false });
   } finally {
     body.delete();
     cutter.delete();
+  }
+}
+
+export function realizeStepProfiles(profiles: TrayBodyProfile[]) {
+  const [bottom, top] = profiles;
+  if (profiles.length === 2 && bottom.width === top.width && bottom.depth === top.depth && bottom.radius === top.radius) {
+    return extrudeStepProfile(drawRoundedRectangle(bottom.width, bottom.depth, bottom.radius), bottom.z, top.z - bottom.z);
+  }
+  const sketches: Sketch[] = [];
+  try {
+    for (const { width, depth, radius, z } of profiles) {
+      sketches.push(roundedRectangleBlueprint(width, depth, radius).sketchOnPlane("XY", z));
+    }
+    return loft(sketches.map(({ wire }) => wire), { ruled: true });
+  } finally {
+    sketches.forEach((sketch) => sketch.delete());
   }
 }
 
@@ -74,13 +95,37 @@ export function prepareStepConstruction(snapshot: FlatTraySnapshot) {
         ![x, y, bottom, top, diameter].every(Number.isFinite) || top <= bottom || diameter <= 0)) {
     throw new Error("托盘轮廓或切削尺寸无效");
   }
-  return { ...plan, cornerRadius: Math.min(params.cornerRadius, plan.width / 2 - 0.01, plan.depth / 2 - 0.01) };
+  const half = snapshot.mode === "grid" && "halfAxis" in plan && plan.halfAxis
+    ? planHalfTraySections(plan.width, plan.depth, params.baseThickness, params.holeDepth,
+        params.cornerRadius, params.sideBevelWidth, plan.halfAxis)
+    : null;
+  return { ...plan, half, profiles: planTrayBodyProfiles(plan.width, plan.depth, plan.height, params.cornerRadius, params.sideBevelWidth) };
+}
+
+function realizeStepBody(plan: ReturnType<typeof prepareStepConstruction>) {
+  if (!plan.half) return realizeStepProfiles(plan.profiles);
+  const { base, upper, clipCenter, clipSize } = plan.half;
+  const upperProfiles = planTrayBodyProfiles(...upper).map((profile) => ({ ...profile, z: profile.z + base[2] }));
+  const corner = (sign: number) => clipCenter.map((v, i) => v + sign * clipSize[i] / 2) as [number, number, number];
+  const mask = makeBox(corner(-1), corner(1));
+  let clipped: Shape3D | undefined;
+  try {
+    const top = realizeStepProfiles(upperProfiles);
+    try { clipped = top.intersect(mask, { simplify: false }); }
+    finally { top.delete(); }
+    const bottom = realizeStepProfiles(planTrayBodyProfiles(...base));
+    try { return bottom.fuse(clipped, { simplify: false }); }
+    finally { bottom.delete(); }
+  } finally {
+    mask.delete();
+    clipped?.delete();
+  }
 }
 
 export function realizeStepTray(plan: ReturnType<typeof prepareStepConstruction>) {
   let body: Shape3D | undefined;
   try {
-    body = extrudeStepProfile(drawRoundedRectangle(plan.width, plan.depth, Math.max(0, plan.cornerRadius)), 0, plan.height);
+    body = realizeStepBody(plan);
     for (const groove of plan.grooves) {
       const cutter = stepGroove(groove);
       const old = body;

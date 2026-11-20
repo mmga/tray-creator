@@ -5,6 +5,7 @@ import {
     BASE_HOLE_CONFIG,
     getBaseHoleMinBottomWall,
 } from "@/lib/config";
+import { planTrayBodyProfiles } from "./tray-body-profiles";
 import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
 import type { BaseHolePresetKey } from "@/types/tray";
 import type { FreeSlot } from "@/types/custom-tray";
@@ -20,9 +21,6 @@ const { extrudeLinear, extrudeFromSlices, slice } = extrusions;
 const { geom2 } = geometries;
 const { mat4 } = maths;
 const BASE_HOLE_WALL_EPSILON = 1e-6;
-const MIN_BEVEL_TOP_SIZE = 0.1;
-/** JSCAD 在 roundRadius 为 0 时返回 4 顶点矩形、否则返回多边形，收分两端必须统一。 */
-const MIN_CORNER_RADIUS = 0.01;
 
 // ── 共享建模工具 ──────────────────────────
 
@@ -104,54 +102,17 @@ export function createBaseBody(
     cornerRadius: number,
     sideBevelWidth = 0,
 ): Geom3 {
-    const effectiveRadius = Math.min(
-        cornerRadius,
-        width / 2 - 0.01,
-        depth / 2 - 0.01,
-    );
-    const safeBevelWidth = Math.max(
-        0,
-        Math.min(
-            sideBevelWidth,
-            width / 2 - MIN_BEVEL_TOP_SIZE,
-            depth / 2 - MIN_BEVEL_TOP_SIZE,
-        ),
-    );
-
-    if (safeBevelWidth <= 0) {
-        return extrudeLinear(
-            { height },
-            roundedRectangle({
-                size: [width, depth],
-                roundRadius: Math.max(effectiveRadius, 0),
-                segments: RENDER_CONFIG.cornerSegments,
-            }),
-        );
-    }
-
-    const topWidth = width - safeBevelWidth * 2;
-    const topDepth = depth - safeBevelWidth * 2;
-    const bottomRadius = Math.max(effectiveRadius, 0);
-    const topRadius = Math.min(
-        Math.max(effectiveRadius - safeBevelWidth, 0),
-        topWidth / 2 - 0.01,
-        topDepth / 2 - 0.01,
-    );
-    // 两端必须同为圆角或同为直角，否则顶点数不一致会让 extrudeFromSlices 静默生成错误实体。
-    const forceRounded = bottomRadius > 0 || topRadius > 0;
-    const normalizeRadius = (radius: number) =>
-        forceRounded ? Math.max(radius, MIN_CORNER_RADIUS) : 0;
-    const bottomProfile = roundedRectangle({
+    const [bottom, top] = planTrayBodyProfiles(width, depth, height, cornerRadius, sideBevelWidth);
+    const profile = ({ width, depth, radius }: typeof bottom) => roundedRectangle({
         size: [width, depth],
-        roundRadius: normalizeRadius(bottomRadius),
+        roundRadius: radius,
         segments: RENDER_CONFIG.cornerSegments,
     });
-    const topProfile = roundedRectangle({
-        size: [topWidth, topDepth],
-        roundRadius: normalizeRadius(topRadius),
-        segments: RENDER_CONFIG.cornerSegments,
-    });
-
+    const bottomProfile = profile(bottom);
+    if (bottom.width === top.width && bottom.depth === top.depth) {
+        return extrudeLinear({ height }, bottomProfile);
+    }
+    const topProfile = profile(top);
     return extrudeFromSlices(
         {
             numberOfSlices: 2,

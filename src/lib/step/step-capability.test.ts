@@ -7,20 +7,14 @@ import { prepareCustomTrayCutSource } from "@/lib/custom-tray-model";
 import { createFreeSlotInstance } from "@/lib/slot-instance-factory";
 import { getStepCapability } from "./step-capability";
 
-describe("STEP 基础阶段", () => {
+describe("STEP 导出能力与托盘构造语义", () => {
   it("区分支持、采样说明和阻断", () => {
     const grid = { mode: "grid" as const, params: DEFAULT_TRAY_PARAMS };
     expect(getStepCapability(grid, "whole")).toEqual({ available: true, sampled: false });
     expect(getStepCapability(grid, "parts")).toMatchObject({ available: false });
-    for (const change of [
-      { rows: 1, halfCircleSlots: true },
-      { spacing: 0 },
-      { sideBevelWidth: 1 },
-      { stackableBox: { ...DEFAULT_TRAY_PARAMS.stackableBox!, enabled: true } },
-    ]) {
-      expect(getStepCapability({ ...grid, params: { ...grid.params, ...change } }, "whole"))
-        .toMatchObject({ available: false, reason: expect.any(String) });
-    }
+    expect(getStepCapability({ ...grid, params: { ...grid.params,
+      stackableBox: { ...DEFAULT_TRAY_PARAMS.stackableBox!, enabled: true } } }, "whole"))
+      .toMatchObject({ available: false, reason: expect.any(String) });
     const custom = { mode: "custom" as const, params: { ...CUSTOM_LAYOUT_DEFAULTS,
       slots: [createFreeSlotInstance({ id: "a", x: 0, y: 0, width: 50, height: 30 })] } };
     expect(getStepCapability(custom, "whole")).toEqual({ available: true, sampled: true });

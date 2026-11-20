@@ -15,6 +15,12 @@ const custom = { ...CUSTOM_LAYOUT_DEFAULTS, traySizingMode: "fixed" as const,
   trayWidth: 100, trayDepth: 80, baseHoleStructure: "none" as const };
 const cases: [string, FlatTraySnapshot][] = [
   ["网格圆槽和封闭磁吸腔", { mode: "grid", params: grid }],
+  ["圆角斜面", { mode: "grid", params: { ...grid, sideBevelWidth: 3 } }],
+  ["斜面大于圆角", { mode: "grid", params: { ...grid, cornerRadius: 1, sideBevelWidth: 4 } }],
+  ["直角斜面", { mode: "grid", params: { ...grid, cornerRadius: 0, sideBevelWidth: 3 } }],
+  ["横排半圆槽", { mode: "grid", params: { ...grid, rows: 1, halfCircleSlots: true } }],
+  ["竖排半圆槽与斜面", { mode: "grid", params: { ...grid, columns: 1, halfCircleSlots: true, sideBevelWidth: 2 } }],
+  ["零间距去岛", { mode: "grid", params: { ...grid, rows: 3, columns: 3, spacing: 0, boundarySpacingIndependent: true } }],
   ["网格矩形槽", { mode: "grid", params: { ...grid, slotShape: "rectangle",
     slotBaseWidth: 25, slotBaseHeight: 50, slotWidth: 25.4, slotHeight: 50.4, baseHoleStructure: "none" } }],
   ["带磁铁桩孔的底板", { mode: "grid", params: { ...grid, basePlateOnly: true, baseHoleStructure: "magnet-post-hole" } }],
@@ -43,6 +49,7 @@ describe("真实内核 STEP 往返", () => {
       const step = await blob.text();
       expect(step).toMatch(/MANIFOLD_SOLID_BREP|BREP_WITH_VOIDS/);
       expect(step).toContain("SI_UNIT(.MILLI.,.METRE.)");
+      expect(step).toContain("AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF");
       if (plan.grooves.some(({ shape }) => shape === "circle")) {
         expect(step).toContain("CYLINDRICAL_SURFACE");
       }
