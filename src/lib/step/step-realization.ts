@@ -1,5 +1,5 @@
 import {
-  draw, drawRoundedRectangle, getOC, isShape3D, loft, makeBox, makeCylinder, measureVolume, roundedRectangleBlueprint,
+  draw, drawRoundedRectangle, getOC, isShape3D, loft, makeBox, makeCompound, makeCylinder, measureVolume, roundedRectangleBlueprint,
   type AnyShape, type Drawing, type Shape3D, type Sketch,
 } from "replicad";
 import { RENDER_CONFIG } from "@/lib/config";
@@ -8,6 +8,8 @@ import { getBaseHoleFitBlockingReason } from "@/lib/base-hole-construction-plan"
 import type { FlatTraySnapshot } from "@/lib/manual-split-plan";
 import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
 import { planHalfTraySections, planTrayBodyProfiles, type TrayBodyProfile } from "@/lib/tray-body-profiles";
+import { buildCustomContouredState } from "@/lib/custom-contoured-footprint";
+import { pointInSplitRing, splitRingArea, type SplitRing } from "@/lib/manual-split-geometry";
 
 export function requireStepSolid(shape: AnyShape): Shape3D {
   if (isShape3D(shape)) return shape as Shape3D;
@@ -81,9 +83,11 @@ export function prepareStepConstruction(snapshot: FlatTraySnapshot) {
       throw new Error("网格行列必须是 1 至 30 的整数");
     }
   }
+  const contoured = snapshot.mode === "custom" ? buildCustomContouredState(snapshot.params) : { status: "inactive" as const };
+  if (contoured.status === "failed") throw new Error(contoured.error.message);
   const plan = snapshot.mode === "grid"
     ? planGridTrayConstruction(snapshot.params)
-    : planCustomTrayConstruction(snapshot.params, { status: "inactive" });
+    : planCustomTrayConstruction(snapshot.params, contoured);
   if (plan.baseHoles.blocked) {
     throw new Error(getBaseHoleFitBlockingReason(plan.baseHoles.violations) ?? "底板孔位不适配");
   }
@@ -99,10 +103,47 @@ export function prepareStepConstruction(snapshot: FlatTraySnapshot) {
     ? planHalfTraySections(plan.width, plan.depth, params.baseThickness, params.holeDepth,
         params.cornerRadius, params.sideBevelWidth, plan.halfAxis)
     : null;
-  return { ...plan, half, profiles: planTrayBodyProfiles(plan.width, plan.depth, plan.height, params.cornerRadius, params.sideBevelWidth) };
+  const width = contoured.status === "ready" && !contoured.value.bodies.length && snapshot.mode === "custom"
+    ? snapshot.params.trayWidth : plan.width;
+  const depth = contoured.status === "ready" && !contoured.value.bodies.length && snapshot.mode === "custom"
+    ? snapshot.params.trayDepth : plan.depth;
+  return { ...plan, half, contoured, profiles: planTrayBodyProfiles(width, depth, plan.height,
+    contoured.status === "ready" ? 0 : params.cornerRadius, contoured.status === "ready" ? 0 : params.sideBevelWidth) };
+}
+
+export function extrudeStepRegion(outer: SplitRing, holes: SplitRing[], bottom: number, height: number) {
+  let body = extrudeStepProfile(drawStepPolygon(outer), bottom, height);
+  for (const hole of holes) {
+    let cutter: Shape3D;
+    try { cutter = extrudeStepProfile(drawStepPolygon(hole), bottom - 1, height + 2); }
+    catch (error) { body.delete(); throw error; }
+    body = cutStepSolid(body, cutter);
+  }
+  return body;
+}
+
+function realizeContouredBody(plan: ReturnType<typeof prepareStepConstruction>) {
+  if (plan.contoured.status !== "ready") throw new Error("轮廓尚未构造");
+  const { bounds, bodies } = plan.contoured.value;
+  const cx = bounds ? (bounds.minX + bounds.maxX) / 2 : 0;
+  const cy = bounds ? (bounds.minY + bounds.maxY) / 2 : 0;
+  const solids: Shape3D[] = [];
+  try {
+    for (const body of bodies) {
+      const rings = body.outlines.map((ring): SplitRing => ring.map(({ x, y }) => [x - cx, y - cy]));
+      const outers = rings.filter((ring) => splitRingArea(ring) > 0);
+      if (!outers.length) throw new Error("自定义底座缺少有效的外轮廓");
+      for (const outer of outers) {
+        const holes = rings.filter((ring) => splitRingArea(ring) < 0 && pointInSplitRing(ring[0], outer));
+        solids.push(extrudeStepRegion(outer, holes, 0, plan.height));
+      }
+    }
+    return requireStepSolid(makeCompound(solids));
+  } finally { solids.forEach((solid) => solid.delete()); }
 }
 
 function realizeStepBody(plan: ReturnType<typeof prepareStepConstruction>) {
+  if (plan.contoured.status === "ready" && plan.contoured.value.bodies.length) return realizeContouredBody(plan);
   if (!plan.half) return realizeStepProfiles(plan.profiles);
   const { base, upper, clipCenter, clipSize } = plan.half;
   const upperProfiles = planTrayBodyProfiles(...upper).map((profile) => ({ ...profile, z: profile.z + base[2] }));
@@ -150,17 +191,19 @@ export function validateStepSolid(shape: Shape3D, label: string) {
   const oc = getOC();
   const check = new oc.BRepCheck_Analyzer(shape.wrapped, true);
   const box = shape.boundingBox;
+  const solids = shape.solids;
   try {
     const bounds = box.bounds;
     const volume = measureVolume(shape);
     const size = bounds[1].map((v, index) => v - bounds[0][index]) as [number, number, number];
-    if (!check.IsValid() || !Number.isFinite(volume) || volume <= 0 ||
+    if (!solids.length || !check.IsValid() || !Number.isFinite(volume) || volume <= 0 ||
         size.some((v) => !Number.isFinite(v) || v <= 0)) {
       throw new Error(`${label}的 STEP 实体拓扑、尺寸或体积无效`);
     }
-    return { bounds, size, volume };
+    return { bounds, size, volume, solidCount: solids.length };
   } finally {
     box.delete();
     check.delete();
+    solids.forEach((solid) => solid.delete());
   }
 }

@@ -1,6 +1,5 @@
 import { createTrayModel, prepareGridTrayCutSource } from "../tray-model";
 import { createCustomTrayModel, prepareCustomTrayCutSource } from "../custom-tray-model";
-import { resolveCustomFootprintStyle } from "../custom-layout-math";
 import { createBaseConverterModel } from "../base-converter-model";
 import {
   createSteppedCadSplitParts,
@@ -17,17 +16,13 @@ import type {
   SteppedLayoutParams,
 } from "@/types/custom-tray";
 import type { StackableBoxParams, TrayParams } from "@/types/tray";
-import {
-  constructCustomContouredFootprintOutcome,
-  projectCustomContouredFootprintInput,
-} from "../custom-contoured-footprint";
+import { buildCustomContouredState } from "../custom-contoured-footprint";
 import {
   constructSteppedContouredFootprintsOutcome,
   projectSteppedContouredFootprintInput,
   type ConstructedSteppedContouredFootprints,
 } from "../stepped-contoured-footprint";
 import type { ContouredFootprintState } from "../contoured-footprint-state";
-import type { ConstructedContouredFootprint } from "../contoured-footprint";
 import { resolveStackableBoxParams } from "../stackable-box";
 import { createManualSplitScene, orientManualPrintPart, realizeManualSplitParts } from "../manual-split-cad";
 import { closeManualSplitStl } from "../manual-split-stl";
@@ -40,18 +35,6 @@ import {
   createBoxSideBySidePreviewSpacing,
   createStackableBoxLid,
 } from "../stackable-box-model";
-
-function buildCustomContouredState(
-  params: CustomLayoutParams,
-): ContouredFootprintState<ConstructedContouredFootprint> {
-  if (resolveCustomFootprintStyle(params) === "rectangular") return { status: "inactive" };
-  const outcome = constructCustomContouredFootprintOutcome(
-    projectCustomContouredFootprintInput(params),
-  );
-  return outcome.ok
-    ? { status: "ready", value: outcome.value }
-    : { status: "failed", error: outcome.error };
-}
 
 function buildSteppedContouredState(
   params: SteppedLayoutParams,

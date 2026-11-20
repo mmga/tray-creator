@@ -18,9 +18,16 @@ self.onmessage = async ({ data }: MessageEvent<StepRequest>) => {
     const shape = realizeStepTray(plan);
     try {
       phase("校验模型");
-      validateStepSolid(shape, "托盘");
+      const { solidCount } = validateStepSolid(shape, "托盘");
       phase("准备文件");
-      const blob = exportSTEP([{ shape, name: `tray_${snapshot.mode}` }], { unit: "MM", modelUnit: "MM" });
+      const solids = solidCount > 1 ? shape.solids : [];
+      let blob: Blob;
+      try {
+        const ordered = solids.map((solid) => ({ solid, min: validateStepSolid(solid, "独立托盘").bounds[0] }))
+          .sort((a, b) => a.min[0] - b.min[0] || a.min[1] - b.min[1] || a.min[2] - b.min[2]);
+        blob = exportSTEP(ordered.length ? ordered.map(({ solid }, i) => ({ shape: solid, name: `tray_${i + 1}` }))
+          : [{ shape, name: `tray_${snapshot.mode}` }], { unit: "MM", modelUnit: "MM" });
+      } finally { solids.forEach((solid) => solid.delete()); }
       const bytes = await blob.arrayBuffer();
       if (bytes.byteLength === 0) throw new Error("STEP 导出结果为空");
       post({ requestId, type: "done", files: [{ bytes }] }, [bytes]);

@@ -15,8 +15,6 @@ export function getStepCapability(snapshot: FlatTraySnapshot, scope: StepScope):
   if (snapshot.mode === "grid") {
     return { available: true, sampled: false };
   }
-  if (resolveCustomFootprintStyle(snapshot.params) !== "rectangular") {
-    return blocked("当前底座轮廓暂不支持 STEP 导出");
-  }
-  return { available: true, sampled: snapshot.params.slots.some(({ shape }) => shape === "ellipse") };
+  return { available: true, sampled: resolveCustomFootprintStyle(snapshot.params) !== "rectangular" ||
+    snapshot.params.slots.some(({ shape }) => shape === "ellipse") };
 }

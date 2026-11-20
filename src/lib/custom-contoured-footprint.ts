@@ -7,6 +7,8 @@ import {
 } from "@/lib/contoured-footprint";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import type { CustomLayoutParams, FreeSlot } from "@/types/custom-tray";
+import type { ContouredFootprintState } from "./contoured-footprint-state";
+import { resolveCustomFootprintStyle } from "./custom-layout-math";
 
 export type CustomContouredFootprintOutcome =
   | { ok: true; value: ConstructedContouredFootprint }
@@ -71,4 +73,10 @@ export function constructCustomContouredFootprintOutcome(
     };
   }
   return { ok: true, value: footprint };
+}
+
+export function buildCustomContouredState(params: CustomLayoutParams): ContouredFootprintState<ConstructedContouredFootprint> {
+  if (resolveCustomFootprintStyle(params) === "rectangular") return { status: "inactive" };
+  const outcome = constructCustomContouredFootprintOutcome(projectCustomContouredFootprintInput(params));
+  return outcome.ok ? { status: "ready", value: outcome.value } : { status: "failed", error: outcome.error };
 }

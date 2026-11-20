@@ -28,6 +28,13 @@ const cases: [string, FlatTraySnapshot][] = [
     slots: [createFreeSlotInstance({ id: "a", x: 35, y: 40, width: 25 })] } }],
   ["自定义旋转超椭圆槽", { mode: "custom", params: { ...custom,
     slots: [createFreeSlotInstance({ id: "a", x: 50, y: 40, width: 50, height: 30, rotation: 35 })] } }],
+  ["自定义断连轮廓", { mode: "custom", params: { ...custom, footprintStyle: "contoured", disconnectDistance: 0,
+    slots: [0, 200].map((x) => createFreeSlotInstance({ id: String(x), x, y: x, width: 25 })) } }],
+  ...(["manual", "tangent"] as const).map((polygonCornerStyle): [string, FlatTraySnapshot] => [
+    `自定义直边包络 ${polygonCornerStyle}`, { mode: "custom", params: { ...custom,
+      footprintStyle: "polygonal", polygonCornerStyle, cornerRadius: 30, sideBevelWidth: 8,
+      slots: [[0, 0], [60, 0], [30, 50]].map(([x, y]) => createFreeSlotInstance({ id: String(x), x, y, width: 25 })) } },
+  ]),
 ];
 
 describe("真实内核 STEP 往返", () => {
@@ -35,10 +42,11 @@ describe("真实内核 STEP 往返", () => {
 
   it.each(cases)("%s", async (_name, snapshot) => {
     const plan = prepareStepConstruction(snapshot);
-    const model = snapshot.mode === "grid" ? createTrayModel(snapshot.params) : createCustomTrayModel(snapshot.params);
+    const model = snapshot.mode === "grid" ? createTrayModel(snapshot.params) : createCustomTrayModel(snapshot.params, plan.contoured);
     const shape = realizeStepTray(plan);
     try {
-      const { volume, bounds } = validateStepSolid(shape, "托盘");
+      const { volume, bounds, solidCount } = validateStepSolid(shape, "托盘");
+      expect(solidCount).toBe(plan.contoured.status === "ready" ? Math.max(1, plan.contoured.value.bodyCount) : 1);
       const reference = measurements.measureVolume(model);
       expect(Math.abs(volume - reference) / reference).toBeLessThan(0.002);
       const refBounds = measurements.measureBoundingBox(model);
@@ -55,9 +63,10 @@ describe("真实内核 STEP 往返", () => {
       }
       const restored = requireStepSolid(await importSTEP(blob));
       try {
-        validateStepSolid(restored, "读回托盘");
+        const roundTrip = validateStepSolid(restored, "读回托盘");
+        expect(roundTrip.solidCount).toBe(solidCount);
         expect(Math.abs(measureVolume(restored) - volume)).toBeLessThan(Math.max(0.001, volume * 1e-8));
-        for (const [index, coordinate] of validateStepSolid(restored, "读回托盘").bounds.flat().entries()) {
+        for (const [index, coordinate] of roundTrip.bounds.flat().entries()) {
           expect(Math.abs(coordinate - bounds.flat()[index])).toBeLessThan(0.001);
         }
       } finally { restored.delete(); }

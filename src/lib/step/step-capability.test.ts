@@ -19,7 +19,7 @@ describe("STEP 导出能力与托盘构造语义", () => {
       slots: [createFreeSlotInstance({ id: "a", x: 0, y: 0, width: 50, height: 30 })] } };
     expect(getStepCapability(custom, "whole")).toEqual({ available: true, sampled: true });
     expect(getStepCapability({ ...custom, params: { ...custom.params, footprintStyle: "contoured" } }, "whole"))
-      .toMatchObject({ available: false });
+      .toEqual({ available: true, sampled: true });
   });
 
   it("保留网格快照直径、实际切削高度和底孔阻断", () => {
