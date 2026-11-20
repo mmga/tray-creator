@@ -3,6 +3,7 @@ import { getStepCapability } from "../step/step-capability";
 import { loadStepKernel } from "../step/step-kernel";
 import { prepareStepConstruction, realizeStepLid, realizeStepTray, validateStepSolid } from "../step/step-realization";
 import type { StepFile, StepPhase, StepRequest, StepResponse } from "../step/step-protocol";
+import { realizeStepParts } from "../step/step-split";
 
 function serializeStep(shape: Shape3D, count: number, name: string) {
   const solids = count > 1 ? shape.solids : [];
@@ -25,8 +26,11 @@ self.onmessage = async ({ data }: MessageEvent<StepRequest>) => {
     phase("加载导出组件");
     await loadStepKernel();
     phase("构建实体");
-    const shapes = [{ shape: realizeStepTray(plan), id: plan.box.enabled ? "body" : undefined }];
+    const whole = realizeStepTray(plan);
+    const shapes: { shape: Shape3D; id?: string }[] = [];
     try {
+      if (scope === "parts") shapes.push(...realizeStepParts(whole, snapshot, plan));
+      else shapes.push({ shape: whole, id: plan.box.enabled ? "body" : undefined });
       if (plan.box.enabled) shapes.push({ shape: realizeStepLid(plan), id: "lid" });
       phase("校验模型");
       const validated = shapes.map(({ shape, id }) => ({ shape, id, count: validateStepSolid(shape, id === "lid" ? "盖子" : "托盘").solidCount }));
@@ -39,7 +43,8 @@ self.onmessage = async ({ data }: MessageEvent<StepRequest>) => {
       }
       post({ requestId, type: "done", files }, files.map(({ bytes }) => bytes));
     } finally {
-      shapes.forEach(({ shape }) => shape.delete());
+      shapes.forEach(({ shape }) => { if (shape !== whole) shape.delete(); });
+      whole.delete();
     }
   } catch (error) {
     post({ requestId, type: "error", message: error instanceof Error ? error.message : "STEP 生成失败" });

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { Button } from "@/components/ui/button";
 import type { TrayViewerSplitPart } from "@/components/TrayViewer";
 import { useToast } from "@/hooks/useToast";
+import { useStepExport } from "@/hooks/useStepExport";
 import { MANUAL_SPLIT_DEFAULTS, type FlatTraySnapshot, type ManualSplitSettings } from "@/lib/manual-split-plan";
 import { browserDownloadPort } from "@/lib/download-port";
 import { captureModeParamSnapshot, createModelGeometryFingerprint } from "@/lib/mode-param-snapshot";
@@ -37,19 +38,21 @@ export function useManualSplitViewport({ snapshot, onChange, onUndo, canUndo, bl
   const locked = Boolean(snapshot.params.stackableBox?.enabled);
   const editing = open && settings.enabled && !locked;
   const ready = settings.enabled && !locked && !blockingReason;
+  const stepExport = useStepExport(editing ? snapshot : undefined, "parts", blockingReason);
   const key = useMemo(() => createModelGeometryFingerprint(snapshot) + "|" + JSON.stringify(settings), [snapshot, settings]);
   const preferSplit = requestedSplitKey === key;
   const current = useRef<string | null>(null);
   const epoch = useRef(0);
   const close = useCallback(() => setOpen(false), []);
   const reset = useCallback(() => {
+    stepExport.cancel();
     epoch.current += 1;
     previewId.current += 1;
     setPreviewRequest(undefined);
     setPreview(null);
     setRequestedSplitKey(undefined);
     close();
-  }, [close]);
+  }, [close, stepExport.cancel]);
   useLayoutEffect(() => {
     current.current = ready ? key : null;
     return () => { current.current = null; };
@@ -131,6 +134,6 @@ export function useManualSplitViewport({ snapshot, onChange, onUndo, canUndo, bl
     canvas: editing ? <ManualSplitEditor snapshot={snapshot} settings={settings} onChange={onChange}
       onExit={close} onUndo={onUndo} canUndo={canUndo} blockingReason={blockingReason}
       onPreview={() => { setRequestedSplitKey(key); onOpenPreview(); void generatePreview(); }}
-      onExport={() => void exportParts()} exporting={exporting} /> : null,
+      onExport={() => void exportParts()} exporting={exporting} stepExport={stepExport} /> : null,
   };
 }

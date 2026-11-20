@@ -60,7 +60,7 @@ export function realizeStepProfiles(profiles: TrayBodyProfile[]) {
   }
 }
 
-function stepGroove({ shape, width, height, cx, cy, bottom, length, rotation, outerOffset, profileExponent }: FlatTrayGroove) {
+export function realizeStepGroove({ shape, width, height, cx, cy, bottom, length, rotation, outerOffset, profileExponent }: FlatTrayGroove) {
   if (shape === "circle") return makeCylinder(width / 2, length, [cx, cy, bottom], [0, 0, 1]);
   if (shape === "rectangle") {
     return makeBox([cx - width / 2, cy - height / 2, bottom], [cx + width / 2, cy + height / 2, bottom + length]);
@@ -149,7 +149,7 @@ function realizeContouredBody(plan: ReturnType<typeof prepareStepConstruction>) 
   } finally { solids.forEach((solid) => solid.delete()); }
 }
 
-function realizeStepBody(plan: ReturnType<typeof prepareStepConstruction>) {
+export function realizeStepBody(plan: ReturnType<typeof prepareStepConstruction>) {
   if (plan.box.enabled) {
     const profiles = planStackableBoxBody({ ...plan.box, trayTopZ: plan.height });
     let body: Shape3D | undefined = realizeStepProfiles(profiles.envelope);
@@ -194,7 +194,7 @@ export function realizeStepTray(plan: ReturnType<typeof prepareStepConstruction>
   try {
     body = realizeStepBody(plan);
     for (const groove of plan.grooves) {
-      const cutter = stepGroove(groove);
+      const cutter = realizeStepGroove(groove);
       const old = body;
       body = undefined;
       body = cutStepSolid(old, cutter);

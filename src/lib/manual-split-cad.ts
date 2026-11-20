@@ -92,7 +92,7 @@ export function realizeManualSplitParts(model: Geom3, scene: ManualSplitScene, s
 }
 
 /** 裁切体越过原托盘外壁，避免圆角处共面布尔裂缝。共享切线保持原位。 */
-function extendSplitMaskPastTrayEdge(ring: SplitRing, root: SplitRing): SplitRing {
+export function extendSplitMaskPastTrayEdge(ring: SplitRing, root: SplitRing): SplitRing {
   const rootEdges = ringEdges(root);
   const sides = ringEdges(ring).map(([a, b]) => {
     const length = splitDistance(a, b);

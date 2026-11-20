@@ -11,7 +11,7 @@ export function getStepCapability(snapshot: FlatTraySnapshot, scope: StepScope):
   const { params } = snapshot;
   const blocked = (reason: string): StepCapability => ({ available: false, reason });
   if (params.stackableBox?.enabled && scope === "parts") return blocked("堆叠盒体不支持手动拆件");
-  if (scope === "parts") return blocked("暂不支持分件 STEP 导出");
+  if (scope === "parts" && !params.manualSplit?.enabled) return blocked("请先启用拆件打印");
   if (snapshot.mode === "grid") {
     return { available: true, sampled: false };
   }

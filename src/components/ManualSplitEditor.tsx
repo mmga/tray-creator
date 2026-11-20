@@ -19,6 +19,7 @@ import {
 } from "@/lib/manual-split-snap";
 import { createModelGeometryFingerprint } from "@/lib/mode-param-snapshot";
 import { trayWorkerService } from "@/lib/worker/worker-service";
+import type { useStepExport } from "@/hooks/useStepExport";
 
 interface EditorProps {
   snapshot: FlatTraySnapshot;
@@ -30,6 +31,7 @@ interface EditorProps {
   onPreview?: () => void;
   onExport?: () => void;
   exporting?: boolean;
+  stepExport?: ReturnType<typeof useStepExport>;
   blockingReason?: string | null;
 }
 
@@ -93,7 +95,7 @@ function SettingInput({ value, min, max, onCommit }: { value: number; min: numbe
     }} />;
 }
 
-function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo, canUndo, onPreview, onExport, exporting }: EditorProps & { scene: ManualSplitScene }) {
+function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo, canUndo, onPreview, onExport, exporting, stepExport }: EditorProps & { scene: ManualSplitScene }) {
   const { parts, invalid } = useMemo(() => replayManualCuts(scene, settings.cuts), [scene, settings.cuts]);
   const [selected, setSelected] = useState<string>();
   const region = parts.find((part) => part.id === selected) ?? parts[0];
@@ -492,7 +494,14 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
             {onExport && <Button size="sm" disabled={!ready || oversize || exporting || !isManualSplitBedValid(settings)} onClick={onExport}>
               {exporting ? "正在导出…" : "导出分件 STL"}
             </Button>}
+            {stepExport && <Button size="sm" variant="outline" disabled={!ready || oversize || Boolean(stepExport.phase || stepExport.reason) || !isManualSplitBedValid(settings)}
+              onClick={() => void stepExport.run()}>导出分件 STEP</Button>}
           </div>}
+          {stepExport?.reason || stepExport?.sampled ? <p className="text-xs text-muted-foreground">{stepExport.reason ?? "包含分段轮廓，部分侧壁由平面组成"}</p> : null}
+          {stepExport?.phase ? <div className="flex items-center gap-2 text-xs">
+            <span role="status">STEP · {stepExport.phase}</span>
+            <Button size="sm" variant="ghost" onClick={stepExport.cancel}>取消 STEP 导出</Button>
+          </div> : null}
           <details className="border-t border-[#383127] pt-2 text-xs" open>
             <summary className="cursor-pointer">打印设置（mm）</summary>
             <div className="mt-2 grid grid-cols-3 gap-1">
