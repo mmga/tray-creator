@@ -6,13 +6,15 @@ import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { createFreeSlotInstance } from "@/lib/slot-instance-factory";
 import { createTrayModel } from "@/lib/tray-model";
 import { createCustomTrayModel } from "@/lib/custom-tray-model";
+import { createStackableBoxLid } from "@/lib/stackable-box-model";
 import type { FlatTraySnapshot } from "@/lib/manual-split-plan";
 import { loadStepKernel } from "./step-kernel";
-import { prepareStepConstruction, realizeStepTray, requireStepSolid, validateStepSolid } from "./step-realization";
+import { extrudeStepRegion, prepareStepConstruction, realizeStepLid, realizeStepTray, requireStepSolid, validateStepSolid } from "./step-realization";
 
 const grid = { ...DEFAULT_TRAY_PARAMS, rows: 2, columns: 2 };
 const custom = { ...CUSTOM_LAYOUT_DEFAULTS, traySizingMode: "fixed" as const,
   trayWidth: 100, trayDepth: 80, baseHoleStructure: "none" as const };
+const box = { ...DEFAULT_TRAY_PARAMS.stackableBox!, enabled: true, outerWidth: 120, outerDepth: 110, outerHeight: 25 };
 const cases: [string, FlatTraySnapshot][] = [
   ["网格圆槽和封闭磁吸腔", { mode: "grid", params: grid }],
   ["圆角斜面", { mode: "grid", params: { ...grid, sideBevelWidth: 3 } }],
@@ -25,6 +27,9 @@ const cases: [string, FlatTraySnapshot][] = [
     slotBaseWidth: 25, slotBaseHeight: 50, slotWidth: 25.4, slotHeight: 50.4, baseHoleStructure: "none" } }],
   ["带磁铁桩孔的底板", { mode: "grid", params: { ...grid, basePlateOnly: true, baseHoleStructure: "magnet-post-hole" } }],
   ["自定义圆槽", { mode: "custom", params: { ...custom,
+    slots: [createFreeSlotInstance({ id: "a", x: 35, y: 40, width: 25 })] } }],
+  ["网格堆叠盒体", { mode: "grid", params: { ...grid, stackableBox: box } }],
+  ["自定义堆叠盒体", { mode: "custom", params: { ...custom, stackableBox: box,
     slots: [createFreeSlotInstance({ id: "a", x: 35, y: 40, width: 25 })] } }],
   ["自定义旋转超椭圆槽", { mode: "custom", params: { ...custom,
     slots: [createFreeSlotInstance({ id: "a", x: 50, y: 40, width: 50, height: 30, rotation: 35 })] } }],
@@ -76,5 +81,29 @@ describe("真实内核 STEP 往返", () => {
   it("拒绝非有限参数和无法容纳的底孔", () => {
     expect(() => prepareStepConstruction({ mode: "grid", params: { ...grid, rows: Infinity } })).toThrow("网格行列");
     expect(() => prepareStepConstruction({ mode: "grid", params: { ...grid, slotDiameter: 10 } })).toThrow();
+  });
+
+  it("盒盖在自己的构造坐标中落地，并保存现有配合尺寸", async () => {
+    const plan = prepareStepConstruction({ mode: "grid", params: { ...grid, stackableBox: box } });
+    const lid = realizeStepLid(plan);
+    try {
+      const { bounds, volume, solidCount } = validateStepSolid(lid, "盖子");
+      const reference = createStackableBoxLid(plan.box);
+      expect(solidCount).toBe(1);
+      expect(bounds[0][2]).toBeCloseTo(0, 5);
+      expect(bounds[1][0] - bounds[0][0]).toBeCloseTo(box.outerWidth, 5);
+      expect(bounds[1][2]).toBeCloseTo(measurements.measureBoundingBox(reference)[1][2], 5);
+      expect(Math.abs(volume - measurements.measureVolume(reference)) / volume).toBeLessThan(0.002);
+      const restored = requireStepSolid(await importSTEP(exportSTEP([{ shape: lid, name: "lid" }], { unit: "MM" })));
+      try { expect(validateStepSolid(restored, "盖子").volume).toBeCloseTo(volume, 4); }
+      finally { restored.delete(); }
+    } finally { lid.delete(); }
+  });
+
+  it("拉伸采样底座时保留内环通孔", () => {
+    const body = extrudeStepRegion([[0, 0], [20, 0], [20, 20], [0, 20]],
+      [[[5, 5], [5, 15], [15, 15], [15, 5]]], 0, 5);
+    try { expect(validateStepSolid(body, "有孔底座").volume).toBeCloseTo(1500, 8); }
+    finally { body.delete(); }
   });
 });

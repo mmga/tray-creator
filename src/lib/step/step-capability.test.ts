@@ -14,7 +14,7 @@ describe("STEP 导出能力与托盘构造语义", () => {
     expect(getStepCapability(grid, "parts")).toMatchObject({ available: false });
     expect(getStepCapability({ ...grid, params: { ...grid.params,
       stackableBox: { ...DEFAULT_TRAY_PARAMS.stackableBox!, enabled: true } } }, "whole"))
-      .toMatchObject({ available: false, reason: expect.any(String) });
+      .toEqual({ available: true, sampled: false });
     const custom = { mode: "custom" as const, params: { ...CUSTOM_LAYOUT_DEFAULTS,
       slots: [createFreeSlotInstance({ id: "a", x: 0, y: 0, width: 50, height: 30 })] } };
     expect(getStepCapability(custom, "whole")).toEqual({ available: true, sampled: true });

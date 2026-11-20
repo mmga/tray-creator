@@ -10,6 +10,9 @@ import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
 import { planHalfTraySections, planTrayBodyProfiles, type TrayBodyProfile } from "@/lib/tray-body-profiles";
 import { buildCustomContouredState } from "@/lib/custom-contoured-footprint";
 import { pointInSplitRing, splitRingArea, type SplitRing } from "@/lib/manual-split-geometry";
+import { planStackableBoxBody, planStackableBoxLid } from "@/lib/stackable-box-construction";
+import { validateGridBox } from "@/lib/grid-layout-math";
+import { validateCustomBox } from "@/lib/custom-layout-math";
 
 export function requireStepSolid(shape: AnyShape): Shape3D {
   if (isShape3D(shape)) return shape as Shape3D;
@@ -88,6 +91,10 @@ export function prepareStepConstruction(snapshot: FlatTraySnapshot) {
   const plan = snapshot.mode === "grid"
     ? planGridTrayConstruction(snapshot.params)
     : planCustomTrayConstruction(snapshot.params, contoured);
+  if (plan.box.enabled) {
+    const boxCheck = snapshot.mode === "grid" ? validateGridBox(snapshot.params) : validateCustomBox(snapshot.params);
+    if (!boxCheck.valid) throw new Error(boxCheck.blockingReasons[0]?.message ?? "堆叠盒体参数无效");
+  }
   if (plan.baseHoles.blocked) {
     throw new Error(getBaseHoleFitBlockingReason(plan.baseHoles.violations) ?? "底板孔位不适配");
   }
@@ -143,6 +150,21 @@ function realizeContouredBody(plan: ReturnType<typeof prepareStepConstruction>) 
 }
 
 function realizeStepBody(plan: ReturnType<typeof prepareStepConstruction>) {
+  if (plan.box.enabled) {
+    const profiles = planStackableBoxBody({ ...plan.box, trayTopZ: plan.height });
+    let body: Shape3D | undefined = realizeStepProfiles(profiles.envelope);
+    try {
+      for (const section of [profiles.lowerCavity, profiles.upperCavity]) {
+        const cutter = realizeStepProfiles(section);
+        const prior = body;
+        body = undefined;
+        body = cutStepSolid(prior, cutter);
+      }
+      const result = body;
+      body = undefined;
+      return result;
+    } finally { body?.delete(); }
+  }
   if (plan.contoured.status === "ready" && plan.contoured.value.bodies.length) return realizeContouredBody(plan);
   if (!plan.half) return realizeStepProfiles(plan.profiles);
   const { base, upper, clipCenter, clipSize } = plan.half;
@@ -161,6 +183,10 @@ function realizeStepBody(plan: ReturnType<typeof prepareStepConstruction>) {
     mask.delete();
     clipped?.delete();
   }
+}
+
+export function realizeStepLid(plan: ReturnType<typeof prepareStepConstruction>) {
+  return realizeStepProfiles(planStackableBoxLid(plan.box));
 }
 
 export function realizeStepTray(plan: ReturnType<typeof prepareStepConstruction>) {
