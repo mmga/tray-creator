@@ -168,3 +168,71 @@ it("镜像侧遇到保护区时阻止整组确认，可解除联动继续绘制"
   fireEvent.click(screen.getByRole("button", { name: "确认分割" }));
   expect(screen.getByText("零件 2 件")).toBeInTheDocument();
 });
+
+function commitCoordinate(name: string, value: number) {
+  const input = screen.getByRole("spinbutton", { name });
+  fireEvent.change(input, { target: { value: String(value) } });
+  fireEvent.blur(input);
+}
+
+it("保存后可从镜像侧编辑，移动横段、增删台阶可保留对称关系", async () => {
+  setupWorker();
+  render(<Editor mode="grid" />);
+  fireEvent.click(await screen.findByRole("button", { name: "正交折线" }));
+  fireEvent.change(screen.getByRole("combobox", { name: "整线对称" }), { target: { value: "left-right" } });
+  takePoint(12, 80);
+  takePoint(12, 16);
+  takePoint(33, 16);
+  takePoint(33, 0);
+  fireEvent.click(screen.getByRole("button", { name: "确认对称分割" }));
+  fireEvent.click(screen.getByRole("button", { name: /编辑切线 1\.[12]/ }));
+  const svg = screen.getByLabelText("托盘拆件画布");
+  Object.defineProperties(svg, {
+    getScreenCTM: { value: () => ({ a: 10, b: 0, inverse: () => ({ a: 0.1, d: 0.1 }) }) },
+    setPointerCapture: { value: vi.fn() },
+  });
+  vi.stubGlobal("DOMPoint", class {
+    constructor(readonly x: number, readonly y: number) {}
+    matrixTransform(matrix: { a: number; d: number }) { return { x: this.x * matrix.a, y: this.y * matrix.d }; }
+  });
+  try {
+    fireEvent.pointerDown(screen.getByText("对称折点 1").parentElement!, { button: 0, isPrimary: true, clientX: 880, clientY: -160 });
+    fireEvent.pointerMove(svg, { isPrimary: true, clientX: 900, clientY: -180 });
+    fireEvent.pointerUp(svg, { button: 0, isPrimary: true, clientX: 900, clientY: -180 });
+    expect(screen.getByRole("spinbutton", { name: "折点 X" })).toHaveValue(10);
+    expect(screen.getByRole("spinbutton", { name: "折点 Y" })).toHaveValue(18);
+  } finally { vi.unstubAllGlobals(); }
+  const segments = screen.getByRole("combobox", { name: "选线段" });
+  fireEvent.change(segments, { target: { value: "1" } });
+  commitCoordinate("线段 Y", 17);
+  fireEvent.click(screen.getByRole("button", { name: "增加台阶" }));
+  expect(segments.querySelectorAll("option")).toHaveLength(5);
+  fireEvent.click(screen.getByRole("button", { name: "删除台阶" }));
+  expect(segments.querySelectorAll("option")).toHaveLength(3);
+  fireEvent.click(screen.getByRole("button", { name: "保存切线调整" }));
+  expect(screen.getByText("零件 3 件")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "解除对称" }));
+  expect(screen.queryByText(/对称组/)).not.toBeInTheDocument();
+  expect(screen.getByText("零件 3 件")).toBeInTheDocument();
+});
+
+it("调整上游折线会提示受影响的下游切线并保留其坐标", async () => {
+  setupWorker();
+  render(<Editor mode="custom" />);
+  fireEvent.click(await screen.findByRole("button", { name: "正交折线" }));
+  takePoint(45, 80);
+  takePoint(45, 0);
+  fireEvent.click(screen.getByRole("button", { name: "确认分割" }));
+  fireEvent.click(screen.getByRole("button", { name: "正交折线" }));
+  takePoint(12, 80);
+  takePoint(12, 0);
+  fireEvent.click(screen.getByRole("button", { name: "确认分割" }));
+  expect(screen.getByText("零件 3 件")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "编辑切线 1" }));
+  commitCoordinate("线段 X", 10);
+  expect(screen.getByRole("alert")).toHaveTextContent("下列切线需要复核：1.1");
+  fireEvent.click(screen.getByRole("button", { name: "保存切线调整" }));
+  expect(screen.getByText("切线 1.1 · 已失效")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "撤销" }));
+  expect(screen.getByText("零件 3 件")).toBeInTheDocument();
+});

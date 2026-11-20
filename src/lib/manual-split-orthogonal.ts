@@ -58,3 +58,43 @@ export function appendOrthogonalPoint(path: SplitRing, point: SplitPoint): Split
   }
   return [...path, point];
 }
+
+export function splitSegmentAxis(path: SplitRing, index: number): 0 | 1 {
+  return path[index][0] === path[index + 1][0] ? 0 : 1;
+}
+
+/** 平移线段只改其法向坐标；首尾沿相同方向重新求边界交点。 */
+export function moveOrthogonalSegment(path: SplitRing, outer: SplitRing, index: number, value: number,
+  axis = splitSegmentAxis(path, index)) {
+  const next = path.map((p): SplitPoint => [...p]);
+  next[index][axis] = next[index + 1][axis] = value;
+  const direction = axis === 0 ? "vertical" : "horizontal";
+  for (const [endpoint, adjacent] of [[0, 1], [next.length - 1, next.length - 2]]) {
+    if (endpoint !== index && endpoint !== index + 1) continue;
+    const hit = projectOrthogonalPoint(next[adjacent], next[endpoint], outer, direction, Infinity);
+    if (hit.boundary) next[endpoint] = hit.point;
+  }
+  return next;
+}
+
+export function moveOrthogonalCorner(path: SplitRing, outer: SplitRing, index: number, point: SplitPoint) {
+  const axis = splitSegmentAxis(path, index - 1);
+  const next = moveOrthogonalSegment(path, outer, index - 1, point[axis]);
+  // 相邻线段的方向取自原折线，允许编辑过程中暂时出现零长度线段。
+  return moveOrthogonalSegment(next, outer, index, point[1 - axis], axis === 0 ? 1 : 0);
+}
+
+export function insertOrthogonalStep(path: SplitRing, outer: SplitRing, index: number, offset: number) {
+  const axis = splitSegmentAxis(path, index);
+  const a = path[index];
+  const b = path[index + 1];
+  const midpoint = a.map((value, i) => (value + b[i]) / 2) as SplitPoint;
+  const withCorners = [...path.slice(0, index + 1), midpoint, midpoint, ...path.slice(index + 1)];
+  return moveOrthogonalSegment(withCorners, outer, index + 2, a[axis] + offset, axis);
+}
+
+export function removeOrthogonalStep(path: SplitRing, outer: SplitRing, index: number) {
+  const axis = splitSegmentAxis(path, index + 1);
+  const aligned = moveOrthogonalSegment(path, outer, index + 1, path[index][axis], axis);
+  return [...aligned.slice(0, index), ...aligned.slice(index + 2)];
+}

@@ -12,12 +12,13 @@ import {
   splitBounds, splitDistance, splitSegmentAvoidsRing, splitSegmentClear, type SplitPoint, type SplitRing,
 } from "@/lib/manual-split-geometry";
 import {
-  appendOrthogonalPoint, mirrorSplitPoint, orthogonalFixedAxis, projectOrthogonalPoint,
+  appendOrthogonalPoint, insertOrthogonalStep, mirrorSplitPoint, moveOrthogonalCorner, moveOrthogonalSegment,
+  orthogonalFixedAxis, projectOrthogonalPoint, removeOrthogonalStep, splitSegmentAxis,
   type SplitDirection, type SplitSymmetry,
 } from "@/lib/manual-split-orthogonal";
 import {
   isManualSplitBedValid, manualCutsToRemove, MAX_MANUAL_SPLIT_CUTS, MAX_SPLIT_PATH_POINTS,
-  planOrthogonalSplit, replayManualCuts, splitPartSize, splitPrintRotation,
+  planOrthogonalSplit, replayManualCuts, splitOperationStart, splitPartSize, splitPrintRotation,
   type FlatTraySnapshot, type ManualSplitCut, type ManualSplitScene, type ManualSplitSettings,
 } from "@/lib/manual-split-plan";
 import type { ManualSplitRoute } from "@/lib/manual-split-routes";
@@ -47,6 +48,7 @@ type SceneResult = { key: string; scene: ManualSplitScene } | { key: string; err
 type Step = "idle" | "start" | "end" | "via" | "orthogonal";
 type GuideAnchor = { point: SplitPoint; span?: ReturnType<typeof splitBounds> };
 type SplitGuide = { axis: 0 | 1; value: number; from: number; to: number };
+type OrthogonalDraft = { path: SplitRing; complete: boolean; editing?: number };
 
 export default function ManualSplitEditor(props: EditorProps) {
   const { snapshot, settings, onExit, blockingReason } = props;
@@ -108,13 +110,23 @@ function SettingInput({ value, min, max, onCommit }: { value: number; min: numbe
 function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo, canUndo, onPreview, onExport, exporting, stepExport }: EditorProps & { scene: ManualSplitScene }) {
   const { parts, invalid } = useMemo(() => replayManualCuts(scene, settings.cuts), [scene, settings.cuts]);
   const [selected, setSelected] = useState<string>();
-  const region = parts.find((part) => part.id === selected) ?? parts[0];
+  const [orthogonal, setOrthogonal] = useState<OrthogonalDraft>();
+  const editing = orthogonal?.editing;
+  const editingCut = editing === undefined ? undefined : settings.cuts[editing];
+  const editingCount = editingCut?.symmetry ? 2 : editingCut ? 1 : 0;
+  const visibleParts = useMemo(() => editing === undefined ? parts : replayManualCuts(scene, settings.cuts.slice(0, editing)).parts,
+    [editing, parts, scene, settings.cuts]);
+  const region = visibleParts.find((part) => part.id === (editingCut?.target ?? selected)) ?? visibleParts[0];
   const [step, setStep] = useState<Step>("idle");
   const [start, setStart] = useState<SplitPoint>();
   const [end, setEnd] = useState<SplitPoint>();
   const [via, setVia] = useState<SplitPoint>();
-  const [orthogonal, setOrthogonal] = useState<{ path: SplitRing; complete: boolean }>();
   const [direction, setDirection] = useState<SplitDirection>("auto");
+  const [selectedSegment, setSelectedSegment] = useState(0);
+  const [selectedCorner, setSelectedCorner] = useState<number>();
+  const [adjustments, setAdjustments] = useState<SplitRing[]>([]);
+  const [stepOffset, setStepOffset] = useState(3);
+  const pathDrag = useRef<{ kind: "segment" | "corner"; index: number; offset: SplitPoint; original: SplitRing; mirrored: boolean } | null>(null);
   const [symmetryKind, setSymmetryKind] = useState<SplitSymmetry["kind"] | "off">("off");
   const [symmetryOverride, setSymmetryOverride] = useState<SplitPoint>();
   const [showCenter, setShowCenter] = useState(true);
@@ -163,6 +175,15 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
   const orthogonalPlan = useMemo(() => orthogonal?.complete
     ? planOrthogonalSplit(region, orthogonal.path, scene.obstacles, linkedSymmetry) : null,
   [orthogonal, region, scene.obstacles, linkedSymmetry]);
+  const editedPlan = useMemo(() => {
+    if (editing === undefined || !orthogonalPlan?.cuts.length) return;
+    const cuts = [...settings.cuts.slice(0, editing), ...orthogonalPlan.cuts, ...settings.cuts.slice(editing + editingCount)];
+    if (new Set(cuts.map(({ target }) => target)).size < cuts.length) {
+      return { issue: "新的对称线与后续切线占用同一个零件。请先移除该切线或关闭对称联动。" };
+    }
+    const { invalid: after } = replayManualCuts(scene, cuts);
+    return { cuts, affected: [...after.keys()].filter((id) => !invalid.has(id)) };
+  }, [editing, editingCount, orthogonalPlan, settings.cuts, scene, invalid]);
   const mirrorPath = orthogonal && linkedSymmetry && orthogonal.path.map((point) => mirrorSplitPoint(point, linkedSymmetry));
   const mirrorAnchor = guideAnchor && linkedSymmetry && mirrorSplitPoint(guideAnchor.point, linkedSymmetry);
   const draftChildren = orthogonalPlan?.parts ?? cut?.children;
@@ -194,6 +215,10 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
     setEnd(undefined);
     setVia(undefined);
     setOrthogonal(next === "orthogonal" ? { path: [], complete: false } : undefined);
+    setSelectedSegment(0);
+    setSelectedCorner(undefined);
+    setAdjustments([]);
+    pathDrag.current = null;
     setRoutes([]);
     setHover(undefined);
     setGapPick("off");
@@ -282,7 +307,7 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
           setStatus("请选择当前零件外边界上的起点。");
           return;
         }
-        setOrthogonal({ path: [boundary.point], complete: false });
+        setOrthogonal({ ...orthogonal, path: [boundary.point], complete: false });
       } else {
         const next = projectOrthogonalPoint(last, point, region.outer, direction, boundaryRadius);
         const path = appendOrthogonalPoint(orthogonal.path, next.point);
@@ -302,7 +327,7 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
           setStatus("线段经过保护区或超出零件边界。");
           return;
         }
-        setOrthogonal({ path, complete: next.boundary });
+        setOrthogonal({ ...orthogonal, path, complete: next.boundary });
       }
       setStatus("");
       setHover(undefined);
@@ -346,8 +371,8 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
     setHover(undefined);
   }
 
-  function pointerInfo(event: PointerEvent<SVGSVGElement>) {
-    const ctm = event.currentTarget.getScreenCTM();
+  function pointerInfo(event: PointerEvent<SVGElement>, svg: SVGSVGElement) {
+    const ctm = svg.getScreenCTM();
     if (!ctm) return null;
     const cursor = new DOMPoint(event.clientX, event.clientY).matrixTransform(ctm.inverse());
     return { point: [cursor.x, -cursor.y] as SplitPoint, scale: 1 / Math.hypot(ctm.a, ctm.b) };
@@ -415,8 +440,10 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
 
   function confirm() {
     if (orthogonal) {
-      if (!orthogonalPlan?.cuts.length || settings.cuts.length + orthogonalPlan.cuts.length > MAX_MANUAL_SPLIT_CUTS) return;
-      onChange({ ...settings, cuts: [...settings.cuts, ...orthogonalPlan.cuts] });
+      if (!orthogonalPlan?.cuts.length || orthogonalIssue) return;
+      const cuts = editing === undefined ? [...settings.cuts, ...orthogonalPlan.cuts] : editedPlan?.cuts;
+      if (!cuts) return;
+      onChange({ ...settings, cuts });
       setSelected(orthogonalPlan.parts[0].id);
       discard();
       return;
@@ -445,9 +472,65 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
 
   function removeLastPoint() {
     if (!orthogonal?.path.length) return;
-    setOrthogonal({ path: orthogonal.path.slice(0, -1), complete: false });
+    setOrthogonal({ ...orthogonal, path: orthogonal.path.slice(0, -1), complete: false });
+    setSelectedSegment(0);
+    setSelectedCorner(undefined);
+    setAdjustments([]);
     setStatus("");
     setHover(undefined);
+  }
+
+  function editOrthogonalCut(index: number) {
+    const startIndex = splitOperationStart(settings.cuts, index);
+    const previous = settings.cuts[startIndex];
+    if (!replayManualCuts(scene, settings.cuts.slice(0, startIndex)).parts.some(({ id }) => id === previous.target)) {
+      setStatus("请先修复这条切线所在零件的上游切线。");
+      return;
+    }
+    discard("orthogonal");
+    setOrthogonal({ path: previous.path, complete: true, editing: startIndex });
+    setSymmetryKind(previous.symmetry?.kind ?? "off");
+    setSymmetryOverride(previous.symmetry?.center);
+  }
+
+  function detachSymmetry(index: number) {
+    const cuts = settings.cuts.map((cut, i) => i === index
+      ? { target: cut.target, path: cut.path, orthogonal: cut.orthogonal } : cut);
+    onChange({ ...settings, cuts });
+  }
+
+  function updateOrthogonalPath(path: SplitRing, original?: SplitRing) {
+    if (!orthogonal) return;
+    if (original) setAdjustments((history) => [...history, original]);
+    setOrthogonal({ ...orthogonal, path });
+    setStatus("");
+  }
+
+  function undoOrthogonal() {
+    if (!orthogonal) return;
+    const previous = adjustments.at(-1);
+    if (previous) {
+      updateOrthogonalPath(previous);
+      setAdjustments(adjustments.slice(0, -1));
+      setSelectedSegment(0);
+      setSelectedCorner(undefined);
+    } else if (!orthogonal.complete || editing === undefined) removeLastPoint();
+  }
+
+  function startPathDrag(event: PointerEvent<SVGElement>, path: SplitRing, mirrored: boolean,
+    index: number, kind: "segment" | "corner") {
+    const svg = (event.currentTarget as SVGGraphicsElement).ownerSVGElement;
+    if (!orthogonal || !svg || event.button !== 0 || !event.isPrimary) return;
+    const info = pointerInfo(event, svg);
+    if (!info) return;
+    event.preventDefault();
+    setSelectedSegment(kind === "corner" ? index - 1 : index);
+    setSelectedCorner(kind === "corner" ? index : undefined);
+    pathDrag.current = {
+      kind, index, mirrored, original: orthogonal.path,
+      offset: [info.point[0] - path[index][0], info.point[1] - path[index][1]],
+    };
+    svg.setPointerCapture(event.pointerId);
   }
 
   function addGuide(axis: 0 | 1) {
@@ -464,15 +547,21 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
   const nextSegmentClear = nextSegment && splitSegmentClear(nextSegment[0], nextSegment[1], region, scene.obstacles);
   const liveMirror = nextSegment && linkedSymmetry && nextSegment.map((point) => mirrorSplitPoint(point, linkedSymmetry));
   const mirrorSegmentClear = liveMirror && splitSegmentClear(liveMirror[0], liveMirror[1], region, scene.obstacles);
-  const orthogonalIssue = orthogonalPlan?.issue ?? (orthogonalPlan && settings.cuts.length + orthogonalPlan.cuts.length > MAX_MANUAL_SPLIT_CUTS
+  const orthogonalIssue = orthogonalPlan?.issue ?? editedPlan?.issue ??
+    (orthogonalPlan && settings.cuts.length - editingCount + orthogonalPlan.cuts.length > MAX_MANUAL_SPLIT_CUTS
     ? "保存的切线已达上限。" : undefined);
+  const segmentIndex = Math.max(0, Math.min(selectedSegment, (orthogonal?.path.length ?? 2) - 2));
+  const segmentAxis = orthogonal?.complete ? splitSegmentAxis(orthogonal.path, segmentIndex) : 0;
+  const canRemoveStep = orthogonal?.complete && segmentIndex > 0 && segmentIndex < orthogonal.path.length - 2 &&
+    splitSegmentAxis(orthogonal.path, segmentIndex - 1) === splitSegmentAxis(orthogonal.path, segmentIndex + 1) &&
+    splitSegmentAxis(orthogonal.path, segmentIndex - 1) !== segmentAxis;
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[#161411] pt-14 text-sm" onKeyDown={(event) => {
       if (event.key === "Escape") { event.stopPropagation(); discard(); }
       if ((event.ctrlKey || event.metaKey) && event.key === "z" && !(event.target instanceof HTMLInputElement)) {
         event.preventDefault(); event.stopPropagation();
-        if (orthogonal) removeLastPoint();
+        if (orthogonal) undoOrthogonal();
         else { discard(); onUndo(); }
       }
     }}>
@@ -497,7 +586,7 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
             onTouchMove={zoom.handleTouchMove} onTouchEnd={zoom.handleTouchEnd}
             onPointerLeave={() => setHover(undefined)}
             onPointerDown={(event) => {
-              const info = pointerInfo(event);
+              const info = pointerInfo(event, event.currentTarget);
               if (!info || !event.isPrimary || (event.button !== 0 && event.button !== 1)) return;
               if (panMode || event.button === 1) {
                 event.preventDefault();
@@ -506,8 +595,29 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
               }
             }}
             onPointerMove={(event) => {
-              const info = pointerInfo(event);
+              const info = pointerInfo(event, event.currentTarget);
               if (!info || !event.isPrimary) return;
+              const drag = pathDrag.current;
+              if (drag) {
+                const axis = splitSegmentAxis(drag.original, drag.index);
+                const raw: SplitPoint = [info.point[0] - drag.offset[0], info.point[1] - drag.offset[1]];
+                let point: SplitPoint = [...raw];
+                if (snapEnabled && !event.altKey) {
+                  const nearest: SplitPoint = [info.scale * 9, info.scale * 9];
+                  for (const guide of activeGuides) {
+                    const distance = Math.abs(raw[guide.axis] - guide.value);
+                    if (distance < nearest[guide.axis]) {
+                      nearest[guide.axis] = distance;
+                      point[guide.axis] = guide.value;
+                    }
+                  }
+                }
+                if (drag.mirrored && linkedSymmetry) point = mirrorSplitPoint(point, linkedSymmetry);
+                updateOrthogonalPath(drag.kind === "corner"
+                  ? moveOrthogonalCorner(drag.original, region.outer, drag.index, point)
+                  : moveOrthogonalSegment(drag.original, region.outer, drag.index, point[axis]));
+                return;
+              }
               const pan = panStart.current;
               if (pan) {
                 zoom.setPan({ x: pan.pan.x + (event.clientX - pan.x) * pan.scale, y: pan.pan.y + (event.clientY - pan.y) * pan.scale });
@@ -515,11 +625,21 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
               }
               if (!panMode) setHover(snapAt(info.point, info.scale, event.altKey));
             }}
-            onPointerCancel={() => { panStart.current = null; }}
+            onPointerCancel={() => {
+              if (pathDrag.current) updateOrthogonalPath(pathDrag.current.original);
+              pathDrag.current = null;
+              panStart.current = null;
+            }}
             onPointerUp={(event) => {
+              if (pathDrag.current) {
+                const { original } = pathDrag.current;
+                pathDrag.current = null;
+                if (orthogonal && orthogonal.path !== original) setAdjustments((history) => [...history, original]);
+                return;
+              }
               if (panStart.current) { panStart.current = null; return; }
               if (event.button !== 0 || !event.isPrimary || panMode) return;
-              const info = pointerInfo(event);
+              const info = pointerInfo(event, event.currentTarget);
               if (!info) return;
               if (gapPick !== "off") {
                 const groove = regionGrooves.find(({ ring }) => pointInSplitRing(info.point, ring));
@@ -530,7 +650,7 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
               selectPoint(snap?.point ?? info.point, info.scale * 15);
             }}>
             <g transform="scale(1,-1)">
-              {parts.map((part, i) => <path key={part.id} d={regionPath(part)} fillRule="evenodd"
+              {visibleParts.map((part, i) => <path key={part.id} d={regionPath(part)} fillRule="evenodd"
                 fill={VIEW_PALETTE[i % VIEW_PALETTE.length]} fillOpacity={region.id === part.id ? 0.23 : 0.09}
                 stroke={region.id === part.id ? "#e1b85f" : "#746659"} strokeWidth={1.5} vectorEffect="non-scaling-stroke" />)}
               {draftChildren?.map((part, i) => <path key={i} d={regionPath(part)}
@@ -555,12 +675,13 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
               {symmetry !== "off" && endpoints.filter(({ label }) => label.includes("对称") || label === "镜像参考")
                 .map(({ point, label }, i) => <circle key={i} cx={point[0]} cy={point[1]} r={zoom.viewW * 0.009}
                   fill={label === "镜像参考" ? "none" : "#86cdd9"} stroke="#86cdd9" vectorEffect="non-scaling-stroke"><title>{label}</title></circle>)}
-              {settings.cuts.map(({ target, path }) => <polyline key={target} points={points(path)} fill="none"
+              {settings.cuts.map(({ target, path }, i) => (editing === undefined || i < editing || i >= editing + editingCount) &&
+                <polyline key={target} points={points(path)} fill="none"
                 stroke={invalid.has(target) ? "#f27765" : "#f1c56b"} strokeWidth={2} vectorEffect="non-scaling-stroke" />)}
               {routes.map(({ path }, i) => <polyline key={i} points={points(path)} fill="none"
                 stroke={i === routeIndex ? "#a7e8eb" : "#77a2a8"} strokeWidth={i === routeIndex ? 3 : 1.5}
                 strokeDasharray={i === routeIndex ? undefined : "5 4"} vectorEffect="non-scaling-stroke" />)}
-              {orthogonal && <polyline points={points(orthogonal.path)} fill="none" stroke="#a7e8eb"
+              {orthogonal && <polyline points={points(orthogonal.path)} fill="none" stroke={orthogonalPlan?.issue && !orthogonalPlan.issue.startsWith("对称线") ? "#f27765" : "#a7e8eb"}
                 strokeWidth={3} vectorEffect="non-scaling-stroke" />}
               {mirrorPath && <polyline points={points(mirrorPath)} fill="none"
                 stroke={orthogonalPlan?.issue ? "#f27765" : "#c6a4f1"} strokeWidth={3} strokeDasharray="6 4" vectorEffect="non-scaling-stroke" />}
@@ -570,6 +691,23 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
                 stroke={nextSegmentClear ? "#a7e8eb" : "#f27765"} strokeWidth={2} strokeDasharray="5 4" vectorEffect="non-scaling-stroke" />}
               {orthogonal?.path.map(([x, y], i) => <circle key={i} cx={x} cy={y}
                 r={zoom.viewW * 0.006} fill="#a7e8eb" vectorEffect="non-scaling-stroke" />)}
+              {orthogonal?.complete && !panMode && !midpointPick && gapPick === "off" && [
+                { path: orthogonal.path, mirrored: false },
+                ...(mirrorPath ? [{ path: mirrorPath, mirrored: true }] : []),
+              ].flatMap(({ path, mirrored }) => [...path.slice(1).map(([x, y], i) => <line key={`segment-${mirrored}-${i}`}
+                x1={path[i][0]} y1={path[i][1]} x2={x} y2={y} stroke={i === segmentIndex ? "#f1c56b" : "transparent"}
+                strokeOpacity={i === segmentIndex ? 0.36 : 0} strokeWidth={14} pointerEvents="stroke" vectorEffect="non-scaling-stroke"
+                className={path[i][0] === x ? "cursor-ew-resize" : "cursor-ns-resize"}
+                onPointerDown={(event) => startPathDrag(event, path, mirrored, i, "segment")}>
+                <title>{mirrored ? "对称" : ""}线段 {i + 1}</title>
+              </line>),
+              ...path.slice(1, -1).map(([x, y], i) => <circle key={`corner-${mirrored}-${i}`}
+                cx={x} cy={y} r={zoom.viewW * 0.008} stroke="#18120a"
+                fill={selectedCorner === i + 1 ? "#f1c56b" : mirrored ? "#c6a4f1" : "#a7e8eb"}
+                vectorEffect="non-scaling-stroke" className="cursor-move"
+                onPointerDown={(event) => startPathDrag(event, path, mirrored, i + 1, "corner")}>
+                <title>{mirrored ? "对称" : ""}折点 {i + 1}</title>
+              </circle>)])}
               {[start, end, via, hover?.point].map((point, i) => point && <circle key={i} cx={point[0]} cy={point[1]}
                 r={zoom.viewW * 0.008} fill={i === 3 ? "#fcf2d5" : "#a7e8eb"} stroke="#18120a" vectorEffect="non-scaling-stroke" />)}
             </g>
@@ -682,9 +820,62 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
           </div>
           {(status || orthogonalIssue) && <p role="alert" className="text-xs text-[#ffc090]">{status || orthogonalIssue}</p>}
           {orthogonal?.complete && <div className="space-y-1 text-xs">
+            <details open>
+              <summary className="cursor-pointer">调整折线</summary>
+              <label className="flex items-center justify-between">选线段
+                <select value={segmentIndex} onChange={(event) => { setSelectedSegment(Number(event.target.value)); setSelectedCorner(undefined); }}>
+                  {orthogonal.path.slice(1).map((_, i) => <option key={i} value={i}>
+                    第 {i + 1} 段 · {splitSegmentAxis(orthogonal.path, i) === 0 ? "竖直" : "水平"}
+                  </option>)}
+                </select>
+              </label>
+              <label className="flex items-center justify-between">线段 {segmentAxis === 0 ? "X" : "Y"}
+                <SettingInput value={orthogonal.path[segmentIndex][segmentAxis]} min={-10000} max={10000} onCommit={(value) =>
+                  updateOrthogonalPath(moveOrthogonalSegment(orthogonal.path, region.outer, segmentIndex, value), orthogonal.path)} />
+              </label>
+              {orthogonal.path.length > 2 && <label className="flex items-center justify-between">选折点
+                <select value={selectedCorner ?? ""} onChange={(event) => setSelectedCorner(event.target.value ? Number(event.target.value) : undefined)}>
+                  <option value="">选择内部折点</option>
+                  {orthogonal.path.slice(1, -1).map((_, i) => <option key={i} value={i + 1}>第 {i + 1} 个折点</option>)}
+                </select>
+              </label>}
+              {selectedCorner !== undefined && <div className="grid grid-cols-2 gap-1">
+                {(["X", "Y"] as const).map((axis, i) => <label key={axis}>折点 {axis}
+                  <SettingInput value={orthogonal.path[selectedCorner][i]} min={-10000} max={10000} onCommit={(value) => {
+                    const point: SplitPoint = [...orthogonal.path[selectedCorner]];
+                    point[i] = value;
+                    updateOrthogonalPath(moveOrthogonalCorner(orthogonal.path, region.outer, selectedCorner, point), orthogonal.path);
+                  }} />
+                </label>)}
+              </div>}
+              <div className="mt-1 flex flex-wrap items-center gap-1">
+                <label>台阶偏移（mm）<DraftNumberInput value={stepOffset} step={0.1} onValueChange={setStepOffset} /></label>
+                <Button size="sm" variant="ghost" disabled={Math.abs(stepOffset) <= SPLIT_EPSILON || orthogonal.path.length + 2 > MAX_SPLIT_PATH_POINTS}
+                  onClick={() => {
+                    updateOrthogonalPath(insertOrthogonalStep(orthogonal.path, region.outer, segmentIndex, stepOffset), orthogonal.path);
+                    setSelectedSegment(segmentIndex + 1);
+                    setSelectedCorner(undefined);
+                  }}>增加台阶</Button>
+                <Button size="sm" variant="ghost" disabled={!canRemoveStep} onClick={() => {
+                  const path = removeOrthogonalStep(orthogonal.path, region.outer, segmentIndex);
+                  if (!cutSplitRegion(region, path, scene.obstacles)) {
+                    setStatus("删除该台阶后的切线不安全，请先调整相邻线段。");
+                    return;
+                  }
+                  updateOrthogonalPath(path, orthogonal.path);
+                  setSelectedSegment(segmentIndex - 1);
+                  setSelectedCorner(undefined);
+                }}>删除台阶</Button>
+                <Button size="sm" variant="ghost" disabled={!adjustments.length} onClick={undoOrthogonal}>还原上次调整</Button>
+              </div>
+            </details>
             {orthogonalPlan?.parts.map((part, i) => <p key={part.id}>预览零件 {i + 1} · {printLabel(splitPartSize(part, scene.height), settings)}</p>)}
+            {editingCut?.symmetry && !linkedSymmetry && <p className="text-[#ffc090]">保存此调整会移除对称线。可取消折线后用「解除对称」保留两条切线。</p>}
+            {editedPlan?.affected?.length ? <p role="alert" className="text-[#ffc090]">
+              保存后，下列切线需要复核：{editedPlan.affected.join("、")}。修复后可导出。
+            </p> : null}
             <Button size="sm" className="w-full" disabled={Boolean(orthogonalIssue) || !orthogonalPlan?.cuts.length} onClick={confirm}>
-              {linkedSymmetry ? "确认对称分割" : "确认分割"}
+              {editing !== undefined ? "保存切线调整" : linkedSymmetry ? "确认对称分割" : "确认分割"}
             </Button>
           </div>}
           {start && end && !pending && <div className="flex flex-wrap gap-1">
@@ -711,10 +902,13 @@ function SplitEditorCanvas({ scene, snapshot, settings, onChange, onExit, onUndo
             {parts.map((part) => <button type="button" key={part.id} aria-pressed={part.id === region.id}
               className="block w-full rounded px-2 py-1 text-left text-xs aria-pressed:bg-[#3b3223]"
               onClick={() => { discard(); setSelected(part.id); }}>零件 {part.id} · {printLabel(size(part), settings)}</button>)}
-            {settings.cuts.map(({ target }) => <div key={target} className="flex items-center justify-between text-xs">
+            {settings.cuts.map(({ target, orthogonal: savedOrthogonal, symmetry: savedSymmetry }, i) => <div key={target} className="flex items-center justify-between text-xs">
               <span className={invalid.has(target) ? "text-[#ff9c87]" : "text-muted-foreground"}>
-                切线 {target}{invalid.has(target) ? invalid.get(target) === "dependency" ? " · 待复核" : " · 已失效" : ""}
+                切线 {target}{savedSymmetry || splitOperationStart(settings.cuts, i) < i ? " · 对称组" : ""}
+                {invalid.has(target) ? invalid.get(target) === "dependency" ? " · 待复核" : " · 已失效" : ""}
               </span>
+              {savedOrthogonal && <Button size="sm" variant="ghost" onClick={() => editOrthogonalCut(i)} aria-label={`编辑切线 ${target}`}>编辑</Button>}
+              {savedSymmetry && !orthogonal && <Button size="sm" variant="ghost" onClick={() => detachSymmetry(i)}>解除对称</Button>}
               <Button size="sm" variant="ghost" onClick={() => setPendingDelete(target)}
                 aria-label={`${invalid.get(target) === "boundary" ? "重做或移除" : "移除"}切线 ${target}`}>
                 {invalid.get(target) === "boundary" ? "重做／移除" : "移除"}
