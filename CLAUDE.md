@@ -28,9 +28,9 @@ pnpm lint
 
 ## 核心架构
 
-### 四种建模模式
+### 五种建模模式
 
-项目支持四种托盘建模模式，每种模式有独立的参数类型、建模逻辑和 UI 面板：
+项目支持五种托盘建模模式，每种模式有独立的参数类型、建模逻辑和 UI 面板：
 
 1. **Grid Mode（网格模式）**
    - 类型：`TrayParams` (src/types/tray.ts)
@@ -46,19 +46,27 @@ pnpm lint
    - UI：`CustomPanel` + `LayoutCanvas` (2D 编辑器)
    - 特点：自由放置圆形/椭圆形凹槽，支持旋转
 
-3. **Simple Stepped Mode（简易阶梯）**
-   - 类型：`SimpleSteppedLayoutParams` (src/types/custom-tray.ts)
-   - 建模：`createSimpleSteppedTrayModel()` (src/lib/simple-stepped-tray-model.ts)
-   - Hook：`useSimpleSteppedLayout()` (src/hooks/useSimpleSteppedLayout.ts)
-   - UI：`SimpleSteppedPanel` + `LayoutCanvas` (2D 编辑器)
-   - 特点：按行组织圆形凹槽，通过行顺序形成规则阶梯
+3. **Base Converter Mode（底盘生成）**
+   - 类型：`BaseConverterParams` (src/types/custom-tray.ts)
+   - 建模：`createBaseConverterModel()` (src/lib/base-converter-model.ts)
+   - Hook：`useBaseConverter()` (src/hooks/useBaseConverter.ts)
+   - UI：`BaseConverterPanel` + `BaseConverterPreview`
+   - 特点：普通底盘、简版六边孔与转换底盘，几何由参数快照重建
 
-4. **Stepped Mode（阶梯底座）**
+4. **Stepped Mode（自定义阶梯底座）**
    - 类型：`SteppedLayoutParams` (src/types/custom-tray.ts)
-   - 建模：`createSteppedTrayModel()` (src/lib/stepped-tray-model.ts)
+   - 建模：`createSteppedCadTrayModel()` (src/lib/stepped-cad-construction.ts)
    - Hook：`useSteppedLayout()` (src/hooks/useSteppedLayout.ts)
    - UI：`SteppedPanel` + `LayoutCanvas` (2D 编辑器)
    - 特点：每个凹槽有独立的生长高度，使用形态学闭运算生成平滑底座轮廓
+
+5. **Storage Stepped Mode（阶梯收纳展示台）**
+   - 类型：`StorageSteppedParams` (src/types/storage-stepped.ts)
+   - 计划/校验：`deriveStorageSteppedPlan()`、`validateStorageSteppedParams()` (src/lib/storage-stepped-plan.ts)
+   - 建模：`createStorageSteppedBodyModel()`、`createStorageSteppedTrayModel()` (src/lib/storage-stepped-model.ts)
+   - Hook：`useStorageStepped()` (src/hooks/useStorageStepped.ts)
+   - UI：`StorageSteppedPanel` + `StorageSteppedViewer` + `LayoutCanvas`（固定边界 2D 编辑）
+   - 特点：三级空心主体 + 三块可互换整宽托盘；托盘总厚固定 6 mm，主体与托盘按零件指纹分别缓存
 
 ### 3D 建模流程
 
@@ -102,8 +110,9 @@ pnpm lint
 
 - `useTrayModel()`: Grid 模式参数、几何体、体积、价格
 - `useCustomLayout()`: Custom 模式参数、槽位管理、碰撞检测
-- `useSimpleSteppedLayout()`: Simple Stepped 模式参数、行与槽位管理
+- `useBaseConverter()`: 底盘生成参数与几何
 - `useSteppedLayout()`: Stepped 模式参数、槽位管理
+- `useStorageStepped()`: 收纳阶梯参数、三阶托盘编辑、按零件缓存、装配/提起/单件视图与导出
 
 共享 Hook：
 - `useUndoHistory()`: 撤销/重做功能
@@ -116,11 +125,12 @@ pnpm lint
 
 - `DEFAULT_TRAY_PARAMS`: Grid 模式默认参数
 - `CUSTOM_LAYOUT_DEFAULTS`: Custom 模式默认参数
-- `SIMPLE_STEPPED_LAYOUT_DEFAULTS`: Simple Stepped 模式默认参数
 - `STEPPED_LAYOUT_DEFAULTS`: Stepped 模式默认参数
+- `STORAGE_STEPPED_INTERFACE_DEFAULTS` / `STORAGE_STEPPED_HEIGHT_SPECS`: 收纳阶梯接口与高度规格
+- `STORAGE_STEPPED_TRAY_PRESETS`: 收纳托盘五个预设
 - `BASE_PRESETS`: 从共享圆形 Slot Definitions 派生的底座直径选项
 - `ELLIPSE_PRESETS`: 椭圆形凹槽预设
-- `PARAM_CONFIG` / `CUSTOM_LIMITS` / `STEPPED_LIMITS`: 参数范围与元数据
+- `PARAM_CONFIG` / `CUSTOM_LIMITS` / `STEPPED_LIMITS` / `STORAGE_STEPPED_LIMITS`: 参数范围与元数据
 - `RENDER_CONFIG`: 3D 渲染配置（细分段数、颜色、摄像机）
 
 路径别名：`@/*` → `./src/*`
@@ -146,8 +156,10 @@ src/
 │   ├── canvas/           # 2D 编辑器相关组件
 │   ├── ParameterPanel.tsx    # Grid 模式参数面板
 │   ├── CustomPanel.tsx       # Custom 模式参数面板
-│   ├── SimpleSteppedPanel.tsx # Simple Stepped 模式参数面板
+│   ├── BaseConverterPanel.tsx # 底盘生成参数面板
 │   ├── SteppedPanel.tsx      # Stepped 模式参数面板
+│   ├── StorageSteppedPanel.tsx  # 收纳阶梯参数面板
+│   ├── StorageSteppedViewer.tsx # 收纳阶梯装配/单件预览
 │   ├── LayoutCanvas.tsx      # 2D 编辑器画布
 │   ├── TrayViewer.tsx        # 3D 预览视口
 │   └── ModeTabs.tsx          # 模式切换标签
@@ -155,8 +167,9 @@ src/
 ├── lib/                   # 核心逻辑
 │   ├── tray-model.ts         # Grid 模式建模
 │   ├── custom-tray-model.ts  # Custom 模式建模
-│   ├── simple-stepped-tray-model.ts # Simple Stepped 模式建模
-│   ├── stepped-tray-model.ts # Stepped 模式建模
+│   ├── stepped-cad-construction.ts # Stepped 模式建模
+│   ├── storage-stepped-plan.ts     # 收纳阶梯尺寸推导与校验
+│   ├── storage-stepped-model.ts    # 收纳主体与托盘建模
 │   ├── model-utils.ts        # 共享建模工具
 │   ├── outline-geometry.ts   # 轮廓生成算法
 │   ├── config.ts             # 配置管理
@@ -189,6 +202,9 @@ src/
 - `doc/stepped-tray.md`: 阶梯托盘功能说明
 - `doc/mobile-ux-optimizations.md`: ~~移动端优化说明~~（已归档，移动端专用布局已移除）
 - `doc/layout-symmetry-plan.md`: 对称功能设计
+- `docs/superpowers/specs/2026-11-26-storage-stepped-requirements.md`: 阶梯收纳展示台需求规格
+- `docs/superpowers/plans/2026-11-26-storage-stepped-mode.md`: 分阶段开发计划与验收
+- `docs/validation/storage-stepped/`: 收纳阶梯阶段验收记录、回归矩阵与截图
 
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph
