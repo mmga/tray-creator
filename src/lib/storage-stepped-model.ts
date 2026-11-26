@@ -35,7 +35,7 @@ const { geom2, geom3, poly3 } = geometries;
 const { mat4 } = maths;
 const { measureBoundingBox, measureVolume } = measurements;
 const { cuboid, cylinder } = primitives;
-const { extrudeFromSlices, extrudeLinear, slice } = extrusions;
+const { extrudeLinear } = extrusions;
 const { rotateY, rotateZ, transform, translate } = transforms;
 
 const DEG_TO_RAD = Math.PI / 180;
@@ -148,16 +148,6 @@ export interface StorageSteppedPartModel {
  */
 function toCenteredY(planBodyDepth: number, y: number): number {
   return y - planBodyDepth / 2;
-}
-
-function rectangleSlice(width: number, depth: number) {
-  const rectangle = geom2.fromPoints([
-    [-width / 2, -depth / 2],
-    [width / 2, -depth / 2],
-    [width / 2, depth / 2],
-    [-width / 2, depth / 2],
-  ]);
-  return slice.fromSides(geom2.toSides(rectangle));
 }
 
 /**
@@ -277,55 +267,6 @@ export function createStorageSteppedBodyModel(
   return finalizeStorageSteppedGeometry(notched);
 }
 
-function createTrayOutlineSlice(
-  width: number,
-  depth: number,
-  z: number,
-) {
-  const baseSlice = rectangleSlice(width, depth);
-  return slice.transform(
-    mat4.fromTranslation(mat4.create(), [0, 0, z]),
-    baseSlice,
-  );
-}
-
-function createStorageSteppedTrayBody(
-  width: number,
-  depth: number,
-  thickness: number,
-  chamferRetreat: number,
-  chamferAngle: number,
-): Geom3 {
-  const safeRetreat = Math.max(0, Math.min(chamferRetreat, width / 2, depth / 2));
-  const angle = Math.min(89.9, Math.max(1, chamferAngle));
-  const chamferHeight = safeRetreat > 0
-    ? Math.min(safeRetreat / Math.tan(angle * DEG_TO_RAD), thickness)
-    : 0;
-
-  if (chamferHeight <= 1e-9) {
-    return translate(
-      [0, 0, thickness / 2],
-      cuboid({ size: [width, depth, thickness] }),
-    );
-  }
-
-  return extrudeFromSlices(
-    {
-      numberOfSlices: 3,
-      callback: (_progress, index) => {
-        const z = index === 0 ? 0 : index === 1 ? chamferHeight : thickness;
-        const retreat = index === 0 ? safeRetreat : 0;
-        return createTrayOutlineSlice(
-          width - retreat * 2,
-          depth - retreat * 2,
-          z,
-        );
-      },
-    },
-    rectangleSlice(width - safeRetreat * 2, depth - safeRetreat * 2),
-  );
-}
-
 function createTrayGrooveCutters(
   params: StorageSteppedParams,
   stepIndex: number,
@@ -368,7 +309,7 @@ function createTrayGrooveCutters(
   });
 }
 
-/** 单块托盘：固定总厚度、底部倒角、槽位与可选底孔。 */
+/** 单块托盘：固定总厚度、平底、槽位与可选底孔。 */
 export function createStorageSteppedTrayModel(
   params: StorageSteppedParams,
   stepIndex: number,
@@ -379,12 +320,9 @@ export function createStorageSteppedTrayModel(
     throw new Error(`找不到第 ${stepIndex + 1} 阶托盘配置`);
   }
 
-  const body = createStorageSteppedTrayBody(
-    plan.trayWidth,
-    plan.trayDepth,
-    plan.trayThickness,
-    plan.interface.trayBottomChamfer,
-    plan.interface.trayChamferAngle,
+  const body = translate(
+    [0, 0, plan.trayThickness / 2],
+    cuboid({ size: [plan.trayWidth, plan.trayDepth, plan.trayThickness] }),
   );
   const grooves = createTrayGrooveCutters(
     params,

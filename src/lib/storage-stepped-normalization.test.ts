@@ -14,6 +14,18 @@ describe("Storage Stepped 参数归一化", () => {
     expect(normalizeStorageSteppedParams(structuredClone(params))).toEqual(params);
   });
 
+  it("旧版带倒角参数的文件可导入，并转为平底接口", () => {
+    const params = rawParams();
+    Object.assign(params.interface, { trayBottomChamfer: 0.4, trayChamferAngle: 45 });
+    const { recorder, retiredFields } = createImportNormalizationRecorder();
+
+    expect(normalizeStorageSteppedParams(params, recorder)).toEqual(createDefaultStorageSteppedParams());
+    expect(retiredFields.map((field) => field.path)).toEqual([
+      "interface.trayBottomChamfer",
+      "interface.trayChamferAngle",
+    ]);
+  });
+
   it("缺失的高度字段按规格补齐并记录默认值", () => {
     const params = rawParams() as Partial<StorageSteppedParams>;
     delete params.firstStepHeight;

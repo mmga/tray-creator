@@ -131,8 +131,6 @@ function sanitizeInterface(
     fingerPullDiameter: finiteOr(value.fingerPullDiameter),
     baseThickness: finiteOr(value.baseThickness),
     assemblyClearance: finiteOr(value.assemblyClearance),
-    trayBottomChamfer: finiteOr(value.trayBottomChamfer),
-    trayChamferAngle: finiteOr(value.trayChamferAngle),
   };
 }
 
@@ -267,8 +265,7 @@ export function deriveStorageSteppedPlan(
   }));
 
   const supportLedgeWidth = iface.lowerWallThickness - iface.rimThickness;
-  const supportContactCentered =
-    supportLedgeWidth - iface.assemblyClearance - iface.trayBottomChamfer;
+  const supportContactCentered = supportLedgeWidth - iface.assemblyClearance;
   return {
     interfaceVersion: params.interfaceVersion,
     heightSpecId,
@@ -608,8 +605,6 @@ function collectInterfaceDeviations(
     fingerPullDiameter: "指扣直径",
     baseThickness: "底板厚度",
     assemblyClearance: "装配间隙",
-    trayBottomChamfer: "底部倒角退让",
-    trayChamferAngle: "底部倒角角度",
   };
   return (Object.keys(labels) as Array<keyof StorageSteppedInterfaceParams>)
     .filter((key) => {
@@ -691,8 +686,6 @@ export function validateStorageSteppedParams(
     ["fingerPullDiameter", "指扣直径"],
     ["baseThickness", "主体底板厚度"],
     ["assemblyClearance", "单边装配间隙"],
-    ["trayBottomChamfer", "托盘底部倒角退让"],
-    ["trayChamferAngle", "托盘底部倒角角度"],
   ];
   let interfaceFinite = true;
   for (const [key, label] of interfaceLabels) {
@@ -747,30 +740,6 @@ export function validateStorageSteppedParams(
     if (iface.fingerPullDiameter <= 0) {
       issues.push(issue("error", "params", "interface.fingerPullDiameter", "指扣直径必须为正"));
     }
-    if (iface.trayBottomChamfer < 0) {
-      issues.push(
-        issue("error", "params", "interface.trayBottomChamfer", "托盘底部倒角退让不能为负"),
-      );
-    }
-    if (iface.trayChamferAngle <= 0 || iface.trayChamferAngle >= 90) {
-      issues.push(
-        issue("error", "params", "interface.trayChamferAngle", "托盘底部倒角角度必须在 0–90° 之间"),
-      );
-    } else {
-      const chamferHeight =
-        iface.trayBottomChamfer /
-        Math.tan((iface.trayChamferAngle * Math.PI) / 180);
-      if (chamferHeight >= iface.trayThickness) {
-        issues.push(
-          issue(
-            "error",
-            "params",
-            "interface.trayBottomChamfer",
-            `倒角高度 ${chamferHeight.toFixed(2)}mm 不小于托盘总厚度`,
-          ),
-        );
-      }
-    }
     if (plan.trayWidth <= 0 || plan.trayDepth <= 0) {
       issues.push(
         issue("error", "params", "interface", "当前接口推导出的托盘尺寸无效"),
@@ -781,8 +750,8 @@ export function validateStorageSteppedParams(
         issue(
           "error",
           "params",
-          "interface.trayBottomChamfer",
-          "当前壁厚、间隙和倒角使托盘居中时没有平底承托面",
+          "interface.assemblyClearance",
+          "当前壁厚和间隙使托盘居中时没有平底承托面",
         ),
       );
     } else if (plan.supportContactShifted <= STORAGE_STEPPED_EPSILON) {

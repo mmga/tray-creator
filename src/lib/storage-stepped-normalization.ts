@@ -126,8 +126,6 @@ const INTERFACE_FIELDS: Array<keyof StorageSteppedInterfaceParams> = [
   "fingerPullDiameter",
   "baseThickness",
   "assemblyClearance",
-  "trayBottomChamfer",
-  "trayChamferAngle",
 ];
 
 /**
@@ -189,6 +187,20 @@ export function normalizeStorageSteppedParams(
   }
   for (const key of INTERFACE_FIELDS) {
     requireFinite(params.interface[key], `interface.${key}`);
+  }
+  const legacyInterface = params.interface as StorageSteppedInterfaceParams & Record<string, unknown>;
+  for (const [key, label] of [
+    ["trayBottomChamfer", "托盘底部倒角退让"],
+    ["trayChamferAngle", "托盘底部倒角角度"],
+  ]) {
+    if (!Object.hasOwn(legacyInterface, key)) continue;
+    recorder?.retire({
+      path: `interface.${key}`,
+      label,
+      previousValue: legacyInterface[key],
+      reason: "收纳托盘改用平底，底部倒角固定为 0 mm",
+    });
+    delete legacyInterface[key];
   }
   if (params.interface.stepCount !== STORAGE_STEPPED_STEP_COUNT) {
     throw new Error(`interface.stepCount: 首版固定为 ${STORAGE_STEPPED_STEP_COUNT} 阶`);

@@ -32,8 +32,6 @@ export const STORAGE_STEPPED_INTERFACE_DEFAULTS: StorageSteppedInterfaceParams =
   fingerPullDiameter: 32,
   baseThickness: 2.4,
   assemblyClearance: 0.3,
-  trayBottomChamfer: 0.4,
-  trayChamferAngle: 45,
 };
 
 export interface StorageSteppedHeightSpec {
@@ -141,20 +139,6 @@ export const STORAGE_STEPPED_LIMITS = {
     max: 2,
     step: 0.05,
     unit: "mm",
-  },
-  trayBottomChamfer: {
-    label: "托盘底部倒角退让",
-    min: 0,
-    max: 3,
-    step: 0.1,
-    unit: "mm",
-  },
-  trayChamferAngle: {
-    label: "托盘底部倒角角度",
-    min: 20,
-    max: 80,
-    step: 1,
-    unit: "°",
   },
   holeDepth: { label: "槽深", min: 0.6, max: 5, step: 0.2, unit: "mm" },
   slotSpacing: { label: "槽位间距", min: 0, max: 20, step: 0.5, unit: "mm" },

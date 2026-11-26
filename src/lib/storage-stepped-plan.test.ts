@@ -41,8 +41,8 @@ describe("Storage Stepped 尺寸推导", () => {
     expect(plan.trayDepth).toBeCloseTo(75.4, 10);
     expect(plan.trayThickness).toBe(6);
     expect(plan.supportLedgeWidth).toBe(2);
-    expect(plan.supportContactCentered).toBeCloseTo(1.3, 10);
-    expect(plan.supportContactShifted).toBeCloseTo(1.0, 10);
+    expect(plan.supportContactCentered).toBeCloseTo(1.7, 10);
+    expect(plan.supportContactShifted).toBeCloseTo(1.4, 10);
     expect(plan.fingerPullRadius).toBe(16);
 
     expect(plan.steps.map((step) => step.deckHeight)).toEqual([30, 70, 110]);
@@ -176,7 +176,7 @@ describe("Storage Stepped 参数校验", () => {
     ).toBe(true);
   });
 
-  it("拒绝非正仓净高与破坏承托的倒角", () => {
+  it("拒绝非正仓净高", () => {
     const highBase = createDefaultStorageSteppedParams();
     highBase.interface.baseThickness = 30;
     expect(
@@ -185,18 +185,11 @@ describe("Storage Stepped 参数校验", () => {
       ),
     ).toBe(true);
 
-    const brokenChamfer = createDefaultStorageSteppedParams();
-    brokenChamfer.interface.trayBottomChamfer = 1.8;
-    expect(
-      validateStorageSteppedParams(brokenChamfer).errors.some((entry) =>
-        entry.message.includes("承托面"),
-      ),
-    ).toBe(true);
   });
 
   it.each([
-    [2.2, -0.5, -0.8],
-    [2.8, 0.1, -0.2],
+    [2.2, -0.1, -0.4],
+    [2.4, 0.1, -0.2],
   ])("壁厚 %s mm 时阻止缺少承托的配置", (wall, centered, shifted) => {
     const params = createDefaultStorageSteppedParams();
     params.interface.lowerWallThickness = wall;
@@ -207,17 +200,6 @@ describe("Storage Stepped 参数校验", () => {
     expect(validateStorageSteppedParams(params).errors).toEqual(
       expect.arrayContaining([expect.objectContaining({ message: expect.stringMatching(/没有平底承托面/) })]),
     );
-  });
-
-  it("倒角高度不得超过托盘总厚度", () => {
-    const params = createDefaultStorageSteppedParams();
-    params.interface.trayBottomChamfer = 3;
-    params.interface.trayChamferAngle = 20;
-    const validation = validateStorageSteppedParams(params);
-    expect(validation.isValid).toBe(false);
-    expect(
-      validation.errors.some((entry) => entry.message.includes("倒角高度")),
-    ).toBe(true);
   });
 
   it("磁吸底孔与 3mm 槽底组合可以成立", () => {

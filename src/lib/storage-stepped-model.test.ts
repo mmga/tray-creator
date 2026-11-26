@@ -251,24 +251,16 @@ describe("Storage Stepped 平板托盘几何", () => {
     expect(max[2]).toBeCloseTo(6, 2);
   });
 
-  it("底部倒角只缩小底面，顶部定位外形不变", () => {
+  it("平底托盘的底部截面保持完整宽度和深度", () => {
     const params = createDefaultStorageSteppedParams();
     const tray = createStorageSteppedTrayModel(params, 0);
-    // 底部倒角退让 0.4mm：在 z=0.1 处的截面小于顶面
     const bottomSlice = intersect(
       tray,
       translate([0, 0, 0.1], cuboid({ size: [300, 200, 0.2] })),
     );
     const [bottomMin, bottomMax] = measureBoundingBox(bottomSlice);
-    expect(bottomMax[0] - bottomMin[0]).toBeLessThan(235.4);
-    expect(bottomMax[0] - bottomMin[0]).toBeGreaterThan(235.4 - 0.9);
-
-    const topSlice = intersect(
-      tray,
-      translate([0, 0, 5.9], cuboid({ size: [300, 200, 0.2] })),
-    );
-    const [topMin, topMax] = measureBoundingBox(topSlice);
-    expect(topMax[0] - topMin[0]).toBeCloseTo(235.4, 1);
+    expect(bottomMax[0] - bottomMin[0]).toBeCloseTo(235.4, 2);
+    expect(bottomMax[1] - bottomMin[1]).toBeCloseTo(75.4, 2);
   });
 
   it("高度规格不改变托盘几何", () => {

@@ -43,10 +43,6 @@ export interface StorageSteppedInterfaceParams {
   baseThickness: number;
   /** 单边装配间隙 (mm) */
   assemblyClearance: number;
-  /** 托盘底部倒角水平退让 (mm) */
-  trayBottomChamfer: number;
-  /** 托盘底部倒角角度 (度) */
-  trayChamferAngle: number;
 }
 
 /**

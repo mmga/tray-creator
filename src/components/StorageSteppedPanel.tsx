@@ -89,8 +89,6 @@ const INTERFACE_SLIDERS: Array<{
   { key: "fingerPullDiameter", label: "指扣直径", limitKey: "fingerPullDiameter" },
   { key: "baseThickness", label: "主体底板厚度", limitKey: "baseThickness" },
   { key: "assemblyClearance", label: "单边装配间隙", limitKey: "assemblyClearance" },
-  { key: "trayBottomChamfer", label: "托盘底部倒角退让", limitKey: "trayBottomChamfer" },
-  { key: "trayChamferAngle", label: "托盘底部倒角角度", limitKey: "trayChamferAngle" },
 ];
 
 export function StorageSteppedPanel({
