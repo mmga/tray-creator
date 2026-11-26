@@ -75,4 +75,62 @@ describe("AlignPanel", { timeout: 15000 }, () => {
     expect(screen.getByRole("button", { name: /左/ })).toBeDisabled();
     expect(screen.getByRole("button", { name: /一排/ })).toBeDisabled();
   });
+
+  it("水平按实际槽宽均分容器留白，保留槽位顺序与 Y 坐标", () => {
+    const onUpdateSlots = vi.fn();
+    render(
+      <AlignPanel
+        selectedSlots={[
+          createSlot({ id: "right", x: 120, y: 35, slotWidth: 10 }),
+          createSlot({ id: "left", x: 50, y: 40, slotWidth: 20 }),
+          createSlot({ id: "middle", x: 85, y: 60, slotWidth: 30 }),
+        ]}
+        distributionArea={{ x: 10, y: 5, width: 140, depth: 100, cornerRadius: 0 }}
+        spacing={5}
+        onUpdateSlots={onUpdateSlots}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "容器内水平均布" }));
+    expect(onUpdateSlots).toHaveBeenCalledExactlyOnceWith([
+      { id: "left", x: 40, y: 40 },
+      { id: "middle", x: 85, y: 60 },
+      { id: "right", x: 125, y: 35 },
+    ]);
+  });
+
+  it("竖直均布保留 X 坐标，空间紧时优先满足最小槽距", () => {
+    const onUpdateSlots = vi.fn();
+    render(
+      <AlignPanel
+        selectedSlots={[
+          createSlot({ id: "front", x: 15, y: 20, slotWidth: 20 }),
+          createSlot({ id: "back", x: 45, y: 36, slotWidth: 20 }),
+        ]}
+        distributionArea={{ x: 0, y: 5, width: 65, depth: 52, cornerRadius: 0 }}
+        spacing={8}
+        onUpdateSlots={onUpdateSlots}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "容器内竖直均布" }));
+    expect(onUpdateSlots).toHaveBeenCalledExactlyOnceWith([
+      { id: "front", x: 15, y: 17 },
+      { id: "back", x: 45, y: 45 },
+    ]);
+  });
+
+  it("容器尺寸不够保留最小槽距时禁用对应方向", () => {
+    render(
+      <AlignPanel
+        selectedSlots={[
+          createSlot({ id: "first", x: 15, y: 15, slotWidth: 30 }),
+          createSlot({ id: "second", x: 47, y: 70, slotWidth: 30 }),
+        ]}
+        distributionArea={{ x: 0, y: 0, width: 64, depth: 100, cornerRadius: 0 }}
+        spacing={5}
+        onUpdateSlots={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "容器内水平均布" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "容器内竖直均布" })).toBeEnabled();
+  });
 });

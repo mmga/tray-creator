@@ -11,6 +11,11 @@ import {
 } from "lucide-react";
 import { getEllipseBoundingBox } from "@/lib/canvas-slot-geometry";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
+import {
+  isCustomSlotWithinFixedTrayUsableArea,
+  type FixedCustomTrayUsableArea,
+} from "@/lib/custom-layout-math";
+import type { CanvasCollisionSpacingOptions } from "@/lib/canvas-collision-model";
 
 const STEP = 0.2;
 const roundToStep = (value: number) => Math.round(value / STEP) * STEP;
@@ -18,11 +23,14 @@ const roundToStep = (value: number) => Math.round(value / STEP) * STEP;
 type AlignType = "left" | "center-x" | "right" | "top" | "center-y" | "bottom";
 type ArrangeType = "row" | "column";
 type SlotUpdate = { id: string; x: number; y: number; rotation?: number };
+type PairSpacing = CanvasCollisionSpacingOptions<FreeSlot>["getPairSpacing"];
 
 interface AlignPanelProps {
   selectedSlots: Array<FreeSlot | SteppedSlot>;
   onUpdateSlots: (updates: SlotUpdate[]) => void;
   spacing: number;
+  distributionArea?: FixedCustomTrayUsableArea;
+  getPairSpacing?: PairSpacing;
   ellipseProfileExponent?: number;
 }
 
@@ -90,13 +98,56 @@ function getSelectionCenter(
   };
 }
 
+function getDistributionUpdates(
+  axis: "x" | "y",
+  slots: FreeSlot[],
+  area: FixedCustomTrayUsableArea | undefined,
+  spacing: number,
+  getPairSpacing: PairSpacing,
+  ellipseProfileExponent?: number,
+): SlotUpdate[] | null {
+  if (!area || slots.length < 2) return null;
+  const horizontal = axis === "x";
+  const span = horizontal ? area.width : area.depth;
+  const sorted = [...slots].sort((left, right) => left[axis] - right[axis]);
+  const halfSpans = sorted.map((slot) => {
+    const { halfW, halfH } = getSlotBounds(slot, ellipseProfileExponent);
+    return horizontal ? halfW : halfH;
+  });
+  const remaining = span - halfSpans.reduce((sum, half) => sum + half * 2, 0);
+  let minimumGap = spacing;
+  for (let index = 1; index < sorted.length; index += 1) {
+    minimumGap = Math.max(minimumGap, getPairSpacing?.(sorted[index - 1], sorted[index], spacing) ?? spacing);
+  }
+  if (!Number.isFinite(remaining) || remaining < minimumGap * (sorted.length - 1) - 1e-6) {
+    return null;
+  }
+
+  const gap = Math.max(minimumGap, remaining / (sorted.length + 1));
+  const inset = Math.max(0, (remaining - gap * (sorted.length - 1)) / 2);
+  let cursor = area[axis] + inset;
+  const updates = sorted.map((slot, index) => {
+    const half = halfSpans[index];
+    const next = { id: slot.id, x: slot.x, y: slot.y, [axis]: cursor + half };
+    cursor += half * 2 + gap;
+    return next;
+  });
+  return updates.every((update, index) =>
+    isCustomSlotWithinFixedTrayUsableArea({ ...sorted[index], ...update }, area),
+  ) ? updates : null;
+}
+
 export default function AlignPanel({
   selectedSlots,
   onUpdateSlots,
   spacing,
+  distributionArea,
+  getPairSpacing,
   ellipseProfileExponent,
 }: AlignPanelProps) {
   const hasMultiple = selectedSlots.length > 1;
+  const horizontalDistribution = getDistributionUpdates("x", selectedSlots, distributionArea, spacing, getPairSpacing, ellipseProfileExponent);
+  const verticalDistribution = getDistributionUpdates("y", selectedSlots, distributionArea, spacing, getPairSpacing, ellipseProfileExponent);
   const actionBtnClass = "flex h-9 items-center justify-center gap-1.5 rounded-sm border border-[#3a352c] bg-[#1a1813] px-3 text-xs text-[#d8d1c5] transition-colors hover:border-[#5d5547] hover:bg-[#252119] hover:text-white disabled:cursor-not-allowed disabled:opacity-35";
 
   const handleAlign = (type: AlignType) => {
@@ -255,6 +306,28 @@ export default function AlignPanel({
           排布间距自动使用当前槽距 {spacing} mm。
         </div>
       </section>
+
+      {distributionArea && (
+        <section className="border border-[#312a21] bg-[#17130f] p-3">
+          <div className="mb-3">
+            <div className="text-[11px] font-semibold text-[#d6c6a5]">容器内均匀分布</div>
+            <div className="mt-1 text-[10px] text-muted-foreground/70">按槽的外缘分配留白，保留另一方向的位置。</div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <button type="button" aria-label="容器内水平均布" className={actionBtnClass}
+              disabled={!horizontalDistribution} onClick={() => horizontalDistribution && onUpdateSlots(horizontalDistribution)}>
+              <Columns2 size={15} /> 水平均布
+            </button>
+            <button type="button" aria-label="容器内竖直均布" className={actionBtnClass}
+              disabled={!verticalDistribution} onClick={() => verticalDistribution && onUpdateSlots(verticalDistribution)}>
+              <Rows2 size={15} /> 竖直均布
+            </button>
+          </div>
+          {hasMultiple && (!horizontalDistribution || !verticalDistribution) && (
+            <p className="mt-2 text-[10px] text-muted-foreground/70">空间或边距不足的方向不可用。</p>
+          )}
+        </section>
+      )}
     </div>
   );
 }

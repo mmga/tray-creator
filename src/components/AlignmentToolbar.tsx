@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { AlignCenterHorizontal, FlipHorizontal } from "lucide-react";
 import type { FreeSlot, SteppedSlot } from "@/types/custom-tray";
+import type { CanvasCollisionSpacingOptions } from "@/lib/canvas-collision-model";
+import type { FixedCustomTrayUsableArea } from "@/lib/custom-layout-math";
 import type { SymmetryInsertSlot, SymmetrySlot } from "@/lib/layout-symmetry";
 import AlignPanel from "./canvas/AlignPanel";
 import EditSidebar from "./canvas/EditSidebar";
@@ -18,6 +20,8 @@ interface AlignmentToolbarProps {
   spacing: number;
   trayWidth: number;
   trayDepth: number;
+  distributionArea?: FixedCustomTrayUsableArea;
+  getPairSpacing?: CanvasCollisionSpacingOptions<FreeSlot>["getPairSpacing"];
   activeTabId: string | null;
   onActiveTabChange: (tabId: string | null) => void;
 }
@@ -36,6 +40,8 @@ export default function AlignmentToolbar({
   spacing,
   trayWidth,
   trayDepth,
+  distributionArea,
+  getPairSpacing,
   activeTabId,
   onActiveTabChange,
 }: AlignmentToolbarProps) {
@@ -58,6 +64,8 @@ export default function AlignmentToolbar({
           selectedSlots={selected}
           onUpdateSlots={onUpdateSlots}
           spacing={spacing}
+          distributionArea={distributionArea}
+          getPairSpacing={getPairSpacing}
         />
       ),
     },

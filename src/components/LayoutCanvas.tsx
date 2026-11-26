@@ -1008,6 +1008,14 @@ export default function LayoutCanvas({
           spacing={spacing}
           trayWidth={trayWidth}
           trayDepth={trayDepth}
+          distributionArea={fixedUsableArea ?? {
+            x: boundarySpacing + sideBevelWidth,
+            y: boundarySpacing + sideBevelWidth,
+            width: trayWidth - 2 * (boundarySpacing + sideBevelWidth),
+            depth: trayDepth - 2 * (boundarySpacing + sideBevelWidth),
+            cornerRadius: Math.max(0, cornerRadius - boundarySpacing - sideBevelWidth),
+          }}
+          getPairSpacing={heightGroupSpacingOptions?.getPairSpacing}
           activeTabId={isActive ? activeActionTab : null}
           onActiveTabChange={setActiveActionTab}
         />
