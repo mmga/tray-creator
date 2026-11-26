@@ -150,12 +150,15 @@ export function StorageSteppedPanel({
           label="托盘"
           value={`${plan.trayWidth.toFixed(1)}×${plan.trayDepth.toFixed(1)}×${plan.trayThickness}`}
         />
-        <Metric label="耗材参考" value={`${(model.volume / 1000).toFixed(1)} cm³`} />
+        <Metric label="实体体积" value={`${(model.volume / 1000).toFixed(1)} cm³`} />
       </div>
       <div className="grid grid-cols-2 gap-1.5">
         <Metric label="仓净高" value={clearSteps} />
         <Metric label="理论容积" value={`${capacityLiters.toFixed(3)} L`} />
       </div>
+      <p className="text-[9px] leading-3 text-muted-foreground/70">
+        体积为实心 CAD 材料体积，不等同于切片填充后的耗材用量。
+      </p>
       {model.isPreviewStale ? (
         <div className="rounded-sm border border-[#5a4a2a] bg-[#2a2518]/95 px-2 py-1 text-[10px] text-[#d7b95d]">
           预览待更新：修改参数后请重新锻造。
