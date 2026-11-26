@@ -194,6 +194,27 @@ describe("Storage Stepped 参数校验", () => {
     ).toBe(true);
   });
 
+  it("倒角高度不得超过托盘总厚度", () => {
+    const params = createDefaultStorageSteppedParams();
+    params.interface.trayBottomChamfer = 3;
+    params.interface.trayChamferAngle = 20;
+    const validation = validateStorageSteppedParams(params);
+    expect(validation.isValid).toBe(false);
+    expect(
+      validation.errors.some((entry) => entry.message.includes("倒角高度")),
+    ).toBe(true);
+  });
+
+  it("磁吸底孔与 3mm 槽底组合可以成立", () => {
+    const params = createDefaultStorageSteppedParams();
+    params.trays[0] = {
+      ...params.trays[0],
+      baseHoleStructure: "magnetic-base-hole",
+      slots: [createFreeSlotInstance({ id: "a", x: 117.7, y: 37.7, width: 32 })],
+    };
+    expect(validateStorageSteppedParams(params).isValid).toBe(true);
+  });
+
   it("接口偏离默认值只提示、不阻断", () => {
     const params = createDefaultStorageSteppedParams();
     params.interface.bodyWidth = 260;
