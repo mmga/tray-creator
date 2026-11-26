@@ -280,6 +280,6 @@ pnpm build
 | 3 功能托盘 | 已完成（软件） | 见阶段 3 提交 | `docs/validation/storage-stepped/phase-3-functional-trays.md`；49 项测试 + 类型检查 + lint 通过 | 候选布局不等于实测布局 |
 | 4 模式与预览 | 已完成（软件） | 见阶段 4 提交 | `docs/validation/storage-stepped/phase-4-mode-and-preview.md`；桌面浏览器实测截图、单元测试、类型检查、lint、构建通过 | 窄屏适配经用户确认不追加 |
 | 5 持久化与导出 | 已完成（软件） | 与阶段 4 同一提交（UI 动作区直接消费导出/草稿适配器） | `docs/validation/storage-stepped/phase-5-persistence-and-export.md`；参数往返、草稿、文件名与下载失败测试通过 | 下载落盘只能确认触发 |
-| 6 回归与实物 | 软件完成，实物待验证 | 见阶段 6 提交 | `docs/validation/storage-stepped/phase-6-final-report.md`；101 项定向测试、全量测试、类型检查、lint、构建通过；桌面浏览器实测通过 | 切片、装配、承重与柜内空间未验证 |
+| 6 回归与实物 | 软件完成，实物待验证 | 见阶段 6 提交 | `docs/validation/storage-stepped/phase-6-final-report.md`；102 项定向测试、全量测试、类型检查、lint、构建通过；桌面浏览器实测通过 | 切片、装配、承重与柜内空间未验证 |
 
 单项任务记录格式：任务编号；输入/样本；改动文件；执行命令或操作；预期结果；实际结果；证据位置；完成状态；遗留事项。测试失败时追加原因与复测记录，保留原失败事实。

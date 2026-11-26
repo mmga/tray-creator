@@ -20,7 +20,7 @@ pnpm exec vitest run src/lib/storage-stepped-plan.test.ts \
   src/viewports/layout-editor/storageSteppedViewportModel.test.ts \
   src/components/ModeTabs.test.tsx \
   src/mode-editor/catalog.test.ts
-# Test Files 12 passed，Tests 101 passed
+# Test Files 12 passed，Tests 102 passed
 
 pnpm exec vitest run --config vitest.performance.config.ts \
   src/lib/storage-stepped.performance.test.ts

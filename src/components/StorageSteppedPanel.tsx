@@ -45,6 +45,7 @@ import {
 import {
   CIRCLE_SLOT_DEFINITIONS,
   ELLIPSE_SLOT_DEFINITIONS,
+  getFreeSlotProfileGeometry,
 } from "@/lib/slot-definitions";
 import type {
   StorageSteppedHeightSpecId,
@@ -232,6 +233,46 @@ export function StorageSteppedPanel({
               label="整体平移"
               value={`X ${importReport.translation.x.toFixed(2)} / Y ${importReport.translation.y.toFixed(2)}`}
             />
+          </div>
+          <div className="rounded-sm border border-[#2e2a24] bg-[#141310] p-1.5">
+            <svg
+              viewBox={`0 0 ${importReport.targetWidth} ${importReport.targetDepth}`}
+              role="img"
+              aria-label="导入布局预览"
+              className="h-28 w-full"
+              preserveAspectRatio="xMidYMid meet"
+            >
+              <rect
+                x={0}
+                y={0}
+                width={importReport.targetWidth}
+                height={importReport.targetDepth}
+                fill="#1c1a16"
+                stroke="#5c5446"
+                strokeWidth={0.6}
+              />
+              {importReport.slots.map((slot) => {
+                const profile = getFreeSlotProfileGeometry(slot);
+                const cy = importReport.targetDepth - slot.y;
+                return (
+                  <ellipse
+                    key={slot.id}
+                    cx={slot.x}
+                    cy={cy}
+                    rx={profile.width / 2}
+                    ry={profile.height / 2}
+                    transform={`rotate(${-slot.rotation} ${slot.x} ${cy})`}
+                    fill={importReport.status === "ready" ? "#6c8348" : "#8b3a3a"}
+                    fillOpacity={0.55}
+                    stroke={importReport.status === "ready" ? "#a8d39a" : "#e28b82"}
+                    strokeWidth={0.5}
+                  />
+                );
+              })}
+            </svg>
+            <div className="mt-1 text-center text-[9px] text-muted-foreground">
+              平移后槽位预览（不缩放、不裁剪）
+            </div>
           </div>
           {importReport.notes.map((note) => (
             <p key={note} className="text-[11px] leading-5 text-muted-foreground">

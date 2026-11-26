@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { StorageSteppedPanel } from "@/components/StorageSteppedPanel";
 import type { UseStorageSteppedReturn } from "@/hooks/useStorageStepped";
@@ -11,6 +11,7 @@ import {
   validateStorageSteppedParams,
 } from "@/lib/storage-stepped-plan";
 import type { StorageSteppedParams } from "@/types/storage-stepped";
+import { prepareStorageSteppedLayoutImport } from "@/lib/storage-stepped-layout-import";
 
 function createModel(params: StorageSteppedParams = createDefaultStorageSteppedParams()) {
   const plan = deriveStorageSteppedPlan(params);
@@ -109,6 +110,60 @@ describe("StorageSteppedPanel", () => {
     expect(
       screen.getByText(/槽深 6.2mm 不小于托盘总厚度 6mm/),
     ).toBeInTheDocument();
+  });
+
+  it("导入托盘布局时显示平移预览与冲突，成功后提交", async () => {
+    const base = createDefaultStorageSteppedParams();
+    const model = createModel(base);
+    const applyMock = vi.fn();
+    model.applyLayoutImport = applyMock;
+    let idCounter = 0;
+    model.prepareLayoutImport = vi.fn((data: unknown) =>
+      prepareStorageSteppedLayoutImport(data, {
+        params: base,
+        stepIndex: 0,
+        idFactory: { createId: () => `imported-${++idCounter}` },
+      }),
+    );
+    const { container } = renderPanel(model);
+
+    const customParams = {
+      version: 1,
+      mode: "custom",
+      params: {
+        trayWidth: 120,
+        trayDepth: 80,
+        spacing: 5,
+        boundarySpacing: 5,
+        baseThickness: 2,
+        holeDepth: 3,
+        cornerRadius: 2,
+        sideBevelWidth: 0,
+        slots: [
+          { id: "a", x: 30, y: 40, shape: "circle", width: 25, height: 25, rotation: 0 },
+          { id: "b", x: 90, y: 40, shape: "circle", width: 25, height: 25, rotation: 0 },
+        ],
+      },
+    };
+    const file = new File([JSON.stringify(customParams)], "custom.json", {
+      type: "application/json",
+    });
+    Object.defineProperty(file, "text", {
+      value: async () => JSON.stringify(customParams),
+    });
+    const input = container.querySelector('input[type="file"]');
+    expect(input).not.toBeNull();
+    fireEvent.change(input!, { target: { files: [file] } });
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("img", { name: "导入布局预览" }),
+      ).toBeInTheDocument();
+    });
+    expect(screen.getAllByText(/整体平移/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/布局可导入/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "确认导入" }));
+    expect(applyMock).toHaveBeenCalledTimes(1);
   });
 
   it("接口偏离默认值时提示不能与默认接口无条件互换", () => {
