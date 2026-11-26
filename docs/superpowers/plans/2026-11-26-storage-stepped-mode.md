@@ -172,7 +172,7 @@ H(i) = 首阶高度 + 40 × i
 - [x] S4-07：连续拖动采用预览/提交事务，一次手势对应一次撤销；模式切换或会话替换时正确结束或取消事务。
 - [x] S4-08：高度变化只重建主体和更新装配变换；槽位变化只重建对应托盘；接口变化使所有相关零件失效；视图变化不重建几何。
 - [x] S4-09：非法配置保留可编辑状态，标记旧预览过期并阻止相关零件导出；仅导出有效主体时，不被无关托盘错误全局阻断。
-- [ ] S4-10：增加交互和异步生命周期测试，检查 Three.js 资源释放以及无关模式的初始化成本。
+- [x] S4-10：增加交互和异步生命周期测试，检查 Three.js 资源释放以及无关模式的初始化成本。
 
 主要接入位置：`src/components/ModeTabs.tsx`、`src/hooks/useModeEditor.tsx`、`src/mode-editor/catalog.ts`、`src/lib/model-ports.ts`、`src/lib/worker/tray.worker.ts`、`src/lib/worker/worker-service.ts`。新增模式专属目录遵循现有 Workspace/Viewport 约定。
 
