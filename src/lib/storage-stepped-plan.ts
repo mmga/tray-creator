@@ -749,6 +749,20 @@ export function validateStorageSteppedParams(
       issues.push(
         issue("error", "params", "interface.trayChamferAngle", "托盘底部倒角角度必须在 0–90° 之间"),
       );
+    } else {
+      const chamferHeight =
+        iface.trayBottomChamfer /
+        Math.tan((iface.trayChamferAngle * Math.PI) / 180);
+      if (chamferHeight >= iface.trayThickness) {
+        issues.push(
+          issue(
+            "error",
+            "params",
+            "interface.trayBottomChamfer",
+            `倒角高度 ${chamferHeight.toFixed(2)}mm 不小于托盘总厚度`,
+          ),
+        );
+      }
     }
     if (plan.trayWidth <= 0 || plan.trayDepth <= 0) {
       issues.push(
