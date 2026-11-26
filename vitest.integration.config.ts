@@ -18,6 +18,7 @@ export default defineConfig({
       NODE_ENV: "test",
     },
     environment: "jsdom",
+    testTimeout: 20_000,
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.integration.test.ts", "src/**/*.integration.test.tsx"],
     passWithNoTests: true,

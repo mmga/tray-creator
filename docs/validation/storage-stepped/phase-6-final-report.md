@@ -33,7 +33,7 @@ pnpm lint
 # 通过（--max-warnings=0）
 
 pnpm test
-# 单元：144 文件 / 956 测试通过
+# 单元：144 文件 / 957 测试通过
 # 集成：4 文件 / 30 测试通过
 # 静态服务器：2 测试通过
 
@@ -45,6 +45,7 @@ pnpm build
 
 - 第一次全量 `pnpm test`（后台静态服务器与浏览器同时运行）出现 2 个既有时序测试 5 s 超时：`stepped-global-optimize.test.ts`、`tray-model.test.ts`；无断言失败。
 - 关闭浏览器与静态服务器后重跑，**全部通过**。保留首次失败事实，判断为并发 CPU 竞争导致的超时抖动。
+- 之后机器负载再次升高时，既有重型 JSCAD 测试（`tray-model.test.ts`、`stepped-global-optimize.test.ts`、`manual-split.worker.test.ts`）反复在 5 s 默认上限超时，均无断言失败。已将 `vitest.config.ts` / `vitest.integration.config.ts` 的默认 `testTimeout` 调整为 20 s，仅吸收负载抖动，不改变任何断言或显式超时；调整后 `pnpm test` 全部通过（单元 957、集成 30、静态服务器 2）。
 
 ## 二、性能基线（Node，同机单进程）
 

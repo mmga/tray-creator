@@ -19,6 +19,9 @@ export default defineConfig({
     env: {
       NODE_ENV: "test",
     },
+    // JSCAD 几何测试在并行或机器负载较高时会明显超过 Vitest 默认 5s；
+    // 放宽默认上限只避免抖动，不改变任何断言。显式设置的更长超时仍然生效。
+    testTimeout: 20_000,
     projects: [
       {
         extends: true,
