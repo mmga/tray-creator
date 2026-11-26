@@ -40,6 +40,7 @@ function createModel(params: StorageSteppedParams = createDefaultStorageSteppedP
     viewMode: "assembly",
     selectedPartId: "body",
     setHeightSpec: vi.fn(),
+    setDepthPreset: vi.fn(),
     setCurrentStepIndex: vi.fn(),
     applyPreset: vi.fn(),
     addSlot: vi.fn(),
@@ -84,11 +85,34 @@ describe("StorageSteppedPanel", () => {
   it("切换高度规格与当前阶", () => {
     const model = createModel();
     renderPanel(model);
-    fireEvent.click(screen.getByRole("button", { name: /收纳高度 40\/80\/120/ }));
+    fireEvent.click(screen.getByRole("button", { name: /收纳高度.*40\/80\/120/ }));
     expect(model.setHeightSpec).toHaveBeenCalledWith("storage");
 
     fireEvent.click(screen.getByRole("button", { name: /^第 3 阶/ }));
     expect(model.setCurrentStepIndex).toHaveBeenCalledWith(2);
+  });
+
+  it("可以从主体规格选择 300 mm 四阶深度预设", () => {
+    Element.prototype.scrollIntoView ??= vi.fn();
+    const model = createModel();
+    renderPanel(model);
+    fireEvent.keyDown(screen.getByRole("combobox", { name: /深度预设/ }), { key: "ArrowDown" });
+    fireEvent.click(screen.getByRole("option", { name: "300 mm · 60 / 80 / 80 / 80" }));
+    expect(model.setDepthPreset).toHaveBeenCalledWith("300-60-80-80-80");
+  });
+
+  it("浅阶显示单排六槽的容量，并可重新应用已选预设", () => {
+    Element.prototype.scrollIntoView ??= vi.fn();
+    const params = createDefaultStorageSteppedParams();
+    params.interface.moduleDepth = 60;
+    params.trays[0].presetId = "circle-32-five";
+    const model = createModel(params);
+    renderPanel(model);
+
+    const preset = screen.getByRole("combobox", { name: "预设" });
+    expect(preset).toHaveTextContent(/32 mm 单排.*最多 6 槽/);
+    fireEvent.click(screen.getByRole("button", { name: "重新应用" }));
+    expect(model.applyPreset).toHaveBeenCalledWith("circle-32-five");
   });
 
   it("添加槽位使用所选槽位定义的成品规格", () => {

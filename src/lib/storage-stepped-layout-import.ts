@@ -101,7 +101,7 @@ export function prepareStorageSteppedLayoutImport(
     idFactory: IdFactory;
   },
 ): StorageSteppedLayoutImportReport {
-  const size = deriveStorageSteppedTraySize(target.params.interface);
+  const size = deriveStorageSteppedTraySize(target.params.interface, target.stepIndex);
   const base: StorageSteppedLayoutImportReportBase = {
     sourceMode: "custom",
     targetWidth: size.width,

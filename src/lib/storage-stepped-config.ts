@@ -12,7 +12,7 @@ import { BASE_HOLE_PARAM_DEFAULTS } from "@/lib/base-hole-config";
 
 /** 首版固定托盘总厚度 (mm)；不随槽深自动增加。 */
 export const STORAGE_STEPPED_TRAY_THICKNESS = 6;
-/** 首版固定阶数。 */
+/** 默认阶数。 */
 export const STORAGE_STEPPED_STEP_COUNT = 3;
 /** 首版固定台阶步进 (mm)。 */
 export const STORAGE_STEPPED_STEP_RISE = 40;
@@ -41,7 +41,6 @@ export interface StorageSteppedHeightSpec {
   firstStepHeight: number;
   /** 台阶步进高度 (mm) */
   stepRise: number;
-  stepCount: number;
 }
 
 export const STORAGE_STEPPED_HEIGHT_SPECS: Record<
@@ -50,17 +49,15 @@ export const STORAGE_STEPPED_HEIGHT_SPECS: Record<
 > = {
   standard: {
     id: "standard",
-    label: "标准高度 30/70/110",
+    label: "标准高度",
     firstStepHeight: 30,
     stepRise: STORAGE_STEPPED_STEP_RISE,
-    stepCount: STORAGE_STEPPED_STEP_COUNT,
   },
   storage: {
     id: "storage",
-    label: "收纳高度 40/80/120",
+    label: "收纳高度",
     firstStepHeight: 40,
     stepRise: STORAGE_STEPPED_STEP_RISE,
-    stepCount: STORAGE_STEPPED_STEP_COUNT,
   },
 };
 
@@ -75,7 +72,7 @@ export function isStorageSteppedHeightSpecId(
   return value === "standard" || value === "storage";
 }
 
-/** 稳定的零件身份；主体与三块托盘各自独立缓存与导出。 */
+/** 稳定的零件身份；主体与各阶托盘独立缓存与导出。 */
 export const STORAGE_STEPPED_BODY_PART_ID = "body";
 
 export function storageSteppedTrayPartId(stepIndex: number): string {
@@ -105,13 +102,15 @@ export function storageSteppedHeightFileTag(
 }
 
 export function storageSteppedPartFileStem(
-  params: Pick<StorageSteppedParams, "heightSpecId" | "interfaceVersion">,
+  params: Pick<StorageSteppedParams, "heightSpecId" | "interfaceVersion" | "interface">,
   partId: string,
 ): string {
   const part = partId === STORAGE_STEPPED_BODY_PART_ID
     ? "body"
     : partId.replace(/^tray-/, "tray-step");
-  return `storage_stepped_${storageSteppedHeightFileTag(params)}_${part}_${storageSteppedInterfaceFileTag(params)}`;
+  const depths = params.interface.stepDepths;
+  const depthTag = depths ? `_d${depths.join("-")}` : "";
+  return `storage_stepped_${storageSteppedHeightFileTag(params)}${depthTag}_${part}_${storageSteppedInterfaceFileTag(params)}`;
 }
 
 export const STORAGE_STEPPED_LIMITS = {
@@ -191,11 +190,74 @@ export function createDefaultStorageSteppedParams(
     firstStepHeight: spec.firstStepHeight,
     stepRise: spec.stepRise,
     interface: { ...STORAGE_STEPPED_INTERFACE_DEFAULTS },
-    trays: Array.from({ length: spec.stepCount }, (_, index) =>
+    trays: Array.from({ length: STORAGE_STEPPED_STEP_COUNT }, (_, index) =>
       createStorageSteppedTrayConfig(index),
     ),
     slotSpacing: STORAGE_STEPPED_DEFAULT_SLOT_SPACING,
     slotBoundarySpacing: STORAGE_STEPPED_DEFAULT_SLOT_BOUNDARY_SPACING,
+  };
+}
+
+export const STORAGE_STEPPED_DEPTH_PRESETS = [
+  { id: "240", depths: [80, 80, 80] },
+  { id: "300-60-60-80-100", depths: [60, 60, 80, 100] },
+  { id: "300-60-80-80-80", depths: [60, 80, 80, 80] },
+  { id: "300-100-100-100", depths: [100, 100, 100] },
+] as const;
+
+export function getStorageSteppedStepDepth(
+  params: StorageSteppedInterfaceParams,
+  stepIndex: number,
+): number {
+  return params.stepDepths?.[stepIndex] ?? params.moduleDepth;
+}
+
+export function getStorageSteppedDepthError(params: StorageSteppedInterfaceParams) {
+  if (params.stepCount !== 3 && params.stepCount !== 4) {
+    return { path: "interface.stepCount", message: "阶数必须为 3 或 4" };
+  }
+  if (params.stepDepths === undefined) return null;
+  if (!Array.isArray(params.stepDepths) || params.stepDepths.length !== params.stepCount) {
+    return { path: "interface.stepDepths", message: "各阶深度数量必须等于阶数" };
+  }
+  for (let index = 0; index < params.stepCount; index += 1) {
+    const depth = params.stepDepths[index];
+    if (!Number.isFinite(depth) || depth <= 0) {
+      return { path: `interface.stepDepths[${index}]`, message: "台阶深度必须为正数" };
+    }
+  }
+  return null;
+}
+
+export function getStorageSteppedDepthPreset(params: StorageSteppedInterfaceParams) {
+  return STORAGE_STEPPED_DEPTH_PRESETS.find(({ depths }) =>
+    depths.length === params.stepCount &&
+    depths.every((depth, index) => depth === getStorageSteppedStepDepth(params, index)),
+  );
+}
+
+export function withStorageSteppedDepthPreset(
+  params: StorageSteppedParams,
+  presetId: string,
+): StorageSteppedParams {
+  const preset = STORAGE_STEPPED_DEPTH_PRESETS.find(({ id }) => id === presetId);
+  if (!preset || getStorageSteppedDepthPreset(params.interface)?.id === presetId) return params;
+  const { depths } = preset;
+  const nextInterface = { ...params.interface, stepCount: depths.length, moduleDepth: depths[0] };
+  if (presetId === "240") delete nextInterface.stepDepths;
+  else nextInterface.stepDepths = [...depths];
+  return {
+    ...params,
+    interface: nextInterface,
+    trays: depths.map((depth, index) => {
+      const tray = getStorageSteppedTray(params, index);
+      if (!tray) return createStorageSteppedTrayConfig(index);
+      const dy = (depth - getStorageSteppedStepDepth(params.interface, index)) / 2;
+      return dy === 0 ? tray : {
+        ...tray,
+        slots: tray.slots.map((slot) => ({ ...slot, y: slot.y + dy })),
+      };
+    }),
   };
 }
 
@@ -228,9 +290,12 @@ export function copyStorageSteppedTrayConfig(
   }
   const copy = cloneStorageSteppedTrayConfig(source);
   copy.stepIndex = toStepIndex;
+  const depthDelta = getStorageSteppedStepDepth(params.interface, toStepIndex) -
+    getStorageSteppedStepDepth(params.interface, fromStepIndex);
   copy.slots = copy.slots.map((slot) => ({
     ...slot,
     id: idFactory.createId(),
+    y: slot.y + depthDelta / 2,
   }));
   return replaceStorageSteppedTray(params, copy);
 }

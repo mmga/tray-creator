@@ -16,6 +16,7 @@ import {
 } from "@/lib/storage-stepped-layout";
 import { prepareStorageSteppedLayoutImport, applyStorageSteppedLayoutImport } from "@/lib/storage-stepped-layout-import";
 import { createDefaultStorageSteppedParams } from "@/lib/storage-stepped-config";
+import { validateStorageSteppedParams } from "@/lib/storage-stepped-plan";
 import { createFreeSlotInstance } from "@/lib/slot-instance-factory";
 import { CIRCLE_SLOT_DEFINITIONS } from "@/lib/slot-definitions";
 import type { StorageSteppedParams } from "@/types/storage-stepped";
@@ -32,10 +33,10 @@ function slotDefinition(id: string) {
 }
 
 describe("Storage Stepped 托盘预设", () => {
-  it("五个预设分别生成 0/10/10/10/5 个槽", () => {
+  it("默认托盘按排列方式排满 0/14/12/12/6/5 个槽", () => {
     const params = createDefaultStorageSteppedParams();
     const context = getStorageSteppedPresetLayoutContext(params);
-    const expected = [0, 10, 10, 10, 5];
+    const expected = [0, 14, 12, 12, 6, 5];
     STORAGE_STEPPED_TRAY_PRESETS.forEach((preset, index) => {
       const slots = createStorageSteppedPresetSlots(preset, {
         ...context,
@@ -43,6 +44,20 @@ describe("Storage Stepped 托盘预设", () => {
       });
       expect(slots, preset.id).toHaveLength(expected[index]);
     });
+  });
+
+  it("浅阶 32 mm 单排可放六槽，间距增至 8 mm 时可放五槽", () => {
+    const params = createDefaultStorageSteppedParams();
+    params.interface.moduleDepth = 60;
+    const context = getStorageSteppedPresetLayoutContext(params);
+    const single = STORAGE_STEPPED_TRAY_PRESETS.find((entry) => entry.id === "circle-32-five")!;
+    const double = STORAGE_STEPPED_TRAY_PRESETS.find((entry) => entry.id === "circle-32-ten-staggered")!;
+    const generated = applyStorageSteppedTrayPreset(params, 0, single.id, idFactory());
+    expect(generated.trays[0].slots).toHaveLength(6);
+    expect(validateStorageSteppedParams(generated).isValid).toBe(true);
+    expect(getStorageSteppedPresetFitReport(single, { ...context, spacing: 8 }).slotCount).toBe(5);
+    expect(getStorageSteppedPresetFitReport(double, context).fits).toBe(false);
+    expect(applyStorageSteppedTrayPreset(generated, 0, double.id, idFactory())).toBe(generated);
   });
 
   it("预设使用项目槽位定义的成品槽径，不重复叠加公差", () => {
@@ -73,7 +88,7 @@ describe("Storage Stepped 托盘预设", () => {
     }
   });
 
-  it("32mm 十人交错布局给出完整边界与最小间距", () => {
+  it("32mm 交错布局优先放满两排，托盘变浅时改为六槽加五槽", () => {
     const params = createDefaultStorageSteppedParams();
     const context = getStorageSteppedPresetLayoutContext(params);
     const preset = STORAGE_STEPPED_TRAY_PRESETS.find(
@@ -81,19 +96,22 @@ describe("Storage Stepped 托盘预设", () => {
     )!;
     const report = getStorageSteppedPresetFitReport(preset, context);
     const pitch = 32.4 + 5;
-    expect(report.layoutWidth).toBeCloseTo(4 * pitch + 32.4 + pitch / 2, 6);
-    expect(report.layoutDepth).toBeCloseTo(32.4 + pitch * Math.sqrt(3) / 2, 6);
+    const shift = 10;
+    expect(report.slotCount).toBe(12);
+    expect(report.layoutWidth).toBeCloseTo(5 * pitch + 32.4 + shift, 6);
+    expect(report.layoutDepth).toBeCloseTo(32.4 + Math.sqrt(pitch ** 2 - shift ** 2), 6);
     expect(report.minimumSpacing).toBeCloseTo(5, 6);
     expect(preset.source).toBe("derived");
+    expect(getStorageSteppedPresetFitReport(preset, { ...context, trayDepth: 72 }).slotCount).toBe(11);
 
     const slots = createStorageSteppedPresetSlots(preset, {
       ...context,
       idFactory: idFactory(),
     });
-    // 第二排相对第一排水平错开半个节距
-    const firstRow = slots.slice(0, 5).map((slot) => slot.x);
-    const secondRow = slots.slice(5).map((slot) => slot.x);
-    expect(secondRow[0] - firstRow[0]).toBeCloseTo(pitch / 2, 6);
+    // 第二排使用横向剩余空间，保留两个完整的六槽排。
+    const firstRow = slots.slice(0, 6).map((slot) => slot.x);
+    const secondRow = slots.slice(6).map((slot) => slot.x);
+    expect(secondRow[0] - firstRow[0]).toBeCloseTo(shift, 6);
   });
 
   it("应用预设只替换目标阶槽位，保留槽深与底孔配置", () => {
@@ -110,7 +128,7 @@ describe("Storage Stepped 托盘预设", () => {
       idFactory(),
     );
     const target = next.trays.find((tray) => tray.stepIndex === 1)!;
-    expect(target.slots).toHaveLength(10);
+    expect(target.slots).toHaveLength(12);
     expect(target.holeDepth).toBe(2.5);
     expect(target.presetId).toBe("circle-32-ten-staggered");
     next.trays.forEach((tray, index) => {

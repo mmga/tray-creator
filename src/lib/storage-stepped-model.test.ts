@@ -1,11 +1,14 @@
 import { booleans, geometries, measurements, primitives, transforms } from "@jscad/modeling";
 import generalizeModule from "@jscad/modeling/src/operations/modifiers/generalize";
+import stlSerializer from "@jscad/stl-serializer";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
 import { describe, expect, it } from "vitest";
 import { createFreeSlotInstance } from "@/lib/slot-instance-factory";
+import { closeManualSplitStl } from "@/lib/manual-split-stl";
 import {
   createDefaultStorageSteppedParams,
   storageSteppedTrayPartId,
+  withStorageSteppedDepthPreset,
   withStorageSteppedHeightSpec,
 } from "@/lib/storage-stepped-config";
 import {
@@ -17,6 +20,7 @@ import {
   measureStorageSteppedBody,
 } from "@/lib/storage-stepped-model";
 import { deriveStorageSteppedPlan } from "@/lib/storage-stepped-plan";
+import { applyStorageSteppedTrayPreset } from "@/lib/storage-stepped-presets";
 import type { StorageSteppedParams } from "@/types/storage-stepped";
 
 const { intersect } = booleans;
@@ -117,6 +121,40 @@ function inspectTopology(geometry: Geom3): TopologyReport {
 }
 
 describe("Storage Stepped 主体几何", () => {
+  it.each([
+    ["300-60-60-80-100", [60, 60, 80, 100], [-120, -60, 10, 100], 150],
+    ["300-60-80-80-80", [60, 80, 80, 80], [-120, -50, 30, 110], 150],
+    ["300-100-100-100", [100, 100, 100], [-100, 0, 100], 110],
+  ] as const)("深度预设 %s 生成闭合且可装配的主体和对应托盘", async (preset, depths, centers, height) => {
+    const params = withStorageSteppedDepthPreset(createDefaultStorageSteppedParams(), preset);
+    const [body, ...trays] = createStorageSteppedPartModels(params);
+    const [min, max] = measureBoundingBox(body.geometry);
+    expect(max[1] - min[1]).toBeCloseTo(300, 2);
+    expect(max[2]).toBeCloseTo(height, 2);
+    expect(inspectTopology(body.geometry)).toEqual({
+      connectedComponents: 1, openEdgeCount: 0, nonManifoldEdgeCount: 0,
+    });
+    expect(trays).toHaveLength(depths.length);
+    trays.forEach((tray, index) => {
+      const [min, max] = measureBoundingBox(tray.geometry);
+      expect(max[1] - min[1]).toBeCloseTo(depths[index] - 4.6, 2);
+      expect(tray.assemblyOffset).toEqual([0, centers[index], 24 + index * 40]);
+      const assembled = translate(tray.assemblyOffset, tray.geometry);
+      const overlap = intersect(body.geometry, assembled);
+      if (Math.abs(measureVolume(overlap)) > 1e-3) {
+        // 主体布尔运算的网格吸附可能产生不足 0.002 mm 的贴面重叠。
+        const [overlapMin, overlapMax] = measureBoundingBox(overlap);
+        const seatZ = tray.assemblyOffset[2];
+        expect(overlapMin[2]).toBeGreaterThan(seatZ - 0.002);
+        expect(overlapMax[2]).toBeLessThan(seatZ + 0.002);
+      }
+    });
+    for (const part of [body, ...trays]) {
+      const stl = new Blob(stlSerializer.serialize({ binary: true }, part.geometry) as BlobPart[]);
+      expect(await closeManualSplitStl(stl), part.partId).not.toBeNull();
+    }
+  });
+
   it("标准高度主体外尺寸为 240 × 240 × 110 且底面 Z=0", () => {
     const params = createDefaultStorageSteppedParams("standard");
     const bounds = measureStorageSteppedBody(params);
@@ -241,6 +279,19 @@ describe("Storage Stepped 主体几何", () => {
 });
 
 describe("Storage Stepped 平板托盘几何", () => {
+  it.each([
+    ["300-60-80-80-80", "circle-32-five", 6],
+    ["240", "circle-32-ten-staggered", 12],
+  ] as const)("预设 %s 的 %s 满槽托盘可以导出闭合 STL", async (depthPreset, trayPreset, count) => {
+    let id = 0;
+    const base = withStorageSteppedDepthPreset(createDefaultStorageSteppedParams(), depthPreset);
+    const params = applyStorageSteppedTrayPreset(base, 0, trayPreset, { createId: () => `slot-${++id}` });
+    expect(params.trays[0].slots).toHaveLength(count);
+    const geometry = createStorageSteppedTrayModel(params, 0);
+    const stl = new Blob(stlSerializer.serialize({ binary: true }, geometry) as BlobPart[]);
+    expect(await closeManualSplitStl(stl)).not.toBeNull();
+  });
+
   it("平板托盘外形为 235.4 × 75.4 × 6，打印底面 Z=0", () => {
     const params = createDefaultStorageSteppedParams();
     const tray = createStorageSteppedTrayModel(params, 0);

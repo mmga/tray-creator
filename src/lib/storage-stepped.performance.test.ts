@@ -53,7 +53,7 @@ describe("storage stepped performance baseline", () => {
     const flatTray = measure("flat tray", () =>
       createStorageSteppedTrayModel(standard, 1),
     );
-    const tenSlotTray = measure("10-slot staggered tray", () =>
+    const staggeredTray = measure(`${withSlots.trays[0].slots.length}-slot staggered tray`, () =>
       createStorageSteppedTrayModel(withSlots, 0),
     );
     const assembly = measure("assembly: body + 3 trays", () =>
@@ -90,7 +90,7 @@ describe("storage stepped performance baseline", () => {
       warmBody,
       storageBody,
       flatTray,
-      tenSlotTray,
+      staggeredTray,
       singleTrayChange,
     ]) {
       expect(duration).toBeLessThan(15_000);

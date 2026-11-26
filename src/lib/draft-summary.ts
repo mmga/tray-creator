@@ -1,3 +1,4 @@
+import { deriveStorageSteppedTraySize } from "@/lib/storage-stepped-plan";
 import { calculateTrayDimensions } from "@/lib/tray-model";
 import { calculateCustomTrayFootprint } from "@/lib/custom-layout-math";
 import { constructCustomContouredFootprintOutcome, projectCustomContouredFootprintInput } from "@/lib/custom-contoured-footprint";
@@ -63,6 +64,7 @@ export type DraftSummary =
       interfaceVersion: number;
       slotCount: number;
       slotCounts: number[];
+      trayDepths?: number[];
       trayWidth: number;
       trayDepth: number;
     };
@@ -200,20 +202,19 @@ function buildStorageSteppedDraftSummary(
   params: StorageSteppedParams,
 ): DraftSummaryByMode["storage-stepped"] {
   const slotCounts = params.trays.map((tray) => tray.slots.length);
+  const firstTraySize = deriveStorageSteppedTraySize(params.interface);
+  const trayDepths = params.interface.stepDepths?.map((_, index) =>
+    deriveStorageSteppedTraySize(params.interface, index).depth,
+  );
   return {
     mode: "storage-stepped",
     heightSpecId: params.heightSpecId,
     interfaceVersion: params.interfaceVersion,
     slotCount: slotCounts.reduce((total, count) => total + count, 0),
     slotCounts,
-    trayWidth:
-      params.interface.bodyWidth -
-      2 * params.interface.rimThickness -
-      2 * params.interface.assemblyClearance,
-    trayDepth:
-      params.interface.moduleDepth -
-      2 * params.interface.rimThickness -
-      2 * params.interface.assemblyClearance,
+    trayWidth: firstTraySize.width,
+    trayDepth: firstTraySize.depth,
+    ...(trayDepths && { trayDepths }),
   };
 }
 

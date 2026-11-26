@@ -21,7 +21,7 @@ export function buildStorageSteppedLayoutEditorViewportModel({
   params: StorageSteppedParams;
   stepIndex: number;
 }): LayoutEditorViewportModel {
-  const size = deriveStorageSteppedTraySize(params.interface);
+  const size = deriveStorageSteppedTraySize(params.interface, stepIndex);
   const tray = getStorageSteppedTray(params, stepIndex);
   const validation = validateStorageSteppedParams(params);
   const partId = storageSteppedTrayPartId(stepIndex);
@@ -54,7 +54,7 @@ export function getStorageSteppedTraySlotBounds(
   stepIndex: number,
 ) {
   const tray = getStorageSteppedTray(params, stepIndex);
-  const size = deriveStorageSteppedTraySize(params.interface);
+  const size = deriveStorageSteppedTraySize(params.interface, stepIndex);
   return {
     width: size.width,
     depth: size.depth,

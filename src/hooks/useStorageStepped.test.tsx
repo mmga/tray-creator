@@ -55,6 +55,25 @@ async function generate(result: { current: ReturnType<typeof useStorageStepped> 
 }
 
 describe("useStorageStepped", () => {
+  it("切换混合深度后保持原槽位居中，第 4 阶可独立编辑并通过撤销恢复", () => {
+    let id = 0;
+    const { result } = renderHook(() =>
+      useStorageStepped({ idFactory: { createId: () => `slot-${++id}` } }),
+    );
+    act(() => result.current.addSlot(32));
+    act(() => result.current.setDepthPreset("300-60-60-80-100"));
+    expect(result.current.params.trays[0].slots[0].y).toBeCloseTo(27.7);
+    act(() => result.current.setCurrentStepIndex(3));
+    act(() => result.current.addSlot(32));
+    expect(result.current.params.trays[3].slots[0].y).toBeCloseTo(47.7);
+
+    act(() => result.current.setDepthPreset("240"));
+    expect(result.current.currentStepIndex).toBe(2);
+    expect(result.current.params.trays).toHaveLength(3);
+    act(() => result.current.undo());
+    expect(result.current.params.trays[3].slots).toHaveLength(1);
+  });
+
   it("整阶复制可以撤销和重做，撤销后的新编辑会清除重做", () => {
     let id = 0;
     const { result } = renderHook(() =>

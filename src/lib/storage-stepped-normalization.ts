@@ -4,7 +4,7 @@ import {
   STORAGE_STEPPED_HEIGHT_SPECS,
   STORAGE_STEPPED_INTERFACE_VERSION,
   STORAGE_STEPPED_LIMITS,
-  STORAGE_STEPPED_STEP_COUNT,
+  getStorageSteppedDepthError,
   STORAGE_STEPPED_TRAY_THICKNESS,
   isStorageSteppedHeightSpecId,
 } from "@/lib/storage-stepped-config";
@@ -116,7 +116,7 @@ function normalizeTray(
   };
 }
 
-const INTERFACE_FIELDS: Array<keyof StorageSteppedInterfaceParams> = [
+const INTERFACE_FIELDS: Array<Exclude<keyof StorageSteppedInterfaceParams, "stepDepths">> = [
   "bodyWidth",
   "moduleDepth",
   "stepCount",
@@ -202,9 +202,8 @@ export function normalizeStorageSteppedParams(
     });
     delete legacyInterface[key];
   }
-  if (params.interface.stepCount !== STORAGE_STEPPED_STEP_COUNT) {
-    throw new Error(`interface.stepCount: 首版固定为 ${STORAGE_STEPPED_STEP_COUNT} 阶`);
-  }
+  const depthError = getStorageSteppedDepthError(params.interface);
+  if (depthError) throw new Error(`${depthError.path}: ${depthError.message}`);
   if (
     Math.abs(
       params.interface.trayThickness - STORAGE_STEPPED_TRAY_THICKNESS,
@@ -231,9 +230,9 @@ export function normalizeStorageSteppedParams(
   if (!Array.isArray(params.trays)) {
     throw new Error("trays: 托盘配置必须是数组");
   }
-  if (params.trays.length !== STORAGE_STEPPED_STEP_COUNT) {
+  if (params.trays.length !== params.interface.stepCount) {
     throw new Error(
-      `trays: 需要 ${STORAGE_STEPPED_STEP_COUNT} 块托盘配置，当前为 ${params.trays.length} 块`,
+      `trays: 需要 ${params.interface.stepCount} 块托盘配置，当前为 ${params.trays.length} 块`,
     );
   }
   // 托盘顺序即阶顺序；stepIndex 与数组位置不一致时直接报错，避免静默重排。

@@ -11,6 +11,8 @@ import {
   STORAGE_STEPPED_INTERFACE_DEFAULTS,
   STORAGE_STEPPED_INTERFACE_VERSION,
   STORAGE_STEPPED_LIMITS,
+  getStorageSteppedStepDepth,
+  getStorageSteppedDepthError,
   storageSteppedTrayPartId,
   isStorageSteppedHeightSpecId,
 } from "@/lib/storage-stepped-config";
@@ -125,6 +127,7 @@ function sanitizeInterface(
     bodyWidth: finiteOr(value.bodyWidth),
     moduleDepth: finiteOr(value.moduleDepth),
     stepCount: finiteOr(value.stepCount),
+    ...(Array.isArray(value.stepDepths) && { stepDepths: value.stepDepths.map((depth) => finiteOr(depth)) }),
     trayThickness: finiteOr(value.trayThickness),
     lowerWallThickness: finiteOr(value.lowerWallThickness),
     rimThickness: finiteOr(value.rimThickness),
@@ -137,17 +140,12 @@ function sanitizeInterface(
 /** 由同一套接口参数推导托盘外形；二维边界、主体开口和托盘几何共用此结果。 */
 export function deriveStorageSteppedTraySize(
   interfaceParams: StorageSteppedInterfaceParams,
+  stepIndex = 0,
 ): { width: number; depth: number } {
-  const resolved = sanitizeInterface(interfaceParams);
+  const inset = 2 * (finiteOr(interfaceParams.rimThickness) + finiteOr(interfaceParams.assemblyClearance));
   return {
-    width:
-      resolved.bodyWidth -
-      2 * resolved.rimThickness -
-      2 * resolved.assemblyClearance,
-    depth:
-      resolved.moduleDepth -
-      2 * resolved.rimThickness -
-      2 * resolved.assemblyClearance,
+    width: finiteOr(interfaceParams.bodyWidth) - inset,
+    depth: finiteOr(getStorageSteppedStepDepth(interfaceParams, stepIndex)) - inset,
   };
 }
 
@@ -166,23 +164,25 @@ export function deriveStorageSteppedPlan(
     : "standard";
   const firstStepHeight = finiteOr(params.firstStepHeight);
   const stepRise = finiteOr(params.stepRise);
-  const stepCount = Math.max(0, Math.floor(iface.stepCount));
+  const stepCount = Math.max(0, Math.min(4, Math.floor(iface.stepCount)));
   const traySize = deriveStorageSteppedTraySize(iface);
-  const bodyDepth = iface.moduleDepth * stepCount;
+  let bodyDepth = 0;
   const trayThickness = iface.trayThickness;
   const fingerPullRadius = iface.fingerPullDiameter / 2;
 
   const steps: StorageSteppedStepPlan[] = [];
   for (let index = 0; index < stepCount; index += 1) {
     const deckHeight = firstStepHeight + stepRise * index;
-    const moduleMinY = index * iface.moduleDepth;
-    const moduleMaxY = moduleMinY + iface.moduleDepth;
+    const moduleDepth = getStorageSteppedStepDepth(iface, index);
+    const moduleMinY = bodyDepth;
+    const moduleMaxY = moduleMinY + moduleDepth;
+    bodyDepth = moduleMaxY;
     const clearHeight =
       deckHeight -
       trayThickness -
       iface.baseThickness;
     const cavityWidth = iface.bodyWidth - 2 * iface.lowerWallThickness;
-    const cavityDepth = iface.moduleDepth - 2 * iface.lowerWallThickness;
+    const cavityDepth = moduleDepth - 2 * iface.lowerWallThickness;
     const capacity = Math.max(0, cavityWidth) *
       Math.max(0, cavityDepth) *
       Math.max(0, clearHeight);
@@ -230,7 +230,7 @@ export function deriveStorageSteppedPlan(
       fingerPulls: [
         {
           side: "left",
-          centerY: moduleMinY + iface.moduleDepth / 2,
+          centerY: moduleMinY + moduleDepth / 2,
           centerZ: deckHeight,
           radius: fingerPullRadius,
           minX: 0,
@@ -238,7 +238,7 @@ export function deriveStorageSteppedPlan(
         },
         {
           side: "right",
-          centerY: moduleMinY + iface.moduleDepth / 2,
+          centerY: moduleMinY + moduleDepth / 2,
           centerZ: deckHeight,
           radius: fingerPullRadius,
           minX: iface.bodyWidth - iface.lowerWallThickness,
@@ -256,7 +256,7 @@ export function deriveStorageSteppedPlan(
     partId: storageSteppedTrayPartId(tray.stepIndex),
     label: `第 ${tray.stepIndex + 1} 阶托盘`,
     width: traySize.width,
-    depth: traySize.depth,
+    depth: deriveStorageSteppedTraySize(iface, tray.stepIndex).depth,
     thickness: trayThickness,
     holeDepth: tray.holeDepth,
     floorThickness: getStorageSteppedFloorThickness(tray, trayThickness),
@@ -515,6 +515,7 @@ function validateTray(
   const issues: StorageSteppedValidationIssue[] = [];
   const partId = storageSteppedTrayPartId(tray.stepIndex);
   const path = `trays[${trayIndex}]`;
+  const { width, depth } = deriveStorageSteppedTraySize(plan.interface, tray.stepIndex);
 
   if (!Number.isInteger(tray.stepIndex) || tray.stepIndex < 0 || tray.stepIndex >= plan.stepCount) {
     issues.push(
@@ -560,8 +561,8 @@ function validateTray(
     if (tray.baseHoleStructure !== "none") {
       const baseHolePlan = createStorageSteppedTrayBaseHolePlan(
         tray,
-        plan.trayWidth,
-        plan.trayDepth,
+        width,
+        depth,
         plan.trayThickness,
       );
       const blockingReason = getStorageSteppedBaseHoleBlockingReason(baseHolePlan);
@@ -582,8 +583,8 @@ function validateTray(
     ...validateTraySlots(
       tray,
       trayIndex,
-      plan.trayWidth,
-      plan.trayDepth,
+      width,
+      depth,
       params.slotSpacing,
       params.slotBoundarySpacing,
     ),
@@ -595,7 +596,7 @@ function validateTray(
 function collectInterfaceDeviations(
   value: StorageSteppedInterfaceParams,
 ): string[] {
-  const labels: Record<keyof StorageSteppedInterfaceParams, string> = {
+  const labels: Record<Exclude<keyof StorageSteppedInterfaceParams, "stepDepths">, string> = {
     bodyWidth: "主体宽度",
     moduleDepth: "单阶深度",
     stepCount: "阶数",
@@ -606,7 +607,7 @@ function collectInterfaceDeviations(
     baseThickness: "底板厚度",
     assemblyClearance: "装配间隙",
   };
-  return (Object.keys(labels) as Array<keyof StorageSteppedInterfaceParams>)
+  return (Object.keys(labels) as Array<keyof typeof labels>)
     .filter((key) => {
       const actual = value[key];
       const expected = STORAGE_STEPPED_INTERFACE_DEFAULTS[key];
@@ -695,11 +696,8 @@ export function validateStorageSteppedParams(
   }
 
   if (interfaceFinite) {
-    if (iface.stepCount !== 3) {
-      issues.push(
-        issue("error", "params", "interface.stepCount", "首版固定为 3 阶"),
-      );
-    }
+    const depthError = getStorageSteppedDepthError(params.interface);
+    if (depthError) issues.push(issue("error", "params", depthError.path, depthError.message));
     if (Math.abs(iface.trayThickness - 6) > STORAGE_STEPPED_EPSILON) {
       issues.push(
         issue(
@@ -740,7 +738,7 @@ export function validateStorageSteppedParams(
     if (iface.fingerPullDiameter <= 0) {
       issues.push(issue("error", "params", "interface.fingerPullDiameter", "指扣直径必须为正"));
     }
-    if (plan.trayWidth <= 0 || plan.trayDepth <= 0) {
+    if (plan.trayWidth <= 0 || plan.trays.some((tray) => tray.depth <= 0)) {
       issues.push(
         issue("error", "params", "interface", "当前接口推导出的托盘尺寸无效"),
       );
@@ -765,6 +763,9 @@ export function validateStorageSteppedParams(
       );
     }
     for (const step of plan.steps) {
+      if (step.cavity.maxY <= step.cavity.minY || step.cavity.maxX <= step.cavity.minX) {
+        issues.push(issue("error", "params", "interface.lowerWallThickness", `第 ${step.index + 1} 阶仓室宽深必须为正`));
+      }
       if (step.clearHeight <= 0) {
         issues.push(
           issue(
@@ -882,7 +883,7 @@ export function getStorageSteppedBlockingReason(
   return `${first.message}${remaining > 0 ? `（另有 ${remaining} 项）` : ""}`;
 }
 
-/** 当前参数应生成的零件身份，按主体、第一阶、第二阶、第三阶排序。 */
+/** 当前参数应生成的零件身份，按主体和托盘阶序排序。 */
 export function getStorageSteppedExpectedPartIds(
   params: StorageSteppedParams,
 ): string[] {

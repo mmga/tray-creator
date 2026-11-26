@@ -68,7 +68,7 @@ function renderDraftSummary(item: AnyDraftListItem): ReactNode {
           <span>{item.heightSpecId === "storage" ? "收纳高度" : "标准高度"}</span>
           <span>{item.slotCounts.join("/")} 槽</span>
           <span>接口 v{item.interfaceVersion}</span>
-          <span>{item.trayWidth.toFixed(1)}×{item.trayDepth.toFixed(1)}mm</span>
+          <span>{item.trayWidth.toFixed(1)}×{item.summary.trayDepths?.map((depth) => depth.toFixed(1)).join("/") ?? item.trayDepth.toFixed(1)}mm</span>
         </>
       );
     default:

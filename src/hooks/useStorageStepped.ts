@@ -29,6 +29,7 @@ import {
   storageSteppedPartLabel,
   storageSteppedTrayPartId,
   withStorageSteppedHeightSpec,
+  withStorageSteppedDepthPreset,
 } from "@/lib/storage-stepped-config";
 import {
   addStorageSteppedTraySlot,
@@ -54,6 +55,7 @@ import {
 import { applyStorageSteppedTrayPreset } from "@/lib/storage-stepped-presets";
 import {
   deriveStorageSteppedPlan,
+  deriveStorageSteppedTraySize,
   getStorageSteppedBlockingReason,
   getStorageSteppedExpectedPartIds,
   getStorageSteppedPartBlockingReason,
@@ -122,6 +124,7 @@ export interface UseStorageSteppedReturn {
   handleExportCurrentTray: () => Promise<void>;
   handleExportAll: () => Promise<void>;
   setHeightSpec: (heightSpecId: StorageSteppedHeightSpecId) => void;
+  setDepthPreset: (presetId: string) => void;
   updateInterface: <K extends keyof StorageSteppedInterfaceParams>(
     key: K,
     value: StorageSteppedInterfaceParams[K],
@@ -178,7 +181,7 @@ function stepIndexOfPart(partId: string): number | null {
 /**
  * 阶梯收纳展示台编辑控制器。
  *
- * 参数、撤销与连续编辑事务复用 useEditableParams；主体与三块托盘按各自几何指纹
+ * 参数、撤销与连续编辑事务复用 useEditableParams；主体与各阶托盘按各自几何指纹
  * 独立缓存，切换高度只重建主体，修改某阶槽位只重建该托盘。
  */
 export function useStorageStepped(
@@ -210,7 +213,7 @@ export function useStorageStepped(
   const [workerErrors, setWorkerErrors] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [currentStepIndex, setCurrentStepIndexState] = useState(0);
+  const [requestedStepIndex, setCurrentStepIndexState] = useState(0);
   const latestRequestSeqRef = useRef(0);
   const [liftedStepIndex, setLiftedStepIndex] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<"assembly" | "single">("assembly");
@@ -242,6 +245,7 @@ export function useStorageStepped(
 
   const params = editable.viewParams;
   const persistedParams = editable.params;
+  const currentStepIndex = Math.min(requestedStepIndex, persistedParams.interface.stepCount - 1);
   const plan = useMemo(() => deriveStorageSteppedPlan(params), [params]);
   const persistedPlan = useMemo(
     () => params === persistedParams ? plan : deriveStorageSteppedPlan(persistedParams),
@@ -279,7 +283,7 @@ export function useStorageStepped(
   const setCurrentStepIndex = useCallback((stepIndex: number) => {
     // 切换阶会更换画布内容；先结束当前连续编辑事务，避免手势跨阶提交。
     editable.cancelContinuousEdit();
-    const next = Math.max(0, Math.min(2, stepIndex));
+    const next = Math.max(0, Math.min(editable.getParams().interface.stepCount - 1, stepIndex));
     // 同步更新 ref，保证同一事件中紧随其后的编辑作用于新选的阶。
     currentStepRef.current = next;
     setCurrentStepIndexState(next);
@@ -289,7 +293,7 @@ export function useStorageStepped(
   const editTray = useCallback(
     (mutate: (current: StorageSteppedParams, stepIndex: number) => StorageSteppedParams) => {
       editable.applyChange((previous) =>
-        mutate(previous, currentStepRef.current),
+        mutate(previous, Math.min(currentStepRef.current, previous.interface.stepCount - 1)),
       );
     },
     [editable],
@@ -299,6 +303,11 @@ export function useStorageStepped(
     editable.applyChange((previous) =>
       withStorageSteppedHeightSpec(previous, heightSpecId),
     );
+  }, [editable]);
+
+  const setDepthPreset = useCallback((presetId: string) => {
+    editable.cancelContinuousEdit();
+    editable.applyChange((previous) => withStorageSteppedDepthPreset(previous, presetId));
   }, [editable]);
 
   const updateInterface = useCallback(
@@ -378,20 +387,20 @@ export function useStorageStepped(
       height?: number,
       ellipseConfig?: EllipseSlotInstanceConfig,
     ) => {
-      const slot = createFreeSlotInstance({
-        id: idFactory.createId(),
-        x: plan.trayWidth / 2,
-        y: plan.trayDepth / 2,
-        width,
-        height,
-        rotation: 0,
-        ellipseConfig,
+      editTray((previous, stepIndex) => {
+        const size = deriveStorageSteppedTraySize(previous.interface, stepIndex);
+        return addStorageSteppedTraySlot(previous, stepIndex, createFreeSlotInstance({
+          id: idFactory.createId(),
+          x: size.width / 2,
+          y: size.depth / 2,
+          width,
+          height,
+          rotation: 0,
+          ellipseConfig,
+        }));
       });
-      editTray((previous, stepIndex) =>
-        addStorageSteppedTraySlot(previous, stepIndex, slot),
-      );
     },
-    [editTray, idFactory, plan.trayDepth, plan.trayWidth],
+    [editTray, idFactory],
   );
 
   const removeSlot = useCallback(
@@ -784,6 +793,7 @@ export function useStorageStepped(
     handleExportCurrentTray,
     handleExportAll,
     setHeightSpec,
+    setDepthPreset,
     updateInterface,
     updateSlotSpacing,
     updateSlotBoundarySpacing,
@@ -810,11 +820,11 @@ export function useStorageStepped(
     updateBaseHole,
     prepareLayoutImport,
     applyLayoutImport,
-    liftedStepIndex,
+    liftedStepIndex: liftedStepIndex !== null && liftedStepIndex < persistedPlan.stepCount ? liftedStepIndex : null,
     setLiftedStepIndex,
     viewMode,
     setViewMode,
-    selectedPartId,
+    selectedPartId: expectedPartIds.includes(selectedPartId) ? selectedPartId : STORAGE_STEPPED_BODY_PART_ID,
     setSelectedPartId,
     setParams: editable.setParams,
   };

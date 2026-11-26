@@ -9,6 +9,7 @@ import {
 } from "@/lib/local-drafts";
 import {
   createDefaultStorageSteppedParams,
+  withStorageSteppedDepthPreset,
   withStorageSteppedHeightSpec,
 } from "@/lib/storage-stepped-config";
 import {
@@ -72,6 +73,14 @@ describe("Storage Stepped 草稿", () => {
     expect(loaded?.item.title).toBe("收纳草稿 2");
     expect(loaded?.paramFile.params.heightSpecId).toBe("storage");
     expect(loaded?.item.summary.heightSpecId).toBe("storage");
+  });
+
+  it("草稿恢复混合深度，并保留各阶托盘深度摘要", () => {
+    const params = withStorageSteppedDepthPreset(createDefaultStorageSteppedParams(), "300-60-80-80-80");
+    const record = createDraft("四阶草稿", snapshot(params));
+    const loaded = getDraft("storage-stepped", record.item.id);
+    expect(loaded?.paramFile.params).toEqual(params);
+    expect(loaded?.item.summary.trayDepths).toEqual([55.4, 75.4, 75.4, 75.4]);
   });
 
   it("删除收纳草稿不影响其他模式", () => {

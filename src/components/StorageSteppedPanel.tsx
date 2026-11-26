@@ -36,6 +36,8 @@ import { PanelShell } from "@/components/PanelShell";
 import { useToast } from "@/hooks/useToast";
 import type { UseStorageSteppedReturn } from "@/hooks/useStorageStepped";
 import {
+  getStorageSteppedDepthPreset,
+  STORAGE_STEPPED_DEPTH_PRESETS,
   STORAGE_STEPPED_HEIGHT_SPECS,
   STORAGE_STEPPED_LIMITS,
 } from "@/lib/storage-stepped-config";
@@ -43,6 +45,8 @@ import {
   STORAGE_STEPPED_TRAY_PRESETS,
   STORAGE_STEPPED_CUSTOM_PRESET_ID,
   findStorageSteppedTrayPreset,
+  getStorageSteppedPresetFitReport,
+  getStorageSteppedPresetLayoutContext,
 } from "@/lib/storage-stepped-presets";
 import {
   CIRCLE_SLOT_DEFINITIONS,
@@ -78,7 +82,7 @@ function formatMm(value: number): string {
 }
 
 const INTERFACE_SLIDERS: Array<{
-  key: keyof StorageSteppedInterfaceParams;
+  key: Exclude<keyof StorageSteppedInterfaceParams, "stepDepths">;
   label: string;
   limitKey: keyof typeof STORAGE_STEPPED_LIMITS;
 }> = [
@@ -110,6 +114,15 @@ export function StorageSteppedPanel({
   const preset = findStorageSteppedTrayPreset(currentTray.presetId);
   const presetValue = preset ? preset.id : STORAGE_STEPPED_CUSTOM_PRESET_ID;
   const baseHoleStructure = currentTray.baseHoleStructure;
+  const depthPreset = getStorageSteppedDepthPreset(model.params.interface);
+  const traySize = getStorageSteppedPresetLayoutContext(model.params, model.currentStepIndex);
+  const presetChoices = STORAGE_STEPPED_TRAY_PRESETS.map((entry) => ({
+    entry,
+    fit: getStorageSteppedPresetFitReport(entry, traySize),
+  }));
+  const selectedPresetFit = presetChoices.find(({ entry }) => entry.id === presetValue)?.fit;
+  const stageHeights = (first: number, rise: number) =>
+    plan.steps.map((step) => first + step.index * rise).join("/");
 
   const clearSteps = plan.steps.map((step) => step.clearHeight.toFixed(1)).join(" / ");
   const capacityLiters = plan.theoreticalCapacity / 1_000_000;
@@ -126,7 +139,7 @@ export function StorageSteppedPanel({
               接口 v{model.params.interfaceVersion}
             </span>
             <span className="rounded-sm border border-[#2e2a24] bg-[#1c1a16] px-1.5 py-0.5 text-[9px] text-muted-foreground">
-              {STORAGE_STEPPED_HEIGHT_SPECS[model.params.heightSpecId].label}
+              {STORAGE_STEPPED_HEIGHT_SPECS[model.params.heightSpecId].label} {stageHeights(plan.firstStepHeight, plan.stepRise)}
             </span>
           </div>
         </div>
@@ -148,7 +161,7 @@ export function StorageSteppedPanel({
         />
         <Metric
           label="托盘"
-          value={`${plan.trayWidth.toFixed(1)}×${plan.trayDepth.toFixed(1)}×${plan.trayThickness}`}
+          value={`${traySize.trayWidth.toFixed(1)}×${traySize.trayDepth.toFixed(1)}×${plan.trayThickness}`}
         />
         <Metric label="实体体积" value={`${(model.volume / 1000).toFixed(1)} cm³`} />
       </div>
@@ -335,6 +348,22 @@ export function StorageSteppedPanel({
     <div className="space-y-3">
       <SectionHeader icon={Ruler} title="主体规格">
         <div className="space-y-2">
+          <div className="space-y-1">
+            <Label htmlFor="storage-depth-preset">深度预设（从前到后）</Label>
+            <Select value={depthPreset?.id ?? "custom"} onValueChange={model.setDepthPreset}>
+              <SelectTrigger id="storage-depth-preset" className="h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {!depthPreset && <SelectItem value="custom" disabled>自定义深度</SelectItem>}
+                {STORAGE_STEPPED_DEPTH_PRESETS.map(({ id, depths }) => (
+                  <SelectItem key={id} value={id}>
+                    {id === "240" ? "240" : "300"} mm · {depths.join(" / ")}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="grid grid-cols-2 gap-1.5">
             {heightOptions.map((option) => {
               const spec = STORAGE_STEPPED_HEIGHT_SPECS[option];
@@ -353,8 +382,7 @@ export function StorageSteppedPanel({
                 >
                   <div className="text-[11px] font-semibold">{spec.label}</div>
                   <div className="mt-0.5 text-[9px]">
-                    台面 {spec.firstStepHeight}/{spec.firstStepHeight + spec.stepRise}/
-                    {spec.firstStepHeight + spec.stepRise * 2} mm
+                    台面 {stageHeights(spec.firstStepHeight, spec.stepRise)} mm
                   </div>
                 </button>
               );
@@ -373,8 +401,7 @@ export function StorageSteppedPanel({
             <Metric label="指扣" value={`Ø${formatMm(model.params.interface.fingerPullDiameter)}`} />
           </div>
           <p className="text-[10px] leading-4 text-muted-foreground">
-            主体宽度、深度与阶数固定为 240 × 240 mm、3 阶；高度规格只改变台面高度，
-            不改变托盘外形与槽位。
+            同深度的托盘可互换。切回三阶会移除第 4 阶托盘，可用撤销恢复。
           </p>
         </div>
       </SectionHeader>
@@ -389,7 +416,7 @@ export function StorageSteppedPanel({
               <Redo2 aria-hidden="true" /> 重做
             </Button>
           </div>
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className={`grid gap-1.5 ${plan.stepCount === 4 ? "grid-cols-4" : "grid-cols-3"}`}>
             {plan.steps.map((step) => {
               const tray = model.params.trays.find(
                 (candidate) => candidate.stepIndex === step.index,
@@ -409,7 +436,7 @@ export function StorageSteppedPanel({
                 >
                   <div className="text-[11px] font-semibold">第 {step.index + 1} 阶</div>
                   <div className="font-mono text-[9px]">
-                    {tray?.slots.length ?? 0} 槽 · 高 {step.deckHeight}
+                    深 {step.module.maxY - step.module.minY} · {tray?.slots.length ?? 0} 槽
                   </div>
                 </button>
               );
@@ -433,13 +460,20 @@ export function StorageSteppedPanel({
                     自定义布局
                   </SelectItem>
                 ) : null}
-                {STORAGE_STEPPED_TRAY_PRESETS.map((entry) => (
-                  <SelectItem key={entry.id} value={entry.id}>
+                {presetChoices.map(({ entry, fit }) => (
+                  <SelectItem key={entry.id} value={entry.id} disabled={!fit.fits}>
                     {entry.label}
+                    {entry.layout.kind !== "flat" && (fit.fits ? ` · 最多 ${fit.slotCount} 槽` : " · 放不下")}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {preset && preset.layout.kind !== "flat" && (
+              <Button type="button" size="sm" variant="outline" disabled={!selectedPresetFit?.fits}
+                onClick={() => model.applyPreset(preset.id)}>
+                重新应用
+              </Button>
+            )}
           </div>
           <p className="text-[10px] leading-4 text-muted-foreground">
             {preset?.description ?? "手工编辑的槽位布局；预设名称不参与几何重建。"}
@@ -638,7 +672,9 @@ export function StorageSteppedPanel({
           <div className="rounded-sm border border-[#5a4a2a] bg-[#2a2518]/80 px-2 py-1.5 text-[10px] leading-4 text-[#d7b95d]">
             接口参数会同时重建主体与托盘；偏离打样默认值时不能与默认接口视为可互换。
           </div>
-          {INTERFACE_SLIDERS.map((entry) => (
+          {INTERFACE_SLIDERS.filter((entry) =>
+            entry.key !== "moduleDepth" || model.params.interface.stepDepths === undefined,
+          ).map((entry) => (
             <ParamSlider
               key={entry.key}
               label={entry.label}
@@ -649,8 +685,8 @@ export function StorageSteppedPanel({
             />
           ))}
           <div className="grid grid-cols-2 gap-1.5">
-            <Metric label="实际托盘宽" value={`${plan.trayWidth.toFixed(1)} mm`} />
-            <Metric label="实际托盘深" value={`${plan.trayDepth.toFixed(1)} mm`} />
+            <Metric label="实际托盘宽" value={`${traySize.trayWidth.toFixed(1)} mm`} />
+            <Metric label="实际托盘深" value={`${traySize.trayDepth.toFixed(1)} mm`} />
           </div>
         </div>
       </SectionHeader>

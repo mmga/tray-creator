@@ -3,6 +3,7 @@ import {
   getStorageSteppedTray,
   replaceStorageSteppedTray,
   cloneStorageSteppedTrayConfig,
+  STORAGE_STEPPED_LIMITS,
 } from "@/lib/storage-stepped-config";
 import { deriveStorageSteppedTraySize } from "@/lib/storage-stepped-plan";
 import type { FreeSlot } from "@/types/custom-tray";
@@ -20,13 +21,11 @@ export type StorageSteppedPresetLayout =
   | {
       kind: "grid";
       rows: number;
-      columns: number;
       slotDefinitionId: string;
     }
   | {
       kind: "staggered";
       rows: number;
-      columns: number;
       slotDefinitionId: string;
     };
 
@@ -40,10 +39,10 @@ export interface StorageSteppedTrayPreset {
 }
 
 /**
- * 首版五个预设。
+ * 托盘槽位预设。
  *
- * 32 mm 十人交错布局为推导布局：按项目 32.4 mm 成品槽径与 5 mm 槽间距
- * 做六方交错排列，不等同于用户已验证托盘的实测坐标。
+ * 每种排列固定排数，槽数按当前托盘的可用空间计算。
+ * 预设 ID 保留，用于识别旧文件中已经保存的槽位快照。
  */
 export const STORAGE_STEPPED_TRAY_PRESETS: StorageSteppedTrayPreset[] = [
   {
@@ -55,49 +54,56 @@ export const STORAGE_STEPPED_TRAY_PRESETS: StorageSteppedTrayPreset[] = [
   },
   {
     id: "circle-25-ten",
-    label: "25 mm 十人双排",
-    description: "两排各五个 25.4 mm 成品槽",
+    label: "25 mm 双排",
+    description: "两排 25.4 mm 成品槽，按可用宽度排满",
     source: "derived",
     layout: {
       kind: "grid",
       rows: 2,
-      columns: 5,
       slotDefinitionId: "circle-25",
     },
   },
   {
     id: "circle-28.5-ten",
-    label: "28.5 mm 十人双排",
-    description: "两排各五个 28.9 mm 成品槽",
+    label: "28.5 mm 双排",
+    description: "两排 28.9 mm 成品槽，按可用宽度排满",
     source: "derived",
     layout: {
       kind: "grid",
       rows: 2,
-      columns: 5,
       slotDefinitionId: "circle-28.5",
     },
   },
   {
     id: "circle-32-ten-staggered",
-    label: "32 mm 十人交错双排",
-    description: "两排各五个 32.4 mm 成品槽，六方交错；坐标由算法推导，未取得实测数据",
+    label: "32 mm 交错双排",
+    description: "两排 32.4 mm 成品槽，按可用空间调整交错距离",
     source: "derived",
     layout: {
       kind: "staggered",
       rows: 2,
-      columns: 5,
+      slotDefinitionId: "circle-32",
+    },
+  },
+  {
+    id: "circle-32-five",
+    label: "32 mm 单排",
+    description: "单排 32.4 mm 成品槽，适合 60 mm 浅阶",
+    source: "derived",
+    layout: {
+      kind: "grid",
+      rows: 1,
       slotDefinitionId: "circle-32",
     },
   },
   {
     id: "circle-40-five",
-    label: "40 mm 五人单排",
-    description: "单排五个 40.4 mm 成品槽",
+    label: "40 mm 单排",
+    description: "单排 40.4 mm 成品槽，按可用宽度排满",
     source: "derived",
     layout: {
       kind: "grid",
       rows: 1,
-      columns: 5,
       slotDefinitionId: "circle-40",
     },
   },
@@ -175,28 +181,44 @@ export function createStorageSteppedPresetSlots(
   // 成品槽径来自 Slot Definition，已含加工公差；width 保留名义底盘尺寸。
   const diameter = definition.slotDiameter;
   const pitch = diameter + options.spacing;
-  const { rows, columns } = preset.layout;
-  const points: CenterPoint[] = [];
+  const { rows, kind } = preset.layout;
+  const width = options.trayWidth - 2 * options.boundarySpacing;
+  const depth = options.trayDepth - 2 * options.boundarySpacing;
+  // 预设适用于面板的制造尺寸范围，防止超大导入尺寸触发无界槽位分配。
+  const epsilon = 1e-6;
+  if (!Number.isFinite(width) || !Number.isFinite(depth) ||
+      !Number.isFinite(pitch) || pitch < diameter || options.boundarySpacing < 0 ||
+      width > STORAGE_STEPPED_LIMITS.bodyWidth.max) return [];
 
-  if (preset.layout.kind === "grid") {
-    for (let row = 0; row < rows; row += 1) {
-      for (let column = 0; column < columns; column += 1) {
-        points.push({
-          x: column * pitch,
-          y: row * pitch,
-        });
-      }
+  const columnsAtOffset = (offset: number) =>
+    Math.floor((width - diameter - offset + epsilon) / pitch) + 1;
+  const fullRowCount = columnsAtOffset(0);
+  if (fullRowCount < 1) return [];
+
+  let shift = 0;
+  let rowPitch = pitch;
+  if (kind === "staggered") {
+    // 先尝试用横向余量错开两排满槽；深度不足时用半节距交错。
+    const spare = width - diameter - (fullRowCount - 1) * pitch;
+    const fullRowShift = Math.min(pitch / 2, spare);
+    const pitchWithFullRows = Math.sqrt(pitch ** 2 - fullRowShift ** 2);
+    if (fullRowShift > epsilon && diameter + (rows - 1) * pitchWithFullRows <= depth + epsilon) {
+      shift = fullRowShift;
+      rowPitch = pitchWithFullRows;
+    } else {
+      shift = pitch / 2;
+      rowPitch = pitch * Math.sqrt(3) / 2;
     }
-  } else {
-    // 六方交错：相邻两排水平错开半个节距，排距使对角槽仍保持槽间距。
-    const rowPitch = (pitch * Math.sqrt(3)) / 2;
-    for (let row = 0; row < rows; row += 1) {
-      for (let column = 0; column < columns; column += 1) {
-        points.push({
-          x: column * pitch + (row % 2) * (pitch / 2),
-          y: row * rowPitch,
-        });
-      }
+  }
+  if (depth + epsilon < diameter + (rows - 1) * rowPitch) return [];
+
+  const points: CenterPoint[] = [];
+  for (let row = 0; row < rows; row += 1) {
+    const offset = row % 2 === 1 ? shift : 0;
+    const columns = columnsAtOffset(offset);
+    if (columns < 1) return [];
+    for (let column = 0; column < columns; column += 1) {
+      points.push({ x: offset + column * pitch, y: row * rowPitch });
     }
   }
 
@@ -250,7 +272,7 @@ export function getStorageSteppedPresetFitReport(
       layoutWidth: 0,
       layoutDepth: 0,
       minimumSpacing: Number.POSITIVE_INFINITY,
-      fits: true,
+      fits: preset.layout.kind === "flat",
     };
   }
   const diameter = getFreeSlotProfileGeometry(slots[0]).width;
@@ -298,8 +320,9 @@ export interface StorageSteppedPresetLayoutContext {
 
 export function getStorageSteppedPresetLayoutContext(
   params: StorageSteppedParams,
+  stepIndex = 0,
 ): StorageSteppedPresetLayoutContext {
-  const size = deriveStorageSteppedTraySize(params.interface);
+  const size = deriveStorageSteppedTraySize(params.interface, stepIndex);
   return {
     trayWidth: size.width,
     trayDepth: size.depth,
@@ -323,9 +346,10 @@ export function applyStorageSteppedTrayPreset(
   if (!tray) throw new Error(`找不到第 ${stepIndex + 1} 阶托盘配置`);
 
   const slots = createStorageSteppedPresetSlots(preset, {
-    ...getStorageSteppedPresetLayoutContext(params),
+    ...getStorageSteppedPresetLayoutContext(params, stepIndex),
     idFactory,
   });
+  if (preset.layout.kind !== "flat" && slots.length === 0) return params;
   const next: StorageSteppedTrayConfig = {
     ...cloneStorageSteppedTrayConfig(tray),
     presetId: preset.id,

@@ -26,6 +26,7 @@ import {
 } from "@/lib/storage-stepped-base-hole";
 import {
   deriveStorageSteppedPlan,
+  deriveStorageSteppedTraySize,
   getStorageSteppedTrayAssemblyOffset,
 } from "@/lib/storage-stepped-plan";
 import type { StorageSteppedParams } from "@/types/storage-stepped";
@@ -167,15 +168,13 @@ export function createStorageSteppedBodyModel(
   const depth = plan.bodyDepth;
   const front = -depth / 2;
   const back = depth / 2;
-  const moduleDepth = plan.interface.moduleDepth;
 
   // 侧面轮廓（u=Y，v=Z），逆时针方向；从底边前缘出发。
   const profilePoints: Array<[number, number]> = [[front, 0], [back, 0]];
   for (let index = plan.steps.length - 1; index >= 0; index -= 1) {
-    const deckHeight = plan.steps[index].deckHeight;
-    const moduleFront = front + index * moduleDepth;
-    profilePoints.push([back - (plan.steps.length - 1 - index) * moduleDepth, deckHeight]);
-    profilePoints.push([moduleFront, deckHeight]);
+    const { deckHeight, module } = plan.steps[index];
+    profilePoints.push([front + module.maxY, deckHeight]);
+    profilePoints.push([front + module.minY, deckHeight]);
   }
 
   const prism = extrudeLinear(
@@ -197,9 +196,8 @@ export function createStorageSteppedBodyModel(
   const cavityOpenings: Geom3[] = [];
   const fingerPulls: Geom3[] = [];
   for (const step of plan.steps) {
-    const moduleFront = front + step.index * moduleDepth;
     const cavityWidth = plan.interface.bodyWidth - 2 * plan.interface.lowerWallThickness;
-    const cavityDepth = moduleDepth - 2 * plan.interface.lowerWallThickness;
+    const cavityDepth = step.cavity.maxY - step.cavity.minY;
     const cavityHeight =
       step.cavity.maxZ - step.cavity.minZ + BOOLEAN_OVERLAP;
     cavityOpenings.push(
@@ -214,14 +212,14 @@ export function createStorageSteppedBodyModel(
     );
 
     const openingWidth = plan.interface.bodyWidth - 2 * plan.interface.rimThickness;
-    const openingDepth = moduleDepth - 2 * plan.interface.rimThickness;
+    const openingDepth = step.opening.maxY - step.opening.minY;
     const openingBottom = step.opening.minZ;
     const openingHeight = step.opening.maxZ - openingBottom + BOOLEAN_OVERLAP;
     cavityOpenings.push(
       translate(
         [
           0,
-          moduleFront + plan.interface.rimThickness + openingDepth / 2,
+          toCenteredY(depth, (step.opening.minY + step.opening.maxY) / 2),
           openingBottom + openingHeight / 2,
         ],
         cuboid({ size: [openingWidth, openingDepth, openingHeight] }),
@@ -320,15 +318,16 @@ export function createStorageSteppedTrayModel(
     throw new Error(`找不到第 ${stepIndex + 1} 阶托盘配置`);
   }
 
+  const { width, depth } = deriveStorageSteppedTraySize(plan.interface, stepIndex);
   const body = translate(
     [0, 0, plan.trayThickness / 2],
-    cuboid({ size: [plan.trayWidth, plan.trayDepth, plan.trayThickness] }),
+    cuboid({ size: [width, depth, plan.trayThickness] }),
   );
   const grooves = createTrayGrooveCutters(
     params,
     stepIndex,
-    plan.trayWidth,
-    plan.trayDepth,
+    width,
+    depth,
     plan.trayThickness,
   );
   const withGrooves = grooves.length > 0 ? subtract(body, ...grooves) : body;
@@ -343,8 +342,8 @@ export function createStorageSteppedTrayModel(
   }
   const baseHolePlan = createStorageSteppedTrayBaseHolePlan(
     tray,
-    plan.trayWidth,
-    plan.trayDepth,
+    width,
+    depth,
     plan.trayThickness,
   );
   const blockingReason = getStorageSteppedBaseHoleBlockingReason(baseHolePlan);
@@ -398,7 +397,7 @@ export function createStorageSteppedPartModel(
   };
 }
 
-/** 全部零件的打印几何；按主体、第一阶、第二阶、第三阶顺序。 */
+/** 全部零件的打印几何；按主体和托盘阶序排列。 */
 export function createStorageSteppedPartModels(
   params: StorageSteppedParams,
 ): StorageSteppedPartModel[] {

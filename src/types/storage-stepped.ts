@@ -4,8 +4,8 @@ import type { BaseHoleParams, SmallBaseHolePresetKey } from "@/types/tray";
 /**
  * 阶梯收纳展示台：产品语义
  *
- * - 一个三级空心阶梯主体，每阶下方是一个独立收纳仓；
- * - 每阶一块可互换的整宽托盘，托盘负责模型槽位与可选底孔；
+ * - 一个空心阶梯主体，每阶下方是一个独立收纳仓；
+ * - 每阶一块整宽托盘，相同开口尺寸的托盘可互换；
  * - 主体与托盘共享同一套接口尺寸，接口版本与实际尺寸必须一起持久化。
  *
  * 与“自定义阶梯底座”不同：本模式的托盘总厚度、底板厚度和台阶高度由产品规格固定，
@@ -27,15 +27,17 @@ export type StorageSteppedHeightSpecId = "standard" | "storage";
 export interface StorageSteppedInterfaceParams {
   /** 主体总宽 (mm) */
   bodyWidth: number;
-  /** 单阶标称深度 (mm) */
+  /** 未指定各阶深度时，所有阶使用的标称深度 (mm) */
   moduleDepth: number;
-  /** 阶数；首版固定 3 */
+  /** 从前到后各阶的实际标称深度 (mm) */
+  stepDepths?: number[];
+  /** 阶数，当前支持 3 或 4 */
   stepCount: number;
   /** 托盘总厚度 (mm)；首版固定 6 */
   trayThickness: number;
   /** 下部壁厚 (mm) */
   lowerWallThickness: number;
-  /** 上沿壁厚 (mm)，等于承托台阶宽度 */
+  /** 上沿壁厚 (mm) */
   rimThickness: number;
   /** 指扣直径 (mm) */
   fingerPullDiameter: number;
@@ -76,7 +78,7 @@ export interface StorageSteppedParams {
   stepRise: number;
   /** 接口实际参数快照 */
   interface: StorageSteppedInterfaceParams;
-  /** 三阶托盘配置，按 stepIndex 升序保存 */
+  /** 各阶托盘配置，按 stepIndex 升序保存 */
   trays: StorageSteppedTrayConfig[];
   /** 槽位最小边缘间距 (mm) */
   slotSpacing: number;

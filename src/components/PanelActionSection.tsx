@@ -88,7 +88,7 @@ export function PanelActionSection({ adapter, stepSnapshot }: { adapter: DraftAc
               {adapter.kind === "storage-stepped" ? <>
                 <DropdownMenuItem disabled={isDisabled(adapter.state.exportBody)} title={adapter.state.exportBody.state === "blocked" ? adapter.state.exportBody.reason : undefined} onSelect={() => void adapter.perform({ type: "export-body" }).then(reportResult)}><Download className="size-4" />主体 STL</DropdownMenuItem>
                 <DropdownMenuItem disabled={isDisabled(adapter.state.exportTray)} title={adapter.state.exportTray.state === "blocked" ? adapter.state.exportTray.reason : undefined} onSelect={() => void adapter.perform({ type: "export-tray" }).then(reportResult)}><Download className="size-4" />当前托盘 STL</DropdownMenuItem>
-                <DropdownMenuItem disabled={isDisabled(adapter.state.exportAll)} title={adapter.state.exportAll.state === "blocked" ? adapter.state.exportAll.reason : undefined} onSelect={() => void adapter.perform({ type: "export-all" }).then(reportResult)}><Download className="size-4" />全部零件（4 STL + JSON）</DropdownMenuItem>
+                <DropdownMenuItem disabled={isDisabled(adapter.state.exportAll)} title={adapter.state.exportAll.state === "blocked" ? adapter.state.exportAll.reason : undefined} onSelect={() => void adapter.perform({ type: "export-all" }).then(reportResult)}><Download className="size-4" />全部零件（STL + JSON）</DropdownMenuItem>
               </> : null}
               {stepSnapshot ? <>
                 <DropdownMenuItem disabled={Boolean(step.reason || step.phase)} onSelect={() => void step.run()}><Download className="size-4" />完整 STEP</DropdownMenuItem>

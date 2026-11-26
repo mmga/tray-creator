@@ -15,6 +15,7 @@ import type {
 } from "@/lib/model-ports";
 import {
   createDefaultStorageSteppedParams,
+  withStorageSteppedDepthPreset,
   withStorageSteppedHeightSpec,
 } from "@/lib/storage-stepped-config";
 import {
@@ -64,6 +65,29 @@ function createDownloadPort(throwOnCall?: (index: number) => boolean) {
 }
 
 describe("Storage Stepped 导出", () => {
+  it("四阶导出包含五件 STL，深度序列和第四阶槽位可以从 JSON 恢复", async () => {
+    const params = withStorageSteppedDepthPreset(createDefaultStorageSteppedParams(), "300-60-60-80-100");
+    let slotId = 0;
+    const withSlots = applyStorageSteppedTrayPreset(params, 3, "circle-32-ten-staggered", {
+      createId: () => `slot-${++slotId}`,
+    });
+    const { worker } = createWorker();
+    const { port, files } = createDownloadPort();
+    const snapshot = captureModeParamSnapshot("storage-stepped", withSlots);
+    await exportStorageSteppedAllParts(snapshot, worker, port);
+
+    expect(files).toHaveLength(6);
+    expect(files[4]).toBe("storage_stepped_standard_d60-60-80-100_tray-step4_ssi1.stl");
+    const prepared = prepareParamFileObject(JSON.parse(serializeCurrentParamArtifact(snapshot)));
+    if (prepared.status !== "ready" || prepared.candidate.mode !== "storage-stepped") {
+      throw new Error("无法读取四阶收纳参数");
+    }
+    const restored = prepared.candidate.snapshot.params;
+    expect(restored.interface.stepDepths).toEqual([60, 60, 80, 100]);
+    expect(restored.trays[3].slots).toHaveLength(12);
+    expect(validateStorageSteppedParams(restored).isValid).toBe(true);
+  });
+
   it("单独参数与 STL 伴随参数都保留临界边距布局", async () => {
     const params = createDefaultStorageSteppedParams();
     const slot = {
@@ -247,7 +271,7 @@ describe("Storage Stepped 导出", () => {
     expect(imported.interfaceVersion).toBe(base.interfaceVersion);
     expect(imported.heightSpecId).toBe(base.heightSpecId);
     expect(imported.interface).toEqual(base.interface);
-    expect(imported.trays[0].slots).toHaveLength(10);
+    expect(imported.trays[0].slots).toHaveLength(12);
     withPreset.trays[0].slots.forEach((slot, index) => {
       const roundTripped = imported.trays[0].slots[index];
       expect(roundTripped.x).toBeCloseTo(slot.x, 3);

@@ -105,7 +105,7 @@ export async function exportStorageSteppedPart(
 }
 
 /**
- * 整套导出：同一参数快照下生成主体与三块托盘的独立 STL，
+ * 整套导出：同一参数快照下生成主体与各阶托盘的独立 STL，
  * 再加一份完整 JSON。任意零件准备失败时不触发任何下载。
  */
 export async function exportStorageSteppedAllParts(
