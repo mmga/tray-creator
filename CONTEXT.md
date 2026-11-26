@@ -536,6 +536,38 @@ _Avoid_: Using lid clear height when the meaning is the stacked clearance.
 The vertical rise of the box wall above the internal tray top surface, a derived value that must be at least 2.4mm.
 _Avoid_: Calling `holeDepth` the box wall height.
 
+**Storage Stepped Tray**:
+A stepped storage-and-display stand Mode (`storage-stepped`) that generates one hollow three-step body with three independent storage compartments plus three interchangeable full-width display trays.
+_Avoid_: Calling it a Custom Stepped Tray variant, a drawer unit, or three independent boxes.
+
+**Storage Compartment**:
+The lower open volume of one Storage Stepped Tray step, bounded by the body walls, the bottom plate, and the underside of the installed tray, and reachable only after lifting that step's tray or through its finger pulls.
+_Avoid_: Confusing it with the upper tray opening or with the whole step module.
+
+**Tray Interface Version**:
+The identifier persisted with every Storage Stepped Tray parameter snapshot that states which interface size set the body and trays were generated from, together with the actual interface dimensions.
+_Avoid_: Treating all Storage Stepped Tray files as unconditionally interchangeable, or using a preset name as the rebuild basis.
+
+**Tray Interface Clearance**:
+The per-side gap between the nominal tray outer edge and the upper mounting opening, defaulting to 0.3mm, which makes the installed tray sit inset and flush without a snap or fastening feature.
+_Avoid_: Treating it as a decorative gap or as a substitute for a retention mechanism.
+
+**Storage Tray Fixed Thickness**:
+The Storage Stepped Tray rule that each tray has a total thickness of 6mm, so the slot floor thickness is exactly 6mm minus the slot depth and is never increased to accommodate base holes.
+_Avoid_: Carrying over the flat-tray `baseThickness + holeDepth` height rule.
+
+**Storage Tray Bottom Chamfer**:
+The 45-degree easing chamfer around the tray bottom that retreats 0.4mm horizontally while the upper locating outline keeps the nominal tray size.
+_Avoid_: Reusing the top-edge side bevel of flat trays as if it were a bottom chamfer.
+
+**Finger Pull**:
+A local half-round cut of 32mm diameter through one side wall and its support ledge at each step's mid-depth and deck height, used to lift the tray and reach the compartment below.
+_Avoid_: Treating it as a handle that cuts the tray, or as a sealed opening.
+
+**Storage Tray Layout Import**:
+The explicit operation that copies slot shapes and relative positions from an existing Custom Mode tray into one Storage Stepped Tray, reporting any required translation and refusing silent scaling or clipping.
+_Avoid_: Auto-converting a Custom Stepped Tray file into a Storage Stepped Tray body.
+
 ## Relationships
 
 - A **Slot Definition** includes its **Tolerance**.
