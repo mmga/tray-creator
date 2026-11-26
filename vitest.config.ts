@@ -43,6 +43,7 @@ export default defineConfig({
           exclude: [
             "src/lib/download-port.test.ts",
             "src/lib/local-drafts.test.ts",
+            "src/lib/storage-stepped-drafts.test.ts",
             "src/lib/param-io.test.ts",
             "src/lib/personal-base-specifications.test.ts",
             "src/lib/stl-export.test.ts",
@@ -71,6 +72,7 @@ export default defineConfig({
             "src/workspaces/**/*.test.tsx",
             "src/lib/download-port.test.ts",
             "src/lib/local-drafts.test.ts",
+            "src/lib/storage-stepped-drafts.test.ts",
             "src/lib/param-io.test.ts",
             "src/lib/personal-base-specifications.test.ts",
             "src/lib/stl-export.test.ts",

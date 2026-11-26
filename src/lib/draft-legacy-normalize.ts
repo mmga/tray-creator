@@ -50,6 +50,14 @@ export type DraftListItemCompatibilityByMode = {
     trayWidth: number;
     trayDepth: number;
   };
+  "storage-stepped": {
+    heightSpecId: "standard" | "storage";
+    interfaceVersion: number;
+    slotCount: number;
+    slotCounts: number[];
+    trayWidth: number;
+    trayDepth: number;
+  };
 };
 
 export type UnknownDraftListItem = Partial<{
@@ -70,6 +78,9 @@ export type UnknownDraftListItem = Partial<{
   baseSizeLabel: unknown;
   sourceLabel: unknown;
   targetLabel: unknown;
+  heightSpecId: unknown;
+  interfaceVersion: unknown;
+  slotCounts: unknown;
 }>;
 
 export const DRAFT_MODES: DraftMode[] = [
@@ -77,6 +88,7 @@ export const DRAFT_MODES: DraftMode[] = [
   "custom",
   "base-converter",
   "stepped",
+  "storage-stepped",
 ];
 
 export function isDraftMode(value: unknown): value is DraftMode {
@@ -125,6 +137,15 @@ export function extractCompatibilityFields(
       return {
         groupCount: summary.groupCount,
         slotCount: summary.slotCount,
+        trayWidth: summary.trayWidth,
+        trayDepth: summary.trayDepth,
+      };
+    case "storage-stepped":
+      return {
+        heightSpecId: summary.heightSpecId,
+        interfaceVersion: summary.interfaceVersion,
+        slotCount: summary.slotCount,
+        slotCounts: summary.slotCounts,
         trayWidth: summary.trayWidth,
         trayDepth: summary.trayDepth,
       };

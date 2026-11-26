@@ -53,10 +53,28 @@ export interface SteppedDraftActionAreaAdapter {
   ): Promise<DraftActionResult>;
 }
 
+export type StorageSteppedDraftActionIntent =
+  | StandardDraftActionIntent
+  | { type: "export-body" }
+  | { type: "export-tray" }
+  | { type: "export-all" };
+
+export interface StorageSteppedDraftActionAreaAdapter {
+  kind: "storage-stepped";
+  state: DraftActionAreaStateBase & {
+    preview: { kind: "manual" };
+    exportBody: Availability;
+    exportTray: Availability;
+    exportAll: Availability;
+  };
+  perform(intent: StorageSteppedDraftActionIntent): Promise<DraftActionResult>;
+}
+
 export type DraftActionAreaAdapter =
   | ManualDraftActionAreaAdapter
   | AutomaticDraftActionAreaAdapter
-  | SteppedDraftActionAreaAdapter;
+  | SteppedDraftActionAreaAdapter
+  | StorageSteppedDraftActionAreaAdapter;
 
 export const available: Availability = { state: "available" };
 

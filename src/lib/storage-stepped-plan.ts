@@ -6,6 +6,7 @@ import {
 } from "@/lib/slot-definitions";
 import { sampleSlotProfilePoints } from "@/lib/slot-profile-geometry";
 import {
+  STORAGE_STEPPED_BODY_PART_ID,
   STORAGE_STEPPED_HEIGHT_SPECS,
   STORAGE_STEPPED_INTERFACE_DEFAULTS,
   STORAGE_STEPPED_INTERFACE_VERSION,
@@ -895,4 +896,54 @@ export function getStorageSteppedBlockingReason(
   if (!first) return null;
   const remaining = validation.errors.length - 1;
   return `${first.message}${remaining > 0 ? `（另有 ${remaining} 项）` : ""}`;
+}
+
+/** 当前参数应生成的零件身份，按主体、第一阶、第二阶、第三阶排序。 */
+export function getStorageSteppedExpectedPartIds(
+  params: StorageSteppedParams,
+): string[] {
+  return [
+    STORAGE_STEPPED_BODY_PART_ID,
+    ...params.trays
+      .slice()
+      .sort((left, right) => left.stepIndex - right.stepIndex)
+      .map((tray) => storageSteppedTrayPartId(tray.stepIndex)),
+  ];
+}
+
+/**
+ * 单件几何指纹：只包含真正影响该零件几何的参数。
+ *
+ * - 主体：接口参数 + 实际主体高度；与槽位无关；
+ * - 托盘：接口参数 + 该阶托盘配置 + 槽位间距；与主体高度无关。
+ *
+ * 因此切换高度只重建主体，修改某阶槽位只重建该托盘，接口变化使全部零件失效。
+ */
+export function getStorageSteppedPartFingerprint(
+  params: StorageSteppedParams,
+  partId: string,
+): string {
+  if (partId === STORAGE_STEPPED_BODY_PART_ID) {
+    return JSON.stringify({
+      partId,
+      interfaceVersion: params.interfaceVersion,
+      interface: params.interface,
+      heightSpecId: params.heightSpecId,
+      firstStepHeight: params.firstStepHeight,
+      stepRise: params.stepRise,
+    });
+  }
+  const stepIndex = Number(/^tray-(\d+)$/.exec(partId)?.[1]) - 1;
+  const tray = params.trays.find((candidate) => candidate.stepIndex === stepIndex);
+  if (!tray) {
+    return JSON.stringify({ partId, missing: true });
+  }
+  return JSON.stringify({
+    partId,
+    interfaceVersion: params.interfaceVersion,
+    interface: params.interface,
+    slotSpacing: params.slotSpacing,
+    slotBoundarySpacing: params.slotBoundarySpacing,
+    tray,
+  });
 }

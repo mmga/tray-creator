@@ -164,7 +164,8 @@ function isKnownStoredParamMode(
   value: unknown,
 ): value is DraftMode | "simple-stepped" | "stepped-cad" {
   return value === "grid" || value === "custom" || value === "base-converter" ||
-    value === "stepped" || value === "simple-stepped" || value === "stepped-cad";
+    value === "stepped" || value === "storage-stepped" ||
+    value === "simple-stepped" || value === "stepped-cad";
 }
 
 function getDraftInternal<M extends DraftMode>(
@@ -467,6 +468,7 @@ export function defaultDraftTitle(mode: DraftMode = "stepped"): string {
     custom: "自定义草稿",
     "base-converter": "底盘生成草稿",
     stepped: "阶梯草稿",
+    "storage-stepped": "收纳阶梯草稿",
   }[mode];
 
   return `${label} ${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;

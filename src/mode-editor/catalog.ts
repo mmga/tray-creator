@@ -44,6 +44,8 @@ export function prepareReset(
       return catalog["base-converter"].prepareReset();
     case "stepped":
       return catalog.stepped.prepareReset();
+    case "storage-stepped":
+      return catalog["storage-stepped"].prepareReset();
   }
 }
 
@@ -69,6 +71,10 @@ export function prepareDraftReplacement(
       const prepared = catalog.stepped.prepareDraftLoad(draftId);
       return prepared ? { kind: "draft", mode, prepared } : null;
     }
+    case "storage-stepped": {
+      const prepared = catalog["storage-stepped"].prepareDraftLoad(draftId);
+      return prepared ? { kind: "draft", mode, prepared } : null;
+    }
   }
 }
 
@@ -88,6 +94,9 @@ export function commitReplacement(
       return;
     case "stepped":
       catalog.stepped.commitReplacement(replacement);
+      return;
+    case "storage-stepped":
+      catalog["storage-stepped"].commitReplacement(replacement);
   }
 }
 
@@ -107,5 +116,8 @@ export function commitImportedCandidate(
       return;
     case "stepped":
       catalog.stepped.commitImport(candidate.snapshot);
+      return;
+    case "storage-stepped":
+      catalog["storage-stepped"].commitImport(candidate.snapshot);
   }
 }

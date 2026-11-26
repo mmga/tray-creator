@@ -49,6 +49,8 @@ import {
 } from "@/lib/stackable-box";
 import type { ParamsByMode } from "@/lib/mode-param-snapshot";
 import { validateManualSplitSettings } from "@/lib/manual-split-plan";
+import { normalizeStorageSteppedParams } from "@/lib/storage-stepped-normalization";
+import type { StorageSteppedParams } from "@/types/storage-stepped";
 
 type NormalizableParams = ParamsByMode[AppMode];
 
@@ -418,6 +420,13 @@ const paramNormalizationCatalog: ParamNormalizationCatalog = {
       steppedParamNormalizationPipeline,
       recorder,
     ),
+  },
+  "storage-stepped": {
+    normalize: (params, recorder) =>
+      normalizeStorageSteppedParams(
+        params as StorageSteppedParams,
+        recorder,
+      ),
   },
 };
 

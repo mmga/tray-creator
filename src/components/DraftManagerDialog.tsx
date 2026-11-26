@@ -28,6 +28,7 @@ const MODE_DIALOG_TITLE: Record<AppMode, string> = {
   custom: "自定义模式草稿",
   "base-converter": "底盘生成草稿",
   stepped: "阶梯模式草稿",
+  "storage-stepped": "阶梯收纳展示台草稿",
 };
 
 export interface DraftManagerItem {

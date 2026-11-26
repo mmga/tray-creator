@@ -6,6 +6,8 @@ import type {
   CustomLayoutParams,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
+import type { StorageSteppedParams } from "@/types/storage-stepped";
+import type { StorageSteppedHeightSpecId } from "@/types/storage-stepped";
 import {
   normalizeBaseConverterParams,
   resolveBaseConverterGeometry,
@@ -54,6 +56,15 @@ export type DraftSummary =
       slotCount: number;
       trayWidth: number;
       trayDepth: number;
+    }
+  | {
+      mode: "storage-stepped";
+      heightSpecId: StorageSteppedHeightSpecId;
+      interfaceVersion: number;
+      slotCount: number;
+      slotCounts: number[];
+      trayWidth: number;
+      trayDepth: number;
     };
 
 export type DraftSummaryByMode = {
@@ -65,6 +76,7 @@ export type DraftParamsByMode = {
   custom: CustomLayoutParams;
   "base-converter": BaseConverterParams;
   stepped: SteppedLayoutParams;
+  "storage-stepped": StorageSteppedParams;
 };
 
 function formatBaseSizeLabel(size: number) {
@@ -184,6 +196,27 @@ function buildBaseConverterDraftSummary(
   };
 }
 
+function buildStorageSteppedDraftSummary(
+  params: StorageSteppedParams,
+): DraftSummaryByMode["storage-stepped"] {
+  const slotCounts = params.trays.map((tray) => tray.slots.length);
+  return {
+    mode: "storage-stepped",
+    heightSpecId: params.heightSpecId,
+    interfaceVersion: params.interfaceVersion,
+    slotCount: slotCounts.reduce((total, count) => total + count, 0),
+    slotCounts,
+    trayWidth:
+      params.interface.bodyWidth -
+      2 * params.interface.rimThickness -
+      2 * params.interface.assemblyClearance,
+    trayDepth:
+      params.interface.moduleDepth -
+      2 * params.interface.rimThickness -
+      2 * params.interface.assemblyClearance,
+  };
+}
+
 function buildSteppedDraftSummary<M extends "stepped">(
   mode: M,
   params: SteppedLayoutParams,
@@ -216,6 +249,10 @@ export function buildDraftSummary<M extends keyof DraftParamsByMode>(
       return buildSteppedDraftSummary(
         "stepped",
         params as SteppedLayoutParams,
+      ) as DraftSummaryByMode[M];
+    case "storage-stepped":
+      return buildStorageSteppedDraftSummary(
+        params as StorageSteppedParams,
       ) as DraftSummaryByMode[M];
     default: {
       const unreachableMode: never = mode;

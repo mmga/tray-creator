@@ -5,12 +5,14 @@ import type {
   CustomLayoutParams,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
+import type { StorageSteppedParams } from "@/types/storage-stepped";
 
 export type ParamsByMode = {
   grid: TrayParams;
   custom: CustomLayoutParams;
   "base-converter": BaseConverterParams;
   stepped: SteppedLayoutParams;
+  "storage-stepped": StorageSteppedParams;
 };
 
 export type ExportableParams = ParamsByMode[AppMode];

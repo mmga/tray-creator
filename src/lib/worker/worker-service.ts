@@ -6,6 +6,7 @@ import type {
   GroupOutlinePreview,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
+import type { StorageSteppedParams } from "@/types/storage-stepped";
 import type { WorkerRequest, WorkerResponse } from "./tray.worker";
 import type { ModeParamSnapshot } from "../mode-param-snapshot";
 
@@ -333,6 +334,31 @@ class TrayWorkerService {
         return {
           outlinePreview: data.outlinePreview,
           durationMs: data.durationMs,
+        };
+      },
+    );
+  }
+
+  public async generateStorageSteppedPart(
+    params: StorageSteppedParams,
+    partId: string,
+  ): Promise<{ partId: string; geometry: Geom3; volume: number; assemblyOffset: [number, number, number] }> {
+    return this.request(
+      (requestId) => ({
+        type: "GENERATE_STORAGE_STEPPED_PART",
+        requestId,
+        params,
+        partId,
+      }),
+      (data) => {
+        if (data.type !== "STORAGE_STEPPED_PART_SUCCESS") {
+          throw new Error(`Unexpected worker response: ${data.type}`);
+        }
+        return {
+          partId: data.partId,
+          geometry: data.geometry,
+          volume: data.volume,
+          assemblyOffset: data.assemblyOffset,
         };
       },
     );

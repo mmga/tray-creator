@@ -5,6 +5,7 @@ import type {
   GroupOutlinePreview,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
+import type { StorageSteppedParams } from "@/types/storage-stepped";
 import type { TrayParams } from "@/types/tray";
 
 export interface STLExportResult {
@@ -84,6 +85,21 @@ export interface SteppedOutlinePreviewPort {
     outlinePreview: GroupOutlinePreview[] | null;
     durationMs: number;
   }>;
+}
+
+/** 阶梯收纳展示台的单件打印几何与装配位移。 */
+export interface StorageSteppedPartResult {
+  partId: string;
+  geometry: Geom3;
+  volume: number;
+  assemblyOffset: [number, number, number];
+}
+
+export interface StorageSteppedWorkerPort extends STLExportWorkerPort {
+  generateStorageSteppedPart: (
+    params: StorageSteppedParams,
+    partId: string,
+  ) => Promise<StorageSteppedPartResult>;
 }
 
 export interface SteppedWorkerPort

@@ -10,6 +10,7 @@ const createBaseConverterModel = vi.fn();
 const createSteppedCadTrayModel = vi.fn();
 const createSteppedCadSplitParts = vi.fn();
 const buildSteppedOutlinePreview = vi.fn();
+const createStorageSteppedPartModel = vi.fn();
 const serialize = vi.fn();
 const measureVolume = vi.fn();
 const createStackableBoxLid = vi.fn();
@@ -35,6 +36,10 @@ vi.mock("../stepped-cad-construction", () => ({
 
 vi.mock("../stepped-outline-preview", () => ({
   buildSteppedOutlinePreview,
+}));
+
+vi.mock("../storage-stepped-model", () => ({
+  createStorageSteppedPartModel,
 }));
 
 vi.mock("../stackable-box-model", () => ({
@@ -249,6 +254,37 @@ describe("tray worker", () => {
       requestId: "req-preview",
       outlinePreview: preview,
       durationMs: 7.5,
+    });
+  });
+
+  it("posts storage stepped part geometry with assembly offset", async () => {
+    const workerSelf = await loadWorkerModule();
+    const geometry = { id: "storage-body" };
+    createStorageSteppedPartModel.mockReturnValue({
+      partId: "body",
+      geometry,
+      volume: 456.7,
+      assemblyOffset: [0, 0, 0],
+    });
+    const params = { interfaceVersion: 1 } as never;
+
+    await workerSelf.onmessage?.({
+      data: {
+        type: "GENERATE_STORAGE_STEPPED_PART",
+        requestId: "req-storage",
+        params,
+        partId: "body",
+      },
+    } as MessageEvent);
+
+    expect(createStorageSteppedPartModel).toHaveBeenCalledWith(params, "body");
+    expect(workerSelf.postMessage).toHaveBeenCalledWith({
+      type: "STORAGE_STEPPED_PART_SUCCESS",
+      requestId: "req-storage",
+      partId: "body",
+      geometry,
+      volume: 456.7,
+      assemblyOffset: [0, 0, 0],
     });
   });
 

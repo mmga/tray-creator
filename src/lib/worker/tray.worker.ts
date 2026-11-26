@@ -6,6 +6,7 @@ import {
   createSteppedCadTrayModel,
 } from "../stepped-cad-construction";
 import { buildSteppedOutlinePreview } from "../stepped-outline-preview";
+import { createStorageSteppedPartModel } from "../storage-stepped-model";
 import stlSerializer from "@jscad/stl-serializer";
 import { measureVolume } from "@jscad/modeling/src/measurements";
 import type { Geom3 } from "@jscad/modeling/src/geometries/types";
@@ -15,6 +16,7 @@ import type {
   GroupOutlinePreview,
   SteppedLayoutParams,
 } from "@/types/custom-tray";
+import type { StorageSteppedParams } from "@/types/storage-stepped";
 import type { StackableBoxParams, TrayParams } from "@/types/tray";
 import { buildCustomContouredState } from "../custom-contoured-footprint";
 import {
@@ -111,6 +113,12 @@ export type WorkerRequest =
       params: SteppedLayoutParams;
     }
   | {
+      type: "GENERATE_STORAGE_STEPPED_PART";
+      requestId: string;
+      params: StorageSteppedParams;
+      partId: string;
+    }
+  | {
       type: "GENERATE_GRID_BOX_PARTS";
       requestId: string;
       params: TrayParams;
@@ -170,6 +178,14 @@ export type WorkerResponse =
         toHeight: number;
         geometry: Geom3;
       }[];
+    }
+  | {
+      type: "STORAGE_STEPPED_PART_SUCCESS";
+      requestId: string;
+      partId: string;
+      geometry: Geom3;
+      volume: number;
+      assemblyOffset: [number, number, number];
     }
   | { type: "EXPORT_SUCCESS"; requestId: string; blob: Blob; filename: string }
   | { type: "ERROR"; requestId: string; message: string };
@@ -329,6 +345,16 @@ self.onmessage = async (e: MessageEvent<WorkerRequest>) => {
         outlinePreview,
         durationMs: performance.now() - startedAt,
       });
+    } else if (req.type === "GENERATE_STORAGE_STEPPED_PART") {
+      const part = createStorageSteppedPartModel(req.params, req.partId);
+      self.postMessage({
+        type: "STORAGE_STEPPED_PART_SUCCESS",
+        requestId,
+        partId: part.partId,
+        geometry: part.geometry,
+        volume: part.volume,
+        assemblyOffset: part.assemblyOffset,
+      } satisfies WorkerResponse);
     } else if (req.type === "EXPORT_STL") {
       const rawData = stlSerializer.serialize({ binary: true }, req.geometry);
       const raw = new Blob(rawData as BlobPart[], { type: "application/sla" });

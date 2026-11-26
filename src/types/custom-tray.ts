@@ -5,7 +5,8 @@ export type AppMode =
   | "grid"
   | "custom"
   | "base-converter"
-  | "stepped";
+  | "stepped"
+  | "storage-stepped";
 
 /**
  * 模型级底座轮廓样式：描述整件模型的底座构造规则。

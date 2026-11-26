@@ -333,3 +333,66 @@ describe("Storage Stepped 配置复制", () => {
     expect(copiedTray.slots).not.toBe(sourceTray.slots);
   });
 });
+
+describe("Storage Stepped 零件指纹", () => {
+  it("高度变化只影响主体指纹", async () => {
+    const { getStorageSteppedPartFingerprint } = await import(
+      "@/lib/storage-stepped-plan"
+    );
+    const standard = createDefaultStorageSteppedParams("standard");
+    const storage = withStorageSteppedHeightSpec(standard, "storage");
+    expect(getStorageSteppedPartFingerprint(standard, "body")).not.toBe(
+      getStorageSteppedPartFingerprint(storage, "body"),
+    );
+    for (const partId of ["tray-1", "tray-2", "tray-3"]) {
+      expect(getStorageSteppedPartFingerprint(standard, partId)).toBe(
+        getStorageSteppedPartFingerprint(storage, partId),
+      );
+    }
+  });
+
+  it("某阶槽位变化只影响该托盘指纹", async () => {
+    const { getStorageSteppedPartFingerprint } = await import(
+      "@/lib/storage-stepped-plan"
+    );
+    const base = createDefaultStorageSteppedParams();
+    const changed: StorageSteppedParams = {
+      ...base,
+      trays: base.trays.map((tray) =>
+        tray.stepIndex === 1
+          ? {
+              ...tray,
+              slots: [
+                createFreeSlotInstance({ id: "a", x: 60, y: 37.7, width: 32 }),
+              ],
+            }
+          : tray,
+      ),
+    };
+    expect(getStorageSteppedPartFingerprint(base, "tray-2")).not.toBe(
+      getStorageSteppedPartFingerprint(changed, "tray-2"),
+    );
+    expect(getStorageSteppedPartFingerprint(base, "tray-1")).toBe(
+      getStorageSteppedPartFingerprint(changed, "tray-1"),
+    );
+    expect(getStorageSteppedPartFingerprint(base, "body")).toBe(
+      getStorageSteppedPartFingerprint(changed, "body"),
+    );
+  });
+
+  it("接口变化使全部零件指纹失效", async () => {
+    const { getStorageSteppedPartFingerprint } = await import(
+      "@/lib/storage-stepped-plan"
+    );
+    const base = createDefaultStorageSteppedParams();
+    const changed: StorageSteppedParams = {
+      ...base,
+      interface: { ...base.interface, assemblyClearance: 0.4 },
+    };
+    for (const partId of ["body", "tray-1", "tray-2", "tray-3"]) {
+      expect(getStorageSteppedPartFingerprint(base, partId)).not.toBe(
+        getStorageSteppedPartFingerprint(changed, partId),
+      );
+    }
+  });
+});

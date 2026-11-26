@@ -32,6 +32,12 @@ export function PanelActionSection({ adapter, stepSnapshot }: { adapter: DraftAc
     adapter.kind === "stepped" && adapter.state.exportSplit.state === "blocked"
       ? `分件导出：${adapter.state.exportSplit.reason}`
       : null,
+    adapter.kind === "storage-stepped" && adapter.state.exportAll.state === "blocked"
+      ? `全部零件导出：${adapter.state.exportAll.reason}`
+      : null,
+    adapter.kind === "storage-stepped" && adapter.state.exportTray.state === "blocked"
+      ? `当前托盘导出：${adapter.state.exportTray.reason}`
+      : null,
   ].filter((message): message is string => message !== null);
 
   const reportResult = (result: DraftActionResult) => {
@@ -72,13 +78,18 @@ export function PanelActionSection({ adapter, stepSnapshot }: { adapter: DraftAc
           {state.generate.state === "busy" ? state.generate.label : "开始锻造"}
         </Button>
 
-        {adapter.kind === "stepped" || stepSnapshot ? (
+        {adapter.kind === "stepped" || adapter.kind === "storage-stepped" || stepSnapshot ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild><Button className="h-11 min-w-0 bg-[#2a3528] px-2 text-xs text-[#8cb880] border border-[#4a6741] hover:bg-[#354530]"><Download className="size-4" />导出</Button></DropdownMenuTrigger>
             <DropdownMenuContent align="end" side="top">
               <DropdownMenuLabel>导出模型</DropdownMenuLabel>
               <DropdownMenuItem disabled={isDisabled(state.exportWhole)} title={state.exportWhole.state === "blocked" ? state.exportWhole.reason : undefined} onSelect={() => void perform({ type: "export-whole" })}><Download className="size-4" />完整 STL</DropdownMenuItem>
               {adapter.kind === "stepped" ? <DropdownMenuItem disabled={isDisabled(adapter.state.exportSplit)} title={adapter.state.exportSplit.state === "blocked" ? adapter.state.exportSplit.reason : undefined} onSelect={() => void adapter.perform({ type: "export-split" }).then(reportResult)}><Download className="size-4" />分件 STL</DropdownMenuItem> : null}
+              {adapter.kind === "storage-stepped" ? <>
+                <DropdownMenuItem disabled={isDisabled(adapter.state.exportBody)} title={adapter.state.exportBody.state === "blocked" ? adapter.state.exportBody.reason : undefined} onSelect={() => void adapter.perform({ type: "export-body" }).then(reportResult)}><Download className="size-4" />主体 STL</DropdownMenuItem>
+                <DropdownMenuItem disabled={isDisabled(adapter.state.exportTray)} title={adapter.state.exportTray.state === "blocked" ? adapter.state.exportTray.reason : undefined} onSelect={() => void adapter.perform({ type: "export-tray" }).then(reportResult)}><Download className="size-4" />当前托盘 STL</DropdownMenuItem>
+                <DropdownMenuItem disabled={isDisabled(adapter.state.exportAll)} title={adapter.state.exportAll.state === "blocked" ? adapter.state.exportAll.reason : undefined} onSelect={() => void adapter.perform({ type: "export-all" }).then(reportResult)}><Download className="size-4" />全部零件（4 STL + JSON）</DropdownMenuItem>
+              </> : null}
               {stepSnapshot ? <>
                 <DropdownMenuItem disabled={Boolean(step.reason || step.phase)} onSelect={() => void step.run()}><Download className="size-4" />完整 STEP</DropdownMenuItem>
                 {step.reason || step.sampled ? <DropdownMenuLabel className="max-w-56 whitespace-normal text-xs font-normal text-muted-foreground">{step.reason ?? "包含分段轮廓，部分侧壁由平面组成"}</DropdownMenuLabel> : null}

@@ -68,19 +68,26 @@ describe("ModeTabs", { timeout: 15000 }, () => {
     const steppedButton = screen.getByRole("button", {
       name: /自定义阶梯底座/,
     });
+    const storageSteppedButton = screen.getByRole("button", {
+      name: /阶梯收纳展示台/,
+    });
 
     expect(gridButton).toHaveAttribute("data-state", "active");
     expect(customButton).toHaveAttribute("data-state", "inactive");
     expect(baseConverterButton).toHaveAttribute("data-state", "inactive");
     expect(steppedButton).toHaveAttribute("data-state", "inactive");
+    expect(storageSteppedButton).toHaveAttribute("data-state", "inactive");
+    expect(storageSteppedButton).toHaveAccessibleName(/阶梯收纳展示台/);
     expect(screen.queryByRole("button", { name: /CAD 阶梯底座/ })).not.toBeInTheDocument();
 
     fireEvent.click(customButton);
     fireEvent.click(baseConverterButton);
     fireEvent.click(steppedButton);
+    fireEvent.click(storageSteppedButton);
 
     expect(onModeChange).toHaveBeenNthCalledWith(1, "custom");
     expect(onModeChange).toHaveBeenNthCalledWith(2, "base-converter");
     expect(onModeChange).toHaveBeenNthCalledWith(3, "stepped");
+    expect(onModeChange).toHaveBeenNthCalledWith(4, "storage-stepped");
   });
 });

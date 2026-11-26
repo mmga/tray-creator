@@ -4,6 +4,7 @@ import { DEFAULT_TRAY_PARAMS } from "@/lib/grid-config";
 import { CUSTOM_LAYOUT_DEFAULTS } from "@/lib/custom-config";
 import { STEPPED_LAYOUT_DEFAULTS } from "@/lib/stepped-config";
 import { BASE_CONVERTER_DEFAULTS } from "@/lib/base-converter-config";
+import { createDefaultStorageSteppedParams } from "@/lib/storage-stepped-config";
 
 class FakeWorker {
   static instances: FakeWorker[] = [];
@@ -77,6 +78,37 @@ describe("worker service", () => {
     });
 
     await expect(promise).resolves.toEqual({ geometry, volume: 321 });
+  });
+
+  it("routes storage stepped part requests and keeps the assembly offset", async () => {
+    const { trayWorkerService } = await import("@/lib/worker/worker-service");
+    const worker = FakeWorker.instances[0];
+    const params = createDefaultStorageSteppedParams();
+    const promise = trayWorkerService!.generateStorageSteppedPart(params, "tray-2");
+    const request = worker.postMessage.mock.calls[0]?.[0] as {
+      type: string;
+      requestId: string;
+      partId: string;
+    };
+    expect(request.type).toBe("GENERATE_STORAGE_STEPPED_PART");
+    expect(request.partId).toBe("tray-2");
+
+    const geometry = { id: "storage-tray" } as never;
+    worker.emit({
+      type: "STORAGE_STEPPED_PART_SUCCESS",
+      requestId: request.requestId,
+      partId: "tray-2",
+      geometry,
+      volume: 42,
+      assemblyOffset: [0, -40, 24],
+    });
+
+    await expect(promise).resolves.toEqual({
+      partId: "tray-2",
+      geometry,
+      volume: 42,
+      assemblyOffset: [0, -40, 24],
+    });
   });
 
   it("routes base converter generation requests", async () => {

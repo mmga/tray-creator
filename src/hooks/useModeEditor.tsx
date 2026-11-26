@@ -14,6 +14,7 @@ import { useCustomLayout } from "@/hooks/useCustomLayout";
 import { useModeInteractionState } from "@/hooks/useModeInteractionState";
 import { useRequestSequence } from "@/hooks/useRequestSequence";
 import { useSteppedLayout } from "@/hooks/useSteppedLayout";
+import { useStorageStepped } from "@/hooks/useStorageStepped";
 import { useToast } from "@/hooks/useToast";
 import { useTrayModel } from "@/hooks/useTrayModel";
 import {
@@ -39,11 +40,14 @@ import { useBaseConverterViewportWorkspace } from "@/viewports/base-converter/us
 import { useCustomViewportWorkspace } from "@/viewports/custom/useCustomViewportWorkspace";
 import { useGridViewportWorkspace } from "@/viewports/grid/useGridViewportWorkspace";
 import { useSteppedViewportWorkspace } from "@/viewports/stepped/useSteppedViewportWorkspace";
+import { useStorageSteppedViewportWorkspace } from "@/viewports/storage-stepped/useStorageSteppedViewportWorkspace";
 import { useBaseConverterWorkspace } from "@/workspaces/base-converter/useBaseConverterWorkspace";
 import { useCustomWorkspace } from "@/workspaces/custom/useCustomWorkspace";
 import type { DraftActionResult } from "@/workspaces/draft-action-area";
 import { useGridWorkspace } from "@/workspaces/grid/useGridWorkspace";
 import { useSteppedWorkspace } from "@/workspaces/stepped/useSteppedWorkspace";
+import { useStorageSteppedWorkspace } from "@/workspaces/storage-stepped/useStorageSteppedWorkspace";
+import { trayWorkerService } from "@/lib/worker/worker-service";
 
 const ParamImportDialog = lazy(async () => {
   const importedModule = await import("@/components/ParamImportDialog");
@@ -115,8 +119,10 @@ export function useModeEditor(initialMode: AppMode = "grid"): ModeEditor {
   const customModel = useCustomLayout();
   const baseConverterModel = useBaseConverter();
   const steppedModel = useSteppedLayout();
+  const storageSteppedModel = useStorageStepped({ workerPort: trayWorkerService });
   const customInteractionState = useModeInteractionState();
   const steppedInteractionState = useModeInteractionState();
+  const storageSteppedInteractionState = useModeInteractionState();
   const performRef = useRef<
     (intent: ModeEditorIntent) => Promise<ModeEditorResult>
   >(async () => ({ status: "error", message: "Mode Editor 尚未装配" }));
@@ -173,6 +179,13 @@ export function useModeEditor(initialMode: AppMode = "grid"): ModeEditor {
     onRequestReset: () => requestReset("stepped"),
     onRequestDraftLoad: (draftId) => requestDraftLoad("stepped", draftId),
   });
+  const storageSteppedWorkspace = useStorageSteppedWorkspace({
+    model: storageSteppedModel,
+    interactionState: storageSteppedInteractionState,
+    onRequestParamImport: requestParamImport,
+    onRequestReset: () => requestReset("storage-stepped"),
+    onRequestDraftLoad: (draftId) => requestDraftLoad("storage-stepped", draftId),
+  });
 
   const gridViewport = useGridViewportWorkspace({ model: gridModel });
   const customViewport = useCustomViewportWorkspace({
@@ -181,6 +194,10 @@ export function useModeEditor(initialMode: AppMode = "grid"): ModeEditor {
   });
   const baseConverterViewport = useBaseConverterViewportWorkspace({
     model: baseConverterModel,
+  });
+  const storageSteppedViewport = useStorageSteppedViewportWorkspace({
+    model: storageSteppedModel,
+    interactionState: storageSteppedInteractionState,
   });
   const steppedViewport = useSteppedViewportWorkspace({
     model: steppedModel,
@@ -200,6 +217,10 @@ export function useModeEditor(initialMode: AppMode = "grid"): ModeEditor {
       baseConverterViewport,
     ),
     stepped: createModeEditorAdapter(steppedWorkspace, steppedViewport),
+    "storage-stepped": createModeEditorAdapter(
+      storageSteppedWorkspace,
+      storageSteppedViewport,
+    ),
   }), [
     baseConverterViewport,
     baseConverterWorkspace,
@@ -209,6 +230,8 @@ export function useModeEditor(initialMode: AppMode = "grid"): ModeEditor {
     gridWorkspace,
     steppedViewport,
     steppedWorkspace,
+    storageSteppedViewport,
+    storageSteppedWorkspace,
   ]);
   const activeEntry = catalog[mode];
 

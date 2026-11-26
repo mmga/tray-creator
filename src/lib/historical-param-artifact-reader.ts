@@ -27,6 +27,7 @@ const HISTORICAL_MODES: readonly HistoricalMode[] = [
   "simple-stepped",
   "stepped",
   "stepped-cad",
+  "storage-stepped",
 ];
 
 export const APP_MODE_LABELS: Record<AppMode, string> = {
@@ -34,6 +35,7 @@ export const APP_MODE_LABELS: Record<AppMode, string> = {
   custom: "自定义",
   "base-converter": "底盘生成",
   stepped: "自定义阶梯",
+  "storage-stepped": "阶梯收纳展示台",
 };
 
 function getModeLabel(mode: HistoricalMode): string {
@@ -114,6 +116,14 @@ function cloneParamValue<M extends AppMode>(
 }
 
 function detectModesFromParamShape(data: Record<string, unknown>): AppMode[] {
+  if (
+    typeof data.interfaceVersion === "number" &&
+    typeof data.interface === "object" &&
+    data.interface !== null &&
+    Array.isArray(data.trays)
+  ) {
+    return ["storage-stepped"];
+  }
   if (
     typeof data.sourceStandardId === "string" &&
     typeof data.targetStandardId === "string"
@@ -372,6 +382,14 @@ function createImportCandidate(
       return createImportCandidateForMode(
         rawParams,
         "stepped",
+        declaredMode,
+        modeResolution,
+        fileName,
+      );
+    case "storage-stepped":
+      return createImportCandidateForMode(
+        rawParams,
+        "storage-stepped",
         declaredMode,
         modeResolution,
         fileName,
