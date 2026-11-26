@@ -71,9 +71,9 @@ describe("Storage Stepped 参数归一化", () => {
     expect(() => normalizeStorageSteppedParams(params)).toThrow(/stepIndex/);
   });
 
-  it("槽深不小于总厚度时拒绝", () => {
+  it.each([0.5, 5.995, 6])("槽深 %s mm 超出面板范围时拒绝", (holeDepth) => {
     const params = rawParams();
-    params.trays[0].holeDepth = 6;
+    params.trays[0].holeDepth = holeDepth;
     expect(() => normalizeStorageSteppedParams(params)).toThrow(/holeDepth/);
   });
 

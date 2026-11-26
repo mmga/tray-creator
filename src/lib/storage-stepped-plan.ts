@@ -10,6 +10,7 @@ import {
   STORAGE_STEPPED_HEIGHT_SPECS,
   STORAGE_STEPPED_INTERFACE_DEFAULTS,
   STORAGE_STEPPED_INTERFACE_VERSION,
+  STORAGE_STEPPED_LIMITS,
   storageSteppedTrayPartId,
   isStorageSteppedHeightSpecId,
 } from "@/lib/storage-stepped-config";
@@ -265,6 +266,9 @@ export function deriveStorageSteppedPlan(
     slots: tray.slots,
   }));
 
+  const supportLedgeWidth = iface.lowerWallThickness - iface.rimThickness;
+  const supportContactCentered =
+    supportLedgeWidth - iface.assemblyClearance - iface.trayBottomChamfer;
   return {
     interfaceVersion: params.interfaceVersion,
     heightSpecId,
@@ -277,15 +281,9 @@ export function deriveStorageSteppedPlan(
     trayWidth: traySize.width,
     trayDepth: traySize.depth,
     trayThickness,
-    supportLedgeWidth: iface.rimThickness,
-    supportContactCentered:
-      iface.rimThickness -
-      iface.assemblyClearance -
-      iface.trayBottomChamfer,
-    supportContactShifted:
-      iface.rimThickness -
-      2 * iface.assemblyClearance -
-      iface.trayBottomChamfer,
+    supportLedgeWidth,
+    supportContactCentered,
+    supportContactShifted: supportContactCentered - iface.assemblyClearance,
     fingerPullRadius,
     interface: iface,
     steps,
@@ -295,6 +293,17 @@ export function deriveStorageSteppedPlan(
 }
 
 export type StorageSteppedIssueSeverity = "error" | "warning";
+
+/** 托盘底面在居中主体坐标系中的装配位置。 */
+export function getStorageSteppedTrayAssemblyOffset(
+  plan: StorageSteppedPlan,
+  stepIndex: number,
+): [number, number, number] {
+  const step = plan.steps[stepIndex];
+  if (!step) throw new Error(`找不到第 ${stepIndex + 1} 阶装配位置`);
+  const centerY = (step.module.minY + step.module.maxY) / 2;
+  return [0, centerY - plan.bodyDepth / 2, step.supportZ];
+}
 
 export interface StorageSteppedValidationIssue {
   severity: StorageSteppedIssueSeverity;
@@ -520,17 +529,14 @@ function validateTray(
   if (!requireFinite(issues, tray.holeDepth, `${path}.holeDepth`, "槽深")) {
     return issues;
   }
-  if (tray.holeDepth <= 0) {
-    issues.push(issue("error", partId, `${path}.holeDepth`, "槽深必须大于 0"));
-    return issues;
-  }
-  if (tray.holeDepth >= plan.trayThickness) {
+  const { min, max } = STORAGE_STEPPED_LIMITS.holeDepth;
+  if (tray.holeDepth < min || tray.holeDepth > max) {
     issues.push(
       issue(
         "error",
         partId,
         `${path}.holeDepth`,
-        `槽深 ${tray.holeDepth}mm 不小于托盘总厚度 ${plan.trayThickness}mm`,
+        `槽深必须在 ${min}–${max}mm 之间`,
       ),
     );
     return issues;
@@ -770,13 +776,22 @@ export function validateStorageSteppedParams(
         issue("error", "params", "interface", "当前接口推导出的托盘尺寸无效"),
       );
     }
-    if (plan.supportContactCentered <= 0) {
+    if (plan.supportContactCentered <= STORAGE_STEPPED_EPSILON) {
       issues.push(
         issue(
           "error",
           "params",
           "interface.trayBottomChamfer",
-          "托盘底部倒角已破坏承托面，直边段没有平底接触宽度",
+          "当前壁厚、间隙和倒角使托盘居中时没有平底承托面",
+        ),
+      );
+    } else if (plan.supportContactShifted <= STORAGE_STEPPED_EPSILON) {
+      issues.push(
+        issue(
+          "error",
+          "params",
+          "interface.assemblyClearance",
+          "托盘移到装配间隙极限时，对侧没有平底承托面",
         ),
       );
     }

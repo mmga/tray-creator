@@ -3,6 +3,7 @@ import { normalizeFreeSlotInstanceSnapshot } from "@/lib/slot-instance-factory";
 import {
   STORAGE_STEPPED_HEIGHT_SPECS,
   STORAGE_STEPPED_INTERFACE_VERSION,
+  STORAGE_STEPPED_LIMITS,
   STORAGE_STEPPED_STEP_COUNT,
   STORAGE_STEPPED_TRAY_THICKNESS,
   isStorageSteppedHeightSpecId,
@@ -70,10 +71,9 @@ function normalizeTray(
     throw new Error(`${path}.stepIndex: 必须为 ${expectedStepIndex}`);
   }
   requireFinite(raw.holeDepth, `${path}.holeDepth`);
-  if (raw.holeDepth <= 0 || raw.holeDepth >= STORAGE_STEPPED_TRAY_THICKNESS) {
-    throw new Error(
-      `${path}.holeDepth: 槽深必须大于 0 且小于托盘总厚度 ${STORAGE_STEPPED_TRAY_THICKNESS}mm`,
-    );
+  const { min, max } = STORAGE_STEPPED_LIMITS.holeDepth;
+  if (raw.holeDepth < min || raw.holeDepth > max) {
+    throw new Error(`${path}.holeDepth: 槽深必须在 ${min}–${max}mm 之间`);
   }
   if (!Array.isArray(raw.slots)) {
     throw new Error(`${path}.slots: 槽位列表无效`);

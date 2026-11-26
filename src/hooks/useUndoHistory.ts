@@ -5,12 +5,15 @@ import { useRef, useCallback } from "react";
 const MAX_HISTORY = 50;
 
 /**
- * 通用撤销历史 Hook
- * 维护一个状态快照栈，支持 undo 操作
+ * 维护撤销与重做的状态快照。
  * 每次 pushState 都代表一个已经明确划分的用户编辑意图。
  */
 export function useUndoHistory<T>() {
   const historyRef = useRef<T[]>([]);
+  const redoRef = useRef<T[]>([]);
+  const clearRedo = useCallback(() => {
+    redoRef.current = [];
+  }, []);
 
   /** 将当前状态压入历史栈（在变更前调用） */
   const pushState = useCallback((state: T) => {
@@ -18,20 +21,28 @@ export function useUndoHistory<T>() {
       ...historyRef.current.slice(-(MAX_HISTORY - 1)),
       state,
     ];
+    clearRedo();
+  }, [clearRedo]);
+
+  /** 翻回上一个状态，传入当前状态时可重做。 */
+  const popState = useCallback((current?: T): T | undefined => {
+    if (historyRef.current.length === 0) return undefined;
+    if (current !== undefined) redoRef.current.push(current);
+    return historyRef.current.pop();
   }, []);
 
-  /** 弹出并返回上一个状态，若无历史则返回 undefined */
-  const popState = useCallback((): T | undefined => {
-    if (historyRef.current.length === 0) return undefined;
-    const prev = historyRef.current[historyRef.current.length - 1];
-    historyRef.current = historyRef.current.slice(0, -1);
-    return prev;
+  const redoState = useCallback((current: T): T | undefined => {
+    if (redoRef.current.length === 0) return undefined;
+    historyRef.current.push(current);
+    return redoRef.current.pop();
   }, []);
 
   const canUndo = useCallback(() => historyRef.current.length > 0, []);
+  const canRedo = useCallback(() => redoRef.current.length > 0, []);
   const clearHistory = useCallback(() => {
     historyRef.current = [];
-  }, []);
+    clearRedo();
+  }, [clearRedo]);
 
-  return { pushState, popState, canUndo, clearHistory };
+  return { pushState, popState, redoState, canUndo, canRedo, clearHistory, clearRedo };
 }

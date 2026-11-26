@@ -2,6 +2,8 @@ import { act, renderHook } from "@testing-library/react";
 import { primitives } from "@jscad/modeling";
 import { describe, expect, it, vi } from "vitest";
 import { useStorageStepped } from "@/hooks/useStorageStepped";
+import { loadThreeGeometry } from "@/lib/three-geometry-loader";
+import { BufferGeometry } from "three";
 import type {
   DownloadPort,
   StorageSteppedPartResult,
@@ -10,6 +12,8 @@ import type {
 import type { StorageSteppedParams } from "@/types/storage-stepped";
 
 const { cuboid } = primitives;
+
+vi.mock("@/lib/three-geometry-loader", { spy: true });
 
 function createFakeWorker() {
   const generationCalls: Array<{ partId: string; params: StorageSteppedParams }> = [];
@@ -51,6 +55,31 @@ async function generate(result: { current: ReturnType<typeof useStorageStepped> 
 }
 
 describe("useStorageStepped", () => {
+  it("整阶复制可以撤销和重做，撤销后的新编辑会清除重做", () => {
+    let id = 0;
+    const { result } = renderHook(() =>
+      useStorageStepped({ idFactory: { createId: () => `slot-${++id}` } }),
+    );
+    act(() => result.current.addSlot(32));
+    act(() => result.current.copyTrayToStep(1));
+    const copied = result.current.persistedParams.trays[1];
+    expect(copied.slots).toHaveLength(1);
+
+    act(() => result.current.undo());
+    expect(result.current.persistedParams.trays[1].slots).toHaveLength(0);
+    expect(result.current.canRedo).toBe(true);
+    act(() => result.current.redo());
+    expect(result.current.persistedParams.trays[1]).toEqual(copied);
+    expect(result.current.canRedo).toBe(false);
+
+    act(() => result.current.undo());
+    act(() => result.current.setHeightSpec("storage"));
+    expect(result.current.canRedo).toBe(false);
+    act(() => result.current.redo());
+    expect(result.current.persistedParams.trays[1].slots).toHaveLength(0);
+    expect(result.current.persistedParams.heightSpecId).toBe("storage");
+  });
+
   it("首次生成按主体与三块托盘分别请求，并缓存为独立零件", async () => {
     const { worker, generationCalls } = createFakeWorker();
     const { port } = createDownloadRecorder();
@@ -74,13 +103,15 @@ describe("useStorageStepped", () => {
     expect(result.current.volume).toBeGreaterThan(0);
   });
 
-  it("切换主体高度只重建主体", async () => {
+  it("切换主体高度只重建主体并更新三块托盘的装配位置", async () => {
     const { worker, generationCalls } = createFakeWorker();
     const { port } = createDownloadRecorder();
     const { result } = renderHook(() =>
       useStorageStepped({ workerPort: worker, downloadPort: port }),
     );
     await generate(result);
+    const trayGeometry = result.current.parts[1].threeGeometry;
+    expect(result.current.parts.map((part) => part.assemblyOffset[2])).toEqual([0, 24, 64, 104]);
     generationCalls.length = 0;
 
     act(() => result.current.setHeightSpec("storage"));
@@ -88,6 +119,9 @@ describe("useStorageStepped", () => {
 
     expect(generationCalls.map((call) => call.partId)).toEqual(["body"]);
     expect(result.current.params.heightSpecId).toBe("storage");
+    expect(result.current.parts.map((part) => part.assemblyOffset[2])).toEqual([0, 34, 74, 114]);
+    expect(result.current.parts[1].threeGeometry).toBe(trayGeometry);
+    expect(result.current.isPreviewStale).toBe(false);
   });
 
   it("修改某一阶槽位只重建该托盘", async () => {
@@ -285,6 +319,35 @@ describe("useStorageStepped", () => {
 });
 
 describe("useStorageStepped 资源释放", () => {
+  it("网格转换期间参数变化时释放过期结果并允许重新生成", async () => {
+    const { worker } = createFakeWorker();
+    const { result } = renderHook(() => useStorageStepped({ workerPort: worker }));
+    const { promise: converting, resolve: markConverting } = Promise.withResolvers<void>();
+    const { promise: conversion, resolve: completeConversion } = Promise.withResolvers<BufferGeometry>();
+    vi.mocked(loadThreeGeometry).mockImplementationOnce(() => {
+      markConverting();
+      return conversion;
+    });
+    let pending!: Promise<void>;
+    await act(async () => {
+      pending = result.current.handleGenerate();
+      await converting;
+    });
+    act(() => result.current.setHeightSpec("storage"));
+    const obsoleteGeometry = new BufferGeometry();
+    const dispose = vi.spyOn(obsoleteGeometry, "dispose");
+    await act(async () => {
+      completeConversion(obsoleteGeometry);
+      await pending;
+    });
+    expect(dispose).toHaveBeenCalledOnce();
+    expect(result.current.parts).toHaveLength(0);
+    expect(result.current.isGenerating).toBe(false);
+    await generate(result);
+    expect(result.current.parts).toHaveLength(4);
+    expect(result.current.isPreviewStale).toBe(false);
+  });
+
   it("卸载时释放缓存的 Three.js 几何", async () => {
     const { worker } = createFakeWorker();
     const { port } = createDownloadRecorder();

@@ -58,6 +58,7 @@ import {
   getStorageSteppedExpectedPartIds,
   getStorageSteppedPartBlockingReason,
   getStorageSteppedPartFingerprint,
+  getStorageSteppedTrayAssemblyOffset,
   validateStorageSteppedParams,
   type StorageSteppedPlan,
   type StorageSteppedValidation,
@@ -145,6 +146,8 @@ export interface UseStorageSteppedReturn {
   duplicateSlots: (ids: string[]) => string[];
   undo: () => void;
   canUndo: boolean;
+  redo: () => void;
+  canRedo: boolean;
   beginContinuousEdit: () => boolean;
   commitContinuousEdit: () => void;
   cancelContinuousEdit: () => void;
@@ -231,6 +234,7 @@ export function useStorageStepped(
         part.threeGeometry.dispose();
       }
       partsRef.current = {};
+      latestRequestSeqRef.current = 0;
       nextSeq();
     },
     [nextSeq],
@@ -239,6 +243,10 @@ export function useStorageStepped(
   const params = editable.viewParams;
   const persistedParams = editable.params;
   const plan = useMemo(() => deriveStorageSteppedPlan(params), [params]);
+  const persistedPlan = useMemo(
+    () => params === persistedParams ? plan : deriveStorageSteppedPlan(persistedParams),
+    [params, persistedParams, plan],
+  );
   const validation = useMemo(
     () => validateStorageSteppedParams(params),
     [params],
@@ -565,7 +573,9 @@ export function useStorageStepped(
           kind: stepIndex === null ? "body" : "tray",
           stepIndex,
           threeGeometry: cached.threeGeometry,
-          assemblyOffset: cached.assemblyOffset,
+          assemblyOffset: stepIndex === null
+            ? [0, 0, 0]
+            : getStorageSteppedTrayAssemblyOffset(persistedPlan, stepIndex),
           volume: cached.volume,
           stale: stalePartIds.includes(partId),
           blockingReason: getStorageSteppedPartBlockingReason(
@@ -575,7 +585,7 @@ export function useStorageStepped(
           color: partColor(partId),
         }];
       }),
-    [expectedPartIds, partsById, persistedValidation, stalePartIds],
+    [expectedPartIds, partsById, persistedPlan, persistedValidation, stalePartIds],
   );
 
   const missingPartLabels = useMemo(
@@ -623,67 +633,67 @@ export function useStorageStepped(
     const seq = nextSeq();
     latestRequestSeqRef.current = seq;
     setIsGenerating(true);
-    const settled = await Promise.allSettled(
-      targets.map((partId) =>
-        workerPort.generateStorageSteppedPart(snapshot.params, partId),
-      ),
-    );
-    if (isStale(seq)) {
-      // 若没有更新的生成请求接手，说明是参数变化导致的过期，由本次请求收尾 loading。
-      if (latestRequestSeqRef.current === seq) setIsGenerating(false);
-      return;
-    }
-
-    const nextParts: Record<string, CachedPart> = {};
-    const nextErrors: Record<string, string> = {};
-    const superseded: THREE.BufferGeometry[] = [];
-    for (let index = 0; index < settled.length; index += 1) {
-      const partId = targets[index];
-      const result = settled[index];
-      if (result.status !== "fulfilled") {
-        nextErrors[partId] = result.reason instanceof Error
-          ? result.reason.message
-          : "未知错误";
-        continue;
-      }
-      try {
-        const threeGeometry = await loadThreeGeometry(result.value.geometry);
-        nextParts[partId] = {
-          ...result.value,
-          fingerprint: getStorageSteppedPartFingerprint(
-            snapshot.params,
-            partId,
-          ),
-          threeGeometry,
-        };
-      } catch (error) {
-        nextErrors[partId] = error instanceof Error
-          ? error.message
-          : "三维几何转换失败";
-      }
-    }
-    if (isStale(seq)) {
-      for (const part of Object.values(nextParts)) part.threeGeometry.dispose();
-      return;
-    }
-    setPartsById((previous) => {
-      const merged = { ...previous };
-      for (const [partId, part] of Object.entries(nextParts)) {
-        const previousPart = previous[partId];
-        if (previousPart) superseded.push(previousPart.threeGeometry);
-        merged[partId] = part;
-      }
-      return merged;
-    });
-    for (const geometry of superseded) geometry.dispose();
-    setWorkerErrors(nextErrors);
-    setIsGenerating(false);
-    if (Object.keys(nextErrors).length > 0) {
-      const first = Object.entries(nextErrors)[0];
-      toast(
-        "error",
-        `${storageSteppedPartLabel(first[0])}生成失败：${first[1]}`,
+    try {
+      const settled = await Promise.allSettled(
+        targets.map(async (partId) =>
+          workerPort.generateStorageSteppedPart(snapshot.params, partId),
+        ),
       );
+      if (isStale(seq)) return;
+
+      const nextParts: Record<string, CachedPart> = {};
+      const nextErrors: Record<string, string> = {};
+      const superseded: THREE.BufferGeometry[] = [];
+      for (let index = 0; index < settled.length; index += 1) {
+        const partId = targets[index];
+        const result = settled[index];
+        if (result.status !== "fulfilled") {
+          nextErrors[partId] = result.reason instanceof Error
+            ? result.reason.message
+            : "未知错误";
+          continue;
+        }
+        try {
+          const threeGeometry = await loadThreeGeometry(result.value.geometry);
+          nextParts[partId] = {
+            ...result.value,
+            fingerprint: getStorageSteppedPartFingerprint(
+              snapshot.params,
+              partId,
+            ),
+            threeGeometry,
+          };
+        } catch (error) {
+          nextErrors[partId] = error instanceof Error
+            ? error.message
+            : "三维几何转换失败";
+        }
+      }
+      if (isStale(seq)) {
+        for (const part of Object.values(nextParts)) part.threeGeometry.dispose();
+        return;
+      }
+      setPartsById((previous) => {
+        const merged = { ...previous };
+        for (const [partId, part] of Object.entries(nextParts)) {
+          const previousPart = previous[partId];
+          if (previousPart) superseded.push(previousPart.threeGeometry);
+          merged[partId] = part;
+        }
+        return merged;
+      });
+      for (const geometry of superseded) geometry.dispose();
+      setWorkerErrors(nextErrors);
+      if (Object.keys(nextErrors).length > 0) {
+        const first = Object.entries(nextErrors)[0];
+        toast(
+          "error",
+          `${storageSteppedPartLabel(first[0])}生成失败：${first[1]}`,
+        );
+      }
+    } finally {
+      // 参数变化可使任一阶段过期，只有请求的所有者可以结束生成状态。
+      if (latestRequestSeqRef.current === seq) setIsGenerating(false);
     }
   }, [editable, isStale, nextSeq, toast, workerPort]);
 
@@ -791,6 +801,8 @@ export function useStorageStepped(
     duplicateSlots,
     undo,
     canUndo: editable.canUndo,
+    redo: editable.redo,
+    canRedo: editable.canRedo,
     beginContinuousEdit,
     commitContinuousEdit,
     cancelContinuousEdit,

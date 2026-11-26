@@ -194,6 +194,21 @@ describe("Storage Stepped 参数校验", () => {
     ).toBe(true);
   });
 
+  it.each([
+    [2.2, -0.5, -0.8],
+    [2.8, 0.1, -0.2],
+  ])("壁厚 %s mm 时阻止缺少承托的配置", (wall, centered, shifted) => {
+    const params = createDefaultStorageSteppedParams();
+    params.interface.lowerWallThickness = wall;
+    const plan = deriveStorageSteppedPlan(params);
+
+    expect(plan.supportContactCentered).toBeCloseTo(centered);
+    expect(plan.supportContactShifted).toBeCloseTo(shifted);
+    expect(validateStorageSteppedParams(params).errors).toEqual(
+      expect.arrayContaining([expect.objectContaining({ message: expect.stringMatching(/没有平底承托面/) })]),
+    );
+  });
+
   it("倒角高度不得超过托盘总厚度", () => {
     const params = createDefaultStorageSteppedParams();
     params.interface.trayBottomChamfer = 3;

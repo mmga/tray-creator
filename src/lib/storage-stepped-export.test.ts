@@ -19,6 +19,7 @@ import {
 } from "@/lib/storage-stepped-config";
 import {
   buildCurrentParamArtifact,
+  serializeCurrentParamArtifact,
 } from "@/lib/current-param-artifact-encoder";
 import { prepareParamFileObject } from "@/lib/historical-param-artifact-reader";
 import { validateStorageSteppedParams } from "@/lib/storage-stepped-plan";
@@ -63,6 +64,41 @@ function createDownloadPort(throwOnCall?: (index: number) => boolean) {
 }
 
 describe("Storage Stepped 导出", () => {
+  it("单独参数与 STL 伴随参数都保留临界边距布局", async () => {
+    const params = createDefaultStorageSteppedParams();
+    const slot = {
+      id: "edge-slot", shape: "circle" as const, width: 32, height: 32,
+      slotWidth: 32.4008, slotHeight: 32.4008, x: 19.20045, y: 37, rotation: 0,
+    };
+    params.trays[0].slots = [slot];
+    const snapshot = captureModeParamSnapshot("storage-stepped", params);
+    expect(validateStorageSteppedParams(params).isValid).toBe(true);
+
+    const { worker } = createWorker();
+    const jsonBlobs: Blob[] = [];
+    const downloadPort: DownloadPort = {
+      downloadBlob(blob, filename) {
+        if (filename.endsWith(".json")) jsonBlobs.push(blob);
+      },
+    };
+    await exportStorageSteppedPart(snapshot, "tray-1", worker, downloadPort);
+    await exportStorageSteppedAllParts(snapshot, worker, downloadPort);
+    expect(jsonBlobs).toHaveLength(2);
+    const jsonFiles = [
+      serializeCurrentParamArtifact(snapshot),
+      ...await Promise.all(jsonBlobs.map((blob) => blob.text())),
+    ];
+    for (const json of jsonFiles) {
+      const prepared = prepareParamFileObject(JSON.parse(json));
+      if (prepared.status !== "ready" || prepared.candidate.mode !== "storage-stepped") {
+        throw new Error("无法读取收纳阶梯参数");
+      }
+      const restored = prepared.candidate.snapshot.params;
+      expect(restored.trays[0].slots[0]).toMatchObject(slot);
+      expect(validateStorageSteppedParams(restored).isValid).toBe(true);
+    }
+  });
+
   it("整套导出同一快照的四件 STL 与完整 JSON", async () => {
     const params = withStorageSteppedHeightSpec(
       createDefaultStorageSteppedParams(),

@@ -76,6 +76,8 @@ export interface UseEditableParamsReturn<P> {
   saveSnapshot: () => void;
   undo: () => void;
   canUndo: boolean;
+  redo: () => void;
+  canRedo: boolean;
   invalidatePreview: () => void;
   threeGeometry: THREE.BufferGeometry | null;
   volume: number;
@@ -124,8 +126,11 @@ export function useEditableParams<P, S, E>({
   const {
     pushState,
     popState,
+    redoState,
     canUndo: canUndoFn,
+    canRedo: canRedoFn,
     clearHistory,
+    clearRedo,
   } = useUndoHistory<P>();
 
   const normalizeIfNeeded = useCallback(
@@ -220,6 +225,8 @@ export function useEditableParams<P, S, E>({
       }
       if (history === "save") {
         pushState(previous);
+      } else {
+        clearRedo();
       }
       paramsRef.current = next;
       internalSetParams(next);
@@ -232,7 +239,7 @@ export function useEditableParams<P, S, E>({
         revision: committedRevision,
       } satisfies EditTransactionOutcome;
     },
-    [areEqual, invalidatePreview, normalizeIfNeeded, pushState],
+    [areEqual, clearRedo, invalidatePreview, normalizeIfNeeded, pushState],
   );
 
   const beginContinuousEdit = useCallback((): EditTransactionOutcome => {
@@ -297,12 +304,12 @@ export function useEditableParams<P, S, E>({
     pushState(paramsRef.current);
   }, [pushState]);
 
-  const undo = useCallback(() => {
+  const restoreHistory = useCallback((takeState: (current: P) => P | undefined) => {
     if (continuousBaseRef.current !== null) {
       cancelWorkingParams();
       return;
     }
-    const prev = popState();
+    const prev = takeState(paramsRef.current);
     if (prev !== undefined) {
       const next = normalizeIfNeeded(prev);
       paramsRef.current = next;
@@ -311,7 +318,9 @@ export function useEditableParams<P, S, E>({
       setTransactionRevision(transactionRevisionRef.current);
       invalidatePreview();
     }
-  }, [cancelWorkingParams, invalidatePreview, normalizeIfNeeded, popState]);
+  }, [cancelWorkingParams, invalidatePreview, normalizeIfNeeded]);
+  const undo = useCallback(() => restoreHistory(popState), [popState, restoreHistory]);
+  const redo = useCallback(() => restoreHistory(redoState), [redoState, restoreHistory]);
 
   const getParams = useCallback(() => paramsRef.current, []);
 
@@ -334,6 +343,8 @@ export function useEditableParams<P, S, E>({
     saveSnapshot,
     undo,
     canUndo: canUndoFn(),
+    redo,
+    canRedo: canRedoFn(),
     invalidatePreview,
     threeGeometry,
     volume,

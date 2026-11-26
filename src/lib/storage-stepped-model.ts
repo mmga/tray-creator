@@ -16,6 +16,7 @@ import { subtractBaseHoleConstructionPlan } from "@/lib/model-utils";
 import { getFreeSlotProfileGeometry } from "@/lib/slot-definitions";
 import {
   STORAGE_STEPPED_BODY_PART_ID,
+  STORAGE_STEPPED_LIMITS,
   storageSteppedTrayPartId,
 } from "@/lib/storage-stepped-config";
 import {
@@ -23,7 +24,10 @@ import {
   getStorageSteppedBaseHoleBlockingReason,
   getStorageSteppedTrayRequiredSupportingThickness,
 } from "@/lib/storage-stepped-base-hole";
-import { deriveStorageSteppedPlan } from "@/lib/storage-stepped-plan";
+import {
+  deriveStorageSteppedPlan,
+  getStorageSteppedTrayAssemblyOffset,
+} from "@/lib/storage-stepped-plan";
 import type { StorageSteppedParams } from "@/types/storage-stepped";
 
 const { subtract } = booleans;
@@ -333,8 +337,9 @@ function createTrayGrooveCutters(
   if (!tray) {
     throw new Error(`找不到第 ${stepIndex + 1} 阶托盘配置`);
   }
-  if (!(tray.holeDepth > 0) || tray.holeDepth >= trayThickness) {
-    throw new Error(`第 ${stepIndex + 1} 阶槽深必须大于 0 且小于托盘总厚度`);
+  const { min, max } = STORAGE_STEPPED_LIMITS.holeDepth;
+  if (!(tray.holeDepth >= min && tray.holeDepth <= max)) {
+    throw new Error(`第 ${stepIndex + 1} 阶槽深必须在 ${min}–${max}mm 之间`);
   }
 
   const halfWidth = trayWidth / 2;
@@ -356,7 +361,7 @@ function createTrayGrooveCutters(
       [
         slot.x - halfWidth,
         slot.y - halfDepth,
-        trayThickness - tray.holeDepth - 0.01,
+        trayThickness - tray.holeDepth,
       ],
       cutter,
     );
@@ -426,12 +431,7 @@ export function getStorageSteppedAssemblyOffset(
   if (stepIndex === null || stepIndex >= plan.steps.length) {
     throw new Error(`未知零件身份：${partId}`);
   }
-  const step = plan.steps[stepIndex];
-  return [
-    0,
-    -plan.bodyDepth / 2 + stepIndex * plan.interface.moduleDepth + plan.interface.moduleDepth / 2,
-    step.supportZ,
-  ];
+  return getStorageSteppedTrayAssemblyOffset(plan, stepIndex);
 }
 
 export function parseStorageSteppedTrayPartId(partId: string): number | null {

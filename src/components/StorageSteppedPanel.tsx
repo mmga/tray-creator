@@ -7,8 +7,10 @@ import {
   FileUp,
   Layers,
   Plus,
+  Redo2,
   Ruler,
   Trash2,
+  Undo2,
   Wrench,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -381,6 +383,14 @@ export function StorageSteppedPanel({
 
       <SectionHeader icon={Layers} title="当前托盘">
         <div className="space-y-2">
+          <div className="flex gap-1.5">
+            <Button type="button" size="sm" variant="outline" disabled={!model.canUndo} onClick={model.undo}>
+              <Undo2 aria-hidden="true" /> 撤销
+            </Button>
+            <Button type="button" size="sm" variant="outline" disabled={!model.canRedo} onClick={model.redo}>
+              <Redo2 aria-hidden="true" /> 重做
+            </Button>
+          </div>
           <div className="grid grid-cols-3 gap-1.5">
             {plan.steps.map((step) => {
               const tray = model.params.trays.find(

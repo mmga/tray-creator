@@ -33,6 +33,9 @@ function createModel(params: StorageSteppedParams = createDefaultStorageSteppedP
     isExporting: false,
     isPreviewStale: false,
     canUndo: false,
+    canRedo: false,
+    undo: vi.fn(),
+    redo: vi.fn(),
     liftedStepIndex: null,
     viewMode: "assembly",
     selectedPartId: "body",
@@ -108,8 +111,17 @@ describe("StorageSteppedPanel", () => {
     renderPanel(createModel(params));
     expect(screen.getByText(/1 项错误/)).toBeInTheDocument();
     expect(
-      screen.getByText(/槽深 6.2mm 不小于托盘总厚度 6mm/),
+      screen.getByText(/槽深必须在 0.6–5mm 之间/),
     ).toBeInTheDocument();
+  });
+
+  it("重做按钮只在有重做记录时启用", () => {
+    const model = createModel();
+    model.canRedo = true;
+    renderPanel(model);
+    expect(screen.getByRole("button", { name: "撤销" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "重做" }));
+    expect(model.redo).toHaveBeenCalledOnce();
   });
 
   it("导入托盘布局时显示平移预览与冲突，成功后提交", async () => {

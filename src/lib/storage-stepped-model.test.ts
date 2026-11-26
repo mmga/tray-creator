@@ -294,6 +294,17 @@ describe("Storage Stepped 平板托盘几何", () => {
     expect(sampleVolume(tray, [0, 0, 2.0], 2)).toBeGreaterThan(7);
   });
 
+  it("最深的可编辑槽位保留 1 mm 槽底，拒绝接近切穿的导入槽深", () => {
+    const params = withSingleSlot(createDefaultStorageSteppedParams(), 0, {
+      id: "deep-slot", width: 32, x: 117.7, y: 37.7,
+    });
+    params.trays[0].holeDepth = 5;
+    expect(sampleVolume(createStorageSteppedTrayModel(params, 0), [0, 0, 0.5]))
+      .toBeCloseTo(1, 3);
+    params.trays[0].holeDepth = 5.995;
+    expect(() => createStorageSteppedTrayModel(params, 0)).toThrow(/槽深/);
+  });
+
   it("磁铁桩孔从槽底向下切，保留 1mm 底壁", () => {
     const params = withSingleSlot(createDefaultStorageSteppedParams(), 0, {
       id: "slot-1",
